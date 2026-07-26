@@ -513,7 +513,7 @@ export default function NavbarSearchAutocomplete({
                             className={cn(
                               "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm transition-colors",
                               active
-                                ? "bg-[var(--accent-soft)] text-[var(--text-primary)]"
+                                ? "bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]"
                                 : "hover:bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                             )}
                           >
@@ -559,7 +559,7 @@ export default function NavbarSearchAutocomplete({
                 addRecentSearch(query.trim());
                 setOpen(false);
               }}
-              className="mt-1.5 flex items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] px-3 py-2.5 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)]"
+              className="mt-1.5 flex items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] px-3 py-2.5 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-primary/10"
             >
               <Search className="h-4 w-4" aria-hidden />
               Ver todos los resultados de &quot;{query.trim()}&quot;

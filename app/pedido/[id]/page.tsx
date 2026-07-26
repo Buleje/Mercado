@@ -316,7 +316,7 @@ export default function PedidoPage() {
                     }`}>
                       {step.label}
                       {active && (
-                        <span className="ml-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold bg-primary/10 text-primary rounded-full px-2 py-0.5">
+                        <span className="ml-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] rounded-full px-2 py-0.5">
                           <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                           Ahora
                         </span>

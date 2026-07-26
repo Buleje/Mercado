@@ -128,7 +128,7 @@ export default function SuccessCelebration({
             aria-hidden
             className="absolute inset-0 flex items-center justify-center"
           >
-            <div className="h-40 w-40 rounded-full bg-[var(--accent-soft)] blur-2xl" />
+            <div className="h-40 w-40 rounded-full bg-primary/10 blur-2xl" />
           </div>
           <div className="relative motion-safe:animate-[bounceIn_0.7s_cubic-bezier(0.34,1.56,0.64,1)]">
             <Mascot size={140} />

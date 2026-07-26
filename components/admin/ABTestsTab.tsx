@@ -97,7 +97,7 @@ export default function ABTestsTab() {
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{t.name}</CardTitle>
-                  <span className={`text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full ${t.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted"}`}>
+                  <span className={`text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full ${t.active ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted"}`}>
                     {t.active ? "Activo" : "Inactivo"}
                   </span>
                 </div>

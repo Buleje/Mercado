@@ -57,8 +57,8 @@ type Cotizacion = {
 
 const STATUS_META: Record<CotizacionStatus, { label: string; color: string; bg: string }> = {
   BORRADOR:   { label: "Borrador",   color: "text-[var(--text-primary)]",      bg: "bg-[var(--surface-sunken)]" },
-  ENVIADA:    { label: "Enviada",    color: "text-[var(--data-success-500)]",      bg: "bg-[var(--accent-soft)]" },
-  ACEPTADA:   { label: "Aceptada",   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" },
+  ENVIADA:    { label: "Enviada",    color: "text-[var(--data-success-500)]",      bg: "bg-primary/10" },
+  ACEPTADA:   { label: "Aceptada",   color: "text-[var(--data-success-500)]", bg: "bg-primary/10" },
   RECHAZADA:  { label: "Rechazada",  color: "text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-100)]" },
   VENCIDA:    { label: "Vencida",    color: "text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-100)]" },
   CONVERTIDA: { label: "Convertida", color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
@@ -171,8 +171,8 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
   // Funnel
   const stages = [
     { id: "BORRADOR", label: "Borrador", count: cotizaciones.filter(c => c.status === "BORRADOR").length, bg: "bg-gray-300", text: "text-[var(--text-primary)]" },
-    { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
-    { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
+    { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-primary/10", text: "text-[var(--data-success-500)]" },
+    { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-primary/10", text: "text-[var(--data-success-500)]" },
     { id: "CONVERTIDA", label: "Convertida", count: cotizaciones.filter(c => c.status === "CONVERTIDA").length, bg: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-500)]" },
   ];
   const maxFunnel = Math.max(...stages.map(s => s.count), 1);
@@ -672,8 +672,8 @@ export default function CotizacionesModule() {
           {!loading && cotizaciones.length > 0 && (() => {
             const stages = [
               { id: "BORRADOR", label: "Borrador", count: cotizaciones.filter(c => c.status === "BORRADOR").length, bg: "bg-[var(--rule-soft)]", text: "text-[var(--text-primary)]" },
-              { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
-              { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
+              { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-primary/10", text: "text-[var(--data-success-500)]" },
+              { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-primary/10", text: "text-[var(--data-success-500)]" },
               { id: "CONVERTIDA", label: "Convertida", count: cotizaciones.filter(c => c.status === "CONVERTIDA").length, bg: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-500)]" },
             ];
             const maxCount = Math.max(...stages.map(s => s.count), 1);
@@ -840,7 +840,7 @@ export default function CotizacionesModule() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4 py-2">
                     {paginated.map(c => {
                       const meta = STATUS_META[c.status];
-                      const headerColor = c.status === "BORRADOR" ? "bg-[var(--surface-sunken)]" : c.status === "ENVIADA" ? "bg-[var(--accent-soft)]" : c.status === "ACEPTADA" || c.status === "CONVERTIDA" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-50)]";
+                      const headerColor = c.status === "BORRADOR" ? "bg-[var(--surface-sunken)]" : c.status === "ENVIADA" ? "bg-primary/10" : c.status === "ACEPTADA" || c.status === "CONVERTIDA" ? "bg-primary/10" : "bg-[var(--data-error-50)]";
                       const diasValidez = Math.max(0, Math.ceil((new Date(c.validoHasta).getTime() - Date.now()) / 86400000));
                       return (
                         <div key={c.id} onClick={() => openDetail(c)} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden  hover:shadow-[var(--shadow-lg)] cursor-pointer transition-all group">
@@ -855,8 +855,8 @@ export default function CotizacionesModule() {
                               <span className="text-xs text-[var(--text-tertiary)]">{formatDate(c.createdAt)} · {diasValidez > 0 ? `${diasValidez}d válido` : "Vencida"}</span>
                             </div>
                             <div className="flex gap-2 pt-2 border-t border-[var(--rule-soft)]">
-                              <button onClick={(e) => { e.stopPropagation(); openDetail(c); }} className="flex-1 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 py-1.5 rounded-lg transition-colors">Ver</button>
-                              <button onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/?text=${encodeURIComponent(`Cotización COT-${String(c.número).padStart(4, "0")} por ${formatCurrency(c.total)}`)}`, "_blank"); }} className="flex-1 text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] py-1.5 rounded-lg transition-colors">WhatsApp</button>
+                              <button onClick={(e) => { e.stopPropagation(); openDetail(c); }} className="flex-1 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 py-1.5 rounded-lg transition-colors">Ver</button>
+                              <button onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/?text=${encodeURIComponent(`Cotización COT-${String(c.número).padStart(4, "0")} por ${formatCurrency(c.total)}`)}`, "_blank"); }} className="flex-1 text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 py-1.5 rounded-lg transition-colors">WhatsApp</button>
                             </div>
                           </div>
                         </div>
@@ -1010,7 +1010,7 @@ export default function CotizacionesModule() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowTemplateModal(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors"
                   >
                     <Copy className="h-3.5 w-3.5" /> Desde plantilla
                   </button>
@@ -1263,10 +1263,10 @@ export default function CotizacionesModule() {
                       return (
                         <div key={idx} className="flex gap-3 items-start">
                           <div className="flex flex-col items-center">
-                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs", isDone ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]")}>
+                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs", isDone ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]")}>
                               {isDone ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                             </div>
-                            {idx < 3 && <div className={cn("w-0.5 h-6", isDone ? "bg-[var(--accent-soft)]" : "bg-[var(--rule-soft)]")} />}
+                            {idx < 3 && <div className={cn("w-0.5 h-6", isDone ? "bg-primary/10" : "bg-[var(--rule-soft)]")} />}
                           </div>
                           <div className="pb-3">
                             <p className={cn("text-xs font-bold", isDone ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{step.label}</p>
@@ -1330,7 +1330,7 @@ export default function CotizacionesModule() {
                   {selected.status === "BORRADOR" && (
                     <>
                       <button onClick={() => updateStatus("ENVIADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors">
                         <Send className="h-4 w-4" /> Enviar
                       </button>
                     </>
@@ -1338,7 +1338,7 @@ export default function CotizacionesModule() {
                   {selected.status === "ENVIADA" && (
                     <>
                       <button onClick={() => updateStatus("ACEPTADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors">
                         <Check className="h-4 w-4" /> Aceptada
                       </button>
                       <button onClick={() => updateStatus("RECHAZADA")} disabled={actionLoading}
@@ -1407,7 +1407,7 @@ export default function CotizacionesModule() {
                   </button>
                   <button
                     onClick={() => { setShowSaveTemplate(true); setTemplateName(""); }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors"
                   >
                     <Bookmark className="h-4 w-4" /> Guardar como plantilla
                   </button>
@@ -1555,7 +1555,7 @@ export default function CotizacionesModule() {
                         </div>
                         <button
                           onClick={() => handleLoadTemplate(tpl)}
-                          className="px-2 py-1 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors shrink-0"
+                          className="px-2 py-1 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors shrink-0"
                         >
                           Usar
                         </button>

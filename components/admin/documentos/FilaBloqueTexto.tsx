@@ -67,7 +67,7 @@ export default function FilaBloqueTexto({
         rows={1}
         aria-label={`Párrafo ${posicion}${bloque.formatoMixto ? " (formatos mezclados)" : ""}`}
         data-bloque={bloque.id}
-        className={`w-full resize-none overflow-hidden rounded-lg bg-transparent px-2 py-1.5 text-[var(--text-primary)] outline-none focus:bg-[var(--accent-soft)] focus:ring-2 focus:ring-[var(--accent)] dark:focus:bg-[var(--accent)]/12 ${ESTILO_TIPO[bloque.tipo]} ${
+        className={`w-full resize-none overflow-hidden rounded-lg bg-transparent px-2 py-1.5 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:bg-primary/10 focus:ring-2 focus:ring-[var(--accent)] dark:focus:bg-[var(--accent)]/12 ${ESTILO_TIPO[bloque.tipo]} ${
           bloque.negrita ? "font-bold" : ""
         } ${bloque.cursiva ? "italic" : ""} ${
           bloque.formatoMixto ? "border-l-4 border-[var(--data-warning-500)]" : ""
@@ -92,14 +92,14 @@ export default function FilaBloqueTexto({
         {formato === "docx" && (
           <>
             <button type="button"
-              className={`${BOTON_LATERAL} ${bloque.negrita ? "bg-[var(--accent-soft)] text-[var(--accent-600)] dark:bg-[var(--accent)]/15 dark:text-[var(--accent)]" : ""}`}
+              className={`${BOTON_LATERAL} ${bloque.negrita ? "bg-primary/10 text-[var(--accent-600)] dark:bg-[var(--accent)]/15 dark:text-[var(--accent)]" : ""}`}
               onClick={() => onFormato(bloque.id, { negrita: !bloque.negrita })}
               title={`Negrita en el párrafo ${posicion}`}>
               <Bold className="h-4 w-4" aria-hidden />
               <span className="sr-only">Negrita párrafo {posicion}</span>
             </button>
             <button type="button"
-              className={`${BOTON_LATERAL} ${bloque.cursiva ? "bg-[var(--accent-soft)] text-[var(--accent-600)] dark:bg-[var(--accent)]/15 dark:text-[var(--accent)]" : ""}`}
+              className={`${BOTON_LATERAL} ${bloque.cursiva ? "bg-primary/10 text-[var(--accent-600)] dark:bg-[var(--accent)]/15 dark:text-[var(--accent)]" : ""}`}
               onClick={() => onFormato(bloque.id, { cursiva: !bloque.cursiva })}
               title={`Cursiva en el párrafo ${posicion}`}>
               <Italic className="h-4 w-4" aria-hidden />

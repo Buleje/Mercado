@@ -176,14 +176,14 @@ const PM_FALLBACK_COLORS = ["var(--accent)", "#7c3aed", "#06b6d4", "#3b82f6", "#
 
 type KpiDef = { key: string; label: string; icon: typeof TrendingUp; color: string; bg: string };
 const KPI_DEFS: KpiDef[] = [
-  { key: "ingresos", label: "Ingresos del mes", icon: TrendingUp, color: "var(--accent)", bg: "bg-[var(--accent-soft)]" },
+  { key: "ingresos", label: "Ingresos del mes", icon: TrendingUp, color: "var(--accent)", bg: "bg-primary/10" },
   { key: "gastos", label: "Gastos del mes", icon: TrendingDown, color: "#ef4444", bg: "bg-[var(--data-error-50)]" },
-  { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: "#3b82f6", bg: "bg-[var(--accent-soft)]" },
+  { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: "#3b82f6", bg: "bg-primary/10" },
   { key: "margen", label: "Margen %", icon: Percent, color: "#8b5cf6", bg: "bg-[var(--surface-sunken)]" },
   { key: "deuda", label: "Deuda proveedores", icon: Truck, color: "#ff6b5b", bg: "bg-[var(--data-warning-50)]" },
   { key: "fiados", label: "Fiados pendientes", icon: CreditCard, color: "#ff6b5b", bg: "bg-[var(--data-warning-50)]" },
   { key: "igv", label: "IGV a pagar", icon: Calculator, color: "#e63946", bg: "bg-[var(--surface-sunken)]" },
-  { key: "puntoEq", label: "Punto equilibrio", icon: Target, color: "var(--color-primary)", bg: "bg-[var(--accent-soft)]" },
+  { key: "puntoEq", label: "Punto equilibrio", icon: Target, color: "var(--color-primary)", bg: "bg-primary/10" },
 ];
 function FinanzasDashboard() {
   const [kpis, setKpis] = useState<Record<string, number>>({});
@@ -623,7 +623,7 @@ function FinanzasDashboard() {
             <p className="text-sm font-bold text-[var(--text-primary)]">Gastos por Categoria</p>
             <div className="flex-1" />
             {gastosPieFilter && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold">
                 {gastosPieFilter}
                 <button onClick={() => setGastosPieFilter(null)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
               </span>

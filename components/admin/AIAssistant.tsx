@@ -60,9 +60,9 @@ type WidgetSize = "mini" | "medium" | "large";
 // Mejora 30: Grouped Quick Actions by category
 const QUICK_ACTIONS: QuickAction[] = [
   { label: "¿Qué debo hacer ahora?", icon: Lightbulb, prompt: "Analiza la situación actual del negocio y dime las 5 acciones más urgentes que debo tomar HOY, en orden de prioridad. Incluye a qué módulo ir para cada acción.", color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/30 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40", category: "Prioridades" },
-  { label: "Estado del negocio", icon: TrendingUp, prompt: "Dame un diagnóstico ejecutivo completo del estado actual del negocio: ventas, inventario, clientes, deudas. Resalta lo positivo y lo que necesita atención urgente.", color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", category: "Análisis" },
+  { label: "Estado del negocio", icon: TrendingUp, prompt: "Dame un diagnóstico ejecutivo completo del estado actual del negocio: ventas, inventario, clientes, deudas. Resalta lo positivo y lo que necesita atención urgente.", color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", category: "Análisis" },
   { label: "Alertas urgentes", icon: AlertTriangle, prompt: "¿Hay alguna alerta urgente? Stock agotado, pedidos sin atender, facturas vencidas, clientes en riesgo. Solo lo crítico.", color: "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40", category: "Prioridades" },
-  { label: "Ideas de productos", icon: Package, prompt: "Basándote en mis productos más vendidos y tendencias, ¿qué productos nuevos me recomiendas agregar al catálogo? Dame 5 ideas con precio sugerido y por qué.", color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", category: "Estrategia" },
+  { label: "Ideas de productos", icon: Package, prompt: "Basándote en mis productos más vendidos y tendencias, ¿qué productos nuevos me recomiendas agregar al catálogo? Dame 5 ideas con precio sugerido y por qué.", color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", category: "Estrategia" },
   { label: "Retener clientes", icon: Users, prompt: "¿Cómo puedo retener mejor a mis clientes actuales? Dame estrategias basadas en los datos reales de mis clientes top y su comportamiento de compra.", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)] border-[var(--rule-base)]", category: "Estrategia" },
   { label: "Plan semanal", icon: Sparkles, prompt: "Crea un plan semanal de tareas ejecutivas para esta semana. Incluye: qué revisar cada día, qué módulo usar, y qué métricas monitorear. Formato tabla o bullets.", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)] border-[var(--rule-base)]", category: "Análisis" },
   { label: "Ventas de hoy", icon: BarChart, prompt: "Dame un resumen detallado de las ventas de hoy: total vendido, cantidad de pedidos, ticket promedio, productos más vendidos, y comparación con ayer.", color: "text-[var(--data-info-500)] bg-[var(--data-info-50)] dark:bg-cyan-950/30 border-[var(--data-info-500)] dark:border-[var(--data-info-500)]/40", category: "Análisis" },
@@ -633,7 +633,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
               <span className="font-bold">{pct}%</span>
             </div>
             <div className="h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
-              <div className={cn("h-full rounded-full transition-all", pct > 70 ? "bg-[var(--accent-soft)]" : pct > 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${pct}%` }} />
+              <div className={cn("h-full rounded-full transition-all", pct > 70 ? "bg-primary/10" : pct > 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${pct}%` }} />
             </div>
           </div>
         );
@@ -654,7 +654,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       if (numMatch) {
         return (
           <div key={i} className="flex flex-wrap items-start gap-2 py-0.5">
-            <span className="text-primary font-bold shrink-0 text-xs w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">{numMatch[1]}</span>
+            <span className="text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold shrink-0 text-xs w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">{numMatch[1]}</span>
             <span dangerouslySetInnerHTML={{ __html: formatInline(line.slice(numMatch[0].length), moduleRegex) }} />
           </div>
         );
@@ -691,7 +691,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         {msg.actions.map((action, i) => (
           <div key={i} className={cn(
             "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] border transition-all",
-            action.status === "done" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+            action.status === "done" ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
             action.status === "error" ? "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" :
             action.status === "executing" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-[var(--data-warning-500)]" :
             "bg-white dark:bg-accent/30 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)]"
@@ -763,7 +763,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       <div className="flex flex-wrap gap-1.5 px-3 py-1.5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
         {chips.map((chip, idx) => (
           <button key={`${chip}-${idx}`} onClick={() => sendMessage(chip)}
-            className="px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--accent-muted)]/50 transition-colors">
+            className="px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-primary/15/50 transition-colors">
             {chip}
           </button>
         ))}
@@ -1021,8 +1021,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           {notifications.length === 0 && (
             <span className={cn("absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-card",
               healthScore !== null
-                ? healthScore > 70 ? "bg-[var(--accent-soft)]" : healthScore > 40 ? "bg-[var(--data-warning-500)] animate-pulse" : "bg-[var(--data-error-500)] animate-pulse"
-                : "bg-[var(--accent-soft)] animate-pulse"
+                ? healthScore > 70 ? "bg-primary/10" : healthScore > 40 ? "bg-[var(--data-warning-500)] animate-pulse" : "bg-[var(--data-error-500)] animate-pulse"
+                : "bg-primary/10 animate-pulse"
             )} />
           )}
           {/* Mejora 33: Mini health score label */}
@@ -1092,7 +1092,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                 {isOffline ? "Modo offline" : "IA en tiempo real"}
                 {healthScore !== null && !isOffline && (
                   <span className={cn("px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
-                    healthScore > 70 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : healthScore > 40 ? "bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]/30 text-[var(--data-error-500)]"
+                    healthScore > 70 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : healthScore > 40 ? "bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]/30 text-[var(--data-error-500)]"
                   )}>
                     Salud: {healthScore}%
                   </span>

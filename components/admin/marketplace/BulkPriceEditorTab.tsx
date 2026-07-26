@@ -34,7 +34,7 @@ function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
     <div className={cn(
       "fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
-      type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
+      type === "success" ? "bg-primary/10 text-white" : "bg-[var(--data-error)] text-white"
     )}>
       {type === "success" ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
       {msg}

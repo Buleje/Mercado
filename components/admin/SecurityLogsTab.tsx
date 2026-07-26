@@ -7,7 +7,7 @@ import { cn, exportToCSV } from "@/lib/utils";
 import type { SecurityLogEntry } from "@/app/api/security-logs/route";
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  auth:     { label: "Autenticación", icon: LogIn,    color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  auth:     { label: "Autenticación", icon: LogIn,    color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" },
   data:     { label: "Datos",         icon: Eye,      color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
   config:   { label: "Configuración", icon: Settings, color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
   security: { label: "Seguridad",     icon: Shield,   color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" },
@@ -89,7 +89,7 @@ export default function SecurityLogsTab() {
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
           <button onClick={() => exportToCSV(filtered.map(l => ({ fecha: fmtDate(l.timestamp), actor: l.actor, accion: l.action, categoria: l.category, severidad: l.severity, ip: l.ip, exito: l.success ? "Sí" : "No", detalles: l.details })), "logs-seguridad")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10">
             <Download className="h-3.5 w-3.5" /> CSV
           </button>
         </div>
@@ -204,7 +204,7 @@ export default function SecurityLogsTab() {
                       <span className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{l.action}</span>
                       <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", SEVERITY_COLORS[l.severity])}>{l.severity}</span>
                       <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5",
-                        l.success ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
+                        l.success ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                         {l.success ? <CheckCircle className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
                         {l.success ? "Éxito" : "Fallo"}
                       </span>

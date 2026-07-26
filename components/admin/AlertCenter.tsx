@@ -18,8 +18,8 @@ interface AlertItem {
 const TYPE_META = {
   pedido:  { icon: ShoppingCart, color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30"  },
   stock:   { icon: AlertTriangle,color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-50)] dark:bg-red-950/30"      },
-  venta:   { icon: TrendingUp,   color: "text-[var(--data-success-500)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
-  tarea:   { icon: Package,      color: "text-[var(--data-success-500)]",   bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"    },
+  venta:   { icon: TrendingUp,   color: "text-[var(--data-success-500)]",bg: "bg-primary/10 dark:bg-primary/15"},
+  tarea:   { icon: Package,      color: "text-[var(--data-success-500)]",   bg: "bg-primary/10 dark:bg-primary/15"    },
   sistema: { icon: Bell,         color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]"},
   tiempo:  { icon: Clock,        color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30"},
 };

@@ -151,7 +151,7 @@ export function FinancialResults({
                   aria-pressed={on}
                   className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition-colors ${
                     on
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                      ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]"
                   }`}
                 >

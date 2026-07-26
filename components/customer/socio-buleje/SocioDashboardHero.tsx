@@ -102,7 +102,7 @@ export function SocioDashboardHero({ name = "Socio" }: { name?: string }) {
           ) : (
             <button
               type="button"
-              className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-[var(--accent-dark)] shadow-sm transition-transform hover:-translate-y-0.5 hover:shadow-md"
+              className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-[var(--accent-dark)] dark:text-[var(--accent)] shadow-sm transition-transform hover:-translate-y-0.5 hover:shadow-md"
             >
               Renovar anticipado
             </button>

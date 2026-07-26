@@ -31,7 +31,7 @@ function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTre
     <p className="text-xs font-medium text-[var(--text-tertiary)] dark:text-muted mb-2.5 truncate">{label}</p>
     <div className="flex flex-wrap items-end justify-between gap-2"><div className="flex flex-col gap-1.5">
       <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums leading-none">{value}</p>
-      {delta != null && delta !== undefined ? <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>{arrowUp ? "\u2191" : "\u2193"} {Math.abs(delta).toFixed(1)}%</div> : delta === null ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">\u2014 Sin datos anteriores</span> : null}
+      {delta != null && delta !== undefined ? <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>{arrowUp ? "\u2191" : "\u2193"} {Math.abs(delta).toFixed(1)}%</div> : delta === null ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">\u2014 Sin datos anteriores</span> : null}
       {sparklineData && sparklineData.length > 0 && <div className="mt-1"><Sparkline data={sparklineData} color={accent.replace("text-","")} /></div>}
     </div><Icon className={cn("h-4 w-4 shrink-0 mb-0.5", accent)} /></div>
   </div>);
@@ -59,7 +59,7 @@ function ElapsedTimer({ createdAt }: { createdAt: string }) {
   return <div className={cn("text-[length:var(--ts-2xs)] font-bold mt-0.5", color)}>\u23F1 {h > 0 ? `${h}h ${m}m` : `${m}m`}</div>;
 }
 function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
-  const m: Record<string,string> = { green:"bg-[var(--accent-soft)] text-[var(--data-success-500)]", red:"bg-red-50 text-[var(--data-error-600)]", amber:"bg-amber-50 text-[var(--data-warning-600)]", blue:"bg-[var(--accent-soft)] text-[var(--data-success-500)]", purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-[var(--text-secondary)]" };
+  const m: Record<string,string> = { green:"bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", red:"bg-red-50 text-[var(--data-error-600)]", amber:"bg-amber-50 text-[var(--data-warning-600)]", blue:"bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-[var(--text-secondary)]" };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
@@ -86,7 +86,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
         <div className={cn("space-y-4", expandAll && "bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4")}>
           {expandAll && (
             <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <div className="w-7 h-7 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 dark:bg-primary/15 flex items-center justify-center">
                 <DollarSign className="h-3.5 w-3.5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
               </div>
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ventas</CardTitle>
@@ -101,7 +101,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
             </div>
             <button
               onClick={exportVentas}
-              className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 px-3 py-2 rounded-lg hover:bg-primary/20 transition-colors"
+              className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 px-3 py-2 rounded-lg hover:bg-primary/20 transition-colors"
               title="Exportar ventas del período como CSV"
             >
               <Download className="h-3.5 w-3.5" /> Exportar CSV
@@ -253,10 +253,10 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                           const intensity = count > 0 ? Math.min((count / st.maxHeat) * 100, 100) : 0;
                           let bgColor = "bg-[var(--surface-sunken)]";
                           if (intensity > 0) {
-                            if (intensity >= 75) bgColor = "bg-[var(--accent-soft)]";
-                            else if (intensity >= 50) bgColor = "bg-[var(--accent-soft)]";
-                            else if (intensity >= 25) bgColor = "bg-[var(--accent-soft)]";
-                            else bgColor = "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]";
+                            if (intensity >= 75) bgColor = "bg-primary/10";
+                            else if (intensity >= 50) bgColor = "bg-primary/10";
+                            else if (intensity >= 25) bgColor = "bg-primary/10";
+                            else bgColor = "bg-primary/10 dark:bg-primary/15";
                           }
                           return (
                             <div
@@ -287,19 +287,19 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Sin ventas</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-4 h-4 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded"></div>
+                  <div className="w-4 h-4 bg-primary/10 dark:bg-primary/15 rounded"></div>
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Bajo</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-4 h-4 bg-[var(--accent-soft)] rounded"></div>
+                  <div className="w-4 h-4 bg-primary/10 rounded"></div>
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Medio</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-4 h-4 bg-[var(--accent-soft)] rounded"></div>
+                  <div className="w-4 h-4 bg-primary/10 rounded"></div>
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Alto</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-4 h-4 bg-[var(--accent-soft)] rounded"></div>
+                  <div className="w-4 h-4 bg-primary/10 rounded"></div>
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Pico</span>
                 </div>
               </div>
@@ -308,7 +308,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                 const topHours = [...st.hourMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
                 if (topHours.length === 0) return null;
                 return (
-                  <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 text-xs">
+                  <div className="bg-primary/10 dark:bg-primary/15 rounded-lg p-3 text-xs">
                     <div className="font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Horarios pico identificados</div>
                     <div className="space-y-0.5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                       {topHours.map(([key, count]) => {
@@ -426,7 +426,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                 </div>
 
                 {/* Insights */}
-                <div className="bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] rounded-lg p-3 text-xs border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                <div className="bg-primary/10/50 dark:bg-primary/15 rounded-lg p-3 text-xs border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <div className="font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1.5 flex items-center gap-1.5">
                     <Lightbulb className="h-3.5 w-3.5" />
                     Insights de conversión
@@ -704,7 +704,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                                   <button
                                     onClick={() => handleQuickStatus(o.id, next.s)}
                                     disabled={changingStatusId === o.id}
-                                    className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-accent hover:bg-primary/10 hover:text-primary text-[var(--text-secondary)] transition-colors disabled:opacity-50 whitespace-nowrap"
+                                    className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-accent hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] text-[var(--text-secondary)] transition-colors disabled:opacity-50 whitespace-nowrap"
                                     title={`Cambiar a ${next.s}`}
                                   >
                                     {changingStatusId === o.id ? "…" : next.label}

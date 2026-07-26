@@ -91,9 +91,9 @@ type DraftItem = {
 
 const STATUS_META: Record<GuiaStatus, { label: string; color: string; bg: string; dot: string }> = {
   BORRADOR:    { label: "Borrador",    color: "text-[var(--text-primary)]",       bg: "bg-[var(--surface-sunken)]",       dot: "bg-[var(--rule-mid)]" },
-  EMITIDA:     { label: "Emitida",     color: "text-[var(--data-success-500)]",       bg: "bg-[var(--accent-soft)]",       dot: "bg-[var(--accent-soft)]" },
+  EMITIDA:     { label: "Emitida",     color: "text-[var(--data-success-500)]",       bg: "bg-primary/10",       dot: "bg-primary/10" },
   EN_TRANSITO: { label: "En tránsito", color: "text-[var(--data-warning-500)]",     bg: "bg-[var(--data-warning-100)]",     dot: "bg-[var(--data-warning-500)]" },
-  ENTREGADA:   { label: "Entregada",   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
+  ENTREGADA:   { label: "Entregada",   color: "text-[var(--data-success-500)]", bg: "bg-primary/10", dot: "bg-primary/10" },
   ANULADA:     { label: "Anulada",     color: "text-[var(--data-error-500)]",         bg: "bg-[var(--data-error-100)]",         dot: "bg-[var(--data-error-500)]" },
 };
 
@@ -111,9 +111,9 @@ const MOTIVOS = [
 const _PILL_COLORS: Record<string, { active: string; inactive: string }> = {
   "":          { active: "bg-primary text-white",  inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
   BORRADOR:    { active: "bg-gray-600 text-white",    inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
-  EMITIDA:     { active: "bg-[var(--accent-soft)] text-white",    inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  EMITIDA:     { active: "bg-primary/10 text-white",    inactive: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
   EN_TRANSITO: { active: "bg-[var(--data-warning-500)] text-white",   inactive: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" },
-  ENTREGADA:   { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  ENTREGADA:   { active: "bg-primary/10 text-white", inactive: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
   ANULADA:     { active: "bg-[var(--data-error-500)] text-white",     inactive: "bg-[var(--data-error-50)] text-[var(--data-error-500)]" },
 };
 
@@ -174,7 +174,7 @@ function GuiaPreview({ guia }: { guia: GuiaRemision }) {
       {guia.transportistaNombre && (
         <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] flex items-center gap-1">
           <Truck className="h-3 w-3" /> {guia.transportistaNombre}
-          {placa && <span className="ml-1 px-1 bg-[var(--accent-soft)] text-[var(--data-success-500)] rounded text-[length:var(--ts-2xs)] font-bold">{placa}</span>}
+          {placa && <span className="ml-1 px-1 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] rounded text-[length:var(--ts-2xs)] font-bold">{placa}</span>}
         </p>
       )}
       <div className="border-t border-[var(--rule-soft)] pt-2">
@@ -232,7 +232,7 @@ function _OrderPickerCard({ order, isSelected, onSelect }: {
           : "bg-white dark:bg-[var(--color-card)] border-[var(--rule-base)] hover:shadow-[var(--shadow-lg)] hover:border-primary/40"
       )}
     >
-      <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-primary" : "bg-[var(--accent-soft)]")} />
+      <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-primary" : "bg-primary/10")} />
       <div className="pl-2">
         <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
           <span className="font-mono text-xs font-bold text-[var(--text-primary)]">#{order.número}</span>
@@ -274,9 +274,9 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
   if (!resumen) return null;
 
   const kpis = [
-    { label: "Guías este mes", value: resumen.totalMes, icon: FileText, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" },
+    { label: "Guías este mes", value: resumen.totalMes, icon: FileText, color: "text-[var(--data-success-500)]", bg: "bg-primary/10" },
     { label: "En tránsito", value: resumen.enTransito, icon: Truck, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)]" },
-    { label: "Entregadas", value: resumen.entregadas, icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" },
+    { label: "Entregadas", value: resumen.entregadas, icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-primary/10" },
     { label: "Anuladas", value: resumen.anuladas, icon: XCircle, color: resumen.anuladas > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]", bg: resumen.anuladas > 0 ? "bg-[var(--data-error-100)]" : "bg-[var(--surface-sunken)]" },
   ];
 
@@ -305,7 +305,7 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
           <div className="space-y-2">
             {resumen.transportistasFrecuentes.slice(0, 3).map((t, i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="h-7 w-7 rounded-full bg-[var(--accent-soft)] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] shrink-0">{i + 1}</div>
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] shrink-0">{i + 1}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{t.nombre}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono">{t.ruc}</p>
@@ -830,9 +830,9 @@ export default function GuiasRemisionModule() {
             const pillColors: Record<string, { active: string; inactive: string }> = {
               "": { active: "bg-primary text-white", inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
               BORRADOR: { active: "bg-gray-600 text-white", inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
-              EMITIDA: { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+              EMITIDA: { active: "bg-primary/10 text-white", inactive: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
               EN_TRANSITO: { active: "bg-[var(--data-warning-500)] text-white", inactive: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" },
-              ENTREGADA: { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+              ENTREGADA: { active: "bg-primary/10 text-white", inactive: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
               ANULADA: { active: "bg-[var(--data-error-500)] text-white", inactive: "bg-[var(--data-error-50)] text-[var(--data-error-500)]" },
             };
             const colors = pillColors[s] ?? pillColors[""];
@@ -905,7 +905,7 @@ export default function GuiasRemisionModule() {
                         <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">{formatDate(g.fechaTraslado)}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                               <Truck className="h-4 w-4 text-[var(--data-success-500)]" />
                             </div>
                             <p className="font-medium text-[var(--text-primary)] truncate">{g.destinatarioNombre}</p>
@@ -996,7 +996,7 @@ export default function GuiasRemisionModule() {
                     <p className="font-bold text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] uppercase">Transportista</p>
                     {selected.transportistaNombre ? (
                       <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
-                        <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                           <Truck className="h-4 w-4 text-[var(--data-success-500)]" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1004,7 +1004,7 @@ export default function GuiasRemisionModule() {
                           {selected.transportistaRuc && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">RUC: {selected.transportistaRuc}</p>}
                         </div>
                         {selected.transportistaPlaca ? (
-                          <span className="px-2 py-1 rounded-lg bg-[var(--accent-soft)] text-xs font-bold text-[var(--data-success-500)] flex items-center gap-1">
+                          <span className="px-2 py-1 rounded-lg bg-primary/10 text-xs font-bold text-[var(--data-success-500)] flex items-center gap-1">
                             {selected.transportistaPlaca}
                           </span>
                         ) : (
@@ -1080,15 +1080,15 @@ export default function GuiasRemisionModule() {
                             <div className="flex flex-col items-center">
                               <div className={cn(
                                 "h-5 w-5 rounded-full flex items-center justify-center",
-                                isDone ? "bg-[var(--accent-soft)]" : "bg-[var(--surface-sunken)]"
+                                isDone ? "bg-primary/10" : "bg-[var(--surface-sunken)]"
                               )}>
                                 {isDone ? (
-                                  <div className="h-2 w-2 rounded-full bg-[var(--accent-soft)]" />
+                                  <div className="h-2 w-2 rounded-full bg-primary/10" />
                                 ) : (
                                   <div className="h-2 w-2 rounded-full bg-[var(--rule-base)]" />
                                 )}
                               </div>
-                              {idx < 3 && <div className={cn("w-0.5 h-5", isDone ? "bg-[var(--accent-soft)]" : "bg-[var(--rule-soft)]")} />}
+                              {idx < 3 && <div className={cn("w-0.5 h-5", isDone ? "bg-primary/10" : "bg-[var(--rule-soft)]")} />}
                             </div>
                             <div className="pb-2">
                               <p className={cn("text-xs font-bold", isDone ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{meta.label}</p>
@@ -1120,7 +1120,7 @@ export default function GuiasRemisionModule() {
                   <div className="space-y-2">
                     {(selected.items ?? []).map((item, i) => (
                       <div key={i} className="flex items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl">
-                        <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                           <Package className="h-4 w-4 text-[var(--data-success-500)]" />
                         </div>
                         <div className="flex-1 min-w-0">

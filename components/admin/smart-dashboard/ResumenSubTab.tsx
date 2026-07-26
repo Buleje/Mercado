@@ -365,9 +365,9 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               key={i}
               className={cn(
                 "border-l-4 p-3 rounded-r-xl text-sm",
-                insight.type === "positive" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+                insight.type === "positive" && "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
                 insight.type === "negative" && "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
-                insight.type === "neutral" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+                insight.type === "neutral" && "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
               )}
             >
               <span className="font-medium">{insight.text}</span>
@@ -407,7 +407,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
       {!loading && (
         <div className="flex flex-wrap items-center gap-2">
           {semanaAnterior && (
-            <span className={cn("inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border", semanaAnterior.pct >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
+            <span className={cn("inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border", semanaAnterior.pct >= 0 ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
               Hace 1 sem ({semanaAnterior.diaLabel}): {fmtR(semanaAnterior.monto)} {semanaAnterior.pct >= 0 ? "+" : ""}{Number(semanaAnterior.pct).toFixed(0)}%
             </span>
           )}
@@ -603,7 +603,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                   {fmtR(monthProjection.ventasMes)} <span className="text-xs font-normal text-[var(--text-tertiary)]">de {fmtR(monthProjection.proyeccion)}</span>
                 </p>
                 <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2 mt-2">
-                  <div className={cn("h-2 rounded-full transition-all", monthProjection.porcentaje >= 80 ? "bg-[var(--accent-soft)]" : monthProjection.porcentaje >= 50 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${Math.min(100, monthProjection.porcentaje)}%` }} />
+                  <div className={cn("h-2 rounded-full transition-all", monthProjection.porcentaje >= 80 ? "bg-primary/10" : monthProjection.porcentaje >= 50 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${Math.min(100, monthProjection.porcentaje)}%` }} />
                 </div>
                 <p className="text-xs mt-1 text-[var(--text-tertiary)]">
                   {monthProjection.porcentaje > 100 ? "Superando proyeccion!" : `${monthProjection.porcentaje}% — dia ${monthProjection.diasTranscurridos}/${monthProjection.diasTotales}`}

@@ -235,7 +235,7 @@ function ModuleTooltip() {
             <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Carrito:</span> <span className="text-[var(--text-secondary)] dark:text-muted">ajusta cantidades y aplica descuentos por ítem.</span></p>
             <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cobro:</span> <span className="text-[var(--text-secondary)] dark:text-muted">efectivo, Yape, Plin, tarjeta o fiado. Pago dividido también.</span></p>
           </div>
-          <div className="mt-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-2">
+          <div className="mt-3 bg-primary/10 dark:bg-primary/15 rounded-xl p-2">
             <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold inline-flex items-center gap-1.5"><Lightbulb className="h-3.5 w-3.5" aria-hidden /> Ejemplo</p>
             <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Carlos busca “Leche”, agrega 2 unidades al carrito, el cliente paga S/10 en efectivo y el sistema le dice el vuelto.</p>
           </div>
@@ -272,7 +272,7 @@ function PromoBadge({ productId, quantity, unitPrice }: { productId: number; qua
   const saving = normalPrice - promo.payPrice;
   const applied = quantity >= promo.buyQty;
   return (
-    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1 py-0.5 rounded", applied ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)]")}>
+    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1 py-0.5 rounded", applied ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]")}>
       {promo.buyQty}xS/{Number(promo.payPrice).toFixed(0)}{saving > 0 ? ` (ahorro S/${saving.toFixed(0)})` : ""}
     </span>
   );
@@ -298,10 +298,10 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{itemCount} {itemCount === 1 ? "articulo" : "articulos"}</span>
           <span className={cn(
             "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
-            sale.payment === "efectivo" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
+            sale.payment === "efectivo" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
             sale.payment === "yape" ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" :
-            sale.payment === "plin" ? "bg-teal-50 text-[var(--accent-dark)]" :
-            sale.payment === "tarjeta" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
+            sale.payment === "plin" ? "bg-teal-50 text-[var(--accent-dark)] dark:text-[var(--accent)]" :
+            sale.payment === "tarjeta" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
             sale.payment === "fiado" ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" :
             "bg-gray-50 text-[var(--text-secondary)]"
           )}>
@@ -428,7 +428,7 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
   };
 
   if (!fiado || done) return done ? (
-    <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30">
+    <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30">
       <Check className="h-5 w-5 text-[var(--data-success-500)]" strokeWidth={3} />
       <span className="text-base font-semibold text-[var(--data-success-500)]">Abono registrado</span>
     </div>
@@ -448,7 +448,7 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
           </button>
         ))}
         <button onClick={() => abonar(fiado.saldo)} disabled={paying}
-          className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--data-success-500)] hover:text-white transition-colors disabled:opacity-50">
+          className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-[var(--data-success-500)] hover:text-white transition-colors disabled:opacity-50">
           Todo S/{Number(fiado.saldo).toFixed(2)}
         </button>
         <button onClick={() => setFiado(null)} className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-surface transition-colors">No, gracias</button>
@@ -585,7 +585,7 @@ function SaleCompleteModal({
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="h-20 w-20 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center mx-auto mb-4 relative z-20"
+            className="h-20 w-20 rounded-full bg-primary/10 dark:bg-primary/15 flex items-center justify-center mx-auto mb-4 relative z-20"
           >
             <Check className="h-10 w-10 text-[var(--data-success-500)]" strokeWidth={3} />
           </m.div>
@@ -621,7 +621,7 @@ function SaleCompleteModal({
               <p className="text-base text-[var(--data-warning-500)]">El cliente queda debiendo</p>
             </div>
           ) : saleComplete.change > 0 ? (
-            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 rounded-xl p-5 text-center">
+            <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 rounded-xl p-5 text-center">
               <p className="text-sm font-semibold text-[var(--data-success-500)] uppercase tracking-wide mb-1">Dar de vuelto</p>
               <p className="text-4xl font-extrabold text-[var(--data-success-500)] tabular-nums">{fmt(saleComplete.change)}</p>
             </div>
@@ -1793,7 +1793,7 @@ export default function POSView() {
                     <div className="absolute right-0 top-full mt-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-2 z-20 min-w-[220px] space-y-1 shadow-[var(--shadow-lg)]">
                       <button
                         onClick={() => { setShowWhatsAppOrder(true); setShowMoreTools(false); }}
-                        className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] px-3 py-2 rounded-lg transition-colors"
+                        className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-success-500)] hover:bg-primary/10 px-3 py-2 rounded-lg transition-colors"
                       >
                         <MessageCircle className="h-4 w-4" /> Pedido por WhatsApp
                       </button>
@@ -1826,7 +1826,7 @@ export default function POSView() {
                               } catch { /* ignore */ }
                               setShowMoreTools(false);
                             }}
-                            className="w-full flex items-center gap-2 text-xs font-bold text-primary hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors"
+                            className="w-full flex items-center gap-2 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors"
                           >
                             <RotateCcw className="h-4 w-4" /> Repetir última venta
                           </button>
@@ -2025,7 +2025,7 @@ export default function POSView() {
                 <ShoppingBasket className="h-4 w-4 text-primary" />
                 Carrito
                 {cartCount > 0 && (
-                  <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded-full">{cartCount}</span>
+                  <span className="bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold px-2 py-0.5 rounded-full">{cartCount}</span>
                 )}
               </CardTitle>
               <div className="flex items-center gap-2">
@@ -2042,7 +2042,7 @@ export default function POSView() {
                   <div className="relative">
                     <button
                       onClick={() => setShowQueueDropdown(!showQueueDropdown)}
-                      className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors"
+                      className="text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors"
                     >
                       Cola: {clientQueues.length}
                     </button>
@@ -2122,7 +2122,7 @@ export default function POSView() {
                 const discountMultiplier = 1 - (item.discount || 0) / 100;
                 const itemTotal = item.product.price * item.quantity * discountMultiplier;
                 return (
-                  <div key={item.product.id} className={cn("rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-2 hover:bg-gray-50 dark:hover:bg-surface transition-all duration-[var(--dur-base)]", lastAddedId === item.product.id && "ring-2 ring-[var(--data-success-500)]/40 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]")}>
+                  <div key={item.product.id} className={cn("rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-2 hover:bg-gray-50 dark:hover:bg-surface transition-all duration-[var(--dur-base)]", lastAddedId === item.product.id && "ring-2 ring-[var(--data-success-500)]/40 bg-primary/10 dark:bg-primary/15")}>
                     <div className="flex flex-wrap items-center gap-2">
                       {item.product.image ? (
                         <Image src={item.product.image} alt={item.product.name} width={48} height={48} className="rounded-lg object-cover shrink-0 w-12 h-12" />
@@ -2138,7 +2138,7 @@ export default function POSView() {
                             {fmt(item.product.price)}
                           </p>
                           {item.discount && item.discount > 0 && (
-                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] px-1 py-0.5 rounded">
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 px-1 py-0.5 rounded">
                               -{item.discount}%
                             </span>
                           )}
@@ -2476,7 +2476,7 @@ export default function POSView() {
 
           {/* Total */}
           {!loadingHistory && salesHistory.length > 0 && (
-            <div className="px-2 sm:px-4 py-2 sm:py-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+            <div className="px-2 sm:px-4 py-2 sm:py-3 bg-primary/10 dark:bg-primary/15 border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
               <p className="text-xs font-bold text-[var(--data-success-500)]">Total Ventas del Turno</p>
               <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                 {fmt(salesHistory.reduce((sum, s) => sum + s.total, 0))}
@@ -2536,7 +2536,7 @@ export default function POSView() {
                 />
               </Field>
               {Number(truequeValor) > 0 && cartTotal > 0 && (
-                <div className={cn("rounded-lg p-3 text-sm font-bold", Number(truequeValor) >= cartTotal ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]" : "bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning-500)]")}>
+                <div className={cn("rounded-lg p-3 text-sm font-bold", Number(truequeValor) >= cartTotal ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning-500)]")}>
                   {Number(truequeValor) >= cartTotal ? (
                     <span>Sin pago adicional (valor trueque cubre el total)</span>
                   ) : (

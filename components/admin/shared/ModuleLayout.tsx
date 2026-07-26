@@ -22,7 +22,7 @@ interface ModuleLayoutProps {
   icon: React.ComponentType<{ className?: string }>;
   /** Clase de color del icono, ej. "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" */
   iconColor?: string;
-  /** Clase de fondo del icono, ej. "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" */
+  /** Clase de fondo del icono, ej. "bg-primary/10 dark:bg-primary/15" */
   iconBg?: string;
   /** Título del módulo */
   title: string;

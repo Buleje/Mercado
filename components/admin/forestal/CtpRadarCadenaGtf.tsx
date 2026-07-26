@@ -28,7 +28,7 @@ export default function CtpRadarCadenaGtf({
 }) {
   return (
     <section className="rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] shadow-[var(--shadow-md)]">
-      <header className="flex flex-wrap items-start justify-between gap-2 border-b-2 border-[var(--rule-base)] bg-[var(--accent-soft)] dark:bg-[var(--accent)]/12 px-4 py-3">
+      <header className="flex flex-wrap items-start justify-between gap-2 border-b-2 border-[var(--rule-base)] bg-primary/10 dark:bg-[var(--accent)]/12 px-4 py-3">
         <div className="min-w-0">
           <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <PackageOpen className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden="true" />

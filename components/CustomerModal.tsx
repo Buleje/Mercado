@@ -75,7 +75,7 @@ function FullMapModal({
             />
           </div>
           {onPick && (
-            <p className="text-xs text-primary/80 px-4 py-2.5 bg-primary/5 font-medium">
+            <p className="text-xs text-[var(--accent-ink)] dark:text-[var(--accent)]/80 px-4 py-2.5 bg-primary/5 font-medium">
               Toca cualquier punto del mapa para fijar tu dirección de entrega
             </p>
           )}
@@ -172,8 +172,8 @@ function LocationForm({
             className={cn(
               "mt-3 w-full flex items-center justify-center gap-2.5 rounded-xl py-3 font-semibold text-sm transition-all duration-[var(--dur-fast)] border-2",
               loadingGeo
-                ? "bg-primary/8 border-primary/15 text-primary/60 cursor-not-allowed"
-                : "bg-primary/8 border-primary/25 text-primary hover:bg-primary hover:text-white hover:border-primary hover:shadow-[var(--shadow-lg)] hover:shadow-primary/25"
+                ? "bg-primary/8 border-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]/60 cursor-not-allowed"
+                : "bg-primary/8 border-primary/25 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary hover:text-white hover:border-primary hover:shadow-[var(--shadow-lg)] hover:shadow-primary/25"
             )}
           >
             {loadingGeo ? (
@@ -481,7 +481,7 @@ export default function CustomerModal() {
                             type="button"
                             onClick={pickPhone}
                             title="Seleccionar de contactos"
-                            className="flex items-center justify-center h-12 w-12 rounded-xl bg-primary/8 border-2 border-primary/25 text-primary hover:bg-primary hover:text-white hover:border-primary transition-all shrink-0"
+                            className="flex items-center justify-center h-12 w-12 rounded-xl bg-primary/8 border-2 border-primary/25 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary hover:text-white hover:border-primary transition-all shrink-0"
                           >
                             <Smartphone className="h-5 w-5" />
                           </button>
@@ -534,7 +534,7 @@ export default function CustomerModal() {
                         </div>
                         <button
                           onClick={() => setView("edit-info")}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-dark bg-primary/8 hover:bg-primary/15 px-3 py-1.5 rounded-lg transition-all"
+                          className="flex items-center gap-1.5 text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)]-dark bg-primary/8 hover:bg-primary/15 px-3 py-1.5 rounded-lg transition-all"
                         >
                           <Pencil className="h-3.5 w-3.5" /> Editar
                         </button>
@@ -559,7 +559,7 @@ export default function CustomerModal() {
                           <p className="text-sm font-bold text-[var(--text-primary)]">Mis direcciones</p>
                           <button
                             onClick={() => setView("add-loc")}
-                            className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-dark bg-primary/8 hover:bg-primary/15 px-3 py-1.5 rounded-lg transition-all"
+                            className="flex items-center gap-1.5 text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)]-dark bg-primary/8 hover:bg-primary/15 px-3 py-1.5 rounded-lg transition-all"
                           >
                             <Plus className="h-3.5 w-3.5" /> Nueva
                           </button>
@@ -598,7 +598,7 @@ export default function CustomerModal() {
                                   <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); setEditLocId(loc.id); setView("edit-loc"); }}
-                                    className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-primary/10 transition-colors"
+                                    className="p-1.5 rounded-lg text-muted hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                                     aria-label="Editar"
                                   >
                                     <Pencil className="h-3.5 w-3.5" />

@@ -299,7 +299,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                 <button
                   type="button"
                   onClick={() => setShowNewCategoryForm(true)}
-                  className="inline-flex items-center gap-2 h-11 px-3.5 rounded-2xl border-2 border-dashed border-[var(--text-tertiary)]/40 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary hover:bg-primary/5 transition-all"
+                  className="inline-flex items-center gap-2 h-11 px-3.5 rounded-2xl border-2 border-dashed border-[var(--text-tertiary)]/40 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-all"
                 >
                   <Plus className="h-4 w-4" />
                   Nueva categoría
@@ -449,7 +449,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                       className={cn(
                         "h-11 px-2 rounded-2xl border-2 text-sm font-semibold transition-all",
                         active
-                          ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/30"
+                          ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-2 ring-primary/30"
                           : "border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]",
                       )}
                     >
@@ -512,7 +512,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                     className={cn(
                       "inline-flex items-center justify-center gap-2 h-11 px-3 rounded-2xl border-2 text-sm font-semibold transition-all",
                       active
-                        ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/30"
+                        ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-2 ring-primary/30"
                         : "border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]",
                     )}
                   >

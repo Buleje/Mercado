@@ -98,7 +98,7 @@ export default function DailySummaryPanel() {
           {lwSales > 0 && (
             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
               weekDelta >= 0
-                ? "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                 : "text-[var(--data-error-500)] bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 dark:text-[var(--data-error-500)]"
             }`}>
               {weekDelta >= 0 ? "↑" : "↓"} {Math.abs(weekDelta).toFixed(0)}% vs semana pasada
@@ -120,14 +120,14 @@ export default function DailySummaryPanel() {
           label="Ventas hoy"
           value={`S/${Number(data.totalSales).toFixed(2)}`}
           color="text-[var(--data-success-500)]"
-          bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]"
+          bg="bg-primary/10 dark:bg-primary/10"
         />
         <KpiCard
           icon={ShoppingCart}
           label="Pedidos"
           value={String(data.totalOrders)}
           color="text-[var(--data-success-500)]"
-          bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]"
+          bg="bg-primary/10 dark:bg-primary/10"
         />
         <KpiCard
           icon={TrendingUp}

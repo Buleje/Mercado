@@ -192,7 +192,7 @@ export default function WhatsAppAlertManager() {
     <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
       <div className="p-5 border-b border-[var(--rule-base)] flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+        <div className="p-2 rounded-xl bg-primary/10 dark:bg-primary/15">
           <MessageCircle className="w-5 h-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
         </div>
         <div>
@@ -251,7 +251,7 @@ export default function WhatsAppAlertManager() {
 
         {/* Preview */}
         {previewType && (
-          <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 p-4">
+          <div className="rounded-xl bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 p-4">
             <p className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-2">
               Preview del mensaje
             </p>

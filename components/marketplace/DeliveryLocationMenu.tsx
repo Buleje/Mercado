@@ -240,7 +240,7 @@ export default function DeliveryLocationMenu({ fallbackLabel }: { fallbackLabel:
                 type="button"
                 onClick={useCurrentLocation}
                 disabled={locating}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent-soft)] h-12 px-3 text-sm font-extrabold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors disabled:opacity-60"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary/10 h-12 px-3 text-sm font-extrabold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors disabled:opacity-60"
               >
                 <Navigation className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                 {locating ? "Ubicando…" : "Mi ubicación"}

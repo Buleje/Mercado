@@ -134,7 +134,7 @@ export function DespachoSection({
 
       {/* Asignado actual */}
       {currentDriver && (
-        <div className="flex items-center gap-3 px-5 py-3 bg-[var(--accent-soft)]/40 border-b border-[var(--rule-soft)]">
+        <div className="flex items-center gap-3 px-5 py-3 bg-primary/10/40 border-b border-[var(--rule-soft)]">
           <span
             aria-hidden
             className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white font-bold text-sm shrink-0"
@@ -212,7 +212,7 @@ export function DespachoSection({
                 disabled={assigning !== null}
                 className={cn(
                   "w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors",
-                  "hover:bg-[var(--accent-soft)]/40 disabled:opacity-50 disabled:cursor-not-allowed",
+                  "hover:bg-primary/10/40 disabled:opacity-50 disabled:cursor-not-allowed",
                 )}
               >
                 <span

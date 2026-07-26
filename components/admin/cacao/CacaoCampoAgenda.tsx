@@ -94,7 +94,7 @@ export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas
       {sugeridas.length > 0 && (
         <div className="rounded-2xl border-2 border-[var(--accent-soft)] bg-[var(--surface-raised)] p-4">
           <div className="mb-3 flex items-center gap-2">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]"><Sparkles className="h-4 w-4" /></span>
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Sparkles className="h-4 w-4" /></span>
             <div className="min-w-0">
               <p className="text-sm font-bold text-[var(--text-primary)]">Próximas labores sugeridas</p>
               <p className="text-xs text-[var(--text-tertiary)]">Según el ciclo agronómico del cacao y la última labor hecha en cada sección.</p>
@@ -137,7 +137,7 @@ export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas
         <div className="rounded-2xl border-2 border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
       ) : view.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
-          <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Calendar className="h-7 w-7" /></span>
+          <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Calendar className="h-7 w-7" /></span>
           <p className="text-base font-bold text-[var(--text-primary)]">{labores.length === 0 ? "Aún no registraste labores" : "Sin resultados"}</p>
           <p className="mx-auto mt-1 max-w-sm text-sm">{labores.length === 0 ? "Registrá labores en tus secciones y acá verás el cronograma completo." : "Ajustá los filtros para ver otras labores."}</p>
         </div>

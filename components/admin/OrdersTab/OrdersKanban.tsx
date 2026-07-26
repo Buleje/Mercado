@@ -83,7 +83,7 @@ const COLUMNS: Array<ColumnConfig & { Icon: React.ElementType; iconColor: string
     description: "Aprobados · listos para preparar",
     accentVar: "var(--accent)",
     Icon: ShoppingBasket,
-    iconColor: "text-[var(--accent-dark)]",
+    iconColor: "text-[var(--accent-dark)] dark:text-[var(--accent)]",
     emptyMessage: "Nada confirmado",
   },
   {

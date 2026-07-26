@@ -79,7 +79,7 @@ function localNowPlus(hours: number) {
 
 const STATUS_STYLES: Record<PriceChangeEvent["status"], { label: string; cls: string }> = {
   pending:   { label: "Pendiente", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
-  active:    { label: "Activo",    cls: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  active:    { label: "Activo",    cls: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" },
   done:      { label: "Finalizado", cls: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]" },
   cancelled: { label: "Cancelado", cls: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" },
 };

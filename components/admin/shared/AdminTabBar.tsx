@@ -202,7 +202,7 @@ export default function AdminTabBar({
                     "flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--ts-sm)] transition-all duration-[var(--dur-fast)]",
                     "lg:rounded-none lg:rounded-r-lg",
                     activeTab === tab.id
-                      ? "bg-primary/10 font-semibold text-primary border-l-[3px] border-l-primary dark:bg-primary/15"
+                      ? "bg-primary/10 font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] border-l-[3px] border-l-primary dark:bg-primary/15"
                       : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] dark:hover:bg-white/[0.06] border-l-[3px] border-l-transparent",
                     "rounded-lg lg:rounded-none lg:rounded-r-lg",
                     tab.disabled && "cursor-not-allowed opacity-40",
@@ -297,7 +297,7 @@ export default function AdminTabBar({
                 wrap && "max-sm:px-2",
                 draggable && "cursor-grab active:cursor-grabbing",
                 activeTab === tab.id
-                  ? "border-primary bg-primary/5 font-semibold text-primary"
+                  ? "border-primary bg-primary/5 font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-transparent font-normal text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]",
                 tab.disabled && "cursor-not-allowed opacity-40",
                 draggedTab === tab.id && "scale-95 opacity-40",

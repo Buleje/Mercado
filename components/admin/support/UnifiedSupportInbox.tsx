@@ -23,7 +23,7 @@ const SOURCE_LABELS: Record<string, { label: string; icon: React.ReactNode; colo
   whatsapp: {
     label: "WhatsApp",
     icon: <MessageCircle className="w-3.5 h-3.5" />,
-    color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   },
   review: {
     label: "Reseña",
@@ -213,7 +213,7 @@ export function UnifiedSupportInbox() {
                     className={[
                       "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full w-fit",
                       item.status === "resolved"
-                        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                        ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                         : "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400",
                     ].join(" ")}
                   >
@@ -225,7 +225,7 @@ export function UnifiedSupportInbox() {
                     <button
                       onClick={() => handleMarkResolved(item.id)}
                       disabled={isResolving}
-                      className="min-h-[44px] min-w-[44px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 text-primary hover:bg-primary hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="min-h-[44px] min-w-[44px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isResolving ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />

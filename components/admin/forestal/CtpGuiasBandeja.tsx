@@ -46,9 +46,9 @@ export default function CtpGuiasBandeja({ onIngresar }: { onIngresar: (gtfNumber
   if (guias.length === 0) return null;
 
   return (
-    // `bg-[var(--accent-soft)]` como CLASE pierde el alpha al compilar (Tailwind
-    // 4 lo resuelve a un color claro sólido) → en dark quedaba un panel blanco
-    // con el título en teal, ilegible. Con `bg-primary/5` el alpha es real.
+    // Tinte con alpha REAL (`bg-primary/N`): los tokens que ya traen alpha
+    // (`--accent-soft`) compilan a un color opaco claro y en dark dejaban un
+    // panel blanco con el título en teal, ilegible.
     <div className="rounded-2xl border-2 border-[var(--accent)] bg-primary/5 p-4 dark:bg-primary/10">
       <div className="mb-2.5 flex items-center gap-2">
         <TreePine className="h-4 w-4 text-primary" aria-hidden="true" />

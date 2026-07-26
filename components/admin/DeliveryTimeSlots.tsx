@@ -111,7 +111,7 @@ export default function DeliveryTimeSlots() {
           disabled={saving}
           className={cn(
             "flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-[var(--dur-fast)]",
-            saved ? "bg-[var(--accent-soft)] text-white" : "bg-primary hover:bg-[#235c42] text-white",
+            saved ? "bg-primary/10 text-white" : "bg-primary hover:bg-[#235c42] text-white",
             saving && "opacity-70 cursor-not-allowed"
           )}
         >

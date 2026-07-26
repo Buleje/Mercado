@@ -251,7 +251,7 @@ function Section({
   return (
     <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4">
       <div className="mb-3 flex items-center gap-2 border-b border-[var(--rule-soft)] pb-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-dark)]">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Icon className="h-4 w-4" />
         </span>
         <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">

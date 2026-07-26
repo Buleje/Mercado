@@ -223,7 +223,7 @@ export default function DeclaracionInventarioModule() {
 
       {/* Card informativa */}
       {!infoDismissed ? (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-5">
+        <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-5">
           <CardTitle className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-2">Para que sirve la Declaracion de Inventario?</CardTitle>
           <div className="space-y-2 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             <p><strong>Que es:</strong> Es un documento oficial que muestra todos tus productos, cuantos tienes y cuanto valen. Es como una &quot;foto&quot; de tu almacen en un momento especifico.</p>
@@ -244,7 +244,7 @@ export default function DeclaracionInventarioModule() {
           </div>
           <button
             onClick={handleDismissInfo}
-            className="mt-3 px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+            className="mt-3 px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
           >
             Entendido, no mostrar de nuevo
           </button>
@@ -253,7 +253,7 @@ export default function DeclaracionInventarioModule() {
         <div className="flex justify-end">
           <button
             onClick={handleShowInfo}
-            className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success-500)] hover:text-[var(--data-success-500)] transition-colors"
+            className="p-1.5 rounded-lg hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:text-[var(--data-success-500)] transition-colors"
             title="Que es la Declaracion de Inventario?"
           >
             <HelpCircle className="h-4 w-4" />
@@ -345,9 +345,9 @@ export default function DeclaracionInventarioModule() {
           {/* Summary cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: "Total Productos", value: (data.totalProductos ?? 0).toLocaleString(), icon: Package, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+              { label: "Total Productos", value: (data.totalProductos ?? 0).toLocaleString(), icon: Package, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
               { label: "Total Unidades", value: (data.totalUnidades ?? 0).toLocaleString(), icon: Layers, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-              { label: "Valor a Costo", value: formatCurrency(data.valorCosto ?? 0), icon: DollarSign, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+              { label: "Valor a Costo", value: formatCurrency(data.valorCosto ?? 0), icon: DollarSign, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
               { label: "Valor a Precio Venta", value: formatCurrency(data.valorPrecio ?? 0), icon: DollarSign, color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]" },
             ].map(card => {
               const CardIcon = card.icon;
@@ -368,7 +368,7 @@ export default function DeclaracionInventarioModule() {
           {/* Actions */}
           <div className="flex gap-2">
             <button onClick={handleExport}
-              className="inline-flex flex-col items-start gap-0.5 px-4 py-2 rounded-lg text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors">
+              className="inline-flex flex-col items-start gap-0.5 px-4 py-2 rounded-lg text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors">
               <span className="inline-flex items-center gap-2"><Download className="h-4 w-4" /> Descargar para mi Contador</span>
               <span className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-secondary)]">Tu contador puede usar este archivo para la declaracion ante SUNAT</span>
             </button>
@@ -396,7 +396,7 @@ export default function DeclaracionInventarioModule() {
 
             return (
               <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
-                <div className="px-4 py-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                <div className="px-4 py-3 bg-primary/10 dark:bg-primary/15 border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                     Comparativa con declaracion anterior ({formatDate(prevDecl.fecha + "T00:00:00")})
                   </p>
@@ -519,7 +519,7 @@ export default function DeclaracionInventarioModule() {
             <BarChart3 className="h-4 w-4 text-primary" />
             <span className="text-sm font-bold text-[var(--text-primary)]">Declaraciones anteriores</span>
             {historial.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold">{historial.length}</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-2xs)] font-bold">{historial.length}</span>
             )}
           </div>
           <span className="text-xs text-[var(--text-tertiary)]">{showHistorial ? "Ocultar" : "Mostrar"}</span>
@@ -549,7 +549,7 @@ export default function DeclaracionInventarioModule() {
                       const prev = realIdx > 0 ? historial[realIdx - 1] : null;
                       const diff = prev ? h.valorCosto - prev.valorCosto : 0;
                       return (
-                        <tr key={i} className={cn("border-b border-gray-50 dark:border-white/5", comparingIdx === realIdx && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]")}>
+                        <tr key={i} className={cn("border-b border-gray-50 dark:border-white/5", comparingIdx === realIdx && "bg-primary/10 dark:bg-primary/15")}>
                           <td className="px-4 py-2 text-[var(--text-secondary)]">{formatDate(h.fecha + "T00:00:00")}</td>
                           <td className="px-4 py-2 text-right text-[var(--text-primary)] font-medium">{h.totalProductos}</td>
                           <td className="px-4 py-2 text-right text-[var(--text-primary)] hidden sm:table-cell">{h.totalUnidades}</td>

@@ -108,8 +108,8 @@ export default function DeliveryScheduleTab() {
           disabled={saving}
           className={`flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition ${
             saved
-              ? "bg-[var(--accent-soft)] text-white"
-              : "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white"
+              ? "bg-primary/10 text-white"
+              : "bg-primary/10 hover:bg-primary/10 text-white"
           } disabled:opacity-50`}
         >
           {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
@@ -178,7 +178,7 @@ export default function DeliveryScheduleTab() {
           </CardTitle>
           <button
             onClick={addZone}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[var(--accent-soft)] text-[var(--data-success-500)] rounded-lg hover:bg-[var(--accent-soft)] transition"
+            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] rounded-lg hover:bg-primary/10 transition"
           >
             <Plus className="w-3 h-3" /> Agregar zona
           </button>

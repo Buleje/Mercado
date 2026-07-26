@@ -210,7 +210,7 @@ export default function BulkWeightCalculator() {
               Pesajes del dia
             </CardTitle>
           </div>
-          <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
             Total: {fmt(todayTotal)}
           </span>
         </div>

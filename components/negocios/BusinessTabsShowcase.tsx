@@ -187,7 +187,7 @@ function DeliveryMockup() {
             key={i}
             className="flex items-center gap-3 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900"
           >
-            <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-extrabold shrink-0">
+            <div className="h-8 w-8 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center text-xs font-extrabold shrink-0">
               {d.name.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">

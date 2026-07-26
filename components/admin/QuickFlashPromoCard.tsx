@@ -78,7 +78,7 @@ export default function QuickFlashPromoCard({ onLaunch, defaultMessage }: Props)
     >
       {/* Header editorial */}
       <div className="flex items-start gap-3">
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Zap className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </span>
         <div className="flex-1">
@@ -119,7 +119,7 @@ export default function QuickFlashPromoCard({ onLaunch, defaultMessage }: Props)
                   className={cn(
                     "flex-1 min-w-[64px] rounded-xl border px-3 py-3 text-base font-extrabold tabular-nums transition-all active:scale-[0.98]",
                     discount === pct
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                      ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40",
                   )}
                 >
@@ -144,7 +144,7 @@ export default function QuickFlashPromoCard({ onLaunch, defaultMessage }: Props)
                   className={cn(
                     "rounded-xl border px-3 py-3 text-left transition-all active:scale-[0.98]",
                     duration === opt.hours
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                      ? "border-[var(--accent)] bg-primary/10"
                       : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] hover:border-[var(--accent)]/40",
                   )}
                 >

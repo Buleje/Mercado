@@ -54,7 +54,7 @@ function BadgeShell({
       : tone === "error"
       ? "bg-[var(--data-error,_#e11d48)] text-white"
       : tone === "info"
-      ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
       : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
 
   return (

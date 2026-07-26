@@ -162,7 +162,7 @@ export default function DocumentCard({
             disabled={busy}
             title="Descargar"
             aria-label="Descargar documento"
-            className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-primary hover:bg-[var(--accent-soft)] disabled:opacity-50"
+            className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 disabled:opacity-50"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           </button>

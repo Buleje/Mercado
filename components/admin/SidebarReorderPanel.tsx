@@ -74,7 +74,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
             className={cn(
               "flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
               saved
-                ? "bg-[var(--accent-soft)] text-white"
+                ? "bg-primary/10 text-white"
                 : "bg-primary text-white hover:bg-primary/90"
             )}
           >

@@ -41,7 +41,7 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 const REASON_META: Record<ReturnReason, { label: string; color: string; bg: string; variant: BadgeVariant }> = {
   defectuoso:        { label: "Defectuoso",         color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",     variant: "error" },
   vencido:           { label: "Vencido",             color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", variant: "warning" },
-  equivocado:        { label: "Producto equivocado", color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",   variant: "info" },
+  equivocado:        { label: "Producto equivocado", color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15",   variant: "info" },
   insatisfecho:      { label: "Insatisfecho",        color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]", variant: "pending" },
   "dañado-transporte": { label: "Dañado en transporte", color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", variant: "warning" },
   duplicado:         { label: "Pedido duplicado",    color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]/30",   variant: "neutral" },
@@ -115,8 +115,8 @@ export default function AdvancedReturnsTab() {
         {[
           { label: "Valor en devoluciones", value: fmt(stats.totalValue), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
           { label: "Reembolsado", value: fmt(stats.refunded), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Restockeados", value: String(stats.restocked), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Pendientes", value: String(stats.pending), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Restockeados", value: String(stats.restocked), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
+          { label: "Pendientes", value: String(stats.pending), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>

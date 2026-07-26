@@ -93,7 +93,7 @@ export default function SegmentsTab({ onCreateCampaign }: { onCreateCampaign: (s
           return (
             <div key={s.id} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4 flex flex-col gap-3">
               <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-primary flex items-center justify-center shrink-0">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 dark:bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0">
                   <Icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -109,7 +109,7 @@ export default function SegmentsTab({ onCreateCampaign }: { onCreateCampaign: (s
               </div>
 
               {s.auto && (
-                <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] inline-flex items-center gap-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg px-2 py-1">
+                <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] inline-flex items-center gap-1 bg-primary/10 dark:bg-primary/15 rounded-lg px-2 py-1">
                   <Bot className="h-3 w-3 shrink-0" /> {s.auto}
                 </p>
               )}

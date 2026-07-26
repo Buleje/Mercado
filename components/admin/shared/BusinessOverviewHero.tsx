@@ -38,17 +38,17 @@ interface BusinessOverviewHeroProps {
 
 function getToneClasses(tone: HeroTone): string {
   if (tone === "positive") {
-    return "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]/70 dark:bg-[var(--accent-muted)]";
+    return "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10/70 dark:bg-primary/15";
   }
   if (tone === "warning") {
     return "border-amber-200 dark:border-amber-800/40 bg-amber-50/70 dark:bg-amber-950/10";
   }
-  return "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]/70 dark:bg-[var(--accent-muted)]";
+  return "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10/70 dark:bg-primary/15";
 }
 
 function getEmphasisClasses(emphasis: HeroEmphasis): string {
   if (emphasis === "positive") {
-    return "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
+    return "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
   }
   if (emphasis === "warning") {
     return "border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/20 text-[var(--data-warning-700)] dark:text-amber-300";
@@ -127,7 +127,7 @@ export function BusinessOverviewHero({
         </div>
 
         {actions.length === 0 ? (
-          <div className="rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
+          <div className="rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15 p-4">
             <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{emptyActionTitle}</p>
             <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{emptyActionDescription}</p>
           </div>

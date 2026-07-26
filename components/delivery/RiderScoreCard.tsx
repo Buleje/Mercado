@@ -97,7 +97,7 @@ const TIERS: Tier[] = [
     name: "Diamante",
     min: 9000,
     max: Infinity,
-    bgClass: "bg-[var(--accent-soft)] border-2 border-[var(--accent)]",
+    bgClass: "bg-primary/10 border-2 border-[var(--accent)]",
     textClass: "text-[var(--accent)]",
   },
 ];
@@ -120,7 +120,7 @@ function computeBadges(
       desc: "Tu primer viaje",
       state: totalAccepted >= 1 ? "unlocked" : "locked",
       colorClass: "text-[var(--accent)]",
-      bgClass: "bg-[var(--accent-soft)]",
+      bgClass: "bg-primary/10",
     },
     {
       id: "rating-alto",
@@ -135,7 +135,7 @@ function computeBadges(
             : "locked",
       progress: rating > 0 ? Math.min(100, Math.round((rating / 4.8) * 100)) : undefined,
       colorClass: "text-[var(--accent)]",
-      bgClass: "bg-[var(--accent-soft)]",
+      bgClass: "bg-primary/10",
     },
     {
       id: "diez-viajes",
@@ -150,7 +150,7 @@ function computeBadges(
             : "locked",
       progress: totalAccepted > 0 ? Math.min(100, Math.round((totalAccepted / 10) * 100)) : undefined,
       colorClass: "text-[var(--accent)]",
-      bgClass: "bg-[var(--accent-soft)]",
+      bgClass: "bg-primary/10",
     },
     {
       id: "cumplidor",
@@ -165,7 +165,7 @@ function computeBadges(
             : "locked",
       progress: onTime > 0 ? Math.min(100, Math.round((onTime / 90) * 100)) : undefined,
       colorClass: "text-[var(--accent)]",
-      bgClass: "bg-[var(--accent-soft)]",
+      bgClass: "bg-primary/10",
     },
     {
       id: "cincuenta",
@@ -180,7 +180,7 @@ function computeBadges(
             : "locked",
       progress: totalAccepted > 0 ? Math.min(100, Math.round((totalAccepted / 50) * 100)) : undefined,
       colorClass: "text-[var(--accent)]",
-      bgClass: "bg-[var(--accent-soft)]",
+      bgClass: "bg-primary/10",
     },
     {
       id: "cien",
@@ -195,7 +195,7 @@ function computeBadges(
             : "locked",
       progress: totalAccepted > 0 ? Math.min(100, Math.round((totalAccepted / 100) * 100)) : undefined,
       colorClass: "text-[var(--accent)]",
-      bgClass: "bg-[var(--accent-soft)]",
+      bgClass: "bg-primary/10",
     },
   ];
 }

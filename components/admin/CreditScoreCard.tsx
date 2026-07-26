@@ -221,10 +221,10 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
 
   const colorClasses = {
     green: {
-      badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+      badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
       icon: ShieldCheck,
       iconColor: "text-[var(--data-success-500)]",
-      bar: "bg-[var(--accent-soft)]",
+      bar: "bg-primary/10",
       border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
     },
     yellow: {
@@ -288,7 +288,7 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
             </div>
 
             {/* Label badge + recommendation */}
-            <div className={cn("flex items-start gap-2 px-3 py-3 rounded-xl border", colorClasses[result.color].border, `${result.color === "green" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : result.color === "yellow" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20" : "bg-[var(--data-error-50)] dark:bg-red-950/20"}`)}>
+            <div className={cn("flex items-start gap-2 px-3 py-3 rounded-xl border", colorClasses[result.color].border, `${result.color === "green" ? "bg-primary/10 dark:bg-primary/15" : result.color === "yellow" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20" : "bg-[var(--data-error-50)] dark:bg-red-950/20"}`)}>
               {(() => {
                 const Icon = colorClasses[result.color].icon;
                 return <Icon className={cn("h-4 w-4 shrink-0 mt-0.5", colorClasses[result.color].iconColor)} />;

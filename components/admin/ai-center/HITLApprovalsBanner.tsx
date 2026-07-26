@@ -235,7 +235,7 @@ export default function HITLApprovalsBanner() {
               <button
                 onClick={() => resolve(selected.id, "approve")}
                 disabled={resolving}
-                className="flex-1 px-4 py-2 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 px-4 py-2 rounded-lg bg-primary/10 hover:bg-primary/10 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 {resolving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -260,7 +260,7 @@ export default function HITLApprovalsBanner() {
           className={[
             "fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl flex items-center gap-2 text-sm font-semibold",
             toast.type === "success"
-              ? "bg-[var(--accent-soft)] text-white"
+              ? "bg-primary/10 text-white"
               : "bg-[var(--data-error-600)] text-white",
           ].join(" ")}
         >

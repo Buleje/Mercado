@@ -153,7 +153,7 @@ export default function CacaoProductores() {
                 <Td>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-[var(--text-primary)]">{p.nombre}</span>
-                    {p.certificacion && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"><Award className="h-3 w-3" />{CERT_LABEL[p.certificacion] ?? p.certificacion}</span>}
+                    {p.certificacion && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"><Award className="h-3 w-3" />{CERT_LABEL[p.certificacion] ?? p.certificacion}</span>}
                     {p.stats.saldo > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]"><AlertTriangle className="h-3 w-3" />Debés S/ {n2(p.stats.saldo)}</span>}
                   </div>
                   <span className="text-xs text-[var(--text-tertiary)]"><span className="font-mono">{p.codigo ?? "—"}</span>{p.variedad ? ` · ${p.variedad}` : ""}{p.status === "inactivo" ? " · inactivo" : ""}</span>
@@ -173,7 +173,7 @@ export default function CacaoProductores() {
         ) : view.length === 0 && (
           search ? <div className="p-12 text-center text-[var(--text-tertiary)]"><Search className="mx-auto mb-3 h-10 w-10 opacity-30" /><p className="text-base font-medium">Sin resultados para tu búsqueda.</p></div>
           : <div className="p-12 text-center text-[var(--text-tertiary)]">
-              <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Users className="h-7 w-7" /></span>
+              <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Users className="h-7 w-7" /></span>
               <p className="text-base font-bold text-[var(--text-primary)]">Aún no tienes productores</p>
               <p className="mx-auto mt-1 max-w-sm text-sm">Registrá a tus proveedores para vincularlos a los lotes y ver su historial de compras y calidad.</p>
               <button type="button" onClick={() => setShowNew(true)} className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Agregar productor</button>

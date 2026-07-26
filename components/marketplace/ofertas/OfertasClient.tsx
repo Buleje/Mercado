@@ -158,7 +158,7 @@ function EmptyState() {
             del DS (regla bsm-design-system: no emojis decorativos). */}
         <div
           aria-hidden
-          className="mx-auto mb-5 inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]"
+          className="mx-auto mb-5 inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         >
           <Tag className="h-10 w-10" strokeWidth={1.5} />
         </div>

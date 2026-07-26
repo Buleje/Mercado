@@ -113,7 +113,7 @@ export default function FiadoFormModal({
                       ) : (
                         <div className={cn(
                           "border-2 rounded-xl p-3 space-y-1.5",
-                          clienteResumen.score >= 4 ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
+                          clienteResumen.score >= 4 ? "border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" :
                           clienteResumen.score === 3 ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20" :
                           "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20"
                         )}>

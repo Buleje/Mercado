@@ -885,7 +885,7 @@ export default function DocumentosModule() {
 
       {/* Sugerencias IA de organización: carpeta + vencimiento detectados */}
       {sugerenciasIA.length > 0 && (
-        <div className="rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)]/40 px-4 py-3">
+        <div className="rounded-2xl border-2 border-[var(--accent)]/40 bg-primary/10/40 px-4 py-3">
           <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)]">
             <Sparkles className="h-4 w-4" /> La IA sugiere organizar
           </p>
@@ -1021,7 +1021,7 @@ export default function DocumentosModule() {
                     }}
                     className={cn(
                       "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors",
-                      active ? "bg-primary/10 text-primary" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                      active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                     )}
                   >
                     <Icon className={cn("h-4 w-4 shrink-0", active ? "text-primary" : cat.color)} />
@@ -1141,7 +1141,7 @@ export default function DocumentosModule() {
                         onClick={() => { setFilterMode("folder"); setActiveFolderId(f.id); }}
                         className={cn(
                           "flex-1 min-w-0 flex items-center gap-2 py-2 pr-14 rounded-lg text-sm font-bold transition-colors",
-                          active ? "bg-primary/10 text-primary" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                          active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                         )}
                       >
                         <FolderGlyph folder={f} active={active} className="h-4 w-4 shrink-0" />
@@ -1227,7 +1227,7 @@ export default function DocumentosModule() {
                 <li key={sf.id} className="group/sf flex items-center">
                   <button
                     onClick={() => { setFilterMode("smart"); setActiveSmartId(sf.id); }}
-                    className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold transition-colors", active ? "bg-primary/10 text-primary" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
+                    className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold transition-colors", active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
                   >
                     <Sparkles className="h-4 w-4 shrink-0 text-[var(--accent)]" />
                     <span className="min-w-0 flex-1 truncate">
@@ -2055,7 +2055,7 @@ function DocCard({
         {(doc.tags.length > 0 || doc.aiTags.length > 0) && (
           <div className="flex flex-wrap gap-1 mt-2">
             {doc.tags.slice(0, 2).map((t) => (
-              <span key={t} className="text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">#{t}</span>
+              <span key={t} className="text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold">#{t}</span>
             ))}
             {doc.aiTags.slice(0, 1).map((t) => (
               <span key={`ai-${t}`} className="text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded bg-violet-100 text-[var(--accent)] font-bold inline-flex items-center gap-0.5">
@@ -2075,7 +2075,7 @@ function DocCard({
 function EmptyState({ onUpload }: { onUpload: () => void }) {
   return (
     <div className="bg-white border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
-      <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 text-primary mb-4">
+      <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
         <Upload className="h-7 w-7" />
       </div>
       <p className="text-lg font-extrabold text-[var(--text-primary)]">Subí tu primer documento</p>

@@ -49,7 +49,7 @@ export default function CambiarClavePage() {
     <div className="min-h-[100dvh] flex items-center justify-center bg-[var(--surface-canvas)] px-4">
       <div className="w-full max-w-md rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-xl)]">
         <div className="flex items-center gap-3 mb-1">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <ShieldCheck className="h-5 w-5" />
           </span>
           <h1 className="text-lg font-extrabold text-[var(--text-primary)]">Creá tu contraseña</h1>

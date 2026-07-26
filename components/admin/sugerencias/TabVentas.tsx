@@ -127,7 +127,7 @@ export default function TabVentas() {
         {/* Top movers — promocionar */}
         <section className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
           <header className="flex items-center gap-2 mb-4">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)]">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
               <TrendingUp className="h-5 w-5 text-[var(--data-success-500)]" />
             </span>
             <div>
@@ -171,7 +171,7 @@ export default function TabVentas() {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{fmt(i.weeklyRevenue)}</p>
-                    <button className="mt-0.5 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]">
+                    <button className="mt-0.5 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--data-success-500)] hover:bg-primary/10">
                       <Megaphone className="h-3 w-3" />
                       Promocionar
                     </button>

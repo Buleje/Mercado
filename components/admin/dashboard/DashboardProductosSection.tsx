@@ -24,7 +24,7 @@ function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTre
     <p className="text-xs font-medium text-[var(--text-tertiary)] dark:text-muted mb-2.5 truncate">{label}</p>
     <div className="flex flex-wrap items-end justify-between gap-2"><div className="flex flex-col gap-1.5">
       <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums leading-none">{value}</p>
-      {delta != null && delta !== undefined ? <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>{arrowUp ? "\u2191" : "\u2193"} {Math.abs(delta).toFixed(1)}%</div> : delta === null ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">\u2014 Sin datos anteriores</span> : null}
+      {delta != null && delta !== undefined ? <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>{arrowUp ? "\u2191" : "\u2193"} {Math.abs(delta).toFixed(1)}%</div> : delta === null ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">\u2014 Sin datos anteriores</span> : null}
       {sparklineData && sparklineData.length > 0 && <div className="mt-1"><Sparkline data={sparklineData} color={accent.replace("text-","")} /></div>}
     </div><Icon className={cn("h-4 w-4 shrink-0 mb-0.5", accent)} /></div>
   </div>);
@@ -98,12 +98,12 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
             <div className="space-y-6">
               {/* ABC Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3">
+                <div className="bg-primary/10 dark:bg-primary/15 rounded-lg p-3">
                   <div className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Clase A</div>
                   <div className="text-lg font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{st.classA.length}</div>
                   <div className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)]/70 dark:text-[var(--data-success-500)]/70">~80% ventas</div>
                 </div>
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3">
+                <div className="bg-primary/10 dark:bg-primary/15 rounded-lg p-3">
                   <div className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Clase B</div>
                   <div className="text-lg font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{st.classB.length}</div>
                   <div className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)]/70 dark:text-[var(--data-success-500)]/70">~15% ventas</div>
@@ -139,7 +139,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                       <div key={p.id} className="flex-1 flex flex-col items-center group relative">
                         <div
                           className={cn("w-full rounded-t transition-all", 
-                            p.abcClass === "A" ? "bg-[var(--accent-soft)]" : p.abcClass === "B" ? "bg-[var(--accent-soft)]" : "bg-gray-400"
+                            p.abcClass === "A" ? "bg-primary/10" : p.abcClass === "B" ? "bg-primary/10" : "bg-gray-400"
                           )}
                           style={{ height: `${(p.revenue / st.paretoChartData[0].revenue) * 100}%` }}
                         />
@@ -156,11 +156,11 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                   {/* Legend */}
                   <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-[var(--rule-base)]">
                     <div className="flex items-center gap-1.5 text-xs">
-                      <div className="w-3 h-3 bg-[var(--accent-soft)] rounded"></div>
+                      <div className="w-3 h-3 bg-primary/10 rounded"></div>
                       <span className="text-[var(--text-secondary)]">A (críticos)</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs">
-                      <div className="w-3 h-3 bg-[var(--accent-soft)] rounded"></div>
+                      <div className="w-3 h-3 bg-primary/10 rounded"></div>
                       <span className="text-[var(--text-secondary)]">B (importantes)</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs">
@@ -176,7 +176,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
               )}
 
               {/* Action insights */}
-              <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 text-xs">
+              <div className="bg-primary/10 dark:bg-primary/15 rounded-lg p-3 text-xs">
                 <div className="font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Recomendaciones</div>
                 <ul className="space-y-0.5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                   <li>• <strong>Clase A:</strong> Nunca dejar agotar. Prioridad en inventario y proveedores.</li>

@@ -265,7 +265,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
                 className={cn(
                   "flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 text-xs font-semibold transition-all",
                   payment === key
-                    ? "border-primary bg-primary/5 text-primary"
+                    ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
                 )}
               >
@@ -286,7 +286,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
 
         {/* Success */}
         {success && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
             <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success-500)] shrink-0" />
             <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">Cobro registrado</p>
           </div>
@@ -300,7 +300,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
           className={cn(
             "w-full py-4 rounded-xl font-extrabold text-xl transition-all flex items-center justify-center gap-3",
             success
-              ? "bg-[var(--accent-soft)] text-white"
+              ? "bg-primary/10 text-white"
               : validAmount && !loading
               ? "bg-primary text-white hover:bg-primary/90 active:scale-98"
               : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed"

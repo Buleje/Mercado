@@ -604,7 +604,7 @@ function fillTemplate(text: string, data: Record<string, string>): string {
 }
 
 const ESTADO_STYLES: Record<ContratoEstado, string> = {
-  VIGENTE: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+  VIGENTE: "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
   POR_VENCER: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
   VENCIDO: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
   ANULADO: "bg-[var(--rule-soft)] dark:bg-gray-800 text-[var(--text-tertiary)]",
@@ -655,7 +655,7 @@ function LegalTooltip({ term, explanation, example }: { term: string; explanatio
     <span ref={ref} className="relative inline-flex items-center">
       <button
         onClick={() => setOpen(!open)}
-        className="ml-1 w-5 h-5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs flex items-center justify-center hover:bg-[var(--accent-soft)] transition-colors"
+        className="ml-1 w-5 h-5 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs flex items-center justify-center hover:bg-primary/10 transition-colors"
         title="¿Qué significa esto?"
         aria-expanded={open}
         aria-haspopup="true"
@@ -1450,14 +1450,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       onClick={() => startWizard(tpl)}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors text-primary">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           <TemplateIcon icon={tpl.icon} className="h-5 w-5" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <h4 className="text-sm font-bold text-[var(--text-primary)]">{tpl.name}</h4>
                           <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">{tpl.description}</p>
                           <div className="mt-2 flex items-center gap-2 flex-wrap">
-                            <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">{tpl.category}</span>
+                            <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold">{tpl.category}</span>
                             <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{tpl.fields.length} campos</span>
                             <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{tpl.clausulas.length} clausulas</span>
                           </div>
@@ -1629,7 +1629,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     {/* Wizard Header */}
                     <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           <TemplateIcon icon={selectedTemplate.icon} className="h-5 w-5" />
                         </div>
                         <div>
@@ -1649,7 +1649,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             onClick={() => setWizardStep(i)}
                             className={cn(
                               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all",
-                              wizardStep === i ? "bg-primary text-white" : wizardStep > i ? "bg-primary/10 text-primary" : "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-tertiary)]"
+                              wizardStep === i ? "bg-primary text-white" : wizardStep > i ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-tertiary)]"
                             )}
                           >
                             <span className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold",
@@ -1677,7 +1677,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           </div>
                           <div className="relative h-3 bg-[var(--rule-soft)] dark:bg-white/10 rounded-full overflow-hidden">
                             <div
-                              className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", progress === 100 ? "bg-[var(--accent-soft)]" : progress >= 60 ? "bg-primary" : "bg-secondary")}
+                              className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", progress === 100 ? "bg-primary/10" : progress >= 60 ? "bg-primary" : "bg-secondary")}
                               style={{ width: `${progress}%` }}
                             />
                           </div>
@@ -1712,7 +1712,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                   {field.label} {field.required && <span className="text-[var(--data-error-500)]">*</span>}
                                   {hasTooltip && <LegalTooltip term={field.label} explanation={hasTooltip.explanation} example={hasTooltip.example} />}
                                   {isAutoFilled && (
-                                    <span className="ml-1 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+                                    <span className="ml-1 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                                       Auto-completado
                                     </span>
                                   )}
@@ -1731,14 +1731,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       placeholder={field.placeholder}
                                       className={cn(
                                         "flex-1 px-3 py-2 rounded-lg border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
-                                        isAutoFilled ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
+                                        isAutoFilled ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
                                       )}
                                     />
                                     <button
                                       type="button"
                                       onClick={detectLocation}
                                       disabled={geoLoading}
-                                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors shrink-0"
+                                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors shrink-0"
                                     >
                                       {geoLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MapPin className="h-3.5 w-3.5" />}
                                       Detectar
@@ -1849,7 +1849,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                     step={field.type === "number" ? "0.01" : undefined}
                                     className={cn(
                                       "w-full px-3 py-2 rounded-lg border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
-                                      isAutoFilled && !isCiudadField ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : validationError ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
+                                      isAutoFilled && !isCiudadField ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : validationError ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
                                     )}
                                   />
                                 )}
@@ -2050,7 +2050,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             <button
                               key={f.key}
                               onClick={() => setEditorText(prev => prev + ` {{${f.key}}}`)}
-                              className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                              className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 transition-colors"
                             >
                               {`{{${f.key}}}`}
                             </button>
@@ -2221,7 +2221,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
                       <Printer className="h-4 w-4" /> PDF
                     </button>
-                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors">
+                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 dark:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors">
                       <Download className="h-4 w-4" /> Word
                     </button>
                   </div>

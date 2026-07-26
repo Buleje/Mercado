@@ -220,7 +220,7 @@ export default function CacaoLoteDrawer({
       <div className="flex h-full max-h-screen flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <Leaf className="h-5 w-5" />
             </span>
             <div>

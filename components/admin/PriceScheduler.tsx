@@ -55,8 +55,8 @@ function getStatus(schedule: PriceSchedule): ScheduleStatus {
 }
 
 const STATUS_UI: Record<ScheduleStatus, { label: string; color: string; dot: string }> = {
-  programado: { label: "Programado", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",    dot: "bg-[var(--accent-soft)]" },
-  activo:     { label: "Activo",     color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", dot: "bg-[var(--accent-soft)]" },
+  programado: { label: "Programado", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",    dot: "bg-primary/10" },
+  activo:     { label: "Activo",     color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", dot: "bg-primary/10" },
   expirado:   { label: "Expirado",   color: "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]",    dot: "bg-gray-400" },
 };
 
@@ -260,7 +260,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
           "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium",
           Number(priceDiff) > 0
             ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
-            : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+            : "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
         )}>
           {Number(priceDiff) > 0 ? "Aumento" : "Descuento"} de {Math.abs(Number(priceDiff))}% ({Number(priceDiff) > 0 ? "+" : ""}{(Number(form.newPrice) - (form.product?.price ?? 0)).toFixed(2)})
         </div>
@@ -448,7 +448,7 @@ export default function PriceScheduler() {
                       "text-xs font-medium px-1.5 py-0.5 rounded-md",
                       isUp
                         ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
-                        : "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                        : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                     )}>
                       {isUp ? "+" : ""}{diff}%
                     </span>

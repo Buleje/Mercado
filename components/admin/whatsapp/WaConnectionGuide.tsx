@@ -132,7 +132,7 @@ export default function WaConnectionGuide({ verifyToken }: { verifyToken: string
         <ol className="space-y-4 border-t border-[var(--rule-base)] p-4">
           {steps.map((s, i) => (
             <li key={s.title} className="flex gap-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 {i + 1}
               </span>
               <div className="min-w-0 space-y-1">

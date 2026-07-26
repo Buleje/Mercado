@@ -378,7 +378,7 @@ export default function ActivityPage() {
             className={[
               "rounded-lg border-2 px-3 py-1.5 text-sm font-bold transition-colors",
               dateRange.range === r
-                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
             ].join(" ")}
           >
@@ -408,7 +408,7 @@ export default function ActivityPage() {
               className={[
                 "rounded-full px-3 py-1 text-xs font-bold border-2 transition-colors",
                 isActive
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                  ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
               ].join(" ")}
             >

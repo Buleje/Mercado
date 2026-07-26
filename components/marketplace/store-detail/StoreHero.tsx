@@ -410,7 +410,7 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--accent-soft)] text-[var(--accent)]">
+      <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
         <Icon className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
       </span>
       <div className="min-w-0">

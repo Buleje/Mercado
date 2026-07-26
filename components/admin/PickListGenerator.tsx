@@ -223,7 +223,7 @@ export default function PickListGenerator() {
               <div
                 className={cn(
                   "h-full transition-all duration-[var(--dur-base)]",
-                  allDone ? "bg-[var(--accent-soft)]" : "bg-primary"
+                  allDone ? "bg-primary/10" : "bg-primary"
                 )}
                 style={{
                   width: `${totalCount > 0 ? (checkedCount / totalCount) * 100 : 0}%`,
@@ -254,7 +254,7 @@ export default function PickListGenerator() {
                   key={item.productName}
                   className={cn(
                     "flex items-start gap-3 p-4 transition",
-                    item.checked && "bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)]"
+                    item.checked && "bg-primary/10/50 dark:bg-primary/15"
                   )}
                 >
                   <button

@@ -188,7 +188,7 @@ export default function CommissionCalculator() {
             className={cn(
               "p-1.5 rounded-lg border transition-colors",
               showSettings
-                ? "border-primary bg-primary/10 text-primary"
+                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750"
             )}
           >

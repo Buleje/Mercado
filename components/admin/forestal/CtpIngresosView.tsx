@@ -205,7 +205,7 @@ export default function CtpIngresosView({
             title={showDashboard ? "Cerrar el dashboard de especies" : "Dashboard de especies"}
             className={`inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition max-sm:w-12 max-sm:px-0 ${
               showDashboard
-                ? "border-[var(--accent)] bg-primary/10 text-primary"
+                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
             }`}
           >
@@ -392,7 +392,7 @@ function StatusChip({
 }) {
   const activeCls =
     tone === "accent"
-      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+      ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
       : TONE_CHIP[tone].active;
   const dotCls = tone === "accent" ? "bg-[var(--accent)]" : TONE_CHIP[tone].dot;
   return (

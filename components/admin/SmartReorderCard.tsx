@@ -120,7 +120,7 @@ export default function SmartReorderCard({ className }: Props) {
   const urgencyStyle: Record<ReorderSuggestion["urgency"], string> = {
     critico: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/40 dark:text-[var(--data-error-500)]",
     pronto: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-yellow-950/40 dark:text-[var(--data-warning-500)]",
-    planificar: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    planificar: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   };
 
   const urgencyLabel: Record<ReorderSuggestion["urgency"], string> = {
@@ -167,7 +167,7 @@ export default function SmartReorderCard({ className }: Props) {
       {/* Empty */}
       {!loading && !error && suggestions.length === 0 && (
         <div className="flex flex-col items-center py-8 gap-2 text-center">
-          <div className="w-10 h-10 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-primary/15 flex items-center justify-center">
             <ShoppingBag className="w-5 h-5 text-[var(--data-success-500)]" />
           </div>
           <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Stock al dia</p>
@@ -271,7 +271,7 @@ export default function SmartReorderCard({ className }: Props) {
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors min-w-[44px] min-h-[44px] justify-center",
                 created
-                  ? "bg-[var(--accent-soft)] text-white"
+                  ? "bg-primary/10 text-white"
                   : selected.size === 0
                     ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
                     : "bg-primary hover:bg-primary-dark text-white",

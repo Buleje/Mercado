@@ -204,10 +204,10 @@ export default function PLTab() {
           {/* KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             {[
-              { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+              { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
               { label: "Utilidad Bruta", value: summary.grossProfit, sub: `Margen ${Number(summary.grossMargin).toFixed(1)}%`, icon: BarChart2, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
               { label: "Gastos Operativos", value: summary.totalExpenses, icon: TrendingDown, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-              { label: "Utilidad Neta", value: summary.netProfit, delta: profitDelta, sub: `Margen ${Number(summary.netMargin).toFixed(1)}%`, icon: DollarSign, color: summary.netProfit >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: summary.netProfit >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+              { label: "Utilidad Neta", value: summary.netProfit, delta: profitDelta, sub: `Margen ${Number(summary.netMargin).toFixed(1)}%`, icon: DollarSign, color: summary.netProfit >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: summary.netProfit >= 0 ? "bg-primary/10 dark:bg-primary/15" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
             ].map(({ label, value, delta, sub, icon: Icon, color, bg }) => (
               <div key={label} className={cn("rounded-xl p-4", bg, "border border-transparent")}>
                 <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-3", bg)}>
@@ -231,7 +231,7 @@ export default function PLTab() {
               <SectionTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">
                 Ganancias y Pérdidas — {summary.period}
               </SectionTitle>
-              <span className={cn("text-xs font-bold px-3 py-1 rounded-full", summary.netProfit >= 0 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)]")}>
+              <span className={cn("text-xs font-bold px-3 py-1 rounded-full", summary.netProfit >= 0 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)]")}>
                 {summary.netProfit >= 0 ? "GANANDO" : "PERDIENDO"}
               </span>
             </div>
@@ -287,13 +287,13 @@ export default function PLTab() {
                   <div className="w-full flex flex-col gap-0.5 justify-end" style={{ height: "120px" }}>
                     {/* Revenue bar */}
                     <div
-                      className="w-full rounded-t-md bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] transition-all"
+                      className="w-full rounded-t-md bg-primary/10 dark:bg-primary/10 transition-all"
                       style={{ height: `${(m.revenue / maxRevenue) * 100}px` }}
                       title={`Ingresos: ${fmt(m.revenue)}`}
                     />
                     {/* Net profit overlay */}
                     <div
-                      className={cn("w-full rounded-t-md transition-all", m.netProfit >= 0 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]")}
+                      className={cn("w-full rounded-t-md transition-all", m.netProfit >= 0 ? "bg-primary/10" : "bg-[var(--data-error-500)]")}
                       style={{ height: `${(Math.abs(m.netProfit) / maxRevenue) * 100}px`, marginTop: "2px" }}
                       title={`Utilidad neta: ${fmt(m.netProfit)}`}
                     />
@@ -303,8 +303,8 @@ export default function PLTab() {
               ))}
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3">
-              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] dark:text-muted"><span className="w-3 h-3 rounded bg-[var(--accent-soft)]" /> Ingresos</span>
-              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] dark:text-muted"><span className="w-3 h-3 rounded bg-[var(--accent-soft)]" /> Utilidad neta</span>
+              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] dark:text-muted"><span className="w-3 h-3 rounded bg-primary/10" /> Ingresos</span>
+              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] dark:text-muted"><span className="w-3 h-3 rounded bg-primary/10" /> Utilidad neta</span>
             </div>
           </div>
         </>

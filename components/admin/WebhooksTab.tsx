@@ -80,7 +80,7 @@ export default function WebhooksTab() {
           <div key={wh.id} className={cn("bg-[var(--surface-raised)] rounded-xl border overflow-hidden transition-opacity", wh.active ? "border-[var(--rule-base)] dark:border-[var(--rule-base)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] opacity-60")}>
             <button onClick={() => setExpandedId(expandedId === wh.id ? null : wh.id)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
               <div className="flex flex-wrap items-center gap-3 text-left">
-                <div className={cn("h-3 w-3 rounded-full", wh.active ? "bg-[var(--accent-soft)]" : "bg-gray-400")} />
+                <div className={cn("h-3 w-3 rounded-full", wh.active ? "bg-primary/10" : "bg-gray-400")} />
                 <div>
                   <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{wh.name}</h4>
                   <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-mono truncate max-w-xs">{wh.url}</p>
@@ -99,7 +99,7 @@ export default function WebhooksTab() {
               <div className="px-5 pb-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-3 space-y-3">
                 <div className="flex flex-wrap gap-1">
                   {wh.events.map(ev => (
-                    <span key={ev} className="text-[length:var(--ts-2xs)] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">{ev}</span>
+                    <span key={ev} className="text-[length:var(--ts-2xs)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-2 py-0.5 rounded-full font-semibold">{ev}</span>
                   ))}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
@@ -109,9 +109,9 @@ export default function WebhooksTab() {
                   <div><span className="text-[var(--text-tertiary)]">Estado:</span> <b className={cn(wh.active ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>{wh.active ? "Activo" : "Inactivo"}</b></div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button onClick={() => setWebhooks(prev => prev.map(w => w.id === wh.id ? { ...w, active: !w.active } : w))} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold", wh.active ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]")}>{wh.active ? "Pausar" : "Activar"}</button>
+                  <button onClick={() => setWebhooks(prev => prev.map(w => w.id === wh.id ? { ...w, active: !w.active } : w))} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold", wh.active ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]" : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10")}>{wh.active ? "Pausar" : "Activar"}</button>
                   <button onClick={() => openEdit(wh)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200"><Pencil className="h-3 w-3 inline mr-1" />Editar</button>
-                  <button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]"><Send className="h-3 w-3 inline mr-1" />Test</button>
+                  <button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10"><Send className="h-3 w-3 inline mr-1" />Test</button>
                   <button onClick={() => setWebhooks(prev => prev.filter(w => w.id !== wh.id))} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]"><Trash2 className="h-3 w-3 inline mr-1" />Eliminar</button>
                 </div>
               </div>

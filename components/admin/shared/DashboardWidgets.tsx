@@ -68,7 +68,7 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
       label: "Ventas hoy",
       value: `S/${Number(data.ventasHoy).toFixed(0)}`,
       icon: DollarSign,
-      color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+      color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15",
       tab: "analytics-pro",
     },
     {
@@ -91,7 +91,7 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
       label: "Clientes nuevos",
       value: String(data.clientesNuevos),
       icon: Users,
-      color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+      color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15",
       tab: "clientes",
     },
   ];

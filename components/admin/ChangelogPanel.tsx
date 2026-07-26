@@ -43,14 +43,14 @@ const ACTION_ICON: Record<ActionType, React.ElementType> = {
 
 const ACTION_STYLE: Record<ActionType, { dot: string; icon: string; bg: string }> = {
   create: {
-    dot: "bg-[var(--accent-soft)]",
+    dot: "bg-primary/10",
     icon: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    bg: "bg-primary/10 dark:bg-primary/15",
   },
   update: {
-    dot: "bg-[var(--accent-soft)]",
+    dot: "bg-primary/10",
     icon: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    bg: "bg-primary/10 dark:bg-primary/15",
   },
   delete: {
     dot: "bg-[var(--data-error-500)]",

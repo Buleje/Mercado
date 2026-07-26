@@ -339,7 +339,7 @@ export default function CacaoVentas() {
                       {v.ventaCode}
                     </span>
                     {v.esFob && (
-                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
                         <Globe className="h-3 w-3" />
                         FOB
                       </span>
@@ -408,7 +408,7 @@ export default function CacaoVentas() {
             </div>
           ) : (
             <div className="p-12 text-center text-[var(--text-tertiary)]">
-              <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <Coins className="h-7 w-7" />
               </span>
               <p className="text-base font-bold text-[var(--text-primary)]">

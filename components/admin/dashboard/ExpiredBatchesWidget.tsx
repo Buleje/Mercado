@@ -230,7 +230,7 @@ export default function ExpiredBatchesWidget() {
         </div>
 
         {/* Sin vencidos */}
-        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3">
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15 px-4 py-3">
           <Package className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] shrink-0" />
           <span className="text-xs font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             No hay lotes vencidos con stock
@@ -458,7 +458,7 @@ export default function ExpiredBatchesWidget() {
             className={cn(
               "mt-2 rounded-xl border px-4 py-2.5 text-xs font-medium",
               modal.toast.type === "success"
-                ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                 : "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )}
           >

@@ -72,14 +72,14 @@ function healthScoreColor(score: number): {
     return {
       text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
       badge:
-        "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+        "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
       label: "Saludable",
     };
   if (score >= 60)
     return {
       text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
       badge:
-        "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+        "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
       label: "Bueno",
     };
   if (score >= 40)

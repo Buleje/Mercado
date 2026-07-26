@@ -47,7 +47,7 @@ function ProductCard({
             </span>
           )}
           {margin !== null && (
-            <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+            <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
               {margin}% margen
             </span>
           )}
@@ -318,7 +318,7 @@ export default function CatalogBrowser() {
           {/* Add all category */}
           <button
             onClick={addCategoryToCart}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
           >
             <CheckCheck className="h-3.5 w-3.5" />
             Agregar {selectedCategory === "all" ? "todos" : categoryMeta?.label ?? "categoria"}
@@ -344,7 +344,7 @@ export default function CatalogBrowser() {
         </div>
         <button onClick={() => setShowCategories(!showCategories)}
           className={cn("flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-colors",
-            selectedCategory !== "all" ? "border-primary bg-primary/5 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-muted hover:text-[var(--text-primary)]")}>
+            selectedCategory !== "all" ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-muted hover:text-[var(--text-primary)]")}>
           <Filter className="h-3.5 w-3.5" />
           {categoryMeta?.emoji ?? "Todas"}
           <ChevronDown className={cn("h-3 w-3 transition-transform", showCategories && "rotate-180")} />
@@ -494,7 +494,7 @@ export default function CatalogBrowser() {
                 </div>
 
                 {result && (
-                  <div className="flex items-center gap-2 mt-3 p-3 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+                  <div className="flex items-center gap-2 mt-3 p-3 rounded-xl bg-primary/10 dark:bg-primary/15">
                     <Check className="h-5 w-5 text-[var(--data-success-500)] shrink-0" />
                     <span className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold">
                       {result.created} productos importados exitosamente{result.skipped > 0 ? `. ${result.skipped} ya existian y se omitieron.` : ""}

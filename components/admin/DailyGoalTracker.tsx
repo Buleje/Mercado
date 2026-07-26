@@ -484,7 +484,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
                     editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] focus:border-primary",
                   )}
                 />
-                <button onClick={saveGoal} aria-label="Guardar meta" className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                <button onClick={saveGoal} aria-label="Guardar meta" className="p-1 rounded-lg hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                   <Check className="w-3.5 h-3.5" />
                 </button>
                 <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="p-1 rounded-lg hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
@@ -504,7 +504,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
             aria-label="Refrescar"
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-              "text-primary hover:bg-[var(--accent-soft)]",
+              "text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10",
               loading && "opacity-50 cursor-not-allowed"
             )}
           >
@@ -516,7 +516,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
       {/* Tarjeta principal */}
       <div className={cn(
         "relative rounded-xl border-2 p-6 overflow-hidden transition-all duration-[var(--dur-slow)]",
-        isGoalMet ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
+        isGoalMet ? "border-[var(--data-success-500)]/30 bg-primary/10" : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
       )}>
         {celebrated && <Confetti />}
 
@@ -544,7 +544,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
               <div className={cn(
                 "inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider",
                 pct >= 100 && "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]",
-                pct >= 80 && pct < 100 && "bg-primary/15 text-primary",
+                pct >= 80 && pct < 100 && "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]",
                 pct >= 50 && pct < 80 && "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]",
                 pct < 50 && "bg-[var(--data-error-500)]/15 text-[var(--data-error-500)]",
               )}>
@@ -575,7 +575,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
             </div>
 
             {isGoalMet ? (
-              <div className="text-center py-2 rounded-xl bg-[var(--accent-soft)]">
+              <div className="text-center py-2 rounded-xl bg-primary/10">
                 <p className="text-[var(--data-success-500)] font-bold text-sm">Meta superada por {fmt(stats.todayTotal - dailyGoal)}</p>
               </div>
             ) : (
@@ -625,7 +625,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
         <div className={cn(
           "rounded-xl border p-4 flex items-start gap-3",
           stats.forecast >= dailyGoal
-            ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]"
+            ? "border-[var(--data-success-500)]/30 bg-primary/10"
             : "border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)]"
         )}>
           <Sparkles className={cn(

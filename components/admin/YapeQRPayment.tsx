@@ -261,7 +261,7 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
           <button
             onClick={onConfirm}
             disabled={expired}
-            className="flex-1 py-3 rounded-lg text-white font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:bg-gray-400"
+            className="flex-1 py-3 rounded-lg text-white font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 bg-primary/10 hover:bg-primary/10 disabled:bg-gray-400"
           >
             <Check className="h-4 w-4" />
             Pago recibido

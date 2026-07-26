@@ -126,7 +126,7 @@ export function MarketplaceResenasTab() {
               className={cn(
                 "inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 text-sm font-bold transition-all",
                 active
-                  ? "border-primary bg-primary/10 text-primary"
+                  ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
               )}
             >
@@ -205,7 +205,7 @@ export function MarketplaceResenasTab() {
                             {cfg.label}
                           </span>
                           {hasReply && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold text-primary bg-primary/10">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10">
                               <MessageSquare className="h-2.5 w-2.5" /> Respondida
                             </span>
                           )}
@@ -262,7 +262,7 @@ export function MarketplaceResenasTab() {
                           "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                           isReplying
                             ? "bg-primary text-white"
-                            : "bg-primary/10 text-primary hover:bg-primary hover:text-white"
+                            : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary hover:text-white"
                         )}
                         title="Responder"
                       >

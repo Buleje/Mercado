@@ -102,7 +102,7 @@ const TYPE_LABEL: Record<PendingItem["type"], string> = {
 };
 
 const TYPE_COLOR: Record<PendingItem["type"], string> = {
-  compra:        "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  compra:        "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   eliminacion:   "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
   cambio_precio: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
 };
@@ -231,7 +231,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
           onClick={handleSave}
           className={cn(
             "px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors",
-            saved ? "bg-[var(--accent-soft)]" : "bg-primary hover:bg-primary-dark"
+            saved ? "bg-primary/10" : "bg-primary hover:bg-primary-dark"
           )}
         >
           {saved ? "Guardado" : "Guardar configuracion"}

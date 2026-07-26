@@ -289,7 +289,7 @@ export default function AnalyticsKPIBarV2() {
                     className={cn(
                       "text-[length:var(--ts-2xs)] font-mono px-2 py-0.5 rounded-full font-medium inline-block mt-0.5",
                       card.cambio >= 0
-                        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                        ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                         : "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
                     )}
                   >

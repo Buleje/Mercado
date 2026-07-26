@@ -40,8 +40,8 @@ const LEVEL_CONFIG: Record<AlertLevel, {
   label: string;
 }> = {
   ok: {
-    bar: "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    bar: "bg-primary/10 dark:bg-primary/10",
+    bg: "bg-primary/10 dark:bg-primary/15",
     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
     text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     label: "Presupuesto bajo control",

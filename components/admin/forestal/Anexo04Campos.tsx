@@ -219,7 +219,7 @@ export default function Anexo04Campos({
           {emisores.map((e) => {
             const activo = e.firmante === datos.firmante && e.documento === datos.documento && e.cargo === datos.cargo;
             return (
-              <span key={e.firmante} className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[length:var(--ts-2xs)] font-bold transition ${activo ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}>
+              <span key={e.firmante} className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[length:var(--ts-2xs)] font-bold transition ${activo ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}>
                 <button type="button" onClick={() => onChange({ firmante: e.firmante, documento: e.documento, cargo: e.cargo })} title={`${e.cargo || "sin cargo"}${e.documento ? ` · ${e.documento}` : ""}`} className="max-w-[10rem] truncate">
                   {activo && <Check className="mr-1 inline h-3 w-3" />}{e.firmante}
                 </button>

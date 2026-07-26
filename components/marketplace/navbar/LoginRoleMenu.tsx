@@ -85,7 +85,7 @@ export function LoginRoleMenu({
           <button
             onClick={cliente}
             role="menuitem"
-            className="flex w-full items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--accent-soft)] px-4 py-3 text-left transition-colors hover:bg-[var(--surface-alt)]"
+            className="flex w-full items-center gap-3 border-b border-[var(--rule-soft)] bg-primary/10 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-alt)]"
           >
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--accent)] text-white">
               <User className="h-4.5 w-4.5" aria-hidden strokeWidth={2} />

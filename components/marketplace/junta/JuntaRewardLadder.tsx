@@ -26,7 +26,7 @@ export default function JuntaRewardLadder({
           <div
             key={tier.members}
             className={`flex flex-col items-center justify-center gap-0.5 px-4 py-5 ${
-              active ? "bg-[var(--accent-soft)]" : "bg-[var(--surface-raised)]"
+              active ? "bg-primary/10" : "bg-[var(--surface-raised)]"
             }`}
           >
             <span

@@ -298,7 +298,7 @@ export default function AICommandCenter() {
                     className={cn(
                       "text-xs font-extrabold rounded-full px-1.5 py-0.5 min-w-[20px] text-center",
                       isActive
-                        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                        ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                         : "bg-[var(--data-error-500)] text-white",
                     )}
                   >

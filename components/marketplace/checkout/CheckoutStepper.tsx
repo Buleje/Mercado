@@ -72,7 +72,7 @@ function StepList({
           "text-[length:var(--ts-xs)] font-extrabold tabular-nums transition-all duration-300",
           isCurrent &&
             "bg-[var(--accent-600,var(--accent))] text-white shadow-[0_4px_14px_-4px_var(--accent)] scale-105",
-          isDone && "bg-[var(--accent-soft)] text-[var(--accent)]",
+          isDone && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
           !isCurrent &&
             !isDone &&
             "border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]",

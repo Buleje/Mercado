@@ -240,7 +240,7 @@ export default function LivesAdminModule() {
           </CardTitle>
           <button
             onClick={() => setShowSchedule(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             Nueva
@@ -278,7 +278,7 @@ export default function LivesAdminModule() {
                   </p>
                   <div className="flex items-center gap-1">
                     <button
-                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
+                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                       title="Editar"
                     >
                       <Edit2 className="h-3.5 w-3.5" />

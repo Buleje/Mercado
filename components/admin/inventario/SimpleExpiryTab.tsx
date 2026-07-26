@@ -38,7 +38,7 @@ const URGENCY_CFG: Record<Urgency, { label: string; chip: string; Icon: typeof A
   vencido: { label: "Vencido", chip: "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]", Icon: AlertTriangle },
   critico: { label: "Vence esta semana", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]", Icon: AlertTriangle },
   pronto:  { label: "Vence pronto", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]", Icon: Clock },
-  bien:    { label: "Vigente", chip: "bg-[var(--accent-soft)] text-[var(--accent)]", Icon: CheckCircle },
+  bien:    { label: "Vigente", chip: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]", Icon: CheckCircle },
 };
 
 const FIELD = "w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-sm font-medium text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]";
@@ -157,7 +157,7 @@ export default function SimpleExpiryTab() {
       {/* Lista */}
       {filtered.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-16 text-center">
-          <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><CheckCircle className="h-6 w-6" /></span>
+          <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><CheckCircle className="h-6 w-6" /></span>
           <p className="text-base font-extrabold text-[var(--text-primary)]">{filter !== "todos" ? "Sin lotes en esta categoría" : "Sin lotes con vencimiento"}</p>
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">Registra lotes con fecha de vencimiento para no perder mercadería.</p>
           <button onClick={() => setShowRegister(true)} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90"><Plus className="h-4 w-4" strokeWidth={2.5} /> Registrar lote</button>
@@ -177,7 +177,7 @@ export default function SimpleExpiryTab() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="truncate font-bold text-[var(--text-primary)]">{b.productName}</span>
                     <span className={cn("rounded-full px-2 py-0.5 text-xs font-bold", cfg.chip)}>{b.days < 0 ? `Venció hace ${Math.abs(b.days)}d` : b.days === 0 ? "Vence hoy" : `Vence en ${b.days}d`}</span>
-                    {isReviewed && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-bold text-[var(--accent)]"><ShieldCheck className="h-3 w-3" /> Revisado</span>}
+                    {isReviewed && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent)]"><ShieldCheck className="h-3 w-3" /> Revisado</span>}
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[var(--text-tertiary)]">
                     <span>Lote <strong className="text-[var(--text-secondary)]">{b.lote}</strong></span>
@@ -200,7 +200,7 @@ export default function SimpleExpiryTab() {
                           <Trash2 className="h-3.5 w-3.5" /> Dar de baja
                         </button>
                       )}
-                      <button onClick={() => markReviewed(b.id)} className={cn("inline-flex h-9 items-center gap-1 rounded-lg border px-2.5 text-xs font-bold transition-colors", isReviewed ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]" : "border-[var(--accent)]/30 bg-[var(--accent-soft)] text-[var(--accent)] hover:brightness-95")}>
+                      <button onClick={() => markReviewed(b.id)} className={cn("inline-flex h-9 items-center gap-1 rounded-lg border px-2.5 text-xs font-bold transition-colors", isReviewed ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]" : "border-[var(--accent)]/30 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:brightness-95")}>
                         <ShieldCheck className="h-3.5 w-3.5" /> {isReviewed ? "Desmarcar" : "Revisado"}
                       </button>
                     </>
@@ -273,7 +273,7 @@ function RegisterBatchModal({ products, onClose, onSaved }: { products: Product[
           <div>
             <span className={LABEL}>Producto</span>
             {selected ? (
-              <button type="button" onClick={() => { setProductId(""); setPsearch(""); }} className="flex w-full items-center justify-between rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3.5 py-2.5 text-left">
+              <button type="button" onClick={() => { setProductId(""); setPsearch(""); }} className="flex w-full items-center justify-between rounded-lg border border-[var(--accent)] bg-primary/10 px-3.5 py-2.5 text-left">
                 <span className="text-sm font-bold text-[var(--text-primary)]">{selected.name}</span>
                 <span className="text-xs font-bold text-[var(--text-tertiary)]">cambiar</span>
               </button>

@@ -15,8 +15,8 @@ type Goal = {
 
 const SEED: Goal[] = [];
 
-const PRIORITY_COLORS = { alta: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]", media: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]", baja: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" };
-const STATUS_COLORS = { pendiente: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-700/30 dark:text-[var(--text-tertiary)]", "en-progreso": "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", completado: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", vencido: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" };
+const PRIORITY_COLORS = { alta: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]", media: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]", baja: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" };
+const STATUS_COLORS = { pendiente: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-700/30 dark:text-[var(--text-tertiary)]", "en-progreso": "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]", completado: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]", vencido: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" };
 
 function fmt(v: number, unit: string) { return unit === "S/" ? `S/ ${v.toLocaleString("es-PE")}` : `${v} ${unit}`; }
 function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -33,7 +33,7 @@ export default function GoalTrackerTab() {
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Trophy className="h-6 w-6 text-primary" /> Tablero de Metas</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Seguimiento visual de objetivos del negocio</p>
         </div>
-        <button onClick={() => exportToCSV(goals.map(g => ({ titulo: g.title, actual: g.currentValue, meta: g.targetValue, unidad: g.unit, estado: g.status, prioridad: g.priority, fecha_limite: fmtDate(g.deadline) })), "metas")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10"><Download className="h-3.5 w-3.5" /> CSV</button>
+        <button onClick={() => exportToCSV(goals.map(g => ({ titulo: g.title, actual: g.currentValue, meta: g.targetValue, unidad: g.unit, estado: g.status, prioridad: g.priority, fecha_limite: fmtDate(g.deadline) })), "metas")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10"><Download className="h-3.5 w-3.5" /> CSV</button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -80,13 +80,13 @@ export default function GoalTrackerTab() {
               {/* Progress bar */}
               <div className="relative">
                 <div className="h-3 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden mb-2">
-                  <div className={cn("h-full rounded-full transition-all", g.status === "completado" ? "bg-[var(--accent-soft)]" : progress >= 80 ? "bg-[var(--accent-soft)]" : progress >= 50 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${progress}%` }} />
+                  <div className={cn("h-full rounded-full transition-all", g.status === "completado" ? "bg-primary/10" : progress >= 80 ? "bg-primary/10" : progress >= 50 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${progress}%` }} />
                 </div>
                 {/* Milestones */}
                 <div className="flex justify-between">
                   {g.milestones.map((m, i) => (
                     <div key={i} className="flex flex-col items-center">
-                      <div className={cn("h-3 w-3 rounded-full border-2", m.reached ? "bg-[var(--accent-soft)] border-[var(--data-success-500)]/30" : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]")} />
+                      <div className={cn("h-3 w-3 rounded-full border-2", m.reached ? "bg-primary/10 border-[var(--data-success-500)]/30" : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]")} />
                       <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{m.label}</span>
                     </div>
                   ))}

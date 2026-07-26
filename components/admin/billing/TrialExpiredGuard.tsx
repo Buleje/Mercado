@@ -173,7 +173,7 @@ function TrialExpiredScreen() {
             el banner de gracia en vez de esta pantalla. */}
         <a
           href="/admin?tab=ventas-caja"
-          className="mt-8 inline-flex items-center gap-2 rounded-full border-2 border-[var(--data-success-500)] bg-[var(--accent-soft)] px-6 py-3 text-sm font-bold text-[var(--data-success-500)] transition-all hover:scale-[1.02]"
+          className="mt-8 inline-flex items-center gap-2 rounded-full border-2 border-[var(--data-success-500)] bg-primary/10 px-6 py-3 text-sm font-bold text-[var(--data-success-500)] transition-all hover:scale-[1.02]"
         >
           <ShoppingCart className="h-4 w-4" strokeWidth={2.25} />
           Seguir vendiendo en el Punto de Venta

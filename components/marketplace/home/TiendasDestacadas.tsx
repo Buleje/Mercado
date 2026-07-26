@@ -160,7 +160,7 @@ function FeaturedStoreCard({ store }: { store: FeaturedStore }) {
       <div className="mt-auto p-3.5 pt-3">
         <Link
           href={`/marketplace/${store.slug}`}
-          className="flex w-full items-center justify-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] py-2.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"
+          className="flex w-full items-center justify-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] py-2.5 text-sm font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] transition-colors hover:border-[var(--accent)] hover:bg-primary/10 hover:text-[var(--accent)]"
         >
           Ver tienda
           <ArrowRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
@@ -250,7 +250,7 @@ export default function TiendasDestacadas({ initialStores }: { initialStores?: F
             <div key={g.id}>
               {/* Sub-header del mundo: icono + nombre + conteo. */}
               <div className="mb-3 flex items-center gap-2.5">
-                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <g.Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </span>
                 <h3 className="text-base font-extrabold tracking-[-0.01em] text-[var(--text-primary)] sm:text-lg">

@@ -222,7 +222,7 @@ export default function VendorDashboardModule() {
         title="Inicio"
         description={TAB_DESCRIPTIONS[tab]}
         icon={LayoutDashboard}
-        bgTint="bg-[var(--accent-soft)]"
+        bgTint="bg-primary/10"
         iconColorClass="text-[var(--data-success-500)]"
       >
         {tab !== "marketplace" && (
@@ -235,7 +235,7 @@ export default function VendorDashboardModule() {
           <button
             onClick={() => void fetchDashboard(false)}
             disabled={loading}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] disabled:opacity-50"
             title="Actualizar marketplace"
             aria-label="Actualizar datos del marketplace"
           >
@@ -281,7 +281,7 @@ export default function VendorDashboardModule() {
                 <p className="text-sm font-medium text-[var(--text-primary)] text-center">{error}</p>
                 <button
                   onClick={() => void fetchDashboard(false)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-[var(--accent-soft)] transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/10 transition-colors"
                 >
                   <RefreshCw className="h-4 w-4" /> Reintentar
                 </button>

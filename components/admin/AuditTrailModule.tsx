@@ -135,8 +135,8 @@ export default function AuditTrailModule() {
 
       {/* Resumen por categoría */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <div className="rounded-2xl border-2 border-[var(--accent)]/25 bg-[var(--accent-soft)] p-4">
-          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--accent-dark)]">
+        <div className="rounded-2xl border-2 border-[var(--accent)]/25 bg-primary/10 p-4">
+          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--accent-dark)] dark:text-[var(--accent)]">
             Total de acciones
           </p>
           <p className="mt-1 font-display text-3xl font-extrabold tabular-nums text-[var(--text-primary)]">

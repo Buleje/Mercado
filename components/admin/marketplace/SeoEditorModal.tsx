@@ -281,7 +281,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
         {toast && (
           <div className={cn(
             "fixed bottom-6 right-6 z-[60] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
-            toast.type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
+            toast.type === "success" ? "bg-primary/10 text-white" : "bg-[var(--data-error)] text-white"
           )}>
             {toast.type === "success" ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
             {toast.msg}

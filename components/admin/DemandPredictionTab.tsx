@@ -216,7 +216,7 @@ export default function DemandPredictionTab() {
                       ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
                       : isWarning
                       ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]"
-                      : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                      : "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                   }`}
                 >
                   {(isUrgent || isWarning) && (
@@ -296,7 +296,7 @@ export default function DemandPredictionTab() {
                   <div key={i} className="flex flex-wrap items-center gap-3 text-sm">
                     <span className="flex-1 truncate font-medium">{p.productName}</span>
                     <span className="font-extrabold text-primary">{p.estimatedDemand} uds</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${p.confidence === "alta" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : p.confidence === "media" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>{p.confidence}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${p.confidence === "alta" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : p.confidence === "media" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>{p.confidence}</span>
                   </div>
                 ))}
               </div>
@@ -308,7 +308,7 @@ export default function DemandPredictionTab() {
               <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-3"><Calendar className="h-4 w-4 text-primary" />Días Pico</CardTitle>
               <div className="flex flex-wrap gap-2">
                 {prediction.peakDays.map((d, i) => (
-                  <span key={i} className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-bold">{d}</span>
+                  <span key={i} className="text-xs bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1.5 rounded-lg font-bold">{d}</span>
                 ))}
               </div>
             </div>

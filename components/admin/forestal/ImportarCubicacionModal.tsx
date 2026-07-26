@@ -78,7 +78,7 @@ export default function ImportarCubicacionModal({
         </p>
 
         {filasActuales > 0 && (
-          <p className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--accent)]/40 bg-[var(--accent-soft)] px-3 py-2 text-sm font-semibold text-[var(--accent)]">
+          <p className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--accent)]/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-[var(--accent)]">
             <Check className="h-4 w-4 shrink-0" />
             Ya tenés <b>{filasActuales}</b> {filasActuales === 1 ? "fila" : "filas"} en el lote. Lo que importes se <b>suma</b> — no se borra nada de lo anterior.
           </p>

@@ -111,7 +111,7 @@ export function DunningPanel({ movement, dunning }: { movement: MrrMovement; dun
                         <Link
                           href={`/superadmin/chat?tenant=${r.id}&name=${encodeURIComponent(r.name)}`}
                           title={`Contactar a ${r.name}`}
-                          className="shrink-0 rounded-md p-1 text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                          className="shrink-0 rounded-md p-1 text-[var(--accent)] hover:bg-primary/10"
                         >
                           <MessageSquare className="h-3.5 w-3.5" />
                         </Link>

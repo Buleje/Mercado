@@ -237,7 +237,7 @@ export function MarketplaceProductosTab() {
 
       {/* ── Bulk action bar — aparece cuando hay selección ─────────── */}
       {selectedCount > 0 && (
-        <div className="flex items-center gap-2 flex-wrap p-3 rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)]">
+        <div className="flex items-center gap-2 flex-wrap p-3 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10">
           <span className="inline-flex items-center gap-1.5 text-sm font-extrabold text-[var(--accent)]">
             <Check className="h-4 w-4" strokeWidth={3} />
             {selectedCount} seleccionado{selectedCount !== 1 ? "s" : ""}
@@ -382,7 +382,7 @@ export function MarketplaceProductosTab() {
                   return (
                     <tr key={p.id} className={cn(
                       "transition-colors",
-                      isSel ? "bg-[var(--accent-soft)]/50" : "hover:bg-[var(--surface-sunken)]/50",
+                      isSel ? "bg-primary/10/50" : "hover:bg-[var(--surface-sunken)]/50",
                     )}>
                       <td className="w-10 px-3 py-2.5">
                         <input
@@ -529,7 +529,7 @@ export function MarketplaceProductosTab() {
                             target="_blank"
                             rel="noopener noreferrer"
                             title="Ver en marketplace público"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] transition-colors"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-primary/10 hover:text-[var(--accent)] transition-colors"
                           >
                             <ExternalLink className="h-3.5 w-3.5" aria-hidden />
                           </a>
@@ -746,7 +746,7 @@ function BoostModal({
               <NumberField label="Duración" suffix="días" value={days} onChange={setDays} hint="Máx 90" />
               <NumberField label="Tope total" prefix="S/" value={maxBudget} onChange={setMaxBudget} hint="Corta al llegar" />
             </div>
-            <div className="rounded-xl bg-[var(--accent-soft)] border-2 border-[var(--accent)]/30 p-3 flex items-center justify-between">
+            <div className="rounded-xl bg-primary/10 border-2 border-[var(--accent)]/30 p-3 flex items-center justify-between">
               <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                 Gasto estimado
               </span>

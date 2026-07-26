@@ -180,7 +180,7 @@ export default function AdminChatTab() {
             <button key={c.phone} onClick={() => setActivePhone(c.phone)}
               className="w-full flex flex-wrap items-center gap-3 p-3 rounded-lg hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition text-left border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0"
             >
-              <div className="w-10 h-10 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold text-sm">
+              <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-primary/15 flex items-center justify-center text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold text-sm">
                 {c.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
@@ -206,7 +206,7 @@ export default function AdminChatTab() {
           <div className="flex-1 overflow-y-auto bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
             {chatMsgs.map(m => (
               <div key={m.id} className={cn("flex flex-col max-w-[75%]", m.sender === "admin" ? "ml-auto items-end" : "items-start")}>
-                <div className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm", m.sender === "admin" ? "bg-[var(--accent-soft)] text-white rounded-br-md" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] rounded-bl-md")}>
+                <div className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm", m.sender === "admin" ? "bg-primary/10 text-white rounded-br-md" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] rounded-bl-md")}>
                   {m.message}
                 </div>
                 <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted mt-0.5">{new Date(m.createdAt).toLocaleTimeString()}</span>
@@ -222,7 +222,7 @@ export default function AdminChatTab() {
               placeholder="Responder al cliente..."
               className="flex-1 px-2 sm:px-4 py-2 sm:py-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-white dark:bg-surface text-sm"
             />
-            <button onClick={sendChatReply} disabled={!chatText.trim() || chatSending} className="bg-[var(--accent-soft)] text-white px-2 sm:px-4 py-2 sm:py-3 rounded-lg hover:bg-[var(--accent-soft)] transition disabled:opacity-50">
+            <button onClick={sendChatReply} disabled={!chatText.trim() || chatSending} className="bg-primary/10 text-white px-2 sm:px-4 py-2 sm:py-3 rounded-lg hover:bg-primary/10 transition disabled:opacity-50">
               {chatSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
             </button>
           </div>

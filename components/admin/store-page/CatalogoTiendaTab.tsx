@@ -461,7 +461,7 @@ export default function CatalogoTiendaTab() {
                   {opt.label}
                   <span className={cn(
                     "text-xs font-mono tabular-nums px-1.5 py-0.5 rounded",
-                    active ? "bg-primary/10 text-primary" : "bg-gray-200 dark:bg-gray-700 text-muted"
+                    active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-gray-200 dark:bg-gray-700 text-muted"
                   )}>
                     {opt.count}
                   </span>

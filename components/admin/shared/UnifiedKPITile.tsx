@@ -128,7 +128,7 @@ export const UnifiedKPITile = memo(function UnifiedKPITile({
     : isNeutralDelta
       ? "bg-[var(--surface-sunken)]"
       : isPositiveDelta
-        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+        ? "bg-primary/10 dark:bg-primary/15"
         : "bg-[var(--data-error-50)] dark:bg-red-950/30";
 
   // Intent top-bar (accent thin stripe if intent !== neutral)

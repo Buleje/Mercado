@@ -447,7 +447,7 @@ export default function OrderEmailTemplates() {
         <div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
           <div className="w-3 h-3 rounded-full bg-[var(--data-error)]" />
           <div className="w-3 h-3 rounded-full bg-[var(--data-warning)]" />
-          <div className="w-3 h-3 rounded-full bg-[var(--accent-soft)]" />
+          <div className="w-3 h-3 rounded-full bg-primary/10" />
           <span className="ml-3 text-xs text-[var(--text-tertiary)] font-mono">
             preview — {tabs.find((t) => t.id === activeTab)?.label}
           </span>

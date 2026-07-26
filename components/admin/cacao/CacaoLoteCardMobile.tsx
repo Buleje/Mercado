@@ -87,7 +87,7 @@ export default function CacaoLoteCardMobile({
           </span>
         )}
         {l.parcelaCodigo && (
-          <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-primary">
+          <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Trees className="h-3 w-3" aria-hidden="true" />
             {l.parcelaCodigo}
           </span>

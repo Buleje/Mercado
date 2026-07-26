@@ -85,7 +85,7 @@ function CategoriasTile() {
             href={`/marketplace/categoria/${slug}`}
             className="group flex flex-col items-center gap-2 rounded-xl p-2 transition-colors hover:bg-[var(--surface-sunken)]"
           >
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)] transition-colors">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-primary/10 group-hover:text-[var(--accent)] transition-colors">
               <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
             </span>
             <span className="text-xs font-bold text-[var(--text-primary)] text-center">

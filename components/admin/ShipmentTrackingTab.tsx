@@ -187,7 +187,7 @@ export default function ShipmentTrackingTab() {
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border",
               autoRefresh
-                ? "bg-primary/10 text-primary border-primary/20"
+                ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-primary/20"
                 : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] border-[var(--rule-base)] dark:border-[var(--rule-base)]"
             )}
           >
@@ -202,7 +202,7 @@ export default function ShipmentTrackingTab() {
           </button>
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10"
           >
             <Download className="h-3.5 w-3.5" /> CSV
           </button>

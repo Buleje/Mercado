@@ -40,8 +40,8 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 
 const STATUS_MAP: Record<AuditStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
   pendiente: { label: "Pendiente", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", icon: AlertTriangle },
-  conforme:  { label: "Conforme",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle2 },
-  sobrante:  { label: "Sobrante",  color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: TrendingUp },
+  conforme:  { label: "Conforme",  color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: CheckCircle2 },
+  sobrante:  { label: "Sobrante",  color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15", icon: TrendingUp },
   faltante:  { label: "Faltante",  color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30", icon: TrendingDown },
 };
 
@@ -210,7 +210,7 @@ function CashCounter({
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/50 transition-colors"
       >
         <span className="flex items-center gap-2.5 text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-          <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <Coins className="h-4 w-4 text-primary" strokeWidth={1.75} aria-hidden />
           </div>
           <div className="text-left">
@@ -331,8 +331,8 @@ function CashCounter({
             <div className={cn(
               "rounded-xl p-3 text-center",
               !hasCount ? "bg-[var(--surface-alt)] dark:bg-surface" :
-              difference === 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
-              difference > 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
+              difference === 0 ? "bg-primary/10 dark:bg-primary/15" :
+              difference > 0 ? "bg-primary/10 dark:bg-primary/15" :
               "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20"
             )}>
               <p className="text-xs font-semibold uppercase text-[var(--text-tertiary)] dark:text-muted">Diferencia</p>
@@ -359,7 +359,7 @@ function CashCounter({
               className={cn(
                 "text-sm font-semibold rounded-lg px-3 py-2",
                 feedback.kind === "ok"
-                  ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                  ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                   : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
               )}
             >
@@ -461,7 +461,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
         <div className="flex flex-wrap items-center gap-2">
           <ModuleTooltip />
           {onNavigateToTurnos && (
-            <button onClick={onNavigateToTurnos} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors">
+            <button onClick={onNavigateToTurnos} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/10 transition-colors">
               <ExternalLink className="h-4 w-4" strokeWidth={1.75} aria-hidden /> Ir a Turnos
             </button>
           )}
@@ -487,7 +487,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
         ].map(({ label, value, tone, icon: Icon }) => {
           const tones = {
             neutral: { bg: "bg-[var(--surface-raised)] border border-[var(--rule-base)]", color: "text-[var(--text-primary)]", iconColor: "text-[var(--text-secondary)]" },
-            success: { bg: "bg-[var(--accent-soft)] border border-[var(--data-success-500)]/20 dark:bg-[var(--accent-muted)]", color: "text-[var(--data-success-500)]", iconColor: "text-[var(--data-success-500)]" },
+            success: { bg: "bg-primary/10 border border-[var(--data-success-500)]/20 dark:bg-primary/15", color: "text-[var(--data-success-500)]", iconColor: "text-[var(--data-success-500)]" },
             error: { bg: "bg-[var(--data-error-50)] border border-[var(--data-error-500)]/20 dark:bg-red-950/30", color: "text-[var(--data-error-500)]", iconColor: "text-[var(--data-error-500)]" },
           }[tone];
           return (

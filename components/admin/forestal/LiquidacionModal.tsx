@@ -83,7 +83,7 @@ export default function LiquidacionModal({
         </div>
 
         {/* Preview del desglose por especie */}
-        <div className="mt-4 overflow-x-auto rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)]/30">
+        <div className="mt-4 overflow-x-auto rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10/30">
           <table className="w-full min-w-[420px] text-sm">
             <thead>
               <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">

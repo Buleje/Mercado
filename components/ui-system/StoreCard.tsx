@@ -51,7 +51,7 @@ function TrustBadges({ store }: { store: StoreCardData }) {
   const items: Array<{ label: string; cls: string }> = [];
   if (store.verified)     items.push({ label: "Verificada",   cls: "bg-blue-50 text-blue-700 border-blue-200" });
   if (store.topSeller)    items.push({ label: "Top del mes",  cls: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30" });
-  if (store.isNew)        items.push({ label: "Nuevo",        cls: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/30" });
+  if (store.isNew)        items.push({ label: "Nuevo",        cls: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-[var(--accent)]/30" });
   if (store.fastDelivery) items.push({ label: "<30 min",      cls: "bg-purple-50 text-[var(--accent)] border-purple-200" });
   // TS-33: ofertas activas — color rojo para llamar atención
   if (store.activePromos && store.activePromos > 0) {
@@ -140,7 +140,7 @@ export default function StoreCard({ store, variant = "grid", onToggleFavorite, c
           <div className="flex items-start justify-between gap-2">
             <h3 title={store.name} className="text-sm font-bold text-[var(--text-primary)] truncate">{store.name}</h3>
             {store.badge && (
-              <span className="shrink-0 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2 py-0.5 text-xs font-bold uppercase tracking-wide">
+              <span className="shrink-0 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-2 py-0.5 text-xs font-bold uppercase tracking-wide">
                 {store.badge}
               </span>
             )}

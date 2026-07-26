@@ -155,7 +155,7 @@ function MethodCard({ method }: { method: Method }) {
           <li key={i} className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
             <span
               aria-hidden
-              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-[length:var(--ts-2xs)] font-extrabold tabular-nums"
+              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-2xs)] font-extrabold tabular-nums"
             >
               {i + 1}
             </span>

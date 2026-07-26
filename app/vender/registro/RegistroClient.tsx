@@ -270,7 +270,7 @@ export default function RegistroClient() {
             aria-label="Volver al inicio"
           >
             <BulejeWordmark size={32} strokeWidth={1.75} textSize={18} />
-            <span className="hidden rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] sm:inline">
+            <span className="hidden rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] sm:inline">
               Seller
             </span>
           </Link>
@@ -316,7 +316,7 @@ export default function RegistroClient() {
                 <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} />
                 Gratis
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-[var(--accent)]/30 bg-[var(--accent-soft)] px-3 py-1 text-xs font-bold text-[var(--accent)]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-[var(--accent)]/30 bg-primary/10 px-3 py-1 text-xs font-bold text-[var(--accent)]">
                 <Zap className="h-3.5 w-3.5" strokeWidth={2.5} />
                 48h
               </span>
@@ -479,7 +479,7 @@ export default function RegistroClient() {
               </div>
 
               {/* Testimonio social proof */}
-              <div className="rounded-2xl border-2 border-[var(--accent)]/20 bg-[var(--accent-soft)]/30 p-5 shadow-sm">
+              <div className="rounded-2xl border-2 border-[var(--accent)]/20 bg-primary/10/30 p-5 shadow-sm">
                 <div className="mb-3 flex items-center gap-2">
                   <BadgeCheck className="h-5 w-5 text-[var(--accent)]" strokeWidth={2.25} />
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
@@ -502,7 +502,7 @@ export default function RegistroClient() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 shadow-sm transition-all hover:border-[var(--accent)] hover:shadow-md"
               >
-                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <MessageCircle className="h-5 w-5" strokeWidth={2.25} />
                 </span>
                 <div className="min-w-0 flex-1">

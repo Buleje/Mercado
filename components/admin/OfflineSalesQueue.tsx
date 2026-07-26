@@ -199,7 +199,7 @@ export default function OfflineSalesQueue() {
         className={cn(
           "flex items-center justify-between rounded-xl border p-4 transition",
           isOnline
-            ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)]"
+            ? "border-[var(--data-success-500)]/30 bg-primary/10 dark:border-[var(--data-success-500)]/30 dark:bg-primary/15"
             : "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:border-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/20"
         )}
       >

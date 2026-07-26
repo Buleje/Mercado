@@ -594,7 +594,7 @@ export default function TurnosModule() {
         </div>
         {/* Chip de estado inline — antes flotaba solo arriba */}
         {turnoActivo ? (
-          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] px-2.5 py-1 rounded-full">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-2.5 py-1 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-success-500)] animate-pulse" aria-hidden />
             Turno abierto
           </span>
@@ -882,9 +882,9 @@ export default function TurnosModule() {
 
       {/* ── Active turno or open form ─────────────────────────────────────────── */}
       {turnoActivo ? (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-2 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-2xl overflow-hidden">
+        <div className="bg-primary/10 dark:bg-primary/15 border-2 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-2xl overflow-hidden">
           {/* Active turno header — prominente */}
-          <div className="bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 px-5 sm:px-6 py-5">
+          <div className="bg-primary/10/50 dark:bg-primary/15 border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 px-5 sm:px-6 py-5">
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 rounded-xl bg-[var(--data-success-500)] flex items-center justify-center animate-pulse shrink-0">
                 <Play className="h-6 w-6 text-white" strokeWidth={2.5} />
@@ -951,7 +951,7 @@ export default function TurnosModule() {
         <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl p-6 sm:p-7">
             <div className="flex items-start gap-4 mb-6">
-              <div className="h-12 w-12 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <Clock className="h-6 w-6 text-primary" strokeWidth={1.75} aria-hidden />
               </div>
               <div className="min-w-0 flex-1">
@@ -979,7 +979,7 @@ export default function TurnosModule() {
                         type="button"
                         onClick={() => { setCreateCajeroError(null); setShowCreateCajero(true); }}
                         title="Crear nueva cajera (sin salir de turnos)"
-                        className="h-11 px-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-sm font-semibold whitespace-nowrap transition-colors"
+                        className="h-11 px-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold whitespace-nowrap transition-colors"
                       >
                         + Nueva
                       </button>
@@ -1242,7 +1242,7 @@ export default function TurnosModule() {
                         {cajerosStats.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map(c => (
                           <tr key={c.name} className={cn(
                             "border-b border-gray-50 dark:border-white/5 transition-colors",
-                            c.name === bestCajero ? "bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)]" : ""
+                            c.name === bestCajero ? "bg-primary/10/50 dark:bg-primary/15" : ""
                           )}>
                             <td className="px-4 py-3 font-medium text-[var(--text-primary)] flex items-center gap-2">
                               <div className="h-6 w-6 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold" style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}>
@@ -1304,7 +1304,7 @@ export default function TurnosModule() {
                 const anio = now.getFullYear();
                 exportToExcel(rows, `turnos-${mes}-${anio}`, "Turnos");
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
               Excel
@@ -1331,7 +1331,7 @@ export default function TurnosModule() {
                 return (
                   <div key={t.id} className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <div className={cn("w-3 h-3 rounded-full shrink-0 mt-1.5", cuadro === null ? "bg-[var(--rule-base)]" : cuadro ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")} />
+                      <div className={cn("w-3 h-3 rounded-full shrink-0 mt-1.5", cuadro === null ? "bg-[var(--rule-base)]" : cuadro ? "bg-primary/10" : "bg-[var(--data-warning-500)]")} />
                       {idx < Math.min(historial.length, 10) - 1 && <div className="w-0.5 flex-1 bg-[var(--rule-soft)] dark:bg-gray-700 my-1" />}
                     </div>
                     <div className="pb-4 flex-1 min-w-0">
@@ -1659,7 +1659,7 @@ export default function TurnosModule() {
                                     return next;
                                   });
                                 }}
-                                className="h-7 w-7 rounded-md border border-primary/40 bg-primary/10 text-base font-bold text-primary hover:bg-primary/20"
+                                className="h-7 w-7 rounded-md border border-primary/40 bg-primary/10 text-base font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20"
                                 aria-label={`Agregar ${d.label}`}
                               >
                                 +
@@ -1706,7 +1706,7 @@ export default function TurnosModule() {
                     <div className={cn(
                       "rounded-xl p-4 text-center",
                       cuadrado
-                        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30"
+                        ? "bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30"
                         : sobrante
                         ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)]/30"
                         : "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30"
@@ -1910,7 +1910,7 @@ export default function TurnosModule() {
                 </div>
 
                 {/* Card 1: Ventas del turno */}
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
+                <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-4">
                   <h4 className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-3 flex items-center gap-1.5">
                     <ShoppingCart className="h-3.5 w-3.5" /> Ventas del turno
                   </h4>
@@ -1932,7 +1932,7 @@ export default function TurnosModule() {
 
                 {/* Card 2: Métodos de pago */}
                 {resumen.metodosPago.length > 0 && (
-                  <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
+                  <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-4">
                     <h4 className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-3 flex items-center gap-1.5">
                       <CreditCard className="h-3.5 w-3.5" /> Metodos de pago
                     </h4>
@@ -1983,7 +1983,7 @@ export default function TurnosModule() {
                     ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                     : pctDescuento >= 2
                     ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
-                    : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
+                    : "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
 
                   return descuentoTotal > 0 ? (
                     <div className={cn("rounded-xl p-4", colorClass)}>
@@ -2088,7 +2088,7 @@ export default function TurnosModule() {
 
                   if (gaps.length === 0) {
                     return (
-                      <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+                      <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                         Ventas constantes durante todo el turno
                       </div>
                     );

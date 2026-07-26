@@ -85,7 +85,7 @@ export default function CacaoCierrePanel() {
     <div className="space-y-5">
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="flex items-start gap-3">
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-dark)]"><Lock className="h-5 w-5" /></span>
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Lock className="h-5 w-5" /></span>
           <div className="min-w-0">
             <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Cerrar una campaña</CardTitle>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">Al cerrar, se congela el acta del mes (kg acopiado, vendido, stock) y el período queda <strong>bloqueado</strong>: no se pueden agregar ni anular lotes/ventas/ajustes de ese mes. El stock de cierre es la apertura del mes siguiente.</p>

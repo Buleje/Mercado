@@ -231,7 +231,7 @@ export default function MassMessageSender({
                   className={cn(
                     "rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-colors",
                     segment === s
-                      ? "border-primary bg-primary/10 text-primary"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40 hover:text-[var(--text-primary)]",
                   )}
                 >
@@ -287,7 +287,7 @@ export default function MassMessageSender({
                 className={cn(
                   "rounded-full border px-3 py-1 text-xs font-semibold capitalize transition-colors",
                   selectedTemplateKey === key
-                    ? "border-primary bg-primary/10 text-primary"
+                    ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40 hover:text-[var(--text-primary)]",
                 )}
               >

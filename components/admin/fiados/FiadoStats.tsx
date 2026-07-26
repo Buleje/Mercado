@@ -460,7 +460,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         if (activos.length === 0) {
           return (
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-xl p-6 flex flex-col items-center gap-2 text-center">
-              <div className="h-10 w-10 rounded-full bg-[var(--accent-soft)] flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Shield className="h-5 w-5 text-[var(--data-success-500)]" strokeWidth={2} />
               </div>
               <p className="text-sm font-bold text-[var(--text-primary)]">Sin deudores pendientes</p>

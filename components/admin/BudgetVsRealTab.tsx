@@ -142,15 +142,15 @@ function ProgressBar({
 
   // Para ventas: verde >80%, amarillo 50-80%, rojo <50%
   // Para gastos: verde <80%, amarillo 80-100%, rojo >100%
-  let color = "bg-[var(--accent-soft)]";
+  let color = "bg-primary/10";
   let textColor = "text-[var(--data-success-500)]";
-  let bgLight = "bg-[var(--accent-soft)]";
+  let bgLight = "bg-primary/10";
   if (isSales) {
-    if (pct >= 80) { color = "bg-[var(--accent-soft)]"; textColor = "text-[var(--data-success-500)]"; bgLight = "bg-[var(--accent-soft)]"; }
+    if (pct >= 80) { color = "bg-primary/10"; textColor = "text-[var(--data-success-500)]"; bgLight = "bg-primary/10"; }
     else if (pct >= 50) { color = "bg-amber-400"; textColor = "text-[var(--data-warning-600)]"; bgLight = "bg-amber-100"; }
     else { color = "bg-[var(--data-error-500)]"; textColor = "text-[var(--data-error-600)]"; bgLight = "bg-red-100"; }
   } else {
-    if (pct < 80) { color = "bg-[var(--accent-soft)]"; textColor = "text-[var(--data-success-500)]"; bgLight = "bg-[var(--accent-soft)]"; }
+    if (pct < 80) { color = "bg-primary/10"; textColor = "text-[var(--data-success-500)]"; bgLight = "bg-primary/10"; }
     else if (pct <= 100) { color = "bg-amber-400"; textColor = "text-[var(--data-warning-600)]"; bgLight = "bg-amber-100"; }
     else { color = "bg-[var(--data-error-500)]"; textColor = "text-[var(--data-error-600)]"; bgLight = "bg-red-100"; }
   }
@@ -210,7 +210,7 @@ function CategoryChart({
               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] w-14 shrink-0">Presup.</span>
               <div className="flex-1 h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-[var(--accent-soft)]"
+                  className="h-full rounded-full bg-primary/10"
                   style={{ width: `${(c.budgeted / max) * 100}%` }}
                 />
               </div>
@@ -220,7 +220,7 @@ function CategoryChart({
               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] w-14 shrink-0">Real</span>
               <div className="flex-1 h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                 <div
-                  className={cn("h-full rounded-full", isOver ? "bg-[var(--data-error-500)]" : isUnder ? "bg-[var(--accent-soft)]" : "bg-primary")}
+                  className={cn("h-full rounded-full", isOver ? "bg-[var(--data-error-500)]" : isUnder ? "bg-primary/10" : "bg-primary")}
                   style={{ width: `${Math.min((c.actual / max) * 100, 100)}%` }}
                 />
               </div>
@@ -232,10 +232,10 @@ function CategoryChart({
         );
       })}
       <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-[var(--text-tertiary)]">
-        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[var(--accent-soft)]" /> Presupuestado</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-primary/10" /> Presupuestado</span>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-primary" /> Real (OK)</span>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[var(--data-error-500)]" /> Real (exceso)</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[var(--accent-soft)]" /> Real (ahorro)</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-primary/10" /> Real (ahorro)</span>
       </div>
     </div>
   );
@@ -485,7 +485,7 @@ export default function BudgetVsRealTab() {
           className={cn(
             "mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all min-h-[44px]",
             savedFlash
-              ? "bg-[var(--accent-soft)] text-white"
+              ? "bg-primary/10 text-white"
               : "bg-primary text-white hover:bg-primary/90"
           )}
         >
@@ -723,7 +723,7 @@ export default function BudgetVsRealTab() {
                         <div
                           className={cn(
                             "h-full rounded-full transition-all",
-                            status === "over" ? "bg-[var(--data-error-500)]" : status === "under" ? "bg-[var(--accent-soft)]" : "bg-[var(--accent-soft)]"
+                            status === "over" ? "bg-[var(--data-error-500)]" : status === "under" ? "bg-primary/10" : "bg-primary/10"
                           )}
                           style={{ width: `${Math.min(pctUsed, 100)}%` }}
                         />
@@ -731,7 +731,7 @@ export default function BudgetVsRealTab() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       {status === "ok" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] text-xs font-bold">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold">
                           <CheckCircle className="h-3 w-3" /> OK
                         </span>
                       )}
@@ -741,7 +741,7 @@ export default function BudgetVsRealTab() {
                         </span>
                       )}
                       {status === "under" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] text-xs font-bold">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold">
                           <TrendingDown className="h-3 w-3" /> Ahorro
                         </span>
                       )}

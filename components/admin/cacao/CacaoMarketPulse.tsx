@@ -123,7 +123,7 @@ export default function CacaoMarketPulse({
               <div className="mt-0.5 font-mono text-lg font-extrabold tabular-nums text-[var(--text-primary)]">S/ {usdPen != null ? usdPen.toFixed(4) : "—"}</div>
               {fxChgPct != null && <div className={`text-[length:var(--ts-2xs)] font-bold ${fxChgPct > 0 ? "text-[var(--data-success-700)]" : fxChgPct < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-tertiary)]"}`}>{pctStr(fxChgPct, 2)} vs ayer</div>}
             </div>
-            <div className="rounded-xl bg-[var(--accent-soft)] px-3 py-2.5">
+            <div className="rounded-xl bg-primary/10 px-3 py-2.5">
               <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Compra local</div>
               <div className="mt-0.5 font-mono text-lg font-extrabold tabular-nums text-[var(--accent)]">S/ {compraLocal != null ? compraLocal.toFixed(2) : "—"}</div>
               <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{COMPRA_LOCAL_PCT}% del oficial · /kg seco</div>

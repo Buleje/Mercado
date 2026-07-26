@@ -140,7 +140,7 @@ export function TenantGrowthChart({ range }: Props) {
             className={[
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
               metric === "orders"
-                ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
             ].join(" ")}
           >
@@ -152,7 +152,7 @@ export function TenantGrowthChart({ range }: Props) {
             className={[
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
               metric === "revenue"
-                ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
             ].join(" ")}
           >

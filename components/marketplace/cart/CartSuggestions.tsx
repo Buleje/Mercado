@@ -242,7 +242,7 @@ function SectionHead({
 }) {
   return (
     <div className="flex items-center gap-2.5 mb-3">
-      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
         {icon}
       </span>
       <div className="leading-tight">

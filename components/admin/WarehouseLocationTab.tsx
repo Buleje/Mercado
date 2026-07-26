@@ -196,7 +196,7 @@ export default function WarehouseLocationTab() {
                 <p className="text-xs font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{zone}</p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {zoneLocs.map((loc) => (
-                    <div key={loc.id} className={cn("h-4 w-4 rounded-sm", !loc.product ? "bg-gray-200 dark:bg-gray-700" : loc.capacity > 0 && (loc.qty / loc.capacity) > 0.9 ? "bg-[var(--data-error-500)]" : loc.capacity > 0 && (loc.qty / loc.capacity) > 0.6 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} title={loc.code + (loc.product ? `: ${loc.product}` : " (vacio)")} />
+                    <div key={loc.id} className={cn("h-4 w-4 rounded-sm", !loc.product ? "bg-gray-200 dark:bg-gray-700" : loc.capacity > 0 && (loc.qty / loc.capacity) > 0.9 ? "bg-[var(--data-error-500)]" : loc.capacity > 0 && (loc.qty / loc.capacity) > 0.6 ? "bg-[var(--data-warning-500)]" : "bg-primary/10")} title={loc.code + (loc.product ? `: ${loc.product}` : " (vacio)")} />
                   ))}
                 </div>
               </button>
@@ -250,7 +250,7 @@ export default function WarehouseLocationTab() {
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <button onClick={() => saveLocation(loc)} className="rounded-lg border border-[var(--data-success-500)]/30 p-2 text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:border-[var(--data-success-500)]/30 dark:hover:bg-[var(--accent-muted)]"><Check className="h-4 w-4" /></button>
+                      <button onClick={() => saveLocation(loc)} className="rounded-lg border border-[var(--data-success-500)]/30 p-2 text-[var(--data-success-500)] hover:bg-primary/10 dark:border-[var(--data-success-500)]/30 dark:hover:bg-primary/15"><Check className="h-4 w-4" /></button>
                       <button onClick={() => deleteLocation(loc.id)} className="rounded-lg border border-[var(--data-error-500)] p-2 text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:border-[var(--data-error-500)]/40 dark:hover:bg-red-950/20"><Trash2 className="h-4 w-4" /></button>
                       {loc.capacity > 0 && (loc.qty / loc.capacity) > 0.9 && <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" />}
                     </div>

@@ -49,7 +49,7 @@ const PURCHASE_STATUS_LABEL: Record<PurchaseStatus, string> = {
 
 const PURCHASE_STATUS_COLOR: Record<PurchaseStatus, string> = {
   pendiente: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]",
-  recibido: "bg-[var(--accent-soft)] dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]",
+  recibido: "bg-primary/10 dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]",
   parcial: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]",
   cancelado: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-500)]",
   auto_generated: "bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
@@ -57,8 +57,8 @@ const PURCHASE_STATUS_COLOR: Record<PurchaseStatus, string> = {
 
 const RETURN_ESTADO_COLOR: Record<ReturnEstado, string> = {
   PENDIENTE: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]",
-  ENVIADA: "bg-[var(--accent-soft)] dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]",
-  RESUELTA: "bg-[var(--accent-soft)] dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]",
+  ENVIADA: "bg-primary/10 dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]",
+  RESUELTA: "bg-primary/10 dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]",
 };
 
 // Fecha absoluta es-PE + relativa ("hace 2 días") sin depender de date-fns.

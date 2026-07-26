@@ -105,7 +105,7 @@ function StepBadge({ step, current }: { step: number; current: number }) {
         current === step
           ? "bg-primary text-white"
           : current > step
-          ? "bg-primary/30 text-primary"
+          ? "bg-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)]"
           : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
       )}
     >
@@ -373,7 +373,7 @@ export default function CustomReportBuilder({
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors",
                   selectedMetrics.includes(key)
-                    ? "bg-primary/10 border-primary/40 text-primary"
+                    ? "bg-primary/10 border-primary/40 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "bg-white dark:bg-[var(--color-card)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40"
                 )}
               >
@@ -621,7 +621,7 @@ export default function CustomReportBuilder({
                 </div>
                 <button
                   onClick={() => loadTemplate(t)}
-                  className="px-2 py-1 rounded text-[length:var(--ts-2xs)] font-medium text-primary border border-primary/30 hover:bg-primary/10 transition-colors"
+                  className="px-2 py-1 rounded text-[length:var(--ts-2xs)] font-medium text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary/30 hover:bg-primary/10 transition-colors"
                 >
                   Cargar
                 </button>

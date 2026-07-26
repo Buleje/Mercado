@@ -44,7 +44,7 @@ const LEVEL_STYLES: Record<MarginLevel, { bar: string; text: string; badge: stri
   good: {
     bar: "bg-primary",
     text: "text-primary",
-    badge: "bg-primary/10 text-primary",
+    badge: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
   },
   warning: {
     bar: "bg-secondary",

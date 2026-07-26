@@ -74,7 +74,7 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
               {method.label}
             </span>
             {method.isDefault && (
-              <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wider">
+              <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] uppercase tracking-wider">
                 Preferido
               </span>
             )}

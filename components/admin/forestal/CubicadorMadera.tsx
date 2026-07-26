@@ -935,7 +935,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
             <button type="button" onClick={() => setShowImportar(true)} title="Importar un Excel/CSV de piezas al lote" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]">
               <FileSpreadsheet className="h-3.5 w-3.5" /> Importar Excel
             </button>
-            <button type="button" onClick={() => setShowAjustes((v) => !v)} aria-pressed={showAjustes} title="Ajustes de voz y comandos" className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition ${showAjustes ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
+            <button type="button" onClick={() => setShowAjustes((v) => !v)} aria-pressed={showAjustes} title="Ajustes de voz y comandos" className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition ${showAjustes ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
               <Settings className="h-3.5 w-3.5" /> Ajustes
             </button>
             {onPresent && <CacaoChartPresent title="Cubicador de madera" onClick={onPresent} />}
@@ -959,7 +959,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 </select>
               </label>
               <div className="flex flex-wrap items-center gap-2">
-                <button type="button" onClick={() => updateConfig({ speak: !config.speak })} className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition ${config.speak ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}>
+                <button type="button" onClick={() => updateConfig({ speak: !config.speak })} className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition ${config.speak ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}>
                   {config.speak ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />} El sistema repite {config.speak ? "SÍ" : "NO"}
                 </button>
                 <button type="button" onClick={() => decir("dos, seis, ocho", config.voiceRate, config.voiceURI)} className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Probar voz</button>
@@ -995,7 +995,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 type="button"
                 onClick={toggleListen}
                 aria-pressed={listening}
-                className={`inline-flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 transition ${listening ? "animate-pulse border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] hover:brightness-95"}`}
+                className={`inline-flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 transition ${listening ? "animate-pulse border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:brightness-95"}`}
               >
                 {listening ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
               </button>
@@ -1010,7 +1010,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     onClick={() => updateConfig({ speak: !config.speak })}
                     aria-pressed={speakOn}
                     title={speakOn ? "La voz repite lo dictado — tocá para silenciar" : "Activar voz que repite lo dictado"}
-                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition ${speakOn ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition ${speakOn ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}
                   >
                     {speakOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
                     Voz {speakOn ? "on" : "off"}
@@ -1030,7 +1030,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     const valor = fijas[d];
                     const unidad = d === "largo" ? "pies" : "pulg";
                     return valor ? (
-                      <span key={d} className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-2 py-1 text-xs font-bold text-[var(--accent)]">
+                      <span key={d} className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-2 py-1 text-xs font-bold text-[var(--accent)]">
                         <Lock className="h-3 w-3" aria-hidden />
                         {d} fijo: {valor} {unidad}
                         <button
@@ -1143,12 +1143,12 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => setShowHistorial((v) => !v)} title="Ver las cubicaciones guardadas" className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${showHistorial ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
+            <button type="button" onClick={() => setShowHistorial((v) => !v)} title="Ver las cubicaciones guardadas" className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${showHistorial ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
               <FileText className="h-3.5 w-3.5" /> Guardadas
             </button>
             {rows.length > 0 && (
               <>
-                <button type="button" onClick={() => { setForm((f) => ({ ...f, nombre: f.nombre || nombreSugerido(especie || undefined, { piezas: totales.piezas, pieTablar: totales.pt, m3: totales.m3 }) })); setShowGuardar((v) => !v); }} title="Guardar esta cubicación con nombre y fecha" className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-bold text-[var(--accent)] transition hover:brightness-95">
+                <button type="button" onClick={() => { setForm((f) => ({ ...f, nombre: f.nombre || nombreSugerido(especie || undefined, { piezas: totales.piezas, pieTablar: totales.pt, m3: totales.m3 }) })); setShowGuardar((v) => !v); }} title="Guardar esta cubicación con nombre y fecha" className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-primary/10 px-3 py-1.5 text-xs font-bold text-[var(--accent)] transition hover:brightness-95">
                   <Save className="h-3.5 w-3.5" /> {cubicacionActual ? "Actualizar" : "Guardar"}
                 </button>
                 <button type="button" onClick={nuevaCubicacion} title="Empezar un lote nuevo (lo guardado no se pierde)" className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
@@ -1159,16 +1159,16 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           </div>
           {rows.length > 0 && (
             <div className="flex w-full flex-wrap gap-2">
-              <button type="button" onClick={() => void enviarAlLibro()} disabled={enviando} title="Registrar este lote como producción en el Libro CTP" className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-bold text-[var(--accent)] transition hover:brightness-95 disabled:opacity-50">
+              <button type="button" onClick={() => void enviarAlLibro()} disabled={enviando} title="Registrar este lote como producción en el Libro CTP" className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-primary/10 px-3 py-1.5 text-xs font-bold text-[var(--accent)] transition hover:brightness-95 disabled:opacity-50">
                 <Send className="h-3.5 w-3.5" /> {enviando ? "Registrando…" : "Enviar al Libro"}
               </button>
-              <button type="button" onClick={() => setShowResumen((v) => !v)} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${showResumen ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
+              <button type="button" onClick={() => setShowResumen((v) => !v)} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${showResumen ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
                 <Table className="h-3.5 w-3.5" /> Resumen
               </button>
-              <button type="button" onClick={leerTabla} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${readingId ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
+              <button type="button" onClick={leerTabla} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${readingId ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
                 {readingId ? <><Square className="h-3.5 w-3.5" /> Detener lectura</> : <><Volume2 className="h-3.5 w-3.5" /> Leer tabla</>}
               </button>
-              <button type="button" onClick={() => setShowLiquidacion(true)} title="Comprobante de liquidación por especie para el comprador" className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-bold text-[var(--accent)] transition hover:brightness-95">
+              <button type="button" onClick={() => setShowLiquidacion(true)} title="Comprobante de liquidación por especie para el comprador" className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-primary/10 px-3 py-1.5 text-xs font-bold text-[var(--accent)] transition hover:brightness-95">
                 <Receipt className="h-3.5 w-3.5" /> Liquidación
               </button>
               <button type="button" onClick={compartirWhatsApp} title="Mandar el resumen por WhatsApp" className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
@@ -1287,7 +1287,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
 
         {/* Resúmenes del lote — la misma madera leída por especie, largo, sección… */}
         {showResumen && rows.length > 0 && (
-          <div className="mb-3 rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)]/40 p-3">
+          <div className="mb-3 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10/40 p-3">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap gap-1.5">
                 {DIMENSIONES_RESUMEN.map((d) => (
@@ -1352,7 +1352,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           </div>
         )}
         {editingId && (
-          <div className="mb-3 flex items-center gap-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2 text-sm font-bold text-[var(--accent)]">
+          <div className="mb-3 flex items-center gap-2 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 py-2 text-sm font-bold text-[var(--accent)]">
             <Mic className="h-4 w-4 animate-pulse" /> Dictá los 3 números para reemplazar esa fila (espesor · ancho · largo)…
           </div>
         )}
@@ -1428,9 +1428,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   const leyendo = readingId === r.id;
                   const editando = editingId === r.id;
                   const rowCls = leyendo
-                    ? "bg-[var(--accent-soft)] outline outline-2 -outline-offset-2 outline-[var(--accent)] shadow-lg [&_td]:border-b-2 [&_td]:border-b-[var(--accent)]"
+                    ? "bg-primary/10 outline outline-2 -outline-offset-2 outline-[var(--accent)] shadow-lg [&_td]:border-b-2 [&_td]:border-b-[var(--accent)]"
                     : editando
-                      ? "bg-[var(--accent-soft)] outline outline-2 -outline-offset-2 outline-[var(--data-warning-500)]"
+                      ? "bg-primary/10 outline outline-2 -outline-offset-2 outline-[var(--data-warning-500)]"
                       : lastAdded?.id === r.id ? "bg-[var(--data-success-50)]" : "";
                   // Medida fuera de rango: se AVISA, no se corrige — el dato es del operario.
                   const rara = avisarRaras && medidaSospechosa(r.espesor, r.ancho, r.largo);
@@ -1482,7 +1482,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 })}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--accent-soft)] font-bold text-[var(--text-primary)]">
+                <tr className="border-t-2 border-[var(--rule-base)] bg-primary/10 font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
                   <td className="px-3 py-2.5" colSpan={8}>{filtrando ? "Filtro" : "Total"} · {(filtrando ? totalesVisibles : totales).piezas} piezas</td>
                   <td className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]">{fmtPt((filtrando ? totalesVisibles : totales).pt)} PT</td>
                   <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--accent)]">{fmtM3((filtrando ? totalesVisibles : totales).m3)}</td>
@@ -1532,7 +1532,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
 
         {/* Precio por especie — Tornillo, Cedro, Caoba valen distinto. Vacío = usa el global. */}
         {showPreciosEsp && especiesLote.length > 0 && (
-          <div className="mt-2 rounded-xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-3">
+          <div className="mt-2 rounded-xl border-2 border-[var(--accent)]/30 bg-primary/10/30 p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="text-xs font-bold text-[var(--text-secondary)]">Precio por especie (S/ por pie tablar)</span>
               {hayPreciosEspecie && (
@@ -1686,7 +1686,7 @@ function ManualSelect({ label, value, onChange, opts, fijo, onFijar }: {
             aria-pressed={!!fijo}
             aria-label={fijo ? `Soltar ${label}` : `Fijar ${label}`}
             title={fijo ? "Soltar esta medida" : "Fijar esta medida (no se dicta más)"}
-            className={`flex h-10 w-8 items-center justify-center rounded-lg border transition disabled:opacity-30 ${fijo ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
+            className={`flex h-10 w-8 items-center justify-center rounded-lg border transition disabled:opacity-30 ${fijo ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
           >
             {fijo ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
           </button>

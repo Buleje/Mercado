@@ -112,7 +112,7 @@ export default function DailyReportWACard({
       {/* Header */}
       <div className="px-5 py-4 sm:px-6 border-b border-[var(--rule-soft)]">
         <div className="flex items-center gap-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <BarChart3 className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <div className="flex-1">
@@ -184,7 +184,7 @@ export default function DailyReportWACard({
                 key={i}
                 className="flex items-center gap-3 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-3 py-2"
               >
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-[length:var(--ts-2xs)] font-extrabold tabular-nums">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-2xs)] font-extrabold tabular-nums">
                   {i + 1}
                 </span>
                 <div className="flex-1 min-w-0">

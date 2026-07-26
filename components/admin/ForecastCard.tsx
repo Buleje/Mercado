@@ -46,7 +46,7 @@ export default function ForecastCard({ className }: Props) {
     : 1;
 
   const confidenceStyle: Record<string, string> = {
-    alta: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    alta: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
     media: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-yellow-950/40 dark:text-[var(--data-warning-500)]",
     baja: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
   };
@@ -127,7 +127,7 @@ export default function ForecastCard({ className }: Props) {
                   <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
                     <div className="w-full relative" style={{ height: "48px" }}>
                       <div
-                        className="absolute bottom-0 left-0 right-0 rounded-t-sm bg-primary/70 dark:bg-[var(--accent-soft)] transition-all duration-[var(--dur-slow)]"
+                        className="absolute bottom-0 left-0 right-0 rounded-t-sm bg-primary/70 dark:bg-primary/10 transition-all duration-[var(--dur-slow)]"
                         style={{ height: `${Math.max(pct, 4)}%` }}
                       />
                     </div>
@@ -142,7 +142,7 @@ export default function ForecastCard({ className }: Props) {
 
           {/* Best / Worst day */}
           <div className="flex gap-3">
-            <div className="flex-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-2.5 text-center">
+            <div className="flex-1 bg-primary/10 dark:bg-primary/15 rounded-xl p-2.5 text-center">
               <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold mb-0.5">
                 Mejor dia
               </p>

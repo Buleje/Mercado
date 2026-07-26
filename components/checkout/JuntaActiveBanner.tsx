@@ -19,7 +19,7 @@ export function JuntaActiveBanner() {
   if (!code) return null;
 
   return (
-    <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)] px-3.5 py-2.5">
+    <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-[var(--accent)]/30 bg-primary/10 px-3.5 py-2.5">
       <Users
         className="h-4 w-4 shrink-0 text-[var(--accent)]"
         strokeWidth={2}

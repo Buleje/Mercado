@@ -137,7 +137,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
               aria-label="Copiar link"
               className="inline-flex h-8 w-8 items-center justify-center border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)] text-muted hover:text-[var(--text-primary)] transition-colors"
             >
-              {copied ? <Check className="h-3.5 w-3.5 text-[var(--accent-dark)]" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? <Check className="h-3.5 w-3.5 text-[var(--accent-dark)] dark:text-[var(--accent)]" /> : <Copy className="h-3.5 w-3.5" />}
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -157,7 +157,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
             >
               {copied ? (
                 <>
-                  <Check className="h-4 w-4 text-[var(--accent-dark)]" strokeWidth={2} />
+                  <Check className="h-4 w-4 text-[var(--accent-dark)] dark:text-[var(--accent)]" strokeWidth={2} />
                   Copiado
                 </>
               ) : (

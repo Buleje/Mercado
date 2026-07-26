@@ -97,7 +97,7 @@ const PLAN_LABEL: Record<AdminPlan, string> = {
 
 const PLAN_BADGE: Record<AdminPlan, string> = {
   basico: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
-  pro: "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]/30",
+  pro: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border border-[var(--accent)]/30",
   enterprise: "bg-[#0d9488]/10 text-[#0d9488] border border-[#0d9488]/30",
   max: "bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-700,#047857)] border border-[var(--data-success-500)]/30",
 };
@@ -545,7 +545,7 @@ export function PlantillaPanelTab() {
                 Borrador sin guardar
               </span>
             ) : saving ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider border border-[var(--accent)]/30">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider border border-[var(--accent)]/30">
                 <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2.5} />
                 Guardando…
               </span>
@@ -604,7 +604,7 @@ export function PlantillaPanelTab() {
           sidebar (header tinted + 4 items con dots) en vez de 3 barritas. */}
       <section className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8">
         <div className="flex items-start gap-3 mb-6">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
             <Palette className="h-5 w-5" strokeWidth={2} />
           </span>
           <div className="min-w-0">
@@ -633,7 +633,7 @@ export function PlantillaPanelTab() {
                 className={[
                   "group relative text-left rounded-2xl border-2 p-3 transition-all overflow-hidden",
                   isActive
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-md shadow-[var(--accent)]/15"
+                    ? "border-[var(--accent)] bg-primary/10 shadow-md shadow-[var(--accent)]/15"
                     : "border-[var(--rule-soft)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/60 hover:-translate-y-1 hover:shadow-lg",
                 ].join(" ")}
               >
@@ -773,8 +773,8 @@ export function PlantillaPanelTab() {
                 className={
                   "group relative text-left rounded-2xl border-2 p-5 transition-colors " +
                   (isActive
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/40")
+                    ? "border-[var(--accent)] bg-primary/10"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-primary/10/40")
                 }
               >
                 {isActive && (
@@ -1065,7 +1065,7 @@ export function PlantillaPanelTab() {
                 <span className="hidden sm:inline">Tenés cambios sin guardar</span>
               </span>
             ) : saving ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-[var(--accent)]/30">
+              <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-[var(--accent)]/30">
                 <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" strokeWidth={2.5} />
                 Guardando…
               </span>

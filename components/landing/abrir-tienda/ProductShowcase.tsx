@@ -43,7 +43,7 @@ export default function ProductShowcase() {
               {/* contenido mock de la tienda */}
               <div className="p-4 sm:p-5">
                 <div className="mb-4 flex items-center gap-3">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                     <Store className="h-5 w-5" strokeWidth={2} aria-hidden />
                   </span>
                   <div className="min-w-0">
@@ -88,7 +88,7 @@ export default function ProductShowcase() {
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Hoy</p>
                 <div className="mt-1 flex items-end gap-2">
                   <p className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)] tabular-nums">S/ 248</p>
-                  <span className="mb-1 inline-flex items-center gap-0.5 rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--accent)]">
+                  <span className="mb-1 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-bold text-[var(--accent)]">
                     <TrendingUp className="h-3 w-3" strokeWidth={2.5} aria-hidden /> +18%
                   </span>
                 </div>

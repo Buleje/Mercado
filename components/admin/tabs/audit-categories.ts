@@ -40,7 +40,7 @@ export const CATEGORY_UI: Record<AuditCategory, CategoryUi> = {
   acceso: {
     label: "Accesos",
     icon: LogIn,
-    pill: "bg-[var(--accent-soft)] text-[var(--accent-dark)]",
+    pill: "bg-primary/10 text-[var(--accent-dark)]",
     accentVar: "var(--accent)",
   },
   otro: {

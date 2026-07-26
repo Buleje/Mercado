@@ -48,7 +48,7 @@ const ROLE_ICONS: Record<Role, React.ReactNode> = {
 
 const ROLE_COLORS: Record<Role, string> = {
   admin: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  cajero: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  cajero: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   almacenero: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
 };
 
@@ -184,7 +184,7 @@ export default function TeamTab() {
           className={cn(
             "fixed top-4 right-4 z-50 flex items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm font-medium",
             toast.ok
-              ? "bg-[var(--accent-soft)] text-white"
+              ? "bg-primary/10 text-white"
               : "bg-[var(--data-error-500)] text-white"
           )}
         >
@@ -242,7 +242,7 @@ export default function TeamTab() {
             >
               {/* Avatar + info */}
               <div className="flex flex-wrap items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold text-sm flex items-center justify-center shrink-0">
                   {u.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">

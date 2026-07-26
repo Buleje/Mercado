@@ -42,7 +42,7 @@ export default function TrazaForwardSection({ entryId }: { entryId: string }) {
   return (
     <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4">
       <div className="mb-3 flex items-center gap-2 border-b border-[var(--rule-soft)] pb-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-dark)]">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <ArrowRight className="h-4 w-4" />
         </span>
         <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
@@ -85,7 +85,7 @@ export default function TrazaForwardSection({ entryId }: { entryId: string }) {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <Boxes className="h-4 w-4 shrink-0 text-[var(--accent-dark)]" />
+                        <Boxes className="h-4 w-4 shrink-0 text-[var(--accent-dark)] dark:text-[var(--accent)]" />
                         <span className="truncate text-sm font-bold text-[var(--text-primary)]">
                           Corrida #{c.lineNo}{c.productType ? ` · ${c.productType}` : ""}
                         </span>

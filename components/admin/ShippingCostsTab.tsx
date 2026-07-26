@@ -184,7 +184,7 @@ export default function ShippingCostsTab() {
                     <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.zone}</h4>
                     <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                       r.active
-                        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                        ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                         : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted"
                     )}>
                       {r.active ? "Activa" : "Inactiva"}

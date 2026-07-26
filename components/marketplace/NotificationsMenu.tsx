@@ -47,7 +47,7 @@ type Notification = {
 
 const KIND_META: Record<NotifKind, { Icon: LucideIcon; label: string; tone: string; dot: string }> = {
   order: { Icon: Package, label: "Pedido", tone: "text-blue-500 bg-blue-500/10", dot: "bg-blue-500" },
-  promo: { Icon: Tag, label: "Oferta", tone: "text-[var(--accent)] bg-[var(--accent-soft)]", dot: "bg-[var(--accent)]" },
+  promo: { Icon: Tag, label: "Oferta", tone: "text-[var(--accent)] bg-primary/10", dot: "bg-[var(--accent)]" },
   delivery: { Icon: Truck, label: "Envío", tone: "text-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10", dot: "bg-[var(--data-warning-500)]" },
   chat: { Icon: MessageCircle, label: "Mensaje", tone: "text-violet-500 bg-violet-500/10", dot: "bg-violet-500" },
   system: { Icon: Sparkles, label: "Sistema", tone: "text-[var(--data-success-500)] bg-[var(--data-success-500)]/10", dot: "bg-[var(--data-success-500)]" },
@@ -226,7 +226,7 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
           className={cn(
             "group flex items-start gap-3 px-5 py-3.5 transition-colors",
             n.unread
-              ? "bg-[var(--accent-soft)]/40 hover:bg-[var(--accent-soft)]"
+              ? "bg-primary/10/40 hover:bg-primary/10"
               : "hover:bg-[var(--surface-sunken)]",
           )}
         >
@@ -339,7 +339,7 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
             {/* Lista */}
             {!isLoggedIn ? (
               <div className="px-5 py-10 text-center">
-                <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <LogIn className="h-6 w-6" strokeWidth={1.5} />
                 </div>
                 <p className="text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">

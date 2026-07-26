@@ -114,7 +114,7 @@ function buildCalendarDays(year: number, month: number, payablesByDay: Map<strin
 
 function _statusDot(status: Payable["status"]) {
   return status === "paid"
-    ? "bg-[var(--accent-soft)]"
+    ? "bg-primary/10"
     : status === "overdue"
     ? "bg-[var(--data-error-500)]"
     : "bg-amber-400";
@@ -122,7 +122,7 @@ function _statusDot(status: Payable["status"]) {
 
 function statusBadge(status: Payable["status"]) {
   return status === "paid"
-    ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+    ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
     : status === "overdue"
     ? "bg-red-100 text-[var(--data-error-600)] dark:bg-red-900/30 dark:text-red-400"
     : "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-400";
@@ -360,7 +360,7 @@ export default function PaymentCalendar() {
                       <div className="flex items-center gap-0.5 mb-0.5">
                         {hasOverdue && <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-error-500)]" />}
                         {hasPending && <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-warning-500)]" />}
-                        {hasPaid && <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-soft)]" />}
+                        {hasPaid && <span className="w-1.5 h-1.5 rounded-full bg-primary/10" />}
                       </div>
                       <span
                         className={cn(
@@ -419,7 +419,7 @@ export default function PaymentCalendar() {
       {/* Legend */}
       <div className="flex items-center gap-4 text-xs text-[var(--text-tertiary)]">
         {[
-          { color: "bg-[var(--accent-soft)]", label: "Pagado" },
+          { color: "bg-primary/10", label: "Pagado" },
           { color: "bg-[var(--data-error-500)]",     label: "Vencido" },
           { color: "bg-[var(--data-warning-500)]",   label: "Próximo" },
         ].map(({ color, label }) => (

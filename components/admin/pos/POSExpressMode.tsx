@@ -155,7 +155,7 @@ export default function POSExpressMode({
           className={cn(
             "text-xs font-semibold text-center px-2 py-1 rounded-lg",
             feedback.startsWith("+")
-              ? "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+              ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 dark:text-[var(--data-success-500)]"
               : "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20 dark:text-[var(--data-error-500)]"
           )}
         >

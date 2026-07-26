@@ -101,7 +101,7 @@ export default function SetupItemCard({
           {/* Steps */}
           {!isDone && (
             <details className="mb-3 group">
-              <summary className="text-xs font-semibold text-[var(--text-secondary)] cursor-pointer hover:text-[var(--accent-dark)] list-none flex items-center gap-1">
+              <summary className="text-xs font-semibold text-[var(--text-secondary)] cursor-pointer hover:text-[var(--accent-dark)] dark:text-[var(--accent)] list-none flex items-center gap-1">
                 <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
                 Pasos exactos ({item.steps.length})
               </summary>

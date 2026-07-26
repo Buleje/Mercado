@@ -67,7 +67,7 @@ export default function MapaPage() {
     return (
       <main className="min-h-[80vh] flex items-center justify-center px-4 py-10">
         <div className="text-center max-w-md">
-          <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <PinIcon className="h-10 w-10" />
           </div>
           <h1 className="mt-5 text-2xl lg:text-3xl font-extrabold text-[var(--text-primary)]">
@@ -93,7 +93,7 @@ export default function MapaPage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
       <header className="flex items-start justify-between mb-5 gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0">
+          <div className="h-12 w-12 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0">
             <MapBadge className="h-6 w-6" />
           </div>
           <div className="min-w-0">

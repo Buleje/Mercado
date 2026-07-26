@@ -24,14 +24,14 @@ interface SupplierScorecardProps {
 }
 
 const GRADE_COLORS: Record<string, string> = {
-  A: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-  B: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  A: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
+  B: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   C: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
   D: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
 };
 
 function MetricBar({ label, value, icon: Icon }: { label: string; value: number; icon: React.ElementType }) {
-  const color = value > 70 ? "bg-[var(--accent-soft)]" : value > 55 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]";
+  const color = value > 70 ? "bg-primary/10" : value > 55 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]";
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">

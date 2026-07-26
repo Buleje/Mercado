@@ -63,9 +63,9 @@ function KpiCard({
   color: "green" | "red" | "blue";
 }) {
   const colors = {
-    green: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
+    green: "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
     red:   "bg-[var(--data-error-50)]   dark:bg-[var(--data-error-500)]/20   text-[var(--data-error-500)]   dark:text-[var(--data-error-500)]   border-[var(--data-error-500)]   dark:border-[var(--data-error-500)]",
-    blue:  "bg-[var(--accent-soft)]  dark:bg-[var(--accent-muted)]  text-[var(--data-success-500)]  dark:text-[var(--data-success-500)]  border-[var(--data-success-500)]/30  dark:border-[var(--data-success-500)]/30",
+    blue:  "bg-primary/10  dark:bg-primary/15  text-[var(--data-success-500)]  dark:text-[var(--data-success-500)]  border-[var(--data-success-500)]/30  dark:border-[var(--data-success-500)]/30",
   };
   return (
     <div className={cn("rounded-xl border p-4 flex items-center gap-3", colors[color])}>
@@ -232,7 +232,7 @@ export default function ReporteMensualTab() {
               Reporte {result.period} generado
             </span>
             {result.emailSent && (
-              <span className="text-xs text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+              <span className="text-xs text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-2 py-0.5 rounded-full border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                 Email enviado
               </span>
             )}
@@ -261,7 +261,7 @@ export default function ReporteMensualTab() {
           </div>
 
           {/* Info PDF */}
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             <FileText className="h-4 w-4 shrink-0" />
             <span>
               PDF generado ({(result.pdfSize / 1024).toFixed(1)} KB) con top 10 productos,
@@ -298,7 +298,7 @@ export default function ReporteMensualTab() {
                 <button
                   onClick={() => handleDownload(entry.year, entry.month)}
                   disabled={loadingHist}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-primary border border-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
                   title="Descargar PDF"
                 >
                   <Download className="h-3.5 w-3.5" />

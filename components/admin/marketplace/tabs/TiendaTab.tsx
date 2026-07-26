@@ -116,7 +116,7 @@ export function MarketplaceTiendaTab() {
           {/* Identidad */}
           <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
             <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Store className="h-5 w-5" />
               </span>
               <div className="min-w-0">
@@ -292,7 +292,7 @@ export function MarketplaceTiendaTab() {
           {/* Vista previa */}
           <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
             <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Eye className="h-5 w-5" />
               </span>
               <div className="min-w-0">
@@ -443,7 +443,7 @@ function ToggleRow({
   const iconBg = active
     ? tone === "warning"
       ? "bg-[var(--data-warning)]/15 text-[var(--data-warning)]"
-      : "bg-primary/15 text-primary"
+      : "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]"
     : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]";
   return (
     <button

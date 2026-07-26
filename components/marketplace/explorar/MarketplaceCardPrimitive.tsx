@@ -220,7 +220,7 @@ export function MarketplaceCardPrice({
             {fmt(before)}
           </span>
           {discountPct > 0 && (
-            <span className="inline-flex items-center rounded-md bg-[var(--accent-soft)] text-[var(--accent)] px-1.5 py-0.5 text-[length:var(--ts-xs)] font-bold tabular-nums">
+            <span className="inline-flex items-center rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-1.5 py-0.5 text-[length:var(--ts-xs)] font-bold tabular-nums">
               −{discountPct}%
             </span>
           )}
@@ -279,12 +279,12 @@ export function MarketplaceCardBadge({
     tone === "warning"
       ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30"
       : tone === "success"
-        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] border-[var(--data-success-500)]/30"
+        ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30"
         : tone === "info"
           ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-base)]"
           : tone === "neutral"
             ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] border-[var(--rule-soft)]"
-            : "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/30";
+            : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-[var(--accent)]/30";
   return (
     <span
       className={cn(

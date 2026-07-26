@@ -132,7 +132,7 @@ export function RoutesList({
               <div className="flex items-center gap-3 mb-3">
                 <div className={cn(
                   "h-10 w-10 rounded-xl flex items-center justify-center text-base font-extrabold shrink-0",
-                  isLive ? "bg-primary/10 text-primary" : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
+                  isLive ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
                 )}>
                   {initial}
                 </div>
@@ -144,7 +144,7 @@ export function RoutesList({
                     <span className="text-base">{vehicleIcon}</span>
                     <span className="capitalize">{route.vehicleType}</span>
                     {route.optimizedByAi && (
-                      <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] uppercase">
+                      <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] uppercase">
                         IA
                       </span>
                     )}

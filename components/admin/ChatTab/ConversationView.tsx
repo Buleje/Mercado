@@ -187,7 +187,7 @@ function MessageBubble({
           {meta.autoReply && (
             <div className={cn(
               "mb-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide",
-              isSeller ? "bg-white/20 text-white" : "bg-primary/10 text-primary",
+              isSeller ? "bg-white/20 text-white" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
             )}>
               <Bot className="h-3 w-3" aria-hidden /> Asistente automático
             </div>

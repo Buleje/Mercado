@@ -70,7 +70,7 @@ const URGENCY_STYLES: Record<PlanItem["urgency"], { badge: string; row: string; 
     label: "Urgente",
   },
   medium: {
-    badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+    badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
     row: "border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)]",
     label: "Esta semana",
   },

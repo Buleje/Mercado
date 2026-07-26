@@ -92,7 +92,7 @@ export default function SubcategoryChips({
                   "h-10 w-10 sm:h-12 sm:w-12 rounded-2xl overflow-hidden flex items-center justify-center transition-all",
                   active
                     ? "bg-[var(--accent)] text-white shadow-md scale-105"
-                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
+                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-primary/10 group-hover:text-[var(--accent)]",
                 )}
               >
                 {s.imageUrl ? (
@@ -147,7 +147,7 @@ export default function SubcategoryChips({
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               ) : (
-                <span className="absolute inset-0 flex items-center justify-center bg-[var(--accent-soft)] text-[var(--accent)]">
+                <span className="absolute inset-0 flex items-center justify-center bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <Boxes className="h-6 w-6" strokeWidth={1.75} aria-hidden />
                 </span>
               )}

@@ -501,7 +501,7 @@ function OrderTimeline({ status }: { status: Order["status"] }) {
                   isCurrent
                     ? "bg-primary text-white shadow-md shadow-primary/30 scale-110"
                     : isCompleted
-                      ? "bg-primary/20 text-primary"
+                      ? "bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)]",
                 )}
               >

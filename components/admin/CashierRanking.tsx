@@ -291,7 +291,7 @@ export default function CashierRanking() {
           disabled={loading}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            "text-primary dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
+            "text-primary dark:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15",
             loading && "opacity-50 cursor-not-allowed"
           )}
         >

@@ -144,7 +144,7 @@ export default function WaConversationList({
             className={cn(
               "inline-flex h-9 items-center gap-1 rounded-full border-2 px-3 text-sm font-bold transition",
               unreadOnly
-                ? "border-primary bg-primary/10 text-primary"
+                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-slate-200 text-slate-500 hover:border-primary/50 dark:border-slate-700 dark:text-slate-400",
             )}
           >
@@ -186,7 +186,7 @@ export default function WaConversationList({
               className={cn(
                 "inline-flex h-9 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
                 showArchived
-                  ? "border-primary bg-primary/10 text-primary"
+                  ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-slate-200 text-slate-500 hover:border-primary/50 dark:border-slate-700 dark:text-slate-400",
               )}
             >
@@ -229,7 +229,7 @@ export default function WaConversationList({
                   )}
                 >
                   {/* Avatar iniciales */}
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
                     {initials(c.customerName) || <User className="h-5 w-5" />}
                   </span>
 

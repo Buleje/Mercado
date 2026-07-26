@@ -39,7 +39,7 @@ function fmt(dateStr: string | null) {
 function StatusBadge({ item }: { item: QueueItem }) {
   if (item.processedAt) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--data-success-500)]">
+      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-[var(--data-success-500)]">
         <CheckCircle2 size={12} /> Procesado
       </span>
     );

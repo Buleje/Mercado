@@ -166,7 +166,7 @@ export function QuotationComparator({ orders, suppliers }: {
                         const item = oc.items.find(i => i.productId === pid);
                         const isBest = best && best.ocId === oc.id;
                         return (
-                          <td key={oc.id} className={cn("py-2 px-2 text-right font-semibold", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                          <td key={oc.id} className={cn("py-2 px-2 text-right font-semibold", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                             {item ? `S/ ${Number(item.unitCost).toFixed(2)}` : "—"}
                           </td>
                         );
@@ -188,7 +188,7 @@ export function QuotationComparator({ orders, suppliers }: {
                     const total = ocTotals.find(t => t.id === oc.id)?.total ?? 0;
                     const isBest = oc.id === bestTotalOcId;
                     return (
-                      <td key={oc.id} className={cn("py-2 px-2 text-right", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                      <td key={oc.id} className={cn("py-2 px-2 text-right", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                         S/ {total.toFixed(2)}
                       </td>
                     );
@@ -204,7 +204,7 @@ export function QuotationComparator({ orders, suppliers }: {
 
             {/* Savings */}
             {savings > 0 && (
-              <div className="mt-3 flex items-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-4 py-2.5">
+              <div className="mt-3 flex items-center gap-2 bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-4 py-2.5">
                 <TrendingDown className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
                 <span className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                   Ahorro vs mas caro: S/ {savings.toFixed(2)}
@@ -300,13 +300,13 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                   key={c.supplierId}
                   className={cn(
                     "border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50 transition-colors",
-                    c.isCheapest && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+                    c.isCheapest && "bg-primary/10 dark:bg-primary/15",
                   )}
                 >
                   <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     {c.supplierName}
                     {c.isCheapest && (
-                      <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">
+                      <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-1.5 py-0.5 rounded-full">
                         <TrendingDown className="h-2.5 w-2.5" /> Mejor precio
                       </span>
                     )}

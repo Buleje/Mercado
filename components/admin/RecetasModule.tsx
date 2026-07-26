@@ -189,7 +189,7 @@ const RecetarioAdminTab = React.lazy(() => import("@/components/admin/recetas/Re
 function EmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><ChefHat className="h-6 w-6 text-primary" /></div>
+      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><ChefHat className="h-6 w-6 text-[var(--accent-ink)] dark:text-[var(--accent)]" /></div>
       <p className="text-sm font-medium text-[var(--text-secondary)]">{message}</p>
       <p className="text-xs text-[var(--text-tertiary)] mt-1">Los datos aparecerán cuando registres actividad</p>
     </div>
@@ -666,7 +666,7 @@ export default function RecetasModule() {
                               <div className="mt-2 text-center">
                                 <span className={cn(
                                   "inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full",
-                                  faltan === 0 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                                  faltan === 0 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                                     : faltan < total ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                                     : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                                 )}>
@@ -752,13 +752,13 @@ export default function RecetasModule() {
                   </div>
                 )}
                 {costData && (
-                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-4 space-y-3">
+                  <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-xs uppercase font-bold text-[var(--data-success-500)]">Análisis de costo</p>
                       <span className={cn(
                         "text-xs font-bold px-2 py-0.5 rounded-lg",
                         costData.margenPorcentaje >= 30
-                          ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                          ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                           : costData.margenPorcentaje >= 10
                             ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                             : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
@@ -852,7 +852,7 @@ export default function RecetasModule() {
                                   <span className={cn(
                                     "text-xs font-bold px-2 py-0.5 rounded-lg",
                                     margen >= 30
-                                      ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                                      ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                                       : margen >= 10
                                         ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                                         : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
@@ -884,7 +884,7 @@ export default function RecetasModule() {
                               const costoLinea = costoUnit * ing.cantidad;
                               return (
                                 <div key={ing.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                  <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                                     <Package className="h-4 w-4 text-[var(--data-success-500)]" />
                                   </div>
                                   <div className="flex-1 min-w-0">
@@ -1212,7 +1212,7 @@ export default function RecetasModule() {
 
                     if (todosDisponibles) {
                       return (
-                        <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
+                        <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
                           <p className="text-xs font-bold text-[var(--data-success-500)]">Todos los ingredientes disponibles</p>
                         </div>
                       );

@@ -300,7 +300,7 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
             <div className="flex-1 overflow-y-auto bg-[var(--surface-canvas)]">
               {featured.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
-                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                     <Sparkles className="h-6 w-6" aria-hidden />
                   </span>
                   <p className="text-sm text-[var(--text-secondary)]">

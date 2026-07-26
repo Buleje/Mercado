@@ -18,12 +18,12 @@ function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFracti
 function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
 
 const TYPE_CONFIG: Record<AnomalyType, { label: string; color: string; icon: typeof TrendingUp }> = {
-  "venta-alta": { label: "Venta Inusual Alta", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", icon: TrendingUp },
+  "venta-alta": { label: "Venta Inusual Alta", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]", icon: TrendingUp },
   "venta-baja": { label: "Venta Inusual Baja", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]", icon: TrendingDown },
   "stock-inusual": { label: "Stock Inusual", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]", icon: Boxes },
   "precio-anomalo": { label: "Precio Anómalo", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]", icon: DollarSign },
   "fraude-potencial": { label: "Fraude Potencial", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]", icon: AlertTriangle },
-  "patron-raro": { label: "Patrón Raro", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", icon: ShoppingCart },
+  "patron-raro": { label: "Patrón Raro", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]", icon: ShoppingCart },
 };
 const SEV_COLORS: Record<Severity, string> = {
   baja: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
@@ -124,7 +124,7 @@ export default function AnomalyDetectionTab() {
                     <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.title}</CardTitle>
                     <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", SEV_COLORS[a.severity])}>{a.severity.toUpperCase()}</span>
                     <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", config.color)}>{config.label}</span>
-                    {isResolved && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">Resuelta</span>}
+                    {isResolved && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]">Resuelta</span>}
                   </div>
                   <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">{a.description}</p>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-xs text-[var(--text-tertiary)] dark:text-muted">
@@ -140,7 +140,7 @@ export default function AnomalyDetectionTab() {
                 <div className="flex flex-wrap items-center gap-2 shrink-0">
                   <button onClick={() => setSelected(a)} className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
                   {!isResolved && (
-                    <button onClick={() => setResolvedIds(prev => new Set([...prev, a.id]))} className="px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors">
+                    <button onClick={() => setResolvedIds(prev => new Set([...prev, a.id]))} className="px-3 py-1.5 rounded-lg bg-primary/10 text-white text-xs font-bold hover:bg-primary/10 transition-colors">
                       Resolver
                     </button>
                   )}
@@ -168,7 +168,7 @@ export default function AnomalyDetectionTab() {
                 <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Valor Detectado</span><p className="font-bold text-[var(--data-error-500)]">{selected.value}</p></div>
                 <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Valor Esperado</span><p className="font-bold text-[var(--data-success-500)]">{selected.expected}</p></div>
               </div>
-              <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
+              <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-4">
                 <h4 className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Recomendación</h4>
                 <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                   {selected.type === "fraude-potencial" ? "Revisar cámaras de seguridad y confrontar con el empleado. Verificar recibos anulados." :

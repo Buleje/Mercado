@@ -29,7 +29,7 @@ export function GuestJoinForm({
         e.preventDefault();
         onSubmit();
       }}
-      className="space-y-2 border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-4"
+      className="space-y-2 border-2 border-[var(--accent)] bg-primary/10 p-4"
     >
       <label
         htmlFor={id}

@@ -375,7 +375,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
                           className={cn(
                             "w-full flex items-start gap-2.5 rounded-lg border-2 px-3.5 py-3 transition-all text-left",
                             checked
-                              ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                              ? "border-[var(--accent)] bg-primary/10"
                               : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--text-tertiary)]",
                           )}
                         >

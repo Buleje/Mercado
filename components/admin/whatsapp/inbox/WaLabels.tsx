@@ -25,7 +25,7 @@ export const WA_LABELS: WaLabelDef[] = [
   {
     id: "pedido",
     nombre: "Pedido",
-    chip: "bg-primary/15 text-primary",
+    chip: "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]",
     dot: "bg-primary",
   },
   {

@@ -130,7 +130,7 @@ export default function LothCierrePanel() {
       {/* Cerrar un período */}
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="mb-1 flex items-center gap-2">
-          <Lock className="h-4 w-4 text-[var(--accent-dark)]" />
+          <Lock className="h-4 w-4 text-[var(--accent-dark)] dark:text-[var(--accent)]" />
           <h3 className="text-sm font-bold text-[var(--text-primary)]">Cerrar un período</h3>
         </div>
         <p className="mb-3 text-sm text-[var(--text-tertiary)]">

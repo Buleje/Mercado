@@ -87,7 +87,7 @@ export default function CacaoCampoSanidad({ parcelas, onOpenParcela, onChanged }
 
       {tip && stats && stats.focosActivos > 0 && (
         <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--accent-soft)] bg-[var(--surface-raised)] p-3">
-          <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]"><Sparkles className="h-4 w-4" /></span>
+          <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Sparkles className="h-4 w-4" /></span>
           <p className="text-sm text-[var(--text-secondary)]"><strong className="text-[var(--text-primary)]">{tip.label}{tip.cientifico ? ` (${tip.cientifico})` : ""}:</strong> {tip.tip}</p>
         </div>
       )}

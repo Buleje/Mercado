@@ -26,7 +26,7 @@ interface CLVCustomer {
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 const TIER_STYLE: Record<CLVTier, { bg: string; text: string; border: string; label: string }> = {
-  alto:  { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",  border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",  label: "Alto valor" },
+  alto:  { bg: "bg-primary/10 dark:bg-primary/15",  text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",  border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",  label: "Alto valor" },
   medio: { bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",  text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",  border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",  label: "Valor medio" },
   bajo:  { bg: "bg-[var(--surface-sunken)]/50",    text: "text-[var(--text-secondary)]",    border: "border-[var(--rule-base)] dark:border-gray-600",    label: "Bajo valor" },
 };

@@ -270,7 +270,7 @@ function NodeTile({ item }: { item: LogoItem }) {
       ) : item.kind === "mark" ? (
         <span aria-hidden className="text-white text-sm sm:text-base font-black tracking-tight">{item.name}</span>
       ) : (
-        <span aria-hidden className="inline-flex h-full w-full items-center justify-center rounded-[1.25rem] bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span aria-hidden className="inline-flex h-full w-full items-center justify-center rounded-[1.25rem] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Receipt className="h-7 w-7 sm:h-9 sm:w-9" strokeWidth={2} />
         </span>
       )}
@@ -510,7 +510,7 @@ function GuaranteeSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {GUARANTEES.map((g) => (
             <div key={g.t} className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 transition-all hover:border-[var(--accent)]/40 hover:shadow-md">
-              <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
+              <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
                 <g.icon className="h-6 w-6" strokeWidth={1.75} />
               </span>
               <h3 className="text-lg font-extrabold tracking-[-0.01em] text-[var(--text-primary)] leading-tight">{g.t}</h3>
@@ -589,7 +589,7 @@ function SocialProofSection() {
           </p>
         </div>
 
-        <div className="relative overflow-hidden rounded-[2rem] border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-6 sm:p-8 lg:p-10">
+        <div className="relative overflow-hidden rounded-[2rem] border-2 border-[var(--accent)]/30 bg-primary/10/30 p-6 sm:p-8 lg:p-10">
           <div aria-hidden className="pointer-events-none absolute -top-24 -right-20 h-72 w-72 rounded-full bg-[var(--accent)]/15 blur-3xl" />
           <div className="relative grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-8 lg:gap-12 items-start">
             {/* Izquierda — value stack con anclaje de precio */}
@@ -605,7 +605,7 @@ function SocialProofSection() {
                       key={perk.title}
                       className="group flex items-center gap-4 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-3.5 sm:p-4 transition-all hover:border-[var(--accent)]/40 hover:shadow-[var(--shadow-sm)]"
                     >
-                      <span aria-hidden className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] ring-1 ring-[var(--accent)]/20">
+                      <span aria-hidden className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-[var(--accent)]/20">
                         <Icon className="h-5 w-5" strokeWidth={2} />
                       </span>
                       <div className="min-w-0 flex-1">
@@ -669,7 +669,7 @@ function SocialProofSection() {
                       className={`h-9 rounded-lg border-2 flex items-center justify-center transition-colors ${
                         tomado
                           ? "bg-[var(--accent)] border-[var(--accent)] text-white"
-                          : "border-dashed border-[var(--accent)]/40 bg-[var(--accent-soft)]/40 text-[var(--accent)]"
+                          : "border-dashed border-[var(--accent)]/40 bg-primary/10/40 text-[var(--accent)]"
                       }`}
                     >
                       {tomado ? (

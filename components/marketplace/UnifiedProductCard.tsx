@@ -533,7 +533,7 @@ export default function UnifiedProductCard({
             className={cn(
               "inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-colors backdrop-blur-sm",
               inCompare
-                ? "bg-[var(--accent-soft)] border-[var(--accent)]/30 text-[var(--accent)]"
+                ? "bg-primary/10 border-[var(--accent)]/30 text-[var(--accent)]"
                 : "bg-white/95 dark:bg-gray-900/95 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:border-[var(--accent)]",
             )}
@@ -713,7 +713,7 @@ export default function UnifiedProductCard({
             type="button"
             onClick={handleAdd}
             aria-label={`Ver ${product.commentCount} comentario${product.commentCount === 1 ? "" : "s"} de ${product.name}`}
-            className="mt-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"
+            className="mt-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent)]"
           >
             <MessageCircle className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
             <span className="tabular-nums">{product.commentCount}</span>

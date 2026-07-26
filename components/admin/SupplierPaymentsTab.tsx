@@ -33,8 +33,8 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 
 const STATUS_MAP: Record<PaymentStatus, { label: string; color: string; bg: string }> = {
   pendiente:  { label: "Pendiente",  color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  programado: { label: "Programado", color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  pagado:     { label: "Pagado",     color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  programado: { label: "Programado", color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
+  pagado:     { label: "Pagado",     color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   vencido:    { label: "Vencido",    color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
   parcial:    { label: "Parcial",    color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
 };
@@ -87,7 +87,7 @@ export default function SupplierPaymentsTab() {
           { label: "Por pagar", value: fmt(stats.totalPending), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: Clock },
           { label: "Vencido", value: fmt(stats.overdue), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: AlertTriangle },
           { label: "Desc. pronto pago", value: String(stats.earlyDiscounts), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]", icon: BadgePercent },
-          { label: "Pagado este mes", value: fmt(stats.paidThisMonth), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle2 },
+          { label: "Pagado este mes", value: fmt(stats.paidThisMonth), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: CheckCircle2 },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />

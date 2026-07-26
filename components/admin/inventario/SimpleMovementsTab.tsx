@@ -216,7 +216,7 @@ export default function SimpleMovementsTab() {
                   </td>
                   <td className="px-4 py-3"><span className="block max-w-[200px] truncate font-semibold text-[var(--text-primary)]">{m.productName}</span></td>
                   <td className="px-4 py-3">
-                    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold", m.dir === "in" ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]")}>
+                    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold", m.dir === "in" ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]")}>
                       <m.Icon className="h-3 w-3" strokeWidth={1.75} /> {m.label}
                     </span>
                   </td>
@@ -301,7 +301,7 @@ function RegisterMovementModal({ products, onClose, onSaved }: { products: Produ
         <div className="space-y-4 p-6">
           {/* Entrada / Salida */}
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => setDirAndType("in")} className={cn("flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3 text-sm font-bold transition-colors", dir === "in" ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}><ArrowUpCircle className="h-4 w-4" /> Entrada</button>
+            <button type="button" onClick={() => setDirAndType("in")} className={cn("flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3 text-sm font-bold transition-colors", dir === "in" ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}><ArrowUpCircle className="h-4 w-4" /> Entrada</button>
             <button type="button" onClick={() => setDirAndType("out")} className={cn("flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3 text-sm font-bold transition-colors", dir === "out" ? "border-[var(--data-warning-500)] bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}><ArrowDownCircle className="h-4 w-4" /> Salida</button>
           </div>
 
@@ -309,7 +309,7 @@ function RegisterMovementModal({ products, onClose, onSaved }: { products: Produ
           <Field label="Producto" labelClassName={LABEL}>
             {(id) => (<>
             {selected ? (
-              <button type="button" onClick={() => { setProductId(""); setPsearch(""); }} className="flex w-full items-center justify-between rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3.5 py-2.5 text-left">
+              <button type="button" onClick={() => { setProductId(""); setPsearch(""); }} className="flex w-full items-center justify-between rounded-lg border border-[var(--accent)] bg-primary/10 px-3.5 py-2.5 text-left">
                 <span className="text-sm font-bold text-[var(--text-primary)]">{selected.name}</span>
                 <span className="text-xs font-bold text-[var(--text-tertiary)]">stock {selected.stock} {selected.unit} · cambiar</span>
               </button>

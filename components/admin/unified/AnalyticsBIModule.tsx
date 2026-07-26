@@ -297,7 +297,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
               className={cn(
                 "px-3 py-2 text-xs font-semibold rounded-t-lg transition-colors",
                 activeTab === t.id
-                  ? "bg-primary/10 text-primary border-b-2 border-primary"
+                  ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-b-2 border-primary"
                   : "text-[var(--text-secondary)] hover:bg-gray-50"
               )}
             >
@@ -538,7 +538,7 @@ function AnomalyDetectorWrapper({ refreshKey }: { refreshKey: number }) {
   if (sales.length === 0 && orders.length === 0) {
     return (
       <div className="text-center py-8">
-        <div className="w-10 h-10 rounded-full bg-[var(--accent-soft)] flex items-center justify-center mx-auto mb-3">
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
           <svg className="w-5 h-5 text-[var(--data-success-500)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>

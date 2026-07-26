@@ -29,8 +29,8 @@ interface RFMSegmentationPanelProps {
 
 // ── Segment Config ─────────────────────────────────────────────────────────────
 const SEGMENT_STYLE: Record<RFMSegment, { bg: string; text: string; border: string; icon: typeof Crown; color: string }> = {
-  Champions:  { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", icon: Crown, color: "var(--accent)" },
-  Loyal:      { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",   text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",   border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", icon: Heart, color: "#2563eb" },
+  Champions:  { bg: "bg-primary/10 dark:bg-primary/15", text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", icon: Crown, color: "var(--accent)" },
+  Loyal:      { bg: "bg-primary/10 dark:bg-primary/15",   text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",   border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", icon: Heart, color: "#2563eb" },
   "At Risk":  { bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]", icon: AlertTriangle, color: "#f0503f" },
   Lost:       { bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",     text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",     border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]", icon: XCircle, color: "#dc2626" },
   New:        { bg: "bg-[var(--surface-sunken)]", text: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", border: "border-[var(--rule-base)]0 dark:border-[var(--rule-base)]", icon: Sparkles, color: "#7c3aed" },

@@ -26,7 +26,7 @@ interface Task {
 
 const PRIORITY_META: Record<Priority, { label: string; color: string; bg: string }> = {
   baja:     { label: "Baja",    color: "text-[var(--text-secondary)]",   bg: "bg-gray-100" },
-  media:    { label: "Media",   color: "text-[var(--data-success-500)]",   bg: "bg-[var(--accent-soft)]" },
+  media:    { label: "Media",   color: "text-[var(--data-success-500)]",   bg: "bg-primary/10" },
   alta:     { label: "Alta",    color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)]" },
   urgente:  { label: "Urgente", color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-50)]" },
 };
@@ -160,7 +160,7 @@ export default function TasksTab() {
                   <button
                     onClick={() => changeStatus(t.id, t.status === "completada" ? "pendiente" : "completada")}
                     className={cn("mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all",
-                      t.status === "completada" ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]" : "border-[var(--rule-base)] dark:border-card-border hover:border-[var(--data-success-500)]/30"
+                      t.status === "completada" ? "border-[var(--data-success-500)]/30 bg-primary/10" : "border-[var(--rule-base)] dark:border-card-border hover:border-[var(--data-success-500)]/30"
                     )}
                   >
                     {t.status === "completada" && <Check className="h-3 w-3 text-white" />}
@@ -189,7 +189,7 @@ export default function TasksTab() {
                           <User className="h-3 w-3" />{t.assignedTo}
                         </span>
                       )}
-                      {t.module && <span className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-semibold">{t.module}</span>}
+                      {t.module && <span className="text-[length:var(--ts-2xs)] bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-semibold">{t.module}</span>}
                       {t.dueDate && (
                         <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)]", new Date(t.dueDate) < new Date() && t.status !== "completada" ? "text-[var(--data-error-500)] font-bold" : "text-[var(--text-tertiary)] dark:text-muted")}>
                           <Clock className="h-3 w-3" />{new Date(t.dueDate).toLocaleDateString("es-PE")}

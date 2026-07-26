@@ -72,7 +72,7 @@ export default async function PrecioCacaoPage() {
           <p className="mt-1 font-mono text-3xl font-extrabold text-[var(--text-primary)]">{p ? `USD ${n0(p.value)}` : "—"}<span className="ml-1 text-base font-bold text-[var(--text-tertiary)]">/t</span></p>
           {p?.changePct != null && <p className={`mt-0.5 text-sm font-bold ${up ? "text-[var(--data-success-700)]" : down ? "text-[var(--data-error-700)]" : "text-[var(--text-secondary)]"}`}>{up ? "▲ +" : down ? "▼ " : ""}{Number(p.changePct).toFixed(1)}% vs. ayer</p>}
         </div>
-        <div className="rounded-2xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-5">
+        <div className="rounded-2xl border-2 border-[var(--accent)] bg-primary/10 p-5">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">En chacra (estimado)</p>
           <p className="mt-1 font-mono text-3xl font-extrabold text-[var(--accent)]">{m.pricePenPerKg != null ? `S/ ${n2(m.pricePenPerKg)}` : "—"}<span className="ml-1 text-base font-bold">/kg</span></p>
           <p className="mt-0.5 text-xs text-[var(--text-secondary)]">seco · referencia, antes de flete y margen</p>

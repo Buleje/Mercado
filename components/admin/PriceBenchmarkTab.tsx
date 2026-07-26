@@ -31,9 +31,9 @@ const fmt = (n: number) => "S/ " + n.toFixed(2);
 const pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(1) + "%";
 
 const POS_META: Record<Positioning, { label: string; color: string; bg: string }> = {
-  competitivo: { label: "Competitivo", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  competitivo: { label: "Competitivo", color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   premium:     { label: "Premium",     color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
-  económico:   { label: "Económico",   color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  económico:   { label: "Económico",   color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
   alineado:    { label: "Alineado",    color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]/30" },
 };
 
@@ -86,8 +86,8 @@ export default function PriceBenchmarkTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Productos analizados", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Competitivos / Alineados", value: String(stats.competitive), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Productos analizados", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
+          { label: "Competitivos / Alineados", value: String(stats.competitive), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Sobre mercado (>10%)", value: String(stats.overpriced), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
           { label: "Dif. promedio", value: pct(stats.avgDiff), color: stats.avgDiff > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
@@ -165,7 +165,7 @@ export default function PriceBenchmarkTab() {
                       </span>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", pos.bg, pos.color)}>{pos.label}</span></td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(i)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(i)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 );
               })}

@@ -403,7 +403,7 @@ export default function WarehouseTab() {
 
       {/* KPIs row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
+        <div className="rounded-xl bg-primary/10 dark:bg-primary/15 p-4">
           <Warehouse className="h-5 w-5 mb-2 text-[var(--data-success-500)]" />
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Almacenes activos</p>
           <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)]">{warehouses.filter(w => w.active).length}</p>
@@ -418,7 +418,7 @@ export default function WarehouseTab() {
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Productos bajo mínimo</p>
           <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning-500)]">{totalLow}</p>
         </div>
-        <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
+        <div className="rounded-xl bg-primary/10 dark:bg-primary/15 p-4">
           <ArrowRightLeft className="h-5 w-5 mb-2 text-[var(--data-success-500)]" />
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Transferencias mes</p>
           <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)]">{transfers.length}</p>
@@ -617,13 +617,13 @@ export default function WarehouseTab() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-xs font-bold text-[var(--text-tertiary)] font-mono">{w.code}</span>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">{TYPE_LABELS[w.type]}</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]">{TYPE_LABELS[w.type]}</span>
                     </div>
                     <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{w.name}</CardTitle>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{w.location}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={cn("h-2.5 w-2.5 rounded-full", w.active ? "bg-[var(--accent-soft)]" : "bg-gray-300")} />
+                    <span className={cn("h-2.5 w-2.5 rounded-full", w.active ? "bg-primary/10" : "bg-gray-300")} />
                     {confirmDeleteId === w.id ? (
                       <div className="flex items-center gap-1">
                         <button onClick={() => handleDeleteWarehouse(w.id)} disabled={deletingId === w.id} className="text-xs px-2 py-1 rounded-lg bg-[var(--data-error-500)] text-white font-bold hover:bg-[var(--data-error-500)] disabled:opacity-50">
@@ -720,7 +720,7 @@ export default function WarehouseTab() {
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                           {isLow
                             ? <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"><AlertTriangle className="h-3 w-3" /> Bajo mínimo</span>
-                            : <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"><CheckCircle className="h-3 w-3" /> OK</span>
+                            : <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"><CheckCircle className="h-3 w-3" /> OK</span>
                           }
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(s.quantity * s.costAvg)}</td>
@@ -750,7 +750,7 @@ export default function WarehouseTab() {
         <div className="space-y-3">
           {transfers.map(t => {
             const statusMeta = t.status === "completado"
-              ? { color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", label: "Completado" }
+              ? { color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", label: "Completado" }
               : t.status === "pendiente"
               ? { color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", label: "Pendiente" }
               : { color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30", label: "Cancelado" };
@@ -774,7 +774,7 @@ export default function WarehouseTab() {
                       <button
                         onClick={() => handleUpdateTransferStatus(t.id, "completado")}
                         disabled={updatingTransferId === t.id}
-                        className="text-xs px-2 py-0.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold hover:bg-[var(--accent-soft)] disabled:opacity-50"
+                        className="text-xs px-2 py-0.5 rounded-lg bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold hover:bg-primary/10 disabled:opacity-50"
                       >
                         {updatingTransferId === t.id ? "…" : "Completar"}
                       </button>

@@ -317,7 +317,7 @@ export default function KioskMode() {
                     </button>
                     <span className="w-6 text-center text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{item.quantity}</span>
                     <button type="button" onClick={() => updateQty(item.product.id, 1)}
-                      className="w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20">
+                      className="w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20">
                       <Plus className="h-3 w-3" />
                     </button>
                     <button type="button" onClick={() => removeFromCart(item.product.id)} className="w-11 h-11 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]">
@@ -345,7 +345,7 @@ export default function KioskMode() {
                   className={cn(
                     "flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 text-xs font-semibold transition-all",
                     paymentMethod === "yape"
-                      ? "border-primary bg-primary/5 text-primary"
+                      ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
                   )}
                 >
@@ -358,7 +358,7 @@ export default function KioskMode() {
                   className={cn(
                     "flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 text-xs font-semibold transition-all",
                     paymentMethod === "efectivo"
-                      ? "border-primary bg-primary/5 text-primary"
+                      ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
                   )}
                 >
@@ -385,7 +385,7 @@ export default function KioskMode() {
       {step === "success" && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/95 dark:bg-gray-950/95 z-50">
           <div className="text-center space-y-4">
-            <div className="w-24 h-24 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center mx-auto">
+            <div className="w-24 h-24 rounded-full bg-primary/10 dark:bg-primary/15 flex items-center justify-center mx-auto">
               <CheckCircle className="h-12 w-12 text-[var(--data-success-500)]" />
             </div>
             <SectionTitle className="text-3xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Pago registrado</SectionTitle>

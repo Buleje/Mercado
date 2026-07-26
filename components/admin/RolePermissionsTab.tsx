@@ -160,8 +160,8 @@ export default function RolePermissionsTab() {
             className={cn(
               "flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition disabled:opacity-50",
               saved
-                ? "bg-[var(--accent-soft)] text-white"
-                : "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white"
+                ? "bg-primary/10 text-white"
+                : "bg-primary/10 hover:bg-primary/10 text-white"
             )}
           >
             {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
@@ -219,7 +219,7 @@ export default function RolePermissionsTab() {
                           className={cn(
                             "w-8 h-8 rounded-lg flex items-center justify-center mx-auto transition-all duration-[var(--dur-fast)]",
                             checked
-                              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30"
+                              ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10 border border-[var(--data-success-500)]/30"
                               : "bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]/50 hover:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)]/10"
                           )}
                           title={`${role} ${checked ? "tiene acceso a" : "NO tiene acceso a"} ${tab.label}`}
@@ -248,7 +248,7 @@ export default function RolePermissionsTab() {
               <div key={role} className="flex items-center gap-1">
                 <button
                   onClick={() => { selectAll(role); setHasChanges(true); }}
-                  className="text-[length:var(--ts-2xs)] px-2 py-1 bg-[var(--accent-soft)] text-[var(--data-success-500)] rounded hover:bg-[var(--accent-soft)] transition"
+                  className="text-[length:var(--ts-2xs)] px-2 py-1 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] rounded hover:bg-primary/10 transition"
                 >
                   Todo ({role})
                 </button>

@@ -160,7 +160,7 @@ export default function ImageCropModal({
           <button type="button" onClick={reset} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:bg-white/5">
             <RotateCcw className="h-3.5 w-3.5" /> Reiniciar
           </button>
-          <button type="button" onClick={apply} disabled={!loaded || busy} className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50">
+          <button type="button" onClick={apply} disabled={!loaded || busy} className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50">
             <Check className="h-3.5 w-3.5" /> {busy ? "Aplicando…" : "Aplicar recorte"}
           </button>
         </div>

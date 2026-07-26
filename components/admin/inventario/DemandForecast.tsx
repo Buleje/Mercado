@@ -89,7 +89,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
   const trendColor = data.trend === 'SUBIENDO' ? 'text-[var(--data-success-500)]' : data.trend === 'BAJANDO' ? "text-[var(--data-error-500)]" : 'text-[var(--text-secondary)]';
 
   const stockColor = data.daysOfStock < 3 ? "text-[var(--data-error-500)]" : data.daysOfStock < 7 ? "text-[var(--data-warning-500)]" : 'text-[var(--data-success-500)]';
-  const stockBg = data.daysOfStock < 3 ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20" : data.daysOfStock < 7 ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" : 'bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]';
+  const stockBg = data.daysOfStock < 3 ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20" : data.daysOfStock < 7 ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" : 'bg-primary/10 dark:bg-primary/15';
 
   // Format chart data
   const chartData = data.historicalSales.map(s => ({

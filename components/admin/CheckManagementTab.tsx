@@ -44,11 +44,11 @@ type PayableRecord = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const STATUS_MAP: Record<CheckStatus, { label: string; color: string; bg: string }> = {
-  "en-cartera":    { label: "En cartera",    color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"    },
+  "en-cartera":    { label: "En cartera",    color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15"    },
   "por-depositar": { label: "Por depositar", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30"  },
   depositado:      { label: "Depositado",    color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]"},
-  cobrado:         { label: "Cobrado",       color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
-  pagado:          { label: "Pagado",        color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
+  cobrado:         { label: "Cobrado",       color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15"},
+  pagado:          { label: "Pagado",        color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15"},
   rebotado:        { label: "Rebotado",      color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30"      },
   pendiente:       { label: "Pendiente",     color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30"},
 };
@@ -202,21 +202,21 @@ export default function CheckManagementTab() {
             label: "Total pagado",
             value: fmt(stats.totalPaid),
             color: "text-[var(--data-success-500)]",
-            bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+            bg: "bg-primary/10 dark:bg-primary/15",
             icon: CheckCircle,
           },
           {
             label: "Por depositar",
             value: String(stats.toDeposit),
             color: "text-[var(--data-success-500)]",
-            bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+            bg: "bg-primary/10 dark:bg-primary/15",
             icon: Calendar,
           },
           {
             label: "Rebotados / Tasa",
             value: `${stats.bounced} (${Number(stats.bouncedRate).toFixed(1)}%)`,
             color: stats.bounced > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]",
-            bg: stats.bounced > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+            bg: stats.bounced > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-primary/10 dark:bg-primary/15",
             icon: Ban,
           },
         ].map(({ label, value, color, bg, icon: Icon }) => (
@@ -345,8 +345,8 @@ export default function CheckManagementTab() {
                         className={cn(
                           "text-xs font-bold px-2 py-0.5 rounded-full",
                           c.type === "recibido"
-                            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]"
-                            : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]"
+                            ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                            : "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                         )}
                       >
                         {c.type === "recibido" ? "Recibido" : "Emitido"}

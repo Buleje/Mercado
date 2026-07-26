@@ -358,7 +358,7 @@ export default function ThemeCustomizer() {
               disabled={saving}
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-70",
-                saved ? "bg-[var(--accent-soft)]" : "bg-primary hover:bg-primary-dark"
+                saved ? "bg-primary/10" : "bg-primary hover:bg-primary-dark"
               )}
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : null}
@@ -368,7 +368,7 @@ export default function ThemeCustomizer() {
 
           {/* Aviso de persistencia */}
           <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1.5">
-            <span className="inline-block w-2 h-2 rounded-full bg-[var(--accent-soft)]" />
+            <span className="inline-block w-2 h-2 rounded-full bg-primary/10" />
             Los colores guardados se aplican automáticamente a todos los visitantes de tu tienda
           </p>
         </div>

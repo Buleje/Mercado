@@ -21,8 +21,8 @@ interface AdminSectionHeaderProps {
 }
 
 const iconBgMap: Record<string, string> = {
-  emerald: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-  blue: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+  emerald: "bg-primary/10 dark:bg-primary/15",
+  blue: "bg-primary/10 dark:bg-primary/15",
   amber: "bg-amber-50 dark:bg-amber-900/20",
   red: "bg-red-50 dark:bg-red-900/20",
   violet: "bg-[var(--surface-sunken)]",

@@ -145,7 +145,7 @@ export default function FridgeScanCard({
       {/* Header */}
       <div className="p-5 sm:p-6">
         <div className="flex items-start gap-3">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Camera className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <div className="flex-1">
@@ -279,7 +279,7 @@ export default function FridgeScanCard({
                     className={cn(
                       "w-full flex items-start gap-3 rounded-xl border p-3 text-left transition-all",
                       isSelected
-                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                        ? "border-[var(--accent)] bg-primary/10"
                         : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40",
                     )}
                   >

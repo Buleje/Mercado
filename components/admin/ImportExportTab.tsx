@@ -205,7 +205,7 @@ export default function ImportExportTab() {
             return (
               <div key={mod.id} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
                 <div className="flex flex-wrap items-center gap-3 mb-4">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><Icon className="h-5 w-5 text-primary" /></div>
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><Icon className="h-5 w-5 text-[var(--accent-ink)] dark:text-[var(--accent)]" /></div>
                   <div>
                     <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{mod.label}</CardTitle>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Datos reales desde la base de datos</p>
@@ -223,7 +223,7 @@ export default function ImportExportTab() {
                   <button
                     onClick={() => handleExport(mod.id, "excel")}
                     disabled={!!exporting}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-60"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-primary/10 text-white hover:bg-primary/10 transition-colors disabled:opacity-60"
                   >
                     {isExportingXLS ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                     Excel
@@ -326,7 +326,7 @@ export default function ImportExportTab() {
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{r.module}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.records}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3">
-                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.status === "success" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : r.status === "partial" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
+                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.status === "success" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : r.status === "partial" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                       {r.status === "success" ? "Exitoso" : r.status === "partial" ? `${r.errors} errores` : "Error"}
                     </span>
                   </td>

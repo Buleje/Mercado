@@ -236,7 +236,7 @@ function KpiCard({
         <div className={cn(
           "flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full",
           trend > 0
-            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
             : trend < 0
             ? "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)]"
             : "bg-[var(--surface-alt)] text-[var(--text-tertiary)] dark:bg-gray-800"

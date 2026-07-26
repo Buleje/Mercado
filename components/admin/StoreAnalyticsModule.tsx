@@ -385,7 +385,7 @@ export default function StoreAnalyticsModule() {
 function LockedAdvanced({ title, desc }: { title: string; desc: string }) {
   return (
     <div className="rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 flex items-start gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
         <Lock className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
       </div>
       <div className="flex-1">

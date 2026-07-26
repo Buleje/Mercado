@@ -10,7 +10,7 @@ import type { SegmentLabel, SegmentsResponse, SegmentedCustomer } from "@/app/ap
 const SEGMENT_CONFIG: Record<SegmentLabel, { label: string; icon: React.ElementType; color: string; bg: string; border: string; barColor: string }> = {
   vip:       { label: "VIP",        icon: Crown,         color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-yellow-950/30",   border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",  barColor: "bg-[var(--data-warning-500)]" },
   regular:   { label: "Regular",    icon: Star,          color: "text-[var(--data-info-500)] dark:text-[var(--data-info-500)]",        bg: "bg-[var(--data-info-50)] dark:bg-sky-950/30",          border: "border-[var(--data-info-500)] dark:border-[var(--data-info-500)]",        barColor: "bg-[var(--data-info-500)]" },
-  nuevo:     { label: "Nuevo",      icon: UserPlus,      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",barColor: "bg-[var(--accent-soft)]" },
+  nuevo:     { label: "Nuevo",      icon: UserPlus,      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",bg: "bg-primary/10 dark:bg-primary/15",  border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",barColor: "bg-primary/10" },
   en_riesgo: { label: "En Riesgo",  icon: AlertTriangle, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",      border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",   barColor: "bg-[var(--data-warning-500)]" },
   dormido:   { label: "Dormido",    icon: Moon,          color: "text-[var(--text-tertiary)]",      bg: "bg-[var(--surface-alt)] dark:bg-surface",            border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]",  barColor: "bg-gray-400" },
 };
@@ -175,7 +175,7 @@ export default function CustomerSegmentationTab() {
               <button
                 onClick={() => handleCampaign(seg)}
                 disabled={count === 0}
-                className={cn("w-full mt-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-sm font-bold transition-all", isSent ? "bg-[var(--accent-soft)] text-white" : "bg-white/60 dark:bg-black/20 text-[var(--text-secondary)] dark:text-muted hover:bg-white dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed")}
+                className={cn("w-full mt-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-sm font-bold transition-all", isSent ? "bg-primary/10 text-white" : "bg-white/60 dark:bg-black/20 text-[var(--text-secondary)] dark:text-muted hover:bg-white dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed")}
               >
                 {isSent ? <>Enviado</> : <><Send className="h-3 w-3" />Enviar campaña</>}
               </button>
@@ -261,9 +261,9 @@ export default function CustomerSegmentationTab() {
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { label: "Recencia", value: r, desc: c.daysSinceLast !== null ? `hace ${c.daysSinceLast}d` : "sin compras", color: r >= 70 ? "bg-[var(--accent-soft)]" : r >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]" },
-                    { label: "Frecuencia", value: f, desc: `${c.orderCount} pedidos`, color: f >= 70 ? "bg-[var(--accent-soft)]" : f >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]" },
-                    { label: "Monto", value: m, desc: `S/${Number(c.totalSpent).toFixed(0)}`, color: m >= 70 ? "bg-[var(--accent-soft)]" : m >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]" },
+                    { label: "Recencia", value: r, desc: c.daysSinceLast !== null ? `hace ${c.daysSinceLast}d` : "sin compras", color: r >= 70 ? "bg-primary/10" : r >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]" },
+                    { label: "Frecuencia", value: f, desc: `${c.orderCount} pedidos`, color: f >= 70 ? "bg-primary/10" : f >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]" },
+                    { label: "Monto", value: m, desc: `S/${Number(c.totalSpent).toFixed(0)}`, color: m >= 70 ? "bg-primary/10" : m >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]" },
                   ].map(metric => (
                     <div key={metric.label}>
                       <div className="flex justify-between items-center mb-1">

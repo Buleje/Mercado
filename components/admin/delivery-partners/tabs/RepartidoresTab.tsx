@@ -464,7 +464,7 @@ export function RepartidoresTab() {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <Users className="h-5 w-5" />
             </span>
             <div>
@@ -506,7 +506,7 @@ export function RepartidoresTab() {
             </div>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                   <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
                 </span>
               </div>
@@ -630,7 +630,7 @@ export function RepartidoresTab() {
 
       {/* ── 1.6 Bulk action bar ────────────────────────────────────── */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[var(--accent-soft)] border-2 border-[var(--accent)]/40">
+        <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-primary/10 border-2 border-[var(--accent)]/40">
           <p className="text-sm font-extrabold text-[var(--accent)]">
             {selectedIds.size} {selectedIds.size === 1 ? "repartidor seleccionado" : "repartidores seleccionados"}
           </p>
@@ -738,7 +738,7 @@ export function RepartidoresTab() {
                     key={p.id}
                     className={cn(
                       "transition-colors",
-                      isSelected ? "bg-[var(--accent-soft)]/40" : "hover:bg-[var(--surface-sunken)]",
+                      isSelected ? "bg-primary/10/40" : "hover:bg-[var(--surface-sunken)]",
                     )}
                   >
                     <td className="px-3 py-4">
@@ -796,7 +796,7 @@ export function RepartidoresTab() {
                       <span className={cn(
                         "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold",
                         p.isActive
-                          ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                          ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                           : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                       )}>
                         <span className={cn("h-1.5 w-1.5 rounded-full", p.isActive ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]")} />
@@ -820,7 +820,7 @@ export function RepartidoresTab() {
                         <button
                           type="button"
                           onClick={() => setModal({ open: true, partner: p })}
-                          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-colors"
+                          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:bg-primary/10 hover:border-primary/30 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors"
                         >
                           <Edit2 className="h-4 w-4" />
                           Editar

@@ -45,8 +45,8 @@ function getUrgency(daysToStockout: number): Urgency {
 const URGENCY_META: Record<Urgency, { label: string; color: string; bg: string }> = {
   urgente: { label: "Urgente",  color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
   pronto:  { label: "Pronto",   color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  normal:  { label: "Normal",   color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  ok:      { label: "OK",       color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  normal:  { label: "Normal",   color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
+  ok:      { label: "OK",       color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
 };
 
 const TREND_ICON: Record<Trend, { icon: typeof ArrowUp; color: string; label: string }> = {
@@ -103,10 +103,10 @@ export default function PurchasePlanningTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Productos", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: BarChart3 },
+          { label: "Productos", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: BarChart3 },
           { label: "Necesitan reorden", value: String(stats.needReorder), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: ShoppingCart },
           { label: "Urgentes", value: String(stats.urgent), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: AlertTriangle },
-          { label: "Inversión sugerida", value: fmt(stats.totalCost), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: TrendingUp },
+          { label: "Inversión sugerida", value: fmt(stats.totalCost), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: TrendingUp },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <div className="flex items-center gap-1.5 mb-1">
@@ -184,7 +184,7 @@ export default function PurchasePlanningTab() {
       </div>
 
       {/* Algorithm note */}
-      <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+      <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
         <p className="font-bold mb-1">Algoritmo de sugerencia</p>
         <p>Punto de reorden = demanda_diaria × plazo_entrega × (1 + factor_seguridad)</p>
         <p>Cantidad sugerida = máx(0, punto_reorden − stock_actual)</p>

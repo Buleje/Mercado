@@ -65,7 +65,7 @@ function ModuleTooltip() {
             <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Historial:</span> <span className="text-[var(--text-secondary)] dark:text-muted">listado de todas las sesiones cerradas con su diferencia.</span></p>
             <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ingreso / Egreso:</span> <span className="text-[var(--text-secondary)] dark:text-muted">ejemplo: registrar S/50 de egreso por compra de bolsas.</span></p>
           </div>
-          <div className="mt-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-2">
+          <div className="mt-3 bg-primary/10 dark:bg-primary/15 rounded-xl p-2">
             <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">Ejemplo</p>
             <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Valentina abre caja con S/200, vende durante el turno y al cerrar el sistema le dice si hay faltante o sobrante.</p>
           </div>
@@ -84,8 +84,8 @@ function fmtDateShort(iso: string) {
 }
 
 const MOVEMENT_COLORS: Record<string, string> = {
-  venta: "text-[var(--data-success-500)] bg-[var(--accent-soft)]",
-  ingreso: "text-[var(--data-success-500)] bg-[var(--accent-soft)]",
+  venta: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12",
+  ingreso: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12",
   egreso: "text-[var(--data-error-500)] bg-[var(--data-error-50)]",
   apertura: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]",
   cierre: "text-[var(--text-secondary)] dark:text-muted bg-[var(--surface-sunken)] dark:bg-accent",
@@ -142,7 +142,7 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
         </div>
       </div>
       {concilAmount && (
-        <div className={cn("rounded-lg p-3 mb-3 text-center", cuadra ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-warning-50)] dark:bg-amber-950/20")}>
+        <div className={cn("rounded-lg p-3 mb-3 text-center", cuadra ? "bg-primary/10 dark:bg-primary/15" : "bg-[var(--data-warning-50)] dark:bg-amber-950/20")}>
           {cuadra ? (
             <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Cuadra perfecto{diferencia !== 0 ? ` (dif. S/${diferencia.toFixed(2)})` : ""}</p>
           ) : (
@@ -635,7 +635,7 @@ export default function CashRegisterTab() {
             <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
               <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl p-6 sm:p-7">
                 <div className="flex items-start gap-4 mb-6">
-                  <div className="h-12 w-12 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <Lock className="h-6 w-6 text-primary" strokeWidth={1.75} aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -693,7 +693,7 @@ export default function CashRegisterTab() {
 
                 <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-3">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                    <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                       <Banknote className="h-4 w-4" />
                     </div>
                     <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">Ventas efectivo</span>
@@ -713,7 +713,7 @@ export default function CashRegisterTab() {
 
                 <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-3">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                    <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                       <Calculator className="h-4 w-4" />
                     </div>
                     <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">Esperado caja</span>
@@ -726,7 +726,7 @@ export default function CashRegisterTab() {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => { setMvType("ingreso"); setMvMotivo(""); setShowMovement(true); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] font-bold text-xs hover:bg-[var(--accent-soft)] transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] font-bold text-xs hover:bg-primary/10 transition-colors"
                 >
                   <ArrowUp className="h-4 w-4" /> Ingreso
                 </button>
@@ -738,7 +738,7 @@ export default function CashRegisterTab() {
                 </button>
                 <button
                   onClick={() => { setArqueoAmount(""); setArqueoDenoms({}); setArqueoError(null); setShowArqueo(true); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] font-bold text-xs hover:bg-[var(--accent-soft)] transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] font-bold text-xs hover:bg-primary/10 transition-colors"
                   title="Conteo físico del efectivo para verificar que cuadra con las ventas"
                 >
                   <Scan className="h-4 w-4" /> Arqueo Express
@@ -843,10 +843,10 @@ export default function CashRegisterTab() {
               {Object.keys(computedPaymentBreakdown).length > 0 && (() => {
                 const totalSales = Object.values(computedPaymentBreakdown).reduce((s, v) => s + v, 0);
                 const METHOD_CONFIG: Record<string, { icon: typeof Banknote; bg: string; color: string }> = {
-                  efectivo: { icon: Banknote, bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+                  efectivo: { icon: Banknote, bg: "bg-primary/10 dark:bg-primary/15", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
                   yape: { icon: Smartphone, bg: "bg-[var(--surface-sunken)]", color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" },
                   plin: { icon: Smartphone, bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/20", color: "text-[var(--data-info-500)] dark:text-[var(--data-info-500)]" },
-                  tarjeta: { icon: CreditCard, bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+                  tarjeta: { icon: CreditCard, bg: "bg-primary/10 dark:bg-primary/15", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
                 };
                 return (
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -890,9 +890,9 @@ export default function CashRegisterTab() {
                       const fullTimeStr = (() => { try { return new Date(item.time).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }); } catch { return ""; } })();
                       const isPositive = ["venta", "ingreso", "apertura"].includes(item.type);
                       const badgeColor = item.type === "apertura" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" :
-                        item.type === "venta" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
+                        item.type === "venta" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
                         item.type === "egreso" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" :
-                        item.type === "ingreso" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
+                        item.type === "ingreso" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
                         "bg-[var(--surface-sunken)] text-[var(--text-primary)]";
                       const isExpanded = expandedMovIdx === idx;
                       return (
@@ -1059,7 +1059,7 @@ export default function CashRegisterTab() {
               const prev5 = diffs.slice(-10, -5).map(d => Math.abs(d));
               const avgLast = last5.reduce((s, v) => s + v, 0) / 5;
               const avgPrev = prev5.reduce((s, v) => s + v, 0) / 5;
-              if (avgLast < avgPrev * 0.8) tendencia = { label: "Mejorando", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" };
+              if (avgLast < avgPrev * 0.8) tendencia = { label: "Mejorando", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" };
               else if (avgLast > avgPrev * 1.2) tendencia = { label: "Empeorando", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" };
               else tendencia = { label: "Estable", color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-zinc-700 dark:text-zinc-400" };
             } else if (diffs.length >= 5) {
@@ -1128,7 +1128,7 @@ export default function CashRegisterTab() {
                     <span>Esperado: {fmt(r.expectedAmount ?? 0)}</span>
                     <span>Cierre: {fmt(r.closingAmount ?? 0)}</span>
                     {withinTolerance ? (
-                      <span className="px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold">Dentro de tolerancia (±S/{cashTolerance})</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold">Dentro de tolerancia (±S/{cashTolerance})</span>
                     ) : (
                       <span className="px-1.5 py-0.5 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-bold">Fuera de tolerancia</span>
                     )}
@@ -1196,7 +1196,7 @@ export default function CashRegisterTab() {
                 </CardTitle>
                 <div className="flex flex-wrap items-center gap-3 text-xs">
                   <div className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full bg-[var(--accent-soft)]"></div>
+                    <div className="h-2 w-2 rounded-full bg-primary/10"></div>
                     <span className="text-[var(--text-secondary)] dark:text-muted">Ingresos</span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -1214,7 +1214,7 @@ export default function CashRegisterTab() {
                     <div key={idx} className="flex flex-col items-center">
                       <div className="relative w-full h-20 flex flex-wrap items-end justify-center gap-0.5 mb-1">
                         <div
-                          className="w-2.5 bg-[var(--accent-soft)] rounded-t transition-all"
+                          className="w-2.5 bg-primary/10 rounded-t transition-all"
                           style={{ height: `${incomeH}px` }}
                           title={`Ingresos: ${fmt(day.income)}`}
                         ></div>
@@ -1250,7 +1250,7 @@ export default function CashRegisterTab() {
                 <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(rows.reduce((s, r) => s + r.totalClosing, 0))}</p>
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Total recaudado</p>
               </div>
-              <div className={cn("border rounded-xl p-3 text-center", totalDiscrepancy > 10 ? "bg-[var(--data-error-50)] border-[var(--data-error-500)]" : totalDiscrepancy > 0 ? "bg-[var(--data-warning-50)] border-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] border-[var(--data-success-500)]/30")}>
+              <div className={cn("border rounded-xl p-3 text-center", totalDiscrepancy > 10 ? "bg-[var(--data-error-50)] border-[var(--data-error-500)]" : totalDiscrepancy > 0 ? "bg-[var(--data-warning-50)] border-[var(--data-warning-500)]" : "bg-primary/10 border-[var(--data-success-500)]/30")}>
                 <p className={cn("text-lg font-extrabold", totalDiscrepancy > 10 ? "text-[var(--data-error-500)]" : totalDiscrepancy > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]")}>{fmt(totalDiscrepancy)}</p>
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Diferencia acumulada</p>
               </div>
@@ -1293,7 +1293,7 @@ export default function CashRegisterTab() {
                           </td>
                           <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                             {isOk ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] text-xs font-bold"><Check className="h-4 w-4" />OK</span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold"><Check className="h-4 w-4" />OK</span>
                             ) : isMinor ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-bold"><AlertTriangle className="h-4 w-4" />Menor</span>
                             ) : (
@@ -1499,7 +1499,7 @@ export default function CashRegisterTab() {
             </div>
 
             {/* Esperado card */}
-            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4 border border-[var(--data-success-500)]/30">
+            <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-4 border border-[var(--data-success-500)]/30">
               <p className="text-xs uppercase tracking-wide font-semibold text-[var(--data-success-500)] mb-1">Esperado en caja</p>
               <p className="text-2xl font-extrabold text-[var(--data-success-500)] tabular-nums mb-2">{fmt(stats?.expectedCash ?? 0)}</p>
               <p className="text-sm text-[var(--data-success-500)]/80">
@@ -1567,7 +1567,7 @@ export default function CashRegisterTab() {
                     {closeAmount && (
                       <div className={cn(
                         "mt-2 rounded-xl p-2 text-center text-xs font-bold",
-                        Number(closeAmount) - (stats?.expectedCash ?? 0) >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)]"
+                        Number(closeAmount) - (stats?.expectedCash ?? 0) >= 0 ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)]"
                       )}>
                         Diferencia: {Number(closeAmount) - (stats?.expectedCash ?? 0) > 0 ? "+" : ""}{fmt(Number(closeAmount) - (stats?.expectedCash ?? 0))}
                       </div>
@@ -1618,7 +1618,7 @@ export default function CashRegisterTab() {
               <div className="flex items-center gap-3">
                 <div className={cn(
                   "h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
-                  mvType === "ingreso" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]/15"
+                  mvType === "ingreso" ? "bg-primary/10" : "bg-[var(--data-error-500)]/15"
                 )}>
                   {mvType === "ingreso"
                     ? <ArrowUp className="h-5 w-5 text-[var(--data-success-500)]" strokeWidth={2} />
@@ -1754,7 +1754,7 @@ export default function CashRegisterTab() {
               {/* Header */}
               <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <Scan className="h-5 w-5 text-[var(--data-success-500)]" strokeWidth={2} />
                   </div>
                   <div>
@@ -1849,7 +1849,7 @@ export default function CashRegisterTab() {
                   <div className={cn(
                     "rounded-xl p-3 text-center border-2",
                     Math.abs(difference) < 0.5
-                      ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                      ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                       : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30"
                   )}>
                     <div className="flex flex-wrap items-center justify-center gap-2 mb-1">
@@ -2169,7 +2169,7 @@ export default function CashRegisterTab() {
               <div className={cn(
                 "rounded-xl p-3 text-center border-2 mb-3",
                 Math.abs(guiadoDiff) < 0.5
-                  ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                  ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                   : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30"
               )}>
                 <div className="flex flex-wrap items-center justify-center gap-2 mb-1">
@@ -2279,7 +2279,7 @@ export default function CashRegisterTab() {
             })()}
             <div className={cn(
               "px-2 sm:px-4 py-1.5 sm:py-2 text-center text-xs font-bold border-b",
-              (detailRegister.difference ?? 0) >= 0 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
+              (detailRegister.difference ?? 0) >= 0 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
             )}>
               Diferencia: {(detailRegister.difference ?? 0) > 0 ? "+" : ""}{fmt(detailRegister.difference ?? 0)}
             </div>

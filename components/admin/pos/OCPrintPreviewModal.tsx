@@ -273,7 +273,7 @@ export default function OCPrintPreviewModal({
           <button
             type="button"
             onClick={handleDownloadPDF}
-            className="flex-1 py-2 bg-[var(--accent-soft)] text-white rounded-lg text-sm font-medium hover:bg-[var(--accent-soft)] transition-colors"
+            className="flex-1 py-2 bg-primary/10 text-white rounded-lg text-sm font-medium hover:bg-primary/10 transition-colors"
           >
             Descargar PDF
           </button>

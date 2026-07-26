@@ -190,7 +190,7 @@ function SortableCategoryItem({
           className={cn(
             "h-9 w-9 rounded-md flex items-center justify-center shrink-0 transition-all",
             isVisible
-              ? "bg-primary/20 text-primary hover:bg-primary/30"
+              ? "bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/30"
               : "bg-zinc-800 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300",
           )}
           title={isVisible ? "Ocultar módulo" : "Mostrar módulo"}
@@ -767,7 +767,7 @@ export default function SidebarConfigurator({
                                   className={cn(
                                     "h-4 w-4 rounded flex items-center justify-center shrink-0 border",
                                     isSubVisible
-                                      ? "bg-primary/25 border-primary/50 text-primary"
+                                      ? "bg-primary/25 border-primary/50 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                                       : "bg-zinc-800 border-zinc-600 text-transparent",
                                   )}
                                 >

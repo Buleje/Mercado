@@ -751,7 +751,7 @@ function DashboardPreview() {
                 buleje.pe/admin
               </p>
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
               <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
@@ -844,7 +844,7 @@ function DashboardPreview() {
                         o.status === "paid"
                           ? "bg-[var(--data-success-500,var(--accent))]/15 text-[var(--data-success-600,var(--accent))]"
                           : o.status === "confirmed"
-                          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                          ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-600,var(--data-warning-500))]",
                       )}
                     >
@@ -915,10 +915,10 @@ function SwitchChip({
   return (
     <a
       href={href}
-      className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 transition-all group"
+      className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:bg-primary/10/30 transition-all group"
     >
       <div className="flex items-center gap-3 min-w-0">
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0 group-hover:bg-[var(--accent-600,var(--accent))] group-hover:text-white transition-colors">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0 group-hover:bg-[var(--accent-600,var(--accent))] group-hover:text-white transition-colors">
           {icon}
         </span>
         <div className="min-w-0">

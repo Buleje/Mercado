@@ -235,7 +235,7 @@ export default function BreakEvenDashboard() {
               "rounded-xl border p-4 flex items-start gap-3",
               stats.reached
                 ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5"
-                : "border-[var(--accent)]/30 bg-[var(--accent-soft)]",
+                : "border-[var(--accent)]/30 bg-primary/10",
             )}
           >
             <span
@@ -271,7 +271,7 @@ export default function BreakEvenDashboard() {
 
           {/* Ritmo de ventas (card secundario) */}
           <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-center gap-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <TrendingUp className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             </span>
             <div className="min-w-0 flex-1">

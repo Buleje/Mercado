@@ -42,9 +42,9 @@ const TYPE_COLORS: Record<PostType, string> = {
   oferta:
     "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
   nuevo:
-    "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   receta:
-    "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   motivacional:
     "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
@@ -330,7 +330,7 @@ export default function SocialPostGenerator() {
               className={cn(
                 "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition",
                 copied
-                  ? "bg-[var(--accent-soft)] text-white"
+                  ? "bg-primary/10 text-white"
                   : "bg-[var(--data-warning-500)] text-white hover:bg-[#e08c4a]"
               )}
             >

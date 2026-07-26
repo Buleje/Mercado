@@ -248,7 +248,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setEditing(true)}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
             aria-label="Editar"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -350,7 +350,7 @@ export default function DeliveryZoneManager() {
             className={cn(
               "flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-[var(--dur-fast)]",
               saved
-                ? "bg-[var(--accent-soft)] text-white"
+                ? "bg-primary/10 text-white"
                 : "bg-primary hover:bg-[#235c42] text-white",
               saving && "opacity-70 cursor-not-allowed"
             )}

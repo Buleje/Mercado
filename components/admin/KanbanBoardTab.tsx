@@ -14,14 +14,14 @@ type Task = {
 
 const PRIORITY_CONFIG: Record<Priority, { label: string; color: string }> = {
   baja: { label: "Baja", color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]" },
-  media: { label: "Media", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  media: { label: "Media", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" },
   alta: { label: "Alta", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
   urgente: { label: "Urgente", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" },
 };
 const COL_CONFIG: Record<Column, { label: string; color: string; bg: string; icon: typeof Clock }> = {
   pendiente: { label: "Pendiente", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/10", icon: Clock },
-  "en-progreso": { label: "En Progreso", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ListChecks },
-  completado: { label: "Completado", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+  "en-progreso": { label: "En Progreso", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: ListChecks },
+  completado: { label: "Completado", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: CheckCircle },
 };
 
 /* ── Seed Data ── */

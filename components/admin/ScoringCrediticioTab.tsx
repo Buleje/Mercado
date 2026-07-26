@@ -101,7 +101,7 @@ const LEVEL_CONFIG: Record<ScoreLevel, {
 }> = {
   EXCELENTE: {
     label: "Excelente",
-    badge: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    badge: "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     bar: "var(--accent)",
     icon: CheckCircle,
   },

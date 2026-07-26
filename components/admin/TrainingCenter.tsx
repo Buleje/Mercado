@@ -211,7 +211,7 @@ export default function TrainingCenter() {
               className={cn(
                 "rounded-xl border transition",
                 isDone
-                  ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)]"
+                  ? "border-[var(--data-success-500)]/30 bg-primary/10 dark:border-[var(--data-success-500)]/30 dark:bg-primary/15"
                   : "border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900"
               )}
             >

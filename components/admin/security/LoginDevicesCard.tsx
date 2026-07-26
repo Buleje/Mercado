@@ -137,7 +137,7 @@ export default function LoginDevicesCard() {
                 <p className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
                   {dev.label}
                   {i === 0 && (
-                    <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
                       Este dispositivo
                     </span>
                   )}
@@ -186,7 +186,7 @@ export default function LoginDevicesCard() {
                 key={t.id}
                 className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)]">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                   <ShieldCheck className="h-4.5 w-4.5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
                 </span>
                 <div className="min-w-0 flex-1">

@@ -122,7 +122,7 @@ export default function SeasonalityTab() {
                   <div className="w-10 text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.shortMonth}</div>
                   <div className="flex-1">
                     <div className="w-full h-6 bg-gray-100 dark:bg-surface rounded-lg overflow-hidden relative">
-                      <div className={cn("h-full rounded-lg transition-all", m.sales === maxSales ? "bg-[var(--accent-soft)]" : m.sales === minSales ? "bg-[var(--data-error-500)]" : "bg-primary/70")} style={{ width: `${pct}%` }} />
+                      <div className={cn("h-full rounded-lg transition-all", m.sales === maxSales ? "bg-primary/10" : m.sales === minSales ? "bg-[var(--data-error-500)]" : "bg-primary/70")} style={{ width: `${pct}%` }} />
                       <span className="absolute inset-0 flex items-center justify-end pr-2 text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(m.sales)}</span>
                     </div>
                   </div>
@@ -162,7 +162,7 @@ export default function SeasonalityTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.product}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{p.category}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <div className="flex flex-wrap gap-1">{p.peakMonths.map(m => <span key={m} className="px-1.5 py-0.5 rounded bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs font-bold">{m}</span>)}</div>
+                      <div className="flex flex-wrap gap-1">{p.peakMonths.map(m => <span key={m} className="px-1.5 py-0.5 rounded bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs font-bold">{m}</span>)}</div>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap gap-1">{p.lowMonths.slice(0, 3).map(m => <span key={m} className="px-1.5 py-0.5 rounded bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-xs font-bold">{m}</span>)}</div>
@@ -173,7 +173,7 @@ export default function SeasonalityTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap gap-0.5 justify-center">
                         {["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"].map(m => (
-                          <div key={m} title={m} className={cn("w-3 h-3 rounded-sm", p.peakMonths.includes(m) ? "bg-[var(--accent-soft)]" : p.lowMonths.includes(m) ? "bg-[var(--data-error-500)]" : "bg-gray-200 dark:bg-surface")} />
+                          <div key={m} title={m} className={cn("w-3 h-3 rounded-sm", p.peakMonths.includes(m) ? "bg-primary/10" : p.lowMonths.includes(m) ? "bg-[var(--data-error-500)]" : "bg-gray-200 dark:bg-surface")} />
                         ))}
                       </div>
                     </td>

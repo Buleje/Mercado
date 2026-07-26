@@ -111,7 +111,7 @@ export default function DynamicPricingSuggestionsCard({
       {/* Header */}
       <div className="px-5 py-4 sm:px-6 border-b border-[var(--rule-soft)]">
         <div className="flex items-center gap-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Zap className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <div className="flex-1">
@@ -145,7 +145,7 @@ export default function DynamicPricingSuggestionsCard({
       <ul className="divide-y divide-[var(--rule-soft)]">
         {visible.length === 0 && (
           <li className="px-5 sm:px-6 py-8 text-center">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] mb-3">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-3">
               <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             </span>
             <p className="text-sm font-bold text-[var(--text-primary)]">
@@ -168,7 +168,7 @@ export default function DynamicPricingSuggestionsCard({
             config.tone === "warn"
               ? "bg-[var(--data-warning,_#eab308)]/10 text-[var(--data-warning,_#eab308)]"
               : config.tone === "accent"
-              ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+              ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
               : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
           return (
             <li key={sug.productId} className="px-5 sm:px-6 py-4">

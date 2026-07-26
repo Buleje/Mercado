@@ -61,7 +61,7 @@ export default function MarketplaceModule({ initialTab }: { initialTab?: string 
       >
         <button
           onClick={refreshKpis}
-          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
+          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
           title="Actualizar"
         >
           <RefreshCw className={cn("h-4 w-4", kpisLoading && "animate-spin")} />

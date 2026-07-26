@@ -21,12 +21,12 @@ const DEFAULT_COLS = 6;
 
 const CATEGORIES = [
   { name: "Abarrotes", color: "bg-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
-  { name: "Bebidas", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  { name: "Bebidas", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" },
   { name: "Lacteos", color: "bg-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
   { name: "Limpieza", color: "bg-[var(--data-info-500)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)] dark:text-[var(--data-info-500)]" },
   { name: "Snacks", color: "bg-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
   { name: "Carnes", color: "bg-[var(--data-error-500)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
-  { name: "Frutas", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  { name: "Frutas", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" },
   { name: "Granos", color: "bg-stone-200 text-stone-800 dark:bg-stone-700 dark:text-stone-100" },
   { name: "Higiene", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]" },
   { name: "Panaderia", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]" },
@@ -152,7 +152,7 @@ export default function WarehouseLayoutEditor() {
             onClick={handleSave}
             className={cn(
               "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-white transition",
-              saved ? "bg-[var(--accent-soft)]" : "bg-primary hover:bg-primary-dark"
+              saved ? "bg-primary/10" : "bg-primary hover:bg-primary-dark"
             )}
           >
             <Save className="h-4 w-4" />

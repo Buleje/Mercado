@@ -72,7 +72,7 @@ export default function FiadoMarketplaceToggle() {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <span
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)]"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10"
         aria-hidden="true"
       >
         <Wallet className="h-5 w-5 text-[var(--accent)]" strokeWidth={2} />
@@ -82,7 +82,7 @@ export default function FiadoMarketplaceToggle() {
         <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
           Mostrar “Acepta fiado” en el marketplace
           {enabled && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
               <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
               Activo
             </span>

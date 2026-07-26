@@ -36,8 +36,8 @@ const PRIORITY_CONFIG: Record<Priority, { label: string; dot: string; badge: str
   },
   baja: {
     label: "Baja",
-    dot: "bg-[var(--accent-soft)]",
-    badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    dot: "bg-primary/10",
+    badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   },
 };
 
@@ -50,12 +50,12 @@ const COL_CONFIG: Record<Column, { label: string; color: string; bg: string }> =
   doing: {
     label: "En proceso",
     color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    bg: "bg-primary/10 dark:bg-primary/15",
   },
   done: {
     label: "Listo",
     color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    bg: "bg-primary/10 dark:bg-primary/15",
   },
 };
 
@@ -354,7 +354,7 @@ export default function TaskKanban() {
                             <div className="flex-1" />
                             <button
                               onClick={() => startEdit(task)}
-                              className="p-1 rounded hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] dark:hover:text-[var(--data-success-500)] transition-colors"
+                              className="p-1 rounded hover:bg-primary/10 dark:hover:bg-primary/15 text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] dark:hover:text-[var(--data-success-500)] transition-colors"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>

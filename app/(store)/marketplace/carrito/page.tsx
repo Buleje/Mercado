@@ -111,7 +111,7 @@ function ItemRow({
               type="button"
               onClick={onSave}
               aria-label="Guardar para después"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-primary/10 transition-colors"
             >
               <Bookmark className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             </button>
@@ -170,7 +170,7 @@ function ItemRow({
 function TrustPill({ icon: Icon, label }: { icon: typeof Truck; label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-1.5 pr-3 h-8 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] shadow-sm shrink-0">
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
         <Icon className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
       </span>
       <span className="whitespace-nowrap">{label}</span>
@@ -510,7 +510,7 @@ export default function CarritoPage() {
                     href={`/marketplace/${group.storeSlug}`}
                     className="flex items-center gap-2.5 px-4 py-3 border-b border-[var(--rule-soft)] group/store hover:bg-[var(--surface-sunken)]/60 transition-colors"
                   >
-                    <span className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-[length:var(--ts-xs)] font-bold uppercase shrink-0 ring-1 ring-[var(--rule-soft)]">
+                    <span className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-xs)] font-bold uppercase shrink-0 ring-1 ring-[var(--rule-soft)]">
                       {storeLogos[group.storeSlug] ? (
                         <Image
                           src={storeLogos[group.storeSlug]!}

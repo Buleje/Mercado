@@ -199,7 +199,7 @@ export function AdminMobileDrawer({
                   className={cn(
                     "w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors",
                     !selectedCategory
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface"
                   )}
                 >
@@ -221,7 +221,7 @@ export function AdminMobileDrawer({
                       className={cn(
                         "w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors",
                         selectedCategory === category.id
-                          ? "bg-primary/10 text-primary"
+                          ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface"
                       )}
                     >
@@ -419,7 +419,7 @@ export function AdminMobileDrawer({
                   className={cn(
                     "flex-1 flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium transition-all",
                     tab === s.id
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
                   )}
                 >
@@ -446,7 +446,7 @@ export function AdminMobileDrawer({
               <div className="relative">
                 <button
                   onClick={onToggleShowAddShortcut}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 rounded-lg text-sm font-medium text-primary/70 hover:bg-primary/5 transition-all border border-dashed border-primary/30"
+                  className="w-full flex items-center gap-2.5 px-4 py-2 rounded-lg text-sm font-medium text-[var(--accent-ink)] dark:text-[var(--accent)]/70 hover:bg-primary/5 transition-all border border-dashed border-primary/30"
                 >
                   <Plus className="h-4 w-4" /> Agregar acceso
                 </button>
@@ -480,7 +480,7 @@ export function AdminMobileDrawer({
           <Link
             href="/"
             target="_blank"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-all"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 dark:hover:bg-primary/20 transition-all"
           >
             <Store className="h-5 w-5" /> Tienda
           </Link>

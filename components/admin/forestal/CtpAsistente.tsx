@@ -74,7 +74,7 @@ export default function CtpAsistente() {
         title="Preguntá al Libro en lenguaje natural"
         className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition-colors ${
           open
-            ? "border-[var(--accent)] bg-primary/10 text-primary dark:bg-primary/20"
+            ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/20"
             : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
         }`}
       >

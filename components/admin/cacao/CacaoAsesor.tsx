@@ -95,7 +95,7 @@ export default function CacaoAsesor() {
         <>
           {/* Notificación: señal fuerte + stock disponible */}
           {a.fuerza === "fuerte" && a.signal !== "neutral" && (data?.local?.stockKg ?? 0) > 0 && (
-            <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-4">
+            <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--accent)] bg-primary/10 p-4">
               <Bell className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
               <div className="text-sm leading-relaxed text-[var(--text-primary)]">
                 <b>Notificación:</b> señal {a.signal === "vender" ? "FUERTE de VENTA" : "FUERTE de AGUANTAR"} con{" "}
@@ -178,7 +178,7 @@ export default function CacaoAsesor() {
           )}
 
           {/* Narrativa IA */}
-          <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-5">
+          <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10/30 p-5">
             <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--accent)]"><Sparkles className="h-4 w-4" /> Lectura de la IA</h3>
             {data?.narrative ? (
               <p className="text-sm leading-relaxed text-[var(--text-primary)]">{data.narrative}</p>
@@ -381,7 +381,7 @@ export default function CacaoAsesor() {
               <ol className="space-y-2">
                 {a.plan.map((t, i) => (
                   <li key={i} className="flex items-center gap-3 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm">
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-xs font-extrabold text-[var(--accent)]">{i + 1}</span>
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-extrabold text-[var(--accent)]">{i + 1}</span>
                     <span className="min-w-0 flex-1">
                       <b className="text-[var(--text-primary)]">{t.pct}%{t.kg != null ? ` (${t.kg} kg)` : ""}</b>
                       <span className="text-[var(--text-secondary)]"> — {t.cuando}</span>

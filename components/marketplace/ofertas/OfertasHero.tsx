@@ -50,7 +50,7 @@ export default function OfertasHero({ dealCount, maxDiscount, storeCount, source
       <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-6 sm:px-6 sm:pt-12 sm:pb-8 lg:px-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent-dark)] dark:text-[var(--accent)]">
+            <p className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <BadgePercent className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
               Ofertas · {BRAND_GEO.city}
             </p>
@@ -74,7 +74,7 @@ export default function OfertasHero({ dealCount, maxDiscount, storeCount, source
               >
                 <span
                   aria-hidden
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-muted)] text-[var(--accent-dark)] dark:text-[var(--accent)]"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 >
                   <s.Icon className="h-4 w-4" strokeWidth={2} />
                 </span>

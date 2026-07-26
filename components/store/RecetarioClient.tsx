@@ -526,7 +526,7 @@ export default function RecetarioClient({
           keyword. El H1 único y canónico es el sr-only del server (page.tsx). */}
       <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-6">
         <div className="flex items-start gap-4 flex-wrap">
-          <div className="hidden sm:inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+          <div className="hidden sm:inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
             <ChefHat className="h-7 w-7" strokeWidth={1.75} aria-hidden />
           </div>
           <div className="min-w-0 flex-1">

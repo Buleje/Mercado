@@ -56,7 +56,7 @@ export default function OCPDFExport({ oc, supplier }: OCPDFExportProps) {
       <button
         type="button"
         onClick={handleWhatsApp}
-        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-xs font-bold transition-colors"
+        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15 text-xs font-bold transition-colors"
         title="Enviar por WhatsApp"
       >
         <MessageCircle className="h-3.5 w-3.5" />

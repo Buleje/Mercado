@@ -74,7 +74,7 @@ export default function PriceSuggestionBadge({
   const _Icon = suggestion.action === "subir" ? TrendingUp : TrendingDown;
   const colors = suggestion.action === "subir"
     ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
-    : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
+    : "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
 
   return (
     <div className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[length:var(--ts-2xs)] font-bold", colors, className)}>

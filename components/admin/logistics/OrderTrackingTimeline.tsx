@@ -187,7 +187,7 @@ export default function OrderTrackingTimeline({
                 )}>
                   {step.label}
                   {step.current && (
-                    <span className="ml-1.5 text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                    <span className="ml-1.5 text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-1.5 py-0.5 rounded-full">
                       Actual
                     </span>
                   )}

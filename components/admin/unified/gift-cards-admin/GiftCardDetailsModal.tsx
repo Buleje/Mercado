@@ -106,7 +106,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
               </p>
               <button
                 onClick={copyCode}
-                className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-primary hover:bg-primary/10 transition-colors"
+                className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                 title="Copiar código"
               >
                 {copied ? <CheckCircle className="h-4 w-4 text-[var(--data-success-500)]" /> : <Copy className="h-4 w-4" />}

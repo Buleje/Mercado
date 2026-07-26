@@ -28,10 +28,10 @@ type Return = {
 
 const STATUS_CONFIG: Record<ReturnStatus, { label: string; color: string; step: number }> = {
   solicitada:  { label: "Solicitada",  color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",    step: 0 },
-  aprobada:    { label: "Aprobada",    color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",          step: 1 },
+  aprobada:    { label: "Aprobada",    color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",          step: 1 },
   recogida:    { label: "En recojo",   color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",  step: 2 },
   inspeccion:  { label: "Inspección",  color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",  step: 3 },
-  completada:  { label: "Completada",  color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", step: 4 },
+  completada:  { label: "Completada",  color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]", step: 4 },
   rechazada:   { label: "Rechazada",   color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",              step: -1 },
 };
 
@@ -121,7 +121,7 @@ export default function ReturnLogisticsTab() {
               estado: STATUS_CONFIG[r.status].label, monto: r.refundAmount,
               solicitud: r.requestDate, resolucion: r.resolvedDate ?? "-",
             })), "devoluciones")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition"
           >
             <Download className="h-3.5 w-3.5" /> CSV
           </button>
@@ -230,7 +230,7 @@ export default function ReturnLogisticsTab() {
                                   done
                                     ? "bg-primary border-primary text-white"
                                     : current
-                                    ? "bg-primary/10 border-primary text-primary"
+                                    ? "bg-primary/10 border-primary text-[var(--accent-ink)] dark:text-[var(--accent)]"
                                     : "bg-gray-100 dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-tertiary)]"
                                 )}>
                                   <Icon className="h-3.5 w-3.5" />
@@ -263,7 +263,7 @@ export default function ReturnLogisticsTab() {
 
                     {/* Notes */}
                     {r.notes && (
-                      <div className="flex items-start gap-2 text-xs bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-3 py-2 rounded-xl">
+                      <div className="flex items-start gap-2 text-xs bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-3 py-2 rounded-xl">
                         <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                         {r.notes}
                       </div>

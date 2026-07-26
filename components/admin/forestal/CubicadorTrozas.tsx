@@ -170,7 +170,7 @@ export default function CubicadorTrozas() {
               type="button"
               onClick={voz.toggle}
               aria-pressed={voz.listening}
-              className={`inline-flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 transition ${voz.listening ? "animate-pulse border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]" : "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] hover:brightness-95"}`}
+              className={`inline-flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 transition ${voz.listening ? "animate-pulse border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]" : "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:brightness-95"}`}
             >
               {voz.listening ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
             </button>
@@ -295,7 +295,7 @@ export default function CubicadorTrozas() {
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--accent-soft)] font-bold text-[var(--text-primary)]">
+                <tr className="border-t-2 border-[var(--rule-base)] bg-primary/10 font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
                   <td className="px-3 py-2.5" colSpan={5}>Total · {totales.trozas} {totales.trozas === 1 ? "troza" : "trozas"}</td>
                   <td className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]">{fmtM3(totales.m3)} m³</td>
                   <td />

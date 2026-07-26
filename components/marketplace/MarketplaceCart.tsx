@@ -512,7 +512,7 @@ export default function MarketplaceCart({
                         )}
                         <div className={`flex items-center gap-1.5 ${isActive ? "text-primary" : isDone ? "text-primary/70" : "text-[var(--text-tertiary)] dark:text-gray-500"}`}>
                           <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-black ${
-                            isActive ? "bg-primary text-white" : isDone ? "bg-primary/20 text-primary" : "bg-[var(--rule-soft)] dark:bg-gray-700 text-[var(--text-tertiary)] dark:text-gray-500"
+                            isActive ? "bg-primary text-white" : isDone ? "bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--rule-soft)] dark:bg-gray-700 text-[var(--text-tertiary)] dark:text-gray-500"
                           }`}>
                             {isDone ? "✓" : num}
                           </div>
@@ -758,7 +758,7 @@ export default function MarketplaceCart({
                       }`}
                     >
                       <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${
-                        paymentMethod === "efectivo" ? "bg-primary/10 text-primary" : "bg-[var(--surface-sunken)] dark:bg-gray-800 text-[var(--text-tertiary)]"
+                        paymentMethod === "efectivo" ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--surface-sunken)] dark:bg-gray-800 text-[var(--text-tertiary)]"
                       }`}>
                         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />

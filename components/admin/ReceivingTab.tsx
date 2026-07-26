@@ -51,15 +51,15 @@ type Reception = {
 };
 
 const STATUS_MAP: Record<ReceptionStatus, { label: string; color: string; bg: string }> = {
-  programada:   { label: "Programada",  color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  programada:   { label: "Programada",  color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
   "en-proceso": { label: "En proceso",  color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  aceptada:     { label: "Aceptada",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  aceptada:     { label: "Aceptada",    color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   parcial:      { label: "Parcial",     color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
   rechazada:    { label: "Rechazada",   color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
 
 const COND_MAP: Record<ItemCondition, { label: string; color: string; bg: string }> = {
-  ok:       { label: "OK",       color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  ok:       { label: "OK",       color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   "dañado": { label: "Dañado",   color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20" },
   vencido:  { label: "Vencido",  color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
   faltante: { label: "Faltante", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
@@ -416,7 +416,7 @@ export default function ReceivingTab() {
                         ) : null}
                       </td>
                       <td className="px-4 py-3">
-                        <button onClick={() => setDetail(r)} className="p-1 rounded-lg hover:bg-primary/10 text-primary transition">
+                        <button onClick={() => setDetail(r)} className="p-1 rounded-lg hover:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] transition">
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                       </td>

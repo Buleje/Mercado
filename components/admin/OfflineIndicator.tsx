@@ -56,8 +56,8 @@ export default function OfflineIndicator() {
             ${bannerState === "offline"
               ? "bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-amber-950"
               : bannerState === "syncing"
-              ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] text-white"
-              : "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] text-white"
+              ? "bg-primary/10 dark:bg-primary/10 text-white"
+              : "bg-primary/10 dark:bg-primary/10 text-white"
             }
           `}
           role="status"

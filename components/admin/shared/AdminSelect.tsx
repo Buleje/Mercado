@@ -182,7 +182,7 @@ function AdminSelectItemInner({ item }: { item: AdminSelectOption }) {
       className={cn(
         "relative flex items-center gap-2.5 px-2.5 py-2 rounded-md outline-none cursor-pointer",
         "data-[highlighted]:bg-[var(--surface-sunken)]",
-        "data-[state=checked]:bg-[var(--accent-soft)]",
+        "data-[state=checked]:bg-primary/10",
         "data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed",
       )}
     >

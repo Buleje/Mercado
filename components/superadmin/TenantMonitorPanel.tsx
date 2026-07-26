@@ -284,7 +284,7 @@ export default function TenantMonitorPanel() {
 // ── Sub-Components ────────────────────────────────────────────────────────────
 
 const STAT_COLORS: Record<string, string> = {
-  teal: "text-[var(--accent-dark)] bg-teal-50",
+  teal: "text-[var(--accent-dark)] dark:text-[var(--accent)] bg-teal-50",
   blue: "text-[var(--data-success-500)] bg-[var(--data-success-50)]",
   purple: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]",
   orange: "text-[#0d9488] bg-[#0d9488]",

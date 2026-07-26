@@ -85,7 +85,7 @@ export default async function JuntaPage({
           </p>
 
           {junta.productLabel && (
-            <div className="mt-6 border-l-4 border-[var(--accent)] bg-[var(--accent-soft)] px-4 py-3">
+            <div className="mt-6 border-l-4 border-[var(--accent)] bg-primary/10 px-4 py-3">
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
                 Esta junta es para
               </p>
@@ -106,7 +106,7 @@ export default async function JuntaPage({
                   key={i}
                   className="flex gap-4 border-b border-[var(--rule-soft)] py-4"
                 >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center bg-[var(--accent-soft)] text-base font-black tabular-nums text-[var(--accent)]">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center bg-primary/10 text-base font-black tabular-nums text-[var(--accent)]">
                     {i + 1}
                   </span>
                   <p className="text-base leading-relaxed text-[var(--text-secondary)]">

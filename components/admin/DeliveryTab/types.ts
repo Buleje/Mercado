@@ -89,7 +89,7 @@ export const ROUTE_STATUS_LABELS: Record<RouteStatus, string> = {
 export const ROUTE_STATUS_COLORS: Record<RouteStatus, string> = {
   planned: "bg-slate-500",
   in_progress: "bg-[#00A0A0]",
-  completed: "bg-[var(--accent-soft)]",
+  completed: "bg-primary/10",
   cancelled: "bg-[var(--data-error-500)]",
 };
 

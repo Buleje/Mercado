@@ -157,7 +157,7 @@ function ShiftCloseModal({
                 <div className="flex items-center justify-center gap-2">
                   <p className="text-4xl font-extrabold text-primary tracking-tight">{fmt(summary.totalVendido)}</p>
                 </div>
-                <div className="inline-flex items-center gap-1.5 mt-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold">
+                <div className="inline-flex items-center gap-1.5 mt-2 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1 rounded-full text-xs font-bold">
                   <History className="h-3.5 w-3.5" />
                   {summary.numVentas} {summary.numVentas === 1 ? "operación" : "operaciones"} de venta
                 </div>
@@ -168,10 +168,10 @@ function ShiftCloseModal({
                 <p className="text-xs font-extrabold text-[var(--text-tertiary)] pl-1">Desglose de ingresos</p>
 
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="col-span-2 bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-4 flex items-center justify-between group relative overflow-hidden">
-                    <div className="absolute -right-4 -top-4 h-16 w-16 bg-[var(--accent-soft)] rounded-full blur-xl group-hover:bg-[var(--accent-soft)] transition-all" />
+                  <div className="col-span-2 bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-4 flex items-center justify-between group relative overflow-hidden">
+                    <div className="absolute -right-4 -top-4 h-16 w-16 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/10 transition-all" />
                     <div className="flex items-center gap-3 relative z-10">
-                      <div className="h-10 w-10 bg-[var(--accent-soft)] rounded-full flex items-center justify-center">
+                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
                         <Banknote className="h-5 w-5 text-[var(--data-success-500)]" />
                       </div>
                       <div>
@@ -189,15 +189,15 @@ function ShiftCloseModal({
                     <p className="text-base sm:text-lg font-extrabold text-[var(--text-secondary)]">{fmt(summary.yape)}</p>
                   </div>
 
-                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3 sm:p-4">
+                  <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="h-2 w-2 rounded-full bg-[var(--accent-soft)]" />
+                      <div className="h-2 w-2 rounded-full bg-primary/10" />
                       <p className="text-xs font-bold text-[var(--data-success-500)]/80">Plin</p>
                     </div>
                     <p className="text-base sm:text-lg font-extrabold text-[var(--data-success-500)]">{fmt(summary.plin)}</p>
                   </div>
 
-                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3 sm:p-4">
+                  <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <CreditCard className="h-3 w-3 text-[var(--data-success-500)]" />
                       <p className="text-xs font-bold text-[var(--data-success-500)]/80">Tarjeta / POS</p>
@@ -336,7 +336,7 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
             className={cn(
               "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors",
               turnoAbierto
-                ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]/80"
+                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10/80"
                 : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200",
             )}
             title={turnoAbierto ? "Turno abierto — click para cerrar" : "Sin turno — click para abrir uno"}

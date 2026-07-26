@@ -78,7 +78,7 @@ export default function TicketList({
           <h2 className="font-bold text-sm text-[var(--text-primary)]">Soporte</h2>
           <span
             aria-label={`${activeCount} tickets activos`}
-            className="text-xs bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full"
+            className="text-xs bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold px-2 py-0.5 rounded-full"
           >
             {activeCount}
           </span>

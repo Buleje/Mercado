@@ -120,7 +120,7 @@ export default function OrderSuccessModal() {
           </button>
 
           <div className="flex items-start gap-3.5 pr-12">
-            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <CheckBadge className="h-7 w-7" />
             </span>
             <div className="min-w-0">
@@ -187,7 +187,7 @@ export default function OrderSuccessModal() {
             {/* ── Columna derecha: total + items + contacto ────── */}
             <section className="px-5 sm:px-6 py-4 sm:py-5 space-y-4">
               {/* Total + nº pedido */}
-              <div className="flex items-center justify-between gap-3 rounded-2xl bg-[var(--accent-soft)] px-4 py-3">
+              <div className="flex items-center justify-between gap-3 rounded-2xl bg-primary/10 px-4 py-3">
                 <div className="min-w-0">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)] leading-tight">
                     Total

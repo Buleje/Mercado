@@ -146,7 +146,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
               {/* Header */}
               <div className="flex items-start justify-between px-6 py-4 border-b border-[var(--rule-soft)]">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                     <Package className="h-5 w-5" />
                   </span>
                   <div>

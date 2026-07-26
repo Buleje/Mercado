@@ -57,7 +57,7 @@ const EMPTY: StreaksData = {
 
 // Paleta unificada (sin rose/purple decorativos).
 const TONE_CHIP =
-  "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/25";
+  "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-[var(--accent)]/25";
 const TONE_BAR = "bg-[var(--accent)]";
 
 // ─── Labels de día de la semana (L M M J V S D) ──────────────────────────────

@@ -259,7 +259,7 @@ export default function TaxTab() {
                     </td>
                     <td className="px-3 py-3 text-center hidden sm:table-cell">
                       {line.status === "pendiente" && (
-                        <button onClick={() => handleDeclare(line.id)} className="text-xs px-2.5 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-semibold transition-colors">Declarar</button>
+                        <button onClick={() => handleDeclare(line.id)} className="text-xs px-2.5 py-1 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 font-semibold transition-colors">Declarar</button>
                       )}
                       {line.status === "declarado" && <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] mx-auto" />}
                     </td>

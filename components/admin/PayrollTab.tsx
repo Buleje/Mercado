@@ -87,7 +87,7 @@ export default function PayrollTab() {
 
   const STATUS_META: Record<PayrollStatus, { label: string; color: string; bg: string }> = {
     pendiente:   { label: "Pendiente",   color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30"   },
-    pagado:      { label: "Pagado",      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"},
+    pagado:      { label: "Pagado",      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",bg: "bg-primary/10 dark:bg-primary/15"},
     observacion: { label: "Observación", color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30"        },
   };
 
@@ -106,7 +106,7 @@ export default function PayrollTab() {
             <Download className="h-4 w-4" /> Exportar
           </button>
           {totals.pending > 0 && (
-            <button onClick={markAllPaid} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-semibold hover:bg-[var(--accent-soft)] transition-colors">
+            <button onClick={markAllPaid} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-white text-sm font-semibold hover:bg-primary/10 transition-colors">
               <CheckCircle className="h-4 w-4" /> Pagar todos ({totals.pending})
             </button>
           )}
@@ -124,7 +124,7 @@ export default function PayrollTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
+        <div className="rounded-xl bg-primary/10 dark:bg-primary/15 p-4">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Total bruto</p>
           <p className="text-lg font-extrabold text-[var(--data-success-500)]">{fmt(totals.gross)}</p>
         </div>
@@ -132,11 +132,11 @@ export default function PayrollTab() {
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Descuentos (AFP+IR)</p>
           <p className="text-lg font-extrabold text-[var(--data-warning-500)]">{fmt(totals.afp + totals.tax)}</p>
         </div>
-        <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
+        <div className="rounded-xl bg-primary/10 dark:bg-primary/15 p-4">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Total neto a pagar</p>
           <p className="text-lg font-extrabold text-[var(--data-success-500)]">{fmt(totals.net)}</p>
         </div>
-        <div className={cn("rounded-xl p-4", totals.pending > 0 ? "bg-[var(--data-warning-50)] dark:bg-amber-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]")}>
+        <div className={cn("rounded-xl p-4", totals.pending > 0 ? "bg-[var(--data-warning-50)] dark:bg-amber-950/30" : "bg-primary/10 dark:bg-primary/15")}>
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{totals.pending > 0 ? "Pagos pendientes" : "Todo pagado"}</p>
           <p className={cn("text-lg font-extrabold", totals.pending > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]")}>{totals.pending > 0 ? `${totals.pending} empleado(s)` : `${totals.paid} pagados`}</p>
         </div>
@@ -190,11 +190,11 @@ export default function PayrollTab() {
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap items-center justify-center gap-2">
-                        <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors" title="Ver detalle">
+                        <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors" title="Ver detalle">
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                         {p.status === "pendiente" && (
-                          <button onClick={() => markPaid(p.id)} className="px-2.5 py-1 text-xs rounded-lg bg-[var(--accent-soft)] text-white font-semibold hover:bg-[var(--accent-soft)] transition-colors">
+                          <button onClick={() => markPaid(p.id)} className="px-2.5 py-1 text-xs rounded-lg bg-primary/10 text-white font-semibold hover:bg-primary/10 transition-colors">
                             Pagar
                           </button>
                         )}
@@ -246,7 +246,7 @@ export default function PayrollTab() {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {detail.status === "pendiente" && (
-                <button onClick={() => markPaid(detail.id)} className="flex-1 py-2.5 text-sm rounded-lg bg-[var(--accent-soft)] text-white font-semibold hover:bg-[var(--accent-soft)]">Marcar como pagado</button>
+                <button onClick={() => markPaid(detail.id)} className="flex-1 py-2.5 text-sm rounded-lg bg-primary/10 text-white font-semibold hover:bg-primary/10">Marcar como pagado</button>
               )}
               {detail.status === "pagado" && (
                 <p className="text-xs text-[var(--data-success-500)] font-semibold text-center w-full">Pagado el {detail.paymentDate}</p>

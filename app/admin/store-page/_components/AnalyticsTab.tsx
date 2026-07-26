@@ -124,12 +124,12 @@ function AnalyticsContent({ data }: { data: Analytics }) {
                 title={`${d.day}: ${d.visits} visitas, ${d.conversions} conversiones`}
               >
                 <div
-                  className="bg-[var(--accent-soft)] rounded-t hover:bg-[var(--accent-soft)] transition-colors"
+                  className="bg-primary/10 rounded-t hover:bg-primary/10 transition-colors"
                   style={{ height: `${h}%`, minHeight: "2px" }}
                 />
                 {d.conversions > 0 && (
                   <div
-                    className="bg-[var(--accent-soft)] rounded-t"
+                    className="bg-primary/10 rounded-t"
                     style={{
                       height: `${Math.max(
                         2,

@@ -485,7 +485,7 @@ export default function ChatIAClean({
 function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-8 py-16 sm:py-20 flex flex-col items-center text-center">
-      <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] mb-5">
+      <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/15 mb-5">
         <Sparkles className="h-7 w-7 text-[color:var(--data-success)]" />
       </span>
       <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight mb-2">
@@ -566,7 +566,7 @@ function MessageRow({
           "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl mt-1",
           message.error
             ? "bg-[var(--data-error-50)] dark:bg-red-950/30"
-            : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+            : "bg-primary/10 dark:bg-primary/15",
         )}
       >
         <Sparkles

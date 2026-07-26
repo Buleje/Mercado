@@ -548,7 +548,7 @@ export default function GiftCardsAdminModule() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setSelected(c)}
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                           title="Ver detalles"
                         >
                           <Eye className="h-4 w-4" />

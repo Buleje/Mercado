@@ -54,7 +54,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors",
                     filters.statuses.has(status)
-                      ? "border-primary bg-primary/10 text-primary"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface"
                   )}
                 >
@@ -86,7 +86,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   className={cn(
                     "flex-1 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
                     filters.source === src
-                      ? "border-primary bg-primary/10 text-primary"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface"
                   )}
                 >
@@ -110,7 +110,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   className={cn(
                     "flex-1 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
                     filters.paymentMethod === method
-                      ? "border-primary bg-primary/10 text-primary"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface"
                   )}
                 >

@@ -90,7 +90,7 @@ function genSparkData(base: number): { v: number }[] {
 function EmptyChartPrestamos({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><BarChart3 className="h-6 w-6 text-primary" /></div>
+      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><BarChart3 className="h-6 w-6 text-[var(--accent-ink)] dark:text-[var(--accent)]" /></div>
       <p className="text-sm font-medium text-[var(--text-tertiary)]">{message}</p>
       <p className="text-xs text-[var(--text-tertiary)] mt-1">Los datos aparecerán cuando registres préstamos</p>
     </div>
@@ -347,7 +347,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
                   <span className="text-xs font-bold font-mono text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(totalRecibidos)}</span>
                 </div>
                 <div className="h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-                  <m.div className="h-full bg-[var(--accent-soft)] rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
+                  <m.div className="h-full bg-primary/10 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
                 </div>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{prestamos.filter(p=>p.direccion==="RECIBIDO").length} préstamos</p>
               </div>

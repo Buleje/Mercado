@@ -148,7 +148,7 @@ export function AdminTopHeader({
             // accent (mismo lenguaje visual que el resto del DS de Buleje).
             className={cn(
               "sm:hidden inline-flex items-center justify-center h-11 w-11 rounded-xl transition-colors shrink-0 ring-1",
-              "bg-[var(--accent-soft)] text-[var(--accent)] ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
+              "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
               "hover:bg-[color-mix(in_oklab,var(--accent)_12%,var(--surface-raised))]"
             )}
             aria-label="Menú"
@@ -165,7 +165,7 @@ export function AdminTopHeader({
             // (teal-soft + accent), igual que la hamburguesa. En sm+ vuelve a
             // ser el pill ancho con placeholder y atajo ⌘K (theme-aware).
             "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-xl sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer transition-all shrink-0 sm:shrink sm:min-w-11",
-            "max-sm:bg-[var(--accent-soft)]! max-sm:text-[var(--accent)]! max-sm:ring-1 max-sm:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]! max-sm:border-0!",
+            "max-sm:bg-primary/10! max-sm:text-[var(--accent)]! max-sm:ring-1 max-sm:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]! max-sm:border-0!",
             "sm:border",
             isAutoDarkTheme
               ? "sm:bg-white/[0.04] sm:border-[color-mix(in oklab, var(--accent) 15%, transparent)] sm:hover:border-[color-mix(in oklab, var(--accent) 40%, transparent)] sm:hover:bg-white/[0.07]"
@@ -214,7 +214,7 @@ export function AdminTopHeader({
               "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-2.5 text-sm font-bold transition-colors sm:px-3",
               isAutoDarkTheme
                 ? "border-[color-mix(in_oklab,var(--accent)_30%,transparent)] bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] text-[color-mix(in_oklab,var(--accent)_65%,white)] hover:bg-[color-mix(in_oklab,var(--accent)_20%,transparent)]"
-                : "border-[color-mix(in_oklab,var(--accent)_25%,transparent)] bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[color-mix(in_oklab,var(--accent)_14%,var(--surface-raised))]"
+                : "border-[color-mix(in_oklab,var(--accent)_25%,transparent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[color-mix(in_oklab,var(--accent)_14%,var(--surface-raised))]"
             )}
           >
             <StoreIcon className="h-4 w-4" strokeWidth={2} aria-hidden />

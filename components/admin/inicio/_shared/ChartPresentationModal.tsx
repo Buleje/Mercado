@@ -291,7 +291,7 @@ export function ChartPresentationModal({
         data-export-hide="true"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-[var(--accent-soft)] shrink-0">
+          <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-primary/10 shrink-0">
             <Maximize2 className="h-4 w-4 text-[var(--accent)]" />
           </span>
           <div className="min-w-0">

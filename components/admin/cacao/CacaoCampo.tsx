@@ -111,7 +111,7 @@ export default function CacaoCampo() {
         <div className="rounded-2xl border-2 border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
       ) : parcelas.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
-          <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Trees className="h-7 w-7" /></span>
+          <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Trees className="h-7 w-7" /></span>
           <p className="text-base font-bold text-[var(--text-primary)]">Dibujá tu chacra</p>
           <p className="mx-auto mt-1 max-w-sm text-sm">Agregá cada sección de tu terreno (ej. una hectárea = un código). Después registrás poda, fertilización, cosecha y las ves acá por color.</p>
           <button type="button" onClick={() => setShowNew(true)} className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Nueva sección</button>

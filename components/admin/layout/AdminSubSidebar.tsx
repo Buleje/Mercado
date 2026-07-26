@@ -86,7 +86,7 @@ export function AdminSubSidebar({
               className={cn(
                 "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-medium transition-all mb-0.5",
                 isActive
-                  ? "bg-primary/10 text-primary dark:bg-primary/20 font-semibold border-l-[3px] border-primary"
+                  ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/20 font-semibold border-l-[3px] border-primary"
                   : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent border-l-[3px] border-transparent"
               )}
             >
@@ -97,7 +97,7 @@ export function AdminSubSidebar({
                   className={cn(
                     "inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 rounded-full text-xs font-extrabold tabular-nums leading-none ring-2",
                     isActive
-                      ? "bg-primary/15 text-primary ring-primary/20"
+                      ? "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-primary/20"
                       : "bg-[var(--data-error-500)] text-white ring-[var(--surface-raised)] dark:ring-[var(--surface-canvas)] shadow-sm"
                   )}
                   title={`${alertCount} ${alertCount === 1 ? "alerta" : "alertas"} sin leer`}

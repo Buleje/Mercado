@@ -254,7 +254,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {c.categoria && (
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 dark:bg-primary/15 text-primary">
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 dark:bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                       {c.categoria}
                     </span>
                   )}
@@ -558,7 +558,7 @@ export default function POSPaymentModal({
                   {fmt(total)}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20 shadow-sm">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold border border-primary/20 shadow-sm">
                     <Receipt className="h-3.5 w-3.5" />
                     {cartCount} {cartCount === 1 ? "articulo" : "articulos"}
                   </span>
@@ -622,7 +622,7 @@ export default function POSPaymentModal({
             {/* COL 1 — Card Pago */}
             <div className="lg:col-span-5 min-w-0 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b border-[var(--rule-soft)] flex items-center gap-2.5">
-                <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <Banknote className="h-4 w-4" />
                 </span>
                 <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Pago</h3>
@@ -711,7 +711,7 @@ export default function POSPaymentModal({
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors",
                         Number(discountValue) === q
-                          ? "border-primary bg-primary/10 text-primary"
+                          ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100"
                       )}
                     >
@@ -780,7 +780,7 @@ export default function POSPaymentModal({
                           className={cn(
                             "group relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border-2 text-xs font-extrabold transition-all overflow-hidden",
                             selected
-                              ? "border-primary bg-primary/10 text-primary shadow-md"
+                              ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shadow-md"
                               : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:border-primary/40 hover:bg-[var(--surface-raised)] hover:-translate-y-0.5"
                           )}
                         >
@@ -788,7 +788,7 @@ export default function POSPaymentModal({
                             "h-9 w-9 rounded-full flex items-center justify-center transition-colors",
                             selected
                               ? "bg-primary text-white"
-                              : "bg-[var(--surface-raised)] text-[var(--text-secondary)] group-hover:bg-primary/10 group-hover:text-primary",
+                              : "bg-[var(--surface-raised)] text-[var(--text-secondary)] group-hover:bg-primary/10 group-hover:text-[var(--accent-ink)] dark:text-[var(--accent)]",
                           )}>
                             <m.icon className="h-4 w-4" />
                           </span>
@@ -985,7 +985,7 @@ export default function POSPaymentModal({
                             className={cn(
                               "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
                               paymentLines[0].amount === a
-                                ? "border-primary bg-primary/10 text-primary"
+                                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                                 : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                             )}
                           >
@@ -997,7 +997,7 @@ export default function POSPaymentModal({
                         className={cn(
                           "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
                           paymentLines[0].amount === total
-                            ? "border-primary bg-primary/10 text-primary"
+                            ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                             : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                         )}
                       >
@@ -1149,7 +1149,7 @@ export default function POSPaymentModal({
                 </button>
                 <button
                   onClick={() => setShowCustomerList(true)}
-                  className="text-sm font-semibold text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+                  className="text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
                 >
                   <ClipboardList className="h-4 w-4" />
                   Ver clientes
@@ -1306,7 +1306,7 @@ export default function POSPaymentModal({
                       className={cn(
                         "py-2 rounded-lg text-xs font-semibold border transition-all truncate",
                         comprobanteTipo === tipo
-                          ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
+                          ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-primary/20"
                           : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 hover:text-[var(--text-primary)]"
                       )}
                     >

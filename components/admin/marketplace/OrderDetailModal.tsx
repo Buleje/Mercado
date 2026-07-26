@@ -264,7 +264,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
                             {it.name}
                           </p>
                           <div className="mt-0.5 flex items-center gap-1.5">
-                            <span className="inline-flex h-5 items-center rounded-md bg-[var(--accent-soft)] text-[var(--accent)] px-1.5 text-[11px] font-extrabold tabular-nums">
+                            <span className="inline-flex h-5 items-center rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-1.5 text-[11px] font-extrabold tabular-nums">
                               ×{it.quantity}
                             </span>
                             <span className="text-xs font-semibold text-[var(--text-secondary)] tabular-nums">

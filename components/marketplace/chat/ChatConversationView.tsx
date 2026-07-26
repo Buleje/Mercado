@@ -596,7 +596,7 @@ export default function ChatConversationView({
         {storeSlug && (
           <Link
             href={`/marketplace/${storeSlug}`}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white"
             aria-label={`Ir a la tienda ${storeName}`}
           >
             Ver tienda
@@ -655,7 +655,7 @@ export default function ChatConversationView({
                   type="button"
                   onClick={() => void send(q)}
                   disabled={sending}
-                  className="rounded-full border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] px-4 py-2 text-sm font-bold text-[var(--accent)] transition-all hover:border-[var(--accent)] hover:bg-[var(--accent)] hover:text-white active:scale-95"
+                  className="rounded-full border-2 border-[var(--accent)]/40 bg-primary/10 px-4 py-2 text-sm font-bold text-[var(--accent)] transition-all hover:border-[var(--accent)] hover:bg-[var(--accent)] hover:text-white active:scale-95"
                 >
                   {q}
                 </button>
@@ -722,7 +722,7 @@ export default function ChatConversationView({
                               "mx-2 mt-2 rounded-lg border-l-[3px] px-2 py-1",
                               mine
                                 ? "border-white/70 bg-white/15"
-                                : "border-[var(--accent)] bg-[var(--accent-soft)]",
+                                : "border-[var(--accent)] bg-primary/10",
                             )}
                           >
                             <p className={cn(
@@ -769,7 +769,7 @@ export default function ChatConversationView({
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); addSharedToCart(sharedProduct); }}
-                                className="flex w-full items-center justify-center gap-1.5 border-t border-[var(--rule-soft)] py-2 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)]"
+                                className="flex w-full items-center justify-center gap-1.5 border-t border-[var(--rule-soft)] py-2 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-primary/10"
                               >
                                 {addedProductId === sharedProduct.storeProductId ? (
                                   <><Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Agregado ✓</>
@@ -786,7 +786,7 @@ export default function ChatConversationView({
                             "m-2 overflow-hidden rounded-xl border bg-[var(--surface-canvas)]",
                             mine ? "border-white/30" : "border-[var(--rule-base)]",
                           )}>
-                            <div className="flex items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--accent-soft)] px-3 py-2">
+                            <div className="flex items-center gap-2 border-b border-[var(--rule-soft)] bg-primary/10 px-3 py-2">
                               <ReceiptText className="h-4 w-4 text-[var(--accent)]" aria-hidden />
                               <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)]">
                                 Pedido armado por la tienda
@@ -860,7 +860,7 @@ export default function ChatConversationView({
                                   <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); void respondSubstitution(m.id, substitution, true); }}
-                                    className="flex flex-1 items-center justify-center gap-1.5 py-2 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)]"
+                                    className="flex flex-1 items-center justify-center gap-1.5 py-2 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-primary/10"
                                   >
                                     <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Sí, dale
                                   </button>
@@ -883,7 +883,7 @@ export default function ChatConversationView({
                             "m-2 overflow-hidden rounded-xl border bg-[var(--surface-canvas)]",
                             mine ? "border-white/30" : "border-[var(--rule-base)]",
                           )}>
-                            <div className="flex items-center justify-between gap-2 bg-[var(--accent-soft)] px-3 py-2">
+                            <div className="flex items-center justify-between gap-2 bg-primary/10 px-3 py-2">
                               <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)]">
                                 <Wallet className="h-4 w-4" aria-hidden /> Cobro por {chatPayment.method === "plin" ? "Plin" : "Yape"}
                               </span>
@@ -960,7 +960,7 @@ export default function ChatConversationView({
                         {isOrder && (
                           <div className={cn(
                             "flex items-center gap-2 rounded-t-2xl px-3 py-2",
-                            mine ? "bg-white/15" : "bg-[var(--accent-soft)]",
+                            mine ? "bg-white/15" : "bg-primary/10",
                           )}>
                             <ReceiptText
                               className={cn("h-4 w-4 shrink-0", mine ? "text-white" : "text-[var(--accent)]")}
@@ -978,7 +978,7 @@ export default function ChatConversationView({
                         <div className="px-3 py-2">
                           {/* Bot AI-first (Tanda 3) — honestidad: el cliente sabe que es automático */}
                           {meta.autoReply && !mine && (
-                            <span className="mb-1 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wide text-[var(--accent)]">
+                            <span className="mb-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wide text-[var(--accent)]">
                               <Bot className="h-3 w-3" aria-hidden /> Asistente
                             </span>
                           )}
@@ -1112,7 +1112,7 @@ export default function ChatConversationView({
                               className={cn(
                                 "inline-flex items-center rounded-full border px-1.5 py-0.5 text-xs leading-none shadow-sm",
                                 r.by === "buyer"
-                                  ? "border-[var(--accent)]/40 bg-[var(--accent-soft)]"
+                                  ? "border-[var(--accent)]/40 bg-primary/10"
                                   : "border-[var(--rule-soft)] bg-[var(--surface-raised)]",
                               )}
                             >
@@ -1140,7 +1140,7 @@ export default function ChatConversationView({
           <>
             {/* Tira "Respondiendo a…" — cita activa (Tanda 1) */}
             {replyTo && (
-              <div className="mb-1.5 flex items-center gap-2 rounded-xl border-l-[3px] border-[var(--accent)] bg-[var(--accent-soft)] px-2.5 py-1.5">
+              <div className="mb-1.5 flex items-center gap-2 rounded-xl border-l-[3px] border-[var(--accent)] bg-primary/10 px-2.5 py-1.5">
                 <div className="min-w-0 flex-1 leading-tight">
                   <p className="text-[length:var(--ts-2xs)] font-black text-[var(--accent)]">
                     Respondiendo a {replyTo.senderType === "buyer" ? "vos" : storeName}
@@ -1217,7 +1217,7 @@ export default function ChatConversationView({
                 className={cn(
                   "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors",
                   emojiOpen
-                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                    ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
                 )}
               >

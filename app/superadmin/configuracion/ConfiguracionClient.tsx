@@ -524,7 +524,7 @@ function Section({
   return (
     <section id={id} className="scroll-mt-24 rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
       <div className="px-5 sm:px-7 py-4 sm:py-5 border-b-2 border-[var(--rule-soft)] bg-linear-to-br from-[var(--surface-sunken)]/60 to-transparent flex items-start gap-3">
-        <span className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)]">
+        <span className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
           {icon}
         </span>
         <div className="min-w-0">
@@ -580,7 +580,7 @@ function SectionNav({ sections }: { sections: NavSection[] }) {
                   className={cn(
                     "flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
                     isActive
-                      ? "bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
                   )}
                 >
@@ -737,7 +737,7 @@ function ImageField({
         <div className="flex-1 flex flex-wrap gap-2">
           <label
             htmlFor={inputId}
-            className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold uppercase tracking-[var(--ls-wider)] cursor-pointer hover:bg-[var(--accent)] hover:text-white transition-colors ${busy ? "opacity-60 pointer-events-none" : ""}`}
+            className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold uppercase tracking-[var(--ls-wider)] cursor-pointer hover:bg-[var(--accent)] hover:text-white transition-colors ${busy ? "opacity-60 pointer-events-none" : ""}`}
           >
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" strokeWidth={2.5} />}
             {url ? "Reemplazar" : "Subir"}

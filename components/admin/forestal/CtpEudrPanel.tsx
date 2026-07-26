@@ -230,7 +230,7 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
 
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="flex items-start gap-3">
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-dark)]"><Globe className="h-5 w-5" /></span>
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Globe className="h-5 w-5" /></span>
           <div className="min-w-0">
             <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Geolocalización de orígenes (EUDR)</CardTitle>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">La UE exige la geolocalización de la parcela de cosecha (Reg. 2023/1115). Cargá las coordenadas de cada concesión/predio del que compraste — se reusan en todos sus ingresos.{origins ? ` ${geolocalizados}/${origins.length} orígenes geolocalizados.` : ""}</p>
@@ -256,10 +256,10 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
                   </div>
                   <input inputMode="decimal" value={d.lat} onChange={(e) => setDraftField(o.originCode, "lat", e.target.value)} placeholder="lat" className="h-11 w-28 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
                   <input inputMode="decimal" value={d.lng} onChange={(e) => setDraftField(o.originCode, "lng", e.target.value)} placeholder="lng" className="h-11 w-28 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
-                  <button type="button" onClick={() => setPickerFor(o.originCode)} title="Marcá el punto de la parcela en el mapa en vez de tipear las coordenadas" className="inline-flex h-11 items-center gap-1.5 rounded-lg border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] px-3 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/15">
+                  <button type="button" onClick={() => setPickerFor(o.originCode)} title="Marcá el punto de la parcela en el mapa en vez de tipear las coordenadas" className="inline-flex h-11 items-center gap-1.5 rounded-lg border-2 border-[var(--accent)]/40 bg-primary/10 px-3 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/15">
                     <MapPin className="h-4 w-4" /> <span className="hidden sm:inline">Punto</span>
                   </button>
-                  <button type="button" onClick={() => setPolygonFor(o.originCode)} title="Dibujá el polígono de la parcela (EUDR exige polígono para > 4 ha)" className={`inline-flex h-11 items-center gap-1.5 rounded-lg border-2 px-3 text-sm font-bold ${g?.polygonJson ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--accent)]/40 bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent)]/15"}`}>
+                  <button type="button" onClick={() => setPolygonFor(o.originCode)} title="Dibujá el polígono de la parcela (EUDR exige polígono para > 4 ha)" className={`inline-flex h-11 items-center gap-1.5 rounded-lg border-2 px-3 text-sm font-bold ${g?.polygonJson ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--accent)]/40 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/15"}`}>
                     <PenTool className="h-4 w-4" /> <span className="hidden sm:inline">{g?.polygonJson ? "Polígono ✓" : "Polígono"}</span>
                   </button>
                   <label className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">

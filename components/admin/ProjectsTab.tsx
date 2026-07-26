@@ -45,9 +45,9 @@ const TYPE_META: Record<ProjectType, { label: string; icon: typeof Wrench; color
 };
 
 const STATUS_META: Record<ProjectStatus, { label: string; icon: typeof Pause; color: string; bg: string }> = {
-  planificacion: { label: "Planificación", icon: Calendar,    color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  planificacion: { label: "Planificación", icon: Calendar,    color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
   "en-curso":    { label: "En Curso",      icon: TrendingUp,  color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  completado:    { label: "Completado",    icon: CheckCircle2, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  completado:    { label: "Completado",    icon: CheckCircle2, color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   cancelado:     { label: "Cancelado",     icon: Ban,          color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
 
@@ -103,8 +103,8 @@ export default function ProjectsTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "En Curso", value: String(stats.activeCount), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Presupuesto Total", value: fmt(stats.totalBudget), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Ejecutado Total", value: fmt(stats.totalSpent), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Presupuesto Total", value: fmt(stats.totalBudget), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
+          { label: "Ejecutado Total", value: fmt(stats.totalSpent), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "ROI Prom. Real", value: pct(stats.avgRoi), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
@@ -154,7 +154,7 @@ export default function ProjectsTab() {
                   <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(spent)} / {fmt(p.budget)}</span>
                 </div>
                 <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                  <div className={cn("h-full rounded-full transition-all", execPct > 100 ? "bg-[var(--data-error-500)]" : execPct > 80 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} style={{ width: `${Math.min(execPct, 100)}%` }} />
+                  <div className={cn("h-full rounded-full transition-all", execPct > 100 ? "bg-[var(--data-error-500)]" : execPct > 80 ? "bg-[var(--data-warning-500)]" : "bg-primary/10")} style={{ width: `${Math.min(execPct, 100)}%` }} />
                 </div>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-right">{pct(execPct)} ejecutado</p>
               </div>

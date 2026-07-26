@@ -100,7 +100,7 @@ export function VendorWeeklyChart({ data }: Props) {
           <span className="w-2.5 h-2.5 rounded-sm bg-[var(--data-warning-500)] inline-block" /> Mejor día
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-sm bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] inline-block" /> Otros días
+          <span className="w-2.5 h-2.5 rounded-sm bg-primary/10 dark:bg-primary/15 inline-block" /> Otros días
         </span>
       </div>
     </div>

@@ -29,9 +29,9 @@ const QUADRANT_META: Record<BCGQuadrant, {
   label: string; icon: string; color: string;
   bg: string; text: string; recommendation: string;
 }> = {
-  star:     { label: "Estrellas",    icon: "↑↑", color: "var(--accent)", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", recommendation: "Invertir para crecer — alta prioridad" },
+  star:     { label: "Estrellas",    icon: "↑↑", color: "var(--accent)", bg: "bg-primary/10 dark:bg-primary/15", text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", recommendation: "Invertir para crecer — alta prioridad" },
   cow:      { label: "Vacas",        icon: "→↑", color: "#ff6b5b", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", recommendation: "Mantener y cosechar — generan caja" },
-  question: { label: "Interrogantes",icon: "↑↓", color: "#3b82f6", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",  recommendation: "Evaluar potencial — requieren inversion" },
+  question: { label: "Interrogantes",icon: "↑↓", color: "#3b82f6", bg: "bg-primary/10 dark:bg-primary/15",  text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",  recommendation: "Evaluar potencial — requieren inversion" },
   dog:      { label: "Perros",       icon: "↓↓", color: "#ef4444", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",    text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",    recommendation: "Reducir o descontinuar" },
 };
 
@@ -208,8 +208,8 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
 
         {/* Quadrant backgrounds */}
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
-          <div className="bg-[var(--accent-soft)]/30 dark:bg-[var(--accent-muted)] border-r border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
-          <div className="bg-[var(--accent-soft)]/30 dark:bg-[var(--accent-muted)] border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
+          <div className="bg-primary/10/30 dark:bg-primary/15 border-r border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
+          <div className="bg-primary/10/30 dark:bg-primary/15 border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
           <div className="bg-[var(--data-error-50)]/30 dark:bg-[var(--data-error-500)]/10 border-r border-dashed border-[var(--rule-base)] dark:border-gray-600" />
           <div className="bg-[var(--data-warning-50)]/30 dark:bg-[var(--data-warning-500)]/10" />
         </div>

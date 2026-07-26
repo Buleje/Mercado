@@ -39,8 +39,8 @@ type MaintenanceLog = {
 };
 
 const STATUS_CONFIG: Record<VehicleStatus, { label: string; color: string; dot: string }> = {
-  activo:        { label: "Disponible",  color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", dot: "bg-[var(--accent-soft)]" },
-  "en-ruta":     { label: "En ruta",     color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",             dot: "bg-[var(--accent-soft)]" },
+  activo:        { label: "Disponible",  color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]", dot: "bg-primary/10" },
+  "en-ruta":     { label: "En ruta",     color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",             dot: "bg-primary/10" },
   mantenimiento: { label: "En taller",   color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",         dot: "bg-[var(--data-warning-500)]" },
   inactivo:      { label: "Inactivo",    color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted",                    dot: "bg-[var(--rule-mid)]" },
 };
@@ -247,7 +247,7 @@ export default function FleetManagementTab() {
                       <div className="w-full h-2.5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                         <div
                           className={cn("h-full rounded-full transition-all",
-                            v.fuelLevel > 50 ? "bg-[var(--accent-soft)]" : v.fuelLevel > 20 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
+                            v.fuelLevel > 50 ? "bg-primary/10" : v.fuelLevel > 20 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
                           )}
                           style={{ width: `${v.fuelLevel}%` }}
                         />
@@ -330,7 +330,7 @@ export default function FleetManagementTab() {
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold border transition",
                     showStatusModal.status === s
-                      ? "border-primary bg-primary/5 text-primary"
+                      ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/30 hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
                   )}
                 >

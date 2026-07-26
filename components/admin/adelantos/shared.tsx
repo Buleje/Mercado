@@ -32,7 +32,7 @@ export function fmtMonedas(map: Record<string, number>): string {
 export function EmptyState({ icon: Icon, title, hint }: { icon: ComponentType<{ className?: string }>; title: string; hint: string }) {
   return (
     <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-10 text-center">
-      <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-3"><Icon className="h-6 w-6" /></div>
+      <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-3"><Icon className="h-6 w-6" /></div>
       <p className="text-base font-extrabold text-[var(--text-primary)]">{title}</p>
       <p className="text-base text-[var(--text-secondary)] mt-1">{hint}</p>
     </div>

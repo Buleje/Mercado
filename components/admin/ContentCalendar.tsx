@@ -37,20 +37,20 @@ const ENTRY_TYPES: { value: EntryType; label: string; color: string; dot: string
   {
     value: "receta",
     label: "Receta",
-    color: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
-    dot: "bg-[var(--accent-soft)]",
+    color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+    dot: "bg-primary/10",
   },
   {
     value: "post",
     label: "Post",
     color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-    dot: "bg-[var(--accent-soft)]",
+    dot: "bg-primary/10",
   },
   {
     value: "evento",
     label: "Evento",
-    color: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
-    dot: "bg-[var(--accent-soft)]",
+    color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+    dot: "bg-primary/10",
   },
 ];
 

@@ -39,8 +39,8 @@ type Props = {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const TYPE_LABELS: Record<string, { label: string; color: string; dir: "in" | "out" }> = {
-  compra:           { label: "Compra",       color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dir: "in" },
-  devolucion:       { label: "Devolución",   color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",           dir: "in" },
+  compra:           { label: "Compra",       color: "text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15", dir: "in" },
+  devolucion:       { label: "Devolución",   color: "text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15",           dir: "in" },
   ajuste_positivo:  { label: "Ajuste (+)",   color: "text-[var(--data-info-500)] dark:text-[var(--data-info-500)] bg-[var(--data-info-50)] dark:bg-sky-950/30",               dir: "in" },
   venta:            { label: "Venta POS",    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/30",       dir: "out" },
   venta_online:     { label: "Venta Online", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-orange-950/30",   dir: "out" },
@@ -150,7 +150,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
           <button
             onClick={handleExport}
             disabled={!data || data.movimientos.length === 0}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50"
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-white text-xs font-bold hover:bg-primary/10 transition-colors disabled:opacity-50"
           >
             <Download className="h-3.5 w-3.5" /> Exportar Excel
           </button>
@@ -173,7 +173,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
             <>
               {/* Summary cards */}
               <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
+                <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
                   <p className="text-lg font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{data.resumen.totalEntradas}</p>
                   <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]/70 uppercase">Total entradas</p>
                 </div>
@@ -181,7 +181,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                   <p className="text-lg font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{data.resumen.totalSalidas}</p>
                   <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)]/70 uppercase">Total salidas</p>
                 </div>
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
+                <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
                   <p className="text-lg font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{data.resumen.saldoFinal}</p>
                   <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]/70 uppercase">Saldo final</p>
                 </div>

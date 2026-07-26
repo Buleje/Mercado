@@ -303,7 +303,7 @@ export default function SupportWidget() {
                       </span>
                     </div>
                     {t.reply && (
-                      <div className="mt-1 text-xs text-[var(--text-secondary)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded p-2 border-l-2 border-[var(--data-success-500)]/30">
+                      <div className="mt-1 text-xs text-[var(--text-secondary)] bg-primary/10 dark:bg-primary/15 rounded p-2 border-l-2 border-[var(--data-success-500)]/30">
                         <span className="font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Respuesta: </span>
                         {t.reply}
                       </div>

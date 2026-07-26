@@ -532,7 +532,7 @@ export default function KioskPOS() {
                 active={paymentMethod === "efectivo"}
                 label="Efectivo"
                 icon={<Banknote className="h-5 w-5" />}
-                color="bg-[var(--accent-soft)]"
+                color="bg-primary/10"
                 onClick={() => setPaymentMethod("efectivo")}
               />
               <PayBtn

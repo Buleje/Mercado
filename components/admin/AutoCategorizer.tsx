@@ -26,7 +26,7 @@ const CATEGORIES: Category[] = [
   {
     name:     "Limpieza",
     keywords: ["jabon", "jabón", "detergente", "lejia", "lejía", "cloro", "suavizante", "desinfectante", "limpiador", "escoba", "trapeador", "esponja", "guante", "bolsa basura"],
-    color:    "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    color:    "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   },
   {
     name:     "Bebidas",

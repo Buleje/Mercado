@@ -584,8 +584,8 @@ export default function PromotionsTab() {
             {campaigns.map(c => {
               const statusConfig = {
                 scheduled: { label: "Programada", color: "bg-gray-100 text-[var(--text-primary)]", icon: Clock },
-                active: { label: "Activa", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", icon: Play },
-                completed: { label: "Finalizada", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", icon: Check },
+                active: { label: "Activa", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", icon: Play },
+                completed: { label: "Finalizada", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", icon: Check },
                 paused: { label: "Pausada", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", icon: Pause },
               };
               const config = statusConfig[c.status];
@@ -618,7 +618,7 @@ export default function PromotionsTab() {
                           <button
                             onClick={() => sendCampaignNow(c)}
                             disabled={sendingCampaignId === c.id}
-                            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors"
+                            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 disabled:opacity-50 transition-colors"
                             title="Enviar ahora"
                           >
                             {sendingCampaignId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -626,7 +626,7 @@ export default function PromotionsTab() {
                           <button
                             onClick={() => toggleCampaignStatus(c.id)}
                             className={cn("p-1.5 rounded-lg transition-colors",
-                              c.status === "paused" ? "text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]" : "text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)]"
+                              c.status === "paused" ? "text-[var(--data-success-500)] hover:bg-primary/10" : "text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)]"
                             )}
                             title={c.status === "paused" ? "Reanudar" : "Pausar"}
                           >
@@ -636,7 +636,7 @@ export default function PromotionsTab() {
                       )}
                       <button
                         onClick={() => openEditCampaign(c)}
-                        className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                        className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
                         title="Editar"
                       >
                         <ExternalLink className="h-4 w-4" />
@@ -668,7 +668,7 @@ export default function PromotionsTab() {
         </div>
       ) : promos.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-14 text-center">
-          <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Gift className="h-7 w-7" strokeWidth={2} />
           </span>
           <div className="space-y-1">
@@ -749,7 +749,7 @@ export default function PromotionsTab() {
                       <div className="flex shrink-0 items-center gap-1" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => openSendModal(p)}
-                          className="rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"
+                          className="rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent)]"
                           title="Enviar por WhatsApp"
                         >
                           <Send className="h-4 w-4" />
@@ -763,7 +763,7 @@ export default function PromotionsTab() {
                         </button>
                         <button
                           onClick={() => toggleActive(p)}
-                          className={cn("rounded-lg p-2 transition-colors", p.active ? "text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
+                          className={cn("rounded-lg p-2 transition-colors", p.active ? "text-[var(--data-success-500)] hover:bg-primary/10" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
                           title={p.active ? "Desactivar" : "Activar"}
                         >
                           {p.active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -850,7 +850,7 @@ export default function PromotionsTab() {
                     <button key={v} type="button"
                       onClick={() => setForm(f => ({ ...f, targetType: v }))}
                       className={cn("flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all",
-                        form.targetType === v ? "border-primary bg-primary/5 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
+                        form.targetType === v ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
                       )}>
                       <Icon className="h-4 w-4" /> {l}
                     </button>
@@ -923,7 +923,7 @@ export default function PromotionsTab() {
               )}
               <div className="flex flex-wrap gap-2">
                 <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
-                  detailPromo.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
+                  detailPromo.active ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
                 )}>{detailPromo.active ? "Activa" : "Inactiva"}</span>
                 {detailPromo.discountPercent > 0 && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)]">
@@ -931,7 +931,7 @@ export default function PromotionsTab() {
                   </span>
                 )}
                 <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
-                  detailPromo.targetType === "all" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : detailPromo.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                  detailPromo.targetType === "all" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : detailPromo.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                 )}>{detailPromo.targetType === "all" ? "Todos los clientes" : detailPromo.targetType === "group" ? "Grupo seleccionado" : "Individual"}</span>
               </div>
               {detailPromo.description && (
@@ -949,7 +949,7 @@ export default function PromotionsTab() {
               {detailPromo.message && (
                 <div>
                   <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Mensaje WhatsApp</p>
-                  <div className="bg-[var(--accent-soft)] rounded-xl p-3 mt-1 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-wrap border border-[var(--data-success-500)]/30">{detailPromo.message}</div>
+                  <div className="bg-primary/10 rounded-xl p-3 mt-1 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-wrap border border-[var(--data-success-500)]/30">{detailPromo.message}</div>
                 </div>
               )}
               {detailPromo.targetPhones && (
@@ -976,7 +976,7 @@ export default function PromotionsTab() {
             <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3 shrink-0">
               <button
                 onClick={() => { setDetailPromo(null); openSendModal(detailPromo); }}
-                className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors"
+                className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white bg-primary/10 hover:bg-primary/10 transition-colors"
               >
                 <Send className="h-4 w-4" /> Enviar por WhatsApp
               </button>
@@ -1007,7 +1007,7 @@ export default function PromotionsTab() {
             {/* Message preview */}
             <div className="px-5 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
               <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-1">Vista previa del mensaje</p>
-              <div className="bg-[var(--accent-soft)] rounded-xl p-3 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-wrap border border-[var(--data-success-500)]/30 max-h-24 overflow-y-auto">
+              <div className="bg-primary/10 rounded-xl p-3 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-wrap border border-[var(--data-success-500)]/30 max-h-24 overflow-y-auto">
                 {applyStoreName(sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`, storeName)}
               </div>
             </div>
@@ -1046,7 +1046,7 @@ export default function PromotionsTab() {
                         const rawMsg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`;
                         sendWhatsApp(c.phone, applyStoreName(rawMsg, storeName));
                       }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 transition-colors flex items-center gap-1"
                     >
                       <Send className="h-3 w-3" /> Enviar
                     </button>
@@ -1059,7 +1059,7 @@ export default function PromotionsTab() {
               <button
                 onClick={sendToAll}
                 disabled={sendPhones.size === 0}
-                className="w-full py-3 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors flex flex-wrap items-center justify-center gap-2"
+                className="w-full py-3 rounded-lg text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors flex flex-wrap items-center justify-center gap-2"
               >
                 <Send className="h-4 w-4" /> Enviar a todos los seleccionados
               </button>

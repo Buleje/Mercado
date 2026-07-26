@@ -87,7 +87,7 @@ export default function ExpiringBatchesAlert() {
   // Sin alertas y sin carga: no renderizar nada
   if (!loading && !error && batches.length === 0) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15 px-4 py-3">
         <Package className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] shrink-0" />
         <span className="text-xs font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
           Sin lotes por vencer en los próximos 7 días

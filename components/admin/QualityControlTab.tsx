@@ -38,7 +38,7 @@ function fmtDate(iso: string) {
 }
 
 const RESULT_META: Record<InspectionResult, { label: string; color: string; bg: string; icon: typeof CheckCircle }> = {
-  aprobado:  { label: "Aprobado",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+  aprobado:  { label: "Aprobado",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: CheckCircle },
   observado: { label: "Observado", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",    icon: AlertTriangle },
   rechazado: { label: "Rechazado", color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",         bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",        icon: AlertTriangle },
 };
@@ -124,8 +124,8 @@ export default function QualityControlTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Total inspecciones", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Aprobados", value: String(stats.aprobados), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Total inspecciones", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
+          { label: "Aprobados", value: String(stats.aprobados), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Observados", value: String(stats.observados), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
           { label: "Rechazados", value: String(stats.rechazados), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
           { label: "% Aprobación", value: `${Number(stats.pctAprobado).toFixed(0)}%`, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
@@ -222,7 +222,7 @@ export default function QualityControlTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{i.inspector}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] max-w-50 truncate">{i.observations || "—"}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <button onClick={() => setDetail(i)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => setDetail(i)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button>
                     </td>
                   </tr>
                 );

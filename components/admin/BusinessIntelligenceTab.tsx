@@ -160,7 +160,7 @@ export default function BusinessIntelligenceTab() {
         <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-4"><AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" /> Alertas de anomalías</CardTitle>
         <div className="space-y-2">
           {ANOMALIES.map(a => {
-            const sevMeta = { alta: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50", media: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50", baja: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" };
+            const sevMeta = { alta: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50", media: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50", baja: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" };
             const sevColor = { alta: "text-[var(--data-error-500)]", media: "text-[var(--data-warning-500)]", baja: "text-[var(--data-success-500)]" };
             return (
               <div key={a.id} className={cn("rounded-xl p-3 border", sevMeta[a.severity])}>

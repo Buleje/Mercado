@@ -86,7 +86,7 @@ function urgencyLabel(days: number): string {
 function urgencyBadge(days: number): string {
   if (days < 0) return "bg-red-100 dark:bg-red-900/30 text-[var(--data-error-700)] dark:text-red-400";
   if (days <= 7) return "bg-amber-100 dark:bg-amber-900/30 text-[var(--data-warning-700)] dark:text-amber-400";
-  return "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
+  return "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
 }
 
 // ── Custom Tooltip ─────────────────────────────────────────────────────────────
@@ -499,7 +499,7 @@ export default function TreasuryDashboard() {
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white rounded-lg text-[length:var(--ts-2xs)] font-medium transition-colors"
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 hover:bg-primary/10 text-white rounded-lg text-[length:var(--ts-2xs)] font-medium transition-colors"
                               title="Enviar recordatorio por WhatsApp"
                             >
                               <MessageCircle className="h-3 w-3" />

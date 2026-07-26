@@ -21,8 +21,8 @@ type Rule = {
 };
 
 const CATEGORIES: Record<Rule["category"], { label: string; color: string }> = {
-  inventario: { label: "Inventario", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
-  ventas: { label: "Ventas", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  inventario: { label: "Inventario", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" },
+  ventas: { label: "Ventas", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" },
   crm: { label: "CRM", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
   finanzas: { label: "Finanzas", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
   rrhh: { label: "RRHH", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
@@ -96,17 +96,17 @@ export default function BusinessRulesTab() {
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.name}</CardTitle>
                   <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", CATEGORIES[r.category].color)}>{CATEGORIES[r.category].label}</span>
-                  <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.enabled ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>{r.enabled ? "Activa" : "Pausada"}</span>
+                  <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.enabled ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>{r.enabled ? "Activa" : "Pausada"}</span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3">{r.description}</p>
 
                 {/* Rule flow visualization */}
                 <div className="flex items-center gap-2 flex-wrap text-xs">
-                  <span className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2.5 py-1.5 rounded-lg font-semibold">{r.trigger}</span>
+                  <span className="bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2.5 py-1.5 rounded-lg font-semibold">{r.trigger}</span>
                   <ArrowRight className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                   <span className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] px-2.5 py-1.5 rounded-lg font-semibold">{r.condition}</span>
                   <ArrowRight className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                  <span className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2.5 py-1.5 rounded-lg font-semibold">{r.action}</span>
+                  <span className="bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2.5 py-1.5 rounded-lg font-semibold">{r.action}</span>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">

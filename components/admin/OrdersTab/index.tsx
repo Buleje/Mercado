@@ -207,7 +207,7 @@ export default function OrdersTab() {
 
       {/* Delivery driver filter */}
       {filterByDelivery && (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4">
+        <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4">
           <div className="flex items-center gap-3 flex-wrap">
             <p className="text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Filtrar por delivery:</p>
             <select
@@ -298,7 +298,7 @@ export default function OrdersTab() {
                 "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold transition-colors border",
                 active
                   ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
-                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]",
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-primary/10",
               )}
             >
               {chip.label}

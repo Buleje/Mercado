@@ -17,7 +17,7 @@ function urgencyClass(days: number): string {
   if (days < 0) return "bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/25 dark:text-[var(--data-error-500)] border-[var(--data-error-500)]/30";
   if (days <= 7) return "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/25 dark:text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30";
   if (days <= 30) return "bg-amber-400/15 text-amber-700 dark:bg-amber-500/25 dark:text-amber-400 border-amber-400/30";
-  return "bg-primary/12 text-primary dark:bg-primary/25 border-primary/25";
+  return "bg-primary/12 text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/25 border-primary/25";
 }
 
 function ymd(d: Date): string {
@@ -72,7 +72,7 @@ export function CalendarView({ docs, onOpenDoc }: { docs: DbDocument[]; onOpenDo
           <h3 className="text-base font-bold text-[var(--text-primary)]">
             {MONTHS[cursor.getMonth()]} {cursor.getFullYear()}
           </h3>
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary tabular-nums">{monthDocsCount} vencen</span>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] tabular-nums">{monthDocsCount} vencen</span>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={() => setCursor(new Date(today.getFullYear(), today.getMonth(), 1))} className="rounded-lg px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">

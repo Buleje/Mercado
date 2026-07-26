@@ -318,7 +318,7 @@ export default function SuperAdminMessenger() {
               <button
                 key={c.id}
                 onClick={() => openConversation(c.id)}
-                className={`w-full text-left px-4 py-3 border-b border-[var(--rule-soft)] transition-colors ${selectedId === c.id ? "bg-[var(--accent-soft)]" : "hover:bg-[var(--surface-sunken)]"}`}
+                className={`w-full text-left px-4 py-3 border-b border-[var(--rule-soft)] transition-colors ${selectedId === c.id ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]"}`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-1.5 min-w-0">
@@ -418,7 +418,7 @@ export default function SuperAdminMessenger() {
                     return (
                       <div
                         key={m.id}
-                        className="mx-auto max-w-[80%] rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2"
+                        className="mx-auto max-w-[80%] rounded-lg border border-[var(--accent)] bg-primary/10 px-3 py-2"
                       >
                         <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--accent)]">
                           <StickyNote className="h-3 w-3" /> Nota interna · {m.senderName}
@@ -490,7 +490,7 @@ export default function SuperAdminMessenger() {
                   <button
                     onClick={() => setShowAi((v) => !v)}
                     disabled={aiBusy}
-                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)]/40 bg-[var(--accent-soft)] px-2.5 h-8 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)]/15 disabled:opacity-60"
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)]/40 bg-primary/10 px-2.5 h-8 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)]/15 disabled:opacity-60"
                   >
                     {aiBusy ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -536,7 +536,7 @@ export default function SuperAdminMessenger() {
                 </div>
                 <button
                   onClick={() => setInternalNote((v) => !v)}
-                  className={`inline-flex items-center gap-1 rounded-lg px-2.5 h-8 text-xs font-bold transition-colors ${internalNote ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                  className={`inline-flex items-center gap-1 rounded-lg px-2.5 h-8 text-xs font-bold transition-colors ${internalNote ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
                 >
                   <StickyNote className="h-3.5 w-3.5" /> {internalNote ? "Nota interna" : "Mensaje"}
                 </button>
@@ -557,7 +557,7 @@ export default function SuperAdminMessenger() {
                       ? "Nota interna (solo la ve el equipo)…"
                       : `Escribile a ${selected.tenantName}…`
                   }
-                  className={`flex-1 resize-none rounded-xl border-2 px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition-colors ${internalNote ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--rule-base)] bg-[var(--surface-canvas)] focus:border-[var(--accent)]"}`}
+                  className={`flex-1 resize-none rounded-xl border-2 px-3 py-2 text-sm text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none transition-colors ${internalNote ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)] bg-[var(--surface-canvas)] focus:border-[var(--accent)]"}`}
                 />
                 <button
                   onClick={handleSend}

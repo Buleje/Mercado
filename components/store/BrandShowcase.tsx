@@ -48,7 +48,7 @@ export default function BrandShowcase() {
     <section className="py-10 sm:py-14 bg-[var(--surface-raised)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-6">
-          <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-3">
+          <span className="inline-flex items-center gap-1.5 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-3">
             Marcas
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)]">

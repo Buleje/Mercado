@@ -59,9 +59,9 @@ function daysUntil(iso: string) {
 }
 
 const CATEGORY_META: Record<DocCategory, { label: string; color: string }> = {
-  factura:     { label: "Factura",     color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  factura:     { label: "Factura",     color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" },
   contrato:    { label: "Contrato",    color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
-  comprobante: { label: "Comprobante", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
+  comprobante: { label: "Comprobante", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" },
   recibo:      { label: "Recibo",      color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
   otro:        { label: "Otro",        color: "bg-[var(--rule-soft)] text-[var(--text-primary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]" },
 };
@@ -222,7 +222,7 @@ export default function DocumentManagerTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Repositorio central de documentos de la empresa</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => fetchContratos()} disabled={loadingContratos} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--accent-muted)]/50 transition-colors disabled:opacity-50">
+          <button onClick={() => fetchContratos()} disabled={loadingContratos} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] dark:hover:bg-primary/15/50 transition-colors disabled:opacity-50">
             {loadingContratos ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSignature className="h-4 w-4" />}
             Sync contratos
           </button>
@@ -238,8 +238,8 @@ export default function DocumentManagerTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Total docs", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Vigentes", value: String(stats.vigentes), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Total docs", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
+          { label: "Vigentes", value: String(stats.vigentes), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Por vencer", value: String(stats.porVencer), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
           { label: "Vencidos", value: String(stats.vencidos), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
           { label: "Contratos activos", value: String(stats.contratosActivos), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
@@ -366,13 +366,13 @@ export default function DocumentManagerTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{d.relatedTo}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap gap-1">
-                        <button onClick={() => setDetail(d)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => setDetail(d)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button>
                         {/* Renew button for contracts about to expire */}
                         {d.isContrato && (d.status === "por-vencer" || d.status === "vencido") && (
                           <button
                             onClick={() => handleRenew(d)}
                             disabled={renewingId === d.id}
-                            className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--accent-muted)]/20 disabled:opacity-50"
+                            className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-[var(--surface-sunken)] dark:hover:bg-primary/15/20 disabled:opacity-50"
                             title="Renovar contrato (+1 anio)"
                           >
                             {renewingId === d.id ? (

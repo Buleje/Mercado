@@ -65,7 +65,7 @@ type Fiado = {
 
 const STATUS_META: Record<FiadoStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2; variant: BadgeVariant }> = {
   ACTIVO:    { label: "Activo",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)]",   icon: Clock,       variant: "warning" },
-  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", icon: CheckCircle2, variant: "success" },
+  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success-500)]", bg: "bg-primary/10", icon: CheckCircle2, variant: "success" },
   VENCIDO:   { label: "Vencido",   color: "text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-100)]",       icon: XCircle,     variant: "error" },
   CANCELADO: { label: "Cancelado", color: "text-[var(--text-secondary)]",     bg: "bg-[var(--surface-sunken)]",     icon: Ban,         variant: "neutral" },
 };
@@ -1353,11 +1353,11 @@ export default function FiadosModule() {
                   ) : (
                     <div className="relative">
                       {/* Timeline line */}
-                      <div className="absolute left-[15px] top-3 bottom-3 w-0.5 bg-[var(--accent-soft)]" />
+                      <div className="absolute left-[15px] top-3 bottom-3 w-0.5 bg-primary/10" />
                       <div className="space-y-3">
                         {[...selected.cuotas].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(c => (
                           <div key={c.id} className="flex items-start gap-3 relative">
-                            <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center shrink-0 z-10 border-2 border-white">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 z-10 border-2 border-white">
                               <DollarSign className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
                             </div>
                             <div className="flex-1 min-w-0 bg-[var(--surface-alt)] rounded-xl p-3">

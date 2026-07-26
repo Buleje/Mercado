@@ -60,7 +60,7 @@ const RATE_UNITS = [
 ];
 const unitNoun = (u: string) => RATE_UNITS.find(r => r.v === u)?.noun ?? u;
 const STATUS_META: Record<string, { label: string; chip: string }> = {
-  operativo:     { label: "Operativo",     chip: "bg-[var(--accent-soft)] text-[var(--accent)]" },
+  operativo:     { label: "Operativo",     chip: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
   mantenimiento: { label: "Mantenimiento", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" },
   parado:        { label: "Parado",        chip: "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" },
 };
@@ -223,7 +223,7 @@ export default function ActivosModule() {
 function EmptyFleet({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-16 text-center">
-      <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Construction className="h-7 w-7" strokeWidth={2} /></span>
+      <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Construction className="h-7 w-7" strokeWidth={2} /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Aún no tienes máquinas</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">Agrega tu cargador, oruga o camión y empieza a registrar alquileres.</p>
       <button type="button" onClick={onAdd} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90"><Plus className="h-4 w-4" strokeWidth={2.5} /> Agregar primera máquina</button>
@@ -269,7 +269,7 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onC
   return (
     <div className="flex flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 transition-all hover:border-[var(--accent)]/40 hover:shadow-[var(--shadow-md)]">
       <div className="flex items-start gap-3">
-        <button type="button" onClick={onDetail} className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2} /></button>
+        <button type="button" onClick={onDetail} className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2} /></button>
         <div className="min-w-0 flex-1">
           <button type="button" onClick={onDetail} className="block truncate text-base font-extrabold text-[var(--text-primary)] hover:text-[var(--accent)]">{asset.name}</button>
           <p className="text-xs font-medium text-[var(--text-tertiary)]">{typeLabel(asset.type)}{asset.plate ? ` · ${asset.plate}` : ""}</p>
@@ -284,7 +284,7 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onC
           onClick={onPublish}
           title={asset.publishedProductId ? "Publicado como servicio de alquiler — tocá para quitarlo de la tienda" : "Publicar como servicio de alquiler en tu tienda/marketplace"}
           className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold transition-colors",
-            asset.publishedProductId ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
+            asset.publishedProductId ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
         >
           <Store className="h-3 w-3" /> {asset.publishedProductId ? "En tienda" : "Publicar en tienda"}
         </button>
@@ -401,7 +401,7 @@ function AssetFormModal({ asset, knownTypes, onClose, onSaved, onPublishChanged 
       <div className="space-y-5">
         {/* Resumen vivo */}
         <div className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Preview className="h-6 w-6" strokeWidth={2} /></span>
+          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Preview className="h-6 w-6" strokeWidth={2} /></span>
           <div className="min-w-0">
             <p className="truncate text-sm font-extrabold text-[var(--text-primary)]">{form.name.trim() || "Nueva máquina"}</p>
             <p className="text-xs font-medium text-[var(--text-tertiary)]">{(form.type === "__new__" ? (form.newType.trim() || "Categoría nueva") : typeLabel(form.type))}{form.hourlyRate ? ` · ${fmt(Number(form.hourlyRate))}/${unitNoun(form.rateUnit).replace(/s$/, "")}` : ""}</p>
@@ -443,7 +443,7 @@ function AssetFormModal({ asset, knownTypes, onClose, onSaved, onPublishChanged 
               onClick={togglePublish}
               disabled={publishing}
               className={cn("flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors disabled:opacity-60",
-                published ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]")}
+                published ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]")}
             >
               <span className={cn("inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", published ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
                 {publishing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Store className="h-5 w-5" />}
@@ -530,7 +530,7 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
         )}
         <Field label="Notas" labelClassName={LABEL} className="sm:col-span-2"><input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className={FIELD} /></Field>
       </div>
-      <div className={cn("mt-3 flex items-center justify-between rounded-xl px-4 py-3", isIncome ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-100)] dark:bg-amber-950/20")}>
+      <div className={cn("mt-3 flex items-center justify-between rounded-xl px-4 py-3", isIncome ? "bg-primary/10" : "bg-[var(--data-warning-100)] dark:bg-amber-950/20")}>
         <span className="text-sm font-bold text-[var(--text-secondary)]">{isIncome ? (form.paid ? "Ingreso a registrar" : "Por cobrar a registrar") : "Gasto a registrar"}</span>
         <span className={cn("font-mono text-xl font-bold tabular-nums", isIncome ? "text-primary" : "text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]")}>{fmt(effectiveAmount)}</span>
       </div>
@@ -554,7 +554,7 @@ function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: A
       <button type="button" aria-label="Cerrar" onClick={onClose} className="absolute inset-0 bg-[var(--text-primary)]/50 backdrop-blur-sm" />
       <div className="relative flex h-full w-full max-w-md flex-col bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] motion-safe:animate-[slideInRight_0.25s_ease-out]">
         <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 py-3.5">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Receipt className="h-5 w-5" /></span>
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Receipt className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-extrabold text-[var(--text-primary)]">{asset.name}</p>
             <p className="text-xs font-bold text-[var(--text-tertiary)]">Ganancia: <span className={cn("font-mono", asset.profit >= 0 ? "text-primary" : "text-[var(--data-error-600)]")}>{fmt(asset.profit)}</span>{asset.currentHours != null && <span> · {asset.currentHours} h</span>}</p>
@@ -575,7 +575,7 @@ function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: A
                 const inc = m.t === "income";
                 return (
                   <li key={m.id} className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-                    <span className={cn("inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", inc ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/20 dark:text-[var(--data-warning-500)]")}>{inc ? <TrendingUp className="h-4 w-4" /> : (m as ExpenseMov).category === "combustible" ? <Fuel className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}</span>
+                    <span className={cn("inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", inc ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/20 dark:text-[var(--data-warning-500)]")}>{inc ? <TrendingUp className="h-4 w-4" /> : (m as ExpenseMov).category === "combustible" ? <Fuel className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}</span>
                     <div className="min-w-0 flex-1 leading-tight">
                       <p className="truncate text-sm font-bold text-[var(--text-primary)]">{inc ? ((m as IncomeMov).client ?? "Alquiler") : EXPENSE_CATS.find(c => c.v === (m as ExpenseMov).category)?.label}{inc && !(m as IncomeMov).paid && <span className="ml-1 rounded bg-[var(--data-warning-100)] px-1 text-[length:var(--ts-2xs)] font-black text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">PENDIENTE</span>}</p>
                       <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{dStr(m.date)}{m.notes ? ` · ${m.notes}` : ""}</p>
@@ -624,7 +624,7 @@ function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged
     if (res.ok) { load(); onChanged(); }
   };
 
-  const stChip = (s: Maintenance["state"]) => s === "due" ? "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : s === "soon" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--accent)]";
+  const stChip = (s: Maintenance["state"]) => s === "due" ? "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : s === "soon" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
 
   return (
     <div className="space-y-2">
@@ -639,7 +639,7 @@ function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged
                 <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold", stChip(m.state))}>{m.detail}</span>
               </div>
               <div className="mt-2 flex gap-1.5">
-                <button type="button" onClick={() => complete(m)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-[var(--accent-soft)] px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:brightness-95"><CheckCircle className="h-3.5 w-3.5" /> Marcar hecho</button>
+                <button type="button" onClick={() => complete(m)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary/10 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:brightness-95"><CheckCircle className="h-3.5 w-3.5" /> Marcar hecho</button>
                 <button type="button" onClick={() => del(m)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--data-error-600)]"><X className="h-3.5 w-3.5" /></button>
               </div>
             </li>
@@ -684,7 +684,7 @@ function ReceivablesView({ onChanged }: { onChanged: () => void }) {
   if (rows == null) return <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</Center>;
   if (rows.length === 0) return (
     <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
-      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><CheckCircle className="h-6 w-6" /></span>
+      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><CheckCircle className="h-6 w-6" /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Todo cobrado</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">No tienes alquileres pendientes de pago.</p>
     </div>
@@ -723,7 +723,7 @@ function CalendarView({ assets }: { assets: AssetStats[] }) {
   if (items == null) return <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando agenda…</Center>;
   if (items.length === 0) return (
     <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
-      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Calendar className="h-6 w-6" /></span>
+      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Calendar className="h-6 w-6" /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Sin alquileres aún</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">Registra alquileres con fecha de inicio/fin y aparecerán acá en orden.</p>
     </div>
@@ -741,7 +741,7 @@ function CalendarView({ assets }: { assets: AssetStats[] }) {
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase leading-none">{new Date(start).toLocaleDateString("es-PE", { month: "short" })}</span>
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-[var(--text-primary)]">{i.assetName} {active && <span className="rounded bg-[var(--accent-soft)] px-1 text-[length:var(--ts-2xs)] font-black text-[var(--accent)]">EN USO</span>}</p>
+              <p className="truncate text-sm font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">{i.assetName} {active && <span className="rounded bg-primary/10 px-1 text-[length:var(--ts-2xs)] font-black text-[var(--accent)]">EN USO</span>}</p>
               <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{i.client ?? "Alquiler"}{i.startDate && i.endDate ? ` · ${dStr(i.startDate)} → ${dStr(i.endDate)}` : ` · ${dStr(i.date)}`}{!i.paid && " · pendiente"}</p>
             </div>
             <span className="font-mono text-sm font-bold tabular-nums text-primary">{fmt(i.amount)}</span>
@@ -757,7 +757,7 @@ function RankingView({ assets }: { assets: AssetStats[] }) {
   const [metric, setMetric] = useState<"profit" | "roi" | "util" | "cost">("profit");
   if (assets.length === 0) return (
     <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
-      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><BarChart3 className="h-6 w-6" /></span>
+      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><BarChart3 className="h-6 w-6" /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Sin máquinas para comparar</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">Agrega máquinas y registra alquileres para ver cuál rinde más.</p>
     </div>
@@ -845,7 +845,7 @@ function ImportModal({ knownTypes, onClose, onDone }: { knownTypes: string[]; on
     <ModalShell title="Importar flota" subtitle="Pega o sube un Excel/CSV y crea varias máquinas de una" onClose={onClose} icon={Upload}>
       {result ? (
         <div className="py-6 text-center">
-          <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><CheckCircle className="h-7 w-7" /></span>
+          <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><CheckCircle className="h-7 w-7" /></span>
           <p className="text-base font-extrabold text-[var(--text-primary)]">{result.ok} importadas{result.fail > 0 ? ` · ${result.fail} con error` : ""}</p>
           <button type="button" onClick={onDone} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90">Listo</button>
         </div>
@@ -910,7 +910,7 @@ function ContractModal({ asset, onClose }: { asset: AssetStats; onClose: () => v
         <Field label="Tarifa (S/)" labelClassName={LABEL}><input type="number" min="0" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} placeholder="180" className={FIELD} /></Field>
         <Field label="Condiciones / notas" labelClassName={LABEL} className="sm:col-span-2"><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} placeholder="Incluye operador. Combustible por cuenta del cliente." /></Field>
       </div>
-      <div className="mt-3 flex items-center justify-between rounded-xl bg-[var(--accent-soft)] px-4 py-3"><span className="text-sm font-bold text-[var(--text-secondary)]">Total</span><span className="font-mono text-xl font-bold tabular-nums text-primary">{fmt(amount)}</span></div>
+      <div className="mt-3 flex items-center justify-between rounded-xl bg-primary/10 px-4 py-3"><span className="text-sm font-bold text-[var(--text-secondary)]">Total</span><span className="font-mono text-xl font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">{fmt(amount)}</span></div>
       <div className="mt-6 flex items-center gap-3">
         <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
         <button type="button" onClick={gen} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-extrabold text-white hover:bg-primary/90"><Download className="h-4 w-4" /> Generar PDF</button>
@@ -966,7 +966,7 @@ function ModalShell({ title, subtitle, onClose, children, icon: Icon = Construct
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] sm:max-w-2xl sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-start gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-5">
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2.1} /></span>
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2.1} /></span>
           <div className="min-w-0 flex-1">
             <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Activos & Maquinaria</p>
             <CardTitle as="h2" className="text-xl leading-tight">{title}</CardTitle>

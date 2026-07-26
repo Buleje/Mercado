@@ -1363,7 +1363,7 @@ function NavGroupsFlyout({
   // Estilos coherentes con el theme buleje (slate + teal).
   const headerActiveClass = isBuleje
     ? "bg-[rgba(0,160,160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
-    : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
+    : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold";
   const headerIdleClass = isBuleje
     ? "text-white/75 hover:bg-white/[0.08] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
@@ -1569,7 +1569,7 @@ function SuperAdminFlyout({
   const headerLabelClass = isBuleje ? "text-white/55" : "text-[var(--text-tertiary)]";
   const itemActive = isBuleje
     ? "bg-linear-to-r from-[rgba(20,194,194,0.22)] via-[rgba(0,160,160,0.14)] to-[rgba(0,160,160,0.04)] text-white font-semibold shadow-[inset_3px_0_0_#14C2C2]"
-    : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
+    : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold";
   const itemIdle = isBuleje
     ? "text-white/75 hover:bg-white/[0.08] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
@@ -1734,7 +1734,7 @@ function NavGroupsAccordion({
   // sutil para separarlo del fondo. Idle: texto tenue. Pulido fino 2026-06-19.
   const itemActive = isBuleje
     ? "bg-[rgba(0,160,160,0.16)] text-[#5eead4] font-semibold shadow-[inset_3px_0_0_#14C2C2] ring-1 ring-inset ring-[rgba(20,194,194,0.16)]"
-    : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold shadow-[inset_3px_0_0_var(--accent)]";
+    : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold shadow-[inset_3px_0_0_var(--accent)]";
   const itemIdle = isBuleje
     ? "text-white/75 hover:bg-white/[0.08] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";

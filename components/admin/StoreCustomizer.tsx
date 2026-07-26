@@ -843,8 +843,8 @@ function HeroTab({
                   className={cn(
                     "px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
                     theme.heroTitle === s
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/40 hover:bg-primary/5"
                   )}
                 >
                   {s}
@@ -891,8 +891,8 @@ function HeroTab({
                   className={cn(
                     "px-3 py-2 rounded-xl text-sm font-semibold border-2 text-left transition-all max-w-md",
                     theme.heroSubtitle === s
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/40 hover:bg-primary/5"
                   )}
                 >
                   {s}
@@ -934,8 +934,8 @@ function HeroTab({
                   className={cn(
                     "px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
                     theme.heroBadge === s
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/40 hover:bg-primary/5"
                   )}
                 >
                   {s}
@@ -981,8 +981,8 @@ function HeroTab({
                 className={cn(
                   "px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
                   theme.heroOriginBadge === s
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
+                    ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                    : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/40 hover:bg-primary/5"
                 )}
               >
                 {s}
@@ -1058,8 +1058,8 @@ function HeroTab({
                     className={cn(
                       "inline-flex items-center gap-2 px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
                       active
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
+                        ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                        : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/40 hover:bg-primary/5"
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -1196,7 +1196,7 @@ function HeroTab({
                   const active = (theme.heroAlign ?? "left") === val;
                   return (
                     <button key={val} type="button" onClick={() => update("heroAlign", val)} aria-pressed={active}
-                      className={cn("h-10 rounded-xl border-2 text-sm font-bold transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
+                      className={cn("h-10 rounded-xl border-2 text-sm font-bold transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
                       {label}
                     </button>
                   );
@@ -1210,7 +1210,7 @@ function HeroTab({
                   const active = (theme.heroHeight ?? "normal") === val;
                   return (
                     <button key={val} type="button" onClick={() => update("heroHeight", val)} aria-pressed={active}
-                      className={cn("h-10 rounded-xl border-2 text-sm font-bold transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
+                      className={cn("h-10 rounded-xl border-2 text-sm font-bold transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
                       {label}
                     </button>
                   );
@@ -1804,7 +1804,7 @@ export default function StoreCustomizer() {
           <button
             type="button"
             onClick={() => setShowPreview(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/20 transition-colors"
           >
             <Eye className="h-4 w-4" />
             Vista previa
@@ -3224,7 +3224,7 @@ export default function StoreCustomizer() {
                     {/* Border radius slider */}
                     <div className="space-y-3">
                       <Field
-                        label={<><span>Bordes redondeados</span><span className="text-base font-bold text-primary bg-primary/10 px-3 py-1 rounded-full tabular-nums ml-auto">{theme.borderRadius}px</span></>}
+                        label={<><span>Bordes redondeados</span><span className="text-base font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 px-3 py-1 rounded-full tabular-nums ml-auto">{theme.borderRadius}px</span></>}
                         labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center justify-between"
                       >
                         <input

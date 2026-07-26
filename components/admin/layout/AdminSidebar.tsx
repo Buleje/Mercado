@@ -610,9 +610,9 @@ export function AdminSidebar({
         return {
           bg: "bg-[var(--surface-raised)]",
           text: "text-[var(--text-secondary)]",
-          hover: "hover:bg-[var(--accent-soft)]/40 hover:text-[var(--text-primary)]",
+          hover: "hover:bg-primary/10/40 hover:text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]",
           border: "border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
-          activeItem: "bg-[var(--accent-soft)] text-primary font-semibold shadow-[inset_0_0_0_1px_color-mix(in oklab, var(--accent) 20%, transparent)]",
+          activeItem: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold shadow-[inset_0_0_0_1px_color-mix(in oklab, var(--accent) 20%, transparent)]",
           headerBorder: "border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
         };
     }
@@ -795,7 +795,7 @@ export function AdminSidebar({
         clientes: "text-[var(--data-error-500)]",
         "marketplace-ops": "text-[var(--accent)]",
         analytics: "text-[var(--nav-cat-analytics)]",
-        comunicacion: "text-[var(--accent-dark)]",
+        comunicacion: "text-[var(--accent-dark)] dark:text-[var(--accent)]",
         documentos: "text-slate-600",
         "mi-tienda": "text-[var(--accent)]",
         metas: "text-[var(--nav-cat-metas)]",
@@ -921,7 +921,7 @@ export function AdminSidebar({
                     "shrink-0 text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-md leading-none transition-all",
                     isDarkTheme
                       ? "bg-[color-mix(in_oklab,var(--accent)_20%,transparent)] text-[color-mix(in_oklab,var(--accent)_70%,white)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_30%,transparent)]"
-                      : "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20",
+                      : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-inset ring-primary/20",
                     canChangeIndustry && "cursor-pointer hover:opacity-80",
                     !canChangeIndustry && "cursor-default"
                   )}
@@ -940,7 +940,7 @@ export function AdminSidebar({
                   "uppercase text-[length:var(--ts-2xs)] font-bold tracking-wider px-1.5 py-px rounded shrink-0",
                   isDarkTheme
                     ? "bg-[color-mix(in oklab, var(--accent) 14%, transparent)] text-[color-mix(in oklab, var(--accent) 60%, white)] ring-1 ring-inset ring-[color-mix(in oklab, var(--accent) 25%, transparent)]"
-                    : "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20"
+                    : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-inset ring-primary/20"
                 )}>
                   {userRole}
                 </span>
@@ -1515,7 +1515,7 @@ export function AdminSidebar({
                   className={cn(
                     "w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors",
                     tab === tabId
-                      ? "bg-primary/10 text-primary font-semibold"
+                      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold"
                       : "text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface font-medium"
                   )}
                 >

@@ -642,7 +642,7 @@ export default function CacaoAcopio() {
                         {l.parcelaCodigo && (
                           <span
                             title={`Origen: sección ${l.parcelaCodigo} (Campo)`}
-                            className="ml-1.5 inline-flex items-center gap-1 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"
+                            className="ml-1.5 inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"
                           >
                             <Trees className="h-3 w-3" />origen {l.parcelaCodigo}
                           </span>
@@ -1144,7 +1144,7 @@ function EmptyOrLoading({
     );
   return (
     <div className="p-12 text-center text-[var(--text-tertiary)]">
-      <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+      <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
         <Icon className="h-7 w-7" />
       </span>
       <p className="text-base font-bold text-[var(--text-primary)]">{msg}</p>

@@ -69,7 +69,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
       <div className="flex h-full max-h-[90vh] flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Users className="h-5 w-5" strokeWidth={1.75} /></span>
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Users className="h-5 w-5" strokeWidth={1.75} /></span>
             <div><CardTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">Nuevo productor</CardTitle><p className="text-xs text-[var(--text-tertiary)]">Proveedor de cacao · maestro</p></div>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-lg p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"><X className="h-4 w-4" /></button>
@@ -103,7 +103,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
                     type="button"
                     onClick={useMyLocation}
                     disabled={geoLoading}
-                    className="inline-flex h-10 items-center gap-2 rounded-lg border-2 border-[var(--accent)] px-3 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] disabled:opacity-60"
+                    className="inline-flex h-10 items-center gap-2 rounded-lg border-2 border-[var(--accent)] px-3 text-sm font-bold text-[var(--accent)] hover:bg-primary/10 disabled:opacity-60"
                   >
                     {geoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
                     Usar mi ubicación (GPS)
@@ -151,7 +151,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
               <p className="mb-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Tarjeta del productor</p>
               <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
                 <div className="flex items-center gap-3">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Users className="h-6 w-6" /></span>
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Users className="h-6 w-6" /></span>
                   <div className="min-w-0">
                     <p className="truncate text-base font-extrabold text-[var(--text-primary)]">{f.nombre.trim() || "Nuevo productor"}</p>
                     <p className="text-xs text-[var(--text-tertiary)]">El código (P-00X) se asigna al guardar</p>
@@ -160,7 +160,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
                 {(f.variedad || f.certificacion) && (
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {f.variedad && <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]">{f.variedad}</span>}
-                    {f.certificacion && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-xs font-medium text-[var(--accent)]"><Award className="h-3 w-3" />{CERT_LABEL[f.certificacion]}</span>}
+                    {f.certificacion && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-[var(--accent)]"><Award className="h-3 w-3" />{CERT_LABEL[f.certificacion]}</span>}
                   </div>
                 )}
                 <div className="mt-3 space-y-1.5 border-t border-[var(--rule-soft)] pt-3 text-sm">

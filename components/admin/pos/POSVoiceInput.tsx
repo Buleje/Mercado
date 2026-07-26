@@ -331,7 +331,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                     "h-11 w-11 rounded-2xl flex items-center justify-center shrink-0",
                     isListening
                       ? "bg-[var(--data-error-500)]/15 text-[var(--data-error-500)]"
-                      : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                      : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
                   )}
                 >
                   <Mic className="h-5 w-5" strokeWidth={2.25} />
@@ -432,7 +432,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                       <button
                         key={prompt}
                         onClick={() => handleQuickPrompt(prompt)}
-                        className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-1.5 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--accent-soft)] hover:border-[var(--accent)]/40 transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-1.5 text-sm font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:border-[var(--accent)]/40 transition-colors"
                       >
                         <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" aria-hidden />
                         {prompt}
@@ -529,7 +529,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                       {item.matchedProductId && (
                         <button
                           onClick={() => addItem(item)}
-                          className="inline-flex items-center gap-1 h-9 px-3 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-sm font-extrabold hover:bg-[var(--accent)] hover:text-white transition-colors"
+                          className="inline-flex items-center gap-1 h-9 px-3 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-extrabold hover:bg-[var(--accent)] hover:text-white transition-colors"
                           title="Agregar al carrito"
                         >
                           <Plus className="h-4 w-4" aria-hidden />

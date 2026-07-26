@@ -750,7 +750,7 @@ export default function BrandConceptTab({
                 href={storefrontUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl border-2 border-primary text-primary text-sm font-bold hover:bg-primary/5 shrink-0"
+                className="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl border-2 border-primary text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-bold hover:bg-primary/5 shrink-0"
               >
                 <ExternalLink className="h-4 w-4" />
                 Ver en vivo
@@ -1027,8 +1027,8 @@ function ConceptCard({
             className={cn(
               "flex-1 h-10 rounded-xl text-xs font-extrabold transition-colors",
               isActive
-                ? "bg-primary/10 text-primary border-2 border-primary"
-                : "bg-gray-100 dark:bg-surface text-[var(--text-primary)] hover:bg-primary/10 hover:text-primary border-2 border-transparent",
+                ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-primary"
+                : "bg-gray-100 dark:bg-surface text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-transparent",
             )}
           >
             {isActive ? "✓ Aplicado" : "Aplicar"}

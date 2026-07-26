@@ -180,13 +180,13 @@ export default function PredictiveAnalyticsTab() {
       </div>
 
       {/* Card 1: Ventas próxima semana */}
-      <PredCard icon={data.trendPct >= 0 ? TrendingUp : TrendingDown} title="Ventas próxima semana" iconBg={data.trendPct >= 0 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]"}>
+      <PredCard icon={data.trendPct >= 0 ? TrendingUp : TrendingDown} title="Ventas próxima semana" iconBg={data.trendPct >= 0 ? "bg-primary/10" : "bg-[var(--data-error-500)]"}>
         <div className="flex items-end gap-3">
           <p className="text-4xl font-extrabold text-[var(--text-primary)]">S/{Number(data.salesForecast).toFixed(2)}</p>
           <span className={cn(
             "text-sm font-bold px-2 py-0.5 rounded-full mb-1",
             data.trendPct >= 0
-              ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+              ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
               : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
           )}>
             {data.trendPct >= 0 ? "+" : ""}{data.trendPct}%
@@ -232,7 +232,7 @@ export default function PredictiveAnalyticsTab() {
       </PredCard>
 
       {/* Card 3: Mejor día para comprar */}
-      <PredCard icon={Calendar} title="Mejor dia para ir al proveedor" iconBg="bg-[var(--accent-soft)]">
+      <PredCard icon={Calendar} title="Mejor dia para ir al proveedor" iconBg="bg-primary/10">
         <div>
           <p className="text-3xl font-extrabold text-[var(--text-primary)]">{data.bestPurchaseDay.day}</p>
           <p className="text-xs text-[var(--text-tertiary)] mt-1">{data.bestPurchaseDay.reason}</p>
@@ -261,7 +261,7 @@ export default function PredictiveAnalyticsTab() {
                     href={c.whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-[length:var(--ts-xs)] font-bold hover:bg-[var(--accent-soft)] transition-colors min-h-[44px]"
+                    className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-white text-[length:var(--ts-xs)] font-bold hover:bg-primary/10 transition-colors min-h-[44px]"
                   >
                     <ExternalLink className="h-3 w-3" />
                     WhatsApp

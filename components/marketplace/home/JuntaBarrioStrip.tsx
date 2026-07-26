@@ -42,7 +42,7 @@ export default function JuntaBarrioStrip() {
     >
       <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 sm:p-6">
         <div className="flex items-center gap-2.5 mb-4">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Users className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <div>

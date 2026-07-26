@@ -93,14 +93,14 @@ const EVENT_CONFIG: Record<
   credit: {
     icon: CreditCard,
     color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-    dot: "bg-[var(--accent-soft)]",
+    bg: "bg-primary/10 dark:bg-primary/15",
+    dot: "bg-primary/10",
   },
   points: {
     icon: Gift,
     color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
     bg: "bg-[var(--surface-sunken)]",
-    dot: "bg-[var(--accent-soft)]",
+    dot: "bg-primary/10",
   },
 };
 

@@ -249,7 +249,7 @@ export default function ChatIAModule() {
       {/* Barra superior: progress + toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 px-4 sm:px-5 py-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)]">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
             <Sparkles className="h-4 w-4 text-[var(--data-success-500)]" />
           </span>
           <div className="min-w-0">

@@ -148,7 +148,7 @@ export default function FiadoTendenciaCobroChart() {
                 className={cn(
                   "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold",
                   header.deltaCobrado >= 0
-                    ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                    ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                     : "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
                 )}
               >

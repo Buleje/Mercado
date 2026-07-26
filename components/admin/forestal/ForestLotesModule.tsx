@@ -117,7 +117,7 @@ export default function ForestLotesModule() {
 
       <div className="flex flex-wrap gap-2">
         {STATUS_FILTERS.map((f) => (
-          <button key={f.key} type="button" onClick={() => setStatusFilter(f.key)} className={`inline-flex h-9 items-center rounded-full border-2 px-3.5 text-sm font-bold transition-colors ${statusFilter === f.key ? "border-[var(--accent)] bg-primary/10 text-primary" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"}`}>
+          <button key={f.key} type="button" onClick={() => setStatusFilter(f.key)} className={`inline-flex h-9 items-center rounded-full border-2 px-3.5 text-sm font-bold transition-colors ${statusFilter === f.key ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"}`}>
             {f.label}
           </button>
         ))}

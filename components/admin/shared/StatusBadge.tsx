@@ -22,7 +22,7 @@ interface StatusBadgeProps {
  *   - text: color puro del token
  *   - dot: color puro del token
  *
- * Ya no hay `bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]` hardcoded — un rebrand
+ * Ya no hay `bg-primary/10 dark:bg-primary/15` hardcoded — un rebrand
  * cambia `--data-success` y las 6 variantes siguen sin editar.
  */
 const variantStyles: Record<BadgeVariant, { badge: string; dot: string }> = {

@@ -561,7 +561,7 @@ export default function StoreDetailClient({
                         className={cn(
                           "inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full text-[length:var(--ts-2xs)] font-black tabular-nums transition-colors",
                           active
-                            ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                            ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                             : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                         )}
                       >
@@ -921,13 +921,13 @@ function MobileSearchOverlay({
                 <button
                   type="button"
                   onClick={() => onSelectSuggestion(s)}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-xl hover:bg-[var(--accent-soft)]/40 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-xl hover:bg-primary/10/40 transition-colors"
                 >
                   <span
                     className={cn(
                       "inline-flex items-center justify-center h-9 w-9 rounded-full shrink-0",
                       s.type === "category"
-                        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                        ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                         : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                     )}
                   >
@@ -1064,7 +1064,7 @@ function StoreInfoModal({
           {/* Zona */}
           {store.zone && (
             <div className="flex items-start gap-3">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <MapPin className="h-5 w-5" strokeWidth={2.25} />
               </span>
               <div className="min-w-0">
@@ -1080,7 +1080,7 @@ function StoreInfoModal({
 
           {/* Horario */}
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <Clock className="h-5 w-5" strokeWidth={2.25} />
             </span>
             <div className="min-w-0 flex-1">
@@ -1126,7 +1126,7 @@ function StoreInfoModal({
           {/* Métodos de pago */}
           {paymentMethods.length > 0 && (
             <div className="flex items-start gap-3">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Wallet className="h-5 w-5" strokeWidth={2.25} />
               </span>
               <div className="min-w-0">
@@ -1144,7 +1144,7 @@ function StoreInfoModal({
               casteaba a `whatsapp` inexistente → nunca aparecía). */}
           {(store as { whatsappPublic?: string | null }).whatsappPublic && (
             <div className="flex items-start gap-3">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Phone className="h-5 w-5" strokeWidth={2.25} />
               </span>
               <div className="min-w-0">

@@ -111,7 +111,7 @@ export default function CacaoConfigModal({ onClose, onSaved }: Props) {
       <div className="bg-[var(--surface-raised)]">
         <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <Bell className="h-5 w-5" strokeWidth={1.75} />
             </span>
             <div>

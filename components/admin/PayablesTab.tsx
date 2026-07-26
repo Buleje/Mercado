@@ -262,7 +262,7 @@ export default function PayablesTab() {
 
                 {/* Payment form */}
                 {showPayment === p.id && (
-                  <form onSubmit={(e) => registerPayment(e, p.id)} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-[var(--accent-soft)] flex flex-wrap items-end gap-3">
+                  <form onSubmit={(e) => registerPayment(e, p.id)} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-primary/10 flex flex-wrap items-end gap-3">
                     <Field label="Monto (S/)" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                       <input
                         required type="number" step="0.01" min="0.01" max={remaining}

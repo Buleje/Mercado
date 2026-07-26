@@ -400,7 +400,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
               >
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-                    <ChefHat className="h-6 w-6 text-[var(--accent-dark)]" />
+                    <ChefHat className="h-6 w-6 text-[var(--accent-dark)] dark:text-[var(--accent)]" />
                     Preparacion
                   </h2>
                   {totalSteps > 0 && (
@@ -524,7 +524,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                 className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-6 shadow-sm"
               >
                 <h2 className="text-lg font-bold text-[var(--text-primary)] mb-5 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-[var(--accent-dark)]" />
+                  <Sparkles className="h-5 w-5 text-[var(--accent-dark)] dark:text-[var(--accent)]" />
                   Tambien te puede gustar
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

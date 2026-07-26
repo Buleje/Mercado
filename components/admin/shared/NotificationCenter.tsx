@@ -42,7 +42,7 @@ const TYPE_CONFIG: Record<
   order: {
     icon: ShoppingCart,
     color: "text-[var(--data-success-500)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    bg: "bg-primary/10 dark:bg-primary/15",
   },
   stock: {
     icon: Package,
@@ -52,7 +52,7 @@ const TYPE_CONFIG: Record<
   message: {
     icon: MessageSquare,
     color: "text-[var(--data-success-500)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    bg: "bg-primary/10 dark:bg-primary/15",
   },
   system: {
     icon: Shield,
@@ -179,7 +179,7 @@ export default function NotificationCenter() {
         className={cn(
           "relative flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
           open
-            ? "bg-primary/10 text-primary"
+            ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
             : "text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent hover:text-primary"
         )}
       >
@@ -246,7 +246,7 @@ export default function NotificationCenter() {
                       onClick={() => markAsRead(notif.id)}
                       className={cn(
                         "px-4 py-3 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800/50 border-b border-gray-50 dark:border-zinc-800/50 cursor-pointer transition-colors flex items-start gap-3 group",
-                        !notif.read && "bg-[var(--accent-soft)]/40 dark:bg-[var(--accent-muted)]/40"
+                        !notif.read && "bg-primary/10/40 dark:bg-primary/15/40"
                       )}
                     >
                       {/* Icono */}

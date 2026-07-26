@@ -420,7 +420,7 @@ export default function QuickActionsBar({
           className={cn(
             "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors ",
             activePanel === "products"
-              ? "bg-primary/10 dark:bg-primary/20 border-primary/40 dark:border-primary/40 text-primary"
+              ? "bg-primary/10 dark:bg-primary/20 border-primary/40 dark:border-primary/40 text-[var(--accent-ink)] dark:text-[var(--accent)]"
               : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface"
           )}
         >

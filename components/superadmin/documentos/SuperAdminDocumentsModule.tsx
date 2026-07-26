@@ -390,7 +390,7 @@ export default function SuperAdminDocumentsModule() {
             className={cn(
               "rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-colors",
               dragOver
-                ? "border-primary bg-[var(--accent-soft)]"
+                ? "border-primary bg-primary/10"
                 : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-alt)]",
             )}
           >

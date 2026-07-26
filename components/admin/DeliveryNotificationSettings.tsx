@@ -148,7 +148,7 @@ export default function DeliveryNotificationSettings({ partner, onSaved }: Props
       )}
 
       {saved && (
-        <p className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg px-3 py-2">
+        <p className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 rounded-lg px-3 py-2">
           Configuracion guardada correctamente
         </p>
       )}

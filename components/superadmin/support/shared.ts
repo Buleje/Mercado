@@ -85,7 +85,7 @@ export const STATUS_CONFIG: Record<TicketStatus, StatusConfig> = {
   },
   in_progress: {
     label: "En progreso",
-    badgeClass: "bg-[var(--accent-soft)] text-[var(--accent)]",
+    badgeClass: "bg-primary/10 text-[var(--accent)]",
     icon: Clock,
   },
   closed: {

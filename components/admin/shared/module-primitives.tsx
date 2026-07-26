@@ -99,7 +99,7 @@ const ICON_ACTION_TONE: Record<IconActionTone, string> = {
   success:
     "border-[var(--data-success-500)]/50 bg-[var(--data-success-50)] text-[var(--data-success-700)] hover:border-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]",
   info: "border-[var(--data-info-500)]/50 bg-[var(--data-info-50)] text-[var(--data-info-700)] hover:border-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/12 dark:text-[var(--data-info-500)]",
-  accent: "border-[var(--accent)] bg-primary/10 text-primary",
+  accent: "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
   danger:
     "border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] text-[var(--data-error-700)] hover:border-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]",
   muted:

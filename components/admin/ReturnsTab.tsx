@@ -91,7 +91,7 @@ export default function ReturnsTab() {
       </div>
 
       {creditSuccess && (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm font-bold px-2 sm:px-4 py-2 sm:py-3 rounded-xl flex flex-wrap items-center gap-2">
+        <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm font-bold px-2 sm:px-4 py-2 sm:py-3 rounded-xl flex flex-wrap items-center gap-2">
           <Check className="h-4 w-4" /> Crédito aplicado al saldo del cliente correctamente.
         </div>
       )}
@@ -183,7 +183,7 @@ export default function ReturnsTab() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">Dev #{r.id.slice(-6)}</p>
                   {r.creditApplied && (
-                    <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                    <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-2 py-0.5 rounded-full border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                       <CreditCard className="h-3 w-3" /> Crédito aplicado
                     </span>
                   )}

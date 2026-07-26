@@ -36,7 +36,7 @@ const SUGGESTION_CONFIG: Record<
   Suggestion,
   { label: string; badge: string; icon: React.ElementType; kpiColor: string }
 > = {
-  Subir:     { label: "Subir precio",  badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", icon: TrendingUp,   kpiColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+  Subir:     { label: "Subir precio",  badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]", icon: TrendingUp,   kpiColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
   Bajar:     { label: "Bajar precio",  badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",                 icon: TrendingDown, kpiColor: "text-[var(--data-error-600)] dark:text-red-400" },
   OK:        { label: "Precio OK",     badge: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",                icon: Minus,        kpiColor: "text-[var(--text-tertiary)]" },
   "Sin datos": { label: "Sin datos",   badge: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]",                icon: HelpCircle,   kpiColor: "text-[var(--text-tertiary)]" },
@@ -92,7 +92,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-[var(--shadow-sm)]">
       <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
         <div className="flex items-start gap-3">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
             <BarChart2 className="h-5 w-5" />
           </span>
           <div>
@@ -265,7 +265,7 @@ export default function CompetitivePricingTab() {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-[var(--shadow-sm)]">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <Target className="h-5 w-5" />
             </span>
             <div>
@@ -291,7 +291,7 @@ export default function CompetitivePricingTab() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                 <TrendingUp className="h-5 w-5 text-[var(--data-success-500)]" />
               </span>
             </div>
@@ -347,7 +347,7 @@ export default function CompetitivePricingTab() {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-[var(--shadow-sm)]">
         <div className="px-6 sm:px-8 py-5 border-b border-[var(--rule-base)] flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <BarChart2 className="h-5 w-5" />
             </span>
             <div>

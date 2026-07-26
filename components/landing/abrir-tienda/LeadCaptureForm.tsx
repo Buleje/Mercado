@@ -59,7 +59,7 @@ export default function LeadCaptureForm() {
           {sent ? (
             <div
               role="status"
-              className="mx-auto mt-8 flex max-w-md items-center gap-3 rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent-soft)] px-5 py-4 text-left"
+              className="mx-auto mt-8 flex max-w-md items-center gap-3 rounded-2xl border border-[var(--accent)]/30 bg-primary/10 px-5 py-4 text-left"
             >
               <CheckCircle2 className="h-6 w-6 shrink-0 text-[var(--accent)]" strokeWidth={2} aria-hidden />
               <p className="text-sm font-semibold text-[var(--text-primary)]">

@@ -79,7 +79,7 @@ function OfferCardImpl({ offer }: OfferCardProps) {
           className={`inline-flex items-center gap-1.5 px-3 h-9 text-sm font-extrabold tabular-nums ${
             urgent
               ? "bg-[var(--brand-danger)] text-white"
-              : "bg-[var(--accent-soft)] text-[var(--accent)]"
+              : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
           }`}
         >
           <TimerIcon className="h-4 w-4" />

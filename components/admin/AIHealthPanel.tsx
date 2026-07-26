@@ -262,8 +262,8 @@ export default function AIHealthPanel() {
                       <span
                         className="relative flex h-2.5 w-2.5 mt-1.5 shrink-0"
                       >
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-soft)] opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--accent-soft)]" />
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/10 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary/10" />
                       </span>
                     )}
                   </div>

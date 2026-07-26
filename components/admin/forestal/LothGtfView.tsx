@@ -159,7 +159,7 @@ export default function LothGtfView() {
                           type="button"
                           onClick={() => ingresarAlCtp(g.gtfNumber)}
                           title="Registrar estas trozas como ingreso en el Libro de Operaciones del CTP"
-                          className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-2.5 text-xs font-bold text-[var(--accent-dark)] hover:bg-[var(--accent-muted)]"
+                          className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-2.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/15"
                         >
                           <LogIn className="h-3.5 w-3.5" /> Ingresar al CTP
                         </button>

@@ -188,7 +188,7 @@ export default function BackupRestoreTab() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{b.name}</h4>
                             <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
-                              b.type === "auto" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]")}>
+                              b.type === "auto" ? "bg-primary/10 text-[var(--data-success)] dark:bg-primary/15 dark:text-[var(--data-success)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]")}>
                               {b.type === "auto" ? "Automático" : "Manual"}
                             </span>
                             <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted">{S.label}</span>
@@ -205,7 +205,7 @@ export default function BackupRestoreTab() {
                         {b.status === "completado" && (
                           <>
                             <a href="/api/backup" download={`bodega-backup-${b.createdAt.slice(0, 10)}.json`}
-                              className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success)]" title="Descargar">
+                              className="p-1.5 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/15 text-[var(--data-success)]" title="Descargar">
                               <Download className="h-4 w-4" />
                             </a>
                             <button className="p-1.5 rounded-lg hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20 text-[var(--data-warning)]" title="Restaurar (próximamente)">
@@ -259,7 +259,7 @@ export default function BackupRestoreTab() {
               className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
           </Field>
 
-          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3">
+          <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3">
             <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">Almacenamiento del backup</p>
             <p className="text-xs text-[var(--data-success)] dark:text-[var(--data-success)]">Los backups se descargan como archivos JSON encriptados. Para almacenamiento en nube, configura un webhook en Configuración → Integraciones.</p>
           </div>

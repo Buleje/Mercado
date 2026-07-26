@@ -39,11 +39,11 @@ function _addDays(d: number): string {
 }
 
 const STATUS_META: Record<ContractStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle }> = {
-  activo:           { label: "Activo",          color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle   },
+  activo:           { label: "Activo",          color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: CheckCircle   },
   "por-vencer":     { label: "Por vencer",       color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",    icon: Clock         },
   vencido:          { label: "Vencido",          color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",         bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",        icon: AlertTriangle },
   cancelado:        { label: "Cancelado",        color: "text-[var(--text-secondary)] dark:text-muted",          bg: "bg-gray-100 dark:bg-surface",          icon: X             },
-  "en-negociacion": { label: "En negociación",   color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",       bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",      icon: RefreshCw     },
+  "en-negociacion": { label: "En negociación",   color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",       bg: "bg-primary/10 dark:bg-primary/15",      icon: RefreshCw     },
 };
 
 type Contract = {
@@ -138,7 +138,7 @@ export default function PurchaseContractsTab() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: "Total contratos", value: String(stats.total), color: "text-[var(--text-primary)] dark:text-[var(--text-primary)]",   bg: "bg-gray-50 dark:bg-surface/50" },
-          { label: "Activos",         value: String(stats.activo), color: "text-[var(--data-success-500)]",                    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Activos",         value: String(stats.activo), color: "text-[var(--data-success-500)]",                    bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Por vencer",      value: String(stats.porVencer), color: "text-[var(--data-warning-500)]",                   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
           { label: "Vencidos",        value: String(stats.vencido), color: "text-[var(--data-error-500)]",                       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
           { label: "Gasto total",     value: fmt(stats.totalSpend), color: "text-[var(--text-secondary)]",                    bg: "bg-[var(--surface-sunken)]" },
@@ -240,7 +240,7 @@ export default function PurchaseContractsTab() {
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
                         <span className="text-xs font-mono font-bold text-[var(--text-tertiary)]">{c.code}</span>
                         <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", meta.bg, meta.color)}><Icon className="h-3 w-3" />{meta.label}</span>
-                        {c.autoRenew && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">Auto-renovación</span>}
+                        {c.autoRenew && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]">Auto-renovación</span>}
                       </div>
                       <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.supplierName}</p>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{c.category} · {c.description}</p>
@@ -270,11 +270,11 @@ export default function PurchaseContractsTab() {
                     {dLeft < 0 ? `${Math.abs(dLeft)}d vencido` : dLeft === 0 ? "Vence hoy" : `${dLeft}d restantes`}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={() => setDetail(c)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
+                    <button onClick={() => setDetail(c)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors">
                       <Eye className="h-3.5 w-3.5" />
                     </button>
                     {(c.computedStatus === "vencido" || c.computedStatus === "por-vencer") && (
-                      <button onClick={() => handleRenew(c.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs font-semibold hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
+                      <button onClick={() => handleRenew(c.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs font-semibold hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors">
                         <RefreshCw className="h-3 w-3" /> Renovar +1 año
                       </button>
                     )}

@@ -236,11 +236,11 @@ export default function RecetarioAdminTab() {
     <div className="space-y-6">
       {/* Stats bar */}
       <div className="flex flex-wrap gap-3 text-xs">
-        <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
+        <div className="flex items-center gap-1.5 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
           <BookOpen className="h-3.5 w-3.5" />
           Recetas publicadas: {activas}
         </div>
-        <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
+        <div className="flex items-center gap-1.5 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
           <BarChart3 className="h-3.5 w-3.5" />
           Ingredientes promedio: {avgIng}
         </div>
@@ -331,7 +331,7 @@ export default function RecetarioAdminTab() {
                         className={cn(
                           "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors",
                           r.activa !== false
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                             : "bg-gray-100 text-[var(--text-secondary)]"
                         )}
                       >
@@ -491,7 +491,7 @@ export default function RecetarioAdminTab() {
                                           <button
                                             key={p.id}
                                             onClick={() => selectProduct(idx, p)}
-                                            className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] text-[var(--data-success-500)] px-2 py-0.5 rounded-md hover:bg-[var(--accent-soft)] transition-colors"
+                                            className="text-[length:var(--ts-2xs)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-md hover:bg-primary/10 transition-colors"
                                           >
                                             {p.name} — S/{Number(p.price).toFixed(2)}
                                           </button>
@@ -540,7 +540,7 @@ export default function RecetarioAdminTab() {
                       </div>
                       {pasos.map((paso, idx) => (
                         <div key={idx} className="flex gap-2 items-start">
-                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0 mt-1">{idx + 1}</span>
+                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold shrink-0 mt-1">{idx + 1}</span>
                           <textarea
                             value={paso}
                             onChange={e => updatePaso(idx, e.target.value)}
@@ -579,7 +579,7 @@ export default function RecetarioAdminTab() {
                                 <span className="flex items-center gap-1"><Users className="h-3 w-3" />{porciones} porciones</span>
                                 <span className={cn(
                                   "px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold",
-                                  dificultad === "Fácil" ? "bg-[var(--accent-soft)]" : dificultad === "Media" ? "bg-[var(--data-warning-500)]/30" : "bg-[var(--data-error-500)]/30"
+                                  dificultad === "Fácil" ? "bg-primary/10" : dificultad === "Media" ? "bg-[var(--data-warning-500)]/30" : "bg-[var(--data-error-500)]/30"
                                 )}>{dificultad}</span>
                               </div>
                             </div>
@@ -610,7 +610,7 @@ export default function RecetarioAdminTab() {
                               <ol className="space-y-1.5">
                                 {pasos.filter(p => p.trim()).map((p, idx) => (
                                   <li key={idx} className="flex gap-2 text-xs text-[var(--text-secondary)]">
-                                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold shrink-0">{idx + 1}</span>
+                                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-2xs)] font-bold shrink-0">{idx + 1}</span>
                                     {p}
                                   </li>
                                 ))}

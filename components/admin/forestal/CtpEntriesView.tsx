@@ -220,7 +220,7 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
             >
               <FileText className="h-5 w-5" /> <span className="max-sm:sr-only">Anexos emitidos</span>
               {totalAnexos > 0 && (
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{totalAnexos}</span>
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">{totalAnexos}</span>
               )}
             </button>
           )}
@@ -496,7 +496,7 @@ function EntryChip({ label, count, active, onClick, tone = "accent" }: {
         active
           ? tone === "muted"
             ? "border-[var(--text-tertiary)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
-            : "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+            : "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
           : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
       }`}
     >

@@ -78,7 +78,7 @@ export default function DealsFilterBar({ filters, onFiltersChange }: DealsFilter
                       "border-2",
                       active
                         ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
-                        : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]",
+                        : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-primary/10",
                     )}
                   >
                     {tab.label}
@@ -141,7 +141,7 @@ export default function DealsFilterBar({ filters, onFiltersChange }: DealsFilter
                     className={cn(
                       "inline-flex items-center rounded-md px-2.5 py-1 text-[length:var(--ts-xs)] font-bold tabular-nums transition-colors border",
                       active
-                        ? "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/30"
+                        ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-[var(--accent)]/30"
                         : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--rule-mid)] hover:text-[var(--text-primary)]",
                     )}
                   >

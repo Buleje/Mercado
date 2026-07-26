@@ -118,7 +118,7 @@ export default function ChatTab() {
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs">
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary">
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <MessageCircle className="h-3.5 w-3.5" />
             {threads.length} hilos
           </span>

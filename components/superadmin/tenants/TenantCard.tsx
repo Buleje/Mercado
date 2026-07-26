@@ -522,7 +522,7 @@ export function TenantCard({
           <button
             type="button"
             onClick={() => onAddProduct(t)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold border-2 border-dashed border-[var(--accent)]/40 text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold border-2 border-dashed border-[var(--accent)]/40 text-[var(--accent)] hover:bg-primary/10 transition-colors"
           >
             <Package className="w-4 h-4" /> Agregar producto a esta tienda
           </button>

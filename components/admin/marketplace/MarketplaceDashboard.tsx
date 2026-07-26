@@ -202,7 +202,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
             </span>
           )}
           {data.pendingReviews > 0 && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-semibold">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-semibold">
               <MessageSquare className="h-3.5 w-3.5" />
               {data.pendingReviews} reseña{data.pendingReviews === 1 ? "" : "s"} por moderar
             </span>
@@ -307,7 +307,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
               href={`/marketplace/${data.store.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 inline-flex items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] transition-colors group"
+              className="mt-3 inline-flex items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm font-semibold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:text-[var(--accent)] transition-colors group"
             >
               <span className="inline-flex items-center gap-2">
                 <ExternalLink className="h-4 w-4" />

@@ -593,7 +593,7 @@ export default function TenantsPage() {
                 title={bulkMode ? "Salir del modo selección" : "Modo selección"}
                 className={`inline-flex items-center justify-center h-10 w-10 rounded-xl border-2 transition-colors ${
                   bulkMode
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                    ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
                 }`}
                 aria-label={bulkMode ? "Salir de selección" : "Activar selección"}
@@ -851,7 +851,7 @@ export default function TenantsPage() {
           <button
             type="button"
             onClick={handleBulkExport}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent)] bg-[var(--accent-soft)] hover:brightness-110 transition-all"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent)] bg-primary/10 hover:brightness-110 transition-all"
           >
             <Download className="h-3.5 w-3.5" />
             Exportar CSV
@@ -859,7 +859,7 @@ export default function TenantsPage() {
           <button
             type="button"
             onClick={() => setBulkMessageOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent)] bg-[var(--accent-soft)] hover:brightness-110 transition-all"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent)] bg-primary/10 hover:brightness-110 transition-all"
           >
             <MessageSquare className="h-3.5 w-3.5" />
             Mensaje
@@ -1053,7 +1053,7 @@ function QuickFilters({
             onClick={() => applyQuickFilter(qf.id)}
             className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold border-2 transition-colors ${
               isActive
-                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             }`}
           >
@@ -1072,7 +1072,7 @@ function QuickFilters({
           onClick={() => setMoreOpen((o) => !o)}
           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold border-2 transition-colors ${
             isMoreActive || moreOpen
-              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+              ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
               : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           }`}
           aria-expanded={moreOpen}

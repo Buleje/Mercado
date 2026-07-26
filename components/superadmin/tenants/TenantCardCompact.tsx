@@ -127,7 +127,7 @@ export function TenantCardCompact({
           }}
           title={`Abrir panel admin de ${t.name}`}
           aria-label={`Abrir panel admin de ${t.name}`}
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] opacity-70 transition-all hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] group-hover:opacity-100"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] opacity-70 transition-all hover:border-[var(--accent)] hover:bg-primary/10 hover:text-[var(--accent)] group-hover:opacity-100"
         >
           <ExternalLink className="h-3.5 w-3.5" />
         </button>

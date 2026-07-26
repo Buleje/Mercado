@@ -364,7 +364,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
           <span className="text-[var(--text-secondary)] dark:text-muted">Ayer:</span>
           <span className="font-semibold text-[var(--text-secondary)]">{fmt(data.ventasAyer)}</span>
           {data.ventasAyer > 0 && (
-            <span className={cn("text-xs font-bold px-1.5 py-0.5 rounded-md", data.ventasHoy >= data.ventasAyer ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]")}>
+            <span className={cn("text-xs font-bold px-1.5 py-0.5 rounded-md", data.ventasHoy >= data.ventasAyer ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]")}>
               {data.ventasHoy >= data.ventasAyer ? "↑" : "↓"} {Math.abs(((data.ventasHoy - data.ventasAyer) / data.ventasAyer) * 100).toFixed(0)}%
             </span>
           )}

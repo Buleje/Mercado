@@ -262,7 +262,7 @@ export default function ObligacionesTab() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
                   {anual.rows.map((r, i) => (
-                    <tr key={i} className={cn("transition-colors hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50", i === month && "bg-[var(--accent-soft)]/40")}>
+                    <tr key={i} className={cn("transition-colors hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50", i === month && "bg-primary/10/40")}>
                       <td className="px-3 py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">{MONTHS[i]}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-[var(--data-warning-500)]">{fmt(r.igv)}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)] dark:text-muted">{fmt(r.renta)}</td>

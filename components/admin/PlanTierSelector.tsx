@@ -38,9 +38,9 @@ const ACCENT_CLASSES: Record<
   },
   pro: {
     ring: "border-[var(--accent)] ring-2 ring-[var(--accent)]/20",
-    badge: "bg-[var(--accent-soft)] text-[var(--accent)]",
+    badge: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
     icon: "text-[var(--accent)]",
-    iconBg: "bg-[var(--accent-soft)]",
+    iconBg: "bg-primary/10",
     button: "bg-[var(--accent-600,var(--accent))] text-white hover:scale-[1.02] hover:shadow-[var(--shadow-lg)]",
   },
   enterprise: {

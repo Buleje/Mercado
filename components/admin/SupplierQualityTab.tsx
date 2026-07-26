@@ -41,10 +41,10 @@ const scoreColor = (s: number) =>
   s >= 80 ? "text-[var(--data-success-500)]" : s >= 60 ? "text-[var(--data-warning-600)]" : "text-[var(--data-error-600)]";
 
 const scoreBg = (s: number) =>
-  s >= 80 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : s >= 60 ? "bg-amber-100 dark:bg-amber-900/30" : "bg-red-100 dark:bg-red-900/30";
+  s >= 80 ? "bg-primary/10 dark:bg-primary/15" : s >= 60 ? "bg-amber-100 dark:bg-amber-900/30" : "bg-red-100 dark:bg-red-900/30";
 
 const severityColor: Record<string, string> = {
-  baja: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+  baja: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15",
   media: "text-[var(--data-warning-500)] bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",
   alta: "text-[var(--data-warning-500)] bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",
   "crítica": "text-[var(--data-error-500)] bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",
@@ -96,7 +96,7 @@ export default function SupplierQualityTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Score promedio", value: stats.avgScore + "%", color: scoreColor(stats.avgScore), bg: scoreBg(stats.avgScore), icon: Star },
-          { label: "Excelentes (≥85)", value: String(stats.excellent), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ThumbsUp },
+          { label: "Excelentes (≥85)", value: String(stats.excellent), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: ThumbsUp },
           { label: "En riesgo (<75)", value: String(stats.atRisk), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: ThumbsDown },
           { label: "Incidentes abiertos", value: String(stats.openIncidents), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: AlertTriangle },
         ].map(({ label, value, color, bg, icon: Icon }) => (

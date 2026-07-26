@@ -22,7 +22,7 @@ type AdminUserRow = {
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; variant: BadgeVariant; icon: React.ElementType }> = {
   admin: { label: "Administrador", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]", variant: "error", icon: ShieldCheck },
-  cajero: { label: "Cajero", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", variant: "info", icon: ShieldAlert },
+  cajero: { label: "Cajero", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]", variant: "info", icon: ShieldAlert },
   almacenero: { label: "Almacenero", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]", variant: "warning", icon: ShieldOff },
 };
 
@@ -228,7 +228,7 @@ export default function AdminUsersTab() {
 
       {/* Success toast */}
       {successMsg && (
-        <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm font-semibold border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+        <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm font-semibold border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
           <Check className="h-4 w-4 shrink-0" /> {successMsg}
         </div>
       )}
@@ -297,7 +297,7 @@ export default function AdminUsersTab() {
                         <button
                           onClick={() => openResetPw(u)}
                           title="Cambiar contraseña"
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] hover:text-[var(--data-success-500)] transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-primary/10 dark:hover:bg-primary/15 hover:text-[var(--data-success-500)] transition-colors"
                         >
                           <KeyRound className="h-4 w-4" />
                         </button>
@@ -383,7 +383,7 @@ export default function AdminUsersTab() {
                 onClick={() => setForm(p => ({ ...p, active: !p.active }))}
                 className={cn(
                   "relative w-12 h-6 rounded-full transition-colors",
-                  form.active ? "bg-[var(--accent-soft)]" : "bg-gray-300 dark:bg-surface"
+                  form.active ? "bg-primary/10" : "bg-gray-300 dark:bg-surface"
                 )}
               >
                 <span className={cn("absolute top-0.5 left-0.5 w-5 h-5 bg-white dark:bg-[var(--color-card)] rounded-full shadow transition-transform", form.active && "translate-x-6")} />

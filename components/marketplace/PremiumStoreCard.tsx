@@ -248,13 +248,13 @@ export default function PremiumStoreCard({
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               {category && (
-                <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
                   {formatCategoryLabel(category)}
                 </span>
               )}
               {acceptsFiado && (
                 <span
-                  className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]"
+                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]"
                   title="Acepta fiado — compra ahora, paga después"
                 >
                   <Wallet className="h-3 w-3" strokeWidth={2.5} aria-hidden />
@@ -287,7 +287,7 @@ export default function PremiumStoreCard({
                     setMapOpen(true);
                   }}
                   aria-label={`Ver ubicación de ${name} en el mapa — a ${distanceKm.toFixed(1)} km de ti`}
-                  className="relative z-20 inline-flex items-center gap-1 rounded-full border border-[var(--accent)]/40 bg-[var(--surface-canvas)] px-2 py-0.5 text-[10px] font-extrabold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)] active:scale-95"
+                  className="relative z-20 inline-flex items-center gap-1 rounded-full border border-[var(--accent)]/40 bg-[var(--surface-canvas)] px-2 py-0.5 text-[10px] font-extrabold text-[var(--accent)] transition-colors hover:bg-primary/10 active:scale-95"
                 >
                   <MapPin className="h-3 w-3" strokeWidth={2.5} aria-hidden />
                   <span className="tabular-nums">{distanceKm.toFixed(1)} km</span>

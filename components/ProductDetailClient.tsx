@@ -625,7 +625,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 className={cn(
                   "h-12 w-12 rounded-xl flex items-center justify-center border-2 transition-all shrink-0",
                   compare
-                    ? "bg-primary/10 border-primary/30 text-primary"
+                    ? "bg-primary/10 border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] text-gray-400 hover:text-primary hover:border-primary/30",
                 )}
                 aria-label={compare ? "Quitar de comparar" : "Comparar"}

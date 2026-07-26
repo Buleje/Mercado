@@ -203,7 +203,7 @@ export default function MonthProjectionCard() {
                           "w-full rounded-t-sm min-h-[2px] transition-all",
                           isToday
                             ? "bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]"
-                            : "bg-primary dark:bg-[var(--accent-soft)]"
+                            : "bg-primary dark:bg-primary/10"
                         )}
                         style={{ height: `${Math.max(h, 2)}%` }}
                         title={`Dia ${d.label}: ${fmt(d.total)}`}

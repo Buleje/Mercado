@@ -120,7 +120,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
               type="button"
               onClick={() => onAnexo(e)}
               className={`inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border-2 px-3 text-xs font-bold ${anexoEmitido
-                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
             >
               <FileText className="h-3.5 w-3.5" /> Anexo 04{anexoEmitido ? " ✓" : ""}

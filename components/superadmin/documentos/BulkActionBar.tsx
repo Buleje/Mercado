@@ -30,7 +30,7 @@ export default function BulkActionBar({
   onClear,
 }: Props) {
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-primary bg-[var(--accent-soft)] px-4 py-3">
+    <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-primary bg-primary/10 px-4 py-3">
       <span className="text-base font-bold text-[var(--text-primary)]">
         {count} seleccionado{count === 1 ? "" : "s"}
       </span>

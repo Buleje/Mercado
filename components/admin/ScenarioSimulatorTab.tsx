@@ -237,7 +237,7 @@ export default function ScenarioSimulatorTab() {
                     <span className="text-[var(--text-tertiary)] dark:text-muted">utilidad</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={() => handleLoad(sc)} className="flex-1 text-xs font-semibold text-primary hover:bg-primary/10 rounded-lg py-2 transition-colors">
+                    <button onClick={() => handleLoad(sc)} className="flex-1 text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 rounded-lg py-2 transition-colors">
                       <Play className="h-3 w-3 inline mr-1" /> Cargar
                     </button>
                     <button onClick={() => setCompareId(sc.id)} className="flex-1 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent rounded-lg py-2 transition-colors">

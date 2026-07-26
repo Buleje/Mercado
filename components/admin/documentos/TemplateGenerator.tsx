@@ -99,7 +99,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                       onClick={() => { setSelected(t); setValues({}); setSuccess(null); }}
                       className={cn(
                         "w-full text-left px-3 py-2.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-2",
-                        selected?.id === t.id ? "bg-primary/10 text-primary" : "text-slate-700 hover:bg-slate-50"
+                        selected?.id === t.id ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-slate-700 hover:bg-slate-50"
                       )}
                     >
                       <FileText className={cn("h-4 w-4 shrink-0", selected?.id === t.id ? "text-primary" : "text-slate-400")} />

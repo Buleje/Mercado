@@ -114,7 +114,7 @@ export default function LothResumenStrip({ onNavigate, reloadSignal }: { onNavig
           <button
             type="button"
             onClick={() => onNavigate("analitica")}
-            className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent-dark)] hover:underline"
+            className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent-dark)] dark:text-[var(--accent)] hover:underline"
           >
             Ver analítica <ChevronRight className="h-3.5 w-3.5" />
           </button>

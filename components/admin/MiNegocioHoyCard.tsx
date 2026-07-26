@@ -161,7 +161,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
           className="group relative overflow-hidden rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 text-left hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
-            <div className="w-9 h-9 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center">
               <DollarSign className="h-5 w-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
             </div>
             {data.ventas.cambioVsAyer !== 0 && (
@@ -169,7 +169,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
                 className={cn(
                   "flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-full",
                   data.ventas.cambioVsAyer > 0
-                    ? "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:text-[var(--data-success-500)] dark:bg-[var(--accent-muted)]"
+                    ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)] dark:bg-primary/15"
                     : "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30"
                 )}
               >
@@ -207,7 +207,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
           className="group relative overflow-hidden rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 text-left hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
-            <div className="w-9 h-9 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center">
               <ShoppingCart className="h-5 w-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
             </div>
             {data.pedidos.pendientes > 0 && (
@@ -241,7 +241,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
                 "w-9 h-9 rounded-xl flex items-center justify-center",
                 data.alertas.totalAlertas > 0
                   ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20"
-                  : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+                  : "bg-primary/10 dark:bg-primary/15"
               )}
             >
               {data.alertas.totalAlertas > 0 ? (

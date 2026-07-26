@@ -57,8 +57,8 @@ const SLOT_CONFIG: Record<SlotKey, { label: string; range: string; icon: typeof 
 
 const STATUS_SLOT_CONFIG: Record<string, { label: string; dot: string }> = {
   pendiente:  { label: "Pendiente",   dot: "bg-[var(--data-warning-500)]" },
-  "en-camino":{ label: "En camino",   dot: "bg-[var(--accent-soft)]" },
-  entregado:  { label: "Entregado",   dot: "bg-[var(--accent-soft)]" },
+  "en-camino":{ label: "En camino",   dot: "bg-primary/10" },
+  entregado:  { label: "Entregado",   dot: "bg-primary/10" },
   fallido:    { label: "Fallido",     dot: "bg-[var(--data-error-500)]" },
 };
 
@@ -170,7 +170,7 @@ export default function DeliveryCalendarTab() {
                   isSelected
                     ? "bg-primary text-white"
                     : isToday
-                    ? "bg-primary/10 text-primary border border-primary/30"
+                    ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary/30"
                     : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
                 )}
               >
@@ -178,7 +178,7 @@ export default function DeliveryCalendarTab() {
                 <span className="text-lg font-extrabold leading-tight">{num}</span>
                 <span className="text-[length:var(--ts-2xs)] capitalize opacity-70">{month}</span>
                 {count > 0 && (
-                  <span className={cn("mt-1 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold", isSelected ? "bg-white/20" : "bg-primary/10 text-primary")}>
+                  <span className={cn("mt-1 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold", isSelected ? "bg-white/20" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]")}>
                     {count}
                   </span>
                 )}
@@ -285,7 +285,7 @@ export default function DeliveryCalendarTab() {
                 <div className="px-3 pb-3">
                   <button
                     onClick={() => setAssigningSlot(key)}
-                    className="w-full py-2 rounded-lg text-xs font-bold text-primary border border-dashed border-primary/30 hover:bg-primary/5 transition flex items-center justify-center gap-1"
+                    className="w-full py-2 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] border border-dashed border-primary/30 hover:bg-primary/5 transition flex items-center justify-center gap-1"
                   >
                     <Clock className="h-3 w-3" />
                     Asignar pedido

@@ -103,7 +103,7 @@ export default function AIReviewResponder({
 
   const sentimentLabel =
     rating >= 4
-      ? { text: "Resena positiva", className: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" }
+      ? { text: "Resena positiva", className: "text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" }
       : { text: "Resena critica", className: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-orange-950/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" };
 
   return (
@@ -154,7 +154,7 @@ export default function AIReviewResponder({
 
       {/* Sent confirmation */}
       {sent && (
-        <div className="rounded-md bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 px-3 py-2">
+        <div className="rounded-md bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 px-3 py-2">
           <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
             Respuesta enviada correctamente.
           </p>

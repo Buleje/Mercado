@@ -22,9 +22,9 @@ interface DeliveryAssignment {
 
 const ASSIGNMENT_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   assigned:    { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" },
-  picked_up:   { label: "Recogido",   className: "bg-primary/10 text-primary" },
-  in_transit:  { label: "En camino",  className: "bg-primary/10 text-primary" },
-  delivered:   { label: "Entregado",  className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  picked_up:   { label: "Recogido",   className: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
+  in_transit:  { label: "En camino",  className: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
+  delivered:   { label: "Entregado",  className: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
   cancelled:   { label: "Cancelado",  className: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
 };
 // Permisos canónicos sincronizados con /api/store-permissions
@@ -154,7 +154,7 @@ export function AsignacionesTab() {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <ClipboardList className="h-5 w-5" />
             </span>
             <div>
@@ -215,7 +215,7 @@ export function AsignacionesTab() {
             </div>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                   <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
                 </span>
               </div>
@@ -229,7 +229,7 @@ export function AsignacionesTab() {
             </div>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                   <DollarSign className="h-5 w-5 text-[var(--data-success-500)]" />
                 </span>
               </div>
@@ -312,7 +312,7 @@ export function AsignacionesTab() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-sm font-extrabold shrink-0">
+                          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-extrabold shrink-0">
                             {initial}
                           </div>
                           <span className="font-bold text-[var(--text-primary)]">
@@ -373,7 +373,7 @@ export function AsignacionesTab() {
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <Plus className="h-5 w-5" />
                 </span>
                 <CardTitle className="font-display text-xl font-extrabold text-[var(--text-primary)]">

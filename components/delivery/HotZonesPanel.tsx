@@ -180,7 +180,7 @@ function ZoneCard({ zone, onNavigate }: { zone: Zone; onNavigate: (id: string) =
           className={[
             "w-full inline-flex items-center justify-center gap-2",
             "h-10 text-sm font-extrabold transition-all",
-            "bg-[var(--accent-soft)] text-[var(--accent)]",
+            "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
             "hover:bg-[var(--accent)] hover:text-white",
             "active:scale-[0.97]",
           ].join(" ")}

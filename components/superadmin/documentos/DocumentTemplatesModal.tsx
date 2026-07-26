@@ -219,7 +219,7 @@ export default function DocumentTemplatesModal({ onClose, onGenerated }: Props) 
                       onClick={() => selectTemplate(t)}
                       className={`w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                         selected?.id === t.id
-                          ? "bg-[var(--accent-soft)] text-[var(--text-primary)]"
+                          ? "bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]"
                           : "hover:bg-[var(--surface-raised)] text-[var(--text-secondary)]"
                       }`}
                     >

@@ -19,8 +19,8 @@ interface Fulfillment {
 
 const STATUS_STYLE: Record<string, string> = {
   pending: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]",
-  forwarded: "bg-[var(--accent-soft)] text-[var(--accent)]",
-  confirmed: "bg-[var(--accent-soft)] text-[var(--accent)]",
+  forwarded: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+  confirmed: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
   shipped: "bg-[var(--data-info-50,var(--accent-soft))] text-[var(--data-info-500,var(--accent))]",
   delivered: "bg-[var(--data-success-50)] text-[var(--data-success-500)]",
   cancelled: "bg-[var(--data-error-50)] text-[var(--data-error-500)]",

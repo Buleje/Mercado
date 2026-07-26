@@ -15,8 +15,8 @@ const TIER_ICONS: Record<ModuleTier, React.ElementType> = {
 
 const TIER_COLORS: Record<ModuleTier, { bg: string; active: string; ring: string }> = {
   principal: {
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-    active: "bg-[var(--accent-soft)] text-white ",
+    bg: "bg-primary/10 dark:bg-primary/15",
+    active: "bg-primary/10 text-white ",
     ring: "ring-[var(--data-success-500)]/40 dark:ring-[var(--data-success-500)]/40",
   },
   intermedio: {
@@ -25,8 +25,8 @@ const TIER_COLORS: Record<ModuleTier, { bg: string; active: string; ring: string
     ring: "ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]",
   },
   avanzado: {
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-    active: "bg-[var(--accent-soft)] text-white ",
+    bg: "bg-primary/10 dark:bg-primary/15",
+    active: "bg-primary/10 text-white ",
     ring: "ring-[var(--data-success-500)]/40 dark:ring-[var(--data-success-500)]/40",
   },
 };
@@ -169,7 +169,7 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
           <Settings2 className="h-3 w-3" />
           {showCustomize ? "Cerrar personalización" : "Personalizar módulos"}
           {overrides && Object.keys(overrides).length > 0 && (
-            <span className="ml-1 text-[length:var(--ts-2xs)] bg-primary/10 text-primary px-1 rounded-full font-bold">
+            <span className="ml-1 text-[length:var(--ts-2xs)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-1 rounded-full font-bold">
               {Object.keys(overrides).length}
             </span>
           )}

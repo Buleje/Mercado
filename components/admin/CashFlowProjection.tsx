@@ -245,7 +245,7 @@ export default function CashFlowProjection() {
                 "flex items-center justify-between rounded-lg px-4 py-3 border",
                 projData.isNegative
                   ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
-                  : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                  : "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
               )}
             >
               <div className="flex items-center gap-2">

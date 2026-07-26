@@ -112,7 +112,7 @@ export default function DealsGrid({ deals, source = "deals" }: DealsGridProps) {
             className={cn(
               "inline-flex h-10 w-10 items-center justify-center rounded-lg",
               "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
-              "hover:bg-[var(--accent-soft)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
+              "hover:bg-primary/10 hover:border-[var(--accent)] hover:text-[var(--accent)]",
               "disabled:opacity-40 disabled:pointer-events-none transition-colors",
             )}
           >
@@ -145,7 +145,7 @@ export default function DealsGrid({ deals, source = "deals" }: DealsGridProps) {
             className={cn(
               "inline-flex h-10 w-10 items-center justify-center rounded-lg",
               "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
-              "hover:bg-[var(--accent-soft)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
+              "hover:bg-primary/10 hover:border-[var(--accent)] hover:text-[var(--accent)]",
               "disabled:opacity-40 disabled:pointer-events-none transition-colors",
             )}
           >

@@ -256,7 +256,7 @@ export default function BulkInvoiceGenerator() {
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
           <p className="text-sm font-bold text-[var(--text-primary)]">Resultado de la generación</p>
           <div className="flex gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl">
+            <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl">
               <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
               <span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{successCount} generadas</span>
             </div>

@@ -148,10 +148,10 @@ export default function LothCadenaModal({ code, onClose }: { code: string; onClo
 
               {/* Autorización (título habilitante) */}
               {trace.plan && (
-                <div className="rounded-2xl border border-[var(--accent-muted)] bg-[var(--accent-soft)] p-4">
+                <div className="rounded-2xl border border-[var(--accent-muted)] bg-primary/10 p-4">
                   <div className="mb-1 flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-[var(--accent-dark)]" />
-                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent-dark)]">Autorización de origen</span>
+                    <ShieldCheck className="h-4 w-4 text-[var(--accent-dark)] dark:text-[var(--accent)]" />
+                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent-dark)] dark:text-[var(--accent)]">Autorización de origen</span>
                   </div>
                   <div className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
                     <Row k="Titular" v={trace.plan.titularName} />

@@ -423,7 +423,7 @@ export default function BreakEvenTab() {
             className={cn(
               "rounded-xl border p-5 flex flex-wrap items-start gap-3",
               generalAnalysis.currentProfit >= 0
-                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                 : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
             )}
           >
@@ -537,7 +537,7 @@ export default function BreakEvenTab() {
             </div>
             <div className="flex flex-wrap items-center gap-6 mt-4 text-xs">
               <span className="flex items-center gap-1.5">
-                <div className="w-4 h-0.5 bg-[var(--accent-soft)]" /> Ingresos
+                <div className="w-4 h-0.5 bg-primary/10" /> Ingresos
               </span>
               <span className="flex items-center gap-1.5">
                 <div className="w-4 h-0.5 bg-[var(--data-error-500)]" /> Costos totales
@@ -645,7 +645,7 @@ export default function BreakEvenTab() {
                     className={cn(
                       "h-full rounded-full transition-all",
                       productAnalysis.monthlySales >= productAnalysis.breakEvenUnits
-                        ? "bg-[var(--accent-soft)]"
+                        ? "bg-primary/10"
                         : "bg-[var(--data-warning-500)]"
                     )}
                     style={{

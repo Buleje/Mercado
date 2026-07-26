@@ -32,7 +32,7 @@ const TEMPLATES: WorkflowTemplate[] = [
     description: "Proceso completo de ingreso de productos con proveedor",
     icon: Package,
     color: "text-[var(--data-success-500)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    bg: "bg-primary/10 dark:bg-primary/15",
     estimatedTime: "20 min",
     steps: [
       { id: "s1", title: "Revisar orden de compra", description: "Verificar que el pedido coincide con lo acordado con el proveedor", module: "Proveedores" },
@@ -84,7 +84,7 @@ const TEMPLATES: WorkflowTemplate[] = [
     description: "Recuento completo para sincronizar stock real con el sistema",
     icon: Repeat,
     color: "text-[var(--data-success-500)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    bg: "bg-primary/10 dark:bg-primary/15",
     estimatedTime: "2–4 hs",
     steps: [
       { id: "s1", title: "Planificar secciones y equipo", description: "Dividir la tienda en zonas y asignar responsables por sección" },
@@ -177,11 +177,11 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
                 className={cn(
                   "flex items-start gap-3 p-4 rounded-xl border transition-all",
                   step.done
-                    ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                    ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                     : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                 )}
               >
-                <button onClick={() => toggleStep(step.id)} className={cn("mt-0.5 w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center transition-all", step.done ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-[var(--data-success-500)]/30")}>
+                <button onClick={() => toggleStep(step.id)} className={cn("mt-0.5 w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center transition-all", step.done ? "border-[var(--data-success-500)]/30 bg-primary/10" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-[var(--data-success-500)]/30")}>
                   {step.done && <CheckCircle2 className="h-4 w-4 text-white" />}
                 </button>
                 <div className="flex-1 min-w-0">
@@ -201,11 +201,11 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
             ))}
 
             {allDone && (
-              <div className="rounded-xl bg-[var(--accent-soft)] text-white p-4 text-center">
+              <div className="rounded-xl bg-primary/10 text-white p-4 text-center">
                 <CheckCircle2 className="h-8 w-8 mx-auto mb-2" />
                 <p className="font-extrabold text-base">¡Flujo completado!</p>
                 <p className="text-[var(--data-success-500)] text-sm mt-0.5">Todos los pasos de &ldquo;{running.template.name}&rdquo; están listos.</p>
-                <button onClick={() => setRunning(null)} className="mt-3 px-5 py-2 rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--data-success-500)] font-bold text-sm hover:bg-[var(--accent-soft)] transition-colors">
+                <button onClick={() => setRunning(null)} className="mt-3 px-5 py-2 rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--data-success-500)] font-bold text-sm hover:bg-primary/10 transition-colors">
                   Cerrar
                 </button>
               </div>

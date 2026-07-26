@@ -345,7 +345,7 @@ function GroupCard({
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <button onClick={onAddOption}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10 transition-colors">
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 px-3 py-2 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors">
             <Plus className="h-3.5 w-3.5" /> Agregar opción
           </button>
           <button onClick={() => setShowCatalogPicker(true)}

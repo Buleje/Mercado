@@ -516,7 +516,7 @@ export function MessageComposer({
                             <Minus className="h-3.5 w-3.5" aria-hidden />
                           </button>
                           <span className="w-5 text-center text-sm font-bold tabular-nums text-slate-800 dark:text-slate-100">{it.quantity}</span>
-                          <button type="button" onClick={() => setDraftQty(it.storeProductId, 1)} aria-label="Sumar" className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20">
+                          <button type="button" onClick={() => setDraftQty(it.storeProductId, 1)} aria-label="Sumar" className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20">
                             <Plus className="h-3.5 w-3.5" aria-hidden />
                           </button>
                         </div>
@@ -625,7 +625,7 @@ export function MessageComposer({
           title="Compartir producto · Sustitución"
           className={cn(
             "rounded-full p-2 transition-colors",
-            menuOpen || pickerOpen ? "bg-primary/10 text-primary" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
+            menuOpen || pickerOpen ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
           )}
         >
           <Plus className="h-4 w-4" aria-hidden />
@@ -637,7 +637,7 @@ export function MessageComposer({
           aria-pressed={emojiOpen}
           className={cn(
             "rounded-full p-2 transition-colors",
-            emojiOpen ? "bg-primary/10 text-primary" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
+            emojiOpen ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
           )}
         >
           <Smile className="h-4 w-4" aria-hidden />
@@ -659,7 +659,7 @@ export function MessageComposer({
           title="Plantillas de respuesta"
           className={cn(
             "rounded-full p-2 transition-colors",
-            templatesOpen ? "bg-primary/10 text-primary" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
+            templatesOpen ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
           )}
         >
           <FileText className="h-4 w-4" aria-hidden />
@@ -674,7 +674,7 @@ export function MessageComposer({
             className={cn(
               "rounded-full p-2 transition-colors disabled:opacity-60",
               suggestions.length > 0 || loadingSuggest
-                ? "bg-primary/10 text-primary"
+                ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
             )}
           >

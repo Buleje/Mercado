@@ -118,7 +118,7 @@ export function FlashDealsOfTheDay({ initialProducts, className }: Props) {
             className={cn(
               "flex items-center gap-2 px-4 py-3 rounded-xl border",
               countdown.urgent
-                ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                ? "border-[var(--accent)] bg-primary/10"
                 : "border-[var(--rule-base)] bg-white dark:bg-gray-900"
             )}
             aria-live="polite"

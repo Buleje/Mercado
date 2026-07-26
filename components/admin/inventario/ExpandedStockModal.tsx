@@ -198,7 +198,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className={cn("h-2.5 w-2.5 rounded-full shrink-0",
-                          noStock ? "bg-[var(--data-error-500)]" : lowStock ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]"
+                          noStock ? "bg-[var(--data-error-500)]" : lowStock ? "bg-[var(--data-warning-500)]" : "bg-primary/10"
                         )} />
                         <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[220px]">{p.name}</span>
                       </div>
@@ -212,7 +212,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                       <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
                         noStock ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]" :
                         lowStock ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]" :
-                        "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                        "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                       )}>
                         {noStock && <AlertTriangle className="h-3 w-3" />}
                         {p.stock ?? 0}
@@ -261,7 +261,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                           <TrendingDown className="h-3 w-3" /> {p.daysSinceMove}d sin mov.
                         </span>
                       ) : recentMove ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]">
                           <TrendingUp className="h-3 w-3" /> Hace {p.daysSinceMove}d
                         </span>
                       ) : (

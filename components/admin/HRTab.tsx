@@ -57,16 +57,16 @@ function yearsOf(startDate: string): string {
 function today(): string { return new Date().toISOString().slice(0, 10); }
 
 const STATUS_EMP: Record<EmployeeStatus, { label: string; color: string; bg: string }> = {
-  activo:     { label: "Activo",      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  activo:     { label: "Activo",      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   inactivo:   { label: "Inactivo",    color: "text-[var(--text-secondary)] dark:text-muted",          bg: "bg-[var(--surface-sunken)] dark:bg-surface" },
-  vacaciones: { label: "Vacaciones",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",       bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  vacaciones: { label: "Vacaciones",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",       bg: "bg-primary/10 dark:bg-primary/15" },
   licencia:   { label: "Licencia",    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",     bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
 };
 const STATUS_ATT: Record<AttendanceStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle }> = {
-  presente: { label: "Presente", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+  presente: { label: "Presente", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: CheckCircle },
   tarde:    { label: "Tarde",    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",      bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",    icon: Clock },
   ausente:  { label: "Ausente",  color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",          bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",        icon: AlertTriangle },
-  permiso:  { label: "Permiso",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",        bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",      icon: UserCheck },
+  permiso:  { label: "Permiso",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",        bg: "bg-primary/10 dark:bg-primary/15",      icon: UserCheck },
   vacacion: { label: "Vacación", color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",    bg: "bg-[var(--surface-sunken)]", icon: Calendar },
 };
 
@@ -82,7 +82,7 @@ const EMPTY_EMP: Omit<Employee, "id" | "photoInitials" | "color"> = {
   startDate: "", baseSalary: 1025, status: "activo",
 };
 
-const COLORS = ["bg-[var(--text-primary)]", "bg-cyan-500", "bg-[var(--accent-soft)]", "bg-[var(--data-warning-500)]", "bg-[var(--text-primary)]", "bg-[var(--text-primary)]", "bg-sky-500", "bg-[var(--accent)]", "bg-orange-500", "bg-[var(--text-primary)]"];
+const COLORS = ["bg-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]", "bg-cyan-500", "bg-primary/10", "bg-[var(--data-warning-500)]", "bg-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]", "bg-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]", "bg-sky-500", "bg-[var(--accent)]", "bg-orange-500", "bg-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]"];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -193,9 +193,9 @@ export default function HRTab() {
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {[
           { label: "Total", value: stats.total, color: "text-[var(--text-primary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-alt)] dark:bg-surface/50" },
-          { label: "Activos", value: stats.activo, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Vacaciones", value: stats.vacaciones, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Presentes hoy", value: stats.presente, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Activos", value: stats.activo, color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
+          { label: "Vacaciones", value: stats.vacaciones, color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
+          { label: "Presentes hoy", value: stats.presente, color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Con retraso", value: stats.tarde, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
           { label: "Ausentes hoy", value: stats.ausente, color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
         ].map(({ label, value, color, bg }) => (

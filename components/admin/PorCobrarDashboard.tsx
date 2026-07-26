@@ -61,7 +61,7 @@ export default function PorCobrarDashboard() {
       <AdminModuleHeader title="Por cobrar" description="Todo lo que te deben, en un solo lugar" icon={Wallet}>
         <button
           onClick={load}
-          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
+          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
           title="Actualizar"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
@@ -69,7 +69,7 @@ export default function PorCobrarDashboard() {
       </AdminModuleHeader>
 
       {/* Total general */}
-      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--accent-soft)] p-5">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-primary/10 p-5">
         <p className="text-xs font-bold uppercase tracking-wide text-white/80">Total por cobrar</p>
         <p className="mt-1 text-3xl font-extrabold text-white">{formatCurrency(data.totalGeneral)}</p>
         <p className="mt-1 text-xs text-white/80">

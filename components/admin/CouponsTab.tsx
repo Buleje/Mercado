@@ -246,7 +246,7 @@ export default function CouponsTab() {
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{config.label}</span>
                       {rule.enabled && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                           <Check className="h-3 w-3" /> Activa
                         </span>
                       )}
@@ -263,7 +263,7 @@ export default function CouponsTab() {
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <button
                       onClick={() => openRuleConfig(rule)}
-                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
                       title="Configurar"
                     >
                       <Settings className="h-4 w-4" />
@@ -297,8 +297,8 @@ export default function CouponsTab() {
                   </p>
                 </div>
                 <span className={cn("inline-flex px-2 py-1 rounded-full text-xs font-bold",
-                  log.status === "sent" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
-                  log.status === "used" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                  log.status === "sent" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
+                  log.status === "used" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                 )}>
                   {log.status === "sent" ? "Enviado" : log.status === "used" ? "Usado" : "Pendiente"}
                 </span>
@@ -328,7 +328,7 @@ export default function CouponsTab() {
                 className={cn(
                   "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors min-h-[44px]",
                   couponScope === "tienda"
-                    ? "bg-[var(--accent-soft)] text-white "
+                    ? "bg-primary/10 text-white "
                     : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent"
                 )}
               >
@@ -398,7 +398,7 @@ export default function CouponsTab() {
                 <span className="font-mono font-extrabold text-primary text-lg">{c.code}</span>
                 <button onClick={() => navigator.clipboard.writeText(c.code)} className="text-[var(--text-tertiary)] hover:text-primary"><Copy className="h-3.5 w-3.5" /></button>
                 {c.storeId ? (
-                  <span className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-bold">Tienda</span>
+                  <span className="text-[length:var(--ts-2xs)] bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-bold">Tienda</span>
                 ) : (
                   <span className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] px-2 py-0.5 rounded-full font-bold">Plataforma</span>
                 )}
@@ -415,7 +415,7 @@ export default function CouponsTab() {
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button
                 onClick={() => { setWhatsappCoupon(c); setWhatsappPhone(""); }}
-                className="p-1.5 rounded-lg text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition"
+                className="p-1.5 rounded-lg text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15 transition"
                 title="Enviar por WhatsApp"
               >
                 <MessageCircle className="h-4 w-4" />
@@ -427,7 +427,7 @@ export default function CouponsTab() {
               >
                 <Copy className="h-4 w-4" />
               </button>
-              <button onClick={() => toggleActive(c)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition", c.active ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]")}>
+              <button onClick={() => toggleActive(c)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition", c.active ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]" : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10")}>
                 {c.active ? "Desactivar" : "Activar"}
               </button>
               <button onClick={() => handleDelete(c.id)} className="p-1.5 rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition"><Trash2 className="h-4 w-4" /></button>
@@ -510,7 +510,7 @@ export default function CouponsTab() {
             </div>
             <div className="px-5 py-4 space-y-4">
               {/* Preview del mensaje */}
-              <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
+              <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
                 <p className="text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-line">{buildWhatsappMsg(whatsappCoupon)}</p>
               </div>
               {/* Enviar a un cliente */}
@@ -528,7 +528,7 @@ export default function CouponsTab() {
                     <button
                       onClick={() => { if (whatsappPhone.trim()) { sendWhatsapp(whatsappPhone, buildWhatsappMsg(whatsappCoupon)); } }}
                       disabled={!whatsappPhone.trim()}
-                      className="px-4 py-2 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-bold hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors inline-flex items-center gap-1"
+                      className="px-4 py-2 rounded-lg bg-primary/10 text-white text-sm font-bold hover:bg-primary/10 disabled:opacity-50 transition-colors inline-flex items-center gap-1"
                     >
                       <MessageCircle className="h-4 w-4" /> Enviar
                     </button>
@@ -538,7 +538,7 @@ export default function CouponsTab() {
               {/* Copiar mensaje */}
               <button
                 onClick={() => { copyWhatsappMsg(whatsappCoupon); }}
-                className="w-full py-2.5 rounded-lg text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors inline-flex items-center justify-center gap-2"
+                className="w-full py-2.5 rounded-lg text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors inline-flex items-center justify-center gap-2"
               >
                 <Copy className="h-4 w-4" /> Copiar mensaje al portapapeles
               </button>
@@ -587,7 +587,7 @@ export default function CouponsTab() {
                 </div>
               </div>
               <button onClick={generateTestCoupon}
-                className="w-full py-2.5 rounded-lg text-sm font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors">
+                className="w-full py-2.5 rounded-lg text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors">
                 Generar código de prueba
               </button>
             </div>

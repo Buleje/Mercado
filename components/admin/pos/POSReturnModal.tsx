@@ -432,7 +432,7 @@ export default function POSReturnModal({
             <div className="flex-1 p-6 flex flex-col items-center justify-center text-center gap-3">
               <div className={cn(
                 "h-14 w-14 rounded-full flex items-center justify-center",
-                result.success ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-50)]"
+                result.success ? "bg-primary/10" : "bg-[var(--data-error-50)]"
               )}>
                 {result.success ? (
                   <Check className="h-7 w-7 text-[var(--data-success-500)]" />
@@ -477,7 +477,7 @@ export default function POSReturnModal({
                     setCreatingNC(false);
                   }}
                   disabled={creatingNC}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 disabled:opacity-50 transition-colors"
                 >
                   {creatingNC ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
                   Crear Nota de Crédito

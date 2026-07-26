@@ -467,7 +467,7 @@ export default function ProductModifierModal({
                         <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
                       </span>
                     </span>
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-none bg-[var(--accent-soft)] px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)] transition-colors group-hover/store:bg-[var(--accent)] group-hover/store:text-white">
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-none bg-primary/10 px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)] transition-colors group-hover/store:bg-[var(--accent)] group-hover/store:text-white">
                       Ir a la tienda
                       <ArrowRight className="h-3 w-3" strokeWidth={2.75} aria-hidden />
                     </span>
@@ -513,7 +513,7 @@ export default function ProductModifierModal({
                       return (
                         <span
                           key={tg.label}
-                          className="inline-flex items-center gap-1 rounded-none border border-[var(--accent)]/25 bg-[var(--accent-soft)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"
+                          className="inline-flex items-center gap-1 rounded-none border border-[var(--accent)]/25 bg-primary/10 px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"
                         >
                           <TagIcon className="h-3 w-3" strokeWidth={2.5} aria-hidden />
                           {tg.label}
@@ -585,7 +585,7 @@ export default function ProductModifierModal({
                               isFull
                                 ? "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]"
                                 : count > 0
-                                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                                  ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                                   : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                             )}>
                               {count > 0 && !isFull && <Check className="h-2.5 w-2.5" strokeWidth={3.5} />}
@@ -665,7 +665,7 @@ export default function ProductModifierModal({
                     <button
                       type="button"
                       onClick={() => setShowNoteField(true)}
-                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-none border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-all"
+                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-none border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-primary/10 transition-all"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       Dejale un mensaje al cocinero
@@ -813,7 +813,7 @@ function OptionRow({
       className={cn(
         "w-full flex items-center gap-3 rounded-none border-2 p-2.5 text-left transition-all",
         isSelected
-          ? "border-[var(--accent)] bg-[var(--accent-soft)] ring-4 ring-[var(--accent)]/15 shadow-md"
+          ? "border-[var(--accent)] bg-primary/10 ring-4 ring-[var(--accent)]/15 shadow-md"
           : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-sunken)]",
         isDisabled && "opacity-40 cursor-not-allowed",
       )}
@@ -822,7 +822,7 @@ function OptionRow({
       <span className={cn(
         "shrink-0 h-14 w-14 rounded-none overflow-hidden border transition-colors",
         isSelected ? "border-[var(--accent)]/30" : "border-[var(--rule-soft)]",
-        option.imageUrl ? "bg-[var(--surface-sunken)]" : "bg-[var(--accent-soft)]/40 flex items-center justify-center"
+        option.imageUrl ? "bg-[var(--surface-sunken)]" : "bg-primary/10/40 flex items-center justify-center"
       )}>
         {option.imageUrl ? (
           <Image

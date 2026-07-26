@@ -280,7 +280,7 @@ export default function CatalogPDFGenerator() {
                         className={cn(
                           "inline-block rounded-full px-2 py-0.5 text-xs font-medium",
                           (p.stock ?? 1) > 0
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]"
+                            ? "bg-primary/10 text-[var(--data-success)] dark:bg-primary/15 dark:text-[var(--data-success)]"
                             : "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]"
                         )}
                       >
@@ -323,7 +323,7 @@ export default function CatalogPDFGenerator() {
           href={waLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--accent-soft)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-soft)]"
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary/10"
         >
           <MessageCircle className="h-4 w-4" />
           Compartir por WhatsApp

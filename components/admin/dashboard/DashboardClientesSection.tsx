@@ -33,7 +33,7 @@ function Kpi({ label, value, icon: Icon, accent, delta }: { label: string; value
     <p className="text-xs font-medium text-[var(--text-tertiary)] dark:text-muted mb-2.5 truncate">{label}</p>
     <div className="flex flex-wrap items-end justify-between gap-2"><div className="flex flex-col gap-1.5">
       <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums leading-none">{value}</p>
-      {delta != null && delta !== undefined ? <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>{arrowUp ? "\u2191" : "\u2193"} {Math.abs(delta).toFixed(1)}%</div> : delta === null ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">\u2014 Sin datos anteriores</span> : null}
+      {delta != null && delta !== undefined ? <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>{arrowUp ? "\u2191" : "\u2193"} {Math.abs(delta).toFixed(1)}%</div> : delta === null ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">\u2014 Sin datos anteriores</span> : null}
     </div><Icon className={cn("h-4 w-4 shrink-0 mb-0.5", accent)} /></div>
   </div>);
 }
@@ -42,7 +42,7 @@ function Card({ title, icon: Icon, children, action }: { title: string; icon: Re
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">{text}</div>; }
 function _DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
-  const m: Record<string,string> = { green:"bg-[var(--accent-soft)] text-[var(--data-success-500)]", red:"bg-red-50 text-[var(--data-error-600)]", amber:"bg-amber-50 text-[var(--data-warning-600)]", blue:"bg-[var(--accent-soft)] text-[var(--data-success-500)]", purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-[var(--text-secondary)]" };
+  const m: Record<string,string> = { green:"bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", red:"bg-red-50 text-[var(--data-error-600)]", amber:"bg-amber-50 text-[var(--data-warning-600)]", blue:"bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-[var(--text-secondary)]" };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
@@ -88,7 +88,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
               <div className="flex items-center justify-end">
                 <button
                   onClick={handleExportCustomers}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--accent-muted)]/20 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-primary/15/20 transition-colors"
                 >
                   <Download className="h-3.5 w-3.5" /> Exportar clientes CSV
                 </button>
@@ -186,7 +186,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                     <span className="text-[var(--text-tertiary)]">({st.clientesAtendidos > 0 ? ((st.newCust/st.clientesAtendidos)*100).toFixed(0) : 0}%)</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent-soft)] shrink-0" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-primary/10 shrink-0" />
                     <span className="text-[var(--text-secondary)] w-24">Recurrentes</span>
                     <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{st.returningCust}</span>
                     <span className="text-[var(--text-tertiary)]">({st.clientesAtendidos > 0 ? ((st.returningCust/st.clientesAtendidos)*100).toFixed(0) : 0}%)</span>
@@ -242,7 +242,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                           <tr key={idx} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
                             <td className="px-2 py-2 font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{cohort.cohortMonth}</td>
                             {[cohort.month0, cohort.month1, cohort.month2, cohort.month3, cohort.month4, cohort.month5plus].map((val, i) => {
-                              const color = val >= 50 ? "bg-[var(--accent-soft)]" : val >= 30 ? "bg-[var(--accent-soft)]" : val >= 15 ? "bg-[var(--data-warning-500)]" : val > 0 ? "bg-[var(--data-error-500)]" : "bg-gray-100 dark:bg-accent";
+                              const color = val >= 50 ? "bg-primary/10" : val >= 30 ? "bg-primary/10" : val >= 15 ? "bg-[var(--data-warning-500)]" : val > 0 ? "bg-[var(--data-error-500)]" : "bg-gray-100 dark:bg-accent";
                               const textColor = val >= 15 ? "text-white" : "text-[var(--text-secondary)]";
                               return (
                                 <td key={i} className="px-2 py-2 text-center">
@@ -258,7 +258,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                     </table>
                   </div>
 
-                  <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 text-xs">
+                  <div className="bg-primary/10 dark:bg-primary/15 rounded-lg p-3 text-xs">
                     <div className="font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Interpretación</div>
                     <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                       Verde (≥50%): Excelente retención. Naranja (30-49%): Retención aceptable. Rojo (&lt;30%): Requiere acción inmediata. 
@@ -303,7 +303,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                               href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, ¡te extrañamos en Buleje!\n\n¿Necesitas algo? Tenemos novedades y ofertas especiales para ti.`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:hover:bg-[var(--accent-muted)] px-2 py-1 rounded transition-colors"
+                              className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 dark:bg-primary/15 dark:hover:bg-primary/15 px-2 py-1 rounded transition-colors"
                             >
                               Contactar
                             </a>
@@ -341,7 +341,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                     </div>
                   </div>
                 )}
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 text-xs">
+                <div className="bg-primary/10 dark:bg-primary/15 rounded-lg p-3 text-xs">
                   <div className="font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Retención proactiva</div>
                   <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                     Los clientes VIP (top 20% en gasto) que no compran en 3+ semanas tienen alto riesgo de irse. Un mensaje personalizado recupera hasta 30% de clientes inactivos.

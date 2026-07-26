@@ -117,7 +117,7 @@ export default function POSGlobalDiscount({
             className={cn(
               "px-2 py-1 rounded-lg text-[length:var(--ts-xs)] font-bold border transition-colors",
               Number(value) === q
-                ? "border-primary bg-primary/10 text-primary"
+                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100"
             )}
           >

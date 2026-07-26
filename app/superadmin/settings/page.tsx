@@ -274,7 +274,7 @@ export default function SettingsPage() {
         </div>
       )}
       {dirty && !saving && !saved && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 px-4 py-3">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--accent)]/30 bg-primary/10/40 px-4 py-3">
           <div className="flex items-center gap-2 text-sm">
             <Sparkles className="h-4 w-4 text-[var(--accent)]" aria-hidden />
             <span className="font-semibold text-[var(--text-primary)]">
@@ -483,7 +483,7 @@ function SectionHeader({
 }) {
   return (
     <div id={id} className="scroll-mt-28 flex items-start gap-3 border-b border-[var(--rule-soft)] pb-3 pt-2">
-      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
         <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
@@ -542,7 +542,7 @@ function JumpNav() {
                 aria-current={isActive ? "true" : undefined}
                 className={`inline-flex whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-bold transition-colors ${
                   isActive
-                    ? "bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                    ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                 }`}
               >
@@ -575,7 +575,7 @@ function PlanPriceCard({
     },
     primary: {
       border: "border-[var(--accent)]/30",
-      badge: "bg-[var(--accent-soft)] text-[var(--accent)]",
+      badge: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
       ring: "focus-within:ring-[var(--accent)]/40",
     },
     violet: {
@@ -649,11 +649,11 @@ function PlanLimitsCard({
   ];
   const accent =
     tone === "primary"
-      ? "border-[var(--accent)]/30 bg-[var(--accent-soft)]/30"
+      ? "border-[var(--accent)]/30 bg-primary/10/30"
       : "border-[var(--rule-soft)] bg-[var(--surface-canvas)]";
   const badge =
     tone === "primary"
-      ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
       : "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-secondary)]";
 
   return (
@@ -721,7 +721,7 @@ function ToggleCard({
         ? "bg-teal-100 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400"
         : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
       : active
-        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+        ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]";
   const switchBg =
     tone === "warning"

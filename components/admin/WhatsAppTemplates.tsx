@@ -225,7 +225,7 @@ export default function WhatsAppTemplates() {
               className={cn(
                 "w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors",
                 copiedId === template.id
-                  ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]"
+                  ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                   : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] hover:bg-[#25D366]/10 hover:text-[#25D366]"
               )}
             >

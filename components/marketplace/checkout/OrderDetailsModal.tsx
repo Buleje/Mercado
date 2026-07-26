@@ -76,7 +76,7 @@ export default function OrderDetailsModal({
           <div className="flex items-center gap-3 min-w-0">
             <span
               aria-hidden
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-muted)] text-[var(--accent-dark)] dark:text-[var(--accent)]"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]"
             >
               <ShoppingCart className="h-4 w-4" strokeWidth={2} />
             </span>
@@ -111,7 +111,7 @@ export default function OrderDetailsModal({
               <section key={g.storeId} className="space-y-3">
                 <header className="flex items-center justify-between gap-3 pb-2.5 border-b border-[var(--rule-soft)]">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-dark)] dark:text-[var(--accent)]">
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                       <Store className="h-4 w-4" strokeWidth={2} aria-hidden />
                     </span>
                     <h3 className="text-base font-semibold tracking-[var(--ls-tight)] text-[var(--text-primary)] truncate">

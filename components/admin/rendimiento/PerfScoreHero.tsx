@@ -186,7 +186,7 @@ export default function PerfScoreHero() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1fr] lg:items-center">
           {/* Gauge protagonista */}
           <div className="flex flex-col items-center">
-            <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent-dark)]">
+            <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
               {hasCustomerData ? (
                 <>
                   <Users className="h-3.5 w-3.5" aria-hidden /> Lo que viven tus clientes · 7 días
@@ -268,8 +268,8 @@ export default function PerfScoreHero() {
 
       {/* Consejo accionable — qué tocar para mejorar el número */}
       {advice && (
-        <div className="flex items-start gap-3 rounded-xl border border-[var(--accent)]/25 bg-[var(--accent-soft)] p-4">
-          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/15 text-[var(--accent-dark)]">
+        <div className="flex items-start gap-3 rounded-xl border border-[var(--accent)]/25 bg-primary/10 p-4">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/15 text-[var(--accent-dark)] dark:text-[var(--accent)]">
             <Lightbulb className="h-5 w-5" strokeWidth={2} aria-hidden />
           </span>
           <div className="min-w-0">

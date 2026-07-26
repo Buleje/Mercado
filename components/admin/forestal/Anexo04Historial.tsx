@@ -141,7 +141,7 @@ export default function Anexo04Historial({
 
       <ul className="max-h-64 space-y-1.5 overflow-y-auto pr-1">
         {visibles.map((a) => (
-          <li key={a.id} className={`rounded-xl border-2 px-3 py-2 ${ctpEntryId && a.ctpEntryId === ctpEntryId ? "border-[var(--accent)] bg-[var(--accent-soft)]/40" : "border-[var(--rule-base)]"}`}>
+          <li key={a.id} className={`rounded-xl border-2 px-3 py-2 ${ctpEntryId && a.ctpEntryId === ctpEntryId ? "border-[var(--accent)] bg-primary/10/40" : "border-[var(--rule-base)]"}`}>
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="truncate text-xs font-bold text-[var(--text-primary)]">

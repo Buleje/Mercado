@@ -38,7 +38,7 @@ const TIER_COLOR: Record<PlanTier, { bg: string; text: string; ring: string; ico
     icon: Sparkles,
   },
   pro: {
-    bg: "bg-[var(--accent-soft)]",
+    bg: "bg-primary/10",
     text: "text-[var(--accent)]",
     ring: "ring-[var(--accent)]/30",
     icon: Zap,

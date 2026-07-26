@@ -115,7 +115,7 @@ function JoinCardTile({ card: c }: { card: JoinCard }) {
     >
       <span
         aria-hidden
-        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-muted)] text-[var(--accent-dark)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_16%,transparent)] transition-transform duration-[var(--dur-base)] group-hover:scale-105 dark:text-[var(--accent)] sm:mb-4"
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-[var(--accent-dark)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_16%,transparent)] transition-transform duration-[var(--dur-base)] group-hover:scale-105 dark:text-[var(--accent)] sm:mb-4"
       >
         <Icon className="h-5 w-5" strokeWidth={1.75} />
       </span>
@@ -130,7 +130,7 @@ function JoinCardTile({ card: c }: { card: JoinCard }) {
         <p className="hidden sm:block mt-2 text-[length:var(--ts-sm)] text-[var(--text-secondary)] leading-snug">
           {c.desc}
         </p>
-        <span className="mt-1.5 sm:mt-3 inline-flex w-fit items-center rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-dark)] dark:text-[var(--accent)]">
+        <span className="mt-1.5 sm:mt-3 inline-flex w-fit items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-ink)] dark:text-[var(--accent)]">
           {c.highlight}
         </span>
         <ul className="hidden sm:block mt-4 space-y-1.5">

@@ -111,7 +111,7 @@ export function AdminTabs({
                 className={cn(
                   "inline-flex items-center justify-center h-4 min-w-4 rounded-full px-1.5 text-[length:var(--ts-2xs)] font-bold tabular-nums transition-colors",
                   variant === "underline"
-                    ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] group-data-[state=active]:bg-[var(--accent-soft)] group-data-[state=active]:text-[var(--accent)]"
+                    ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] group-data-[state=active]:bg-primary/10 group-data-[state=active]:text-[var(--accent)]"
                     : "bg-[var(--surface-raised)] text-[var(--text-tertiary)]",
                 )}
               >

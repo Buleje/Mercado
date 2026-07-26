@@ -465,7 +465,7 @@ export default function CheckoutSummary({
             </dt>
             <dd>
               {shipping === 0 ? (
-                <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[length:var(--ts-xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                   Gratis
                 </span>
               ) : (

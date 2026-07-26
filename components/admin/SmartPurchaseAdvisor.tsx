@@ -76,7 +76,7 @@ function getUrgencyLabel(u: AdvisedItem["urgency"]): string {
 const URGENCY_COLORS: Record<AdvisedItem["urgency"], string> = {
   critical: "text-[var(--data-error-500)] bg-[var(--data-error-50)]",
   high: "text-secondary bg-secondary/10",
-  medium: "text-[var(--data-success-500)] bg-[var(--accent-soft)]",
+  medium: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12",
 };
 
 // ── Mock data ─────────────────────────────────────────────────────────────────

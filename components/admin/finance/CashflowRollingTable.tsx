@@ -141,7 +141,7 @@ export default function CashflowRollingTable() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-[var(--accent-soft)] text-white flex items-center justify-center  shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-primary/10 text-white flex items-center justify-center  shrink-0">
             <TrendingUp className="h-5 w-5" />
           </div>
           <div>
@@ -158,7 +158,7 @@ export default function CashflowRollingTable() {
           type="button"
           onClick={() => void fetchData()}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50  transition-colors shrink-0 min-h-[44px]"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50  transition-colors shrink-0 min-h-[44px]"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar

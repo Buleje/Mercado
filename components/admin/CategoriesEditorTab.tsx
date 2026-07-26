@@ -328,7 +328,7 @@ export default function CategoriesEditorTab() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setShowNewForm((v) => !v)}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] px-4 text-sm font-bold text-[var(--accent-dark)] transition-colors hover:bg-[var(--accent)] hover:text-white"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10 px-4 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white"
           >
             <Plus className="h-4 w-4" />
             Nueva categoría
@@ -390,7 +390,7 @@ export default function CategoriesEditorTab() {
             className="w-full max-w-md rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
           >
             <header className="flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)]">
-              <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+              <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Tag className="h-6 w-6" strokeWidth={2.25} />
               </span>
               <div className="min-w-0 flex-1">
@@ -482,7 +482,7 @@ export default function CategoriesEditorTab() {
       {/* Empty state — negocio nuevo sin categorías creadas */}
       {cats.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-14 text-center">
-          <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Layers className="h-7 w-7" strokeWidth={2} />
           </span>
           <div className="space-y-1">
@@ -747,7 +747,7 @@ export default function CategoriesEditorTab() {
                   {/* SEO Score Details */}
                   <div className={cn(
                     "rounded-lg p-3 text-xs",
-                    seoScore === "good" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
+                    seoScore === "good" && "bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
                     seoScore === "warning" && "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30",
                     seoScore === "error" && "bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30"
                   )}>

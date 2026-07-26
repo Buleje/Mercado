@@ -159,7 +159,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
               label="Ingresos"
               value={`S/ ${data!.revenue.toLocaleString()}`}
               icon={DollarSign}
-              color="bg-[var(--accent-soft)]"
+              color="bg-primary/10"
             />
           </div>
 

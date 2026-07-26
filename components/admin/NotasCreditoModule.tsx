@@ -91,13 +91,13 @@ type NCTemplate = {
 
 const STATUS_META: Record<NCStatus, { label: string; color: string; bg: string; dot: string }> = {
   BORRADOR: { label: "Borrador", color: "text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", dot: "bg-[var(--rule-mid)]" },
-  EMITIDA:  { label: "Emitida",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
+  EMITIDA:  { label: "Emitida",  color: "text-[var(--data-success-500)]", bg: "bg-primary/10", dot: "bg-primary/10" },
   ANULADA:  { label: "Anulada",  color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-100)]", dot: "bg-[var(--data-error-500)]" },
 };
 
 const DOC_STYLE: Record<string, { bg: string; border: string; icon: string; badge: string; label: string; accent: string }> = {
-  factura: { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success-500)]/30", icon: "\u{1F4CB}", badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", label: "Factura", accent: "text-[var(--data-success-500)]" },
-  boleta:  { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success-500)]/30", icon: "\u{1F4C4}", badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", label: "Boleta", accent: "text-[var(--data-success-500)]" },
+  factura: { bg: "bg-primary/10", border: "border-[var(--data-success-500)]/30", icon: "\u{1F4CB}", badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", label: "Factura", accent: "text-[var(--data-success-500)]" },
+  boleta:  { bg: "bg-primary/10", border: "border-[var(--data-success-500)]/30", icon: "\u{1F4C4}", badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", label: "Boleta", accent: "text-[var(--data-success-500)]" },
   ticket:  { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning-500)]", icon: "\u{1F3AB}", badge: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", label: "Ticket", accent: "text-[var(--data-warning-500)]" },
 };
 
@@ -216,7 +216,7 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
           <p className="text-xs text-[var(--text-secondary)] truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
           {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-1">{nc.clienteNombre}</p>}
           {nc.orderNumero && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] mb-2">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] mb-2">
               {"\u{1F517}"} {nc.orderNumero}
             </span>
           )}
@@ -259,7 +259,7 @@ function WizardProgress({ step }: { step: number }) {
         <div key={i} className="flex items-center gap-2 flex-1">
           <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-[var(--dur-base)]",
             i < step ? "bg-primary text-white " :
-            i === step ? "bg-primary/10 text-primary border-2 border-primary" :
+            i === step ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-primary" :
             "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]")}>
             {i < step ? "\u2713" : i + 1}
           </div>
@@ -291,7 +291,7 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
       )}>
       {/* Color accent strip */}
       <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-primary" :
-        doc.comprobanteTipo === "factura" ? "bg-[var(--accent-soft)]" : doc.comprobanteTipo === "boleta" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]"
+        doc.comprobanteTipo === "factura" ? "bg-primary/10" : doc.comprobanteTipo === "boleta" ? "bg-primary/10" : "bg-[var(--data-warning-500)]"
       )} />
       <div className="flex items-start gap-3 pl-2">
         <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 ",
@@ -823,10 +823,10 @@ export default function NotasCreditoModule() {
 
   // ── Semáforo de salud ─────────────────────────────────────────────────────
   const semaforo = useMemo(() => {
-    if (kpis.count === 0) return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" };
+    if (kpis.count === 0) return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-[var(--data-success-500)]", bg: "bg-primary/10" };
     if (kpis.trend > 50) return { nivel: "rojo", label: "Alto", Icon: ShieldX, color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)]" };
     if (kpis.trend > 20) return { nivel: "amarillo", label: "Atención", Icon: ShieldAlert, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)]" };
-    return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" };
+    return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-[var(--data-success-500)]", bg: "bg-primary/10" };
   }, [kpis]);
 
   // ── Distribución por día de semana (mes actual) ───────────────────────────
@@ -1029,7 +1029,7 @@ export default function NotasCreditoModule() {
               <span className="text-sm font-bold text-primary">{checkedIds.size} seleccionado{checkedIds.size !== 1 ? "s" : ""}</span>
               <div className="flex-1" />
               {filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR").length > 0 && (
-                <button onClick={handleBulkEmit} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] transition-colors">
+                <button onClick={handleBulkEmit} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary/10 text-white hover:bg-primary/10 transition-colors">
                   <Send className="h-3.5 w-3.5" />Emitir {filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR").length} NC
                 </button>
               )}
@@ -1076,7 +1076,7 @@ export default function NotasCreditoModule() {
                         <div className="flex gap-1">
                           {nc.status === "BORRADOR" && (
                             <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }}
-                              className="p-1 rounded hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]" title="Emitir">
+                              className="p-1 rounded hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" title="Emitir">
                               <Send className="h-3 w-3" />
                             </button>
                           )}
@@ -1172,7 +1172,7 @@ export default function NotasCreditoModule() {
                         </td>
                         <td className="px-3 py-3 hidden sm:table-cell">
                           {nc.orderNumero ? (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                               {"\u{1F517}"} {nc.orderNumero}
                             </span>
                           ) : <span className="text-[var(--text-tertiary)]">{"\u2014"}</span>}
@@ -1192,7 +1192,7 @@ export default function NotasCreditoModule() {
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {nc.status === "BORRADOR" && (
-                              <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]" title="Emitir">
+                              <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="p-1 rounded-lg hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" title="Emitir">
                                 <Send className="h-3.5 w-3.5" />
                               </button>
                             )}
@@ -1254,13 +1254,13 @@ export default function NotasCreditoModule() {
                     {STATUS_META[selected.status].label}
                   </span>
                   {selected.orderNumero && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                       {"\u{1F517}"} Vinculada a {selected.orderNumero}
                     </span>
                   )}
                   <div className="flex-1" />
                   {selected.status === "BORRADOR" && (
-                    <button onClick={() => handleEmitSunat(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] transition-colors">
+                    <button onClick={() => handleEmitSunat(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary/10 text-white hover:bg-primary/10 transition-colors">
                       <Send className="h-3.5 w-3.5" />Emitir a SUNAT
                     </button>
                   )}
@@ -1272,10 +1272,10 @@ export default function NotasCreditoModule() {
                   <button onClick={() => handleDuplicate(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] transition-colors">
                     <Copy className="h-3.5 w-3.5" />Duplicar
                   </button>
-                  <button onClick={() => sendWhatsApp(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors" title="Enviar por WhatsApp">
+                  <button onClick={() => sendWhatsApp(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors" title="Enviar por WhatsApp">
                     <MessageCircle className="h-3.5 w-3.5" />WhatsApp
                   </button>
-                  <button onClick={() => exportPDF(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors" title="Descargar PDF">
+                  <button onClick={() => exportPDF(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors" title="Descargar PDF">
                     <FileDown className="h-3.5 w-3.5" />PDF
                   </button>
                 </div>
@@ -1500,7 +1500,7 @@ export default function NotasCreditoModule() {
                     <div className="space-y-6">
                       {/* ── Templates guardados ─────────────────────────── */}
                       {templates.length > 0 && (
-                        <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3">
+                        <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-3">
                           <button onClick={() => setShowTemplates(s => !s)} className="flex items-center gap-2 w-full text-xs font-bold text-[var(--data-success-500)]">
                             <Bookmark className="h-3.5 w-3.5" />
                             Mis templates guardados ({templates.length})

@@ -18,14 +18,14 @@ const ACTION_META: Record<DocAction, { verb: string; Icon: typeof Upload; cls: s
   restore: { verb: "restauró", Icon: RotateCcw, cls: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]" },
   share: { verb: "compartió", Icon: Share2, cls: "bg-[var(--accent)]/15 text-[var(--accent)]" },
   share_revoke: { verb: "revocó el link de", Icon: Ban, cls: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]" },
-  sign: { verb: "firmó", Icon: PenTool, cls: "bg-primary/15 text-primary" },
+  sign: { verb: "firmó", Icon: PenTool, cls: "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
   version: { verb: "subió una versión de", Icon: FileText, cls: "bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]" },
   move: { verb: "movió", Icon: FolderInput, cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
   tag: { verb: "etiquetó", Icon: Tag, cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
   ai_categorize: { verb: "clasificó con IA", Icon: Sparkles, cls: "bg-[var(--accent)]/15 text-[var(--accent)]" },
   ocr: { verb: "escaneó (OCR)", Icon: ScanLine, cls: "bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]" },
   stamp: { verb: "selló", Icon: Stamp, cls: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]" },
-  link: { verb: "vinculó", Icon: Link2, cls: "bg-primary/15 text-primary" },
+  link: { verb: "vinculó", Icon: Link2, cls: "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
   merge: { verb: "combinó", Icon: Combine, cls: "bg-[var(--accent)]/15 text-[var(--accent)]" },
 };
 

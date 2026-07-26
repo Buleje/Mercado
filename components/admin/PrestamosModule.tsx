@@ -96,21 +96,21 @@ type Resumen = {
 
 const STATUS_META: Record<PrestamoStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
   ACTIVO:    { label: "Activo",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)]",   icon: Clock },
-  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", icon: CheckCircle2 },
+  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success-500)]", bg: "bg-primary/10", icon: CheckCircle2 },
   VENCIDO:   { label: "Vencido",   color: "text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-100)]",       icon: XCircle },
   CANCELADO: { label: "Cancelado", color: "text-[var(--text-secondary)]",     bg: "bg-gray-100",     icon: Ban },
 };
 
 const TIPO_META: Record<PrestamoTipo, { label: string; color: string; bg: string; icon: typeof Landmark }> = {
-  PERSONAL:  { label: "Personal",  color: "text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)]",     icon: User },
+  PERSONAL:  { label: "Personal",  color: "text-[var(--data-success-500)]",     bg: "bg-primary/10",     icon: User },
   BANCARIO:  { label: "Bancario",  color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]", icon: Building2 },
   TERCERO:   { label: "Tercero",   color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)]", icon: ArrowUpDown },
-  PROVEEDOR: { label: "Proveedor", color: "text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)]",     icon: Coins },
+  PROVEEDOR: { label: "Proveedor", color: "text-[var(--data-success-500)]",     bg: "bg-primary/10",     icon: Coins },
 };
 
 const DIRECCION_META: Record<PrestamoDireccion, { label: string; shortLabel: string; color: string; bg: string; icon: typeof ArrowDownToLine }> = {
   DADO:     { label: "Préstamo Dado",     shortLabel: "Dado",     color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)]",     icon: ArrowUpFromLine },
-  RECIBIDO: { label: "Préstamo Recibido", shortLabel: "Recibido", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", icon: ArrowDownToLine },
+  RECIBIDO: { label: "Préstamo Recibido", shortLabel: "Recibido", color: "text-[var(--data-success-500)]", bg: "bg-primary/10", icon: ArrowDownToLine },
 };
 
 const SISTEMA_LABELS: Record<SistemaAmortizacion, string> = {
@@ -481,7 +481,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
                   <span className="text-xs font-bold font-mono text-[var(--data-success-500)]">{formatCurrency(totalRecibidos)}</span>
                 </div>
                 <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <m.div className="h-full bg-[var(--accent-soft)] rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
+                  <m.div className="h-full bg-primary/10 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
                 </div>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{prestamos.filter(p=>p.direccion==="RECIBIDO").length} préstamos</p>
               </div>
@@ -1176,7 +1176,7 @@ export default function PrestamosModule() {
         const counts = { ACTIVO: prestamos.filter(p => p.status === "ACTIVO").length, PAGADO: prestamos.filter(p => p.status === "PAGADO").length, VENCIDO: prestamos.filter(p => p.status === "VENCIDO").length, CANCELADO: prestamos.filter(p => p.status === "CANCELADO").length };
         const pills = [
           { id: "" as "" | PrestamoStatus, label: "Todos", count: prestamos.length, activeBg: "bg-[var(--accent-600,var(--accent))] text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)]" },
-          { id: "ACTIVO" as PrestamoStatus, label: "Activos", count: counts.ACTIVO, activeBg: "bg-[var(--accent-soft)] text-white", inactiveClass: "bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30" },
+          { id: "ACTIVO" as PrestamoStatus, label: "Activos", count: counts.ACTIVO, activeBg: "bg-primary/10 text-white", inactiveClass: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30" },
           { id: "PAGADO" as PrestamoStatus, label: "Pagados", count: counts.PAGADO, activeBg: "bg-gray-500 text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)] border border-[var(--rule-base)]" },
           { id: "VENCIDO" as PrestamoStatus, label: "Vencidos", count: counts.VENCIDO, activeBg: "bg-[var(--data-error-500)] text-white", inactiveClass: "bg-[var(--data-error-50)] text-[var(--data-error-700)] border border-[var(--data-error-500)]/30 dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]" },
           { id: "CANCELADO" as PrestamoStatus, label: "Cancelados", count: counts.CANCELADO, activeBg: "bg-gray-700 text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)] border border-[var(--rule-base)]" },
@@ -1189,7 +1189,7 @@ export default function PrestamosModule() {
               </button>
             ))}
             {selectedIds.size > 0 && (
-              <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--accent-soft)] border border-[var(--accent)]/20">
+              <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-[var(--accent)]/20">
                 <span className="text-xs font-bold text-[var(--accent)]">{selectedIds.size} selec.</span>
                 <button onClick={() => {
                   const sel = prestamos.filter(p => selectedIds.has(p.id));
@@ -1256,12 +1256,12 @@ export default function PrestamosModule() {
                       const rowNow = new Date(); const rowSemana = new Date(); rowSemana.setDate(rowNow.getDate() + 7);
                       const tieneVenc = p.cuotas.some(c => !c.pagadoEn && new Date(c.fechaVence) < rowNow);
                       const venceSemana = !tieneVenc && p.cuotas.some(c => !c.pagadoEn && new Date(c.fechaVence) <= rowSemana);
-                      const riskDot = tieneVenc ? "bg-[var(--data-error-500)]" : venceSemana ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]";
+                      const riskDot = tieneVenc ? "bg-[var(--data-error-500)]" : venceSemana ? "bg-[var(--data-warning-500)]" : "bg-primary/10";
                       // Mejora 12: Badge de sistema de amortización
                       const sisBadge = p.sistemaAmortizacion === "FRANCES" ? "F" : p.sistemaAmortizacion === "ALEMAN" ? "A" : "AM";
-                      const sisBg = p.sistemaAmortizacion === "FRANCES" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : p.sistemaAmortizacion === "ALEMAN" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]";
+                      const sisBg = p.sistemaAmortizacion === "FRANCES" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : p.sistemaAmortizacion === "ALEMAN" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]";
                       return (
-                        <tr key={p.id} className={cn("border-b border-gray-50 hover:bg-gray-50 transition-colors", selectedIds.has(p.id) && "bg-[var(--accent-soft)]")}>
+                        <tr key={p.id} className={cn("border-b border-gray-50 hover:bg-gray-50 transition-colors", selectedIds.has(p.id) && "bg-primary/10")}>
                           <td className="px-3 py-3 w-8" onClick={e => e.stopPropagation()}>
                             <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded accent-blue-600 cursor-pointer" />
                           </td>
@@ -1390,7 +1390,7 @@ export default function PrestamosModule() {
                               href={waLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition"
+                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-white text-xs font-bold hover:bg-primary/10 transition"
                               title="Enviar recordatorio por WhatsApp"
                             >
                               <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -1434,7 +1434,7 @@ export default function PrestamosModule() {
                                 "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap",
                                 isUrgent
                                   ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
-                                  : "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                                  : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                               )}>
                                 {c.diasRestantes}d restantes
                               </span>
@@ -1451,7 +1451,7 @@ export default function PrestamosModule() {
                               href={waLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition"
+                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-white text-xs font-bold hover:bg-primary/10 transition"
                               title="Enviar recordatorio por WhatsApp"
                             >
                               <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -1519,7 +1519,7 @@ export default function PrestamosModule() {
                   <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)]  transition-colors">
                     <Plus className="h-4 w-4" /> Crear Préstamo con estos datos
                   </button>
-                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold  transition-colors border", showComparador ? "bg-[var(--accent-soft)] text-white border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success-500)]/30 hover:text-[var(--data-success-500)]")}>
+                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold  transition-colors border", showComparador ? "bg-primary/10 text-white border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success-500)]/30 hover:text-[var(--data-success-500)]")}>
                     <Scale className="h-4 w-4" /> Comparar sistemas
                   </button>
                 </>
@@ -1842,7 +1842,7 @@ export default function PrestamosModule() {
                               </thead>
                               <tbody>
                                 {rows.map(c => (
-                                  <tr key={c.id} className={cn("border-b border-[var(--rule-soft)]", c.pagadoEn ? "bg-[var(--accent-soft)]/50" : !c.pagadoEn && new Date(c.fechaVence) < new Date() ? "bg-[var(--data-error-50)]/50" : "")}>
+                                  <tr key={c.id} className={cn("border-b border-[var(--rule-soft)]", c.pagadoEn ? "bg-primary/10/50" : !c.pagadoEn && new Date(c.fechaVence) < new Date() ? "bg-[var(--data-error-50)]/50" : "")}>
                                     <td className="py-1.5 px-1 font-mono text-[var(--text-secondary)]">{c.numeroCuota}</td>
                                     <td className="py-1.5 px-1 text-[var(--text-secondary)]">{new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</td>
                                     <td className="py-1.5 px-1 text-right font-mono text-[var(--text-primary)]">{formatCurrency(c.capital)}</td>
@@ -1851,7 +1851,7 @@ export default function PrestamosModule() {
                                     <td className="py-1.5 px-1 text-right font-mono text-[var(--data-success-500)]">{formatCurrency(c.saldo)}</td>
                                     <td className="py-1.5 px-1 text-center">
                                       {c.pagadoEn ? (
-                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] px-1.5 py-0.5 rounded">PAGADA</span>
+                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 px-1.5 py-0.5 rounded">PAGADA</span>
                                       ) : new Date(c.fechaVence) < new Date() ? (
                                         <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1.5 py-0.5 rounded">VENCIDA</span>
                                       ) : (
@@ -1886,7 +1886,7 @@ export default function PrestamosModule() {
                         const pagoAnticipado = capitalPendiente + (pendientes[0]?.interes || 0);
                         const ahorro = totalPendiente - pagoAnticipado;
                         return (
-                          <div className="mt-3 bg-[var(--accent-soft)] rounded-xl p-3 border border-[var(--data-success-500)]/30">
+                          <div className="mt-3 bg-primary/10 rounded-xl p-3 border border-[var(--data-success-500)]/30">
                             <button
                               onClick={() => setShowPagoAnticipado(!showPagoAnticipado)}
                               className="w-full flex items-center justify-between"
@@ -1915,7 +1915,7 @@ export default function PrestamosModule() {
                                   <span className="font-extrabold font-mono text-[var(--data-success-500)]">{formatCurrency(pagoAnticipado)}</span>
                                 </div>
                                 {ahorro > 0 && (
-                                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold bg-[var(--accent-soft)] rounded-lg px-2 py-1 text-center">
+                                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold bg-primary/10 rounded-lg px-2 py-1 text-center">
                                     Ahorro de {formatCurrency(ahorro)} en intereses futuros
                                   </p>
                                 )}
@@ -2065,7 +2065,7 @@ ${cuotas.map(c => { const row = `<tr>
                             w.document.close();
                             setTimeout(() => w.print(), 300);
                           }}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--accent)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]/80 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--accent)] bg-primary/10 hover:bg-primary/10/80 transition-colors"
                         >
                           <FileText className="h-3.5 w-3.5" /> Resumen Deuda
                         </button>
@@ -2085,7 +2085,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   key={c.id}
                                   className={cn(
                                     "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all",
-                                    isSelected ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--rule-base)] hover:border-gray-300",
+                                    isSelected ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)] hover:border-gray-300",
                                     isOverdue && !isSelected && "border-[var(--data-error-500)] bg-[var(--data-error-50)]/50"
                                   )}
                                 >
@@ -2143,7 +2143,7 @@ ${cuotas.map(c => { const row = `<tr>
                             </button>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30">
+                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30">
                               <RotateCcw className="h-3.5 w-3.5" /> Refinanciar
                             </button>
                             <button onClick={() => setShowCancelConfirm(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error-500)]">
@@ -2191,7 +2191,7 @@ ${cuotas.map(c => { const row = `<tr>
                             </h4>
                             <div className="space-y-2 max-h-52 overflow-y-auto">
                               {pagadas.map(c => (
-                                <div key={c.id} className="flex items-center justify-between py-2 px-3 bg-[var(--accent-soft)] rounded-xl">
+                                <div key={c.id} className="flex items-center justify-between py-2 px-3 bg-primary/10 rounded-xl">
                                   <div>
                                     <p className="text-xs font-bold text-[var(--text-primary)]">Cuota #{c.numeroCuota}</p>
                                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{formatDate(c.pagadoEn!)}</p>
@@ -2235,7 +2235,7 @@ ${cuotas.map(c => { const row = `<tr>
                 {refinanciarError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{refinanciarError}</p>}
                 <div className="flex gap-2">
                   <button onClick={() => setShowRefinanciar(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200">Cancelar</button>
-                  <button onClick={handleRefinanciar} disabled={refinancing} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50">
+                  <button onClick={handleRefinanciar} disabled={refinancing} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50">
                     {refinancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Refinanciar
                   </button>
                 </div>
@@ -2349,7 +2349,7 @@ ${cuotas.map(c => { const row = `<tr>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Crear Préstamo</CardTitle>
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                       Paso {createStep} de 2
                     </span>
                   </div>
@@ -2379,7 +2379,7 @@ ${cuotas.map(c => { const row = `<tr>
                             <button
                               key={dir}
                               onClick={() => setCreateDireccion(dir)}
-                              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300"}`}
+                              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${active ? "border-[var(--accent)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300"}`}
                             >
                               <Icon className="h-4 w-4" />
                               {meta.label}
@@ -2429,7 +2429,7 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 key={preset.nombre}
                                 onClick={() => applyBankPreset(preset)}
-                                className={`px-2 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-bold transition-all border ${active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50"}`}
+                                className={`px-2 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-bold transition-all border ${active ? "border-[var(--accent)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50"}`}
                               >
                                 <span className="block">{preset.nombre}</span>
                                 <span className="block text-[length:var(--ts-2xs)] opacity-60">TEA ~{preset.teaRef}%</span>

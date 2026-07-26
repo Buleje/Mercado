@@ -881,7 +881,7 @@ function EmptyState({
 }) {
   return (
     <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 px-6 text-center">
-      <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)]/40 text-[var(--accent)]">
+      <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10/40 text-[var(--accent)]">
         <ImageIcon className="h-7 w-7" strokeWidth={1.5} aria-hidden />
       </span>
       <p className="font-display text-lg font-bold text-[var(--text-primary)] mt-3">
@@ -1217,7 +1217,7 @@ function BannerCard({
                     placeholder="O pegá una URL: https://…"
                     className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-mono focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
                   />
-                  <div className="rounded-md bg-[var(--accent-soft)]/30 border border-[var(--rule-soft)] px-2.5 py-1.5">
+                  <div className="rounded-md bg-primary/10/30 border border-[var(--rule-soft)] px-2.5 py-1.5">
                     <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">
                       <span className="text-[var(--accent)]">Recomendado:</span>{" "}
                       <span className="font-mono">1600 × 400 px</span> · 4:1 · &lt;200 KB
@@ -1240,7 +1240,7 @@ function BannerCard({
           {/* ── Encuadre y previsualización avanzada ── */}
           {banner.type !== "promo" && banner.imageUrl && (
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 flex items-center gap-3">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Monitor className="h-4 w-4" />
               </span>
               <div className="flex-1 min-w-0">

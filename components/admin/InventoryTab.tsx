@@ -1232,7 +1232,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           onClick={() => setNoImageOnly(!noImageOnly)}
           className={cn(
             "flex items-center gap-1 px-3 h-10 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
-            noImageOnly ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:bg-[var(--accent-muted)]/20 dark:text-[var(--text-primary)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+            noImageOnly ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:bg-primary/15/20 dark:text-[var(--text-primary)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
           )}
         >
           <Camera className="h-3.5 w-3.5" /> Sin foto ({noImageCount})
@@ -1250,7 +1250,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
             "flex items-center gap-1 px-3 h-10 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
-            showFilters ? "border-primary bg-primary/5 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+            showFilters ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
           )}
         >
           <Filter className="h-3.5 w-3.5" />
@@ -1371,7 +1371,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Activos</p>
           <p className="text-2xl font-mono font-bold text-[var(--data-success-500)] mt-1">{activeProducts}</p>
           <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{totalProducts - activeProducts} inactivos</p>
-          <div className="h-1 rounded-full mt-2 bg-[var(--accent-soft)]" />
+          <div className="h-1 rounded-full mt-2 bg-primary/10" />
         </div>
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Bajo stock</p>
@@ -1389,7 +1389,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Valor inventario (costo)</p>
           <p className="text-2xl font-mono font-bold text-primary mt-1">{fmt(totalStockValue)}</p>
           <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">Valuado a costo</p>
-          <div className="h-1 rounded-full mt-2 bg-[var(--accent-soft)]" />
+          <div className="h-1 rounded-full mt-2 bg-primary/10" />
         </div>
       </div>
 
@@ -1413,7 +1413,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               key={cm.cat}
               className={cn(
                 "text-xs font-mono font-bold px-2 py-0.5 rounded-full",
-                cm.margin > 25 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                cm.margin > 25 ? "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]"
                 : cm.margin >= 15 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
                 : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
               )}
@@ -1519,21 +1519,21 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 onClick={() => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch {} }}
                 className={cn(
                   "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
-                  showExtendedCols ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-white dark:hover:bg-[var(--surface-raised)]"
+                  showExtendedCols ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30 dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-white dark:hover:bg-[var(--surface-raised)]"
                 )}
               >
                 <Layers className="h-3.5 w-3.5" /> {showExtendedCols ? "Menos columnas" : "Mas columnas"}
               </button>
               <button
                 onClick={() => setShowExpandedTable(true)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30 dark:bg-primary/15 dark:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
               >
                 <Maximize2 className="h-3.5 w-3.5" /> Expandir tabla
               </button>
               {view === "productos" && (
                 <button
                   onClick={() => { setBulkField("pricePercent"); setBulkValue(""); setBulkModal(true); }}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-primary/30 text-primary hover:bg-primary/5 transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors"
                 >
                   <TrendingUp className="h-3.5 w-3.5" /> Ajuste %
                 </button>
@@ -1545,7 +1545,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all",
                   noImageCount > 0
                     ? "border-primary bg-linear-to-r from-primary to-[var(--data-success-500)] text-white hover:opacity-90 shadow-[var(--shadow-sm)]"
-                    : "border-primary/30 text-primary hover:bg-primary/5",
+                    : "border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5",
                 )}
               >
                 <Sparkles className="h-3.5 w-3.5" />
@@ -1595,7 +1595,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     Unidad: p.unit, Codigo: p.barcode ?? "", Activo: p.active ? "Si" : "No",
                   })), `inventario-${new Date().toISOString().slice(0, 10)}`, "Inventario");
                 }}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
               >
                 <Download className="h-3.5 w-3.5" /> Excel
               </button>
@@ -1603,7 +1603,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               <button
                 onClick={() => { setCsvResult(null); csvImportRef.current?.click(); }}
                 disabled={csvImporting}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors disabled:opacity-50"
               >
                 {csvImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Subir CSV
               </button>
@@ -1620,7 +1620,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       {/* Content */}
       {/* CSV import result feedback */}
       {csvResult && (
-        <div className={`flex items-start gap-3 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm mb-2 ${csvResult.errors.length > 0 ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"}`}>
+        <div className={`flex items-start gap-3 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm mb-2 ${csvResult.errors.length > 0 ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" : "bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"}`}>
           <CheckCircle className="h-4 w-4 mt-0.5 shrink-0" />
           <div className="flex-1">
             <p className="font-bold">{csvResult.created} producto{csvResult.created !== 1 ? "s" : ""} importado{csvResult.created !== 1 ? "s" : ""} correctamente.</p>
@@ -1681,7 +1681,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     className={cn(
                       "absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition-colors",
                       p.active
-                        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:brightness-95"
+                        ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:brightness-95"
                         : "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)]"
                     )}
                   >
@@ -1705,7 +1705,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                       <div className="flex flex-wrap items-center gap-1.5">
                         <p className="font-bold text-sm leading-tight text-[var(--text-primary)] dark:text-[var(--text-primary)] line-clamp-2">{p.name}</p>
                         {p.type === "service" && (
-                          <span className="rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--accent)]">Servicio</span>
+                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--accent)]">Servicio</span>
                         )}
                         {topRentables.includes(p.id) && (
                           <StatusBadge variant="success" label="Alta rentabilidad" size="sm" />
@@ -1715,7 +1715,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                       <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                         <span className="text-base font-extrabold text-primary">S/{Number(p.price).toFixed(2)}</span>
                         {p.costPrice && <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">costo S/{Number(p.costPrice).toFixed(2)}</span>}
-                        {p.badge && <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{p.badge}</span>}
+                        {p.badge && <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">{p.badge}</span>}
                       </div>
                     </div>
                   </div>
@@ -1742,10 +1742,10 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     <button onClick={() => openEditModal(p)} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface px-3 py-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary" title="Editar producto">
                       <Pencil className="h-3.5 w-3.5" /> Editar
                     </button>
-                    <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} title="Ver Kardex (movimientos)" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--data-success-500)]">
+                    <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} title="Ver Kardex (movimientos)" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-primary/10 hover:text-[var(--data-success-500)]">
                       <BookOpen className="h-4 w-4" />
                     </button>
-                    <button onClick={() => setModifiersProduct({ id: p.id, name: p.name })} title="Modificadores (cremas, adicionales, talla)" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]">
+                    <button onClick={() => setModifiersProduct({ id: p.id, name: p.name })} title="Modificadores (cremas, adicionales, talla)" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-primary/10 hover:text-[var(--accent)]">
                       <Sliders className="h-4 w-4" />
                     </button>
                     <button onClick={() => deleteProduct(p.id)} title="Eliminar producto" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)]">
@@ -1838,7 +1838,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                               if (stock === 0) return <span className="w-2.5 h-2.5 rounded-full bg-black inline-block shrink-0" title="Agotado" />;
                               if (stock <= stockMin) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-error-500)] inline-block shrink-0" title="Critico" />;
                               if (stock <= stockMin * 2) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-warning-500)] inline-block shrink-0" title="Bajo" />;
-                              return <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent-soft)] inline-block shrink-0" title="OK" />;
+                              return <span className="w-2.5 h-2.5 rounded-full bg-primary/10 inline-block shrink-0" title="OK" />;
                             })()}
                             <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate-25">{p.name}</span>
                             {/* Mejora QW-10i: Badge alta rentabilidad */}
@@ -1858,7 +1858,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                           <PriceSparkline productId={p.id} />
                         </td>
                         <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
-                          {p.badge ? <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">{p.badge}</span> : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>}
+                          {p.badge ? <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-semibold">{p.badge}</span> : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>}
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3">
                           {/* Brandon 2026-06-06: barra visual de nivel de stock
@@ -1906,10 +1906,10 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                             onClick={() => toggleActive(p)}
                             className={cn(
                               "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors",
-                              p.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]" : "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)]"
+                              p.active ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10" : "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)]"
                             )}
                           >
-                            <span className={cn("h-1.5 w-1.5 rounded-full", p.active ? "bg-[var(--accent-soft)]" : "bg-gray-400")} />
+                            <span className={cn("h-1.5 w-1.5 rounded-full", p.active ? "bg-primary/10" : "bg-gray-400")} />
                             {p.active ? "Activo" : "Inactivo"}
                           </button>
                         </td>
@@ -1950,7 +1950,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                                 });
                                 setShowAdd(true);
                               }}
-                              className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                              className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
                               title="Duplicar"
                             >
                               <ClipboardList className="h-4 w-4" />
@@ -1959,7 +1959,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                               <Trash2 className="h-4 w-4" />
                             </button>
                             {/* Adicionales / modificadores (cremas, sabores, extras) */}
-                            <button onClick={() => setModifiersProduct({ id: p.id, name: p.name })} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors" title="Adicionales y modificadores (cremas, salsas, extras)">
+                            <button onClick={() => setModifiersProduct({ id: p.id, name: p.name })} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--accent)] hover:bg-primary/10 transition-colors" title="Adicionales y modificadores (cremas, salsas, extras)">
                               <Sliders className="h-4 w-4" />
                             </button>
                             {/* Mejora 6 nueva: QR */}
@@ -1980,8 +1980,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                               className={cn(
                                 "p-1.5 rounded-lg transition-colors",
                                 autoReorderConfigs[p.id]
-                                  ? "text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]"
-                                  : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]"
+                                  ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10"
+                                  : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10"
                               )}
                               title={autoReorderConfigs[p.id] ? "Auto-reorden activo (click para desactivar)" : "Configurar auto-reorden"}
                             >
@@ -2011,8 +2011,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           const columns = [
             { key: "agotado", label: "Agotado", color: "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20", badgeColor: "bg-[var(--data-error-500)]", filter: (p: DbProduct) => (p.stock ?? 0) === 0 },
             { key: "bajo", label: "Pocas Existencias", color: "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20", badgeColor: "bg-[var(--data-warning-500)]", filter: (p: DbProduct) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stockMin ?? 5) },
-            { key: "normal", label: "Normal", color: "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", badgeColor: "bg-[var(--accent-soft)]", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMin ?? 5) && (p.stock ?? 0) <= (p.stockMax ?? 999) },
-            { key: "exceso", label: "Exceso", color: "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", badgeColor: "bg-[var(--accent-soft)]", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMax ?? 999) },
+            { key: "normal", label: "Normal", color: "border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15", badgeColor: "bg-primary/10", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMin ?? 5) && (p.stock ?? 0) <= (p.stockMax ?? 999) },
+            { key: "exceso", label: "Exceso", color: "border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15", badgeColor: "bg-primary/10", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMax ?? 999) },
           ];
           return (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4">
@@ -2034,7 +2034,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                           onClick={() => { setEditModalProduct(p); }}
                           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditModalProduct(p); } }}>
                           <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
-                            {p.type === "service" && <span className="mr-1 rounded bg-[var(--accent-soft)] px-1 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--accent)]">Serv</span>}
+                            {p.type === "service" && <span className="mr-1 rounded bg-primary/10 px-1 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--accent)]">Serv</span>}
                             {p.name}
                           </p>
                           <div className="flex items-center justify-between mt-1">
@@ -2070,7 +2070,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && setShowPicker(false)}>
             <div className="bg-[var(--surface-raised)] w-full sm:max-w-4xl sm:rounded-2xl rounded-t-2xl overflow-hidden max-h-[92dvh] flex flex-col border border-[var(--rule-base)] shadow-2xl">
               <div className="flex items-start gap-3 px-5 sm:px-6 py-5 border-b-2 border-[var(--rule-soft)] sticky top-0 bg-[var(--surface-raised)] z-10">
-                <span aria-hidden className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <span aria-hidden className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <PackagePlus className="h-6 w-6" strokeWidth={2.1} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -2115,7 +2115,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               <div className="flex-1 overflow-y-auto p-5">
                 {pickerProducts.length === 0 ? (
                   <div className="flex flex-col items-center justify-center text-center py-10">
-                    <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-3">
+                    <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-3">
                       <PackagePlus className="h-7 w-7" strokeWidth={1.9} />
                     </span>
                     <h3 className="text-base font-extrabold text-[var(--text-primary)]">
@@ -2159,7 +2159,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         {p.stock != null && (
                           <span className={cn(
                             "text-xs font-bold px-2 py-0.5 rounded-full",
-                            (p.stock ?? 0) === 0 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" : (p.stock ?? 0) <= (p.stockMin ?? 5) ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                            (p.stock ?? 0) === 0 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" : (p.stock ?? 0) <= (p.stockMin ?? 5) ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                           )}>
                             Stock: {p.stock}
                           </span>
@@ -2193,7 +2193,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 {addForm.image ? (
                   <Image src={addForm.image} alt="" width={48} height={48} unoptimized={addForm.image.startsWith("data:")} className="h-12 w-12 rounded-lg object-cover border border-[var(--rule-soft)] bg-[var(--surface-alt)]" />
                 ) : (
-                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]"><PackagePlus className="h-6 w-6" /></span>
+                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><PackagePlus className="h-6 w-6" /></span>
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-extrabold text-[var(--text-primary)]">{addForm.name.trim() || "Nuevo producto"}</p>
@@ -2230,7 +2230,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
 
               {/* National product DB search — solo productos físicos */}
               {addForm.type !== "service" && (
-              <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-4 space-y-3">
+              <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-4 space-y-3">
                 <p className="text-xs font-bold text-[var(--data-success-500)] flex items-center gap-1.5">
                   <Search className="h-3.5 w-3.5" /> Buscar en base nacional de productos
                 </p>
@@ -2246,7 +2246,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     type="button"
                     onClick={handleDbSearch}
                     disabled={dbSearching || !dbQuery.trim()}
-                    className="px-3 py-2 rounded-lg bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50 flex items-center gap-1 text-sm font-bold"
+                    className="px-3 py-2 rounded-lg bg-primary/10 text-white hover:bg-primary/10 transition-colors disabled:opacity-50 flex items-center gap-1 text-sm font-bold"
                   >
                     {dbSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   </button>
@@ -2258,7 +2258,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         key={i}
                         type="button"
                         onClick={() => applyDbResult(r)}
-                        className="w-full text-left px-3 py-2.5 hover:bg-[var(--accent-soft)] flex flex-wrap items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
+                        className="w-full text-left px-3 py-2.5 hover:bg-primary/10 flex flex-wrap items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
                       >
                         {r.image && (
                           <Image src={r.image} alt={r.name} width={40} height={40} className="rounded-lg object-cover border border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 bg-[var(--surface-alt)] dark:bg-surface" />
@@ -2357,7 +2357,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   {(id) => (
                     <div className="flex flex-wrap gap-2">
                       <input id={id} value={addForm.barcode} onChange={(e) => setAddForm(f => ({ ...f, barcode: e.target.value }))} placeholder="7750000000000" className={cn(FIELD_INPUT, "flex-1 font-mono")} />
-                      <button type="button" onClick={() => setShowScanner(true)} className="px-3 py-2 rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-colors">
+                      <button type="button" onClick={() => setShowScanner(true)} className="px-3 py-2 rounded-lg border border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors">
                         <ScanBarcode className="h-4 w-4" />
                       </button>
                     </div>
@@ -2435,7 +2435,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <button
                     type="button"
                     onClick={() => setAddVariants(v => [...v, { name: "", price: "", stock: "" }])}
-                    className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/5 transition-colors"
+                    className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2.5 py-1.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" /> Agregar
                   </button>
@@ -2495,7 +2495,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <button
                     type="button"
                     onClick={() => setAddModifierGroups(g => [...g, { name: "", required: false, multi: true, options: [{ name: "", priceDelta: "" }] }])}
-                    className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/5 transition-colors"
+                    className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2.5 py-1.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" /> Agregar grupo
                   </button>
@@ -2600,7 +2600,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         type="button"
                         onClick={() => addImgRef.current?.click()}
                         disabled={imgUploading}
-                        className="w-full flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors text-sm font-medium disabled:opacity-50"
+                        className="w-full flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-primary/40 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors text-sm font-medium disabled:opacity-50"
                       >
                         <Camera className="h-4 w-4" />
                         {imgUploading ? "Procesando…" : "Subir foto"}
@@ -2669,7 +2669,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     type="button"
                     onClick={() => galleryRef.current?.click()}
                     disabled={galleryUploading}
-                    className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2.5 py-1.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors disabled:opacity-50"
                   >
                     {galleryUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Agregar foto
                   </button>
@@ -2746,14 +2746,14 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                             const price = Number(addForm.price) || 0;
                             const cost = Number(addForm.costPrice) || 0;
                             if (cost > 0 && price > 0) {
-                              return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--accent)]">Margen {((1 - cost / price) * 100).toFixed(0)}%</span>;
+                              return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">Margen {((1 - cost / price) * 100).toFixed(0)}%</span>;
                             }
                             return null;
                           })()}
                           {addForm.type !== "service" && addForm.trackStock && addForm.stock !== "" && (() => {
                             const s = Number(addForm.stock) || 0;
                             const min = addForm.stockMin !== "" ? Number(addForm.stockMin) : 0;
-                            const cls = s <= 0 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" : s <= min ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)]";
+                            const cls = s <= 0 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" : s <= min ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]";
                             const txt = s <= 0 ? "Sin stock" : s <= min ? `Stock bajo · ${s}` : `En stock · ${s}`;
                             return <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", cls)}>{txt}</span>;
                           })()}
@@ -2815,7 +2815,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 {editForm.image ? (
                   <Image src={editForm.image} alt="" width={48} height={48} unoptimized={editForm.image.startsWith("data:")} className="h-12 w-12 rounded-lg object-cover border border-[var(--rule-soft)] bg-[var(--surface-alt)]" />
                 ) : (
-                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]"><Package className="h-6 w-6" /></span>
+                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Package className="h-6 w-6" /></span>
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-extrabold text-[var(--text-primary)]">{editForm.name?.trim() || "Producto"}</p>
@@ -3166,7 +3166,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   onClick={() => setEditForm(f => ({ ...f, active: !f.active }))}
                   className={cn(
                     "relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer",
-                    editForm.active ? "bg-[var(--accent-soft)]" : "bg-[var(--rule-soft)]"
+                    editForm.active ? "bg-primary/10" : "bg-[var(--rule-soft)]"
                   )}
                 >
                   <span className={cn("inline-block h-5 w-5 rounded-full bg-[var(--surface-raised)] shadow transition-transform", editForm.active ? "translate-x-5" : "translate-x-0")} />
@@ -3195,7 +3195,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         <div className="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-0.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-2 py-1.5 shadow-lg backdrop-blur-md animate-[slideUp_0.2s_ease-out]">
           {/* Conteo — chip discreto, sin barra de color saturada */}
           <span className="inline-flex items-center gap-2 pl-1.5 pr-1 text-sm font-semibold text-[var(--text-primary)]">
-            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] px-1.5 text-xs font-black tabular-nums text-[var(--accent)]">
+            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary/10 px-1.5 text-xs font-black tabular-nums text-[var(--accent)]">
               {selectedIds.size}
             </span>
             <span className="hidden sm:inline">seleccionado{selectedIds.size > 1 ? "s" : ""}</span>
@@ -3643,7 +3643,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
 
       {/* Mejora 5 nueva: Resumen de auto-reorden */}
       {autoReorderCount > 0 && view === "productos" && (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3 flex items-center gap-2">
+        <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3 flex items-center gap-2">
           <RefreshCw className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
           <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold">
             {autoReorderCount} producto{autoReorderCount > 1 ? "s" : ""} con reorden automatico configurado

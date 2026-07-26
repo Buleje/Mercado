@@ -240,7 +240,7 @@ export default function PointsProgramTab() {
             <div className="divide-y divide-gray-100 dark:divide-card-border">
               {movements.map(m => (
                 <div key={m.id} className="flex items-center gap-3 px-4 py-3">
-                  <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0", m.action === "earn" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
+                  <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0", m.action === "earn" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
                     {m.action === "earn" ? <ArrowUp className="h-4 w-4" /> : <Gift className="h-4 w-4" />}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -303,7 +303,7 @@ export default function PointsProgramTab() {
             </div>
           </div>
 
-          <button onClick={handleSaveConfig} className={cn("px-5 py-2.5 rounded-lg text-sm font-bold transition-all", configSaved ? "bg-[var(--accent-soft)] text-white" : "bg-primary text-white hover:bg-primary/90")}>
+          <button onClick={handleSaveConfig} className={cn("px-5 py-2.5 rounded-lg text-sm font-bold transition-all", configSaved ? "bg-primary/10 text-white" : "bg-primary text-white hover:bg-primary/90")}>
             {configSaved ? "Guardado" : "Guardar configuración"}
           </button>
         </div>

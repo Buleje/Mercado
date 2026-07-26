@@ -40,7 +40,7 @@ const PRIORITY_META: Record<TicketPriority, { label: string; color: string; bg: 
   critica: { label: "Crítica",  color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
   alta:    { label: "Alta",     color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
   media:   { label: "Media",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  baja:    { label: "Baja",     color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  baja:    { label: "Baja",     color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
 };
 
 const STATUS_META: Record<TicketStatus, { label: string; color: string }> = {
@@ -113,10 +113,10 @@ export default function SupportTicketsTab() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Tickets abiertos", value: String(stats.open), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Tickets abiertos", value: String(stats.open), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "SLA incumplido", value: String(stats.breached), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
           { label: "Satisfacción prom.", value: `${Number(stats.avgSatisfaction).toFixed(1)}/5`, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Tiempo resolución prom.", value: `${Number(stats.avgResolutionTime).toFixed(1)}h`, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Tiempo resolución prom.", value: `${Number(stats.avgResolutionTime).toFixed(1)}h`, color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
@@ -212,7 +212,7 @@ export default function SupportTicketsTab() {
               ))}
             </div>
             {detail.resolution && (
-              <div><p className="text-xs text-[var(--text-tertiary)] mb-1">Resolución</p><p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3">{detail.resolution}</p></div>
+              <div><p className="text-xs text-[var(--text-tertiary)] mb-1">Resolución</p><p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-primary/10 dark:bg-primary/15 rounded-xl p-3">{detail.resolution}</p></div>
             )}
           </div>
         </div>

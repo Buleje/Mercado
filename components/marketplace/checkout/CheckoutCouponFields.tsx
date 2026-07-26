@@ -110,7 +110,7 @@ export default function CheckoutCouponFields({
               {g.storeName}
             </p>
             {applied ? (
-              <div className="flex items-center justify-between rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)] pl-4 pr-2 py-2">
+              <div className="flex items-center justify-between rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10 pl-4 pr-2 py-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <CheckCircle2
                     className="h-4 w-4 text-[var(--accent)] shrink-0"
@@ -164,7 +164,7 @@ export default function CheckoutCouponFields({
                     "shrink-0 inline-flex items-center justify-center rounded-2xl px-5 h-12",
                     "text-base font-bold transition-colors",
                     "bg-[var(--surface-sunken)] text-[var(--text-primary)] border-2 border-[var(--rule-base)]",
-                    "hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40",
+                    "hover:bg-primary/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/40",
                     "disabled:opacity-50 disabled:cursor-not-allowed",
                   )}
                 >

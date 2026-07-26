@@ -37,7 +37,7 @@ import { BulejeLoader } from "@/components/admin/inicio/_shared";
 
 // ── Accesos directos a módulos (URL ?tab=X — patrón del admin) ──────────────
 const SHORTCUTS: { label: string; tab: string; icon: LucideIcon; tint: string }[] = [
-  { label: "Punto de venta", tab: "ventas-caja", icon: ShoppingCart, tint: "text-[var(--accent)] bg-[var(--accent-soft)]" },
+  { label: "Punto de venta", tab: "ventas-caja", icon: ShoppingCart, tint: "text-[var(--accent)] bg-primary/10" },
   { label: "Pedidos", tab: "pedidos", icon: ClipboardCheck, tint: "text-[var(--data-warning-600,#c93b2c)] bg-[var(--data-warning-50,#fffbeb)]" },
   { label: "Compras", tab: "compras", icon: Truck, tint: "text-[var(--data-info-600,#2563eb)] bg-[var(--data-info-50,#eff6ff)]" },
   { label: "Clientes", tab: "clientes", icon: Users, tint: "text-[var(--data-purple-600,#7c3aed)] bg-[var(--data-purple-50,#f5f3ff)]" },
@@ -262,7 +262,7 @@ export default function VendorCommandCenter() {
                 </div>
 
                 {/* Ganancia — con sparkline */}
-                <div className="relative overflow-hidden border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-4">
+                <div className="relative overflow-hidden border border-[var(--accent)]/30 bg-primary/10/40 p-4">
                   <div className="flex items-center justify-between gap-1">
                     <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
                       <Coins className="h-3.5 w-3.5" strokeWidth={2.25} /> Ganancia

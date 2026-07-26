@@ -271,7 +271,7 @@ function OverrideRow({
         <p className="text-xs text-[var(--text-secondary)]">
           Precio base: <span className="font-mono">S/{Number(override.productBasePrice).toFixed(2)}</span>
           {override.savingsPercent != null && override.savingsPercent > 0 && (
-            <span className="ml-2 inline-block px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold">
+            <span className="ml-2 inline-block px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold">
               -{override.savingsPercent}%
             </span>
           )}
@@ -356,7 +356,7 @@ function OverrideRow({
         title={override.visible ? "Visible" : "Oculto"}
         className={`p-2 rounded-lg transition-colors ${
           override.visible
-            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)]"
+            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15"
             : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
         }`}
       >

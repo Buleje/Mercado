@@ -218,7 +218,7 @@ export default function HomepageEditorTab() {
     {
       id: "stats",
       icon: <BarChart3 className="h-6 w-6 text-[var(--data-success-500)]" />,
-      bgColor: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+      bgColor: "bg-primary/10 dark:bg-primary/15",
       title: "Nuestros Números",
       description: "Estadísticas que se muestran debajo del hero",
       fields: [
@@ -323,7 +323,7 @@ export default function HomepageEditorTab() {
             className={cn(
               "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-white transition-all",
               saved
-                ? "bg-[var(--accent-soft)]"
+                ? "bg-primary/10"
                 : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >
@@ -340,7 +340,7 @@ export default function HomepageEditorTab() {
       </AdminModuleHeader>
 
       {/* Info banner */}
-      <div className="flex flex-wrap items-start gap-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
+      <div className="flex flex-wrap items-start gap-3 bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
         <Sparkles className="h-4 w-4 text-[var(--data-success-500)] mt-0.5 shrink-0" />
         <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] leading-relaxed">
           Los cambios se guardan en la configuración del sistema. Haz clic en <strong>Guardar cambios</strong> y luego refresca la página de inicio para ver los cambios aplicados.
@@ -391,7 +391,7 @@ export default function HomepageEditorTab() {
         {/* Benefits Editor */}
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("benefits")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 dark:bg-primary/15">
               <Heart className="h-6 w-6 text-[var(--data-success-500)]" />
             </div>
             <div className="flex-1 min-w-0">

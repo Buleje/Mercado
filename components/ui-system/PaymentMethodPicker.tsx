@@ -104,7 +104,7 @@ export default function PaymentMethodPicker({
             className={cn(
               "w-full flex items-center gap-3 rounded-2xl border-2 p-3 transition-all text-left",
               selected
-                ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                ? "border-[var(--accent)] bg-primary/10"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--text-primary)]",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2",
             )}

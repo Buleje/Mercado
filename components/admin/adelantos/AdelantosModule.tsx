@@ -276,7 +276,7 @@ function ResumenView({
             {abiertos.slice(0, 5).map((a) => (
               <li key={a.id}>
                 <button onClick={() => onGoTab("lista")} className="flex w-full items-center gap-3 py-3 text-left transition-colors hover:bg-[var(--surface-sunken)]/50">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-primary">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]">
                     {(a.beneficiario?.nombre ?? "?").charAt(0).toUpperCase()}
                   </span>
                   <span className="flex-1 text-base font-bold text-[var(--text-primary)]">{a.beneficiario?.nombre ?? "—"}</span>
@@ -354,7 +354,7 @@ function AdelantosView({
   const chipCls = (active: boolean) =>
     `h-10 px-4 rounded-full border-2 text-base font-bold transition-colors ${
       active
-        ? "border-primary bg-primary/10 text-primary"
+        ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
     }`;
 
@@ -447,7 +447,7 @@ function AdelantosView({
                       {a.status === "ABIERTO" && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setDetalle(a); }}
-                          className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border-2 border-primary text-primary text-sm font-bold hover:bg-primary/10 transition-colors"
+                          className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border-2 border-primary text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-bold hover:bg-primary/10 transition-colors"
                         >
                           <Plus className="h-4 w-4" /> Registrar entrega
                         </button>
@@ -540,7 +540,7 @@ function CrearAdelantoModal({
               key={val}
               type="button"
               onClick={() => setModalidad(val)}
-              className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${modalidad === val ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}
+              className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${modalidad === val ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}
             >
               {lbl}
             </button>
@@ -684,7 +684,7 @@ function DetalleAdelantoModal({
               <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Registrar entrega</CardTitle>
               <div className="grid grid-cols-2 gap-2">
                 {(["LIBRE", "PRODUCTO"] as const).map((t) => (
-                  <button key={t} type="button" onClick={() => setTipo(t)} className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${tipo === t ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}>
+                  <button key={t} type="button" onClick={() => setTipo(t)} className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${tipo === t ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}>
                     {t === "LIBRE" ? "Servicio / libre" : "Producto"}
                   </button>
                 ))}
@@ -801,7 +801,7 @@ function PersonasView({
 
   const ordenChip = (val: typeof orden, label: string) =>
     `h-10 px-3 rounded-full border-2 text-sm font-bold transition-colors ${
-      orden === val ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+      orden === val ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
     }`;
 
   return (
@@ -869,7 +869,7 @@ function PersonasView({
                 </div>
 
                 <button onClick={() => setEstadoCuenta(b)} className="flex items-start gap-3 pr-16 text-left group" title="Ver estado de cuenta">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-extrabold text-primary">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]">
                     {b.nombre.charAt(0).toUpperCase()}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -909,7 +909,7 @@ function PersonasView({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setAdelantoPara(b.id)}
-                      className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border-2 border-primary text-sm font-bold text-primary hover:bg-primary/10 transition-colors"
+                      className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border-2 border-primary text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                     >
                       <Plus className="h-4 w-4" /> Adelanto
                     </button>
@@ -1273,7 +1273,7 @@ function CobranzaView({ adelantos, loading, onGoTab }: { adelantos: DbAdelanto[]
             const vencido = d.dias > 30;
             return (
               <li key={d.id} className="flex items-center gap-3 py-2.5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-primary">{d.nombre.charAt(0).toUpperCase()}</span>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]">{d.nombre.charAt(0).toUpperCase()}</span>
                 <div className="min-w-0 flex-1">
                   <p className="text-base font-bold text-[var(--text-primary)] truncate">{d.nombre}</p>
                   <p className={`text-sm ${vencido ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}`}>
@@ -1287,7 +1287,7 @@ function CobranzaView({ adelantos, loading, onGoTab }: { adelantos: DbAdelanto[]
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => marcarRecordado(d.id)}
-                    className={`inline-flex items-center gap-1 h-9 px-3 rounded-xl border text-sm font-bold transition-colors ${ts ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-primary" : "border-primary text-primary hover:bg-primary/10"}`}
+                    className={`inline-flex items-center gap-1 h-9 px-3 rounded-xl border text-sm font-bold transition-colors ${ts ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-primary text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10"}`}
                   >
                     <MessageCircle className="h-4 w-4" /> {ts ? "Recordar de nuevo" : "Recordar"}
                   </a>
@@ -1365,9 +1365,9 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
   if (eventos.length === 0) return <EmptyState icon={Activity} title="Sin actividad" hint="Acá aparecen adelantos y entregas a medida que ocurren." />;
 
   const chip = (active: boolean) =>
-    `h-10 px-4 rounded-full border-2 text-base font-bold transition-colors ${active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`;
+    `h-10 px-4 rounded-full border-2 text-base font-bold transition-colors ${active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`;
   const rangoChip = (active: boolean) =>
-    `h-9 px-3 rounded-full border-2 text-sm font-bold transition-colors ${active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`;
+    `h-9 px-3 rounded-full border-2 text-sm font-bold transition-colors ${active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`;
 
   return (
     <div className="space-y-4">
@@ -1489,7 +1489,7 @@ function RecurrentesView({ beneficiarios, onChange }: { beneficiarios: Beneficia
               </div>
               <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{fmtMon(r.monto, r.moneda)}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-bold text-primary"><Repeat className="h-3.5 w-3.5" /> {FREC_LABEL[r.frecuencia]}</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"><Repeat className="h-3.5 w-3.5" /> {FREC_LABEL[r.frecuencia]}</span>
                 {r.proximaEjecucion && <span className="text-[var(--text-tertiary)]">Próx.: {new Date(r.proximaEjecucion).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>}
               </div>
               <button onClick={() => toggle(r)} className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${r.activo ? "bg-[var(--data-success)]/15 text-[var(--data-success)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}>
@@ -1550,7 +1550,7 @@ function CrearRecurrenteModal({ beneficiarios, onClose, onCreated }: { beneficia
       <Field label="Frecuencia">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {(["semanal", "quincenal", "mensual"] as const).map((f) => (
-            <button key={f} type="button" onClick={() => setFrecuencia(f)} className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${frecuencia === f ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}>{FREC_LABEL[f]}</button>
+            <button key={f} type="button" onClick={() => setFrecuencia(f)} className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${frecuencia === f ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}>{FREC_LABEL[f]}</button>
           ))}
         </div>
       </Field>

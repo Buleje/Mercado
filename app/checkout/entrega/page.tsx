@@ -199,7 +199,7 @@ function SectionBox({
               done
                 ? "bg-[var(--accent)] text-white"
                 : tracked
-                  ? "bg-[var(--accent-soft)] text-[var(--accent-dark)] ring-2 ring-inset ring-[color-mix(in_srgb,var(--accent)_28%,transparent)] dark:text-[var(--accent)]"
+                  ? "bg-primary/10 text-[var(--accent-dark)] ring-2 ring-inset ring-[color-mix(in_srgb,var(--accent)_28%,transparent)] dark:text-[var(--accent)]"
                   : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
             )}
           >
@@ -234,7 +234,7 @@ function SectionBox({
           <button
             type="button"
             onClick={onEdit}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-[length:var(--ts-sm)] font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-[length:var(--ts-sm)] font-bold text-[var(--accent)] hover:bg-primary/10 transition-colors"
           >
             <Edit3 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             Editar
@@ -1079,7 +1079,7 @@ export default function CheckoutEntregaPage() {
                 "disabled:cursor-wait",
                 geoSuccess
                   ? "border-2 border-[var(--accent)] bg-[var(--accent-600,var(--accent))] text-white"
-                  : "border border-[var(--accent)]/40 bg-[var(--accent-soft)] text-[var(--accent)] hover:border-[var(--accent)]",
+                  : "border border-[var(--accent)]/40 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:border-[var(--accent)]",
               )}
             >
               {/* Icono */}
@@ -1387,7 +1387,7 @@ export default function CheckoutEntregaPage() {
               // movio al CashChangeModal que se abre al seleccionar efectivo.
               // Aca solo dejamos un resumen del monto/vuelto elegido + boton
               // para reabrir el modal y modificar.
-              <div className="rounded-2xl border-2 border-[var(--accent)]/25 bg-[var(--accent-soft)]/50 p-4 flex items-center justify-between gap-3">
+              <div className="rounded-2xl border-2 border-[var(--accent)]/25 bg-primary/10/50 p-4 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-0.5">
                     Pago en efectivo
@@ -1460,7 +1460,7 @@ export default function CheckoutEntregaPage() {
                         "w-full flex items-center justify-between gap-3 rounded-2xl border-2 p-4 text-left transition-all",
                         proof
                           ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/5 hover:border-[var(--data-success-500)]"
-                          : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
+                          : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] hover:bg-primary/10",
                       )}
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -1600,7 +1600,7 @@ export default function CheckoutEntregaPage() {
                       key={v}
                       type="button"
                       onClick={() => setLoyalty({ redeemPoints: v })}
-                      className="rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-8 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] transition-colors"
+                      className="rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-8 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:bg-primary/10 hover:text-[var(--accent)] transition-colors"
                     >
                       {v} pts
                     </button>
@@ -1609,7 +1609,7 @@ export default function CheckoutEntregaPage() {
                     <button
                       type="button"
                       onClick={() => setLoyalty({ redeemPoints: maxRedeem })}
-                      className="rounded-full border border-[var(--accent)]/30 bg-[var(--accent-soft)] px-4 h-8 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors"
+                      className="rounded-full border border-[var(--accent)]/30 bg-primary/10 px-4 h-8 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors"
                     >
                       Máximo ({maxRedeem})
                     </button>

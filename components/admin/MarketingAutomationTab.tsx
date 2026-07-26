@@ -53,7 +53,7 @@ const STATUS_META: Record<Status, { label: string; color: string; bg: string }> 
   borrador:   { label: "Borrador",   color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]" },
   programada: { label: "Programada", color: "text-[var(--data-info-500)]",    bg: "bg-[var(--data-info-50)] dark:bg-[var(--data-info-500)]/15" },
   activa:     { label: "Activa",     color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15" },
-  completada: { label: "Completada", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  completada: { label: "Completada", color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   cancelada:  { label: "Cancelada",  color: "text-[var(--data-error-500)]",   bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15" },
 };
 
@@ -240,7 +240,7 @@ export default function MarketingAutomationTab({
         {[
           { label: "Campañas", value: String(stats.total), bg: "bg-[var(--surface-sunken)]", color: "text-[var(--text-primary)]" },
           { label: "Programadas", value: String(stats.programadas), bg: "bg-[var(--data-info-50)] dark:bg-[var(--data-info-500)]/15", color: "text-[var(--data-info-500)]" },
-          { label: "Completadas", value: String(stats.completadas), bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", color: "text-[var(--data-success-500)]" },
+          { label: "Completadas", value: String(stats.completadas), bg: "bg-primary/10 dark:bg-primary/15", color: "text-[var(--data-success-500)]" },
           { label: "Clientes alcanzados", value: stats.alcance.toLocaleString("es-PE"), bg: "bg-[var(--surface-sunken)]", color: "text-[var(--text-primary)]" },
         ].map(({ label, value, bg, color }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
@@ -365,7 +365,7 @@ export default function MarketingAutomationTab({
               <label className="text-xs font-bold text-[var(--text-secondary)]">Cuándo</label>
               <div className="grid grid-cols-3 gap-2">
                 {([["ahora", "Ahora"], ["programar", "Programar"], ["borrador", "Borrador"]] as const).map(([m, lbl]) => (
-                  <button key={m} type="button" onClick={() => setForm(f => ({ ...f, mode: m }))} className={cn("h-11 rounded-xl text-sm font-semibold border-2 transition-colors", form.mode === m ? "border-primary bg-primary/5 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}>{lbl}</button>
+                  <button key={m} type="button" onClick={() => setForm(f => ({ ...f, mode: m }))} className={cn("h-11 rounded-xl text-sm font-semibold border-2 transition-colors", form.mode === m ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}>{lbl}</button>
                 ))}
               </div>
               {form.mode === "programar" && (

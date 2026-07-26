@@ -199,7 +199,7 @@ export default function RecipeSuggestions() {
         <div className="text-center mt-10">
           <Link
             href="/recetas"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary/10 hover:bg-primary/15 text-primary font-bold text-base transition-all hover:gap-3"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary/10 hover:bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold text-base transition-all hover:gap-3"
           >
             Ver todas las recetas <ArrowRight className="h-5 w-5" />
           </Link>

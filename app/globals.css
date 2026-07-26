@@ -759,12 +759,18 @@ body {
     display: none;
   }
 
-  .admin-mobile-cards tbody {
+  /* `tfoot` va con `tbody`: dejarlo como table-footer-group mantenía vivo el
+     algoritmo de columnas de la tabla y las "cards" salían angostas (medido:
+     354px sin tfoot → 270px con tfoot). La fila de totales pasa a ser una card
+     más, que es como se lee en un teléfono. */
+  .admin-mobile-cards tbody,
+  .admin-mobile-cards tfoot {
     display: grid;
     gap: 0.75rem;
   }
 
-  .admin-mobile-cards tbody tr {
+  .admin-mobile-cards tbody tr,
+  .admin-mobile-cards tfoot tr {
     display: block;
     border: 1px solid var(--color-card-border);
     border-radius: 1rem;
@@ -776,7 +782,9 @@ body {
   }
 
   .admin-mobile-cards tbody td,
-  .admin-mobile-cards tbody th {
+  .admin-mobile-cards tbody th,
+  .admin-mobile-cards tfoot td,
+  .admin-mobile-cards tfoot th {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -788,7 +796,9 @@ body {
   }
 
   .admin-mobile-cards tbody td::before,
-  .admin-mobile-cards tbody th::before {
+  .admin-mobile-cards tbody th::before,
+  .admin-mobile-cards tfoot td::before,
+  .admin-mobile-cards tfoot th::before {
     content: attr(data-label);
     flex: 0 0 42%;
     text-align: left;
@@ -2065,6 +2075,10 @@ button,
      pressed/énfasis (AA sobre blanco), -glow=sombra de realce. */
   --accent-600: #008787;
   --accent-dark: #007575;
+  /* Teal de TINTA — para texto sobre un tinte claro (`bg-primary/10`), donde
+     --accent-dark se queda en 3.9:1. Sobre ese tinte da ~5.7:1 y sobre blanco
+     ~6.3:1, así que sirve en ambos fondos sin cambiar la identidad. */
+  --accent-ink: #006B6B;
   --accent-glow: rgba(0, 160, 160, 0.28);
 
   /* Data viz monochrome + 1 accent */
@@ -2281,6 +2295,8 @@ button,
      --accent para dar feedback de hover sin perder contraste sobre canvas. */
   --accent-600: #0FAFAF;
   --accent-dark: #0C9C9C;
+  /* En dark el texto sobre tinte usa el accent brillante (ver :root). */
+  --accent-ink: #14C2C2;
   --accent-glow: rgba(20, 194, 194, 0.24);
 
   /* ── Brand bridge (mantiene cohesión con --color-* tokens del bloque legacy) ── */

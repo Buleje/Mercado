@@ -145,8 +145,8 @@ export default function CacaoMapa() {
       {sinUbicar > 0 && <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-sm text-[var(--text-secondary)]"><Navigation className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" /><span><strong className="text-[var(--text-primary)]">{sinUbicar}</strong> productor{sinUbicar === 1 ? "" : "es"} sin ubicación. Agregá su parcela con GPS desde Productores.</span></div>}
 
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={() => setShowProd((v) => !v)} className={`${btn} ${showProd ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"}`}><Users className="h-4 w-4" />Productores</button>
-        <button type="button" onClick={() => setShowCampo((v) => !v)} className={`${btn} ${showCampo ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"}`}><Trees className="h-4 w-4" />Mi campo</button>
+        <button type="button" onClick={() => setShowProd((v) => !v)} className={`${btn} ${showProd ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"}`}><Users className="h-4 w-4" />Productores</button>
+        <button type="button" onClick={() => setShowCampo((v) => !v)} className={`${btn} ${showCampo ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"}`}><Trees className="h-4 w-4" />Mi campo</button>
         {sectores.length > 0 && <select value={sector} onChange={(e) => setSector(e.target.value)} className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"><option value="todos">Todos los sectores</option>{sectores.map((s) => <option key={s} value={s}>{s}</option>)}</select>}
         <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} className={`${btn} ml-auto border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]`}><Layers className="h-4 w-4" />{layer === "sat" ? "Satélite" : "Calles"}</button>
         <button type="button" onClick={load} className={`${btn} border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]`}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>
@@ -163,7 +163,7 @@ export default function CacaoMapa() {
         {ready && !loading && geo.length === 0 && conPoligono.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center p-6">
             <div className="max-w-sm rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center shadow-[var(--shadow-lg)]">
-              <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><MapPin className="h-7 w-7" /></span>
+              <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><MapPin className="h-7 w-7" /></span>
               <p className="text-base font-bold text-[var(--text-primary)]">Nada que mapear aún</p>
               <p className="mx-auto mt-1 text-sm text-[var(--text-secondary)]">Ubicá tus productores con GPS (pestaña Productores) o dibujá tus secciones (Campo → Mapa) para verlos acá juntos.</p>
             </div>

@@ -126,7 +126,7 @@ export default function ReviewModal() {
       ? "border-red-400 bg-red-50 text-[var(--data-error-700)] font-medium"
       : tier === "neutral"
       ? "border-amber-400 bg-amber-50 text-[var(--data-warning-700)] font-medium"
-      : "border-primary bg-primary/8 text-primary font-medium";
+      : "border-primary bg-primary/8 text-[var(--accent-ink)] dark:text-[var(--accent)] font-medium";
 
   const labelColor =
     tier === "critical" ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]";
@@ -258,7 +258,7 @@ export default function ReviewModal() {
                             className={`w-full text-left text-sm px-4 py-3 rounded-xl border transition-all leading-relaxed ${
                               selectedPreset === idx
                                 ? selectedStyle
-                                : "border-gray-200 hover:border-primary/40 hover:bg-primary/4 text-[var(--text-primary)]"
+                                : "border-gray-200 hover:border-primary/40 hover:bg-primary/4 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]"
                             }`}
                           >
                             {msg}

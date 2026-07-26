@@ -452,7 +452,7 @@ export default function StoreRegistrationForm() {
         />
         <div className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
           <div className="text-center">
-            <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--accent)]/25 bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+            <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--accent)]/25 bg-primary/10 px-3 py-1 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
               <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
               Sumate gratis al marketplace
             </p>
@@ -621,7 +621,7 @@ export default function StoreRegistrationForm() {
                       <User className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
                       Tu nombre completo <span className="text-[var(--data-error-500)]">*</span>
                       {dniFilled && (
-                        <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+                        <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
                           <ScanLine className="h-3 w-3" strokeWidth={2.5} />
                           Desde tu DNI
                         </span>
@@ -841,7 +841,7 @@ export default function StoreRegistrationForm() {
                           <button
                             type="button"
                             onClick={() => void applyRucData()}
-                            className="w-full rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] p-3.5 text-left transition-all hover:border-[var(--accent)] hover:shadow-[var(--shadow-sm)]"
+                            className="w-full rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10 p-3.5 text-left transition-all hover:border-[var(--accent)] hover:shadow-[var(--shadow-sm)]"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
@@ -891,7 +891,7 @@ export default function StoreRegistrationForm() {
                             className={cn(
                               "flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-left text-sm font-bold transition-all",
                               active
-                                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-[var(--shadow-sm)]"
+                                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shadow-[var(--shadow-sm)]"
                                 : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-sunken)]",
                             )}
                           >
@@ -1113,7 +1113,7 @@ export default function StoreRegistrationForm() {
               </div>
 
               {/* Testimonio */}
-              <figure className="rounded-2xl border border-[var(--accent)]/15 bg-[var(--accent-soft)]/40 p-5">
+              <figure className="rounded-2xl border border-[var(--accent)]/15 bg-primary/10/40 p-5">
                 <blockquote className="text-sm font-medium leading-relaxed text-[var(--text-primary)]">
                   &ldquo;En el primer mes recibí <strong className="font-bold">32 pedidos</strong> nuevos
                   sin hacer publicidad. Lo más simple que probé.&rdquo;
@@ -1133,7 +1133,7 @@ export default function StoreRegistrationForm() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 shadow-[var(--shadow-sm)] transition-all hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)]"
               >
-                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <MessageCircle className="h-5 w-5" strokeWidth={2.25} />
                 </span>
                 <div className="min-w-0 flex-1">

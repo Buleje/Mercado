@@ -301,7 +301,7 @@ export default function PushNotificationManager() {
               className={cn(
                 "flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white transition",
                 sendState === "sent"
-                  ? "bg-[var(--accent-soft)]"
+                  ? "bg-primary/10"
                   : sendState === "error"
                   ? "bg-[var(--data-error-500)]"
                   : "bg-primary hover:bg-[#245a40]",
@@ -397,7 +397,7 @@ export default function PushNotificationManager() {
                         className={cn(
                           "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
                           n.status === "sent"
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                             : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
                         )}
                       >

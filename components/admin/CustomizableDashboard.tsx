@@ -101,7 +101,7 @@ function WidgetContent({ id }: { id: WidgetId }) {
           ].map(({ day, h }) => (
             <div key={day} className="flex-1 flex flex-col items-center gap-1">
               <div
-                className="w-full rounded-t bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+                className="w-full rounded-t bg-primary/10 dark:bg-primary/15"
                 style={{ height: `${h}px` }}
               />
               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{day}</span>
@@ -248,7 +248,7 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
             onClick={() => setEditMode((v) => !v)}
             className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors ${
               editMode
-                ? "bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)]"
+                ? "bg-primary/10 text-white hover:bg-primary/10"
                 : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             }`}
           >
@@ -294,7 +294,7 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
                 onClick={() => toggleVisibility(widget.id)}
                 className={`p-1.5 rounded-lg transition-colors ${
                   widget.visible
-                    ? "text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"
+                    ? "text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"
                     : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
                 }`}
                 aria-label={widget.visible ? "Ocultar" : "Mostrar"}

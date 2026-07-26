@@ -59,7 +59,7 @@ export default function DocumentToolbar({
           className={cn(
             "flex items-center gap-1.5 h-12 px-3 rounded-2xl border-2 text-sm font-semibold transition-colors shrink-0",
             contentMode
-              ? "border-primary text-primary bg-[var(--accent-soft)]"
+              ? "border-primary text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10"
               : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]",
           )}
         >
@@ -108,7 +108,7 @@ export default function DocumentToolbar({
           className={cn(
             "flex items-center gap-2 h-12 px-3 rounded-2xl border-2 text-base font-semibold transition-colors",
             selecting
-              ? "border-primary text-primary bg-[var(--accent-soft)]"
+              ? "border-primary text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10"
               : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]",
           )}
         >

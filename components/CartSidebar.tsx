@@ -352,7 +352,7 @@ export default function CartSidebar() {
                               window.location.href = `/tienda#cat-${cat.id}`;
                             }
                           }}
-                          className="px-4 py-2 rounded-full bg-primary/8 text-primary text-sm font-semibold hover:bg-primary/15 transition-colors"
+                          className="px-4 py-2 rounded-full bg-primary/8 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/15 transition-colors"
                         >
                           {cat.label}
                         </button>

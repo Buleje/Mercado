@@ -34,7 +34,7 @@ export default function WaCustomerCard({ context }: { context: WaCustomerContext
           {customer && (
             <a
               href={`/admin?tab=clientes&q=${encodeURIComponent(customer.name)}`}
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[length:var(--ts-xs)] font-bold text-primary underline-offset-2 hover:underline"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] underline-offset-2 hover:underline"
               title="Ver ficha completa en Clientes"
             >
               <UserCircle className="h-3.5 w-3.5" />

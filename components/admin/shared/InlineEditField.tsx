@@ -181,7 +181,7 @@ export function InlineEditField<T extends string | number>({
         onClick={() => void commit()}
         disabled={saving}
         aria-label="Guardar"
-        className="h-6 w-6 rounded-md flex items-center justify-center text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] disabled:opacity-50"
+        className="h-6 w-6 rounded-md flex items-center justify-center text-[var(--data-success-500)] hover:bg-primary/10 disabled:opacity-50"
       >
         <Check className="h-3.5 w-3.5" strokeWidth={2} />
       </button>

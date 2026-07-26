@@ -238,9 +238,9 @@ const GROUP_ORDER: (keyof GroupedResults)[] = ["modulos", "productos", "clientes
 
 const QUICK_ACCESS = [
   { label: "Nuevo pedido",    tab: "pedidos",              icon: ShoppingCart,   color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
-  { label: "Mi stock",        tab: "inventario", icon: Boxes,          color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { label: "Mi stock",        tab: "inventario", icon: Boxes,          color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
   { label: "Mis clientes",    tab: "clientes",         icon: Users,          color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
-  { label: "Caja",            tab: "ventas-caja",             icon: Monitor,        color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { label: "Caja",            tab: "ventas-caja",             icon: Monitor,        color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
   { label: "Reportes",        tab: "reportes-documentos",  icon: FileText,       color: "text-[var(--text-secondary)] bg-[var(--surface-alt)] dark:bg-surface" },
   { label: "Promociones",     tab: "productos",       icon: TrendingUp,     color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
 ];

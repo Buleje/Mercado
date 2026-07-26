@@ -160,8 +160,8 @@ export default function AIProductDescriptionGenerator({
             className={cn(
               "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
               used
-                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] cursor-default"
-                : "border border-primary text-primary hover:bg-primary/10 dark:hover:bg-primary/20"
+                ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] cursor-default"
+                : "border border-primary text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 dark:hover:bg-primary/20"
             )}
           >
             <Check className="h-3.5 w-3.5" />

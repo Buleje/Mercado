@@ -168,7 +168,7 @@ function CategoryTreemapView() {
         {/* Mejora 9: SUNAT export button */}
         <button
           onClick={handleExportSunat}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--data-success-500)]/30 text-[var(--data-success-500)] text-sm font-bold hover:bg-[var(--accent-soft)] transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--data-success-500)]/30 text-[var(--data-success-500)] text-sm font-bold hover:bg-primary/10 transition-colors"
         >
           Exportar para Contador
         </button>
@@ -373,7 +373,7 @@ function InventoryAnalyticsDashboard() {
             <h4 className="text-sm font-bold text-[var(--text-primary)]">Valor por Categoria</h4>
             <div className="flex items-center gap-2">
               {pieFilter && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold">
                   {pieFilter}
                   <button onClick={() => setPieFilter(null)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
                 </span>
@@ -571,7 +571,7 @@ function InventoryAnalyticsDashboard() {
             const colorClasses = {
               red: { bg: "bg-[var(--data-error-500)]", text: "text-[var(--data-error-500)]", track: "bg-red-100" },
               amber: { bg: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-500)]", track: "bg-amber-100" },
-              emerald: { bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]", track: "bg-[var(--accent-soft)]" },
+              emerald: { bg: "bg-primary/10", text: "text-[var(--data-success-500)]", track: "bg-primary/10" },
             }[color];
             return (
               <div key={item.name || i} className="flex items-center gap-3">

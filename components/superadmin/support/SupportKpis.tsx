@@ -39,7 +39,7 @@ export default function SupportKpis({ kpis, active, onPick }: Props) {
       label: "En progreso",
       value: kpis.inProgress,
       color: "text-[var(--accent)]",
-      bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent)]/10",
+      bg: "bg-primary/10 dark:bg-[var(--accent)]/10",
       activeRing: "ring-[var(--accent)]",
       icon: Clock,
     },

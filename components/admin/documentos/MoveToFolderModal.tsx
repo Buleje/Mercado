@@ -40,7 +40,7 @@ export function MoveToFolderModal({
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div className="w-full max-w-[30rem] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><FolderInput className="h-5 w-5" /></span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><FolderInput className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-extrabold text-[var(--text-primary)]">Mover a carpeta</p>
             <p className="truncate text-xs text-[var(--text-tertiary)]">{doc.name}</p>
@@ -52,7 +52,7 @@ export function MoveToFolderModal({
             onClick={() => move(null)}
             className={cn(
               "flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors",
-              currentFolderId === null ? "bg-primary/10 text-primary" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              currentFolderId === null ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             )}
           >
             <CornerUpLeft className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
@@ -71,7 +71,7 @@ export function MoveToFolderModal({
                 style={{ paddingLeft: depth * 16 + 12 }}
                 className={cn(
                   "flex w-full items-center gap-2 rounded-lg py-2.5 pr-3 text-sm font-bold transition-colors",
-                  isCurrent ? "bg-primary/10 text-primary" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                  isCurrent ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                 )}
               >
                 <Folder className={cn("h-4 w-4 shrink-0", isCurrent ? "text-primary" : "text-[var(--text-tertiary)]")} />

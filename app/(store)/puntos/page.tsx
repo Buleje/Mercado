@@ -1106,7 +1106,7 @@ export default function PuntosPage() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--accent-dark)]">
+                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--accent-dark)] dark:text-[var(--accent)]">
                         Cerca de desbloquearse
                       </p>
                       <p className="text-base font-extrabold text-[var(--text-primary)] truncate">

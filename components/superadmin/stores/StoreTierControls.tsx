@@ -37,7 +37,7 @@ function MockFeatured() {
       <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[8px] font-black uppercase text-white">
         <Star className="h-2 w-2 fill-current" aria-hidden /> Dest.
       </span>
-      <div className="aspect-[4/3] w-full rounded-md bg-[var(--accent-soft)]" />
+      <div className="aspect-[4/3] w-full rounded-md bg-primary/10" />
       <div className="mt-1.5 h-2 w-3/4 rounded-full bg-[var(--text-tertiary)]/40" />
       <div className="mt-1 h-1.5 w-1/2 rounded-full bg-[var(--text-tertiary)]/25" />
     </div>
@@ -51,7 +51,7 @@ function MockPremium() {
         <Star className="h-2 w-2 fill-current" aria-hidden /> Premium
       </span>
       <div className="flex gap-2">
-        <div className="h-12 w-12 shrink-0 rounded-lg bg-[var(--accent-soft)]" />
+        <div className="h-12 w-12 shrink-0 rounded-lg bg-primary/10" />
         <div className="min-w-0 flex-1">
           <div className="h-2 w-2/3 rounded-full bg-[var(--text-tertiary)]/40" />
           <div className="mt-1 h-1.5 w-1/3 rounded-full bg-[var(--text-tertiary)]/25" />
@@ -129,7 +129,7 @@ export function TierSelector({
             className={`rounded-lg font-bold transition-colors disabled:opacity-40 ${pad} ${
               active
                 ? "bg-[var(--accent)] text-white shadow-sm"
-                : "text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                : "text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-primary/10"
             }`}
           >
             {t.label}

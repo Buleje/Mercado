@@ -144,7 +144,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
           {/* Clientes del día */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 dark:bg-primary/15">
                 <Users className="w-3.5 h-3.5 text-[var(--data-success-500)]" />
               </span>
               <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Clientes hoy</span>
@@ -153,7 +153,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Promedio: {clientesPromedio}/dia</p>
             <div className="flex items-center gap-1.5 mt-2">
               {clientesHoy > clientesAyer ? (
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
               ) : clientesHoy < clientesAyer ? (
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
               ) : (
@@ -336,7 +336,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
               <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-1">
                 {topClientMonth.orderCount} compras &middot; {fmtR(topClientMonth.total)} &middot; Ticket: {fmtR(topClientMonth.avg)}
               </p>
-              <span className="inline-block text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-1.5 py-0.5 rounded-full mt-1.5 capitalize">
+              <span className="inline-block text-[length:var(--ts-2xs)] font-bold bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-1.5 py-0.5 rounded-full mt-1.5 capitalize">
                 Cliente mas fiel de {topClientMonth.monthName}
               </span>
             </AdminCard>

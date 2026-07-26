@@ -205,7 +205,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
       <div className="p-4 space-y-4">
         {/* ── Closing summary overlay ── */}
         {closingSummary && (
-          <div className="rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 space-y-3">
+          <div className="rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-[var(--data-success-500)]" />
@@ -389,7 +389,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                         {session.closedAt ? (
                           <span className="text-xs px-1.5 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted">Cerrado</span>
                         ) : (
-                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Activo</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Activo</span>
                         )}
                       </div>
                       <div className="grid grid-cols-3 gap-1.5">

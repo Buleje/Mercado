@@ -16,16 +16,16 @@ type ChipColor = "emerald" | "violet" | "blue" | "amber" | "red";
 
 const COLOR_MAP: Record<ChipColor, { chip: string; badge: string }> = {
   emerald: {
-    chip: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    badge: "bg-[var(--accent-soft)] text-white",
+    chip: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    badge: "bg-primary/10 text-white",
   },
   violet: {
     chip: "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
     badge: "bg-[var(--accent-600,var(--accent))] text-white",
   },
   blue: {
-    chip: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    badge: "bg-[var(--accent-soft)] text-white",
+    chip: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    badge: "bg-primary/10 text-white",
   },
   amber: {
     chip: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",

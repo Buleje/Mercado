@@ -316,7 +316,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
                         </div>
                         {z.nombre && <p className="truncate text-sm text-[var(--text-secondary)]">{z.nombre}</p>}
                         {invSummary(inv) ? (
-                          <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-bold text-[var(--accent-dark)]"><Boxes className="h-3 w-3" />{invSummary(inv)}</p>
+                          <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"><Boxes className="h-3 w-3" />{invSummary(inv)}</p>
                         ) : (
                           <p className="mt-1 text-xs text-[var(--text-tertiary)]">sin madera ubicada</p>
                         )}

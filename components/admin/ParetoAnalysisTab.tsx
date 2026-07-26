@@ -106,7 +106,7 @@ export default function ParetoAnalysisTab() {
               {/* Cumulative line marker */}
               <div className="w-20 flex items-center gap-1">
                 <div className="flex-1 h-1.5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
-                  <div className={cn("h-full rounded-full", p.cumPct <= 80 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")} style={{ width: `${p.cumPct}%` }} />
+                  <div className={cn("h-full rounded-full", p.cumPct <= 80 ? "bg-primary/10" : "bg-[var(--data-warning-500)]")} style={{ width: `${p.cumPct}%` }} />
                 </div>
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] w-10 text-right">{Number(p.cumPct).toFixed(0)}%</span>
               </div>
@@ -116,7 +116,7 @@ export default function ParetoAnalysisTab() {
         </div>
         {/* 80% line reference */}
         <div className="mt-4 pt-3 border-t border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-wrap items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[var(--accent-soft)]" />
+          <div className="w-3 h-3 rounded-full bg-primary/10" />
           <span className="text-xs text-[var(--text-secondary)] dark:text-muted">Línea 80% — Los productos marcados TOP representan ~80% del valor total</span>
         </div>
       </div>

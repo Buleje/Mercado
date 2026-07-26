@@ -121,7 +121,7 @@ export default function GroupBuyCard({
       <div className="space-y-5 px-6 py-5">
         {/* Premio (recto, acento a la izquierda) — oculto si venció */}
         {!isExpired && (
-          <div className="flex items-center gap-3 border-l-4 border-[var(--accent)] bg-[var(--accent-soft)] px-4 py-3">
+          <div className="flex items-center gap-3 border-l-4 border-[var(--accent)] bg-primary/10 px-4 py-3">
             <Gift
               className="h-5 w-5 shrink-0 text-[var(--accent)]"
               strokeWidth={2}
@@ -185,7 +185,7 @@ export default function GroupBuyCard({
 
         {/* Cupón (junta completa) — recto */}
         {isComplete && couponCode && (
-          <div className="border-l-4 border-[var(--accent)] bg-[var(--accent-soft)] p-4">
+          <div className="border-l-4 border-[var(--accent)] bg-primary/10 p-4">
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
               Tu cupón de la junta · {JUNTA_COUPON_PERCENT}% off
             </p>
@@ -252,7 +252,7 @@ export default function GroupBuyCard({
                     type="button"
                     onClick={handleJoin}
                     disabled={joining || joined}
-                    className="inline-flex w-full items-center justify-center gap-2 border-2 border-[var(--accent)] py-3 text-base font-bold text-[var(--accent)] transition hover:bg-[var(--accent-soft)] disabled:opacity-60 active:scale-[0.99]"
+                    className="inline-flex w-full items-center justify-center gap-2 border-2 border-[var(--accent)] py-3 text-base font-bold text-[var(--accent)] transition hover:bg-primary/10 disabled:opacity-60 active:scale-[0.99]"
                   >
                     {joined ? (
                       <>

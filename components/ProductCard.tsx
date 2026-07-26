@@ -251,7 +251,7 @@ function ProductCardComponent({ product }: ProductCardProps) {
           "absolute top-3 left-20 z-10 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold shadow-[var(--shadow-sm)] flex items-center gap-0.5",
           offerUrgent
             ? "bg-[var(--accent-600,var(--accent))] text-white"
-            : "bg-[var(--accent-soft)] text-[var(--accent)]"
+            : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         )}>
           <Clock className="h-3 w-3" /> {offerUrgent ? "Última hora" : offerCountdown}
         </span>
@@ -265,11 +265,11 @@ function ProductCardComponent({ product }: ProductCardProps) {
               <Star className="h-3 w-3 fill-current" /> Popular
             </span>
           ) : soldCount >= 5 ? (
-            <span className="flex items-center gap-0.5 bg-[var(--accent-soft)] text-[var(--accent)] rounded-full px-2 py-0.5">
+            <span className="flex items-center gap-0.5 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] rounded-full px-2 py-0.5">
               <Flame className="h-3 w-3" /> {soldCount} vendidos hoy
             </span>
           ) : (
-            <span className="flex items-center gap-0.5 bg-[var(--accent-soft)] text-[var(--accent)] rounded-full px-2 py-0.5">
+            <span className="flex items-center gap-0.5 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] rounded-full px-2 py-0.5">
               <Flame className="h-3 w-3" /> Vendiendo rápido
             </span>
           )}
@@ -421,7 +421,7 @@ function ProductCardComponent({ product }: ProductCardProps) {
 
         {/* AA2: Bulk discount hint */}
         {product.unit === "und" && product.price <= 15 && !isOutOfStock && (
-          <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--accent)] bg-[var(--accent-soft)] rounded-md px-1.5 py-0.5 w-fit">Lleva 3+ · 5% off</span>
+          <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--accent)] bg-primary/10 rounded-md px-1.5 py-0.5 w-fit">Lleva 3+ · 5% off</span>
         )}
 
         <div>
@@ -436,7 +436,7 @@ function ProductCardComponent({ product }: ProductCardProps) {
                     unit={product.unit}
                     size="md"
                   />
-                  <span className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] text-[var(--accent)] px-1.5 py-0.5 rounded font-bold w-fit">
+                  <span className="text-[length:var(--ts-2xs)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-1.5 py-0.5 rounded font-bold w-fit">
                     -{Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)}%
                   </span>
                 </div>

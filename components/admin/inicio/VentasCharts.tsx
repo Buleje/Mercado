@@ -91,7 +91,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
                 className={cn(
                   "text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap",
                   data.wowGrowth >= 0
-                    ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)]"
+                    ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15"
                     : "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-red-950/30",
                 )}
               >
@@ -223,7 +223,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
             />
             {/* Mini predicción del próximo día */}
             {data.nextDayPrediction && (
-              <div className="mt-4 border border-dashed border-[color:var(--accent,var(--rule-base))] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 flex items-center gap-3">
+              <div className="mt-4 border border-dashed border-[color:var(--accent,var(--rule-base))] bg-primary/10 dark:bg-primary/15 p-4 flex items-center gap-3">
                 <div className="shrink-0 h-10 w-10 bg-[var(--surface-raised)] border border-[color:var(--accent,var(--rule-base))] flex items-center justify-center">
                   <Sparkles className="h-5 w-5 text-[color:var(--accent,var(--text-primary))]" strokeWidth={2.25} />
                 </div>

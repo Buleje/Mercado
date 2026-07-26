@@ -78,7 +78,7 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className={`text-center mb-10 sm:mb-12 transition-all duration-[var(--dur-slower)] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-          <span className="inline-flex items-center gap-1.5 bg-primary/8 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
+          <span className="inline-flex items-center gap-1.5 bg-primary/8 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
             <TrendingUp className="w-3.5 h-3.5" />
             Esta semana
           </span>
@@ -112,7 +112,7 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
                 style={{ transitionDelay: inView ? `${i * 80}ms` : "0ms" }}
               >
                 {/* Rank badge — uniforme accent-soft para todos los top 6 */}
-                <div className="absolute top-2.5 left-2.5 z-10 rounded-full w-6 h-6 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--accent)]">
+                <div className="absolute top-2.5 left-2.5 z-10 rounded-full w-6 h-6 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   #{i + 1}
                 </div>
 

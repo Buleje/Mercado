@@ -133,9 +133,9 @@ function getAvatarColor(name: string): string {
 
 // ── Mejora 9: Customer segment badge ─────────────────────────────────────────
 function CustomerSegmentBadge({ totalSpent, orderCount }: { totalSpent: number; orderCount: number }) {
-  if (orderCount === 0) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">Nuevo</span>;
+  if (orderCount === 0) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">Nuevo</span>;
   if (totalSpent > 1000) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-50)] text-[var(--data-warning-500)] border border-[var(--data-warning-500)]">VIP</span>;
-  if (totalSpent > 500) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">Premium</span>;
+  if (totalSpent > 500) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">Premium</span>;
   return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]">Regular</span>;
 }
 
@@ -234,14 +234,14 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
 // ── Config ─────────────────────────────────────────────────────────────────
 
 const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg: string; border: string }> = {
-  frecuente: { label: "Frecuente",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
-  ocasional: { label: "Ocasional",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
+  frecuente: { label: "Frecuente",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
+  ocasional: { label: "Ocasional",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-primary/10 dark:bg-primary/15",     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
   nuevo:     { label: "Nuevo",      color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]" },
   perdido:   { label: "Perdido",    color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",       border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" },
 };
 
 const HEALTH_CONFIG: Record<HealthScore | "desconocido", { label: string; color: string; bg: string; border: string; tooltip: string }> = {
-  activo:      { label: "Activo",     color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", tooltip: "Compra en últimos 30 días" },
+  activo:      { label: "Activo",     color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", tooltip: "Compra en últimos 30 días" },
   en_riesgo:   { label: "En riesgo",  color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",     bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",     border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",   tooltip: "Sin compras hace 31-90 días" },
   perdido:     { label: "Perdido",    color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",         bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",         border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",       tooltip: "Sin compras hace +90 días" },
   desconocido: { label: "Desconocido", color: "text-[var(--text-tertiary)]",      bg: "bg-[var(--surface-sunken)]/30",      border: "border-[var(--rule-base)] dark:border-gray-600",     tooltip: "Activo: compra en últimos 30 días | En riesgo: 31-90 días | Perdido: +90 días" },
@@ -249,9 +249,9 @@ const HEALTH_CONFIG: Record<HealthScore | "desconocido", { label: string; color:
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; Icon: React.ElementType }> = {
   pendiente:  { label: "Pendiente",  color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",   Icon: Clock },
-  confirmado: { label: "Confirmado", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",     Icon: CheckCircle },
+  confirmado: { label: "Confirmado", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-primary/10 dark:bg-primary/15",     Icon: CheckCircle },
   en_camino:  { label: "En camino",  color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", Icon: Truck },
-  entregado:  { label: "Entregado",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", Icon: CheckCircle },
+  entregado:  { label: "Entregado",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", Icon: CheckCircle },
   cancelado:  { label: "Cancelado",  color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",       Icon: XCircle },
 };
 
@@ -441,7 +441,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
       </div>
       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-3">Las compras de toda la familia suman al mismo historial. El fiado y puntos son compartidos.</p>
 
-      <div className="flex items-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg px-3 py-2 mb-2">
+      <div className="flex items-center gap-2 bg-primary/10 dark:bg-primary/15 rounded-lg px-3 py-2 mb-2">
         <div className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: getAvatarColor(customer.name) }}>
           {getInitials(customer.name)}
         </div>
@@ -468,7 +468,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
       ))}
 
       {addingMember ? (
-        <div className="mt-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 space-y-2">
+        <div className="mt-2 bg-primary/10 dark:bg-primary/15 rounded-lg p-3 space-y-2">
           <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Nuevo miembro familiar</p>
           <div className="grid grid-cols-2 gap-2">
             <input type="text" placeholder="Nombre" value={newMember.nombre} onChange={e => setNewMember({...newMember, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
@@ -909,7 +909,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           {/* Badges */}
           <div className="flex flex-wrap gap-1.5 mt-3">
             {customer.categoria && (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 capitalize">{customer.categoria}</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 capitalize">{customer.categoria}</span>
             )}
             {customer.canal && (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] capitalize">{customer.canal}</span>
@@ -977,7 +977,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                         ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
                         : pct < 0.2
                           ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]"
-                          : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                          : "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                     )}>
                       {pct <= 0
                         ? "Sin crédito disponible"
@@ -1017,8 +1017,8 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               // Auto-color by hash
               const hash = tag.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
               const colors = [
-                "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-                "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+                "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
+                "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
                 "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
                 "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-400",
                 "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
@@ -1235,7 +1235,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                   <p className="text-xs text-[var(--text-secondary)] dark:text-muted">= S/{(totalPoints * 0.05).toFixed(2)} en descuento</p>
                 </div>
                 {totalPoints >= 100 && (
-                  <span className="ml-auto text-xs font-bold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                  <span className="ml-auto text-xs font-bold px-2.5 py-1 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                     Canjeable
                   </span>
                 )}

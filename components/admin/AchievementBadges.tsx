@@ -56,7 +56,7 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     maxProgress: 7,
     iconSymbol: "C",
     colorUnlocked: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    colorBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
+    colorBg: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
   },
   {
     id: "madrugador",
@@ -67,7 +67,7 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     maxProgress: 1,
     iconSymbol: "M",
     colorUnlocked: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    colorBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
+    colorBg: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
   },
   {
     id: "cliente-feliz",
@@ -89,7 +89,7 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     maxProgress: 5,
     iconSymbol: "G",
     colorUnlocked: "text-primary dark:text-[var(--data-success-500)]",
-    colorBg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
+    colorBg: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
   },
 ];
 

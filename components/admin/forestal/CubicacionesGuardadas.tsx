@@ -139,7 +139,7 @@ export default function CubicacionesGuardadas({
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button type="button" onClick={() => onAbrir(c)} title="Abrir en el cubicador para seguir o exportar"
-                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-2.5 py-1.5 text-xs font-bold text-[var(--accent)] hover:brightness-95">
+                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-[var(--accent)] hover:brightness-95">
                       <Table className="h-3.5 w-3.5" /> Abrir
                     </button>
                     <button type="button" onClick={() => onAbrir({ ...c, id: "", nombre: `${c.nombre} (copia)` })} title="Empezar una cubicación nueva con estas mismas piezas"

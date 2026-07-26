@@ -31,10 +31,10 @@ function Sparkline({ history, trend }: { history: KpiTrendPoint[]; trend: Custom
   );
 }
 
-const EMPTY_FORM = { name: "", desc: "", formula: "", target: "", unit: "S/", category: "Ventas", color: "bg-[var(--accent-soft)]" };
+const EMPTY_FORM = { name: "", desc: "", formula: "", target: "", unit: "S/", category: "Ventas", color: "bg-primary/10" };
 const COLOR_OPTIONS = [
-  { label: "Verde", value: "bg-[var(--accent-soft)]" },
-  { label: "Azul", value: "bg-[var(--accent-soft)]" },
+  { label: "Verde", value: "bg-primary/10" },
+  { label: "Azul", value: "bg-primary/10" },
   { label: "Violeta", value: "bg-[var(--text-primary)]" },
   { label: "Ámbar", value: "bg-[var(--data-warning-500)]" },
   { label: "Rojo", value: "bg-[var(--data-error-500)]" },
@@ -124,7 +124,7 @@ export default function CustomKPITab() {
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
           <button onClick={() => exportToCSV(kpis.map(k => ({ nombre: k.name, valor: k.currentValue, meta: k.target, unidad: k.unit, tendencia: k.trend, cambio: k.changePercent, categoria: k.category })), "kpis")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10">
             <Download className="h-3.5 w-3.5" /> CSV
           </button>
           <button onClick={openCreate} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90">
@@ -187,7 +187,7 @@ export default function CustomKPITab() {
                 {/* Barra progreso hacia meta */}
                 <div className="flex items-center gap-2 mb-1">
                   <div className="flex-1 h-1.5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
-                    <div className={cn("h-full rounded-full transition-all", isGood ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")}
+                    <div className={cn("h-full rounded-full transition-all", isGood ? "bg-primary/10" : "bg-[var(--data-warning-500)]")}
                       style={{ width: `${progress}%` }} />
                   </div>
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{fmt(k.target, k.unit)}</span>

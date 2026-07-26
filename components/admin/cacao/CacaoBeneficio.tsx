@@ -533,7 +533,7 @@ export default function CacaoBeneficio() {
                             e.stopPropagation();
                             openAdvance(b);
                           }}
-                          className="inline-flex h-8 items-center gap-1 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-2.5 text-xs font-bold text-[var(--accent)] hover:opacity-90"
+                          className="inline-flex h-8 items-center gap-1 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-2.5 text-xs font-bold text-[var(--accent)] hover:opacity-90"
                         >
                           {b.estado === "fermentando" ? "Secar" : "Terminar"}
                           <ArrowRight className="h-3.5 w-3.5" />
@@ -593,7 +593,7 @@ export default function CacaoBeneficio() {
             </div>
           ) : (
             <div className="p-12 text-center text-[var(--text-tertiary)]">
-              <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <Droplets className="h-7 w-7" />
               </span>
               <p className="text-base font-bold text-[var(--text-primary)]">

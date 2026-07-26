@@ -82,7 +82,7 @@ export function MarketplaceCuponesTab() {
 
       {coupons.length === 0 ? (
         <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
+          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             <Ticket className="h-6 w-6" />
           </div>
           <p className="text-base font-extrabold text-[var(--text-primary)]">Sin cupones todavía</p>
@@ -190,7 +190,7 @@ export function MarketplaceCuponesTab() {
                     <button
                       onClick={() => navigator.clipboard?.writeText(c.code).catch(() => { /* clipboard best-effort */ })}
                       title="Copiar código"
-                      className="p-2 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-[var(--text-tertiary)]"
+                      className="p-2 rounded-lg hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors text-[var(--text-tertiary)]"
                     >
                       <Star className="h-4 w-4" />
                     </button>
@@ -302,7 +302,7 @@ function NewCouponModal({
           {/* Sección 1: Identificación */}
           <section className="space-y-4">
             <header className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-extrabold">1</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold">1</span>
               <h4 className="text-sm font-extrabold text-[var(--text-primary)]">Identificación</h4>
             </header>
 
@@ -338,7 +338,7 @@ function NewCouponModal({
           {/* Sección 2: Tipo y valor */}
           <section className="space-y-4">
             <header className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-extrabold">2</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold">2</span>
               <h4 className="text-sm font-extrabold text-[var(--text-primary)]">Tipo de descuento</h4>
             </header>
 
@@ -422,7 +422,7 @@ function NewCouponModal({
           {/* Sección 3: Límites */}
           <section className="space-y-4">
             <header className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-extrabold">3</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold">3</span>
               <h4 className="text-sm font-extrabold text-[var(--text-primary)]">Límites</h4>
             </header>
 

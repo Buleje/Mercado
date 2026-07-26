@@ -328,7 +328,7 @@ export default function WaChatView({
                 setSuggestions([]);
                 draftRef.current?.focus();
               }}
-              className="shrink-0 max-w-[280px] truncate rounded-full border-2 border-primary/40 bg-primary/5 px-3.5 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10"
+              className="shrink-0 max-w-[280px] truncate rounded-full border-2 border-primary/40 bg-primary/5 px-3.5 py-2 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] transition hover:bg-primary/10"
               title={s}
             >
               {s}
@@ -345,7 +345,7 @@ export default function WaChatView({
             onClick={() => void fetchSuggestions()}
             disabled={!canSend || loadingSuggest}
             className={cn(
-              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-primary/40 bg-primary/5 text-primary transition hover:bg-primary/10",
+              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-primary/40 bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)] transition hover:bg-primary/10",
               (!canSend || loadingSuggest) && "cursor-not-allowed opacity-40",
             )}
             aria-label="Sugerir respuesta con IA"
@@ -360,7 +360,7 @@ export default function WaChatView({
             className={cn(
               "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 transition",
               showQuick
-                ? "border-primary bg-primary/10 text-primary"
+                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
               !canSend && "cursor-not-allowed opacity-40",
             )}
@@ -376,7 +376,7 @@ export default function WaChatView({
             className={cn(
               "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 transition",
               showProducts
-                ? "border-primary bg-primary/10 text-primary"
+                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
               !canSend && "cursor-not-allowed opacity-40",
             )}
@@ -416,7 +416,7 @@ export default function WaChatView({
             className={cn(
               "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 transition",
               showTemplates
-                ? "border-primary bg-primary/10 text-primary"
+                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
               !canSend && "cursor-not-allowed opacity-40",
             )}

@@ -221,7 +221,7 @@ export default function LandingHeader({
                     "rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all",
                     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                     active
-                      ? "bg-[var(--accent-soft)] text-[var(--accent)] shadow-sm"
+                      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shadow-sm"
                       : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]/70 hover:text-[var(--text-primary)]",
                   )}
                   aria-current={active ? "page" : undefined}
@@ -283,9 +283,9 @@ export default function LandingHeader({
               aria-label="Ver tiendas"
               className={cn(
                 "inline-flex h-10 items-center gap-1.5 rounded-full",
-                "border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)] px-2.5 sm:px-3",
+                "border-2 border-[var(--accent)]/30 bg-primary/10 px-2.5 sm:px-3",
                 "text-[13px] sm:text-sm font-extrabold text-[var(--accent)] transition-all",
-                "hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/80",
+                "hover:border-[var(--accent)] hover:bg-primary/10/80",
                 "active:scale-[0.97]",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
               )}
@@ -301,7 +301,7 @@ export default function LandingHeader({
                 "text-[var(--text-primary)] transition-all duration-200",
                 "border-2",
                 mobileOpen
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] scale-95"
+                  ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] scale-95"
                   : "border-transparent hover:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
               )}
@@ -496,7 +496,7 @@ function MobileSheet({
                         "flex h-12 items-center gap-3 rounded-xl px-3 text-[15px] font-bold transition-all",
                         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                         active
-                          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                          ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
                       )}
                       aria-current={active ? "page" : undefined}
@@ -543,7 +543,7 @@ function MobileSheet({
                       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                     )}
                   >
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                       <Icon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1 flex flex-col leading-tight">

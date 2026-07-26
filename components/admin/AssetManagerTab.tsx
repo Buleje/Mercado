@@ -50,7 +50,7 @@ function calcDepreciation(cost: number, lifeYears: number, acqDate: string): { a
 }
 
 const STATUS_META: Record<AssetStatus, { label: string; color: string; bg: string }> = {
-  activo:         { label: "Activo",          color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  activo:         { label: "Activo",          color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   mantenimiento:  { label: "En mantenimiento", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
   "dado-de-baja": { label: "Dado de baja",   color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",         bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
@@ -152,8 +152,8 @@ export default function AssetManagerTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
         {[
-          { label: "Total activos", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Activos operativos", value: String(stats.activos), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Total activos", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
+          { label: "Activos operativos", value: String(stats.activos), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Costo adquisición", value: fmt(stats.totalCost), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
           { label: "Depreciación acum.", value: fmt(stats.totalDep), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
           { label: "Valor en libros", value: fmt(stats.totalBook), color: "text-[var(--data-info-500)]", bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
@@ -248,14 +248,14 @@ export default function AssetManagerTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                       <div className="flex items-center gap-1.5 justify-center">
                         <div className="w-12 bg-[var(--rule-soft)] dark:bg-surface rounded-full h-2 overflow-hidden">
-                          <div className={cn("h-full rounded-full", a.dep.pctDepreciated >= 90 ? "bg-[var(--data-error-500)]" : a.dep.pctDepreciated >= 50 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} style={{ width: `${Math.min(100, a.dep.pctDepreciated)}%` }} />
+                          <div className={cn("h-full rounded-full", a.dep.pctDepreciated >= 90 ? "bg-[var(--data-error-500)]" : a.dep.pctDepreciated >= 50 ? "bg-[var(--data-warning-500)]" : "bg-primary/10")} style={{ width: `${Math.min(100, a.dep.pctDepreciated)}%` }} />
                         </div>
                         <span className="text-xs text-[var(--text-secondary)]">{Number(a.dep.pctDepreciated).toFixed(0)}%</span>
                       </div>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{a.location}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <button onClick={() => setDetail(a)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => setDetail(a)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button>
                     </td>
                   </tr>
                 );

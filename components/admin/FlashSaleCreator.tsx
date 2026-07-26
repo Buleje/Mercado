@@ -351,7 +351,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
 
         {/* Descuento calculado */}
         {selected && salePriceNum > 0 && salePriceNum < selected.price && (
-          <div className="mb-4 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-3 py-2 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+          <div className="mb-4 rounded-lg bg-primary/10 dark:bg-primary/15 px-3 py-2 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             Descuento del{" "}
             <span className="font-bold">{discountPct(selected.price, salePriceNum)}%</span>
             {" "}— ahorro de{" "}
@@ -400,7 +400,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
           </div>
         )}
         {success && (
-          <div role="status" className="mb-3 rounded-lg border border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] px-3 py-2 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+          <div role="status" className="mb-3 rounded-lg border border-[var(--data-success-500)]/30 bg-primary/10 dark:border-[var(--data-success-500)]/30 dark:bg-primary/15 px-3 py-2 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             Oferta creada correctamente
           </div>
         )}

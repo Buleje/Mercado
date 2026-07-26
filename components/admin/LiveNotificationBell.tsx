@@ -65,8 +65,8 @@ const TYPE_CONFIG: Record<
   order_status_changed: {
     label: "Estado de pedido",
     Icon: Package,
-    dot: "bg-[var(--accent-soft)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    dot: "bg-primary/10",
+    bg: "bg-primary/10 dark:bg-primary/15",
     text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
   },
@@ -81,8 +81,8 @@ const TYPE_CONFIG: Record<
   payment: {
     label: "Pago recibido",
     Icon: CreditCard,
-    dot: "bg-[var(--accent-soft)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    dot: "bg-primary/10",
+    bg: "bg-primary/10 dark:bg-primary/15",
     text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
   },

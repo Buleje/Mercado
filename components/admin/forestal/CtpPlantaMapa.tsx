@@ -445,7 +445,7 @@ export default function CtpPlantaMapa({ zonas, inventario, onChanged }: { zonas:
             </select>
           )}
           <button type="button" onClick={locate} disabled={locating} title="Centrar el mapa en mi ubicación (GPS)" className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden sm:inline">Mi ubicación</span></button>
-          {hasZonas && <button type="button" onClick={toggleLabels} title="Mostrar los códigos sobre las zonas" className={`inline-flex h-11 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold hover:bg-[var(--surface-canvas)] ${showLabels ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"}`}><Tag className="h-4 w-4" /><span className="hidden sm:inline">Etiquetas</span></button>}
+          {hasZonas && <button type="button" onClick={toggleLabels} title="Mostrar los códigos sobre las zonas" className={`inline-flex h-11 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold hover:bg-[var(--surface-canvas)] ${showLabels ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"}`}><Tag className="h-4 w-4" /><span className="hidden sm:inline">Etiquetas</span></button>}
           {conGeom.some((z) => parseCoords(z.poligono ?? null)) && <button type="button" onClick={exportGeoJSON} title="Exportar las zonas como GeoJSON (SIG / plano de planta)" className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" /><span className="hidden sm:inline">Exportar</span></button>}
           <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Layers className="h-4 w-4" />{layer === "sat" ? "Satélite" : "Calles"}</button>
           <button type="button" onClick={() => setFullscreen((v) => !v)} title={fullscreen ? "Salir de pantalla completa (Esc)" : "Ver el mapa a pantalla completa"} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">{fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}<span className="hidden sm:inline">{fullscreen ? "Salir" : "Pantalla completa"}</span></button>
@@ -457,7 +457,7 @@ export default function CtpPlantaMapa({ zonas, inventario, onChanged }: { zonas:
         {ready && !hasZonas && !drawing && !measuring && (
           <div className="absolute inset-0 flex items-center justify-center p-6">
             <div className="max-w-xs rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-center shadow-[var(--shadow-lg)]">
-              <span className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Pencil className="h-6 w-6" /></span>
+              <span className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Pencil className="h-6 w-6" /></span>
               <p className="text-sm font-bold text-[var(--text-primary)]">Dibujá la primera zona de tu aserradero</p>
               <p className="mt-1 text-xs text-[var(--text-secondary)]">Tocá “Dibujar zona”, marcá el contorno del patio de trozas, la sierra o el despacho, y asignale su tipo. Aparecerá coloreada en el mapa.</p>
               <button type="button" onClick={startDraw} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"><Pencil className="h-4 w-4" />Dibujar zona</button>
@@ -568,7 +568,7 @@ function AsignarZonaModal({ poligono, suggest, onClose, onSaved }: { poligono: [
           <p className="mb-1.5 text-sm font-bold text-[var(--text-primary)]">Tipo de zona *</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {ZONA_TIPOS.map((t) => (
-              <button key={t.tipo} type="button" onClick={() => onTipo(t.tipo)} className={`flex items-center gap-2 rounded-xl border-2 px-2.5 py-2 text-left text-xs font-bold transition ${tipo === t.tipo ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`}>
+              <button key={t.tipo} type="button" onClick={() => onTipo(t.tipo)} className={`flex items-center gap-2 rounded-xl border-2 px-2.5 py-2 text-left text-xs font-bold transition ${tipo === t.tipo ? "border-[var(--accent)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`}>
                 <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: t.ring }} />
                 <span className="truncate">{t.label}</span>
               </button>
@@ -627,7 +627,7 @@ function ZonaFichaModal({ zona, onClose, onSaved, onDeleted }: { zona: PlantaZon
           <p className="mb-1.5 text-sm font-bold text-[var(--text-primary)]">Tipo de zona</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {ZONA_TIPOS.map((t) => (
-              <button key={t.tipo} type="button" onClick={() => setTipo(t.tipo)} className={`flex items-center gap-2 rounded-xl border-2 px-2.5 py-2 text-left text-xs font-bold transition ${tipo === t.tipo ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`}>
+              <button key={t.tipo} type="button" onClick={() => setTipo(t.tipo)} className={`flex items-center gap-2 rounded-xl border-2 px-2.5 py-2 text-left text-xs font-bold transition ${tipo === t.tipo ? "border-[var(--accent)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`}>
                 <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: t.ring }} />
                 <span className="truncate">{t.label}</span>
               </button>

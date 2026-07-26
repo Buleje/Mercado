@@ -344,7 +344,7 @@ export default function ExcelProductImporter() {
           <button
             onClick={handleDownloadTemplate}
             disabled={downloadingTemplate}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-primary border border-primary/30 hover:bg-primary/5 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary/30 hover:bg-primary/5 transition-colors disabled:opacity-50"
             title="Descargar plantilla Excel"
           >
             <Download className="h-4 w-4" />

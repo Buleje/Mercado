@@ -154,7 +154,7 @@ export default function POSSplitPayment({
                   className={cn(
                     "flex-1 flex items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold border transition-colors",
                     line.method === m.id
-                      ? "border-primary bg-primary/10 text-primary"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-transparent text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
                   )}
                 >

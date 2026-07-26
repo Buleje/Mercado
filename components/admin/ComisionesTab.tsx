@@ -247,7 +247,7 @@ export default function ComisionesTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-[var(--accent-soft)] text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold flex flex-wrap items-center gap-2">
+        <div className="fixed top-4 right-4 z-50 bg-primary/10 text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold flex flex-wrap items-center gap-2">
           <CheckCircle2 className="h-4 w-4" /> {toast}
         </div>
       )}
@@ -280,7 +280,7 @@ export default function ComisionesTab() {
           <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] shrink-0">Período:</span>
           <div className="flex gap-2 flex-wrap">
             {PERIOD_OPTIONS.map(p => (
-              <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all", period === p.id ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-400")}>
+              <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all", period === p.id ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-400")}>
                 {p.label}
               </button>
             ))}
@@ -431,7 +431,7 @@ export default function ComisionesTab() {
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(s.commission)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-all", s.paid ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
+                        <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-all", s.paid ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
                           {s.paid ? "Pagado" : "Pendiente"}
                         </button>
                       </td>
@@ -462,7 +462,7 @@ export default function ComisionesTab() {
                       <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.cashierName}</p>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ROLE_LABEL[s.role] ?? s.role}</p>
                     </div>
-                    <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold", s.paid ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
+                    <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold", s.paid ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
                       {s.paid ? "Pagado" : "Pendiente"}
                     </button>
                   </div>
@@ -479,7 +479,7 @@ export default function ComisionesTab() {
       </div>
 
       {/* Info note */}
-      <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4">
+      <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4">
         <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
           <strong>ℹ️ Nota:</strong> Las comisiones se calculan sobre los ingresos brutos de cada cajero en el POS. Los datos se cargan desde <code className="font-mono">/api/commissions</code>. Para que aparezcan ventas reales, cada venta del POS debe registrar el <code className="font-mono">cashierId</code> del cajero activo.
         </p>

@@ -32,8 +32,8 @@ const ENTITY_ICONS: Record<string, React.ElementType> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  crear: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
-  editar: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  crear: "bg-primary/10 text-[var(--data-success)] dark:bg-primary/15 dark:text-[var(--data-success)]",
+  editar: "bg-primary/10 text-[var(--data-success)] dark:bg-primary/15 dark:text-[var(--data-success)]",
   eliminar: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
   estado: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
   otro: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
@@ -128,7 +128,7 @@ export default function ActivityLogTab() {
           <button
             onClick={() => setAutoRefresh(p => !p)}
             className={cn("flex items-center gap-1 px-3 py-1.5 text-xs font-semibold border rounded-lg transition-colors",
-              autoRefresh ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5"
+              autoRefresh ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5"
             )}
             title={autoRefresh ? "Auto-refresh activo (30s)" : "Auto-refresh desactivado"}
           >

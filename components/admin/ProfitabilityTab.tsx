@@ -98,9 +98,9 @@ export default function ProfitabilityTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Ingresos totales", value: fmt(totals.revenue), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Ingresos totales", value: fmt(totals.revenue), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Costo de venta", value: fmt(totals.cogs), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
-          { label: "Margen bruto", value: fmt(totals.grossMargin), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Margen bruto", value: fmt(totals.grossMargin), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "% Margen", value: pct(totals.marginPct), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
           { label: "Uds. vendidas", value: totals.units.toLocaleString("es-PE"), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
@@ -185,7 +185,7 @@ export default function ProfitabilityTab() {
                     </span>
                   </td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3">
-                    <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button>
                   </td>
                 </tr>
               ))}

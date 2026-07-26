@@ -275,8 +275,8 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
         </div>
         {data.claseA > 0 && (
           <div className="hidden sm:flex items-center gap-3 text-[length:var(--ts-xs)]">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--accent-soft)]" />A: {data.claseA}</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--accent-soft)]" />B: {data.claseB}</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary/10" />A: {data.claseA}</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary/10" />B: {data.claseB}</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400" />C: {data.claseC}</span>
           </div>
         )}

@@ -51,7 +51,7 @@ function getBucket(days: number): AgeBucket {
 }
 
 const BUCKET_META: Record<AgeBucket, { label: string; color: string; bg: string; border: string }> = {
-  "0-30": { label: "0–30 días",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
+  "0-30": { label: "0–30 días",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
   "31-60":{ label: "31–60 días", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",    bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",    border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]"   },
   "61-90":{ label: "61–90 días", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/20",  border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" },
   "90+":  { label: ">90 días",   color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-50)] dark:bg-red-950/20",        border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"       },
@@ -220,10 +220,10 @@ export default function CollectionCenterTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Cartera total", value: fmt(stats.totalDebt), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: DollarSign },
+          { label: "Cartera total", value: fmt(stats.totalDebt), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: DollarSign },
           { label: "Vencido (+30d)", value: fmt(stats.overdue), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: Clock },
-          { label: "Cobrado hoy", value: fmt(stats.collectedToday), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
-          { label: "Crítico (+90d)", value: String(stats.critical), color: stats.critical > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]", bg: stats.critical > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ShieldAlert },
+          { label: "Cobrado hoy", value: fmt(stats.collectedToday), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: CheckCircle },
+          { label: "Crítico (+90d)", value: String(stats.critical), color: stats.critical > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]", bg: stats.critical > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-primary/10 dark:bg-primary/15", icon: ShieldAlert },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
@@ -462,7 +462,7 @@ export default function CollectionCenterTab() {
                   href={`https://wa.me/51${detail.phone.replace(/\D/g, "")}?text=Hola%20${encodeURIComponent(detail.customer)}%2C%20le%20recordamos%20su%20deuda%20pendiente%20de%20${fmt(detail.amount - detail.paid)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-white text-xs font-bold hover:bg-primary/10 transition-colors"
                 >
                   <Phone className="h-3.5 w-3.5" /> WhatsApp
                 </a>

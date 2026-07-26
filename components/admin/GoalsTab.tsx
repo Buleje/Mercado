@@ -34,12 +34,12 @@ interface Goal {
 }
 
 const CATEGORY_META: Record<GoalCategory, { label: string; color: string; bg: string; icon: React.ElementType; trackable: boolean }> = {
-  ventas:           { label: "Ventas",           color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: TrendingUp, trackable: true  },
+  ventas:           { label: "Ventas",           color: "text-[var(--data-success-500)]", bg: "bg-primary/10",     icon: TrendingUp, trackable: true  },
   pedidos:          { label: "Pedidos",          color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)]", icon: BarChart3,  trackable: true  },
   clientes:         { label: "Clientes",         color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]",  icon: Users,      trackable: true  },
-  productos:        { label: "Productos",        color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: Package,    trackable: false },
+  productos:        { label: "Productos",        color: "text-[var(--data-success-500)]", bg: "bg-primary/10",     icon: Package,    trackable: false },
   caja:             { label: "Caja",             color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]",  icon: Coins,      trackable: false },
-  ticket_promedio:  { label: "Ticket promedio",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: Coins,      trackable: true  },
+  ticket_promedio:  { label: "Ticket promedio",  color: "text-[var(--data-success-500)]", bg: "bg-primary/10",     icon: Coins,      trackable: true  },
   retencion:        { label: "Retención",        color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]",  icon: Users,      trackable: true  },
 };
 
@@ -792,7 +792,7 @@ export default function GoalsTab() {
                     <button
                       onClick={() => void syncFromData(g)}
                       title={`Auto-actualizar a ${formatNumber(Math.round(autoValue ?? 0), g.unit)}`}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold hover:bg-primary/20 transition-colors"
                     >
                       <RefreshCw className="h-3 w-3" />
                       Sync
@@ -922,7 +922,7 @@ export default function GoalsTab() {
                         key={s.label}
                         type="button"
                         onClick={() => setForm(f => ({ ...f, target: String(s.value) }))}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 transition-colors"
                       >
                         <Sparkles className="h-3 w-3" />
                         {s.label}: {formatNumber(s.value, form.unit || "S/")}

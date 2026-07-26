@@ -39,8 +39,8 @@ const TIPO_LABELS: Record<PromoType, string> = {
 };
 
 const TIPO_BADGE: Record<PromoType, string> = {
-  porcentaje: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-  "2x1": "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+  porcentaje: "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+  "2x1": "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
   "3x2": "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
   combo: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
   monto_fijo: "bg-teal-100 dark:bg-teal-900/30 text-[var(--accent-dark)] dark:text-teal-400",
@@ -347,14 +347,14 @@ export default function PromocionesModule() {
 
       {/* Mensaje de éxito */}
       {successMsg && (
-        <div className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl px-4 py-2.5 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+        <div className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 rounded-xl px-4 py-2.5 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
           ✓ {successMsg}
         </div>
       )}
 
       {/* Stats rápido */}
       <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-xs px-3 py-1.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
+        <span className="text-xs px-3 py-1.5 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
           {activeToday} activas hoy
         </span>
         <span className="text-xs px-3 py-1.5 rounded-full bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium">

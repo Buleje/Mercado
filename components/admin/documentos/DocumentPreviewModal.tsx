@@ -668,7 +668,7 @@ function PermissionsSection({ doc, onChanged }: { doc: DbDocument; onChanged: (d
               disabled={busy}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-lg border-2 px-3 py-1.5 text-sm font-bold transition-colors disabled:opacity-50",
-                on ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/40",
+                on ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/40",
               )}
             >
               {on ? <Check className="h-3.5 w-3.5" /> : <Users className="h-3.5 w-3.5" />} {r.label}
@@ -1208,7 +1208,7 @@ const ACTION_META: Record<string, { color: string; label: string }> = {
   restore: { color: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]", label: "Restaurado" },
   share: { color: "bg-[var(--accent)]/15 text-[var(--accent)]", label: "Compartido" },
   share_revoke: { color: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]", label: "Share revocado" },
-  sign: { color: "bg-primary/15 text-primary", label: "Firmado" },
+  sign: { color: "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]", label: "Firmado" },
   version: { color: "bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]", label: "Nueva versión" },
   move: { color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", label: "Movido" },
   tag: { color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", label: "Tag" },

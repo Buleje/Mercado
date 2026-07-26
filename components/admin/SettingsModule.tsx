@@ -79,18 +79,18 @@ const DEFAULT_NAV_LINKS: NavLinkItem[] = [
 const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc: string; color: string }[] = [
   // ── Setup inicial ──
   { id: "business", icon: <Store className="h-5 w-5" />, title: "Datos del Negocio", desc: "Nombre, RUC, contacto, redes", color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
-  { id: "subscription", icon: <Crown className="h-5 w-5" />, title: "Plan y suscripción", desc: "Básico, Pro, Enterprise o Max — cambiá cuando quieras", color: "text-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { id: "subscription", icon: <Crown className="h-5 w-5" />, title: "Plan y suscripción", desc: "Básico, Pro, Enterprise o Max — cambiá cuando quieras", color: "text-[var(--accent)] bg-primary/10 dark:bg-primary/15" },
   // ── Operación diaria ──
-  { id: "sales", icon: <FileText className="h-5 w-5" />, title: "Ventas y Comprobantes", desc: "Series, SUNAT, descuentos", color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  { id: "inventory", icon: <Package className="h-5 w-5" />, title: "Inventario", desc: "Stock, alertas, unidades", color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  { id: "cash", icon: <DollarSign className="h-5 w-5" />, title: "Caja y Pagos", desc: "Apertura, métodos, devoluciones", color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { id: "sales", icon: <FileText className="h-5 w-5" />, title: "Ventas y Comprobantes", desc: "Series, SUNAT, descuentos", color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
+  { id: "inventory", icon: <Package className="h-5 w-5" />, title: "Inventario", desc: "Stock, alertas, unidades", color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
+  { id: "cash", icon: <DollarSign className="h-5 w-5" />, title: "Caja y Pagos", desc: "Apertura, métodos, devoluciones", color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
   { id: "delivery", icon: <Truck className="h-5 w-5" />, title: "Delivery y Envíos", desc: "Zonas, tarifas, repartidores", color: "text-[var(--data-info-500)] bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
   // ── Comunicación ──
   { id: "notifications", icon: <Bell className="h-5 w-5" />, title: "Notificaciones", desc: "Email, WhatsApp, push", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { id: "integrations", icon: <Zap className="h-5 w-5" />, title: "Integraciones", desc: "Yape, Plin, SUNAT, analytics", color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
   // ── Personalización ──
   { id: "appearance", icon: <Palette className="h-5 w-5" />, title: "Apariencia", desc: "Colores, slogan, tema", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
-  { id: "storefront", icon: <Monitor className="h-5 w-5" />, title: "Mi Tienda Web", desc: "Secciones visibles y orden del home", color: "text-primary bg-primary/10 dark:bg-primary/20" },
+  { id: "storefront", icon: <Monitor className="h-5 w-5" />, title: "Mi Tienda Web", desc: "Secciones visibles y orden del home", color: "text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 dark:bg-primary/20" },
   // ── Sistema avanzado ──
   { id: "system", icon: <Settings className="h-5 w-5" />, title: "Configuración del Sistema", desc: "Formato, moneda, impuestos", color: "text-slate-500 bg-slate-50 dark:bg-slate-950/30" },
   { id: "security", icon: <Lock className="h-5 w-5" />, title: "Usuarios y Seguridad", desc: "Contraseña, sesiones, acceso", color: "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30" },
@@ -212,7 +212,7 @@ function SaveButton({ saving, saved, onClick, label = "Guardar cambios" }: {
       disabled={saving}
       className={cn(
         "flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all w-full justify-center",
-        saved ? "bg-[var(--accent-soft)] text-white" : "bg-gray-900 dark:bg-white dark:text-[var(--text-primary)] text-white hover:bg-gray-800 dark:hover:bg-gray-100"
+        saved ? "bg-primary/10 text-white" : "bg-gray-900 dark:bg-white dark:text-[var(--text-primary)] text-white hover:bg-gray-800 dark:hover:bg-gray-100"
       )}
     >
       {saving && !saved ? <><Loader2 className="h-4 w-4 animate-spin" /> Guardando...</> :
@@ -225,7 +225,7 @@ function SaveButton({ saving, saved, onClick, label = "Guardar cambios" }: {
 function StatusDot({ ok, label }: { ok: boolean; label: string }) {
   return (
     <div className="flex items-center gap-2">
-      <div className={cn("w-2.5 h-2.5 rounded-full", ok ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]")} />
+      <div className={cn("w-2.5 h-2.5 rounded-full", ok ? "bg-primary/10" : "bg-[var(--data-error-500)]")} />
       <span className="text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">{label}</span>
       <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase", ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{ok ? "Conectado" : "No configurado"}</span>
     </div>
@@ -267,7 +267,7 @@ function OverviewCard({ section, completionPct, onClick }: {
       </div>
       <div className="w-full flex items-center gap-2 mt-auto">
         <div className="flex-1 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-          <div className={cn("h-full rounded-full transition-all", completionPct === 100 ? "bg-[var(--accent-soft)]" : "bg-primary/60")} style={{ width: `${completionPct}%` }} />
+          <div className={cn("h-full rounded-full transition-all", completionPct === 100 ? "bg-primary/10" : "bg-primary/60")} style={{ width: `${completionPct}%` }} />
         </div>
         <span className={cn("text-[length:var(--ts-2xs)] font-bold shrink-0", completionPct === 100 ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>{completionPct}%</span>
       </div>
@@ -835,7 +835,7 @@ export default function SettingsModule({
           {(["whatsapp", "checkout"] as const).map(m => (
             <button key={m} onClick={() => setMode(m)} className={cn(
               "flex flex-col items-center gap-2 py-5 px-3 rounded-xl border-2 transition-all",
-              mode === m ? (m === "whatsapp" ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-primary bg-primary/5") : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-gray-300"
+              mode === m ? (m === "whatsapp" ? "border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : "border-primary bg-primary/5") : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-gray-300"
             )}>
               {m === "whatsapp" ? <MessageCircle className={cn("h-8 w-8", mode === m ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")} /> : <ShoppingCart className={cn("h-8 w-8", mode === m ? "text-primary" : "text-[var(--text-tertiary)]")} />}
               <span className={cn("font-bold text-sm", mode === m ? (m === "whatsapp" ? "text-[var(--data-success-500)]" : "text-primary") : "text-[var(--text-tertiary)]")}>{m === "whatsapp" ? "WhatsApp" : "Checkout"}</span>
@@ -869,7 +869,7 @@ export default function SettingsModule({
             <FieldLabel icon={<MapPin className="h-3.5 w-3.5" />}>Dirección</FieldLabel>
             <div className="flex gap-2">
               <div className="flex-1"><TextInput value={businessAddress} onChange={setBusinessAddress} /></div>
-              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 transition-colors shrink-0">
+              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30 transition-colors shrink-0">
                 <MapPin className="h-4 w-4" />
               </button>
               <button
@@ -886,7 +886,7 @@ export default function SettingsModule({
                     { enableHighAccuracy: true }
                   );
                 }}
-                className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 transition-colors shrink-0 flex items-center gap-1.5"
+                className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30 transition-colors shrink-0 flex items-center gap-1.5"
               >
                 <MapPin className="h-4 w-4" /> Mi ubicación
               </button>
@@ -1038,7 +1038,7 @@ export default function SettingsModule({
                 alert("Credenciales copiadas al portapapeles");
               }
             }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/5 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/5 transition-colors"
           >
             <Send className="h-4 w-4" /> Compartir credenciales
           </button>
@@ -1073,7 +1073,7 @@ export default function SettingsModule({
               <div className="flex gap-1">
                 {[1, 2, 3, 4].map(i => {
                   const strength = (newPw.length >= 4 ? 1 : 0) + (newPw.length >= 8 ? 1 : 0) + (/[A-Z]/.test(newPw) ? 1 : 0) + (/[0-9]/.test(newPw) ? 1 : 0);
-                  return <div key={i} className={cn("h-1.5 flex-1 rounded-full", i <= strength ? (strength <= 1 ? "bg-[var(--data-error-500)]" : strength <= 2 ? "bg-[var(--data-warning-500)]" : strength <= 3 ? "bg-[var(--accent-soft)]" : "bg-[var(--accent-soft)]") : "bg-gray-200 dark:bg-surface")} />;
+                  return <div key={i} className={cn("h-1.5 flex-1 rounded-full", i <= strength ? (strength <= 1 ? "bg-[var(--data-error-500)]" : strength <= 2 ? "bg-[var(--data-warning-500)]" : strength <= 3 ? "bg-primary/10" : "bg-primary/10") : "bg-gray-200 dark:bg-surface")} />;
                 })}
               </div>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{newPw.length < 4 ? "Muy corta" : newPw.length < 8 ? "Aceptable" : "Fuerte"}</p>
@@ -1130,7 +1130,7 @@ export default function SettingsModule({
                 <button disabled={idx === navLinks.length - 1} onClick={() => { const n = [...navLinks]; [n[idx], n[idx + 1]] = [n[idx + 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-25"><ArrowDown className="h-3.5 w-3.5" /></button>
               </div>
               <span className="flex-1 font-semibold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{NAV_LABEL[link.id] || link.id}</span>
-              <button onClick={() => setNavLinks(prev => prev.map((l, i) => i === idx ? { ...l, visible: !l.visible } : l))} className={cn("p-1.5 rounded-lg", link.visible ? "text-primary bg-primary/10" : "text-[var(--text-tertiary)]")}>
+              <button onClick={() => setNavLinks(prev => prev.map((l, i) => i === idx ? { ...l, visible: !l.visible } : l))} className={cn("p-1.5 rounded-lg", link.visible ? "text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10" : "text-[var(--text-tertiary)]")}>
                 {link.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
               </button>
             </div>
@@ -1211,7 +1211,7 @@ export default function SettingsModule({
               <button key={t} onClick={() => {
                 const types = enabledDocTypes.split(",").filter(Boolean);
                 setEnabledDocTypes(active ? types.filter(x => x !== t).join(",") : [...types, t].join(","));
-              }} className={cn("px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-gray-300")}>
+              }} className={cn("px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-gray-300")}>
                 {active ? <Check className="h-3.5 w-3.5 inline mr-1.5" /> : null}
                 {t === "nota_venta" ? "Nota de venta" : t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
@@ -1276,7 +1276,7 @@ export default function SettingsModule({
               <button key={ch.id} onClick={() => {
                 const chs = stockAlertChannels.split(",").filter(Boolean);
                 setStockAlertChannels(active ? chs.filter(x => x !== ch.id).join(",") : [...chs, ch.id].join(","));
-              }} className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-gray-300")}>
+              }} className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-gray-300")}>
                 {ch.icon} {ch.label}
               </button>
             );
@@ -1353,9 +1353,9 @@ export default function SettingsModule({
                 <div><FieldLabel>Número</FieldLabel><TextInput value={plinPhone} onChange={setPlinPhone} mono /></div>
               </div>
               <div>
-                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-[var(--data-success-500)]/30 hover:border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-500)] bg-[var(--accent-soft)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
+                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-[var(--data-success-500)]/30 hover:border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
                 <input ref={plinImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setPlinImage, "plin", "payments")} />
-                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-[var(--accent-soft)] rounded-lg"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-[var(--data-error-500)]">Quitar</button></div>}
+                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-primary/10 rounded-lg"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-[var(--data-error-500)]">Quitar</button></div>}
               </div>
             </div>
           )}
@@ -1506,7 +1506,7 @@ export default function SettingsModule({
             { label: "SUNAT", ok: sunatProvider !== "none" && !!sunatApiKey },
             { label: "Google Analytics", ok: !!googleAnalyticsId },
           ].map(s => (
-            <div key={s.label} className={cn("flex items-center gap-2 p-3 rounded-xl border", s.ok ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
+            <div key={s.label} className={cn("flex items-center gap-2 p-3 rounded-xl border", s.ok ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
               {s.ok ? <Wifi className="h-4 w-4 text-[var(--data-success-500)]" /> : <WifiOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
               <span className={cn("text-xs font-semibold", s.ok ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>{s.label}</span>
             </div>
@@ -1654,7 +1654,7 @@ export default function SettingsModule({
                   <button key={a.id} onClick={() => {
                     const acts = logActions.split(",").filter(Boolean);
                     setLogActions(active ? acts.filter(x => x !== a.id).join(",") : [...acts, a.id].join(","));
-                  }} className={cn("px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-tertiary)]")}>
+                  }} className={cn("px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)]")}>
                     {a.label}
                   </button>
                 );
@@ -1677,7 +1677,7 @@ export default function SettingsModule({
           const daysSince = lastDate ? Math.floor((Date.now() - lastDate.getTime()) / 86400000) : null;
           const needsBackup = !lastDate || (daysSince !== null && daysSince > 7);
           return (
-            <div className={cn("p-3 rounded-xl border", needsBackup ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30")}>
+            <div className={cn("p-3 rounded-xl border", needsBackup ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border-[var(--data-warning-500)]" : "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30")}>
               <div className="flex items-center gap-2.5">
                 {needsBackup ? <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" /> : <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />}
                 <p className="text-xs font-medium">{lastDate ? `Último respaldo: hace ${daysSince} día${daysSince !== 1 ? "s" : ""}` : "No hay respaldos recientes"}</p>
@@ -1693,7 +1693,7 @@ export default function SettingsModule({
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
             if (typeof window !== "undefined") localStorage.setItem("buleje-last-backup", new Date().toISOString());
             setLastBackupAt(new Date().toISOString());
-          }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-teal-200 bg-white dark:bg-[var(--color-card)] hover:bg-teal-50 text-sm font-semibold text-[var(--accent-dark)]">
+          }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-teal-200 bg-white dark:bg-[var(--color-card)] hover:bg-teal-50 text-sm font-semibold text-[var(--accent-dark)] dark:text-[var(--accent)]">
             <Download className="h-4 w-4" /> Generar respaldo
           </button>
           <button onClick={() => setShowRestoreModal(true)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-[var(--data-info-500)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--data-info-50)] text-sm font-semibold text-[var(--data-info-500)]">
@@ -1867,8 +1867,8 @@ export default function SettingsModule({
         <span className={cn(
           "text-xs font-bold px-2 py-0.5 rounded-full",
           overallCompletion === 100
-            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
-            : "bg-primary/10 text-primary"
+            ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+            : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         )}>
           {overallCompletion}% completo
         </span>
@@ -1920,7 +1920,7 @@ export default function SettingsModule({
                 onClick={() => { setActiveSection(nextStep.id); setShowOverview(false); setSearchQuery(""); }}
                 className="group w-full flex items-center gap-4 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 p-4 mb-5 text-left transition-colors"
               >
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   {nextStep.icon}
                 </span>
                 <span className="min-w-0 flex-1">
@@ -2000,7 +2000,7 @@ export default function SettingsModule({
                 {/* Back to overview */}
                 <button
                   onClick={() => setShowOverview(true)}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-primary/5 mb-2 transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 mb-2 transition-colors"
                 >
                   <ChevronDown className="h-3.5 w-3.5 rotate-90" /> Ver todas las secciones
                 </button>
@@ -2014,7 +2014,7 @@ export default function SettingsModule({
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group",
                         activeSection === s.id
-                          ? "bg-primary/10 text-primary font-bold "
+                          ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold "
                           : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
                       )}
                     >
@@ -2026,7 +2026,7 @@ export default function SettingsModule({
                         <div className="flex items-center gap-2 mt-0.5">
                           <div className="flex-1 h-1 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                             <div
-                              className={cn("h-full rounded-full transition-all", pct === 100 ? "bg-[var(--accent-soft)]" : "bg-primary/60")}
+                              className={cn("h-full rounded-full transition-all", pct === 100 ? "bg-primary/10" : "bg-primary/60")}
                               style={{ width: `${pct}%` }}
                             />
                           </div>
@@ -2088,7 +2088,7 @@ export default function SettingsModule({
               <button onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-4 flex flex-col gap-3">
-              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30">
+              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30">
                 <MapPin className="h-4 w-4" /> Usar ubicación actual
               </button>
               <LeafletMap lat={pickerLat} lon={pickerLon} zoom={15} height={340} onPick={(lat: number, lon: number, address: string) => { setPickerLat(lat); setPickerLon(lon); setBusinessLat(lat); setBusinessLon(lon); setBusinessAddress(address); }} />

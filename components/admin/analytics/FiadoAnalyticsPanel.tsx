@@ -449,7 +449,7 @@ export default function FiadoAnalyticsPanel() {
                       "text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full font-medium",
                       d.status === "vencido" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
                         : d.status === "riesgo" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
-                        : "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                        : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                     )}>
                       {d.status === "vencido" ? "Vencido" : d.status === "riesgo" ? "Riesgo" : "Al dia"}
                     </span>

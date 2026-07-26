@@ -17,9 +17,9 @@ interface Suggestion {
 
 const TYPE_META: Record<SuggestionType, { icon: React.ElementType; color: string; bg: string; border: string; label: string }> = {
   alerta:      { icon: AlertTriangle, color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",     border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40",   label: "Alerta" },
-  oportunidad: { icon: TrendingUp,    color: "text-[var(--data-success-500)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",border:"border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",label:"Oportunidad"},
+  oportunidad: { icon: TrendingUp,    color: "text-[var(--data-success-500)]",bg: "bg-primary/10 dark:bg-primary/15",border:"border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",label:"Oportunidad"},
   optimizacion:{ icon: Lightbulb,     color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",  border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30",label: "Mejora" },
-  accion:      { icon: ShoppingCart,  color: "text-[var(--data-success-500)]",   bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",    border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", label: "Acción" },
+  accion:      { icon: ShoppingCart,  color: "text-[var(--data-success-500)]",   bg: "bg-primary/10 dark:bg-primary/15",    border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", label: "Acción" },
 };
 
 interface Props {

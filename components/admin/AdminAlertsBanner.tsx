@@ -376,7 +376,7 @@ function AlertCard({
       ? "bg-[var(--data-error-100,#fee2e2)] text-[var(--data-error-700,#b91c1c)]"
       : sev === "warning"
         ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
-        : "bg-[var(--accent-soft)] text-[var(--accent)]";
+        : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
 
   return (
     <li

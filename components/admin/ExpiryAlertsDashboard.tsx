@@ -349,7 +349,7 @@ export default function ExpiryAlertsDashboard() {
 
       {/* Loading overlay for actions */}
       {actionLoading && (
-        <div className="flex items-center gap-2 px-4 py-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl">
+        <div className="flex items-center gap-2 px-4 py-3 bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl">
           <Loader2 className="h-4 w-4 animate-spin text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Procesando acción...</p>
         </div>

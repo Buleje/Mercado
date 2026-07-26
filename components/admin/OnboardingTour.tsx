@@ -198,7 +198,7 @@ export function OnboardingTour({
               </p>
             </div>
           </div>
-          <div className="bg-[#f0fdf4] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg px-3 py-2">
+          <div className="bg-[#f0fdf4] dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg px-3 py-2">
             <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
               {step.example}
             </p>

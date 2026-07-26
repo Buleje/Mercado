@@ -51,8 +51,8 @@ type EmitForm = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const TYPE_META: Record<DocType, { label: string; color: string; bg: string }> = {
-  boleta:         { label: "Boleta",          color: "text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  factura:        { label: "Factura",         color: "text-[var(--data-success-500)]",  bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  boleta:         { label: "Boleta",          color: "text-[var(--data-success-500)]",     bg: "bg-primary/10 dark:bg-primary/15" },
+  factura:        { label: "Factura",         color: "text-[var(--data-success-500)]",  bg: "bg-primary/10 dark:bg-primary/15" },
   "nota-credito": { label: "Nota de crédito", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
   "nota-debito":  { label: "Nota de débito",  color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
 };
@@ -263,7 +263,7 @@ export default function EInvoiceTab() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[var(--accent-soft)] text-white px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
+        <div className="fixed bottom-6 right-6 z-50 bg-primary/10 text-white px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 shrink-0" /> {toast}
         </div>
       )}
@@ -459,7 +459,7 @@ export default function EInvoiceTab() {
                 href={detail.pdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-semibold hover:bg-[var(--accent-soft)] transition-colors"
+                className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-primary/10 text-white text-sm font-semibold hover:bg-primary/10 transition-colors"
               >
                 <Download className="h-4 w-4" /> Descargar PDF
               </a>

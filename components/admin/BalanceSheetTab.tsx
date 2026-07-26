@@ -139,9 +139,9 @@ export default function BalanceSheetTab() {
       {/* Ratios KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Liquidez corriente", value: Number(totals.liquidezCorriente).toFixed(2), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Liquidez corriente", value: Number(totals.liquidezCorriente).toFixed(2), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Prueba ácida", value: Number(totals.pruebaAcida).toFixed(2), color: "text-[var(--data-info-500)]", bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
-          { label: "Endeudamiento", value: pct(totals.endeudamiento), color: totals.endeudamiento > 60 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]", bg: totals.endeudamiento > 60 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Endeudamiento", value: pct(totals.endeudamiento), color: totals.endeudamiento > 60 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]", bg: totals.endeudamiento > 60 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-primary/10 dark:bg-primary/15" },
           { label: "Capital de trabajo", value: fmt(totals.capitalTrabajo), color: totals.capitalTrabajo >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: "bg-[var(--surface-sunken)]" },
           { label: "ROE", value: pct(totals.roe), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
         ].map(({ label, value, color, bg }) => (
@@ -156,7 +156,7 @@ export default function BalanceSheetTab() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-4">
         {/* ACTIVOS */}
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-          <div className="px-2 sm:px-4 py-2 sm:py-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+          <div className="px-2 sm:px-4 py-2 sm:py-3 bg-primary/10 dark:bg-primary/15 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
             <CardTitle className="font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm">ACTIVOS</CardTitle>
             <div className="flex flex-wrap gap-6 text-xs mt-1">
               <span className="font-semibold text-[var(--text-secondary)]">Período actual</span>
@@ -166,7 +166,7 @@ export default function BalanceSheetTab() {
           </div>
           {renderSection("activo-corriente", grouped["activo-corriente"])}
           {renderSection("activo-no-corriente", grouped["activo-no-corriente"])}
-          <div className="flex items-center px-2 sm:px-4 py-2 sm:py-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-sm font-extrabold">
+          <div className="flex items-center px-2 sm:px-4 py-2 sm:py-3 bg-primary/10 dark:bg-primary/15 text-sm font-extrabold">
             <span className="flex-1 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">TOTAL ACTIVOS</span>
             <span className="w-28 text-right text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmt(totals.totalActivos.current)}</span>
             <span className="w-28 text-right text-[var(--data-success-500)]/60">{fmt(totals.totalActivos.previous)}</span>
@@ -216,7 +216,7 @@ export default function BalanceSheetTab() {
               <div key={type} className="flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted w-32 truncate">{TYPE_LABELS[type]}</span>
                 <div className="flex-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-full h-5 overflow-hidden">
-                  <div className={cn("h-full rounded-full transition-all", isAsset ? "bg-[var(--accent-soft)]" : type === "patrimonio" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")} style={{ width: `${Math.min(100, pctFill)}%` }} />
+                  <div className={cn("h-full rounded-full transition-all", isAsset ? "bg-primary/10" : type === "patrimonio" ? "bg-primary/10" : "bg-[var(--data-warning-500)]")} style={{ width: `${Math.min(100, pctFill)}%` }} />
                 </div>
                 <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] w-24 text-right">{fmt(total)}</span>
               </div>

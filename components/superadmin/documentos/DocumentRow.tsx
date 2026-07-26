@@ -60,7 +60,7 @@ export default function DocumentRow({
     <li
       className={cn(
         "flex items-center gap-3 p-4 transition-colors",
-        selected ? "bg-[var(--accent-soft)]" : "hover:bg-[var(--surface-alt)]/50",
+        selected ? "bg-primary/10" : "hover:bg-[var(--surface-alt)]/50",
       )}
     >
       {selecting && (
@@ -155,7 +155,7 @@ export default function DocumentRow({
         disabled={busy}
         title="Descargar"
         aria-label="Descargar documento"
-        className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-primary hover:bg-[var(--accent-soft)] disabled:opacity-50"
+        className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 disabled:opacity-50"
       >
         {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}
       </button>

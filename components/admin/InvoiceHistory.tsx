@@ -51,7 +51,7 @@ function fmtDate(iso: string) {
 function EstadoBadge({ estado }: { estado: InvoiceRecord["estado"] }) {
   const styles = {
     emitido:
-      "bg-[var(--accent-soft)] text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30",
+      "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:bg-primary/15 dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30",
     anulado:
       "bg-[var(--data-error-50)] text-[var(--data-error-500)] border-[var(--data-error-500)] dark:bg-red-950/20 dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30",
     pendiente:
@@ -239,8 +239,8 @@ export default function InvoiceHistory() {
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[length:var(--ts-xs)] font-bold ${
                           record.tipo === "factura"
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
-                            : "bg-primary/10 text-primary"
+                            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
+                            : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                         }`}
                       >
                         {record.tipo === "factura" ? "Factura" : "Boleta"}
@@ -285,8 +285,8 @@ export default function InvoiceHistory() {
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[length:var(--ts-xs)] font-bold ${
                       record.tipo === "factura"
-                        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
-                        : "bg-primary/10 text-primary"
+                        ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
+                        : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     }`}
                   >
                     {record.tipo === "factura" ? "Factura" : "Boleta"}

@@ -293,7 +293,7 @@ export default function AnalyticsProDashboard() {
             </div>
           )}
           {data.alerts.pendingOrders > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm">
               <span className="font-medium">{data.alerts.pendingOrders}</span> pedidos pendientes
             </div>
           )}

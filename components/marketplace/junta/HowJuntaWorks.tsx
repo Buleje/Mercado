@@ -25,7 +25,7 @@ export default function HowJuntaWorks({
       {STEPS.map((step, i) => (
         <Fragment key={step.label}>
           <li className="flex flex-col items-center gap-2 text-center">
-            <span className="flex h-14 w-14 items-center justify-center bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="flex h-14 w-14 items-center justify-center bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <step.icon className="h-6 w-6" strokeWidth={2} aria-hidden />
             </span>
             <span className="text-sm font-bold text-[var(--text-primary)]">

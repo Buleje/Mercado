@@ -104,8 +104,8 @@ function ScoreBadge({ score, hasData = true }: { score: number; hasData?: boolea
   }
   const grade = score >= 80 ? "A" : score >= 65 ? "B" : score >= 50 ? "C" : "D";
   const colors: Record<string, string> = {
-    A: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-    B: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    A: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
+    B: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
     C: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
     D: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
   };
@@ -452,7 +452,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
                       <td className="px-4 py-3 text-center">
                         <button
                           onClick={e => { e.stopPropagation(); handleCreateOC(s); }}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors min-h-[32px]"
+                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors min-h-[32px]"
                           title="Crear orden de compra"
                         >
                           <ShoppingCart className="h-3 w-3" /> OC
@@ -497,9 +497,9 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
             {selectedSupplier.hasData && (
             <div className="px-4 pb-4 space-y-2.5 mt-1">
               {[
-                { label: "Calidad", value: selectedSupplier.scoreCalidad, icon: Star, color: "bg-[var(--accent-soft)]" },
+                { label: "Calidad", value: selectedSupplier.scoreCalidad, icon: Star, color: "bg-primary/10" },
                 { label: "Precio", value: selectedSupplier.scorePrecio, icon: DollarSign, color: "bg-primary" },
-                { label: "Tiempo", value: selectedSupplier.scoreTiempo, icon: Clock, color: "bg-[var(--accent-soft)]" },
+                { label: "Tiempo", value: selectedSupplier.scoreTiempo, icon: Clock, color: "bg-primary/10" },
                 { label: "Variedad", value: selectedSupplier.scoreVariedad, icon: Package, color: "bg-[var(--text-primary)]" },
                 { label: "Cond. pago", value: selectedSupplier.scoreCondicion, icon: CreditCard, color: "bg-[var(--data-warning-500)]" },
               ].map(({ label, value, icon: Icon, color }) => (

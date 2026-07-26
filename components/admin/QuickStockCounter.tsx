@@ -413,7 +413,7 @@ export default function QuickStockCounter() {
               className={cn(
                 "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition",
                 saveState === "saved"
-                  ? "bg-[var(--accent-soft)]"
+                  ? "bg-primary/10"
                   : saveState === "error"
                   ? "bg-[var(--data-error-500)]"
                   : "bg-primary hover:bg-[#245a40]",

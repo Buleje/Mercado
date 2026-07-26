@@ -126,7 +126,7 @@ export default function SalesChannelsTab() {
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 px-4 sm:px-6 py-2">
       <header className="flex items-start gap-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Share2 className="h-6 w-6" />
         </span>
         <div>
@@ -156,7 +156,7 @@ export default function SalesChannelsTab() {
       )}
 
       {/* Beneficios combinados */}
-      <section className="rounded-2xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-4">
+      <section className="rounded-2xl border-2 border-[var(--accent)] bg-primary/10 p-4">
         <p className="flex items-center gap-2 text-sm font-extrabold text-[var(--accent)] uppercase tracking-wide">
           <Sparkles className="h-4 w-4" /> Conectando ambos ganás
         </p>

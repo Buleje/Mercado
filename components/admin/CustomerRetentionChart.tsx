@@ -202,7 +202,7 @@ export default function CustomerRetentionChart() {
         <div className={cn(
           "rounded-xl px-5 py-3 text-sm font-medium",
           avgRetention >= 50
-            ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+            ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
             : "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]"
         )}>
           Tu retencion promedio al primer mes es <strong>{avgRetention}%</strong>

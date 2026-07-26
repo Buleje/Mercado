@@ -75,8 +75,8 @@ const RISK_CONFIG: Record<
   bajo: {
     label: "Bajo",
     color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
-    bar: "bg-[var(--accent-soft)]",
+    bg: "bg-primary/10 dark:bg-primary/15",
+    bar: "bg-primary/10",
   },
 };
 
@@ -317,7 +317,7 @@ export default function ChurnPrediction() {
                     href={waLink(r.phone, r.name)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 self-start rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--accent-soft)] sm:self-auto"
+                    className="flex items-center gap-1.5 self-start rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/10 sm:self-auto"
                   >
                     <Phone className="h-3.5 w-3.5" />
                     Contactar

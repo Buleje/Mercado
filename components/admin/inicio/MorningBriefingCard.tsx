@@ -245,7 +245,7 @@ export default function MorningBriefingCard() {
 
       {/* Sugerencia contextual */}
       <div className="mt-5 flex items-start gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Sparkles className="h-4 w-4" />
         </span>
         <div className="min-w-0">

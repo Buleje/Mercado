@@ -124,9 +124,9 @@ export default function CostCenterTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Centros activos", value: String(globalStats.centerCount), color: "text-[var(--text-primary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-alt)] dark:bg-surface/50" },
-          { label: "Presupuesto total", value: fmt(globalStats.totalBudget), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Presupuesto total", value: fmt(globalStats.totalBudget), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Total asignado", value: fmt(globalStats.totalAllocated), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
-          { label: "Disponible", value: fmt(globalStats.totalBudget - globalStats.totalAllocated), color: globalStats.totalBudget >= globalStats.totalAllocated ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: globalStats.totalBudget >= globalStats.totalAllocated ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Disponible", value: fmt(globalStats.totalBudget - globalStats.totalAllocated), color: globalStats.totalBudget >= globalStats.totalAllocated ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: globalStats.totalBudget >= globalStats.totalAllocated ? "bg-primary/10 dark:bg-primary/15" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
@@ -155,7 +155,7 @@ export default function CostCenterTab() {
                   <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</p>
                   <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Responsable: {c.responsible}</p>
                 </div>
-                <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", c.pct > 100 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" : c.pct > 85 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]")}>
+                <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", c.pct > 100 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" : c.pct > 85 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]")}>
                   {c.pct > 100 ? <AlertTriangle className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
                   {Number(c.pct).toFixed(0)}%
                 </span>
@@ -166,7 +166,7 @@ export default function CostCenterTab() {
                   <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(c.totalAllocated)} / {fmt(c.budgetMonthly)}</span>
                 </div>
                 <div className="w-full h-2.5 bg-[var(--rule-soft)] dark:bg-surface rounded-full overflow-hidden">
-                  <div className={cn("h-full rounded-full transition-all", c.pct > 100 ? "bg-[var(--data-error-500)]" : c.pct > 85 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} style={{ width: `${Math.min(c.pct, 100)}%` }} />
+                  <div className={cn("h-full rounded-full transition-all", c.pct > 100 ? "bg-[var(--data-error-500)]" : c.pct > 85 ? "bg-[var(--data-warning-500)]" : "bg-primary/10")} style={{ width: `${Math.min(c.pct, 100)}%` }} />
                 </div>
                 <p className={cn("text-xs font-semibold", c.budgetMonthly - c.totalAllocated >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                   Disponible: {fmt(c.budgetMonthly - c.totalAllocated)}

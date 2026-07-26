@@ -372,14 +372,14 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
             <Link
               href={`/superadmin/tenants/${t.slug}`}
               title="Ficha 360 del negocio"
-              className="inline-flex h-8 items-center rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+              className="inline-flex h-8 items-center rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--accent)] hover:bg-primary/10"
             >
               Ficha 360
             </Link>
             <Link
               href={`/superadmin/chat?tenant=${t.id}&name=${encodeURIComponent(t.name)}`}
               title="Chatear con este negocio"
-              className="p-1.5 rounded-lg text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+              className="p-1.5 rounded-lg text-[var(--accent)] hover:bg-primary/10"
             >
               <MessageSquare className="w-4 h-4" />
             </Link>
@@ -437,7 +437,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                     label: "Ganancia",
                     color:
                       (t.monthProfit ?? 0) >= 0
-                        ? "text-[var(--accent-dark)]"
+                        ? "text-[var(--accent-dark)] dark:text-[var(--accent)]"
                         : "text-[var(--data-error-500)]",
                   },
                 ].map(({ value, label, color }) => (

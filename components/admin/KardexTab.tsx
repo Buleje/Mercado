@@ -57,8 +57,8 @@ type KardexLine = {
 };
 
 const TYPE_META: Record<string, { label: string; color: string; bg: string; dir: "in" | "out" }> = {
-  compra: { label: "Compra", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dir: "in" },
-  devolucion: { label: "Devolucion", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dir: "in" },
+  compra: { label: "Compra", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", dir: "in" },
+  devolucion: { label: "Devolucion", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", dir: "in" },
   ajuste_positivo: { label: "Ajuste (+)", color: "text-[var(--data-info-500)] dark:text-[var(--data-info-500)]", bg: "bg-[var(--data-info-100)] dark:bg-[var(--data-info-500)]/30", dir: "in" },
   venta: { label: "Venta POS", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", dir: "out" },
   venta_online: { label: "Venta Online", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", dir: "out" },
@@ -377,8 +377,8 @@ export default function KardexTab() {
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:gap-4 sm:grid-cols-4">
-        <KCard label="Saldo actual" value={`${stats.lastBalance} ${product.unit}`} sub={fmt(stats.lastBalance * (product.costPrice ?? 0))} icon={RefreshCw} color="text-[var(--data-success-500)]" bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" />
-        <KCard label="Total entradas" value={`+${stats.inTotal} ${product.unit}`} sub="del periodo" icon={ArrowUpCircle} color="text-[var(--data-success-500)]" bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" />
+        <KCard label="Saldo actual" value={`${stats.lastBalance} ${product.unit}`} sub={fmt(stats.lastBalance * (product.costPrice ?? 0))} icon={RefreshCw} color="text-[var(--data-success-500)]" bg="bg-primary/10 dark:bg-primary/15" />
+        <KCard label="Total entradas" value={`+${stats.inTotal} ${product.unit}`} sub="del periodo" icon={ArrowUpCircle} color="text-[var(--data-success-500)]" bg="bg-primary/10 dark:bg-primary/15" />
         <KCard label="Total salidas" value={`-${stats.outTotal} ${product.unit}`} sub="del periodo" icon={ArrowDownCircle} color="text-[var(--data-warning-600)]" bg="bg-amber-50 dark:bg-amber-950/30" />
         <KCard label="Costo compras" value={fmt(stats.costTotal)} sub="periodo actual" icon={TrendingUp} color="text-[var(--text-secondary)]" bg="bg-[var(--surface-sunken)]" />
       </div>

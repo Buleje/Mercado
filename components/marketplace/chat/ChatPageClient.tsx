@@ -90,7 +90,7 @@ export default function ChatPageClient() {
       {!customer ? (
         // ── No logueado ──
         <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
-          <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <StoreIcon className="h-8 w-8" strokeWidth={1.75} aria-hidden />
           </span>
           <p className="text-base font-extrabold text-[var(--text-primary)]">Entra para chatear</p>
@@ -138,7 +138,7 @@ export default function ChatPageClient() {
               </div>
             ) : conversations.length === 0 ? (
               <div className="px-6 py-12 text-center">
-                <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <StoreIcon className="h-8 w-8" strokeWidth={1.75} aria-hidden />
                 </span>
                 <p className="text-sm font-extrabold text-[var(--text-primary)]">Todavía no tienes chats</p>

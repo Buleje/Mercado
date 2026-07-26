@@ -49,7 +49,7 @@ function StoreTile({ store: s }: { store: MarqueeStore }) {
           {s.logo ? (
             <Image src={s.logo} alt="" fill sizes="84px" className="object-cover" />
           ) : (
-            <span className="grid h-full w-full place-items-center bg-[var(--accent-soft)] text-2xl font-black text-[var(--accent)]">
+            <span className="grid h-full w-full place-items-center bg-primary/10 text-2xl font-black text-[var(--accent)]">
               {initial}
             </span>
           )}

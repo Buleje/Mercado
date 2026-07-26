@@ -184,8 +184,8 @@ export default function GeolocationPickerModal({
               {step === "loading" && (
                 <div className="flex flex-col items-center justify-center min-h-[300px] px-6 gap-4">
                   <div className="relative h-16 w-16">
-                    <span className="absolute inset-0 rounded-full bg-[var(--accent-soft)] animate-ping" />
-                    <span className="relative h-16 w-16 rounded-full bg-[var(--accent-soft)] flex items-center justify-center">
+                    <span className="absolute inset-0 rounded-full bg-primary/10 animate-ping" />
+                    <span className="relative h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
                       <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
                     </span>
                   </div>

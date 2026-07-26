@@ -138,7 +138,7 @@ export default function CreateJuntaForm() {
                   aria-pressed={active}
                   className={`flex flex-col items-center gap-0.5 border-2 py-3 transition ${
                     active
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                      ? "border-[var(--accent)] bg-primary/10"
                       : "border-[var(--rule-base)] hover:border-[var(--accent)]"
                   }`}
                 >

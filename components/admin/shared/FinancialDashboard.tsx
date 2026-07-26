@@ -507,7 +507,7 @@ export default function FinancialDashboard() {
           label="Ventas brutas"
           value={formatCurrency(ventasBrutas)}
           icon={DollarSign}
-          accent="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+          accent="bg-primary/10 dark:bg-primary/15"
           iconColor="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
           borderColor="var(--accent)"
         />
@@ -532,7 +532,7 @@ export default function FinancialDashboard() {
           label="Margen %"
           value={`${margenPct.toFixed(1)}%`}
           icon={Percent}
-          accent="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+          accent="bg-primary/10 dark:bg-primary/15"
           iconColor="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
           borderColor="#3b82f6"
         />

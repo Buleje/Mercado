@@ -216,7 +216,7 @@ export default function CacaoResumen() {
         <Panel icon={Users} title="Top productores (por pago)">
           {!trends || trends.topProductores.length === 0 ? <Muted /> : trends.topProductores.map((p, i) => (
             <div key={p.nombre + i} className="flex items-center justify-between gap-2 py-1.5 text-sm">
-              <span className="flex min-w-0 items-center gap-2"><span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">{i + 1}</span><span className="truncate text-[var(--text-primary)]">{p.nombre}</span></span>
+              <span className="flex min-w-0 items-center gap-2"><span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">{i + 1}</span><span className="truncate text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">{p.nombre}</span></span>
               <span className="flex shrink-0 items-center gap-3"><span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{n2(p.kg)} kg</span><span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">S/ {n2(p.pagado)}</span></span>
             </div>
           ))}

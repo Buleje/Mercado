@@ -261,7 +261,7 @@ export default function VolumePricingEditor({
       <div className="flex items-center gap-3 pt-1">
         <button
           onClick={handleAddTier}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-primary text-primary hover:bg-primary/10 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-primary text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
           Agregar tramo
@@ -273,7 +273,7 @@ export default function VolumePricingEditor({
           className={cn(
             "flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg text-white transition-colors",
             saved
-              ? "bg-[var(--accent-soft)]"
+              ? "bg-primary/10"
               : saving
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-primary hover:bg-[#1e4d38]",

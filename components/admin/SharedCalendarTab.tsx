@@ -12,8 +12,8 @@ type CalEvent = {
 };
 
 const TYPE_CONFIG: Record<EventType, { label: string; color: string }> = {
-  tarea: { label: "Tarea", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
-  entrega: { label: "Entrega", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
+  tarea: { label: "Tarea", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
+  entrega: { label: "Entrega", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
   pago: { label: "Pago", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)] border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" },
   reunion: { label: "Reunión", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] border-[var(--rule-base)] dark:border-[var(--rule-base)]" },
   recordatorio: { label: "Recordatorio", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] border-[var(--data-info-500)] dark:border-[var(--data-info-500)]" },

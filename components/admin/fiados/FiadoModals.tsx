@@ -334,7 +334,7 @@ export default function FiadoModals({
               <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 print:shadow-none print:border-0">
                 {/* Mejora 18 (ronda 3): Recibo imprimible mejorado */}
                 <div className="text-center print:mb-2">
-                  <div className="h-12 w-12 rounded-full bg-[var(--accent-soft)] flex items-center justify-center mx-auto mb-2 print:hidden">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2 print:hidden">
                     <CheckCircle2 className="h-6 w-6 text-[var(--data-success-500)]" />
                   </div>
                   <CardTitle className="text-base font-extrabold text-[var(--text-primary)] print:text-lg">RECIBO DE PAGO</CardTitle>
@@ -791,7 +791,7 @@ export default function FiadoModals({
                                           <a
                                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.descripcion! + " Pucallpa")}`}
                                             target="_blank" rel="noopener noreferrer"
-                                            className="p-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                                            className="p-1.5 rounded-lg bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
                                             title="Google Maps"
                                           >
                                             <Navigation className="h-3 w-3" />

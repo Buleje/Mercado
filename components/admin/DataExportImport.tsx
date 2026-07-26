@@ -141,7 +141,7 @@ export default function DataExportImport() {
       {/* ── Sección Exportar ── */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/15 flex items-center justify-center">
             <Download className="w-5 h-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           </div>
           <div className="flex-1 min-w-0">
@@ -154,7 +154,7 @@ export default function DataExportImport() {
               disabled={exporting}
               className={cn(
                 "mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white",
+                "bg-primary/10 hover:bg-primary/10 text-white",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
               )}
             >
@@ -168,7 +168,7 @@ export default function DataExportImport() {
       {/* ── Sección Importar ── */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
         <div className="flex items-start gap-4 mb-4">
-          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/15 flex items-center justify-center">
             <Upload className="w-5 h-5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           </div>
           <div>
@@ -189,8 +189,8 @@ export default function DataExportImport() {
             className={cn(
               "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
               dragOver
-                ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
-                : "border-[var(--rule-base)] dark:border-gray-600 hover:border-[var(--data-success-500)]/30 hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
+                ? "border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15"
+                : "border-[var(--rule-base)] dark:border-gray-600 hover:border-[var(--data-success-500)]/30 hover:bg-primary/10 dark:hover:bg-primary/15",
             )}
           >
             <FileJson className="w-8 h-8 mx-auto mb-2 text-[var(--text-tertiary)]" />
@@ -223,7 +223,7 @@ export default function DataExportImport() {
             <div className="rounded-lg bg-[var(--surface-canvas)]/50 border border-[var(--rule-base)] p-4 space-y-2">
               {(preview.products?.length ?? 0) > 0 && (
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="w-2 h-2 rounded-full bg-[var(--accent-soft)]" />
+                  <span className="w-2 h-2 rounded-full bg-primary/10" />
                   <span className="text-[var(--text-secondary)]">
                     <strong>{preview.products?.length}</strong> producto(s) para importar
                   </span>
@@ -231,7 +231,7 @@ export default function DataExportImport() {
               )}
               {(preview.customers?.length ?? 0) > 0 && (
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="w-2 h-2 rounded-full bg-[var(--accent-soft)]" />
+                  <span className="w-2 h-2 rounded-full bg-primary/10" />
                   <span className="text-[var(--text-secondary)]">
                     <strong>{preview.customers?.length}</strong> cliente(s) para importar
                   </span>
@@ -249,7 +249,7 @@ export default function DataExportImport() {
               disabled={importing || ((preview.products?.length ?? 0) === 0 && (preview.customers?.length ?? 0) === 0)}
               className={cn(
                 "w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white",
+                "bg-primary/10 hover:bg-primary/10 text-white",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
               )}
             >
@@ -261,7 +261,7 @@ export default function DataExportImport() {
 
         {/* Resultado */}
         {result && (
-          <div className="rounded-lg border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 space-y-2">
+          <div className="rounded-lg border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15 p-4 space-y-2">
             <div className="flex items-center gap-2 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
               <CheckCircle className="w-4 h-4" />
               Importación completada

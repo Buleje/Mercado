@@ -355,7 +355,7 @@ export default function ProductQRGenerator() {
                   className={cn(
                     "flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition disabled:opacity-50",
                     copied
-                      ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                      ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                       : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-400 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)]"
                   )}
                 >

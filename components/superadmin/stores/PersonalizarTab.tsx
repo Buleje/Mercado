@@ -179,7 +179,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                         className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors disabled:opacity-40 ${
                           active
                             ? "bg-[var(--accent)] text-white shadow-sm"
-                            : "text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                            : "text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-primary/10"
                         }`}
                       >
                         {t.label}
@@ -225,7 +225,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                       onClick={() =>
                         setEditCommission({ id: store.id, value: String(store.commission) })
                       }
-                      className="flex items-center gap-1 text-xs font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded-lg transition-colors"
+                      className="flex items-center gap-1 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 px-2 py-1 rounded-lg transition-colors"
                       title="Editar comisión"
                     >
                       <Percent className="w-3 h-3" />

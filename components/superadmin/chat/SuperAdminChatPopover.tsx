@@ -158,7 +158,7 @@ export default function SuperAdminChatPopover() {
               <Link
                 href="/superadmin/chat"
                 onClick={() => setOpen(false)}
-                className="inline-flex items-center gap-1 rounded-lg px-2 h-7 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                className="inline-flex items-center gap-1 rounded-lg px-2 h-7 text-xs font-bold text-[var(--accent)] hover:bg-primary/10"
               >
                 Ver todo <ExternalLink className="h-3 w-3" />
               </Link>

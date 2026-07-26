@@ -250,10 +250,10 @@ export default function LiquidityForecastTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Saldo inicial", value: fmt(openingBalance), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: Wallet },
-          { label: "Mínimo proyectado", value: fmt(stats.minCum), color: stats.minCum < 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]", bg: stats.minCum < 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ArrowDown },
-          { label: "Máximo proyectado", value: fmt(stats.maxCum), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ArrowUp },
-          { label: "Semanas en déficit", value: String(stats.deficitWeeks), color: stats.deficitWeeks > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]", bg: stats.deficitWeeks > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: AlertTriangle },
+          { label: "Saldo inicial", value: fmt(openingBalance), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: Wallet },
+          { label: "Mínimo proyectado", value: fmt(stats.minCum), color: stats.minCum < 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]", bg: stats.minCum < 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-primary/10 dark:bg-primary/15", icon: ArrowDown },
+          { label: "Máximo proyectado", value: fmt(stats.maxCum), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: ArrowUp },
+          { label: "Semanas en déficit", value: String(stats.deficitWeeks), color: stats.deficitWeeks > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]", bg: stats.deficitWeeks > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-primary/10 dark:bg-primary/15", icon: AlertTriangle },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
@@ -337,7 +337,7 @@ export default function LiquidityForecastTab() {
                 </span>
                 <div className="flex-1 flex flex-col gap-0.5 min-w-[100px]">
                   <div
-                    className="h-3 rounded-full bg-[var(--accent-soft)]"
+                    className="h-3 rounded-full bg-primary/10"
                     style={{ width: `${(w.inflows / barMax) * 100}%` }}
                   />
                   <div
@@ -360,7 +360,7 @@ export default function LiquidityForecastTab() {
         )}
         <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--text-tertiary)] mt-2">
           <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-[var(--accent-soft)]" /> Ingresos (proyectados)
+            <span className="w-3 h-3 rounded-full bg-primary/10" /> Ingresos (proyectados)
           </span>
           <span className="flex items-center gap-1">
             <span className="w-3 h-3 rounded-full bg-[var(--data-error-500)]" /> Egresos (proyectados)

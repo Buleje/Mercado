@@ -40,9 +40,9 @@ type RFQ = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const STATUS_MAP: Record<RFQStatus, { label: string; color: string; bg: string }> = {
-  abierta:     { label: "Abierta",     color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  abierta:     { label: "Abierta",     color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
   evaluando:   { label: "Evaluando",   color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  adjudicada:  { label: "Adjudicada",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  adjudicada:  { label: "Adjudicada",  color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   cerrada:     { label: "Cerrada",     color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]/30" },
   cancelada:   { label: "Cancelada",   color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
@@ -105,9 +105,9 @@ export default function RFQTab() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Abiertas", value: String(stats.open), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: Send },
+          { label: "Abiertas", value: String(stats.open), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: Send },
           { label: "Evaluando", value: String(stats.evaluating), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: Clock },
-          { label: "Adjudicadas/Cerradas", value: String(stats.awarded), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: Trophy },
+          { label: "Adjudicadas/Cerradas", value: String(stats.awarded), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: Trophy },
           { label: "Promedio cotizaciones", value: stats.avgQuotes, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]", icon: ArrowUpDown },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
@@ -180,7 +180,7 @@ export default function RFQTab() {
                   <thead><tr><th>Proveedor</th><th>Precio unit.</th><th>Total</th><th>Plazo</th><th>Calidad</th><th>Pago</th></tr></thead>
                   <tbody>
                     {sortedQuotes.map((q, i) => (
-                      <tr key={q.supplier} className={cn(i === 0 && sortBy === "price" && "bg-[var(--accent-soft)]", detail.winner === q.supplier && "ring-2 ring-primary ring-inset")}>
+                      <tr key={q.supplier} className={cn(i === 0 && sortBy === "price" && "bg-primary/10", detail.winner === q.supplier && "ring-2 ring-primary ring-inset")}>
                         <td className="font-bold text-[var(--text-primary)] flex items-center gap-1">{detail.winner === q.supplier && <Trophy className="h-3.5 w-3.5 text-[var(--data-warning-500)]" />}{q.supplier}</td>
                         <td className="font-bold text-[var(--text-primary)]">{fmt(q.unitPrice)}</td>
                         <td className="font-bold text-[var(--text-primary)]">{fmt(q.unitPrice * detail.quantity)}</td>

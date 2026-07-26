@@ -130,7 +130,7 @@ function SectionCard({
   return (
     <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
       <header className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-[var(--rule-soft)]">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
           <Icon className="h-4 w-4" strokeWidth={2.25} />
         </span>
         <div className="min-w-0 flex-1">
@@ -171,8 +171,8 @@ function CategoryCard({
       className={cn(
         "group relative w-full text-left rounded-xl overflow-hidden border-2 transition-colors flex items-center gap-3 p-2.5",
         selected
-          ? "border-[var(--accent)] bg-[var(--accent-soft)]/50"
-          : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/20",
+          ? "border-[var(--accent)] bg-primary/10/50"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-primary/10/20",
       )}
     >
       <div className="relative h-12 w-12 shrink-0 rounded-lg overflow-hidden bg-[var(--surface-sunken)]">
@@ -301,7 +301,7 @@ function CustomCategoryEditor({
               {subs.map((s) => (
                 <span
                   key={s.id}
-                  className="inline-flex items-center gap-1.5 h-9 pl-3 pr-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-sm font-bold"
+                  className="inline-flex items-center gap-1.5 h-9 pl-3 pr-1.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-bold"
                 >
                   {s.label}
                   <button
@@ -484,7 +484,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
         hint="Elige cómo aparece tu tienda en filtros del marketplace."
         rightSlot={
           value.category ? (
-            <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold">
+            <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold">
               <Check className="h-3 w-3" strokeWidth={3} />
               Elegida
             </span>
@@ -560,7 +560,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                   setEditing(null);
                   setShowEditor(true);
                 }}
-                className="h-[68px] rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 flex items-center justify-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+                className="h-[68px] rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--accent)] hover:bg-primary/10/30 flex items-center justify-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
               >
                 <Plus className="h-4 w-4" strokeWidth={2.5} />
                 <span className="text-sm font-extrabold">Crear propia</span>
@@ -596,7 +596,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
               className={cn(
                 "h-9 px-3.5 rounded-full border-2 text-xs font-extrabold transition-colors",
                 value.subcategory === null
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                  ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
               )}
             >
@@ -612,7 +612,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                   className={cn(
                     "h-9 px-3.5 rounded-full border-2 text-xs font-extrabold transition-colors",
                     active
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                      ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
                   )}
                 >
@@ -645,7 +645,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
         title="Zonas de cobertura"
         hint="Marca dónde hacés delivery."
         rightSlot={
-          <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold tabular-nums">
+          <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold tabular-nums">
             {value.coverageZones.length}
             <span className="text-[length:var(--ts-2xs)] uppercase tracking-wider opacity-75">marcadas</span>
           </span>
@@ -695,7 +695,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                       className={cn(
                         "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border-2 text-xs font-extrabold transition-colors",
                         active
-                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                          ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
                       )}
                     >
@@ -745,7 +745,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                 .map((z) => (
                   <span
                     key={z}
-                    className="inline-flex items-center gap-1 h-9 pl-3 pr-1 rounded-full border-2 border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold"
+                    className="inline-flex items-center gap-1 h-9 pl-3 pr-1 rounded-full border-2 border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold"
                   >
                     {z}
                     <button

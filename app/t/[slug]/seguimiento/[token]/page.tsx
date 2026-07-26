@@ -82,7 +82,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
       <header className="border-b border-gray-200 dark:border-[var(--rule-soft)] bg-[#060a0d]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-white">
-            <span className="inline-flex h-8 w-8 items-center justify-center bg-primary/20 border border-primary/30 text-primary font-extrabold text-sm">
+            <span className="inline-flex h-8 w-8 items-center justify-center bg-primary/20 border border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)] font-extrabold text-sm">
               B
             </span>
             <span className="text-sm font-extrabold tracking-tight">Buleje</span>

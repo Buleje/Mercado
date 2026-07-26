@@ -136,7 +136,7 @@ export default function CxPCalendar() {
               S/ {Number(data.resumen.venceEstaSemana).toFixed(2)}
             </p>
           </div>
-          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
+          <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <Calendar className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
               <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Vence este mes</p>
@@ -252,7 +252,7 @@ export default function CxPCalendar() {
               className={cn(
                 "flex items-center justify-between p-3 rounded-lg border",
                 entry.status === "pagado"
-                  ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                  ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                   : entry.daysOverdue > 0
                     ? "bg-[var(--data-error-50)] dark:bg-red-950/10 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30"
                     : "bg-gray-50 dark:bg-accent/50 border-[var(--rule-base)] dark:border-[var(--rule-base)]",
@@ -281,14 +281,14 @@ export default function CxPCalendar() {
                 {entry.status !== "pagado" && (
                   <button
                     onClick={() => markPaid(entry.id)}
-                    className="p-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+                    className="p-2 rounded-lg bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
                     title="Marcar como pagado"
                   >
                     <Check className="h-4 w-4" />
                   </button>
                 )}
                 {entry.status === "pagado" && (
-                  <span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2 py-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-full">
+                  <span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2 py-1 bg-primary/10 dark:bg-primary/15 rounded-full">
                     Pagado
                   </span>
                 )}

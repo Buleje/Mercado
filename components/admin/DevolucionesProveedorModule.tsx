@@ -50,7 +50,7 @@ const MOTIVOS = [
 const ESTADO_STYLES: Record<DevolucionEstado, string> = {
   PENDIENTE: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
   ENVIADA:   "bg-[var(--data-info-100)] text-[var(--data-info-500)]",
-  RESUELTA:  "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  RESUELTA:  "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
 };
 
 // Etiquetas legibles (reporte QA Compras: "ENVIADA" = esperando respuesta del
@@ -633,7 +633,7 @@ export default function DevolucionesProveedorModule() {
                       <button
                         onClick={() => avanzarEstado(dev.id)}
                         disabled={actionId === dev.id}
-                        className="text-xs px-2.5 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 flex items-center gap-1"
+                        className="text-xs px-2.5 py-1.5 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] rounded-lg hover:bg-primary/20 transition-colors font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 flex items-center gap-1"
                       >
                         {actionId === dev.id && <Loader2 className="h-3 w-3 animate-spin" />}
                         {ESTADO_LABEL_SIGUIENTE[dev.estado]}
@@ -718,7 +718,7 @@ export default function DevolucionesProveedorModule() {
             <span className="text-sm font-semibold text-[var(--text-primary)]">
               Reportes de Devoluciones
             </span>
-            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-2 py-0.5 rounded-full">
               {devoluciones.length} registros
             </span>
           </div>

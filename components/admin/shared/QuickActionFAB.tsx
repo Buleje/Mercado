@@ -132,9 +132,9 @@ export default function QuickActionFAB({ onNavigate }: QuickActionFABProps) {
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "w-14 h-14 rounded-full bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white",
+          "w-14 h-14 rounded-full bg-primary/10 hover:bg-primary/10 text-white",
           "flex items-center justify-center transition-all duration-[var(--dur-base)]",
-          open && "bg-[var(--accent-soft)]"
+          open && "bg-primary/10"
         )}
         aria-label={open ? "Cerrar acciones rapidas" : "Acciones rapidas"}
         title="Acciones rapidas"

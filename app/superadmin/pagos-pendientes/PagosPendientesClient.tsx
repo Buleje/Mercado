@@ -107,7 +107,7 @@ const METHOD_LABEL: Record<string, string> = {
 const STATUS_META = {
   pending: {
     label: "Pendiente",
-    pill: "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]",
+    pill: "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
     dot: "bg-[var(--accent)]",
   },
   approved: {
@@ -124,7 +124,7 @@ const STATUS_META = {
 
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
   good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
-  warn: "bg-[var(--accent-soft)] text-[var(--accent)]",
+  warn: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
   bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
 };
 
@@ -883,7 +883,7 @@ function StatPill({
     accent === "success"
       ? "border-emerald-300/50 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-950/30 dark:text-emerald-300"
       : accent === "warning"
-        ? "border-[var(--accent)]/60 bg-[var(--accent-soft)] text-[var(--accent)]"
+        ? "border-[var(--accent)]/60 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)]";
   return (
     <div className={`rounded-xl border-2 px-3.5 py-2 min-w-[100px] ${cls}`}>
@@ -968,7 +968,7 @@ function ProofCard({
               unoptimized
             />
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[var(--accent-soft)]/40 text-[var(--accent)]">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-primary/10/40 text-[var(--accent)]">
               <Gift className="h-8 w-8" strokeWidth={1.75} aria-hidden />
               <span className="text-xs font-bold uppercase tracking-wider">
                 Plan gratis · sin comprobante
@@ -1165,7 +1165,7 @@ function ProofModal({
                 </a>
               </>
             ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center bg-[var(--accent-soft)]/30">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center bg-primary/10/30">
                 <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent)] text-white">
                   <Gift className="h-8 w-8" strokeWidth={2} aria-hidden />
                 </span>

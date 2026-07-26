@@ -88,7 +88,7 @@ const TONO: Record<ToastTono, { icon: ReactNode; border: string; chip: string }>
   info: {
     icon: <Info className="h-4 w-4" strokeWidth={2.5} aria-hidden />,
     border: "border-[var(--accent)]/45",
-    chip: "bg-[var(--accent-soft)] text-[var(--accent)]",
+    chip: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
   },
 };
 

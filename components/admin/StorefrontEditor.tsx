@@ -84,7 +84,7 @@ const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
     label: "Hero principal",
     description: "Banner grande con foto y llamada a la acción",
     icon: <Layout className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    iconBg: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   },
   {
     key: "categories",
@@ -98,7 +98,7 @@ const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
     label: "Productos populares",
     description: "Grilla de productos más vendidos o destacados",
     icon: <ShoppingBag className="h-4 w-4" />,
-    iconBg: "bg-primary/10 text-primary dark:bg-primary/20",
+    iconBg: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/20",
   },
   {
     key: "deals",
@@ -119,7 +119,7 @@ const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
     label: "Recetas",
     description: "Ideas de recetas peruanas con ingredientes de la bodega",
     icon: <BookOpen className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    iconBg: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   },
   {
     key: "testimonials",
@@ -201,7 +201,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Más Vendidos de la Semana",
     description: "Los productos que más se venden esta semana",
     icon: <TrendingUp className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    iconBg: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
     defaultEnabled: true,
   },
   {
@@ -209,7 +209,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Productos Destacados",
     description: "Carrusel de productos que quieres resaltar",
     icon: <ShoppingBag className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    iconBg: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
     defaultEnabled: true,
   },
   {
@@ -271,7 +271,7 @@ const NAV_ITEM_DEFAULTS: Omit<NavItem, "visible">[] = [
     label: "Tienda",
     description: "Catálogo completo de productos",
     icon: <Store className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    iconBg: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   },
   {
     id: "recetas",
@@ -588,7 +588,7 @@ function SectionEditorModal({
                           "px-3 h-8 rounded-full text-xs font-semibold border-2 transition-all",
                           title === s
                             ? "bg-primary text-white border-primary"
-                            : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
+                            : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/40 hover:bg-primary/5"
                         )}
                       >
                         {s}
@@ -604,7 +604,7 @@ function SectionEditorModal({
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-bold text-[var(--text-primary)]">Productos en esta sección</h3>
-                  <span className="inline-flex items-center justify-center h-6 px-2 rounded-md bg-primary/10 text-primary text-xs font-bold tabular-nums">
+                  <span className="inline-flex items-center justify-center h-6 px-2 rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold tabular-nums">
                     {assignedProducts.length}
                   </span>
                 </div>
@@ -627,7 +627,7 @@ function SectionEditorModal({
                 <div className="space-y-2">
                   {assignedProducts.map((p, idx) => (
                     <div key={p.id} className="group flex items-center gap-3 p-3 rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 transition-all">
-                      <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-lg bg-primary/10 text-primary text-xs font-bold tabular-nums shrink-0">
+                      <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold tabular-nums shrink-0">
                         {idx + 1}
                       </span>
                       <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
@@ -792,7 +792,7 @@ function SectionEditorModal({
                           )}
                         </div>
                       </div>
-                      <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
+                      <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
                         <Plus className="h-4 w-4" />
                       </div>
                     </button>
@@ -1112,7 +1112,7 @@ function SortableRow({
           className={cn(
             "inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-lg text-xs font-bold tabular-nums shrink-0 border",
             section.enabled
-              ? "bg-primary/10 text-primary border-primary/20"
+              ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-primary/20"
               : "bg-gray-100 dark:bg-gray-700 text-[var(--text-tertiary)] border-transparent"
           )}
           aria-label={`Posición ${position}`}
@@ -1152,7 +1152,7 @@ function SortableRow({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onEdit(); }}
-            className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
+            className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors shrink-0"
             aria-label={`Editar ${section.label}`}
           >
             <Pencil className="h-4 w-4" />
@@ -1336,7 +1336,7 @@ export default function StorefrontEditor() {
       {/* Header — solo contador y CTAs (titulo lo da el wrapper de StoreCustomizer) */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
-          <span className="inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-xl bg-primary/10 text-primary font-bold text-base">
+          <span className="inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold text-base">
             {enabledCount}
             <span className="text-muted/70 mx-1">/</span>
             <span className="text-muted">{totalCount}</span>
@@ -1364,7 +1364,7 @@ export default function StorefrontEditor() {
             className={cn(
               "flex items-center gap-1.5 px-4 h-10 rounded-xl text-sm font-bold text-white transition-all",
               saved
-                ? "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]"
+                ? "bg-primary/10 hover:bg-primary/10"
                 : "bg-primary hover:bg-primary/90 active:scale-[0.98] shadow-md",
               saving && "opacity-70 cursor-not-allowed"
             )}

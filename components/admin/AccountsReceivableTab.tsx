@@ -42,8 +42,8 @@ type PaymentRecord = {
 const STATUS_LABEL: Record<ARStatus, string> = { pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado", vencido: "Vencido" };
 const STATUS_COLOR: Record<ARStatus, string> = {
   pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
-  parcial:   "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-  pagado:    "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  parcial:   "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
+  pagado:    "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   vencido:   "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
 };
 const STATUS_VARIANT: Record<ARStatus, BadgeVariant> = {
@@ -78,7 +78,7 @@ function _getRiskLevel(balance: number): RiskLevel {
   return "bajo";
 }
 const _RISK_CONFIG: Record<RiskLevel, { label: string; color: string; bg: string; dot: string }> = {
-  bajo:  { label: "Bajo",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", dot: "bg-[var(--accent-soft)]" },
+  bajo:  { label: "Bajo",  color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", dot: "bg-primary/10" },
   medio: { label: "Medio", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",    dot: "bg-[var(--data-warning-500)]" },
   alto:  { label: "Alto",  color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-50)] dark:bg-red-950/20",        dot: "bg-[var(--data-error-500)]" },
 };
@@ -288,10 +288,10 @@ export default function AccountsReceivableTab() {
       {/* KPI Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
-          { label: "Total por cobrar", value: fmt(totalPending), icon: CreditCard, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Total por cobrar", value: fmt(totalPending), icon: CreditCard, color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Cuentas vencidas", value: fmt(totalOverdue), icon: AlertTriangle, color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
           { label: "Clientes en mora", value: String(countOverdue), icon: Clock, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Cuentas pagadas", value: String(records.filter(r => r.status === "pagado").length), icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Cuentas pagadas", value: String(records.filter(r => r.status === "pagado").length), icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <Icon className={cn("h-5 w-5 mb-2", color)} />
@@ -382,7 +382,7 @@ export default function AccountsReceivableTab() {
                   {ar.paidAmount > 0 && (
                     <div className="mt-2">
                       <div className="w-full h-1.5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
-                        <div className="h-full bg-[var(--accent-soft)] rounded-full transition-all" style={{ width: `${pctPaid}%` }} />
+                        <div className="h-full bg-primary/10 rounded-full transition-all" style={{ width: `${pctPaid}%` }} />
                       </div>
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{pctPaid.toFixed(0)}% pagado — {fmt(ar.paidAmount)} de {fmt(ar.totalAmount)}</p>
                     </div>
@@ -427,7 +427,7 @@ export default function AccountsReceivableTab() {
                         {["efectivo","transferencia","yape","plin","otro"].map(m => <option key={m} value={m} className="capitalize">{m.charAt(0).toUpperCase() + m.slice(1)}</option>)}
                       </select>
                     </Field>
-                    <button onClick={handleRegisterPayment} className="w-full py-2.5 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-bold hover:bg-[var(--accent-soft)] transition-colors">Registrar pago</button>
+                    <button onClick={handleRegisterPayment} className="w-full py-2.5 rounded-lg bg-primary/10 text-white text-sm font-bold hover:bg-primary/10 transition-colors">Registrar pago</button>
                   </div>
                 )}
 

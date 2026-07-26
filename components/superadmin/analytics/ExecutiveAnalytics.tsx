@@ -92,7 +92,7 @@ function InsightBadge({ tone, text }: { tone: "positive" | "negative" | "neutral
   const styles = {
     positive: "bg-emerald-50 text-[var(--data-success-700)] border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40",
     negative: "bg-rose-50 text-[var(--data-error-500)] border-rose-200 dark:bg-rose-950/30 dark:text-[var(--data-error-500)] dark:border-rose-800/40",
-    neutral: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/30",
+    neutral: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-[var(--accent)]/30",
   };
   return (
     <div className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-bold ${styles[tone]}`}>
@@ -377,7 +377,7 @@ export default function ExecutiveAnalytics({
                 con teléfono identificado
               </p>
             </div>
-            <div className="rounded-xl bg-[var(--accent-soft)] p-4">
+            <div className="rounded-xl bg-primary/10 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Repeat className="h-4 w-4 text-[var(--accent)]" />
                 <span className="text-sm font-bold uppercase tracking-wider text-[var(--accent)]">

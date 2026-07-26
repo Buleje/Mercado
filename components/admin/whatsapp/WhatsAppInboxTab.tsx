@@ -299,7 +299,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
             className={cn(
               "flex h-9 w-9 items-center justify-center rounded-full border-2 transition",
               soundOn
-                ? "border-primary/40 bg-primary/10 text-primary"
+                ? "border-primary/40 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-slate-200 text-slate-400 dark:border-slate-700",
             )}
             title={soundOn ? "Sonido de mensaje nuevo: activado" : "Sonido de mensaje nuevo: apagado"}
@@ -449,7 +449,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
             className={cn(
               "h-9 rounded-full border-2 px-3.5 text-sm font-bold transition",
               numberFilter === null
-                ? "border-primary bg-primary/10 text-primary"
+                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-slate-200 text-slate-600 hover:border-primary/50 dark:border-slate-700 dark:text-slate-300",
             )}
           >
@@ -463,7 +463,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
               className={cn(
                 "h-9 rounded-full border-2 px-3.5 text-sm font-bold transition",
                 numberFilter === n.phoneNumberId
-                  ? "border-primary bg-primary/10 text-primary"
+                  ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-slate-200 text-slate-600 hover:border-primary/50 dark:border-slate-700 dark:text-slate-300",
                 !n.isActive && "opacity-50",
               )}
@@ -530,7 +530,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                       {prettyPhone(selected.customerPhone)}
                     </a>
                     {numbers.length > 1 && (
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-primary">
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
                         vía {numberLabel(selected.phoneNumberId)}
                       </span>
                     )}
@@ -541,7 +541,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                   type="button"
                   onClick={() => void fetchSummary(selected.customerPhone)}
                   disabled={loadingSummary}
-                  className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-primary/40 bg-primary/5 text-primary transition hover:bg-primary/10 disabled:opacity-40"
+                  className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-primary/40 bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)] transition hover:bg-primary/10 disabled:opacity-40"
                   title="Resumen IA del hilo (qué pidió, montos, qué falta)"
                   aria-label="Resumir conversación"
                 >
@@ -583,7 +583,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                       className={cn(
                         "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
                         archived
-                          ? "border-primary bg-primary/10 text-primary"
+                          ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
                       )}
                       title={archived ? "Volver a la bandeja principal" : "Archivar conversación (sigue recibiendo mensajes)"}

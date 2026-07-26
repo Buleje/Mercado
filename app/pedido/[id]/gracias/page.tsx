@@ -218,7 +218,7 @@ export default function GraciasPage() {
             </span>
           </div>
 
-          <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-[var(--accent-soft)] px-4 py-3">
+          <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-primary/10 px-4 py-3">
             <Clock className="h-4 w-4 shrink-0 text-[var(--accent-dark)] dark:text-[var(--accent)]" strokeWidth={2} aria-hidden />
             <p className="text-[length:var(--ts-sm)] text-[var(--text-secondary)]">
               Tiempo estimado:{" "}
@@ -253,7 +253,7 @@ export default function GraciasPage() {
         {/* ── Extras: instalar app + referidos ──────────────────────── */}
         <div className="space-y-3">
           <div className="flex items-start gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4 sm:p-5">
-            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-muted)] text-[var(--accent-dark)] dark:text-[var(--accent)]">
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <Smartphone className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
             </span>
             <div className="min-w-0">
@@ -269,7 +269,7 @@ export default function GraciasPage() {
 
           <Link
             href="/marketplace/mi-cuenta"
-            className="group flex items-start gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--accent)_25%,transparent)] bg-[var(--accent-soft)] p-4 sm:p-5 transition-colors hover:border-[var(--accent)]"
+            className="group flex items-start gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--accent)_25%,transparent)] bg-primary/10 p-4 sm:p-5 transition-colors hover:border-[var(--accent)]"
           >
             <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white">
               <Gift className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />

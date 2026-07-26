@@ -49,8 +49,8 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
   }, []);
 
   const healthColor = healthScore !== null
-    ? healthScore > 70 ? "bg-[var(--accent-soft)]" : healthScore > 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
-    : "bg-[var(--accent-soft)]";
+    ? healthScore > 70 ? "bg-primary/10" : healthScore > 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
+    : "bg-primary/10";
 
   return (
     <>

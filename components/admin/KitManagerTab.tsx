@@ -103,7 +103,7 @@ export default function KitManagerTab() {
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button onClick={() => setDetail(kit)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
-                  <button onClick={() => toggleActive(kit.id)} className={cn("p-1.5 rounded-lg text-xs font-bold", kit.active ? "text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent")}>
+                  <button onClick={() => toggleActive(kit.id)} className={cn("p-1.5 rounded-lg text-xs font-bold", kit.active ? "text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent")}>
                     {kit.active ? "ON" : "OFF"}
                   </button>
                   <button onClick={() => deleteKit(kit.id)} className="p-1.5 rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20"><Trash2 className="h-4 w-4" /></button>

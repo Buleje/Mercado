@@ -65,7 +65,7 @@ export default function PaymentMethodCard({
         "group relative text-left w-full rounded-2xl p-3.5 sm:p-5 transition-colors duration-200",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2",
         selected
-          ? "border-2 border-[var(--accent)] bg-[var(--accent-soft)]"
+          ? "border-2 border-[var(--accent)] bg-primary/10"
           : "border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40",
       )}
     >
@@ -97,7 +97,7 @@ export default function PaymentMethodCard({
                 ? "bg-[var(--accent-600,var(--accent))] text-white"
                 : brandColor
                 ? ""
-                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)]",
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-primary/10",
             )}
             style={
               brandColor && !selected

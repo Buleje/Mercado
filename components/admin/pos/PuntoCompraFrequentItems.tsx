@@ -101,7 +101,7 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
           )}
         >
           {/* Frequency badge */}
-          <span className="shrink-0 h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-[length:var(--ts-2xs)] font-bold">
+          <span className="shrink-0 h-7 w-7 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold">
             {item.frequency}x
           </span>
 

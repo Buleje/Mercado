@@ -518,7 +518,7 @@ export default function CategoryCatalog({
               <Link
                 key={cat.id}
                 href={`/tienda/categoria/${cat.id}`}
-                className="shrink-0 flex items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-full px-4 py-2 text-sm font-semibold text-[var(--text-primary)] text-[var(--text-secondary)] hover:border-primary hover:text-primary hover:bg-primary/5 active:scale-95 transition-all duration-[var(--dur-fast)] whitespace-nowrap shadow-[var(--shadow-sm)]"
+                className="shrink-0 flex items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-full px-4 py-2 text-sm font-semibold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] text-[var(--text-secondary)] hover:border-primary hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 active:scale-95 transition-all duration-[var(--dur-fast)] whitespace-nowrap shadow-[var(--shadow-sm)]"
               >
                 <Icon size={18} className="text-[var(--text-secondary)] hover:text-[var(--accent)]" />
                 {cat.label}
@@ -568,7 +568,7 @@ export default function CategoryCatalog({
               className={cn(
                 "flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-semibold transition-all shadow-[var(--shadow-sm)]",
                 showPriceFilter
-                  ? "border-primary bg-primary/10 text-primary"
+                  ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-primary"
               )}
             >
@@ -796,7 +796,7 @@ export default function CategoryCatalog({
                           "h-8 w-8 rounded-full text-sm font-bold transition-all",
                           pg === page
                             ? "bg-primary text-white shadow-[var(--shadow-md)] shadow-primary/25"
-                            : "text-gray-500 hover:bg-primary/10 hover:text-primary"
+                            : "text-gray-500 hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)]"
                         )}
                       >
                         {pg}

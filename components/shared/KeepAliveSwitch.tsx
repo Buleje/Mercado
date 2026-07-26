@@ -76,7 +76,7 @@ export function KeepAliveSwitch() {
       className={cn(
         "overflow-hidden rounded-2xl border-2 transition-colors",
         on
-          ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+          ? "border-[var(--accent)] bg-primary/10"
           : "border-[var(--rule-base)] bg-[var(--surface-raised)]",
       )}
     >

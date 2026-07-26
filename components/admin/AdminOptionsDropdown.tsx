@@ -126,7 +126,7 @@ export default function AdminOptionsDropdown({
           // (mismo lenguaje que hamburguesa + lupa). En md+ vuelve al pill
           // compacto con "Opciones" + chevron.
           "inline-flex items-center justify-center md:justify-start h-11 w-11 md:w-auto md:h-8 md:px-2.5 md:gap-1.5 rounded-xl md:rounded-lg text-xs font-semibold transition-colors shrink-0",
-          "max-md:bg-[var(--accent-soft)] max-md:text-[var(--accent)] max-md:ring-1 max-md:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
+          "max-md:bg-primary/10 max-md:text-[var(--accent)] max-md:ring-1 max-md:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
           "md:border md:text-[var(--text-secondary)] md:border-[var(--rule-base)]",
           "md:dark:text-[var(--text-secondary)] md:dark:border-[var(--rule-base)]",
           "hover:bg-gray-100 md:dark:hover:bg-[var(--surface-sunken)] md:hover:text-primary",

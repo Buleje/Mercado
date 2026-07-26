@@ -102,7 +102,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
       <div className="flex h-full max-h-[90vh] flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Droplets className="h-5 w-5" strokeWidth={1.75} /></span>
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Droplets className="h-5 w-5" strokeWidth={1.75} /></span>
             <div><CardTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">Beneficio del lote</CardTitle><p className="text-xs text-[var(--text-tertiary)]">Fermentación + secado · estado y merma al vuelo</p></div>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-lg p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"><X className="h-4 w-4" /></button>
@@ -114,7 +114,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
               {error && <div className="rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">{error}</div>}
 
               {/* Picker de lote */}
-              <div className="space-y-2 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-3">
+              <div className="space-y-2 rounded-xl border border-[var(--accent)]/30 bg-primary/10/40 p-3">
                 <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]"><Leaf className="h-3.5 w-3.5" />Lote a beneficiar</span>
                 {loteCode && <div className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Check className="h-4 w-4 text-[var(--accent)]" /> {loteCode}</div>}
                 <div className="relative"><Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" /><input value={lq} onChange={(e) => setLq(e.target.value)} placeholder="Buscar lote…" className={`${I} h-9 pl-8`} /></div>
@@ -122,7 +122,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
                   {loadingL ? <div className="flex items-center gap-2 px-3 py-3 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
                     : filtered.length === 0 ? <div className="px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">Sin lotes pendientes de beneficio. Registrá un acopio primero (o escribí el código abajo).</div>
                     : filtered.map((l) => (
-                      <button key={l.id} type="button" onClick={() => pick(l)} className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-[var(--accent-soft)]/60 ${loteId === l.id ? "bg-[var(--accent-soft)]/60" : ""}`}>
+                      <button key={l.id} type="button" onClick={() => pick(l)} className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-primary/10/60 ${loteId === l.id ? "bg-primary/10/60" : ""}`}>
                         <span className="truncate"><span className="font-mono text-xs font-bold text-[var(--text-primary)]">{l.loteCode}</span> <span className="text-[var(--text-secondary)]">{l.variedad ?? ""}</span></span>
                         <span className="shrink-0 text-xs text-[var(--text-tertiary)]">{Number(l.pesoKg).toFixed(0)} kg {l.tipoGrano === "humedo" ? "húmedo" : "seco"}</span>
                       </button>

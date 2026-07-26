@@ -97,7 +97,7 @@ export default memo(function PuntoCompraProductCard({
         ) : (
           <div
             aria-hidden="true"
-            className="h-20 w-20 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary font-bold text-xl"
+            className="h-20 w-20 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold text-xl"
           >
             {displayName.charAt(0).toUpperCase()}
           </div>

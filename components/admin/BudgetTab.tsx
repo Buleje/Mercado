@@ -43,7 +43,7 @@ function budgetStatus(planned: number, executed: number, committed: number): Bud
 }
 
 const STATUS_META: Record<BudgetStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle }> = {
-  "bajo-control": { label: "Bajo control", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+  "bajo-control": { label: "Bajo control", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: CheckCircle },
   "en-riesgo":    { label: "En riesgo",    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",    bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",    icon: AlertTriangle },
   excedido:       { label: "Excedido",      color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",         bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",        icon: AlertTriangle },
 };
@@ -136,9 +136,9 @@ export default function BudgetTab() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: "Total planificado", value: fmt(stats.totalPlanned), color: "text-[var(--text-primary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-alt)] dark:bg-surface/50" },
-          { label: "Ejecutado", value: fmt(stats.totalExecuted), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Ejecutado", value: fmt(stats.totalExecuted), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Comprometido", value: fmt(stats.totalCommitted), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-          { label: "Disponible", value: fmt(stats.available), color: stats.available >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: stats.available >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+          { label: "Disponible", value: fmt(stats.available), color: stats.available >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: stats.available >= 0 ? "bg-primary/10 dark:bg-primary/15" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
           { label: "% Ejecución", value: fmtPct(stats.executionPct), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
@@ -251,13 +251,13 @@ export default function BudgetTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                       <div className="flex items-center gap-1.5 justify-center">
                         <div className="w-16 h-2 bg-[var(--rule-soft)] dark:bg-surface rounded-full overflow-hidden">
-                          <div className={cn("h-full rounded-full transition-all", l.executionPct > 100 ? "bg-[var(--data-error-500)]" : l.executionPct > 85 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} style={{ width: `${Math.min(l.executionPct, 100)}%` }} />
+                          <div className={cn("h-full rounded-full transition-all", l.executionPct > 100 ? "bg-[var(--data-error-500)]" : l.executionPct > 85 ? "bg-[var(--data-warning-500)]" : "bg-primary/10")} style={{ width: `${Math.min(l.executionPct, 100)}%` }} />
                         </div>
                         <span className="text-xs font-bold text-[var(--text-secondary)]">{fmtPct(l.executionPct)}</span>
                       </div>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]">
+                      <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15">
                         <Eye className="h-3.5 w-3.5" />
                       </button>
                     </td>
@@ -296,7 +296,7 @@ export default function BudgetTab() {
               <div key={dept} className="flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted w-28 shrink-0">{dept}</span>
                 <div className="flex-1 h-5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden relative">
-                  <div className={cn("h-full rounded-full transition-all", pct > 100 ? "bg-[var(--data-error-500)]" : pct > 85 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} style={{ width: `${Math.min(pct, 100)}%` }} />
+                  <div className={cn("h-full rounded-full transition-all", pct > 100 ? "bg-[var(--data-error-500)]" : pct > 85 ? "bg-[var(--data-warning-500)]" : "bg-primary/10")} style={{ width: `${Math.min(pct, 100)}%` }} />
                   <span className="absolute inset-0 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmtPct(pct)}</span>
                 </div>
                 <span className="text-xs font-semibold text-[var(--text-secondary)] w-28 text-right">{fmt(executed)} / {fmt(planned)}</span>

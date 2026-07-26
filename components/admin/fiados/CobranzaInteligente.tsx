@@ -61,7 +61,7 @@ const NIVEL_META: Record<
     descripcion: "WhatsApp amable",
     colorBadge:
       "bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success-500)]",
-    colorRow: "hover:bg-[var(--accent-soft)]/50",
+    colorRow: "hover:bg-primary/10/50",
     colorBtn:
       "bg-[var(--data-success-500)] hover:opacity-90 text-white",
     icon: MessageCircle,
@@ -406,7 +406,7 @@ export default function CobranzaInteligente() {
         </div>
         <button
           onClick={fetchFiados}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-primary border border-primary/30 hover:bg-primary/10 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary/30 hover:bg-primary/10 transition-colors"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Actualizar
@@ -420,14 +420,14 @@ export default function CobranzaInteligente() {
           value={`S/${totalPorCobrar.toFixed(2)}`}
           sub={`${fiados.length} clientes pendientes`}
           icon={DollarSign}
-          colorClass="bg-primary/10 text-primary"
+          colorClass="bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         />
         <KpiCard
           label="En nivel 1"
           value={String(enNivel1)}
           sub="Recordatorio amable"
           icon={CheckCircle2}
-          colorClass="bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+          colorClass="bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
         />
         <KpiCard
           label="Nivel 2 o más"
@@ -441,7 +441,7 @@ export default function CobranzaInteligente() {
           value={String(fiados.filter((f) => f.diasVencido === 0).length)}
           sub="Al día o por vencer"
           icon={Users}
-          colorClass="bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+          colorClass="bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
         />
       </div>
 
@@ -690,7 +690,7 @@ export default function CobranzaInteligente() {
                           {f.nivel >= 2 && (
                             <button
                               onClick={() => setModalDescuento(f)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 transition-colors"
                               title="Ofrecer descuento por pronto pago"
                             >
                               <Gift className="h-3 w-3" />

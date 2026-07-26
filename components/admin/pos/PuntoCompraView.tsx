@@ -965,7 +965,7 @@ export default function PuntoCompraView() {
         <button
           type="button"
           onClick={() => setShowInvoiceScanner(true)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--data-success-500)] transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-[var(--text-secondary)] hover:bg-primary/10 hover:text-[var(--data-success-500)] transition-colors"
           title="Escanear factura con cámara"
         >
           <Camera className="h-3.5 w-3.5 shrink-0" /> Factura
@@ -1645,7 +1645,7 @@ export default function PuntoCompraView() {
                     {/* Miniatura */}
                     <div
                       aria-hidden="true"
-                      className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold text-sm overflow-hidden relative"
+                      className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold text-sm overflow-hidden relative"
                     >
                       <span className="absolute inset-0 flex items-center justify-center">
                         {(item.product.name || "?")[0].toUpperCase()}
@@ -1678,7 +1678,7 @@ export default function PuntoCompraView() {
                             "text-xs font-bold px-1 rounded",
                             (item.product.costPrice ?? item.product.price) > priceHistory[item.product.id]
                               ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
-                              : "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                              : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                           )}>
                             {(item.product.costPrice ?? item.product.price) > priceHistory[item.product.id] ? "↑" : "↓"}
                             {Math.abs(((item.product.costPrice ?? item.product.price) - priceHistory[item.product.id]) / priceHistory[item.product.id] * 100).toFixed(0)}%
@@ -1866,7 +1866,7 @@ export default function PuntoCompraView() {
                 </div>
 
                 {lastOC && (
-                  <div className="bg-[var(--accent-soft)] rounded-xl p-3 space-y-2">
+                  <div className="bg-primary/10 rounded-xl p-3 space-y-2">
                     <p className="text-xs font-bold text-[var(--data-success-500)]">✓ OC Creada</p>
                     <p className="text-xs text-[var(--data-success-500)]">ID: {lastOC.id}</p>
                     <p className="text-xs text-[var(--data-success-500)]">{lastOC.items} productos — S/{Number(lastOC.total).toFixed(2)}</p>
@@ -1877,7 +1877,7 @@ export default function PuntoCompraView() {
                         const event = new CustomEvent("compras-navigate-tab", { detail: "ordenes-compra" });
                         window.dispatchEvent(event);
                       }}
-                      className="w-full text-center text-xs font-semibold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] rounded-lg py-1.5 transition-colors"
+                      className="w-full text-center text-xs font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 rounded-lg py-1.5 transition-colors"
                     >
                       Ver en Órdenes →
                     </button>
@@ -2167,7 +2167,7 @@ export default function PuntoCompraView() {
                     type="text"
                     value={newSupplier.razonSocial}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, razonSocial: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--accent-soft)]/30 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-primary/10/30 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
               )}
@@ -2182,7 +2182,7 @@ export default function PuntoCompraView() {
                     type="text"
                     value={newSupplier.address}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, address: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--accent-soft)]/30 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-primary/10/30 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
               )}

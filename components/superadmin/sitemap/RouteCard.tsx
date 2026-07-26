@@ -69,7 +69,7 @@ export default function RouteCard({ route }: Props) {
       <div className="flex items-start gap-3 mb-2">
         <span
           aria-hidden="true"
-          className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:text-[var(--accent)] group-hover:bg-[var(--accent-soft)] transition-colors"
+          className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:text-[var(--accent)] group-hover:bg-primary/10 transition-colors"
         >
           {iconEl}
         </span>

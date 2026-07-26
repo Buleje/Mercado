@@ -215,7 +215,7 @@ export default function SavedFiltersTab() {
                 <Filter className="h-4 w-4 text-primary shrink-0" />
                 <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">{f.name}</CardTitle>
               </div>
-              {f.isDefault && <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">Default</span>}
+              {f.isDefault && <span className="px-2 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold shrink-0">Default</span>}
             </div>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3 line-clamp-2">{f.description}</p>
 
@@ -236,10 +236,10 @@ export default function SavedFiltersTab() {
                 <span>{f.usageCount} usos</span>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={() => handleToggleDefault(f.id)} className={cn("p-1.5 rounded-lg transition-colors", f.isDefault ? "text-primary hover:bg-primary/10" : "text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent")} title={f.isDefault ? "Quitar default" : "Marcar default"}>
+                <button onClick={() => handleToggleDefault(f.id)} className={cn("p-1.5 rounded-lg transition-colors", f.isDefault ? "text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10" : "text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent")} title={f.isDefault ? "Quitar default" : "Marcar default"}>
                   <Play className="h-3.5 w-3.5" />
                 </button>
-                <button onClick={() => handleCopy(f)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
+                <button onClick={() => handleCopy(f)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors">
                   {copiedId === f.id ? <Check className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> : <Copy className="h-3.5 w-3.5" />}
                 </button>
                 <button onClick={() => handleDelete(f.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">

@@ -526,7 +526,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
               })}
             </div>
             {seguirId && (
-              <button type="button" onClick={() => setSeguirId(null)} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent)]/12 px-3 text-xs font-bold text-[var(--accent)]">
+              <button type="button" onClick={() => setSeguirId(null)} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 px-3 text-xs font-bold text-[var(--accent)]">
                 <XIcon className="h-3.5 w-3.5" /> Dejar de seguir la GTF
               </button>
             )}
@@ -653,7 +653,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
                 title={hayAgrupacion ? "Ver línea por línea" : "Agrupar por especie, producto y destino"}
                 className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition ${
                   hayAgrupacion
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent)]/12 text-[var(--accent)]"
+                    ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 text-[var(--accent)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
                 }`}
               >
@@ -666,7 +666,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
               )}
 
               {foco !== "todos" && (
-                <button type="button" onClick={() => setFoco("todos")} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent)]/12 px-3 text-xs font-bold text-[var(--accent)]">
+                <button type="button" onClick={() => setFoco("todos")} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 px-3 text-xs font-bold text-[var(--accent)]">
                   <Maximize2 className="h-3.5 w-3.5" /> Ver toda la cadena
                 </button>
               )}
@@ -691,7 +691,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
 
             {/* Barra del nodo fijado: su balance + la ficha completa (drill-in). */}
             {pinnedNode && (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent)]/12 px-3 py-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 px-3 py-2">
                 <div className="min-w-0 space-y-1">
                   <div className="text-sm">
                     <span className="font-bold text-[var(--text-primary)]">{pinnedNode.top}</span>
@@ -702,7 +702,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
                 <div className="flex shrink-0 items-center gap-2">
                   {/* Sólo para ingresos: aislar SU cadena aguas abajo. */}
                   {pinnedNode.kind === "ingreso" && !esGrupo(pinnedNode.id) && (
-                    <button type="button" onClick={() => setSeguirId(pinnedNode.id)} title="Ver a dónde terminó esta guía, paso por paso" className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent)]/15">
+                    <button type="button" onClick={() => setSeguirId(pinnedNode.id)} title="Ver a dónde terminó esta guía, paso por paso" className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--accent)] hover:bg-primary/10 dark:hover:bg-[var(--accent)]/15">
                       <Route className="h-3.5 w-3.5" /> Seguir esta GTF
                     </button>
                   )}

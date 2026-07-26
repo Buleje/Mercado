@@ -277,7 +277,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
       {/* Estado vacio */}
       {sections.length === 0 && (
         <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
-          <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
+          <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             <Layers className="h-7 w-7" strokeWidth={1.75} />
           </span>
           <h3 className="text-lg font-extrabold text-[var(--text-primary)] mb-1">
@@ -329,7 +329,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
                   >
                     <GripVertical className="h-4 w-4" aria-hidden />
                   </span>
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-xl shrink-0">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-xl shrink-0">
                     {TYPE_EMOJI[section.type]}
                   </span>
                   <div className="flex-1 min-w-0">
@@ -845,7 +845,7 @@ function SectionEditor({
               onClick={() => onChange({ imagePosition: "left" })}
               className={`flex-1 rounded-lg border-2 px-3 h-10 text-xs font-extrabold transition-all ${
                 data.imagePosition === "left"
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                  ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)]"
               }`}
             >
@@ -856,7 +856,7 @@ function SectionEditor({
               onClick={() => onChange({ imagePosition: "right" })}
               className={`flex-1 rounded-lg border-2 px-3 h-10 text-xs font-extrabold transition-all ${
                 data.imagePosition === "right"
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                  ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)]"
               }`}
             >
@@ -878,7 +878,7 @@ function SectionEditor({
                 onClick={() => onChange({ background: b.id })}
                 className={`flex-1 rounded-lg border-2 px-3 h-10 text-xs font-extrabold transition-all ${
                   (data.background ?? "light") === b.id
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                    ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] text-[var(--text-secondary)]"
                 }`}
               >

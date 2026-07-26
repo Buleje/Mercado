@@ -303,7 +303,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
               </p>
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Recibidos</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{itemsRecibidos.length}</p>
                 </div>
@@ -311,7 +311,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                   <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase">Con diferencia</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{itemsConDiferencia.length}</p>
                 </div>
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Total factura</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/ {totalFactura.toFixed(2)}</p>
                 </div>
@@ -372,7 +372,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
             <button
               onClick={handleConfirm}
               disabled={saving || itemsRecibidos.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/10 disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Confirmar recepción

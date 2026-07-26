@@ -282,7 +282,7 @@ export default function WhatsAppInbox() {
                 className={cn(
                   "flex w-full items-center gap-3 border-b border-[var(--rule-soft)] px-4 py-3 text-left transition hover:bg-gray-50 dark:border-[var(--rule-base)] dark:hover:bg-gray-800",
                   selectedPhone === conv.phone &&
-                    "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+                    "bg-primary/10 dark:bg-primary/15",
                 )}
               >
                 {/* Avatar */}

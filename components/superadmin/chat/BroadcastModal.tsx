@@ -123,7 +123,7 @@ export function BroadcastModal({ onClose, onSent }: { onClose: () => void; onSen
               </select>
             </label>
           </div>
-          <div className="flex items-center gap-2 rounded-xl bg-[var(--accent-soft)] px-3 py-2 text-sm font-bold text-[var(--accent)]">
+          <div className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-sm font-bold text-[var(--accent)]">
             <Users className="h-4 w-4" />
             {count === null ? "Calculando…" : `${count} tenant${count === 1 ? "" : "s"} en el segmento`}
             {sample.length > 0 && (

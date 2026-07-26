@@ -14,11 +14,11 @@ interface ActivityEntry {
 }
 
 const ICON_MAP: Record<string, { icon: typeof ShoppingCart; color: string; bg: string }> = {
-  sale:     { icon: ShoppingCart,   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  order:    { icon: ShoppingCart,   color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  sale:     { icon: ShoppingCart,   color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
+  order:    { icon: ShoppingCart,   color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
   product:  { icon: Package,        color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
   payment:  { icon: DollarSign,     color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
-  customer: { icon: UserPlus,       color: "text-primary",     bg: "bg-primary/10" },
+  customer: { icon: UserPlus,       color: "text-[var(--accent-ink)] dark:text-[var(--accent)]",     bg: "bg-primary/10" },
   fiado:    { icon: DollarSign,     color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
 };
 

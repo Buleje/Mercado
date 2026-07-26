@@ -134,7 +134,7 @@ export default function CacaoBitacoraModal({ beneficioId, loteCode, onClose, onC
       <div className="flex max-h-[88vh] flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <Thermometer className="h-5 w-5" strokeWidth={1.75} />
             </span>
             <div>
@@ -242,7 +242,7 @@ export default function CacaoBitacoraModal({ beneficioId, loteCode, onClose, onC
           {/* Alta del día */}
           <form
             onSubmit={add}
-            className="rounded-xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-3"
+            className="rounded-xl border-2 border-[var(--accent)]/30 bg-primary/10/30 p-3"
           >
             <p className="mb-2 text-sm font-bold text-[var(--text-primary)]">
               Registrar día {proximoDia}

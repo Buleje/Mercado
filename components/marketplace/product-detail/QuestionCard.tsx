@@ -74,7 +74,7 @@ function AnswerItem({
             {answer.userName}
           </span>
           {answer.isVendor && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
               Respuesta del vendedor
             </span>
           )}
@@ -93,7 +93,7 @@ function AnswerItem({
           className={cn(
             "mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors",
             voted
-              ? "bg-primary/10 text-primary cursor-default"
+              ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] cursor-default"
               : "text-[var(--text-secondary)] dark:text-gray-400 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 hover:text-[var(--text-primary)] dark:hover:text-white",
           )}
         >

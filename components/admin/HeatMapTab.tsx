@@ -13,8 +13,8 @@ function getColor(ratio: number): string {
   if (ratio > 0.85) return "bg-[var(--data-error-500)] text-white";
   if (ratio > 0.65) return "bg-orange-400 text-white";
   if (ratio > 0.45) return "bg-yellow-400 text-[var(--text-primary)]";
-  if (ratio > 0.25) return "bg-[var(--accent-soft)] text-[var(--text-primary)]";
-  if (ratio > 0.05) return "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--text-secondary)]";
+  if (ratio > 0.25) return "bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]";
+  if (ratio > 0.05) return "bg-primary/10 dark:bg-primary/15 text-[var(--text-secondary)]";
   return "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)]";
 }
 
@@ -162,7 +162,7 @@ export default function HeatMapTab() {
             {/* Leyenda */}
             <div className="flex flex-wrap items-center gap-2 mt-4 justify-center">
               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Menos</span>
-              {["bg-[var(--accent-soft)]", "bg-[var(--accent-soft)]", "bg-yellow-400", "bg-orange-400", "bg-[var(--data-error-500)]"].map((c, i) => (
+              {["bg-primary/10", "bg-primary/10", "bg-yellow-400", "bg-orange-400", "bg-[var(--data-error-500)]"].map((c, i) => (
                 <div key={i} className={cn("h-4 w-6 rounded", c)} />
               ))}
               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Más</span>

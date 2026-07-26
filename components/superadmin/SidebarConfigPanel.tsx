@@ -196,7 +196,7 @@ function SortableNavItem({
       className={[
         "flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors",
         isDragging
-          ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-lg"
+          ? "border-[var(--accent)] bg-primary/10 shadow-lg"
           : "border-[var(--rule-soft)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-sunken)]",
         hidden ? "opacity-60" : "",
       ].join(" ")}
@@ -208,7 +208,7 @@ function SortableNavItem({
           "h-8 w-8 rounded-md flex items-center justify-center shrink-0 transition-colors",
           hidden
             ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-[var(--accent)]"
-            : "bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent)]/15",
+            : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/15",
         ].join(" ")}
         title={hidden ? "Mostrar" : "Ocultar"}
         aria-pressed={!hidden}
@@ -343,7 +343,7 @@ export default function SidebarConfigPanel({ items }: Props) {
                 className={[
                   "group text-left rounded-xl border-2 p-3 transition-all",
                   isActive
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-sm"
+                    ? "border-[var(--accent)] bg-primary/10 shadow-sm"
                     : "border-[var(--rule-soft)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/60 hover:-translate-y-0.5",
                 ].join(" ")}
               >
@@ -387,7 +387,7 @@ export default function SidebarConfigPanel({ items }: Props) {
                   className={[
                     "rounded-lg border px-3 py-2 text-left transition-colors",
                     active
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                      ? "border-[var(--accent)] bg-primary/10"
                       : "border-[var(--rule-soft)] hover:border-[var(--rule-strong)]",
                   ].join(" ")}
                 >
@@ -447,7 +447,7 @@ export default function SidebarConfigPanel({ items }: Props) {
                   className={[
                     "rounded-lg border px-3 py-2 text-sm font-semibold capitalize transition-colors",
                     active
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                      ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]",
                   ].join(" ")}
                 >
@@ -473,7 +473,7 @@ export default function SidebarConfigPanel({ items }: Props) {
                   className={[
                     "rounded-lg border px-3 py-2 text-sm font-semibold transition-colors",
                     active
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                      ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]",
                   ].join(" ")}
                 >

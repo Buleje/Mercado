@@ -98,14 +98,14 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
             {CHANGELOG.map((release) => (
               <div key={release.version}>
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-sm font-extrabold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                  <span className="text-sm font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 px-2.5 py-1 rounded-full">
                     v{release.version}
                   </span>
                   <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">
                     {release.fecha}
                   </span>
                   {release.version === CURRENT_VERSION && (
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full uppercase">
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-2 py-0.5 rounded-full uppercase">
                       Actual
                     </span>
                   )}

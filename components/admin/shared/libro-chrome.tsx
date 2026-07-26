@@ -237,7 +237,7 @@ export default function LibroChrome({
                   onClick={() => onView?.(v.key)}
                   className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm transition-colors sm:px-3 ${
                     activo
-                      ? "bg-primary/10 font-bold text-primary dark:bg-primary/20"
+                      ? "bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/20"
                       : "font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
                   }`}
                 >

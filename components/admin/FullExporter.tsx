@@ -275,7 +275,7 @@ export default function FullExporter() {
                   st.status === "loading"
                     ? "bg-[var(--surface-sunken)] cursor-not-allowed"
                     : st.status === "done"
-                    ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"
+                    ? "bg-primary/10 dark:bg-primary/15 hover:bg-primary/10 dark:hover:bg-primary/15"
                     : "bg-[var(--surface-sunken)] hover:bg-primary/10"
                 )}
               >

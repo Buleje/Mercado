@@ -36,10 +36,10 @@ interface ActiveOrder {
 const STATUS_COLOR: Record<LiveTrackingEvent["status"], { dot: string; bg: string; text: string }> = {
   preparing:  { dot: "bg-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)]",   text: "text-[var(--data-warning-500)]" },
   ready:      { dot: "bg-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)]",   text: "text-[var(--data-warning-500)]" },
-  picked_up:  { dot: "bg-primary",                   bg: "bg-primary/10",                 text: "text-primary" },
-  in_transit: { dot: "bg-primary animate-pulse",     bg: "bg-primary/10",                 text: "text-primary" },
-  nearby:     { dot: "bg-primary animate-pulse",     bg: "bg-primary/10",                 text: "text-primary" },
-  delivered:  { dot: "bg-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",       text: "text-[var(--data-success-500)]" },
+  picked_up:  { dot: "bg-primary",                   bg: "bg-primary/10",                 text: "text-[var(--accent-ink)] dark:text-[var(--accent)]" },
+  in_transit: { dot: "bg-primary animate-pulse",     bg: "bg-primary/10",                 text: "text-[var(--accent-ink)] dark:text-[var(--accent)]" },
+  nearby:     { dot: "bg-primary animate-pulse",     bg: "bg-primary/10",                 text: "text-[var(--accent-ink)] dark:text-[var(--accent)]" },
+  delivered:  { dot: "bg-[var(--data-success-500)]", bg: "bg-primary/10",       text: "text-[var(--data-success-500)]" },
   failed:     { dot: "bg-[var(--data-error-500)]",   bg: "bg-[var(--data-error-50)]",     text: "text-[var(--data-error-500)]" },
   cancelled:  { dot: "bg-[var(--text-tertiary)]",    bg: "bg-[var(--surface-sunken)]",    text: "text-[var(--text-tertiary)]" },
 };

@@ -104,7 +104,7 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
           {/* Clientes del día */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 dark:bg-primary/15">
                 <Users className="w-3.5 h-3.5 text-[var(--data-success-500)]" />
               </span>
               <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Clientes hoy</span>
@@ -113,7 +113,7 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Promedio: {clientesPromedio}/dia</p>
             <div className="flex items-center gap-1.5 mt-2">
               {clientesHoy > clientesAyer ? (
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
               ) : clientesHoy < clientesAyer ? (
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
               ) : (
@@ -166,7 +166,7 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
             {deadStockData.value > 500 ? (
               <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)] px-1.5 py-0.5 rounded-full">Capital atrapado</span>
             ) : (
-              <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] px-1.5 py-0.5 rounded-full">Poco stock muerto</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)] px-1.5 py-0.5 rounded-full">Poco stock muerto</span>
             )}
           </div>
           <p className="text-lg font-bold font-mono text-[var(--text-primary)] dark:text-zinc-100">{fmtR(deadStockData.value)} <span className="text-xs font-normal text-[var(--text-tertiary)]">en {deadStockData.count} productos sin vender 30+ dias</span></p>

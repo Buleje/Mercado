@@ -10,7 +10,7 @@ export default function SuperAdminLoading() {
         >
           <ShieldCheck className="w-7 h-7 text-white" />
         </div>
-        <Loader2 className="w-6 h-6 text-[var(--accent-dark)] animate-spin" />
+        <Loader2 className="w-6 h-6 text-[var(--accent-dark)] dark:text-[var(--accent)] animate-spin" />
         <p className="text-sm text-[var(--text-tertiary)]">Cargando plataforma…</p>
       </div>
     </div>

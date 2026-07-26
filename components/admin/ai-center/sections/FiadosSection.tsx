@@ -159,7 +159,7 @@ function StatusBadge({ status }: StatusBadgeProps) {
     ACTIVO: {
       label: "Activo",
       className:
-        "bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30",
+        "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:bg-primary/15 dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30",
     },
     PAGADO: {
       label: "Pagado",
@@ -355,7 +355,7 @@ export default function FiadosSection() {
             className={cn(
               "px-3 py-1 text-xs rounded border transition-colors",
               filter === f.key
-                ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30"
+                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:bg-primary/15 dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30"
                 : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-gray-300 dark:bg-gray-900 dark:text-[var(--text-tertiary)] dark:border-[var(--rule-base)] dark:hover:border-gray-600"
             )}
           >
@@ -464,7 +464,7 @@ export default function FiadosSection() {
         </p>
         <button
           type="button"
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded border border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30 hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded border border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30 hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors shrink-0"
           onClick={() => {}}
         >
           Ir a Gestion de Fiados

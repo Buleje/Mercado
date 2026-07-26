@@ -198,7 +198,7 @@ const DELTA_ICON: Record<string, React.ReactNode> = {
 
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
   good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
-  warn: "bg-[var(--accent-soft)] text-[var(--accent)]",
+  warn: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
   bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
 };
 
@@ -902,7 +902,7 @@ export default function PagosYapeClient(_: Props) {
                     </div>
 
                     {a.status === "review_required" && (
-                      <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-extrabold text-[var(--accent)]">
+                      <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-extrabold text-[var(--accent)]">
                         <AlertTriangle className="w-3 h-3" />
                         Revisión requerida
                       </div>
@@ -912,7 +912,7 @@ export default function PagosYapeClient(_: Props) {
                       const conf = getConfidence(a.visionResponse);
                       if (conf != null && conf < 0.7) {
                         return (
-                          <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-bold text-[var(--accent)]">
+                          <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent)]">
                             <AlertTriangle className="w-3 h-3" />
                             IA {Math.round(conf * 100)}%
                           </div>

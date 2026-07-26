@@ -83,7 +83,7 @@ export default function CustomDateRangePicker({ active, value, onChange, onActiv
         className={[
           "inline-flex items-center gap-1.5 rounded-lg border-2 px-3 py-1.5 text-sm font-bold transition-colors",
           active
-            ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+            ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
             : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
         ].join(" ")}
         aria-expanded={open}

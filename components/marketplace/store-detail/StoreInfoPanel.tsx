@@ -249,7 +249,7 @@ export default function StoreInfoPanel({
             también en la página de la tienda, no solo en el directorio. */}
         {acceptsFiado && (
           <div className="border-t border-[var(--rule-soft)] pt-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent)]">
               <Wallet className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
               Acepta fiado
             </span>

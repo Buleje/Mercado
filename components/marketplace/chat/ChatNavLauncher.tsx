@@ -611,7 +611,7 @@ export default function ChatNavLauncher({
                       })()
                     ) : (
                       <div className="px-5 py-8 text-center">
-                        <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                        <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           <ChatGlyph className="h-8 w-8" />
                         </span>
                         <p className="text-sm font-extrabold text-[var(--text-primary)]">

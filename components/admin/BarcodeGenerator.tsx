@@ -275,7 +275,7 @@ export default function BarcodeGenerator({ product: initialProduct }: BarcodeGen
             <button
               onClick={addManual}
               disabled={!manualCode.trim()}
-              className="px-3 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-bold text-sm disabled:opacity-40 transition-colors"
+              className="px-3 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold text-sm disabled:opacity-40 transition-colors"
             >
               <Plus className="h-4 w-4" />
             </button>

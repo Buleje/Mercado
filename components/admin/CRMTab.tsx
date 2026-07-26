@@ -80,8 +80,8 @@ function inferSegment(c: Customer): Segment {
 // ── Config ─────────────────────────────────────────────────────────────────
 
 const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg: string; border: string; Icon: React.ElementType; variant: BadgeVariant }> = {
-  frecuente: { label: "Frecuente", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", Icon: Crown,    variant: "success" },
-  ocasional: { label: "Ocasional", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",     Icon: Star,     variant: "info" },
+  frecuente: { label: "Frecuente", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", Icon: Crown,    variant: "success" },
+  ocasional: { label: "Ocasional", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-primary/10 dark:bg-primary/15",     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",     Icon: Star,     variant: "info" },
   nuevo:     { label: "Nuevo",     color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]", Icon: UserPlus, variant: "pending" },
   perdido:   { label: "Perdido",   color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",       border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",       Icon: Moon,     variant: "error" },
 };
@@ -727,7 +727,7 @@ export default function CRMTab() {
                     {/* Nombre */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-extrabold text-primary shrink-0 select-none">
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0 select-none">
                           {c.name.split(" ").slice(0, 2).map(n => n[0]?.toUpperCase() ?? "").join("")}
                         </div>
                         <div>
@@ -826,7 +826,7 @@ export default function CRMTab() {
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => setDetail(c.phone)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold transition-colors"
                       >
                         <ShoppingCart className="h-3 w-3" />360°
                       </button>

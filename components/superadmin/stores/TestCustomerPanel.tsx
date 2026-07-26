@@ -116,7 +116,7 @@ export default function TestCustomerPanel() {
   };
 
   return (
-    <div className="mb-5 rounded-2xl border-2 border-dashed border-[var(--accent)]/40 bg-[var(--accent-soft)] p-4 sm:p-5">
+    <div className="mb-5 rounded-2xl border-2 border-dashed border-[var(--accent)]/40 bg-primary/10 p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white">

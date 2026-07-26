@@ -133,7 +133,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
         >
           {/* Header */}
           <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0">
               <BookOpen className="h-5 w-5" />
             </div>
             <div className="flex-1 min-w-0">
@@ -277,7 +277,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                             ? "bg-[var(--data-success-500)] text-white"
                             : recent
                               ? "bg-[var(--data-success-500)] text-white"
-                              : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white",
+                              : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] group-hover:bg-primary group-hover:text-white",
                         )}>
                           {inGroup || recent ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                         </span>

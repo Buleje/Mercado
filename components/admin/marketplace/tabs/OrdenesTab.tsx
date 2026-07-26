@@ -414,7 +414,7 @@ export function MarketplaceOrdenesTab() {
 
       {/* ── Bulk actions bar (visible cuando hay selección) ───────── */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[var(--accent-soft)] border-2 border-[var(--accent)]/40">
+        <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-primary/10 border-2 border-[var(--accent)]/40">
           <p className="text-sm font-extrabold text-[var(--accent)]">
             {selectedIds.size} {selectedIds.size === 1 ? "orden seleccionada" : "órdenes seleccionadas"}
           </p>
@@ -549,7 +549,7 @@ export function MarketplaceOrdenesTab() {
                       className={cn(
                         "transition-colors cursor-pointer",
                         isSelected
-                          ? "bg-[var(--accent-soft)]/40"
+                          ? "bg-primary/10/40"
                           : "hover:bg-[var(--surface-sunken)]/50",
                       )}
                       onClick={(e) => {

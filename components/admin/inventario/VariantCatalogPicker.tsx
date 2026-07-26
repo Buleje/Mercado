@@ -316,7 +316,7 @@ function TemplateRow({
                 {template.category}
               </span>
               {template.required && (
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   Obligatorio
                 </span>
               )}

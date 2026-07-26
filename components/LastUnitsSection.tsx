@@ -60,7 +60,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header — tono neutral sin urgencia agresiva */}
         <div className="text-center mb-10 sm:mb-12">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold tracking-wider uppercase rounded-full bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold tracking-wider uppercase rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             Disponibilidad limitada
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)]">

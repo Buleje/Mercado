@@ -352,7 +352,7 @@ export default function EmployeePerformanceChart() {
           disabled={loading}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            "text-primary dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]",
+            "text-primary dark:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15",
             loading && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -474,7 +474,7 @@ export default function EmployeePerformanceChart() {
             <div className={cn(
               "rounded-xl p-3 flex items-center justify-between",
               weekChange != null && weekChange >= 0
-                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                ? "bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                 : "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
             )}>
               <span className="text-sm text-[var(--text-secondary)]">

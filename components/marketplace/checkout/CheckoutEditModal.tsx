@@ -278,7 +278,7 @@ export default function CheckoutEditModal({
           <div className="flex items-center gap-2.5">
             <span
               aria-hidden
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-muted)] text-[var(--accent-dark)] dark:text-[var(--accent)]"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]"
             >
               <Icon className="h-4 w-4" strokeWidth={2} />
             </span>
@@ -366,7 +366,7 @@ export default function CheckoutEditModal({
                 type="button"
                 onClick={handleUseCurrentLocation}
                 disabled={geoLoading}
-                className="group flex w-full items-center gap-3 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] px-4 py-3.5 text-left transition-colors hover:border-[var(--accent)] disabled:opacity-60"
+                className="group flex w-full items-center gap-3 rounded-2xl border-2 border-[var(--accent)]/40 bg-primary/10 px-4 py-3.5 text-left transition-colors hover:border-[var(--accent)] disabled:opacity-60"
               >
                 <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white">
                   {geoLoading ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Navigation className="h-5 w-5" strokeWidth={2} aria-hidden />}

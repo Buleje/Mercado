@@ -73,11 +73,11 @@ const URGENCY = {
   },
   medium: {
     label: "Esta semana",
-    bg: "bg-[var(--accent-soft)]",
+    bg: "bg-primary/10",
     text: "text-[var(--data-success-500)]",
     bar: "bg-[var(--data-success-500)]",
     border: "border-[var(--data-success-500)]",
-    barTrack: "bg-[var(--accent-soft)]",
+    barTrack: "bg-primary/10",
   },
 } as const;
 

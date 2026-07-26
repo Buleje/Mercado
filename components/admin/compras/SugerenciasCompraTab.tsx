@@ -65,7 +65,7 @@ const URGENCY_CONFIG: Record<Urgency, {
     short: "Planificar",
     hint: "> 7 días",
     border: "border-[var(--data-success-500)]/40",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--data-success-500)]/10",
+    bg: "bg-primary/10 dark:bg-[var(--data-success-500)]/10",
     text: "text-[var(--data-success-500)]",
     iconBg: "bg-emerald-100 dark:bg-[var(--data-success-500)]/20",
     ring: "ring-[var(--data-success-500)]/40",
@@ -362,7 +362,7 @@ export default function SugerenciasCompraTab() {
 
   if (sugerencias.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--data-success-500)]/5 px-6 py-14 text-center">
+      <div className="rounded-2xl border-2 border-dashed border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-[var(--data-success-500)]/5 px-6 py-14 text-center">
         <span className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-emerald-100 dark:bg-[var(--data-success-500)]/20 mb-4">
           <Check className="h-8 w-8 text-[var(--data-success-500)]" strokeWidth={2.5} />
         </span>
@@ -387,7 +387,7 @@ export default function SugerenciasCompraTab() {
     <div className="space-y-5 pb-32">
       {/* ─── Hero header ─────────────────────────────────────────────── */}
       <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-white to-[var(--accent-soft)]/40 dark:from-[var(--color-card)] dark:to-[var(--accent-muted)]/20 px-5 py-4 flex items-center gap-4 flex-wrap">
-        <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[var(--accent-soft)] dark:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 shrink-0">
+        <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/10 dark:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 shrink-0">
           <Sparkles className="h-6 w-6 text-[var(--data-success-500)]" strokeWidth={2.2} />
         </span>
         <div className="flex-1 min-w-0">
@@ -488,7 +488,7 @@ export default function SugerenciasCompraTab() {
             <button
               type="button"
               onClick={selectAllVisible}
-              className="ml-auto inline-flex items-center gap-1.5 h-11 px-3 rounded-2xl text-sm font-bold text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+              className="ml-auto inline-flex items-center gap-1.5 h-11 px-3 rounded-2xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors whitespace-nowrap"
             >
               {visible.every((s) => selected.has(s.productId)) ? "Deseleccionar visibles" : "Seleccionar visibles"}
             </button>
@@ -689,7 +689,7 @@ export default function SugerenciasCompraTab() {
           <button
             type="button"
             onClick={() => { setFilter("todos"); setSearch(""); }}
-            className="mt-4 inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-primary hover:bg-primary/10 transition-colors"
+            className="mt-4 inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
           >
             Ver todas
           </button>

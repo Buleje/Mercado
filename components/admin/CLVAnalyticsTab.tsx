@@ -85,8 +85,8 @@ export default function CLVAnalyticsTab() {
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-        <KPI label="Clientes activos"       value={String(data.summary.totalCustomers)} icon={Users}        color="bg-[var(--accent-soft)]" />
-        <KPI label="CLV promedio"           value={fmt(data.summary.avgLTV)}            icon={TrendingUp}   color="bg-[var(--accent-soft)]" sub={momChange ? `${Number(momChange) >= 0 ? "+" : ""}${momChange}% vs mes ant.` : undefined} />
+        <KPI label="Clientes activos"       value={String(data.summary.totalCustomers)} icon={Users}        color="bg-primary/10" />
+        <KPI label="CLV promedio"           value={fmt(data.summary.avgLTV)}            icon={TrendingUp}   color="bg-primary/10" sub={momChange ? `${Number(momChange) >= 0 ? "+" : ""}${momChange}% vs mes ant.` : undefined} />
         <KPI label="Pedidos por cliente"    value={String(data.summary.avgOrderCount)}  icon={ShoppingCart} color="bg-[var(--data-warning-500)]" />
         <KPI label="Cohortes identificadas" value={String(data.cohorts.length)}         icon={Calendar}     color="bg-[var(--text-primary)]" />
       </div>

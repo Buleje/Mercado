@@ -159,10 +159,10 @@ export default function AdminModal({
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0 gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 {Icon && (
-                  // `bg-[var(--accent-soft)]` como clase pierde el alpha en
-                  // Tailwind 4 y compila a un color claro sólido: en dark el
-                  // chip era una mancha blanca. `bg-primary/10` sí es alpha real.
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20">
+                  // Tinte con alpha real: con `--accent-soft` (token que ya
+                  // trae alpha) el chip compilaba a un claro opaco y en dark
+                  // era una mancha blanca.
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/20">
                     <Icon className="h-5 w-5" strokeWidth={1.75} />
                   </span>
                 )}

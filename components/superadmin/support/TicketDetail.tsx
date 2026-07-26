@@ -138,7 +138,7 @@ export default function TicketDetail({
             <button
               type="button"
               onClick={() => onSetStatus(ticket.id, "in_progress")}
-              className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] hover:opacity-80 transition-opacity"
+              className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:opacity-80 transition-opacity"
             >
               <Clock className="w-4 h-4" aria-hidden="true" />
               En progreso
@@ -149,7 +149,7 @@ export default function TicketDetail({
             <button
               type="button"
               onClick={() => onSetStatus(ticket.id, "in_progress")}
-              className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] hover:opacity-80 transition-opacity"
+              className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:opacity-80 transition-opacity"
             >
               <Mail className="w-4 h-4" aria-hidden="true" />
               Reabrir como en progreso
@@ -304,7 +304,7 @@ export default function TicketDetail({
             className={cn(
               "flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl border-2 transition-colors",
               showTemplates
-                ? "border-primary text-primary bg-[var(--accent-soft)]"
+                ? "border-primary text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
             )}
           >

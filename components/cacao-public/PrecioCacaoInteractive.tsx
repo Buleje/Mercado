@@ -49,7 +49,7 @@ export default function PrecioCacaoInteractive({ series, usdPen, pricePenPerKg }
       </div>
 
       {/* CTA */}
-      <div className="flex flex-col items-start gap-3 rounded-2xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col items-start gap-3 rounded-2xl border-2 border-[var(--accent)] bg-primary/10 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-base font-bold text-[var(--text-primary)]">¿Acopias o produces cacao?</p>
           <p className="text-sm text-[var(--text-secondary)]">Lleva tu libro de acopio, calidad (NTP 208.040) y pago al productor con Buleje — gratis para empezar.</p>

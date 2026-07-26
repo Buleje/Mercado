@@ -101,7 +101,7 @@ export function NewConversationModal({ onClose, onCreated }: { onClose: () => vo
             </>
           ) : (
             <>
-              <div className="flex items-center justify-between rounded-xl bg-[var(--accent-soft)] px-3 py-2">
+              <div className="flex items-center justify-between rounded-xl bg-primary/10 px-3 py-2">
                 <span className="flex items-center gap-2 text-sm font-bold text-[var(--accent)]"><Building2 className="h-4 w-4" /> {selected.name}</span>
                 <button onClick={() => setSelected(null)} className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Cambiar</button>
               </div>

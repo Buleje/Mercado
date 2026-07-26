@@ -232,7 +232,7 @@ function FilterPills({
                   active
                     ? "bg-white/25 text-white"
                     : key === "sin-leer" && count > 0
-                      ? "bg-primary/15 text-primary"
+                      ? "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "bg-[var(--surface-sunken)] dark:bg-surface text-muted",
                 )}
               >

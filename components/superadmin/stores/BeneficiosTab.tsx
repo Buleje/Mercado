@@ -254,7 +254,7 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
                               title={b.desc}
                               className={`group flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition-colors disabled:opacity-50 ${
                                 on
-                                  ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                                  ? "border-[var(--accent)] bg-primary/10"
                                   : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/40"
                               }`}
                             >

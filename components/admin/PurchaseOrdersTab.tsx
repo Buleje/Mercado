@@ -30,7 +30,7 @@ const STATUS_LABELS: Record<PurchaseStatus, string> = {
 };
 const STATUS_COLORS: Record<PurchaseStatus, string> = {
   pendiente: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30",
-  recibido: "bg-[var(--accent-soft)] dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] border-[var(--data-success-500)]/30",
+  recibido: "bg-primary/10 dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] border-[var(--data-success-500)]/30",
   parcial: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30",
   cancelado: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-500)] border-[var(--data-error-500)]/30",
   auto_generated: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-base)]",
@@ -523,7 +523,7 @@ export default function PurchaseOrdersTab() {
           className={cn(
             "inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 text-sm font-bold transition-colors",
             showSupplierHistory
-              ? "border-primary bg-primary/10 text-primary"
+              ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
               : "border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
           )}
         >
@@ -545,7 +545,7 @@ export default function PurchaseOrdersTab() {
             }));
             exportToExcel(rows, `compras-${new Date().toISOString().slice(0, 10)}`, "Compras");
           }}
-          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--data-success-500)]/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           title="Exportar compras a Excel"
         >
           <Download className="h-4 w-4" />
@@ -791,11 +791,11 @@ export default function PurchaseOrdersTab() {
                   
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                    <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                    <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                       <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Órdenes</p>
                       <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{stats.count}</p>
                     </div>
-                    <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                    <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                       <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Total gastado</p>
                       <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(stats.totalAmount).toFixed(2)}</p>
                     </div>
@@ -953,7 +953,7 @@ export default function PurchaseOrdersTab() {
                       <Package className="h-4 w-4 text-[var(--text-tertiary)]" />
                       Productos de la orden
                       {items.length > 0 && (
-                        <span className="inline-flex items-center justify-center h-6 min-w-[24px] px-2 rounded-full bg-primary/10 text-primary text-xs font-extrabold tabular-nums">
+                        <span className="inline-flex items-center justify-center h-6 min-w-[24px] px-2 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold tabular-nums">
                           {items.length}
                         </span>
                       )}
@@ -997,7 +997,7 @@ export default function PurchaseOrdersTab() {
                         return (
                           <div key={idx} className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] p-3 transition-all hover:border-[var(--text-tertiary)]">
                             <div className="flex items-start gap-2 mb-2">
-                              <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10 text-primary text-xs font-extrabold shrink-0">
+                              <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold shrink-0">
                                 {idx + 1}
                               </span>
                               <div className="flex-1 relative">
@@ -1074,7 +1074,7 @@ export default function PurchaseOrdersTab() {
                                   )}
                                 </Field>
                               </div>
-                              <div className="ml-auto inline-flex items-center gap-2 h-10 px-3 rounded-xl bg-primary/10 text-primary">
+                              <div className="ml-auto inline-flex items-center gap-2 h-10 px-3 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                                 <span className="text-xs font-bold uppercase">Total</span>
                                 <span className="text-base font-extrabold tabular-nums">S/{lineTotal.toFixed(2)}</span>
                               </div>
@@ -1245,7 +1245,7 @@ export default function PurchaseOrdersTab() {
                     <button
                       type="button"
                       onClick={() => { setShowRecurringModal(o); setRecurringInterval(15); setRecurringNotifyDays(2); }}
-                      className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-primary hover:bg-primary/10 text-sm font-bold transition-colors"
+                      className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 text-sm font-bold transition-colors"
                       title="Hacer pedido recurrente"
                     >
                       <Repeat className="h-4 w-4" />
@@ -1338,7 +1338,7 @@ export default function PurchaseOrdersTab() {
                     return (
                       <div className={cn("mt-2 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg",
                         diff < 0
-                          ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                          ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                           : diff > 0
                           ? "bg-[var(--data-warning-50)] dark:bg-orange-950/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                           : "bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)]"
@@ -1564,7 +1564,7 @@ export default function PurchaseOrdersTab() {
       {duplicateToast && (
         <div className="fixed bottom-4 right-4 z-50 bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center shrink-0">
+            <div className="h-8 w-8 rounded-full bg-primary/10 dark:bg-primary/15 flex items-center justify-center shrink-0">
               <Copy className="h-4 w-4 text-[var(--data-success-500)]" />
             </div>
             <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{duplicateToast}</p>

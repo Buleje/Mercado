@@ -48,15 +48,15 @@ const TYPE_LABELS: Record<PolicyType, string> = {
 };
 
 const STATUS_META: Record<PolicyStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
-  vigente:    { label: "Vigente",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle2 },
+  vigente:    { label: "Vigente",    color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: CheckCircle2 },
   "por-vencer": { label: "Por Vencer", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",   icon: Clock },
   vencida:    { label: "Vencida",    color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",       icon: XCircle },
 };
 
 const CLAIM_STATUS: Record<ClaimStatus, { label: string; color: string; bg: string }> = {
-  abierto:     { label: "Abierto",     color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  abierto:     { label: "Abierto",     color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
   "en-revision": { label: "En Revisión", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  aprobado:    { label: "Aprobado",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  aprobado:    { label: "Aprobado",    color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   rechazado:   { label: "Rechazado",   color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
 
@@ -110,8 +110,8 @@ export default function InsuranceTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Pólizas vigentes", value: String(stats.vigentes), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Prima mensual total", value: fmt(stats.monthlyTotal), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Pólizas vigentes", value: String(stats.vigentes), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
+          { label: "Prima mensual total", value: fmt(stats.monthlyTotal), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Siniestros abiertos", value: String(stats.claimsOpen), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
           { label: "Monto total siniestros", value: fmt(stats.claimsTotal), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
@@ -179,7 +179,7 @@ export default function InsuranceTab() {
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] font-mono">{p.policyNumber}</td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(p.monthlyPremium)}</td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)]">{p.endDate}</td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button></td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button></td>
                       </tr>
                     );
                   })}
@@ -215,7 +215,7 @@ export default function InsuranceTab() {
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-mono text-[var(--text-secondary)]">{pol?.policyNumber ?? "—"}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.type}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(c.amount)}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setClaimDetail(c)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button></td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setClaimDetail(c)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button></td>
                     </tr>
                   );
                 })}

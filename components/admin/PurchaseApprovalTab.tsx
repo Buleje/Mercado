@@ -111,9 +111,9 @@ export default function PurchaseApprovalTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "En espera", value: String(stats.pending), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: Clock },
-          { label: "Aprobadas", value: String(stats.approved), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
+          { label: "Aprobadas", value: String(stats.approved), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: CheckCircle },
           { label: "Rechazadas", value: String(stats.rejected), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: XCircle },
-          { label: "Valor aprobable", value: fmt(stats.totalValue), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: Send },
+          { label: "Valor aprobable", value: fmt(stats.totalValue), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: Send },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />

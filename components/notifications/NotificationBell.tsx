@@ -167,7 +167,7 @@ export default function NotificationBell() {
         className={cn(
           "relative flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
           open
-            ? "bg-primary/10 text-primary"
+            ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
             : "text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary"
         )}
       >

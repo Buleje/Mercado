@@ -277,7 +277,7 @@ export default function PartnerDashboard() {
       {me.currentOrderId && (
         <Link
           href={`/delivery-app/pedido/${me.currentOrderId}`}
-          className="block group border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-5 lg:p-6 transition-colors hover:bg-[var(--accent)]/15"
+          className="block group border-2 border-[var(--accent)] bg-primary/10 p-5 lg:p-6 transition-colors hover:bg-[var(--accent)]/15"
         >
           <div className="flex items-start gap-4">
             <div className="h-14 w-14 bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center shrink-0">
@@ -303,7 +303,7 @@ export default function PartnerDashboard() {
       {activeCount >= 2 && (
         <Link
           href="/delivery-app/ruta"
-          className="block group border-2 border-[var(--accent)] bg-[var(--surface-raised)] p-5 transition-colors hover:bg-[var(--accent-soft)]"
+          className="block group border-2 border-[var(--accent)] bg-[var(--surface-raised)] p-5 transition-colors hover:bg-primary/10"
         >
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 bg-[var(--accent)] text-white flex items-center justify-center shrink-0">

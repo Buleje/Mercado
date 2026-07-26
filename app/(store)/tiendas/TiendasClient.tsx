@@ -976,7 +976,7 @@ export default function TiendasClient({
            promocionales. Especialmente útil en modo tiendas-only. */}
       {search.trim().length > 0 && stores.length > 0 && (
         <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-5 sm:p-6">
+          <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10/40 p-5 sm:p-6">
             <div className="flex items-end justify-between gap-4 mb-4">
               <div>
                 <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
@@ -1004,7 +1004,7 @@ export default function TiendasClient({
                   href={`/tienda/${s.slug}`}
                   className="group flex items-center gap-3 rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] p-3 hover:border-[var(--text-primary)]/40 transition-colors"
                 >
-                  <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden flex items-center justify-center bg-[var(--accent-soft)]">
+                  <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden flex items-center justify-center bg-primary/10">
                     {s.logo ? (
                       // Brandon 2026-05-18 perf P2 #11: logos "Activas ahora"
                       // — next/image con sizes 56px, lazy decode automático.
@@ -1047,9 +1047,9 @@ export default function TiendasClient({
                 productos en TODAS las tiendas (que sí matchea por producto). */}
             <Link
               href={`/marketplace/buscar?q=${encodeURIComponent(search.trim())}`}
-              className="mt-4 flex items-center gap-3 rounded-xl border-2 border-dashed border-[var(--accent)]/40 bg-[var(--surface-canvas)] p-3.5 transition-all hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/40"
+              className="mt-4 flex items-center gap-3 rounded-xl border-2 border-dashed border-[var(--accent)]/40 bg-[var(--surface-canvas)] p-3.5 transition-all hover:border-[var(--accent)] hover:bg-primary/10/40"
             >
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <ShoppingBag className="h-5 w-5" strokeWidth={2} aria-hidden />
               </span>
               <span className="min-w-0 flex-1">
@@ -1192,14 +1192,14 @@ export default function TiendasClient({
                 className={cn(
                   "group flex h-[112px] w-[112px] shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 transition-all sm:h-[128px] sm:w-[128px]",
                   vertical === null
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                    ? "border-[var(--accent)] bg-primary/10"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
                 )}
               >
                 <span
                   className={cn(
                     "inline-flex h-11 w-11 items-center justify-center rounded-2xl transition-colors",
-                    vertical === null ? "bg-[var(--accent)] text-white" : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                    vertical === null ? "bg-[var(--accent)] text-white" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
                   )}
                 >
                   <Boxes className="h-5 w-5" strokeWidth={2} aria-hidden />
@@ -1217,14 +1217,14 @@ export default function TiendasClient({
                     className={cn(
                       "group flex h-[112px] w-[112px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 px-1 text-center transition-all sm:h-[128px] sm:w-[128px]",
                       active
-                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                        ? "border-[var(--accent)] bg-primary/10"
                         : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
                     )}
                   >
                     <span
                       className={cn(
                         "inline-flex h-11 w-11 items-center justify-center rounded-2xl transition-colors",
-                        active ? "bg-[var(--accent)] text-white" : "bg-[var(--accent-soft)] text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white",
+                        active ? "bg-[var(--accent)] text-white" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white",
                       )}
                     >
                       <v.Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
@@ -1257,7 +1257,7 @@ export default function TiendasClient({
                 className={cn(
                   "group flex h-[84px] w-[84px] shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border transition-all sm:h-[100px] sm:w-[100px]",
                   subCategoryId === null
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                    ? "border-[var(--accent)] bg-primary/10"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
                 )}
               >
@@ -1379,7 +1379,7 @@ export default function TiendasClient({
                       className={cn(
                         "shrink-0 inline-flex items-center rounded-full border px-3 h-8 text-[length:var(--ts-xs)] font-bold whitespace-nowrap transition-colors",
                         subCategoryId === null
-                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)] dark:text-[var(--accent)]"
+                          ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]",
                       )}
                     >
@@ -1522,7 +1522,7 @@ export default function TiendasClient({
                   className={cn(
                     "shrink-0 inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-bold transition-colors [scroll-snap-align:start]",
                     zone
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                      ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)]",
                   )}
                 >
@@ -1619,7 +1619,7 @@ export default function TiendasClient({
                     type="button"
                     onClick={f.remove}
                     aria-label={`Quitar filtro ${f.label}`}
-                    className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 h-7 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/15"
+                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 h-7 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/15"
                   >
                     <span className="max-w-[140px] truncate">{f.label}</span>
                     <X className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden="true" />
@@ -1706,7 +1706,7 @@ export default function TiendasClient({
                   {/* Header */}
                   <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-soft)]">
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                         <MapPin className="h-5 w-5" strokeWidth={2.25} aria-hidden />
                       </span>
                       <div className="min-w-0">
@@ -1748,7 +1748,7 @@ export default function TiendasClient({
                                 "w-full flex items-center gap-3 rounded-2xl border-2 p-3 sm:p-4 text-left transition-all",
                                 active
                                   ? "border-[var(--text-primary)] bg-[var(--surface-sunken)]"
-                                  : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/30",
+                                  : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/50 hover:bg-primary/10/30",
                               )}
                             >
                               <span

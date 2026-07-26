@@ -552,7 +552,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={cn("relative h-6 w-11 rounded-full transition-colors", checked ? "bg-[var(--accent-soft)]" : "bg-gray-700")}
+      className={cn("relative h-6 w-11 rounded-full transition-colors", checked ? "bg-primary/10" : "bg-gray-700")}
     >
       <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white dark:bg-[var(--color-card)] transition-transform", checked ? "left-5" : "left-0.5")} />
     </button>
@@ -592,7 +592,7 @@ function SectionCard({
   return (
     <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
       <div className="flex items-center gap-2.5 border-b border-white/5 bg-white/[0.02] px-3 py-2.5">
-        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)]/15 text-[var(--accent-soft)]">
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10/15 text-[var(--accent-soft)]">
           <Icon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
@@ -754,7 +754,7 @@ function AdvancedBackground({ onSetBg }: { onSetBg: (bg: string) => void }) {
           <input type="range" min={0} max={360} value={angle} onChange={(e) => setAngle(Number(e.target.value))} className="w-full accent-[var(--accent-soft)]" />
           <span className="w-9 text-right text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent-soft)]">{angle}°</span>
         </div>
-        <button type="button" onClick={() => onSetBg(`linear-gradient(${angle}deg, ${gA}, ${gB})`)} className="w-full rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90">
+        <button type="button" onClick={() => onSetBg(`linear-gradient(${angle}deg, ${gA}, ${gB})`)} className="w-full rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90">
           Aplicar degradado
         </button>
       </div>
@@ -809,7 +809,7 @@ function TextStyleControls({
   const toggleBtn = (active: boolean) =>
     cn(
       "inline-flex h-7 min-w-7 items-center justify-center rounded px-1.5 text-[length:var(--ts-2xs)] font-bold transition-colors",
-      active ? "bg-[var(--accent-soft)] text-white" : "bg-white/[0.04] text-gray-300 hover:bg-white/10",
+      active ? "bg-primary/10 text-white" : "bg-white/[0.04] text-gray-300 hover:bg-white/10",
     );
   return (
     <div className="space-y-1.5 rounded-lg border border-white/10 bg-white/[0.02] p-2">
@@ -893,7 +893,7 @@ function SectionStyleEditor({
   return (
     <div className="space-y-3">
       {/* Encabezado: volver + sección + scope */}
-      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-[var(--accent-soft)]/10 px-2.5 py-2">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-primary/10/10 px-2.5 py-2">
         <button
           type="button"
           onClick={onBack}
@@ -958,7 +958,7 @@ function SectionStyleEditor({
                     onClick={() => onText("align", val)}
                     className={cn(
                       "flex flex-col items-center gap-1 rounded-lg border py-2 transition-colors",
-                      active ? "border-[var(--accent-soft)] bg-[var(--accent-soft)]/10 text-white" : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/25",
+                      active ? "border-[var(--accent-soft)] bg-primary/10/10 text-white" : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/25",
                     )}
                   >
                     <Ico className="h-4 w-4" />
@@ -1002,7 +1002,7 @@ function SectionStyleEditor({
                 onClick={() => onPreset(p.style)}
                 className={cn(
                   "group rounded-lg border p-2 text-left transition-colors",
-                  active ? "border-[var(--accent-soft)] bg-[var(--accent-soft)]/10" : "border-white/10 bg-white/[0.03] hover:border-white/25",
+                  active ? "border-[var(--accent-soft)] bg-primary/10/10" : "border-white/10 bg-white/[0.03] hover:border-white/25",
                 )}
               >
                 <span
@@ -1032,7 +1032,7 @@ function SectionStyleEditor({
       {/* Fondo avanzado (Brandon 2026-06-27 · #3): degradado / imagen+overlay / patrón */}
       <details className="group overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
         <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-white/[0.02]">
-          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)]/15 text-[var(--accent-soft)]">
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10/15 text-[var(--accent-soft)]">
             <Palette className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
@@ -1257,7 +1257,7 @@ function CustomSectionEditor({
     : null;
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-[var(--accent-soft)]/10 px-2.5 py-2">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-primary/10/10 px-2.5 py-2">
         <button type="button" onClick={onBack} aria-label="Volver al menú" className="shrink-0 rounded-md p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white">
           <ArrowLeft className="h-4 w-4" />
         </button>
@@ -1275,7 +1275,7 @@ function CustomSectionEditor({
             type="button"
             onClick={generateWithAi}
             disabled={aiBusy}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--accent-soft)]/40 bg-[var(--accent-soft)]/10 px-3 py-2 text-xs font-bold text-[var(--accent-soft)] transition-colors hover:bg-[var(--accent-soft)]/20 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--accent-soft)]/40 bg-primary/10/10 px-3 py-2 text-xs font-bold text-[var(--accent-soft)] transition-colors hover:bg-primary/10/20 disabled:opacity-50"
           >
             <Sparkles className={cn("h-3.5 w-3.5", aiBusy && "animate-pulse")} />
             {aiBusy ? "Generando…" : "Generar contenido con IA"}
@@ -1564,7 +1564,7 @@ function CardDesignEditor({
   const hasAny = Object.keys(value).length > 0;
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-[var(--accent-soft)]/10 px-2.5 py-2">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-primary/10/10 px-2.5 py-2">
         <button type="button" onClick={onBack} aria-label="Volver al menú" className="shrink-0 rounded-md p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white">
           <ArrowLeft className="h-4 w-4" />
         </button>
@@ -2878,7 +2878,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           {/* Progress */}
           <div className="mt-3 flex gap-1">
             {TOUR_STEPS.map((_, i) => (
-              <span key={i} className={cn("h-1 flex-1 rounded-full", i <= tourStep ? "bg-[var(--accent-soft)]" : "bg-white/15")} />
+              <span key={i} className={cn("h-1 flex-1 rounded-full", i <= tourStep ? "bg-primary/10" : "bg-white/15")} />
             ))}
           </div>
           <div className="mt-3 flex items-center justify-between gap-2">
@@ -2887,7 +2887,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               {tourStep > 0 && (
                 <button type="button" onClick={() => goTourStep(tourStep - 1)} className="rounded-lg border border-white/10 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold text-gray-200 transition-colors hover:bg-white/5">Anterior</button>
               )}
-              <button type="button" onClick={() => goTourStep(tourStep + 1)} className="rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold text-white transition-opacity hover:opacity-90">
+              <button type="button" onClick={() => goTourStep(tourStep + 1)} className="rounded-lg bg-primary/10 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold text-white transition-opacity hover:opacity-90">
                 {tourStep === TOUR_STEPS.length - 1 ? "Terminar" : "Siguiente"}
               </button>
             </div>
@@ -3047,7 +3047,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   onClick={() => setNavMode((v) => !v)}
                   className={cn(
                     "inline-flex items-center gap-1.5 px-2.5 h-8 rounded-md text-xs font-bold transition-colors",
-                    navMode ? "bg-[var(--accent-soft)]/20 text-[var(--accent-soft)]" : "text-gray-300 hover:text-white hover:bg-gray-700",
+                    navMode ? "bg-primary/10/20 text-[var(--accent-soft)]" : "text-gray-300 hover:text-white hover:bg-gray-700",
                   )}
                   title={navMode ? "Volver a editar (click selecciona)" : "Probar la tienda: scroll y clicks reales"}
                 >
@@ -3129,7 +3129,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
       {/* #3.1 Banner de restauración de borrador sin publicar */}
       {pendingRestore && (
-        <div className="flex items-center gap-3 border-b border-[var(--accent-soft)]/30 bg-[var(--accent-soft)]/[0.08] px-4 py-2">
+        <div className="flex items-center gap-3 border-b border-[var(--accent-soft)]/30 bg-primary/10/[0.08] px-4 py-2">
           <Clock className="h-4 w-4 shrink-0 text-[var(--accent-soft)]" />
           <p className="min-w-0 flex-1 text-xs text-gray-200">
             Tenemos cambios sin publicar de un borrador anterior. ¿Restaurar o descartar?
@@ -3137,7 +3137,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <button
             type="button"
             onClick={() => { pushChange(pendingRestore.theme); setPendingRestore(null); }}
-            className="shrink-0 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold text-white transition-opacity hover:opacity-90"
+            className="shrink-0 rounded-lg bg-primary/10 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold text-white transition-opacity hover:opacity-90"
           >
             Restaurar
           </button>
@@ -3214,7 +3214,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <div className="p-4 space-y-3">
             {/* #1.1 Recomendaciones de diseño en tiempo real */}
             {designTips.length > 0 && (
-              <div className="space-y-1.5 rounded-xl border border-[var(--accent-soft)]/30 bg-[var(--accent-soft)]/[0.07] p-2.5">
+              <div className="space-y-1.5 rounded-xl border border-[var(--accent-soft)]/30 bg-primary/10/[0.07] p-2.5">
                 <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-soft)]"><Sparkles className="h-3.5 w-3.5" /> Sugerencias ({designTips.length})</p>
                 {designTips.map((t, i) => (
                   <p key={i} className={cn("flex items-start gap-1.5 text-[length:var(--ts-2xs)] leading-snug", t.level === "warn" ? "text-[var(--data-warning-500)]" : "text-gray-300")}>
@@ -3308,7 +3308,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     type="button"
                     onClick={generateAiTheme}
                     disabled={aiLoading || aiPrompt.trim().length < 4}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {aiLoading
                       ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Generando…</>
@@ -4115,7 +4115,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* ── Bandas de imagen extra (sectionImages REAL) — secundario ── */}
                 <details className="group overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
                   <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-white/[0.02]">
-                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)]/15 text-[var(--accent-soft)]">
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10/15 text-[var(--accent-soft)]">
                       <ImageIcon className="h-4 w-4" />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -4723,7 +4723,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
                 {/* Lote G: comparación side-by-side de 2 versiones seleccionadas. */}
                 {compareIdx.length === 2 && (
-                  <div className="rounded-lg border border-[var(--accent-soft)]/40 bg-[var(--accent-soft)]/10 p-2.5">
+                  <div className="rounded-lg border border-[var(--accent-soft)]/40 bg-primary/10/10 p-2.5">
                     <p className="mb-2 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">Comparando 2 versiones</p>
                     <div className="grid grid-cols-2 gap-2">
                       {compareIdx.map((ci) => {
@@ -4965,8 +4965,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="rounded-xl p-3 border" style={{ borderColor: draft.darkModeDefault ? "#374151" : "#e5e7eb" }}>
                   <p className="text-xs font-bold mb-2">Herramientas activas</p>
                   <div className="flex flex-wrap gap-1.5">
-                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)]">{draft.cartStyle}</span>
-                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)]">{draft.buttonStyle}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">{draft.cartStyle}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">{draft.buttonStyle}</span>
                     <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--surface-sunken)] text-[var(--text-primary)]">{draft.animations}</span>
                     <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)]">{draft.backgroundPattern}</span>
                     <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-slate-100 text-slate-700">{draft.fontFamily}</span>

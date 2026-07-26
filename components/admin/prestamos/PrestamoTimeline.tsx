@@ -64,7 +64,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
           <span className={cn(
             "text-xs font-bold px-2 py-0.5 rounded-lg",
             porcentaje === 100
-              ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+              ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
               : porcentaje > 50
                 ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                 : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
@@ -74,7 +74,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
         </div>
         <div className="h-2 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
           <div
-            className="h-full rounded-full bg-[var(--accent-soft)] transition-all duration-[var(--dur-slow)]"
+            className="h-full rounded-full bg-primary/10 transition-all duration-[var(--dur-slow)]"
             style={{ width: `${porcentaje}%` }}
           />
         </div>
@@ -100,7 +100,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                 <div className={cn(
                   "absolute left-[-14px] top-5 w-0.5 h-[calc(100%-4px)]",
                   currentPaid && (i + 1 < cuotas.length && cuotas[i + 1].pagadoEn)
-                    ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]"
+                    ? "bg-primary/10 dark:bg-primary/10"
                     : "bg-gray-200 dark:bg-white/10"
                 )} />
               )}
@@ -108,7 +108,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
               {/* Node */}
               <div className="absolute left-[-20px] top-0.5">
                 {status === "pagada" && (
-                  <div className="h-6 w-6 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
+                  <div className="h-6 w-6 rounded-full bg-primary/10 dark:bg-primary/15 flex items-center justify-center">
                     <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
                   </div>
                 )}
@@ -132,7 +132,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
               {/* Content */}
               <div className={cn(
                 "ml-2 rounded-xl p-3 transition-colors",
-                status === "pagada" && "bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)]",
+                status === "pagada" && "bg-primary/10/50 dark:bg-primary/15",
                 status === "vencida" && "bg-[var(--data-error-50)]/50 dark:bg-[var(--data-error-500)]/10",
                 status === "próxima" && "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning-500)]/10 ring-1 ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]",
                 status === "futura" && "bg-gray-50/50 dark:bg-white/[0.02]",
@@ -143,7 +143,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                   </p>
                   <span className={cn(
                     "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded",
-                    status === "pagada" && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+                    status === "pagada" && "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
                     status === "vencida" && "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
                     status === "próxima" && "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
                     status === "futura" && "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",

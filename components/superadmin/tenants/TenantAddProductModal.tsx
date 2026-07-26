@@ -298,7 +298,7 @@ export default function TenantAddProductModal({
               <button
                 type="button"
                 onClick={addGroup}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1.5 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-3 py-1.5 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"
               >
                 <Plus className="h-4 w-4" /> Grupo
               </button>
@@ -365,7 +365,7 @@ export default function TenantAddProductModal({
                   <button
                     type="button"
                     onClick={() => addOption(gIdx)}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold text-[var(--accent)] hover:bg-primary/10"
                   >
                     <Plus className="h-3.5 w-3.5" /> Opción
                   </button>

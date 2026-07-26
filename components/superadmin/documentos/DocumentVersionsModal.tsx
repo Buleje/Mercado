@@ -133,7 +133,7 @@ export default function DocumentVersionsModal({ doc, onClose, onChanged }: Props
             <FileText className="h-4 w-4 shrink-0" />
             <span className="truncate font-medium">{doc.name}</span>
           </div>
-          <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--accent-soft)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
+          <p className="rounded-xl border border-[var(--rule-base)] bg-primary/10 px-3 py-2 text-xs text-[var(--text-tertiary)]">
             El archivo actual es la versión vigente. Subir una versión nueva la reemplaza y
             archiva la anterior.
           </p>
@@ -158,7 +158,7 @@ export default function DocumentVersionsModal({ doc, onClose, onChanged }: Props
                 className={cn(
                   "flex items-start gap-3 rounded-xl border px-3 py-2.5",
                   v.versionNumber === maxVersion
-                    ? "border-[var(--rule-base)] bg-[var(--accent-soft)]"
+                    ? "border-[var(--rule-base)] bg-primary/10"
                     : "border-[var(--rule-base)] bg-transparent",
                 )}
               >

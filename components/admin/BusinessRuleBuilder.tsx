@@ -60,8 +60,8 @@ const ACTION_SUMMARY: Record<ActionType, (v: string) => string> = {
 
 const ACTION_COLOR: Record<ActionType, string> = {
   create_alert:   "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
-  send_whatsapp:  "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-  create_order:   "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  send_whatsapp:  "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
+  create_order:   "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   apply_discount: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 

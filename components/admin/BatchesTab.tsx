@@ -60,8 +60,8 @@ function fmtDate(iso: string) {
 }
 
 const STATUS_META: Record<BatchStatus, { label: string; color: string; bg: string; icon: typeof AlertTriangle }> = {
-  vigente:     { label: "Vigente",    color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle },
-  próximo:     { label: "Próximo",    color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",      bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",      icon: Clock },
+  vigente:     { label: "Vigente",    color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: CheckCircle },
+  próximo:     { label: "Próximo",    color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",      bg: "bg-primary/10 dark:bg-primary/15",      icon: Clock },
   "por-vencer":{ label: "Por vencer", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",    bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",    icon: Clock },
   critico:     { label: "Crítico",    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30",  icon: AlertTriangle },
   vencido:     { label: "Vencido",    color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",        icon: AlertTriangle },
@@ -127,7 +127,7 @@ function ExpiryCountdownBadge({ daysLeft }: { daysLeft: number }) {
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+    <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-semibold px-2 py-0.5 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
       Vence en {daysLeft}d
     </span>
   );
@@ -313,7 +313,7 @@ export default function BatchesTab() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: "Total lotes", count: stats.total, color: "text-[var(--text-primary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-alt)] dark:bg-surface/50" },
-          { label: "Vigentes", count: stats.vigente, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Vigentes", count: stats.vigente, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Por vencer", count: stats.por_vencer, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
           { label: "Críticos (≤7d)", count: stats.critico, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
           { label: "Vencidos", count: stats.vencido, color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
@@ -478,7 +478,7 @@ export default function BatchesTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{b.costUnit > 0 ? fmt(b.costUnit) : "—"}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => handleEdit(b)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors" title="Editar lote">
+                        <button onClick={() => handleEdit(b)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors" title="Editar lote">
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button onClick={() => handleDelete(b.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors" title="Eliminar lote">

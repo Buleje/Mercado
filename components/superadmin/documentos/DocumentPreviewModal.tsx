@@ -74,7 +74,7 @@ export default function DocumentPreviewModal({ doc, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="h-10 px-5 rounded-2xl border-2 border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--accent-soft)]"
+            className="h-10 px-5 rounded-2xl border-2 border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-primary/10"
           >
             Cerrar
           </button>
@@ -156,7 +156,7 @@ export default function DocumentPreviewModal({ doc, onClose }: Props) {
                 type="button"
                 onClick={handleDownload}
                 aria-label="Descargar documento"
-                className="flex items-center gap-1.5 h-9 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--accent-soft)]"
+                className="flex items-center gap-1.5 h-9 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-primary/10"
               >
                 <Download className="h-4 w-4" />
                 Descargar

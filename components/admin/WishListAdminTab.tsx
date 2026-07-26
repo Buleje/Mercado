@@ -127,14 +127,14 @@ export default function WishListAdminTab() {
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Heart className="h-6 w-6 text-primary" /> Listas de Deseos</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Análisis de wishlists para stock y marketing</p>
         </div>
-        <button onClick={() => exportToCSV(lists.flatMap(l => l.items.map(i => ({ cliente: l.customer, producto: i.productName, precio: i.price, en_stock: i.inStock ? "Sí" : "No" }))), "wishlists")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors">
+        <button onClick={() => exportToCSV(lists.flatMap(l => l.items.map(i => ({ cliente: l.customer, producto: i.productName, precio: i.price, en_stock: i.inStock ? "Sí" : "No" }))), "wishlists")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors">
           <Download className="h-3.5 w-3.5" /> CSV
         </button>
       </div>
 
       {/* Feedback banner */}
       {notifyFeedback && (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-4 py-2.5 flex items-center gap-2">
+        <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-4 py-2.5 flex items-center gap-2">
           <Bell className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
           <p className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{notifyFeedback}</p>
         </div>
@@ -187,12 +187,12 @@ export default function WishListAdminTab() {
                           <button
                             onClick={() => handleNotify(p.productId, p.name)}
                             disabled={isNotified}
-                            className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors", isNotified ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]")}
+                            className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors", isNotified ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]")}
                           >
                             {isNotified ? <><BellOff className="h-3 w-3" />Notificado</> : <><Bell className="h-3 w-3" />Notificar</>}
                           </button>
                         )}
-                        {p.inStock && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-lg">En stock</span>}
+                        {p.inStock && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-2 py-0.5 rounded-lg">En stock</span>}
                       </div>
                     </div>
                     <div className="h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
@@ -265,7 +265,7 @@ export default function WishListAdminTab() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0 ml-2">
                           <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(i.price)}</span>
-                          <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", i.inStock ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
+                          <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", i.inStock ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                             {i.inStock ? "En stock" : "Agotado"}
                           </span>
                           {!i.inStock && (

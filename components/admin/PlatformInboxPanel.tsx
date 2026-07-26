@@ -87,7 +87,7 @@ export default function PlatformInboxPanel() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <ShieldCheck className="h-4 w-4" />
           </span>
           <div>
@@ -108,7 +108,7 @@ export default function PlatformInboxPanel() {
             </div>
           ) : (
             conversations.map((c) => (
-              <button key={c.id} onClick={() => open(c.id)} className={`w-full border-b border-[var(--rule-soft)] px-4 py-3 text-left transition-colors ${selectedId === c.id ? "bg-[var(--accent-soft)]" : "hover:bg-[var(--surface-sunken)]"}`}>
+              <button key={c.id} onClick={() => open(c.id)} className={`w-full border-b border-[var(--rule-soft)] px-4 py-3 text-left transition-colors ${selectedId === c.id ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]"}`}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate text-sm font-bold text-[var(--text-primary)]">{c.subject ?? "Buleje"}</span>
                   <span className="shrink-0 text-[10px] font-semibold text-[var(--text-tertiary)]">{timeAgo(c.lastMessageAt)}</span>

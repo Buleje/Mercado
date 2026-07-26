@@ -223,7 +223,7 @@ export default function InvoiceEmitter({
   if (emitido) {
     return (
       <div className="space-y-6">
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 sm:p-6 text-center space-y-3">
+        <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 sm:p-6 text-center space-y-3">
           <CheckCircle2 className="h-12 w-12 text-[var(--data-success-500)] mx-auto" />
           <SectionTitle className="text-xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             Comprobante emitido
@@ -267,7 +267,7 @@ export default function InvoiceEmitter({
               href={emitido.pdfUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-semibold hover:bg-[var(--accent-soft)] transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary/10 text-white text-sm font-semibold hover:bg-primary/10 transition-colors"
             >
               <Printer className="h-4 w-4" /> Imprimir / Descargar PDF
             </a>

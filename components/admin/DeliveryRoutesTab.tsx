@@ -211,14 +211,14 @@ function GeoLocationButton({ onLocated }: GeoButtonProps) {
 }
 
 const FALLBACK_ZONES: Zone[] = [
-  { id: "z-1", name: "Zona Centro", color: "bg-[var(--accent-soft)]", deliveryFee: 3, estimatedMin: 20, neighborhoods: ["Jr. Progreso", "Jr. Inmaculada", "Plaza de Armas", "Mercado Central"] },
-  { id: "z-2", name: "Zona Norte", color: "bg-[var(--accent-soft)]", deliveryFee: 5, estimatedMin: 35, neighborhoods: ["Yarinacocha", "San Juan", "Manantay", "Nueva Requena"] },
+  { id: "z-1", name: "Zona Centro", color: "bg-primary/10", deliveryFee: 3, estimatedMin: 20, neighborhoods: ["Jr. Progreso", "Jr. Inmaculada", "Plaza de Armas", "Mercado Central"] },
+  { id: "z-2", name: "Zona Norte", color: "bg-primary/10", deliveryFee: 5, estimatedMin: 35, neighborhoods: ["Yarinacocha", "San Juan", "Manantay", "Nueva Requena"] },
   { id: "z-3", name: "Zona Sur", color: "bg-[var(--data-warning-500)]", deliveryFee: 4, estimatedMin: 30, neighborhoods: ["Campo Verde", "Puírto Callao", "Masisea", "Iparia"] },
   { id: "z-4", name: "Zona Este", color: "bg-[var(--text-primary)]", deliveryFee: 6, estimatedMin: 45, neighborhoods: ["Contamana", "Padre Abad", "Von Humboldt"] },
 ];
 
 const STATUS_LABELS: Record<string, string> = { "en-ruta": "En Ruta", completada: "Completada", pendiente: "Pendiente", cancelada: "Cancelada" };
-const STATUS_COLORS: Record<string, string> = { "en-ruta": "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", completada: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]", cancelada: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" };
+const STATUS_COLORS: Record<string, string> = { "en-ruta": "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]", completada: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]", pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]", cancelada: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" };
 
 function fmtDate(iso: string) { return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }); }
 function fmt(n: number) { return `S/ ${n.toFixed(2)}`; }
@@ -373,7 +373,7 @@ export default function DeliveryRoutesTab() {
               </span>
             ))}
             <span className="flex items-center gap-1">
-              <span className="inline-block w-2.5 h-2.5 rounded-full border border-gray-400 bg-[var(--accent-soft)]" />
+              <span className="inline-block w-2.5 h-2.5 rounded-full border border-gray-400 bg-primary/10" />
               En camino
             </span>
             <span className="flex items-center gap-1">
@@ -381,7 +381,7 @@ export default function DeliveryRoutesTab() {
               Pendiente
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block w-2.5 h-2.5 rounded-full border border-gray-400 bg-[var(--accent-soft)]" />
+              <span className="inline-block w-2.5 h-2.5 rounded-full border border-gray-400 bg-primary/10" />
               Entregado
             </span>
           </div>
@@ -403,7 +403,7 @@ export default function DeliveryRoutesTab() {
           <div className={cn(
             "rounded-lg border px-4 py-3 text-sm space-y-1",
             geoResult.zone.available
-              ? "bg-[var(--accent-soft)] border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:border-[var(--data-success-500)]/30"
+              ? "bg-primary/10 border-[var(--data-success-500)]/30 dark:bg-primary/15 dark:border-[var(--data-success-500)]/30"
               : "bg-[var(--data-error-50)] border-[var(--data-error-500)] dark:bg-red-950/20 dark:border-[var(--data-error-500)]"
           )}>
             <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{geoResult.address}</p>
@@ -502,7 +502,7 @@ export default function DeliveryRoutesTab() {
               <div key={r.id} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex flex-wrap items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><Navigation className="h-5 w-5 text-primary" /></div>
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><Navigation className="h-5 w-5 text-[var(--accent-ink)] dark:text-[var(--accent)]" /></div>
                     <div>
                       <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.name}</h4>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{r.zone} · {assignedRiders[r.id] ?? r.rider}</p>
@@ -534,7 +534,7 @@ export default function DeliveryRoutesTab() {
                 {r.status === "en-ruta" && (
                   <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                     <div className="w-full h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
-                      <div className="h-full bg-[var(--accent-soft)] rounded-full animate-pulse" style={{ width: "60%" }} />
+                      <div className="h-full bg-primary/10 rounded-full animate-pulse" style={{ width: "60%" }} />
                     </div>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Estimado: ~{r.estimatedTime - 15} min restantes</p>
                   </div>
@@ -551,10 +551,10 @@ export default function DeliveryRoutesTab() {
                 {r.status !== "completada" && r.status !== "cancelada" && (
                   <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center gap-2 flex-wrap">
                     {r.status === "pendiente" && (
-                      <button onClick={() => updateRouteStatus(r.id, "en-ruta")} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] transition-colors">Enviar a ruta</button>
+                      <button onClick={() => updateRouteStatus(r.id, "en-ruta")} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary/10 text-white hover:bg-primary/10 transition-colors">Enviar a ruta</button>
                     )}
                     {r.status === "en-ruta" && (
-                      <button onClick={() => updateRouteStatus(r.id, "completada")} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] transition-colors">Marcar entregado</button>
+                      <button onClick={() => updateRouteStatus(r.id, "completada")} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary/10 text-white hover:bg-primary/10 transition-colors">Marcar entregado</button>
                     )}
                     <button onClick={() => updateRouteStatus(r.id, "cancelada")} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors">Cancelar</button>
                   </div>

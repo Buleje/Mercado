@@ -191,7 +191,7 @@ export default function DailyReportExport({ className }: DailyReportExportProps)
       {/* Preview de estadísticas */}
       {stats && !loading && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
+          <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
               <TrendingUp className="h-4 w-4 text-[var(--data-success-500)]" />
               <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Ventas hoy</p>
@@ -199,7 +199,7 @@ export default function DailyReportExport({ className }: DailyReportExportProps)
             <p className="text-lg font-extrabold text-[var(--data-success-500)]">{fmt(stats.totalSales)}</p>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{stats.orderCount} pedido{stats.orderCount !== 1 ? "s" : ""}</p>
           </div>
-          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
+          <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
               <Package className="h-4 w-4 text-[var(--data-success-500)]" />
               <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Top producto</p>

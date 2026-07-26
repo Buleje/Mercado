@@ -315,7 +315,7 @@ export default function WeeklyReportCard() {
                   return (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
                       <div
-                        className="w-full rounded-t-sm bg-primary dark:bg-[var(--accent-soft)] min-h-[2px] transition-all"
+                        className="w-full rounded-t-sm bg-primary dark:bg-primary/10 min-h-[2px] transition-all"
                         style={{ height: `${Math.max(pct, 2)}%` }}
                         title={fmt(d.total)}
                       />

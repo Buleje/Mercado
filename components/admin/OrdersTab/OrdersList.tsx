@@ -46,7 +46,7 @@ interface OrdersListProps {
 // ── Status pills tokenizadas ──────────────────────────────────────────────
 const STATUS_STYLES: Record<OrderStatus, string> = {
   pendiente: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)] border-[var(--data-warning-500)]/25",
-  confirmado: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/30",
+  confirmado: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-[var(--accent)]/30",
   preparando: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] border-[var(--data-warning-500)]/35",
   en_camino: "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]",
   entregado: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] border-[var(--data-success-500)]/30",
@@ -223,7 +223,7 @@ export function OrdersList({
                           "inline-flex px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border",
                           o.paymentMethod === "yape"
                             ? "bg-[var(--surface-sunken)] text-[var(--text-primary)] border-[var(--rule-base)]"
-                            : "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/25",
+                            : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-[var(--accent)]/25",
                         )}
                       >
                         {o.paymentMethod === "yape" ? "Yape" : "Efectivo"}
@@ -316,7 +316,7 @@ export function OrdersList({
                     href={googleMapsUrl(o.customer.location)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center h-9 w-9 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+                    className="inline-flex items-center justify-center h-9 w-9 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                     title="Ver en Google Maps"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -359,7 +359,7 @@ export function OrdersList({
             type="button"
             disabled={safeOrdPage <= 1}
             onClick={() => onPageChange(Math.max(1, safeOrdPage - 1))}
-            className="h-9 px-4 rounded-lg text-sm font-bold border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] disabled:opacity-40 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+            className="h-9 px-4 rounded-lg text-sm font-bold border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] disabled:opacity-40 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-primary/10 transition-colors"
           >
             Anterior
           </button>
@@ -372,7 +372,7 @@ export function OrdersList({
             type="button"
             disabled={safeOrdPage >= ordTotalPages}
             onClick={() => onPageChange(safeOrdPage + 1)}
-            className="h-9 px-4 rounded-lg text-sm font-bold border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] disabled:opacity-40 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+            className="h-9 px-4 rounded-lg text-sm font-bold border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] disabled:opacity-40 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-primary/10 transition-colors"
           >
             Siguiente
           </button>

@@ -336,7 +336,7 @@ function PlanBar({
         title={active ? "Quitar filtro" : `Filtrar tabla por ${label}`}
         className={cn(
           "w-full text-left rounded-lg -mx-1.5 px-1.5 py-1 transition-colors",
-          active ? "bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]/30" : "hover:bg-[var(--surface-sunken)]/60",
+          active ? "bg-primary/10 ring-1 ring-[var(--accent)]/30" : "hover:bg-[var(--surface-sunken)]/60",
         )}
       >
         {inner}

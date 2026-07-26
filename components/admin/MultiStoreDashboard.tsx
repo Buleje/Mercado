@@ -558,7 +558,7 @@ export default function MultiStoreDashboard() {
                             className={cn(
                               "inline-block rounded-full px-2 py-0.5 text-xs font-bold",
                               store.isPublished
-                                ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                                 : "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
                             )}
                           >

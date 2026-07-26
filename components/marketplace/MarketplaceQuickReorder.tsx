@@ -128,7 +128,7 @@ export default function MarketplaceQuickReorder() {
     <section className="mt-4 rounded-3xl border border-gray-200 bg-white p-4 shadow-sm dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)] sm:p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 flex-1">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-primary">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <RotateCcw className="h-3.5 w-3.5" />
             Recompra en 1 toque
           </div>

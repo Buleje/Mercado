@@ -408,13 +408,13 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
           {/* Fiado Digital — diferenciador #1 de Buleje. Chip destacado en teal
               para que "compra ahora, paga después" salte a la vista. */}
           {store.acceptsFiado && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] max-md:bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] max-md:text-[var(--text-primary)]">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 max-md:bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] max-md:text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
               <Wallet className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
               Acepta fiado
             </span>
           )}
           {store.freeDelivery && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] max-md:bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] max-md:text-[var(--text-primary)]">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 max-md:bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] max-md:text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
               <Bike className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
               Envío gratis
             </span>
@@ -1164,7 +1164,7 @@ export default function MarketplaceStoresView({
               >
                 {/* Encabezado del mundo: icono en chip + nombre + conteo. */}
                 <div className="mb-4 flex items-center gap-2.5">
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                     <g.Icon className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
                   </span>
                   <h3

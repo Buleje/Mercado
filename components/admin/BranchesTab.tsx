@@ -48,8 +48,8 @@ const TRANSFERS: Transfer[] = [];
 
 const TRANSFER_STATUS: Record<Transfer["status"], { label: string; color: string; bg: string }> = {
   pendiente:     { label: "Pendiente",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  "en-transito": { label: "En Tránsito", color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  completada:    { label: "Completada",   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  "en-transito": { label: "En Tránsito", color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
+  completada:    { label: "Completada",   color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -94,8 +94,8 @@ export default function BranchesTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Sucursales activas", value: String(stats.active), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Venta mensual total", value: fmt(stats.totalRevenue), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Sucursales activas", value: String(stats.active), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
+          { label: "Venta mensual total", value: fmt(stats.totalRevenue), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Stock consolidado", value: stats.totalStock.toLocaleString("es-PE") + " uds", color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
           { label: "Transferencias activas", value: String(stats.pendingTransfers), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
         ].map(({ label, value, color, bg }) => (
@@ -130,7 +130,7 @@ export default function BranchesTab() {
                     <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{b.name}</p>
                     <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{b.code}</p>
                   </div>
-                  <span className={cn("flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", b.status === "activa" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)]")}>
+                  <span className={cn("flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", b.status === "activa" ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)]")}>
                     {b.status === "activa" ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
                     {b.status === "activa" ? "Activa" : "Inactiva"}
                   </span>
@@ -203,7 +203,7 @@ export default function BranchesTab() {
                     <span className="font-bold text-[var(--data-success-500)]">{fmt(b.monthlyRevenue)}</span>
                   </div>
                   <div className="h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
-                    <div className="h-full bg-[var(--accent-soft)] rounded-full" style={{ width: `${pct}%` }} />
+                    <div className="h-full bg-primary/10 rounded-full" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );

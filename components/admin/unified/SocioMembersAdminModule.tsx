@@ -311,7 +311,7 @@ function MembersTab({
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => onSelect(m)}
-                        className="inline-flex items-center gap-1 p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
+                        className="inline-flex items-center gap-1 p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                         title="Ver perfil"
                       >
                         <Eye className="h-4 w-4" />

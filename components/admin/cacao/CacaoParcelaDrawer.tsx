@@ -107,7 +107,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
 
         {parcela && (
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => { setShowEdit((v) => !v); setShowForm(false); }} className={`inline-flex h-9 items-center gap-1.5 rounded-lg border-2 px-3 text-xs font-bold ${showEdit ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"}`}><Settings2 className="h-3.5 w-3.5" />Editar datos</button>
+            <button type="button" onClick={() => { setShowEdit((v) => !v); setShowForm(false); }} className={`inline-flex h-9 items-center gap-1.5 rounded-lg border-2 px-3 text-xs font-bold ${showEdit ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"}`}><Settings2 className="h-3.5 w-3.5" />Editar datos</button>
             <button type="button" onClick={() => setShowDup(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Copy className="h-3.5 w-3.5" />Duplicar</button>
           </div>
         )}
@@ -177,7 +177,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
                       {(l.detalle || l.responsable || l.cantidad != null || l.insumo || l.costo != null) && (
                         <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{[l.detalle, l.responsable && `por ${l.responsable}`, l.cantidad != null && `${l.cantidad}${l.unidad ? ` ${l.unidad}` : ""}`, l.insumo && (l.dosis ? `${l.insumo} (${l.dosis})` : l.insumo), l.costo != null && `S/ ${money(l.costo)}`].filter(Boolean).join(" · ")}</p>
                       )}
-                      {!!l.recurrenteDias && <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"><RotateCcw className="h-3 w-3" />cada {l.recurrenteDias} d</span>}
+                      {!!l.recurrenteDias && <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"><RotateCcw className="h-3 w-3" />cada {l.recurrenteDias} d</span>}
                       {l.tipo === "cosecha" && l.loteId && <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-[var(--data-success-50)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]"><Warehouse className="h-3 w-3" />En acopio</span>}
                       {l.gastoId && <span title="Costo posteado como gasto en Finanzas" className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-[var(--data-info-50)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)]">en Finanzas</span>}
                     </div>

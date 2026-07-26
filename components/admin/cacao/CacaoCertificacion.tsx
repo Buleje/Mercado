@@ -159,7 +159,7 @@ export default function CacaoCertificacion() {
                   </Td>
                   <Td>
                     {p.certificacion && p.certificacion !== "convencional"
-                      ? <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"><Leaf className="h-3 w-3" />{CERT_LABEL[p.certificacion] ?? p.certificacion}</span>
+                      ? <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"><Leaf className="h-3 w-3" />{CERT_LABEL[p.certificacion] ?? p.certificacion}</span>
                       : <span className="text-xs text-[var(--text-tertiary)]">{p.certificacion === "convencional" ? "Convencional" : "Sin declarar"}</span>}
                   </Td>
                   <Td>
@@ -182,7 +182,7 @@ export default function CacaoCertificacion() {
           <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
         ) : view.length === 0 && (
           <div className="p-12 text-center text-[var(--text-tertiary)]">
-            <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><ShieldCheck className="h-7 w-7" /></span>
+            <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><ShieldCheck className="h-7 w-7" /></span>
             <p className="text-base font-bold text-[var(--text-primary)]">{search ? "Sin resultados" : "Aún no tienes productores"}</p>
             <p className="mx-auto mt-1 max-w-sm text-sm">{search ? "Ningún productor coincide con tu búsqueda." : "Registrá productores y cargá su certificación y ubicación para preparar tu exportación."}</p>
           </div>

@@ -102,7 +102,7 @@ function PhoneMockup({ stats }: { stats: DailyStats }) {
 
         {/* App grid placeholder */}
         <div className="mt-4 grid grid-cols-4 gap-2">
-          {["bg-[var(--accent-soft)]", "bg-[var(--accent-soft)]", "bg-[var(--data-error-500)]", "bg-yellow-500",
+          {["bg-primary/10", "bg-primary/10", "bg-[var(--data-error-500)]", "bg-yellow-500",
             "bg-[var(--text-primary)]", "bg-[var(--text-primary)]", "bg-[var(--text-primary)]", "bg-[var(--accent)]"].map((color, i) => (
             <div
               key={i}
@@ -325,7 +325,7 @@ export default function SalesWidgetPreview() {
           </div>
 
           {/* Info box */}
-          <div className="flex items-start gap-3 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] p-4 dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)]">
+          <div className="flex items-start gap-3 rounded-xl border border-[var(--data-success-500)]/30 bg-primary/10 p-4 dark:border-[var(--data-success-500)]/30 dark:bg-primary/15">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
             <div>
               <p className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">

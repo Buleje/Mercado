@@ -247,7 +247,7 @@ export default function AlertsPage() {
                 className={[
                   "inline-flex items-center gap-2 rounded-xl border-2 px-3.5 h-11 text-sm font-bold transition-colors",
                   active
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)]"
+                    ? "border-[var(--accent)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40",
                 ].join(" ")}
               >
@@ -405,7 +405,7 @@ export default function AlertsPage() {
                         <Link
                           href={`/superadmin/tenants/${encodeURIComponent(a.tenantSlug)}`}
                           title="Ficha 360 del negocio"
-                          className="inline-flex h-8 items-center rounded-lg border border-[var(--rule-base)] px-2 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] mr-0.5"
+                          className="inline-flex h-8 items-center rounded-lg border border-[var(--rule-base)] px-2 text-xs font-bold text-[var(--accent)] hover:bg-primary/10 mr-0.5"
                         >
                           Ficha 360
                         </Link>

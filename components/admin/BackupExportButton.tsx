@@ -92,7 +92,7 @@ export default function BackupExportButton() {
         className={cn(
           "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all",
           status === "done"
-            ? "bg-[var(--accent-soft)] text-white"
+            ? "bg-primary/10 text-white"
             : status === "error"
               ? "bg-[var(--data-error-500)] text-white"
               : status === "downloading"

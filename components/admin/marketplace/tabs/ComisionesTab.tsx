@@ -111,7 +111,7 @@ export function MarketplaceComisionesTab() {
               className={cn(
                 "inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 text-sm font-bold transition-all tabular-nums",
                 active
-                  ? "border-primary bg-primary/10 text-primary"
+                  ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
               )}
             >
@@ -126,7 +126,7 @@ export function MarketplaceComisionesTab() {
 
       {filtered.length === 0 && !error ? (
         <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
+          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             <DollarSign className="h-6 w-6" />
           </div>
           <p className="text-base font-extrabold text-[var(--text-primary)]">
@@ -179,7 +179,7 @@ export function MarketplaceComisionesTab() {
                           <button
                             onClick={() => handleMarkPaid(e.id)}
                             disabled={markingPaid === e.id}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
                           >
                             {markingPaid === e.id ? (
                               <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />

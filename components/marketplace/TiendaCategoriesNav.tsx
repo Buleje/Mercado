@@ -138,7 +138,7 @@ export default function TiendaCategoriesNav() {
                   "w-[112px] sm:w-full aspect-square sm:aspect-square",
                   "flex flex-col items-center justify-center gap-2 rounded-2xl border-2 transition-all p-3",
                   isActive
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-md scale-[1.02]"
+                    ? "border-[var(--accent)] bg-primary/10 shadow-md scale-[1.02]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5 hover:shadow-md",
                 ].join(" ")}
               >

@@ -304,7 +304,7 @@ export default function BulkPriceUpdater() {
                   <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden" onChange={onFileChange} />
                 </div>
               ) : (
-                <div className="flex items-center justify-between rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3">
+                <div className="flex items-center justify-between rounded-lg bg-primary/10 dark:bg-primary/15 px-4 py-3">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
                     <span className="text-sm font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">

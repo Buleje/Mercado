@@ -296,7 +296,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
       <div className="flex h-full flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <Leaf className="h-5 w-5" strokeWidth={1.75} />
             </span>
             <div>
@@ -330,7 +330,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
                 </div>
               )}
               {pendingDraft && (
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-4 py-3 text-sm text-[var(--text-primary)]">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-4 py-3 text-sm text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
                   <span className="flex items-center gap-2 font-medium">
                     <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--accent)]" />
                     Hay un lote sin guardar de un intento anterior.
@@ -384,7 +384,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
                 </div>
 
                 {/* Picker de productor */}
-                <div className="space-y-2 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-3">
+                <div className="space-y-2 rounded-xl border border-[var(--accent)]/30 bg-primary/10/40 p-3">
                   <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                     <Users className="h-3.5 w-3.5" />
                     Productor
@@ -419,7 +419,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
                           key={p.id}
                           type="button"
                           onClick={() => pick(p)}
-                          className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-[var(--accent-soft)]/60 ${productorId === p.id ? "bg-[var(--accent-soft)]/60" : ""}`}
+                          className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-primary/10/60 ${productorId === p.id ? "bg-primary/10/60" : ""}`}
                         >
                           <span className="truncate">
                             <span className="font-mono text-xs font-bold text-[var(--text-tertiary)]">

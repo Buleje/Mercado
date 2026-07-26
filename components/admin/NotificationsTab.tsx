@@ -114,9 +114,9 @@ export default function NotificationsTab() {
                     <p className="text-xs text-[var(--text-tertiary)]">{o.customerPhone} · #{o.id.slice(0, 8)}</p>
                   </div>
                   <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase",
-                    o.status === "entregado" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
+                    o.status === "entregado" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
                     o.status === "cancelado" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" :
-                    o.status === "en_camino" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
+                    o.status === "en_camino" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
                     "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                   )}>{o.status}</span>
                   <span className="font-bold text-sm text-[var(--text-secondary)]">S/{o.total?.toFixed(2)}</span>
@@ -138,7 +138,7 @@ export default function NotificationsTab() {
                 <span className="text-[var(--text-secondary)]">Pedido #{selectedOrder.id.slice(0, 8)}</span>
                 <span className="font-bold">S/{selectedOrder.total?.toFixed(2)}</span>
                 <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase",
-                  selectedOrder.status === "entregado" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
+                  selectedOrder.status === "entregado" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
                   selectedOrder.status === "cancelado" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" :
                   "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                 )}>{selectedOrder.status}</span>
@@ -147,15 +147,15 @@ export default function NotificationsTab() {
           )}
 
           {waUrl && (
-            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-2 sm:px-4 py-2 sm:py-3 space-y-2">
+            <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-2 sm:px-4 py-2 sm:py-3 space-y-2">
               <p className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex flex-wrap items-center gap-2"><CheckCircle2 className="h-4 w-4" />Notificación registrada</p>
-              <a href={waUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-[var(--accent-soft)] text-white rounded-lg text-sm font-bold hover:bg-[var(--accent-soft)] transition">
+              <a href={waUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-primary/10 text-white rounded-lg text-sm font-bold hover:bg-primary/10 transition">
                 <ExternalLink className="h-4 w-4" />Abrir WhatsApp
               </a>
             </div>
           )}
 
-          <button onClick={sendNotification} disabled={!selectedOrder || sending} className="w-full py-2.5 bg-[var(--accent-soft)] text-white rounded-lg font-bold text-sm hover:bg-[var(--accent-soft)] transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
+          <button onClick={sendNotification} disabled={!selectedOrder || sending} className="w-full py-2.5 bg-primary/10 text-white rounded-lg font-bold text-sm hover:bg-primary/10 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}Enviar por WhatsApp
           </button>
         </div>

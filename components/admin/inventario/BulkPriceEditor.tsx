@@ -201,7 +201,7 @@ export default function BulkPriceEditor() {
     <div className="space-y-6">
       {/* Toast */}
       {toast && (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-4 py-3 rounded-lg text-sm">
+        <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-4 py-3 rounded-lg text-sm">
           {toast}
         </div>
       )}

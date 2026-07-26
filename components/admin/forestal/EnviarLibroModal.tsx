@@ -39,7 +39,7 @@ export default function EnviarLibroModal({
       <div className="p-5">
 
         {/* Resumen de lo que se registra */}
-        <div className="mb-3 rounded-xl bg-[var(--accent-soft)]/40 px-4 py-3">
+        <div className="mb-3 rounded-xl bg-primary/10/40 px-4 py-3">
           <div className="text-sm font-bold text-[var(--text-primary)]">{piezas} piezas · {fmt(pieTablar)} PT</div>
           <div className="text-xs text-[var(--text-secondary)]">{fmt(m3)} m³{especie ? ` · ${especie}` : ""} · Madera aserrada (producción)</div>
         </div>
@@ -53,7 +53,7 @@ export default function EnviarLibroModal({
         </label>
 
         {/* Crear lote */}
-        <button type="button" onClick={() => setCrearLote((v) => !v)} aria-pressed={crearLote} className={`mt-3 flex w-full items-start gap-3 rounded-xl border-2 p-3 text-left transition ${crearLote ? "border-[var(--accent)] bg-[var(--accent-soft)]/40" : "border-[var(--rule-base)]"}`}>
+        <button type="button" onClick={() => setCrearLote((v) => !v)} aria-pressed={crearLote} className={`mt-3 flex w-full items-start gap-3 rounded-xl border-2 p-3 text-left transition ${crearLote ? "border-[var(--accent)] bg-primary/10/40" : "border-[var(--rule-base)]"}`}>
           <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${crearLote ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--rule-base)]"}`}>
             {crearLote && <Check className="h-3.5 w-3.5" />}
           </span>

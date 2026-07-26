@@ -26,8 +26,8 @@ type MessageTemplate = {
 
 /* ── config ─────────────────────────────────────────────────── */
 const CHANNEL_CONFIG: Record<TemplateChannel, { label: string; color: string; bg: string }> = {
-  whatsapp: { label: "WhatsApp", color: "text-[var(--data-success-500)]",  bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  email:    { label: "Email",    color: "text-[var(--data-success-500)]",   bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  whatsapp: { label: "WhatsApp", color: "text-[var(--data-success-500)]",  bg: "bg-primary/10 dark:bg-primary/15" },
+  email:    { label: "Email",    color: "text-[var(--data-success-500)]",   bg: "bg-primary/10 dark:bg-primary/15" },
   sms:      { label: "SMS",      color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
 };
 
@@ -227,7 +227,7 @@ export default function MessageTemplatesTab() {
                     <span>{t.usageCount} usos</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button onClick={e => { e.stopPropagation(); handleCopy(t); }} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors">
+                    <button onClick={e => { e.stopPropagation(); handleCopy(t); }} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors">
                       {copiedId === t.id ? <Check className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> : <Copy className="h-3.5 w-3.5" />}
                     </button>
                     <button onClick={e => { e.stopPropagation(); handleDelete(t.id); }} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
@@ -253,7 +253,7 @@ export default function MessageTemplatesTab() {
               {selected.subject && (
                 <div className="mb-3"><p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Asunto:</p><p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{selected.subject}</p></div>
               )}
-              <div className={cn("rounded-xl p-4 text-sm whitespace-pre-line leading-relaxed", selected.channel === "whatsapp" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" : "bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+              <div className={cn("rounded-xl p-4 text-sm whitespace-pre-line leading-relaxed", selected.channel === "whatsapp" ? "bg-primary/10 dark:bg-primary/15 text-[var(--text-primary)] dark:text-[var(--text-primary)]" : "bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                 {selected.body}
               </div>
               {selected.variables.length > 0 && (
@@ -261,7 +261,7 @@ export default function MessageTemplatesTab() {
                   <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold mb-2">Variables ({selected.variables.length}):</p>
                   <div className="flex flex-wrap gap-1.5">
                     {selected.variables.map(v => (
-                      <span key={v} className="px-2 py-1 rounded-lg bg-primary/10 text-primary text-xs font-bold">{`{{${v}}}`}</span>
+                      <span key={v} className="px-2 py-1 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold">{`{{${v}}}`}</span>
                     ))}
                   </div>
                 </div>

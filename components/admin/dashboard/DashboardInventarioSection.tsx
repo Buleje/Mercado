@@ -29,7 +29,7 @@ function Card({ title, icon: Icon, children, action }: { title: string; icon: Re
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">{text}</div>; }
 function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
-  const m: Record<string,string> = { green:"bg-[var(--accent-soft)] text-[var(--data-success-500)]", red:"bg-red-50 text-[var(--data-error-600)]", amber:"bg-amber-50 text-[var(--data-warning-600)]", blue:"bg-[var(--accent-soft)] text-[var(--data-success-500)]", purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-[var(--text-secondary)]" };
+  const m: Record<string,string> = { green:"bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", red:"bg-red-50 text-[var(--data-error-600)]", amber:"bg-amber-50 text-[var(--data-warning-600)]", blue:"bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-[var(--text-secondary)]" };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
@@ -82,7 +82,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                     <div className="flex flex-wrap items-center gap-2 shrink-0">
                       {/* E2 — Margin badge */}
                       {p.costPrice != null && p.price > 0 && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">
+                        <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]">
                           {Math.round((p.price - p.costPrice) / p.price * 100)}% mg
                         </span>
                       )}
@@ -97,7 +97,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                         href={`https://wa.me/?text=${encodeURIComponent(`Hola, necesito reponer: ${p.name}. Stock actual: ${p.stock} uds (mínimo: ${p.stockMin}). Por favor confirmar disponibilidad y precio.`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:hover:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded transition-colors"
+                        className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 dark:bg-primary/15 dark:hover:bg-primary/15 px-1.5 py-0.5 rounded transition-colors"
                         title="Pedir al proveedor por WhatsApp"
                       >
                         Pedir
@@ -182,7 +182,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                                   </div>
                                 );
                               })}
-                              <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-2.5 text-xs mt-3">
+                              <div className="bg-primary/10 dark:bg-primary/15 rounded-lg p-2.5 text-xs mt-3">
                                 <div className="font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Sugerencia</div>
                                 <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                                   Crea un combo especial con estos productos o sugiérelos activamente cuando vendes {product.name}.
@@ -311,7 +311,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                 )}
 
                 {/* Info box */}
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 text-xs">
+                <div className="bg-primary/10 dark:bg-primary/15 rounded-lg p-3 text-xs">
                   <div className="font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Proyección inteligente</div>
                   <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                     Basado en ventas de los últimos 30 días. Las cantidades sugeridas cubren 30 días de demanda proyectada.

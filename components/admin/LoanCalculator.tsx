@@ -196,7 +196,7 @@ export default function LoanCalculator() {
                   ? "bg-[var(--data-error-50)]"
                   : salesRatio > 15
                   ? "bg-[var(--data-warning-50)]"
-                  : "bg-[var(--accent-soft)]"
+                  : "bg-primary/10"
               )}
             >
               <TrendingDown
@@ -271,7 +271,7 @@ export default function LoanCalculator() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowTable(!showTable)}
-              className="flex items-center gap-2 rounded-lg border border-primary px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary/5"
+              className="flex items-center gap-2 rounded-lg border border-primary px-4 py-2 text-sm font-medium text-[var(--accent-ink)] dark:text-[var(--accent)] transition hover:bg-primary/5"
             >
               <Calculator className="h-4 w-4" />
               {showTable ? "Ocultar tabla" : "Ver tabla de amortizacion"}

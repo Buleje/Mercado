@@ -132,7 +132,7 @@ export default function DeliveryAppShell({ children }: { children: React.ReactNo
       <aside className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:left-0 border-r border-[var(--rule-base)] bg-[var(--surface-raised)] z-40">
         <div className="px-6 py-6 border-b border-[var(--rule-base)]">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
+            <div className="h-12 w-12 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center">
               <MotoIcon className="h-7 w-7" />
             </div>
             <div className="min-w-0">
@@ -172,7 +172,7 @@ export default function DeliveryAppShell({ children }: { children: React.ReactNo
                 aria-current={active ? "page" : undefined}
                 className={`flex items-center gap-3 px-4 h-12 text-base font-bold transition-colors ${
                   active
-                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                    ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
                 }`}
               >
@@ -201,7 +201,7 @@ export default function DeliveryAppShell({ children }: { children: React.ReactNo
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="px-4 py-3 flex items-center gap-3">
-          <div className="h-10 w-10 bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0">
+          <div className="h-10 w-10 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0">
             <MotoIcon className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">

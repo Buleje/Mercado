@@ -123,7 +123,7 @@ export default function RepartidoresOverview() {
                     <ol className="space-y-2">
                       {data.topPerformers.map((p, i) => (
                         <li key={p.id} className="flex items-center gap-3">
-                          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold tabular-nums">{i + 1}</span>
+                          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold tabular-nums">{i + 1}</span>
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-bold text-[var(--text-primary)] truncate">{p.name}{p.isOnline && <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-[var(--data-success-500)] align-middle" title="Online" />}</p>
                             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{p.zone}{p.tenant ? ` · ${p.tenant}` : ""}</p>

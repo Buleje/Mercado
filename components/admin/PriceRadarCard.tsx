@@ -81,7 +81,7 @@ export default function PriceRadarCard({ products, onAdjust }: Props) {
       {/* Header */}
       <div className="px-5 py-4 sm:px-6 border-b border-[var(--rule-soft)]">
         <div className="flex items-center gap-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Target className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <div className="flex-1">

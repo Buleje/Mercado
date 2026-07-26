@@ -455,7 +455,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
           </div>
           <span className={cn(
             "text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-full",
-            data.margenHoy >= 30 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : data.margenHoy >= 15 ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
+            data.margenHoy >= 30 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : data.margenHoy >= 15 ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
           )}>
             {data.margenHoy >= 30 ? "Excelente" : data.margenHoy >= 15 ? "Aceptable" : "Revisar"}
           </span>
@@ -464,7 +464,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
           <div
             className={cn(
               "h-full rounded-full transition-all duration-[var(--dur-slower)]",
-              data.margenHoy >= 30 ? "bg-[var(--accent-soft)]" : data.margenHoy >= 15 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
+              data.margenHoy >= 30 ? "bg-primary/10" : data.margenHoy >= 15 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
             )}
             style={{ width: `${Math.min(data.margenHoy, 100)}%` }}
           />

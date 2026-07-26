@@ -216,7 +216,7 @@ export default function ConteoFisicoWizard() {
                     onClick={() => setTipo('completo')}
                     className={`flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
                       tipo === 'completo'
-                        ? 'border-primary bg-primary/5 text-primary'
+                        ? 'border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]'
                         : 'border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300'
                     }`}
                   >
@@ -226,7 +226,7 @@ export default function ConteoFisicoWizard() {
                     onClick={() => setTipo('categoria')}
                     className={`flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
                       tipo === 'categoria'
-                        ? 'border-primary bg-primary/5 text-primary'
+                        ? 'border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]'
                         : 'border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300'
                     }`}
                   >
@@ -343,7 +343,7 @@ export default function ConteoFisicoWizard() {
                       <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${
                         item.stockContado !== null
                           ? item.diferencia === 0
-                            ? 'bg-[var(--accent-soft)] text-[var(--data-success-500)]'
+                            ? 'bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]'
                             : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                           : 'bg-gray-100 text-[var(--text-secondary)]'
                       }`}>
@@ -511,7 +511,7 @@ export default function ConteoFisicoWizard() {
       {/* ═══ PASO 4: Resumen Final ═══ */}
       {paso === 4 && resumen && (
         <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 text-center space-y-6">
-          <div className="w-16 h-16 mx-auto bg-[var(--accent-soft)] rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
             <svg className="w-8 h-8 text-[var(--data-success-500)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
@@ -532,7 +532,7 @@ export default function ConteoFisicoWizard() {
               <div className="text-2xl font-bold text-[var(--data-warning-500)]">{resumen.conDiferencia}</div>
               <div className="text-xs text-[var(--text-secondary)]">Con diferencia</div>
             </div>
-            <div className="bg-[var(--accent-soft)] rounded-lg p-4">
+            <div className="bg-primary/10 rounded-lg p-4">
               <div className="text-2xl font-bold text-[var(--data-success-500)]">{resumen.ajustados}</div>
               <div className="text-xs text-[var(--text-secondary)]">Ajustes aplicados</div>
             </div>

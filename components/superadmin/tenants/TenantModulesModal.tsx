@@ -224,7 +224,7 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
         {/* Barra de estado + acción masiva — Brandon 2026-06-05 */}
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]/60 p-3 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-sm font-bold text-[var(--accent)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-[var(--accent)]">
               <Eye className="h-4 w-4" />
               {effectiveStats.visible}/{effectiveStats.inPlanTotal} visibles
             </span>
@@ -315,7 +315,7 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
                               </span>
                               {isSpec && (
                                 <span
-                                  className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5 text-xs font-bold text-[var(--accent)]"
+                                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-bold text-[var(--accent)]"
                                   title="Requiere especialización activa en el tenant"
                                 >
                                   <Sparkles className="h-3 w-3" /> Spec

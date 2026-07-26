@@ -113,7 +113,7 @@ export default function CheckoutUpsell() {
     >
       {/* Header compacto */}
       <header className="flex items-center gap-2">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Zap className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
         </span>
         <div>
@@ -138,7 +138,7 @@ export default function CheckoutUpsell() {
                 className={cn(
                   "flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors",
                   isAdded
-                    ? "border-[var(--accent)]/40 bg-[var(--accent-soft)]"
+                    ? "border-[var(--accent)]/40 bg-primary/10"
                     : "border-[var(--rule-soft)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/30",
                 )}
               >
@@ -179,7 +179,7 @@ export default function CheckoutUpsell() {
                     "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all",
                     isAdded
                       ? "bg-[var(--accent)] text-white cursor-default"
-                      : "bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white hover:scale-110 active:scale-95",
+                      : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white hover:scale-110 active:scale-95",
                   )}
                 >
                   <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />

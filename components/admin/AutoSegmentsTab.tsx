@@ -23,13 +23,13 @@ const FIELDS = [
   { id: "puntos",              label: "Puntos de fidelidad" },
 ];
 const OPERATORS = ["<", ">", "=", ">=", "<="];
-const COLORS = ["bg-[var(--accent-soft)]","bg-[var(--accent-soft)]","bg-[var(--data-warning-500)]","bg-[var(--data-error-500)]","bg-[var(--text-primary)]","bg-[var(--text-primary)]","bg-cyan-500"];
+const COLORS = ["bg-primary/10","bg-primary/10","bg-[var(--data-warning-500)]","bg-[var(--data-error-500)]","bg-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]","bg-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]","bg-cyan-500"];
 
 const DEFAULT_SEGMENTS: Omit<Segment, "customerCount" | "avgTicket" | "avgFrequency" | "matchedCustomers">[] = [
   { id: "sg-perdido",   name: "Clientes perdidos",    description: "Sin comprar en 60+ días",              rules: [{ field: "dias_sin_compra",    operator: ">",  value: "60"  }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-[var(--data-error-500)]",     active: true },
   { id: "sg-riesgo",   name: "En riesgo",             description: "Sin comprar entre 30 y 60 días",       rules: [{ field: "dias_sin_compra",    operator: ">",  value: "30"  }, { field: "dias_sin_compra", operator: "<=", value: "60" }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-[var(--data-warning-500)]",   active: true },
   { id: "sg-vip",      name: "VIP potencial",         description: "Gastaron más de S/500",                rules: [{ field: "total_comprado",     operator: ">=", value: "500" }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-[var(--data-warning-500)]",  active: true },
-  { id: "sg-frecuente",name: "Clientes frecuentes",   description: "Más de 5 pedidos",                     rules: [{ field: "frecuencia_pedidos", operator: ">",  value: "5"   }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-[var(--accent-soft)]", active: true },
+  { id: "sg-frecuente",name: "Clientes frecuentes",   description: "Más de 5 pedidos",                     rules: [{ field: "frecuencia_pedidos", operator: ">",  value: "5"   }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-primary/10", active: true },
 ];
 
 /** Evalúa si un cliente cumple una regla */

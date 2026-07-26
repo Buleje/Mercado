@@ -237,7 +237,7 @@ export default function TenantsGrowthRanking() {
                 className={[
                   "flex items-center gap-4 rounded-xl px-4 py-3 transition-colors border",
                   isPodium
-                    ? "bg-[var(--accent-soft)] border-[var(--accent)]/30"
+                    ? "bg-primary/10 border-[var(--accent)]/30"
                     : "bg-[var(--surface-canvas)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
                 ].join(" ")}
               >

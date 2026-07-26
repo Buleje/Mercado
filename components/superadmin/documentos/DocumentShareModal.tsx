@@ -166,7 +166,7 @@ export default function DocumentShareModal({ doc, onClose }: Props) {
         )}
 
         {/* Create form */}
-        <div className="shrink-0 space-y-3 rounded-xl border-2 border-[var(--rule-base)] p-4 bg-[var(--accent-soft)]">
+        <div className="shrink-0 space-y-3 rounded-xl border-2 border-[var(--rule-base)] p-4 bg-primary/10">
           <p className="text-sm font-semibold text-[var(--text-secondary)]">Crear link</p>
           <div className="flex gap-2">
             <label className="flex-1 space-y-1">

@@ -545,7 +545,7 @@ export default function CheckoutConfirmarPage() {
                 <AlertCircle className="h-10 w-10" strokeWidth={1.5} />
               </span>
             ) : (
-              <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <CheckCircle2 className="h-10 w-10" strokeWidth={1.5} />
               </span>
             )}
@@ -590,7 +590,7 @@ export default function CheckoutConfirmarPage() {
                 className={cn(
                   "rounded-2xl border px-5 py-4 flex items-start gap-3",
                   r.success
-                    ? "border-[var(--accent)]/30 bg-[var(--accent-soft)]"
+                    ? "border-[var(--accent)]/30 bg-primary/10"
                     : "border-[var(--data-error-500)]/30 bg-[var(--data-error-50)]",
                 )}
               >
@@ -712,7 +712,7 @@ export default function CheckoutConfirmarPage() {
           {showAuthBanner && (
             <aside
               aria-label="Iniciar sesión para rastrear pedidos"
-              className="rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent-soft)]/40 p-3.5 sm:p-4 flex items-center gap-3"
+              className="rounded-2xl border border-[var(--accent)]/25 bg-primary/10/40 p-3.5 sm:p-4 flex items-center gap-3"
             >
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-white shrink-0">
                 <UserCircle className="h-5 w-5" strokeWidth={2.25} aria-hidden />
@@ -795,7 +795,7 @@ export default function CheckoutConfirmarPage() {
               <div className="flex items-center gap-2.5">
                 <span
                   aria-hidden
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0"
                 >
                   <Tag className="h-4 w-4" strokeWidth={2.25} />
                 </span>
@@ -877,13 +877,13 @@ export default function CheckoutConfirmarPage() {
                   type="button"
                   onClick={() => setDetailsOpen(true)}
                   aria-label="Ver detalle del pedido"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--accent)] hover:bg-primary/10 transition-colors"
                 >
                   <Eye className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </button>
                 <Link
                   href="/marketplace/carrito"
-                  className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-4 h-9 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+                  className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-4 h-9 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:bg-primary/10 transition-colors"
                 >
                   Editar
                 </Link>
@@ -1100,7 +1100,7 @@ function ReviewCard({
   className?: string;
 }) {
   const editCls =
-    "inline-flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] active:scale-95 transition-all shrink-0";
+    "inline-flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-lg text-[var(--text-tertiary)] hover:bg-primary/10 hover:text-[var(--accent)] active:scale-95 transition-all shrink-0";
   const editLink = onEdit ? (
     <button type="button" onClick={onEdit} aria-label={`Editar ${title}`} className={editCls}>
       <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
@@ -1113,7 +1113,7 @@ function ReviewCard({
   const iconChip = (
     <span
       aria-hidden
-      className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0"
+      className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0"
     >
       <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2.25} />
     </span>

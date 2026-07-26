@@ -330,7 +330,7 @@ export default function PaymentCalendarView() {
                         <span className="inline-block h-2 w-2 rounded-full bg-[var(--data-warning-500)]" title="Préstamos por cobrar" />
                       )}
                       {hasPayables && (
-                        <span className="inline-block h-2 w-2 rounded-full bg-[var(--accent-soft)]" title="Cuentas por pagar" />
+                        <span className="inline-block h-2 w-2 rounded-full bg-primary/10" title="Cuentas por pagar" />
                       )}
                     </div>
                   )}
@@ -348,7 +348,7 @@ export default function PaymentCalendarView() {
               <span className="h-2 w-2 rounded-full bg-[var(--data-warning-500)] inline-block" /> Préstamos
             </span>
             <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">
-              <span className="h-2 w-2 rounded-full bg-[var(--accent-soft)] inline-block" /> Por pagar
+              <span className="h-2 w-2 rounded-full bg-primary/10 inline-block" /> Por pagar
             </span>
           </div>
         </div>
@@ -410,7 +410,7 @@ export default function PaymentCalendarView() {
                   </p>
                   <div className="space-y-1.5">
                     {selectedEvents.payables.map(p => (
-                      <div key={p.id} className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg px-3 py-2">
+                      <div key={p.id} className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg px-3 py-2">
                         <p className="text-xs font-bold text-[var(--text-primary)] truncate">{p.supplierName}</p>
                         {p.description && <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted truncate">{p.description}</p>}
                         <p className="text-[length:var(--ts-xs)] font-mono font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-0.5">{fmt(p.amount)}</p>

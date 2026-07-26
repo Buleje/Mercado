@@ -658,7 +658,7 @@ async function CategoriesGrid() {
               >
                 {/* Encabezado del bloque — sans bold (sin serif alargada), sin conteo */}
                 <div className="flex items-center gap-2.5 border-b border-[var(--rule-soft)] px-4 py-3.5">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-muted)] text-[var(--accent-dark)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_20%,transparent)] dark:text-[var(--accent)]">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-[var(--accent-dark)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_20%,transparent)] dark:text-[var(--accent)]">
                     <BlockIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
                   </span>
                   <span className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
@@ -681,7 +681,7 @@ async function CategoriesGrid() {
                           href={hrefForCategory(c.id)}
                           className="group/tile flex h-full flex-col items-center justify-center gap-2.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-4 text-center transition-[border-color,background-color,transform] duration-[var(--dur-fast)] hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent)_45%,transparent)] hover:bg-[var(--surface-sunken)]"
                         >
-                          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-muted)] text-[var(--accent-dark)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_16%,transparent)] transition-transform duration-[var(--dur-fast)] group-hover/tile:scale-105 dark:text-[var(--accent)]">
+                          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-[var(--accent-dark)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_16%,transparent)] transition-transform duration-[var(--dur-fast)] group-hover/tile:scale-105 dark:text-[var(--accent)]">
                             <CatIcon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                           </span>
                           <span className="text-sm font-semibold leading-tight text-[var(--text-primary)] line-clamp-2">
@@ -807,7 +807,7 @@ function StoreCard({ s, priority = false }: { s: TopStore | FeaturedStorePreview
         {(s.category || s.zone) && (
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {s.category && (
-              <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] sm:text-xs font-bold text-[var(--accent)] line-clamp-1 max-w-full">
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] sm:text-xs font-bold text-[var(--accent)] line-clamp-1 max-w-full">
                 {s.category}
               </span>
             )}
@@ -917,7 +917,7 @@ function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; p
           </h3>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {s.category && (
-              <span className="inline-flex items-center bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-bold capitalize text-[var(--accent)]">
+              <span className="inline-flex items-center bg-primary/10 px-2 py-0.5 text-[11px] font-bold capitalize text-[var(--accent)]">
                 {s.category}
               </span>
             )}
@@ -1039,7 +1039,7 @@ function EmptyStoresPlaceholder() {
       <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <span
           aria-hidden
-          className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-5"
+          className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-5"
         >
           <Store className="h-8 w-8" strokeWidth={1.75} />
         </span>
@@ -1105,7 +1105,7 @@ function HomeFaqSection() {
                      acento al abrir), tinte suave + número resaltado en open. */
                   <details
                     key={n}
-                    className="group border border-[var(--rule-base)] border-l-[3px] border-l-[var(--rule-strong)] bg-[var(--surface-raised)] transition-colors open:border-l-[var(--accent)] open:bg-[var(--accent-soft)]/25"
+                    className="group border border-[var(--rule-base)] border-l-[3px] border-l-[var(--rule-strong)] bg-[var(--surface-raised)] transition-colors open:border-l-[var(--accent)] open:bg-primary/10/25"
                   >
                     <summary className="flex items-center gap-3.5 cursor-pointer list-none px-4 sm:px-5 py-4 [&::-webkit-details-marker]:hidden">
                       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center bg-[var(--surface-sunken)] text-[length:var(--ts-sm)] font-black tabular-nums text-[var(--text-tertiary)] transition-colors group-open:bg-[var(--accent)] group-open:text-white">

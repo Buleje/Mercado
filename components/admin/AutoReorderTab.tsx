@@ -57,8 +57,8 @@ const LEVEL_CONFIG: Record<AlertLevel, { label: string; color: string; bg: strin
 
 const HISTORY_STATUS: Record<string, { label: string; color: string }> = {
   pendiente: { label: "Pendiente", color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
-  enviada:   { label: "Enviada",   color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  recibida:  { label: "Recibida",  color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  enviada:   { label: "Enviada",   color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
+  recibida:  { label: "Recibida",  color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
 };
 
 function fmtDate(iso: string) {
@@ -212,7 +212,7 @@ export default function AutoReorderTab() {
           { label: "Críticos",         value: kpis.critical, color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20",    icon: AlertTriangle },
           { label: "Stock bajo",       value: kpis.low,      color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20", icon: TrendingDown },
           { label: "En alerta",        value: kpis.warning,  color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20", icon: Package },
-          { label: "Auto-reorden ON",  value: kpis.autoOn,   color: "text-[var(--data-success-500)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: RefreshCw },
+          { label: "Auto-reorden ON",  value: kpis.autoOn,   color: "text-[var(--data-success-500)]",bg: "bg-primary/10 dark:bg-primary/15", icon: RefreshCw },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5 shrink-0", color)} />
@@ -226,7 +226,7 @@ export default function AutoReorderTab() {
 
       {/* Success banner */}
       {created && (
-        <div className="flex flex-wrap items-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-4 py-3 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+        <div className="flex flex-wrap items-center gap-2 bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-4 py-3 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           Orden de compra creada: <span className="font-mono font-bold">{created.slice(0, 8)}...</span>
           <button onClick={() => setCreated(null)} className="ml-auto text-xs underline">Cerrar</button>
@@ -347,7 +347,7 @@ export default function AutoReorderTab() {
                             <td className="px-4 py-3 text-center">
                               <button
                                 onClick={() => { setEditThresholds(p); setThresholdForm({ stockMin: p.stockMin, stockMax: p.stockMax }); }}
-                                className="p-1.5 rounded-lg hover:bg-primary/10 text-[var(--text-tertiary)] hover:text-primary transition"
+                                className="p-1.5 rounded-lg hover:bg-primary/10 text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition"
                                 title="Editar umbrales"
                               >
                                 <SlidersHorizontal className="h-3.5 w-3.5" />

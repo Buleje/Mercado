@@ -93,7 +93,7 @@ export function SuperAdminModuleTabs({ tabs }: { tabs: ModuleTab[] }) {
                   "ml-0.5 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[length:var(--ts-2xs)] font-bold tabular-nums",
                   active
                     ? "bg-white/25 text-white"
-                    : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                    : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
                 ].join(" ")}
                 aria-label={`${badge} pendientes`}
               >

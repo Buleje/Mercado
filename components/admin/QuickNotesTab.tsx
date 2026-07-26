@@ -22,16 +22,16 @@ type NoteColor = "yellow" | "green" | "blue" | "pink" | "purple" | "orange";
 
 const COLOR_MAP: Record<NoteColor, { bg: string; border: string; darkBg: string; darkBorder: string }> = {
   yellow: { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning-500)]", darkBg: "dark:bg-yellow-950/20", darkBorder: "dark:border-yellow-800" },
-  green:  { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success-500)]/30", darkBg: "dark:bg-[var(--accent-muted)]", darkBorder: "dark:border-[var(--data-success-500)]/30" },
-  blue:   { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success-500)]/30", darkBg: "dark:bg-[var(--accent-muted)]", darkBorder: "dark:border-[var(--data-success-500)]/30" },
+  green:  { bg: "bg-primary/10", border: "border-[var(--data-success-500)]/30", darkBg: "dark:bg-primary/15", darkBorder: "dark:border-[var(--data-success-500)]/30" },
+  blue:   { bg: "bg-primary/10", border: "border-[var(--data-success-500)]/30", darkBg: "dark:bg-primary/15", darkBorder: "dark:border-[var(--data-success-500)]/30" },
   pink:   { bg: "bg-[var(--surface-sunken)]", border: "border-[var(--data-info-500)]", darkBg: "dark:bg-pink-950/20", darkBorder: "dark:border-pink-800" },
-  purple: { bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]", darkBg: "dark:bg-[var(--accent-muted)]/20", darkBorder: "dark:border-[var(--rule-base)]" },
+  purple: { bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]", darkBg: "dark:bg-primary/15/20", darkBorder: "dark:border-[var(--rule-base)]" },
   orange: { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning-500)]", darkBg: "dark:bg-orange-950/20", darkBorder: "dark:border-orange-800" },
 };
 
 const COLOR_DOTS: Record<NoteColor, string> = {
-  yellow: "bg-[var(--data-warning-500)]", green: "bg-[var(--accent-soft)]", blue: "bg-[var(--accent-soft)]",
-  pink: "bg-[var(--data-info-500)]", purple: "bg-[var(--accent-soft)]", orange: "bg-[var(--data-warning-500)]",
+  yellow: "bg-[var(--data-warning-500)]", green: "bg-primary/10", blue: "bg-primary/10",
+  pink: "bg-[var(--data-info-500)]", purple: "bg-primary/10", orange: "bg-[var(--data-warning-500)]",
 };
 
 /* ── seed notes ─────────────────────────────────────────────── */

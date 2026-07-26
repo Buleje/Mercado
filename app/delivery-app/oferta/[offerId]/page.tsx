@@ -214,7 +214,7 @@ export default function OfferPage() {
         {/* ── Info principal ─────────────────────────────── */}
         <section className="space-y-5">
           <header>
-            <span className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3 h-8 text-xs font-extrabold uppercase tracking-wider">
+            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 h-8 text-xs font-extrabold uppercase tracking-wider">
               Oferta nueva · Intento #{offer.attempt}
             </span>
             <h1 className="mt-3 text-4xl lg:text-5xl font-extrabold text-[var(--text-primary)] tabular-nums">

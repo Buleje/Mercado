@@ -47,14 +47,14 @@ function getBarColor(porcentaje: number): string {
   if (porcentaje > 100) return "bg-[var(--data-error-500)] animate-pulse";
   if (porcentaje > 80) return "bg-[var(--data-error-500)]";
   if (porcentaje > 60) return "bg-[var(--data-warning-500)]";
-  return "bg-[var(--accent-soft)]";
+  return "bg-primary/10";
 }
 
 function getBarTrack(porcentaje: number): string {
   if (porcentaje > 100) return "bg-red-100 dark:bg-red-900/20";
   if (porcentaje > 80) return "bg-red-100 dark:bg-red-900/20";
   if (porcentaje > 60) return "bg-amber-100 dark:bg-amber-900/20";
-  return "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]";
+  return "bg-primary/10 dark:bg-primary/15";
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -205,7 +205,7 @@ export default function PresupuestoMensualTab() {
         </div>
         <button
           onClick={openEdit}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors"
         >
           <Pencil className="h-3.5 w-3.5" />
           Editar presupuesto
@@ -232,7 +232,7 @@ export default function PresupuestoMensualTab() {
                       ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                       : cat.porcentaje > 60
                         ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
-                        : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                        : "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                 )}>
                   {cat.porcentaje}%
                 </span>

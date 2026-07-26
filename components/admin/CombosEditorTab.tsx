@@ -134,7 +134,7 @@ export default function CombosEditorTab() {
             disabled={!hasChanges || saving}
             className={cn(
               "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-white transition-all",
-              saved ? "bg-[var(--accent-soft)]" : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
+              saved ? "bg-primary/10" : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
@@ -153,7 +153,7 @@ export default function CombosEditorTab() {
                 <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{combo.name}</p>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{combo.categories.length} categorías · {combo.discount}% dto · {combo.size} productos</p>
               </div>
-              <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase px-2 py-0.5 rounded-full", combo.enabled ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
+              <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase px-2 py-0.5 rounded-full", combo.enabled ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
                 {combo.enabled ? "Activo" : "Inactivo"}
               </span>
               {expanded === combo.id ? <ChevronUp className="h-4 w-4 text-muted" /> : <ChevronDown className="h-4 w-4 text-muted" />}
@@ -190,7 +190,7 @@ export default function CombosEditorTab() {
                         className={cn(
                           "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all",
                           combo.categories.includes(cat.id)
-                            ? "bg-primary/10 border-primary/30 text-primary"
+                            ? "bg-primary/10 border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                             : "bg-[var(--surface-alt)] dark:bg-background border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)]"
                         )}
                       >

@@ -188,7 +188,7 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
                 className={[
                   "rounded-xl border-2 border-dashed p-8 sm:p-12 text-center cursor-pointer transition-all",
                   dragActive
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                    ? "border-[var(--accent)] bg-primary/10"
                     : "border-[var(--rule-base)] hover:border-[var(--accent)]/60 hover:bg-[var(--surface-sunken)]",
                 ].join(" ")}
               >

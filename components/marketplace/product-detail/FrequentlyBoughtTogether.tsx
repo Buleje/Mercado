@@ -174,7 +174,7 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
       className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
     >
       <header className="flex items-center gap-3 border-b border-[var(--rule-soft)] px-5 py-4">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
           <ShoppingCart className="h-5 w-5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
         </span>
         <div className="min-w-0">
