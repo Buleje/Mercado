@@ -19,6 +19,8 @@ import {
 import { analizarLote } from "@/lib/forestal/cubicacion-insights";
 import { BarraComposicion, LecturaDelLote } from "./resumen-vistas";
 import ResumenComparar from "./ResumenComparar";
+import ResumenMeta from "./ResumenMeta";
+import { useCubicacionesGuardadas } from "@/hooks/use-cubicaciones-guardadas";
 import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoBadge } from "./tipo-badge";
 
@@ -124,6 +126,8 @@ export default function CubicacionResumenes() {
     return () => window.removeEventListener("storage", onStorage);
   }, [recargar]);
 
+  /** Historial: lo comparten la meta (tendencia) y el panel de comparación. */
+  const { lista: guardadas, cargando: cargandoGuardadas } = useCubicacionesGuardadas();
   /** Dimensión libre: la pregunta al vender casi nunca es "por especie". */
   const [dim, setDim] = useState<DimensionResumen>("medida");
   const porEspecie = useMemo(() => agruparPor(rows, "especie", precioDe), [rows, precioDe]);
@@ -217,6 +221,9 @@ export default function CubicacionResumenes() {
         </div>
       </div>
 
+      {/* Meta de mix: qué se buscaba, contra lo que salió */}
+      <ResumenMeta rows={rows} precioDe={precioDe} guardadas={guardadas} />
+
       {/* Lectura del lote: lo accionable primero */}
       {insights.length > 0 && (
         <section>
@@ -278,7 +285,7 @@ export default function CubicacionResumenes() {
             comparado <b className="text-[var(--text-secondary)]">{ETIQUETA_DIMENSION[dim].toLowerCase()}</b> — cambialo arriba
           </span>
         </div>
-        <ResumenComparar rows={rows} precioDe={precioDe} conValor={conValor} dim={dim} />
+        <ResumenComparar rows={rows} precioDe={precioDe} conValor={conValor} dim={dim} guardadas={guardadas} cargando={cargandoGuardadas} />
       </section>
 
       {/* 3. General por tipo */}

@@ -7,7 +7,7 @@
  * más comercial y menos corta que la anterior, el aserrío va bien; si el pie
  * tablar se paga menos, hay que mirar la mezcla antes de culpar al mercado.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowLeftRight, Loader2, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
@@ -22,26 +22,16 @@ const tono = (v: number) =>
     : v < 0 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
       : "text-[var(--text-tertiary)]";
 
-export default function ResumenComparar({ rows, precioDe, conValor, dim }: {
+export default function ResumenComparar({ rows, precioDe, conValor, dim, guardadas, cargando }: {
   rows: PiezaCubicada[];
   precioDe: PrecioPt;
   conValor: boolean;
   dim: DimensionResumen;
+  /** Historial del tenant (lo carga el padre: también lo usa la meta). */
+  guardadas: CubicacionRegistro[];
+  cargando: boolean;
 }) {
-  const [guardadas, setGuardadas] = useState<CubicacionRegistro[]>([]);
-  const [cargando, setCargando] = useState(true);
   const [contraId, setContraId] = useState("");
-
-  useEffect(() => {
-    let vivo = true;
-    fetch("/api/admin/forestal/cubicaciones", { credentials: "include", cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : { cubicaciones: [] }))
-      .then((j: { cubicaciones?: CubicacionRegistro[] }) => { if (vivo) setGuardadas(j.cubicaciones ?? []); })
-      // Sin historial no hay contra qué comparar: la sección simplemente no aparece.
-      .catch(() => { if (vivo) setGuardadas([]); })
-      .finally(() => { if (vivo) setCargando(false); });
-    return () => { vivo = false; };
-  }, []);
 
   const contra = guardadas.find((g) => g.id === contraId);
   const comp = useMemo(
