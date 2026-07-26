@@ -131,6 +131,31 @@ export function resolveCtpPeriod(
   }
 }
 
+/**
+ * El mismo rango, en formato corto para la cabina del libro ("may–jul 2026").
+ * El `label` largo sigue siendo el de los informes y exports; acá manda el
+ * ancho: en la cabecera compite con el score, las acciones y el título.
+ */
+export function ctpPeriodShortLabel(period: CtpPeriod): string {
+  if (!period.from || !period.to) return period.key === "custom" ? "sin definir" : "histórico";
+  const f = new Date(period.from);
+  const t = new Date(period.to);
+  if (Number.isNaN(f.getTime()) || Number.isNaN(t.getTime())) return period.label;
+
+  const mes = (d: Date) => d.toLocaleDateString("es-PE", { month: "short" }).replace(".", "");
+  const mismoAnio = f.getFullYear() === t.getFullYear();
+  // ¿Los límites son meses completos? Entonces se nombra por mes, no por día.
+  const mesesEnteros = f.getDate() === 1 && t.getDate() === lastDay(t.getFullYear(), t.getMonth());
+
+  if (mesesEnteros && mismoAnio && f.getMonth() === 0 && t.getMonth() === 11) return String(f.getFullYear());
+  if (mesesEnteros && mismoAnio && f.getMonth() === t.getMonth()) return `${mes(f)} ${f.getFullYear()}`;
+  if (mesesEnteros && mismoAnio) return `${mes(f)}–${mes(t)} ${f.getFullYear()}`;
+  if (mesesEnteros) return `${mes(f)} ${f.getFullYear()} – ${mes(t)} ${t.getFullYear()}`;
+  return mismoAnio
+    ? `${f.getDate()} ${mes(f)} – ${t.getDate()} ${mes(t)} ${t.getFullYear()}`
+    : `${f.getDate()} ${mes(f)} ${f.getFullYear()} – ${t.getDate()} ${mes(t)} ${t.getFullYear()}`;
+}
+
 /** Agrega `from`/`to` a los params de un request (no-op si el período es histórico). */
 export function applyCtpPeriodParams(params: URLSearchParams, period: CtpPeriod): URLSearchParams {
   if (period.from) params.set("from", period.from);

@@ -25,9 +25,9 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from "@buleje/design-system/icons";
-import { WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
+import { CardTitle, WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
 import { BulejeGaugeChart } from "@/components/ui-system/charts";
-import { Btn } from "./ctp-shared";
+import { Btn, VistaHeader } from "./ctp-shared";
 import {
   computeLothCompliance,
   type LothAnomaly,
@@ -142,20 +142,18 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="min-w-[16rem] flex-1 text-sm text-[var(--text-tertiary)]">
-          Chequeo del libro sobre <strong className="text-[var(--text-secondary)]">{totalLineas.toLocaleString("es-PE")}</strong>{" "}
-          {plural(totalLineas, "línea registrada", "líneas registradas")}. Mismos números que la Analítica.
-        </p>
-        <div className="flex shrink-0 items-center gap-2">
-          <Btn variant="dark" size="md" onClick={handleReport}>
-            <FileDown className="h-4 w-4" /> Descargar reporte
-          </Btn>
-          <Btn variant="secondary" size="md" onClick={() => void load()} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
-          </Btn>
-        </div>
-      </div>
+      <VistaHeader
+        titulo="Chequeo del libro"
+        meta={`${totalLineas.toLocaleString("es-PE")} ${plural(totalLineas, "línea registrada", "líneas registradas")}`}
+        hint="Los mismos números que la Analítica."
+      >
+        <Btn variant="dark" size="md" onClick={handleReport}>
+          <FileDown className="h-4 w-4" /> Descargar reporte
+        </Btn>
+        <Btn variant="secondary" size="md" onClick={() => void load()} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
+        </Btn>
+      </VistaHeader>
 
       {reportError && <WarningAlert title="No se pudo abrir el reporte" description={reportError} />}
 
@@ -202,9 +200,9 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-[var(--data-warning-600)]" />
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">
+            <CardTitle className="text-sm font-bold">
               Requiere atención <span className="text-[var(--text-tertiary)]">({problemas.length})</span>
-            </h3>
+            </CardTitle>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {problemas.map((c) => (

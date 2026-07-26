@@ -13,7 +13,7 @@ import {
   Layers, Plus, RefreshCw, Search, PackageCheck, Boxes, Truck, Tag,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import LibroChrome from "./libro-chrome";
 import { useDebounce } from "@/hooks/use-debounce";
 import LoteForm from "./LoteForm";
 import LoteDetailModal from "./LoteDetailModal";
@@ -81,17 +81,22 @@ export default function ForestLotesModule() {
   const kpis = useMemo(() => stats ?? { total: 0, abiertos: 0, cerrados: 0, despachados: 0, cantidadTotal: 0 }, [stats]);
 
   return (
-    <div className="space-y-6">
-      <AdminModuleHeader
-        eyebrow="Forestal · Especialización"
-        title="Lotes de Producción"
-        description="Agrupá corridas del Libro CTP en lotes comerciales con código, grado y estado. Cada lote hereda su cadena de custodia y tiene certificado + QR verificable."
-        icon={Layers}
-      >
-        <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--brand-ink)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90">
-          <Plus className="h-5 w-5" /> Nuevo lote
+    <LibroChrome
+      moduleId="forest-lotes"
+      eyebrow="Forestal · Especialización"
+      title="Lotes de Producción"
+      icon={Layers}
+      tools={
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          title="Agrupá corridas del Libro CTP en un lote comercial con código, grado y certificado QR"
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110"
+        >
+          <Plus className="h-4 w-4" /> Nuevo lote
         </button>
-      </AdminModuleHeader>
+      }
+    >
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Lotes totales" value={String(kpis.total)} icon={Layers} emphasis="neutral" />
@@ -112,7 +117,7 @@ export default function ForestLotesModule() {
 
       <div className="flex flex-wrap gap-2">
         {STATUS_FILTERS.map((f) => (
-          <button key={f.key} type="button" onClick={() => setStatusFilter(f.key)} className={`inline-flex h-9 items-center rounded-full border-2 px-3.5 text-xs font-bold transition-colors ${statusFilter === f.key ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`}>
+          <button key={f.key} type="button" onClick={() => setStatusFilter(f.key)} className={`inline-flex h-9 items-center rounded-full border-2 px-3.5 text-sm font-bold transition-colors ${statusFilter === f.key ? "border-[var(--accent)] bg-primary/10 text-primary" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"}`}>
             {f.label}
           </button>
         ))}
@@ -156,6 +161,6 @@ export default function ForestLotesModule() {
 
       {showForm && <LoteForm onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
       {detailId && <LoteDetailModal loteId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
-    </div>
+    </LibroChrome>
   );
 }

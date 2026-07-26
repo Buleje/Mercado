@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CardTitle, StatCard } from "@buleje/design-system";
+import { PanelSkeleton } from "./ctp-shared";
 import { AlertCircle, Award, CheckCircle2, Coins, Loader2, Sparkles, TrendingDown, TrendingUp, Wallet } from "@buleje/design-system/icons";
 import { BulejeWaterfallChart, type WaterfallStep } from "@/components/ui-system/charts";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -70,7 +71,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
   }
 
   if (error && !pnl) return <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><div><strong>Error:</strong> {error}</div></div>;
-  if (!pnl) return <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando P&L…</p>;
+  if (!pnl) return <PanelSkeleton kpis={4} />;
 
   // Ranking + insight: qué producto deja plata y cuál la pierde. Se ordena por
   // margen (desc); el detalle de la tabla usa una barra proporcional al mayor

@@ -6,6 +6,9 @@
  * Widget colapsable: el operador escribe una pregunta ("¿cuánto shihuahuaco me
  * queda?", "¿qué despachos no tienen certificado?") y la IA responde SOLO con
  * el resumen real del libro que arma el server (`/ctp/ask`). No inventa cifras.
+ *
+ * 2026-07-26 — vive en la cabina como botón: abierto es un popover anclado, no
+ * un panel que empuja la vista hacia abajo cada vez que se pregunta algo.
  */
 
 import { useEffect, useState } from "react";
@@ -61,39 +64,60 @@ export default function CtpAsistente() {
     }
   }
 
-  if (!open) {
-    return (
-      <button type="button" onClick={() => setOpen(true)} className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--brand-ink)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--brand-ink)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
-        <Sparkles className="h-4 w-4" /> Preguntá al Libro
-      </button>
-    );
-  }
-
   return (
-    <div className="rounded-2xl border-2 border-[var(--brand-ink)] bg-[var(--surface-raised)] p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Sparkles className="h-4 w-4 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" /> Asistente del Libro</span>
-        <button type="button" onClick={() => setOpen(false)} className="grid h-8 w-8 place-items-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)]" aria-label="Cerrar"><XIcon className="h-4 w-4" /></button>
-      </div>
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        title="Preguntá al Libro en lenguaje natural"
+        className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition-colors ${
+          open
+            ? "border-[var(--accent)] bg-primary/10 text-primary dark:bg-primary/20"
+            : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+        }`}
+      >
+        <Sparkles className="h-4 w-4" aria-hidden="true" />
+        <span className="max-sm:sr-only">Preguntá</span>
+      </button>
 
-      <form onSubmit={(e) => { e.preventDefault(); void ask(); }} className="flex items-center gap-2">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Preguntá sobre existencias, despachos, cumplimiento…" className="h-11 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-ink)]" />
-        <button type="submit" disabled={loading || q.trim().length < 3} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--brand-ink)] text-white hover:opacity-90 disabled:opacity-50" aria-label="Preguntar">
-          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-        </button>
-      </form>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div
+            role="dialog"
+            aria-label="Asistente del Libro"
+            className="absolute right-0 z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+                <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" /> Asistente del Libro
+              </span>
+              <button type="button" onClick={() => setOpen(false)} className="grid h-8 w-8 place-items-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)]" aria-label="Cerrar"><XIcon className="h-4 w-4" /></button>
+            </div>
 
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {EJEMPLOS.map((ej) => (
-          <button key={ej} type="button" onClick={() => void ask(ej)} disabled={loading} className="rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 py-1 text-xs text-[var(--text-secondary)] hover:border-[var(--brand-ink)] hover:text-[var(--text-primary)] disabled:opacity-50">{ej}</button>
-        ))}
-      </div>
+            <form onSubmit={(e) => { e.preventDefault(); void ask(); }} className="flex items-center gap-2">
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Existencias, despachos, cumplimiento…" className="h-11 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+              <button type="submit" disabled={loading || q.trim().length < 3} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white hover:brightness-110 disabled:opacity-50" aria-label="Preguntar">
+                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+              </button>
+            </form>
 
-      {error && <p className="mt-3 rounded-lg bg-[var(--data-error-50)] p-2.5 text-xs font-medium text-[var(--data-error-700)]">{error}</p>}
-      {answer && (
-        <div className="mt-3 whitespace-pre-wrap rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-sm text-[var(--text-primary)]">{answer}</div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {EJEMPLOS.map((ej) => (
+                <button key={ej} type="button" onClick={() => void ask(ej)} disabled={loading} className="rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 py-1 text-xs text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50">{ej}</button>
+              ))}
+            </div>
+
+            {error && <p className="mt-3 rounded-lg bg-[var(--data-error-50)] p-2.5 text-xs font-medium text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">{error}</p>}
+            {answer && (
+              <div className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-sm text-[var(--text-primary)]">{answer}</div>
+            )}
+            <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Responde con los datos del libro. Verificá cifras críticas en las pestañas.</p>
+          </div>
+        </>
       )}
-      <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Responde con los datos del libro. Verificá cifras críticas en las pestañas.</p>
     </div>
   );
 }

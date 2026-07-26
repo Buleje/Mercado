@@ -20,10 +20,8 @@ import {
   ShieldAlert,
   ShieldCheck,
   Ban,
-  Download,
   Printer,
   FileSpreadsheet,
-  ChevronDown,
   QrCode,
   Map as MapIcon,
   MapPin,
@@ -35,12 +33,12 @@ import {
   Coins,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
-import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import LibroChrome, { type LibroAction, type LibroGroup } from "./libro-chrome";
+import { IconAction } from "./ctp-shared";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";
 import { printLothInforme } from "@/lib/forestal/loth-informe-print";
 import { printTrozaLabels } from "@/lib/forestal/loth-labels";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import {
   LOTH_SECTIONS,
   PLAZO_REGISTRO_DIAS,
@@ -134,20 +132,47 @@ const COLS: Record<LothSection, Col[]> = {
 
 type LothView = "secciones" | "trazabilidad" | "plan" | "gtf" | "analitica" | "cumplimiento" | "cierre" | "mapa" | "rentabilidad";
 
-// Sub-tabs coherentes con el resto del admin (AdminTabBar: reorden por drag +
-// registro en sidebar), reemplaza el toggle segmentado hecho a mano.
+// Navegación en cabina compartida con el Libro CTP (`libro-chrome`): las nueve
+// vistas agrupadas por fase, con los MISMOS nombres de grupo que el otro libro
+// — quien sabe moverse en uno se mueve en el otro sin volver a aprender.
 const LOTH_MODULE_ID = "loth-libro";
-const LOTH_TAB_ITEMS = [
-  { id: "plan", label: "Plan de Manejo", icon: MapIcon, title: "Censo + especies autorizadas" },
-  { id: "secciones", label: "Secciones", icon: Layers, title: "Las 6 secciones SERFOR" },
-  { id: "trazabilidad", label: "Trazabilidad", icon: Share2, title: "Operación completa por árbol" },
-  { id: "mapa", label: "Mapa", icon: MapPin, title: "Dónde se taló cada árbol (GPS de campo)" },
-  { id: "gtf", label: "GTF", icon: Truck, title: "Guías de transporte forestal" },
-  { id: "analitica", label: "Analítica", icon: TrendingUp, title: "Aprovechamiento + anomalías" },
-  { id: "rentabilidad", label: "Rentabilidad", icon: Coins, title: "Margen por especie (ingreso − costos)" },
-  { id: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, title: "Veredicto de fiscalización + reporte imprimible" },
-  { id: "cierre", label: "Cierre", icon: Lock, title: "Cerrar el mes → acta inmutable (OSINFOR)" },
+const LOTH_GROUPS: LibroGroup[] = [
+  {
+    id: "operacion",
+    label: "Operación",
+    views: [
+      { key: "secciones", label: "Secciones", icon: Layers, hint: "Las 6 secciones SERFOR" },
+      { key: "gtf", label: "GTF", icon: Truck, hint: "Guías de transporte forestal" },
+    ],
+  },
+  {
+    id: "trazabilidad",
+    label: "Trazabilidad",
+    views: [
+      { key: "plan", label: "Plan de Manejo", icon: MapIcon, hint: "Censo + especies autorizadas" },
+      { key: "mapa", label: "Mapa", icon: MapPin, hint: "Dónde se taló cada árbol (GPS de campo)" },
+      { key: "trazabilidad", label: "Por árbol", icon: Share2, hint: "Operación completa de un árbol" },
+    ],
+  },
+  {
+    id: "control",
+    label: "Control",
+    views: [
+      { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Veredicto de fiscalización + reporte imprimible" },
+      { key: "cierre", label: "Cierre", icon: Lock, hint: "Cerrar el mes → acta inmutable (OSINFOR)" },
+    ],
+  },
+  {
+    id: "gestion",
+    label: "Gestión",
+    views: [
+      { key: "rentabilidad", label: "Rentabilidad", icon: Coins, hint: "Margen por especie (ingreso − costos)" },
+      { key: "analitica", label: "Analítica", icon: TrendingUp, hint: "Aprovechamiento + anomalías" },
+    ],
+  },
 ];
+
+const LOTH_VIEW_KEYS = LOTH_GROUPS.flatMap((g) => g.views.map((v) => v.key));
 
 export default function LothLibroOperaciones() {
   const [section, setSection] = useState<LothSection>("tala");
@@ -170,8 +195,10 @@ export default function LothLibroOperaciones() {
   const [view, setView] = useState<LothView>(() => {
     if (typeof window === "undefined") return "secciones";
     const saved = localStorage.getItem(`admin-last-tab-${LOTH_MODULE_ID}`);
-    return saved && LOTH_TAB_ITEMS.some((t) => t.id === saved) ? (saved as LothView) : "secciones";
+    return saved && LOTH_VIEW_KEYS.includes(saved) ? (saved as LothView) : "secciones";
   });
+  /** Estable: la cabina la registra en el contexto del sidebar y en atajos. */
+  const irA = useCallback((v: string) => setView(v as LothView), []);
   useEffect(() => {
     try {
       localStorage.setItem(`admin-last-tab-${LOTH_MODULE_ID}`, view);
@@ -184,7 +211,6 @@ export default function LothLibroOperaciones() {
   const [censoArboles, setCensoArboles] = useState<
     { treeCode: string; speciesCommon: string; dapM: number | null; volumenEstimadoM3: number | null; estado: string }[]
   >([]);
-  const [exportMenu, setExportMenu] = useState(false);
   const [exporting, setExporting] = useState<"pdf" | "excel" | null>(null);
   const [printingLabels, setPrintingLabels] = useState(false);
 
@@ -206,7 +232,6 @@ export default function LothLibroOperaciones() {
   }
 
   async function doExport(kind: "pdf" | "excel") {
-    setExportMenu(false);
     setExporting(kind);
     setError(null);
     try {
@@ -231,6 +256,52 @@ export default function LothLibroOperaciones() {
       setInforming(false);
     }
   }
+
+  /** Lo que se presenta ante la autoridad, plegado: se usa al cerrar el mes,
+   *  no en cada línea que se registra. */
+  const acciones: LibroAction[] = useMemo(
+    () => [
+      {
+        id: "pdf",
+        label: "PDF formato SERFOR",
+        hint: "Carátula + las 6 secciones, para imprimir y firmar",
+        icon: Printer,
+        tone: "dark",
+        busy: exporting === "pdf",
+        disabled: exporting !== null,
+        onSelect: () => void doExport("pdf"),
+      },
+      {
+        id: "informe",
+        label: "Informe ARFFS / OSINFOR",
+        hint: "Informe del período para presentar",
+        icon: FileText,
+        busy: informing,
+        disabled: informing,
+        onSelect: () => void doInforme(),
+      },
+      {
+        id: "excel",
+        label: "Excel (.xlsx) editable",
+        hint: "1 hoja por sección + resumen",
+        icon: FileSpreadsheet,
+        busy: exporting === "excel",
+        disabled: exporting !== null,
+        onSelect: () => void doExport("excel"),
+      },
+      {
+        id: "caratula",
+        label: caratula ? "Editar carátula" : "Configurar carátula",
+        hint: "Titular, título habilitante, registro y tomo",
+        icon: FileText,
+        onSelect: () => setShowCaratula(true),
+      },
+    ],
+    // doExport/doInforme se redefinen por render; lo que cambia el menú es el
+    // trabajo en curso y si ya hay carátula.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [exporting, informing, caratula],
+  );
 
   // Solo la lista de la sección activa — corre en cada cambio de sección/búsqueda.
   const loadEntries = useCallback(async () => {
@@ -366,104 +437,66 @@ export default function LothLibroOperaciones() {
   const usaCantidad = section === "producto_terminado" || section === "despacho_producto";
 
   return (
-    <div className="space-y-6">
-      <AdminModuleHeader
-        eyebrow="Forestal · Especialización"
-        title="Libro de Operaciones · Títulos Habilitantes"
-        description="Trazabilidad del aprovechamiento en el bosque: tala → trozado → despacho → consumo → producto → despacho. 6 secciones SERFOR (RDE 264-2019). Interno, no oficial."
-        icon={TreePine}
-      >
+    <LibroChrome
+      moduleId={LOTH_MODULE_ID}
+      eyebrow="Forestal · LO-TH SERFOR"
+      title="Libro de Operaciones · Títulos Habilitantes"
+      icon={TreePine}
+      groups={LOTH_GROUPS}
+      view={view}
+      onView={irA}
+      status={
+        // La carátula ES la identidad del libro: sin ella, ningún export es
+        // presentable. Por eso el chip vive en la cabina y no en un banner.
         <button
           type="button"
           onClick={() => setShowCaratula(true)}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+          title={caratula ? "Carátula del libro — titular, título habilitante, registro y tomo" : "El libro necesita carátula para poder presentarse"}
+          className={`inline-flex h-10 max-w-[18rem] items-center gap-2 rounded-xl border-2 px-3 text-sm transition-colors ${
+            caratula
+              ? "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+              : "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] font-bold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
+          }`}
         >
-          <FileText className="h-4 w-4" />
-          <span>{caratula ? "Carátula" : "Configurar carátula"}</span>
+          <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {caratula ? (
+            <>
+              <span className="truncate font-bold">{caratula.titularName}</span>
+              {caratula.tituloHabilitante && (
+                <span className="hidden shrink-0 font-mono text-xs text-[var(--text-tertiary)] lg:inline">
+                  {caratula.tituloHabilitante}
+                </span>
+              )}
+            </>
+          ) : (
+            <span>Configurar carátula</span>
+          )}
         </button>
-        <div className="relative">
+      }
+      tools={
+        <>
           <button
             type="button"
-            onClick={() => setExportMenu((v) => !v)}
-            disabled={exporting !== null}
-            className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+            onClick={refreshAll}
+            disabled={loading}
+            aria-label="Recargar"
+            title="Recargar el libro"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-60"
           >
-            {exporting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            <span>{exporting === "excel" ? "Generando…" : exporting === "pdf" ? "Abriendo…" : "Exportar"}</span>
-            <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
-          {exportMenu && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setExportMenu(false)} />
-              <div className="absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl">
-                <button
-                  type="button"
-                  onClick={() => doExport("pdf")}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-[var(--surface-canvas)]"
-                >
-                  <Printer className="h-4 w-4 text-[var(--data-error-600)]" />
-                  <span><b className="block text-[var(--text-primary)]">PDF formato SERFOR</b><span className="text-xs text-[var(--text-tertiary)]">Carátula + 6 secciones, para imprimir/firmar</span></span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => doExport("excel")}
-                  className="flex w-full items-center gap-3 border-t border-[var(--rule-soft)] px-4 py-3 text-left text-sm transition-colors hover:bg-[var(--surface-canvas)]"
-                >
-                  <FileSpreadsheet className="h-4 w-4 text-[var(--data-success-600)]" />
-                  <span><b className="block text-[var(--text-primary)]">Excel (.xlsx) editable</b><span className="text-xs text-[var(--text-tertiary)]">1 hoja por sección + resumen</span></span>
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={doInforme}
-          disabled={informing}
-          title="Informe del período para presentar a la ARFFS / OSINFOR"
-          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
-        >
-          {informing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-          <span>{informing ? "Generando…" : "Informe ARFFS"}</span>
-        </button>
-        <button
-          type="button"
-          onClick={refreshAll}
-          disabled={loading}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
-          aria-label="Recargar"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          <span>Recargar</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--brand-ink)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"
-        >
-          <Plus className="h-5 w-5" />
-          Nueva línea
-        </button>
-      </AdminModuleHeader>
-
-      {/* Carátula activa */}
-      {caratula && (
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3 text-sm">
-          <span className="font-bold text-[var(--text-primary)]">{caratula.titularName}</span>
-          {caratula.tituloHabilitante && <Meta k="Título" v={caratula.tituloHabilitante} />}
-          {caratula.registroNumber && <Meta k="Registro" v={caratula.registroNumber} />}
-          {caratula.tomo && <Meta k="Tomo" v={caratula.tomo} />}
-        </div>
-      )}
-
-      {/* Sub-tabs del Libro TH — AdminTabBar (coherente con el resto del admin:
-          reorden por drag + registro en sidebar). */}
-      <AdminTabBar
-        moduleId={LOTH_MODULE_ID}
-        tabs={LOTH_TAB_ITEMS}
-        activeTab={view}
-        onTabChange={(id) => setView(id as LothView)}
-      />
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110"
+          >
+            <Plus className="h-4 w-4" />
+            Nueva línea
+          </button>
+        </>
+      }
+      actions={acciones}
+    >
 
       {/* Vista Plan de Manejo — base maestra (censo + especies autorizadas) */}
       {view === "plan" && <LothPlanView reloadSignal={reloadSignal} />}
@@ -668,22 +701,23 @@ export default function LothLibroOperaciones() {
                         </div>
                       </div>
                     ) : (
-                      <div className="inline-flex items-center justify-end gap-1.5">
+                      // Íconos, no palabras: la columna de acciones no debe
+                      // pesar más que las seis de datos (mismo criterio que el
+                      // Libro CTP — `IconAction`).
+                      <div className="inline-flex items-center justify-end gap-1">
                         {(e.trozaCode || e.treeCode) && (
-                          <button
-                            type="button"
+                          <IconAction
+                            icon={Share2}
+                            label="Ver la cadena de custodia de este árbol/troza"
                             onClick={() => setCadenaCode(e.trozaCode || e.treeCode)}
-                            title="Ver la cadena de custodia de este árbol/troza"
-                            className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-                          >
-                            <Share2 className="h-3 w-3" />
-                            Cadena
-                          </button>
+                          />
                         )}
-                        <button type="button" onClick={() => { setAnnulId(e.id); setAnnulReason(""); }} title="Anular (subsanación SERFOR — queda visible)" className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]">
-                          <Ban className="h-3 w-3" />
-                          Anular
-                        </button>
+                        <IconAction
+                          icon={Ban}
+                          tone="danger"
+                          label="Anular (subsanación SERFOR — queda visible)"
+                          onClick={() => { setAnnulId(e.id); setAnnulReason(""); }}
+                        />
                       </div>
                     )}
                   </Td>
@@ -729,7 +763,7 @@ export default function LothLibroOperaciones() {
         />
       )}
       {cadenaCode && <LothCadenaModal code={cadenaCode} onClose={() => setCadenaCode(null)} />}
-    </div>
+    </LibroChrome>
   );
 }
 
@@ -769,13 +803,6 @@ function Tag({ children, tone }: { children: React.ReactNode; tone?: "danger" })
     ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]"
     : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
   return <span className={`rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide ${cls}`}>{children}</span>;
-}
-function Meta({ k, v }: { k: string; v: string }) {
-  return (
-    <span className="text-[var(--text-secondary)]">
-      <span className="text-[var(--text-tertiary)]">{k}:</span> <span className="font-medium text-[var(--text-primary)]">{v}</span>
-    </span>
-  );
 }
 function unitLabel(u: string | null) {
   return u === "m3" ? "m³" : u === "kg" ? "Kg" : u === "unidad" ? "Unidad" : (u ?? "—");

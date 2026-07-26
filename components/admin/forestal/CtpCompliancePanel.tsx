@@ -34,13 +34,13 @@ import {
   ThumbsUp,
   TreePine,
 } from "@buleje/design-system/icons";
-import { WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
+import { CardTitle, WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
 import { BulejeGaugeChart } from "@/components/ui-system/charts";
-import { Btn } from "./ctp-shared";
+import { Btn, VistaHeader } from "./ctp-shared";
 import { useCtpCompliance } from "@/hooks/use-ctp-compliance";
 import { ctpComplianceTone, ctpComplianceBreakdown, type CtpComplianceTone } from "@/lib/forestal/ctp-compliance";
 import { printCumplimiento } from "@/lib/forestal/ctp-cumplimiento-print";
-import type { CtpPeriod } from "@/lib/forestal/ctp-period";
+import { ctpPeriodShortLabel, type CtpPeriod } from "@/lib/forestal/ctp-period";
 
 type ComplianceNavTarget = "ingresos" | "saldos" | "despacho" | "produccion" | "ficha";
 type Severity = "error" | "warning";
@@ -291,21 +291,18 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="min-w-[16rem] flex-1 text-sm text-[var(--text-tertiary)]">
-          Chequeo de <strong className="text-[var(--text-secondary)]">{period.label}</strong> sobre{" "}
-          {data.totalIngresos.toLocaleString("es-PE")} ingresos registrados. Mismos números que exporta el
-          libro a Excel.
-        </p>
-        <div className="flex shrink-0 items-center gap-2">
-          <Btn variant="dark" size="md" onClick={() => void handleReport()}>
-            <FileDown className="h-4 w-4" /> Descargar reporte
-          </Btn>
-          <Btn variant="secondary" size="md" onClick={() => void reload()} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
-          </Btn>
-        </div>
-      </div>
+      <VistaHeader
+        titulo="Chequeo del período"
+        meta={`${ctpPeriodShortLabel(period)} · ${data.totalIngresos.toLocaleString("es-PE")} ingresos`}
+        hint="Los mismos números que exporta el libro a Excel."
+      >
+        <Btn variant="dark" size="md" onClick={() => void handleReport()}>
+          <FileDown className="h-4 w-4" /> Descargar reporte
+        </Btn>
+        <Btn variant="secondary" size="md" onClick={() => void reload()} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
+        </Btn>
+      </VistaHeader>
 
       {reportError && <WarningAlert title="No se pudo abrir el reporte" description={reportError} />}
 
@@ -354,9 +351,9 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-[var(--data-warning-600)]" />
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">
+            <CardTitle className="text-sm font-bold">
               Requiere atención <span className="text-[var(--text-tertiary)]">({problemas.length})</span>
-            </h3>
+            </CardTitle>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {problemas.map((c) => (

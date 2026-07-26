@@ -9,8 +9,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Wrench, Calculator, Activity, Ruler, Gauge, BarChart3 } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import LibroChrome, { type LibroGroup } from "./libro-chrome";
 
 const cargando = (
   <div className="flex h-64 items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]">
@@ -30,36 +29,31 @@ const TOOLS: { key: Tool; label: string; icon: typeof Calculator; hint: string }
   { key: "resumenes", label: "Resúmenes", icon: BarChart3, hint: "Tablas por especie y tipo del lote cubicado" },
   { key: "rendimiento", label: "Rendimiento", icon: Gauge, hint: "Coeficiente de aserrío (%) con tu histórico del Libro" },
 ];
-const TOOL_TAB_ITEMS = TOOLS.map((t) => ({ id: t.key, label: t.label, icon: t.icon, title: t.hint }));
+// Un solo grupo: la cabina dibuja las herramientas y omite la fila de fases
+// (misma pieza que los libros — el módulo se ve parte de la misma familia).
+const TOOL_GROUPS: LibroGroup[] = [
+  { id: "herramientas", label: "Herramientas", views: TOOLS.map((t) => ({ key: t.key, label: t.label, icon: t.icon, hint: t.hint })) },
+];
 
 export default function ForestalHerramientas() {
   const [tool, setTool] = useState<Tool>("cubicador");
 
   return (
-    <div className="space-y-6">
-      <AdminModuleHeader
-        eyebrow="Forestal · Herramientas"
-        title="Herramientas Forestales"
-        description="Cubicá aserrada por voz, verificá trozas contra la GTF y calculá el coeficiente de rendimiento del aserrío."
-        icon={Wrench}
-      />
-
-      {/* Sub-nav de herramientas — AdminTabBar (coherente con el resto del admin).
-          Con una sola herramienta el reorden por drag no aplica todavía. */}
-      <AdminTabBar
-        moduleId={HERRAMIENTAS_MODULE_ID}
-        tabs={TOOL_TAB_ITEMS}
-        activeTab={tool}
-        onTabChange={(id) => setTool(id as Tool)}
-        draggable={TOOLS.length > 1}
-      />
-
-      <div className="mt-6">
+    <LibroChrome
+      moduleId={HERRAMIENTAS_MODULE_ID}
+      eyebrow="Forestal · Herramientas"
+      title="Herramientas Forestales"
+      icon={Wrench}
+      groups={TOOL_GROUPS}
+      view={tool}
+      onView={(v) => setTool(v as Tool)}
+    >
+      <div>
         {tool === "cubicador" && <CubicadorMadera />}
         {tool === "trozas" && <CubicadorTrozas />}
         {tool === "resumenes" && <CubicacionResumenes />}
         {tool === "rendimiento" && <CalculadoraRendimiento />}
       </div>
-    </div>
+    </LibroChrome>
   );
 }

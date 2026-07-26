@@ -24,13 +24,17 @@ const json = (url: string) =>
     .then((r) => (r.ok ? r.json() : null))
     .catch(() => null);
 
-export function useCtpPendientes(period: CtpPeriod): {
+/** Lo que devuelve el hook. Exportado: el shell lo carga una vez y lo reparte
+ *  (tira de pendientes + avisos por pestaña en la cabina). */
+export interface CtpPendientesState {
   datos: DatosPendientes;
   lista: Pendiente[];
   cargando: boolean;
   falló: boolean;
   recargar: () => void;
-} {
+}
+
+export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
   const [datos, setDatos] = useState<DatosPendientes>(VACIO);
   const [cargando, setCargando] = useState(true);
   /** Si el cálculo falla, NO se puede decir "al día": sería mentir. */

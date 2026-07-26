@@ -16,10 +16,15 @@ import { useCtpCompliance } from "@/hooks/use-ctp-compliance";
 import { ctpComplianceTone } from "@/lib/forestal/ctp-compliance";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 
+// Los tints `-50` son claros en AMBOS temas: sin variante dark el chip queda
+// como una mancha blanca en una cabina oscura. En dark se usa el -500 al 12%.
 const TONE_CLS: Record<ReturnType<typeof ctpComplianceTone>, string> = {
-  success: "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]",
-  warning: "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)]",
-  error: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]",
+  success:
+    "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]",
+  warning:
+    "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]",
+  error:
+    "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]",
 };
 
 export default function CtpHealthChip({

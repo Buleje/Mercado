@@ -46,10 +46,13 @@ export default function CtpGuiasBandeja({ onIngresar }: { onIngresar: (gtfNumber
   if (guias.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-4">
+    // `bg-[var(--accent-soft)]` como CLASE pierde el alpha al compilar (Tailwind
+    // 4 lo resuelve a un color claro sólido) → en dark quedaba un panel blanco
+    // con el título en teal, ilegible. Con `bg-primary/5` el alpha es real.
+    <div className="rounded-2xl border-2 border-[var(--accent)] bg-primary/5 p-4 dark:bg-primary/10">
       <div className="mb-2.5 flex items-center gap-2">
-        <TreePine className="h-4 w-4 text-[var(--accent-dark)]" aria-hidden="true" />
-        <CardTitle as="h3" className="text-sm font-bold text-[var(--accent-dark)]">
+        <TreePine className="h-4 w-4 text-primary" aria-hidden="true" />
+        <CardTitle as="h3" className="text-sm font-bold text-primary">
           {guias.length === 1 ? "1 guía del monte sin ingresar al CTP" : `${guias.length} guías del monte sin ingresar al CTP`}
         </CardTitle>
       </div>

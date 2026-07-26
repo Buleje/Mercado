@@ -8,7 +8,7 @@
  */
 
 import { Eye, Share2, ThumbsDown, ThumbsUp, XCircle } from "@buleje/design-system/icons";
-import type { WoodEntry } from "./ctp-shared";
+import { IconAction, type WoodEntry } from "./ctp-shared";
 
 export interface CtpEntryActionsProps {
   entry: WoodEntry;
@@ -74,6 +74,49 @@ export default function CtpEntryActions({
             Cancelar
           </button>
         </div>
+      </div>
+    );
+  }
+
+  // En la tabla mandan los íconos: cuatro botones con texto por fila medían más
+  // que las columnas de datos y empujaban todo al scroll horizontal. La única
+  // que conserva palabra es Validar — es la acción del día a día, y en verde
+  // sólido se encuentra sin buscarla. La card de móvil sigue con texto (`block`).
+  if (!block) {
+    return (
+      <div className="inline-flex items-center gap-1">
+        <IconAction icon={Eye} label="Ver ficha completa" onClick={() => onDetail(e)} />
+        {onChain && (e.status === "validado" || e.status === "procesado") && (
+          <IconAction
+            icon={Share2}
+            tone="info"
+            label="Cadena: a dónde fue esta madera (corridas y despachos)"
+            onClick={() => onChain(e)}
+          />
+        )}
+        {e.status === "pendiente" && (
+          <>
+            <button
+              type="button"
+              disabled={busy === `${e.id}:validate`}
+              onClick={() => onValidate(e.id)}
+              title="Validar ingreso"
+              className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-success-600)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+            >
+              <ThumbsUp className="h-3.5 w-3.5" />
+              Validar
+            </button>
+            <IconAction icon={ThumbsDown} tone="danger" label="Rechazar el ingreso" onClick={() => onStartReject(e.id)} />
+          </>
+        )}
+        {e.status === "validado" && (
+          <IconAction
+            icon={XCircle}
+            tone="danger"
+            label="Anular ingreso validado (corrección con motivo)"
+            onClick={() => onStartReject(e.id)}
+          />
+        )}
       </div>
     );
   }

@@ -195,37 +195,43 @@ export default function CtpIngresosView({
             className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
           />
         </div>
-        <button
-          type="button"
-          onClick={() => setShowDashboard((v) => !v)}
-          aria-pressed={showDashboard}
-          className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition ${
-            showDashboard
-              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
-              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-          }`}
-        >
-          <BarChart3 className="h-4 w-4" />
-          <span className="max-sm:sr-only">{showDashboard ? "Cerrar dashboard" : "Dashboard"}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => void reload()}
-          disabled={loading}
-          aria-label="Recargar"
-          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          <span className="max-sm:sr-only">Recargar</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white shadow-sm transition hover:shadow-md hover:brightness-110"
-        >
-          <Plus className="h-5 w-5" />
-          Nuevo ingreso
-        </button>
+        {/* En móvil los tres van en UNA fila: con `max-sm:sr-only` y ancho
+            completo, Dashboard y Recargar se veían como dos cajas vacías. */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowDashboard((v) => !v)}
+            aria-pressed={showDashboard}
+            title={showDashboard ? "Cerrar el dashboard de especies" : "Dashboard de especies"}
+            className={`inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition max-sm:w-12 max-sm:px-0 ${
+              showDashboard
+                ? "border-[var(--accent)] bg-primary/10 text-primary"
+                : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            }`}
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span className="max-sm:sr-only">{showDashboard ? "Cerrar dashboard" : "Dashboard"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => void reload()}
+            disabled={loading}
+            aria-label="Recargar"
+            title="Recargar"
+            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60 max-sm:w-12 max-sm:px-0"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <span className="max-sm:sr-only">Recargar</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white shadow-sm transition hover:shadow-md hover:brightness-110 sm:flex-none"
+          >
+            <Plus className="h-5 w-5" />
+            Nuevo ingreso
+          </button>
+        </div>
       </div>
 
       {/* Chips de estado: distribución del período de un vistazo + filtro de 1 clic. */}

@@ -13,7 +13,7 @@
  * la tabla NO se auto-convierte y no compite con las cards premium.
  */
 
-import { RefreshCw, TreePine } from "@buleje/design-system/icons";
+import { TreePine } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import CtpEntryActions from "./CtpEntryActions";
 import CtpIngresoCardMobile from "./CtpIngresoCardMobile";
@@ -25,6 +25,7 @@ import {
   formatDate,
   originLabel,
   productLabel,
+  TablaSkeleton,
   type WoodEntry,
 } from "./ctp-shared";
 
@@ -243,12 +244,7 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
         </div>
       )}
 
-      {loading && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center text-[var(--text-tertiary)]">
-          <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
-          <p className="mt-2 text-sm">Cargando registros...</p>
-        </div>
-      )}
+      {loading && <TablaSkeleton filas={5} columnas={7} />}
     </>
   );
 }

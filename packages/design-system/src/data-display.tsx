@@ -181,7 +181,10 @@ export function StatCard({
       className={cn(
         // Rediseño minimalista (Brandon 2026-06-10): rectangular (sin rounded),
         // fondo blanco (surface-raised), hairline border, sin sombra.
-        "w-full text-left border bg-[var(--surface-raised)] border-[var(--rule-base)]",
+        // `h-full`: en una grilla, la card con subValue estiraba a sus vecinas y
+        // las dejaba flotando a media altura (fila despareja). Fuera de grilla,
+        // 100% de un padre auto sigue siendo auto — no cambia nada.
+        "h-full w-full text-left border bg-[var(--surface-raised)] border-[var(--rule-base)]",
         DENSITY_PADDING[density],
         "transition-colors",
         onClick && "hover:border-[var(--rule-strong)] cursor-pointer",

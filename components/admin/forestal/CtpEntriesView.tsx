@@ -28,6 +28,7 @@ import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
 import { type CtpEntry, type CtpSection, Th, Td, n2 } from "./ctp-section-shared";
+import { IconAction, TablaSkeleton } from "./ctp-shared";
 
 const SECTION_META: Record<CtpSection, { label: string; icon: typeof Boxes; cta: string; empty: string }> = {
   produccion: { label: "Producción", icon: Boxes, cta: "Nueva producción", empty: "Sin transformaciones registradas. Registrá la primera para convertir materia prima en producto." },
@@ -204,30 +205,34 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
           <label htmlFor={`ctp-search-${section}`} className="sr-only">Buscar en {meta.label}</label>
           <input id={`ctp-search-${section}`} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Buscar por especie, producto o GTF..." className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
         </div>
-        <button type="button" onClick={load} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
-        </button>
-        {section === "despacho" && (
-          <button
-            type="button"
-            onClick={() => setVerBandeja(true)}
-            title="Los ANEXOS N° 04 ya emitidos: re-imprimir, buscar o bajar el libro en Excel"
-            className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-          >
-            <FileText className="h-5 w-5" /> Anexos emitidos
-            {totalAnexos > 0 && (
-              <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-bold text-[var(--accent)]">{totalAnexos}</span>
-            )}
+        {/* Una sola fila en móvil: los secundarios como cuadrados con tooltip,
+            el CTA se estira. Antes cada uno era una caja de ancho completo. */}
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={load} disabled={loading} aria-label="Recargar" title="Recargar" className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60 max-sm:w-12 max-sm:px-0">
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> <span className="max-sm:sr-only">Recargar</span>
           </button>
-        )}
-        {section === "produccion" && (
-          <button type="button" onClick={() => setShowSim(true)} title="Previsualizá producido, costo y margen antes de registrar una corrida" className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--brand-ink)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--brand-ink)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
-            <Calculator className="h-5 w-5" /> Simular
+          {section === "despacho" && (
+            <button
+              type="button"
+              onClick={() => setVerBandeja(true)}
+              title="Los ANEXOS N° 04 ya emitidos: re-imprimir, buscar o bajar el libro en Excel"
+              className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] max-sm:px-3"
+            >
+              <FileText className="h-5 w-5" /> <span className="max-sm:sr-only">Anexos emitidos</span>
+              {totalAnexos > 0 && (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{totalAnexos}</span>
+              )}
+            </button>
+          )}
+          {section === "produccion" && (
+            <button type="button" onClick={() => setShowSim(true)} title="Previsualizá producido, costo y margen antes de registrar una corrida" className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] max-sm:w-12 max-sm:px-0">
+              <Calculator className="h-5 w-5" /> <span className="max-sm:sr-only">Simular</span>
+            </button>
+          )}
+          <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white shadow-sm transition hover:brightness-110 sm:flex-none">
+            <Plus className="h-5 w-5" /> {meta.cta}
           </button>
-        )}
-        <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--brand-ink)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90">
-          <Plus className="h-5 w-5" /> {meta.cta}
-        </button>
+        </div>
       </div>
       {showSim && section === "produccion" && <CtpSimuladorModal onClose={() => setShowSim(false)} />}
 
@@ -309,44 +314,40 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
                 </Td>
                 <Td className="text-right">
                   {e.status === "registrado" ? (
-                    <div className="inline-flex items-center gap-2">
-                      <button
-                        type="button"
+                    <div className="inline-flex items-center gap-1">
+                      <IconAction
+                        icon={Link2}
+                        tone="success"
                         onClick={() => setChainEntry(e)}
-                        title={section === "despacho"
-                          ? "Cadena de custodia: origen, costo y certificado de trazabilidad"
+                        label={section === "despacho"
+                          ? "Cadena de custodia: origen, costo y certificado"
                           : "Corrida: materia prima consumida, costo y congelado"}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 text-xs font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-100)]"
-                      >
-                        <Link2 className="h-3.5 w-3.5" />
-                        Cadena
-                      </button>
-                      <button
-                        type="button"
+                      />
+                      <IconAction
+                        icon={PackagePlus}
+                        tone="info"
                         disabled={toProductId === e.id}
+                        busy={toProductId === e.id}
                         onClick={() => sendToInventory(e.id)}
-                        title="Crea el producto como borrador en el catálogo (inactivo)"
-                        className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-50)] px-3 text-xs font-bold text-[var(--data-info-700)] hover:bg-[var(--data-info-100)] disabled:opacity-50"
-                      >
-                        <PackagePlus className="h-3.5 w-3.5" />
-                        {toProductId === e.id ? "Creando…" : "Enviar a inventario"}
-                      </button>
+                        label={toProductId === e.id ? "Creando el producto…" : "Enviar a inventario (borrador inactivo)"}
+                      />
                       {section === "despacho" && (
-                        <button
-                          type="button"
+                        <IconAction
+                          icon={FileText}
+                          tone={conAnexo.has(e.id) ? "accent" : "muted"}
+                          done={conAnexo.has(e.id)}
                           onClick={() => setAnexoEntry(e)}
-                          title={conAnexo.has(e.id)
-                            ? "Ya se emitió el ANEXO N° 04 de esta GTF — abrir para re-imprimirlo o corregirlo"
-                            : "Emitir el ANEXO N° 04 (lista de productos transformados) de esta GTF"}
-                          className={`inline-flex h-9 items-center gap-1.5 rounded-xl border-2 px-3 text-xs font-bold ${conAnexo.has(e.id)
-                            ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                            : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
-                        >
-                          <FileText className="h-3.5 w-3.5" />
-                          Anexo 04{conAnexo.has(e.id) ? " ✓" : ""}
-                        </button>
+                          label={conAnexo.has(e.id)
+                            ? "ANEXO N° 04 emitido — abrir para re-imprimir o corregir"
+                            : "Emitir el ANEXO N° 04 de esta GTF"}
+                        />
                       )}
-                      <button type="button" onClick={() => { setAnnulId(e.id); setAnnulReason(""); }} className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]">Anular</button>
+                      <IconAction
+                        icon={XIcon}
+                        tone="danger"
+                        onClick={() => { setAnnulId(e.id); setAnnulReason(""); }}
+                        label="Anular la línea"
+                      />
                     </div>
                   ) : (
                     <span className="text-xs text-[var(--text-tertiary)]">—</span>
@@ -394,7 +395,7 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
           )}
         </div>
       )}
-      {loading && <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>}
+      {loading && <TablaSkeleton filas={4} columnas={section === "produccion" ? 8 : 9} />}
 
       {showForm && <CtpEntryForm section={section} onClose={() => setShowForm(false)} onSaved={(o) => { if (!o?.keepOpen) setShowForm(false); load(); if (o?.offline) pushToast({ tono: "warning", msg: "Sin señal: quedó anotado en el patio", detail: "Todavía NO está en el libro. Sube solo cuando vuelva la conexión." }); }} />}
       {verBandeja && (

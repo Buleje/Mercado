@@ -16,6 +16,10 @@
  * negativos, pendientes de validar) ahora tienen su propio panel. Va al
  * final (después de Saldos) porque combina datos de Ingresos + Saldos —
  * un cierre de período la revisa último, no primero.
+ * 2026-07-26 v5 — cabina (`libro-chrome`): identidad + período + acciones en
+ * una fila y las doce vistas agrupadas por fase (Operación → Trazabilidad →
+ * Control → Gestión). El cromo pasó de ~370px a ~130px y la nav de doce
+ * destinos planos a cuatro grupos de tres.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -26,7 +30,6 @@ import {
   FileSpreadsheet,
   FileText,
   Globe,
-  Loader2,
   Lock,
   MapPin,
   PackageOpen,
@@ -38,8 +41,7 @@ import {
   Truck,
   Upload,
 } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import LibroChrome, { type LibroAction, type LibroGroup } from "./libro-chrome";
 import { exportarLibroCtp, exportarLibroCtpOficial } from "@/lib/forestal/ctp-export";
 import { printInformePeriodo } from "@/lib/forestal/ctp-informe";
 import { resolveCtpPeriod, type CtpPeriodKey } from "@/lib/forestal/ctp-period";
@@ -62,29 +64,63 @@ import CtpAsistente from "./CtpAsistente";
 import CtpAnalisis from "./CtpAnalisis";
 import CtpHealthChip from "./CtpHealthChip";
 import CtpPendientes from "./CtpPendientes";
+import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
 import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
 
 type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "planta" | "saldos" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "ficha";
 
-const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string }[] = [
-  { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida" },
-  { key: "produccion", label: "Producción", icon: Boxes, hint: "Transformación" },
-  { key: "despacho", label: "Despacho", icon: Truck, hint: "Salida de producto" },
-  { key: "radar", label: "Radar", icon: Share2, hint: "Cadena de custodia visual" },
-  { key: "planta", label: "Planta", icon: MapPin, hint: "Mapa del aserradero" },
-  { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta" },
-  { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Alertas del período" },
-  { key: "cierre", label: "Cierre", icon: Lock, hint: "Cerrar mes · bloquear el acta" },
-  { key: "eudr", label: "EUDR", icon: Globe, hint: "Geolocalización + dossier UE" },
-  { key: "rentabilidad", label: "Rentabilidad", icon: Coins, hint: "Margen: venta − COGS" },
-  { key: "analisis", label: "Análisis", icon: TrendingUp, hint: "Reorden + tendencias" },
-  { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR" },
+/**
+ * Las doce vistas, agrupadas por la fase del libro a la que sirven. El orden
+ * dentro de cada grupo es el del flujo real de la planta; el orden de los
+ * grupos es el de un mes de trabajo: se opera, se demuestra de dónde salió,
+ * se controla y recién al final se mira el negocio.
+ */
+const CTP_GROUPS: LibroGroup[] = [
+  {
+    id: "operacion",
+    label: "Operación",
+    views: [
+      { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida" },
+      { key: "produccion", label: "Producción", icon: Boxes, hint: "Transformación" },
+      { key: "despacho", label: "Despacho", icon: Truck, hint: "Salida de producto" },
+    ],
+  },
+  {
+    id: "trazabilidad",
+    label: "Trazabilidad",
+    views: [
+      { key: "radar", label: "Radar", icon: Share2, hint: "Cadena de custodia visual" },
+      { key: "planta", label: "Planta", icon: MapPin, hint: "Mapa del aserradero" },
+      { key: "eudr", label: "EUDR", icon: Globe, hint: "Geolocalización + dossier UE" },
+    ],
+  },
+  {
+    id: "control",
+    label: "Control",
+    views: [
+      { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta" },
+      { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Alertas del período" },
+      { key: "cierre", label: "Cierre", icon: Lock, hint: "Cerrar mes · bloquear el acta" },
+    ],
+  },
+  {
+    id: "gestion",
+    label: "Gestión",
+    views: [
+      { key: "rentabilidad", label: "Rentabilidad", icon: Coins, hint: "Margen: venta − COGS" },
+      { key: "analisis", label: "Análisis", icon: TrendingUp, hint: "Reorden + tendencias" },
+      { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR" },
+    ],
+  },
 ];
 
-// Sub-tabs coherentes con el resto del admin: AdminTabBar da reorden por drag,
-// persistencia del orden y registro en el sidebar. `title` = el hint como tooltip.
+const CTP_VIEW_KEYS = CTP_GROUPS.flatMap((g) => g.views.map((v) => v.key));
 const CTP_MODULE_ID = "ctp-libro";
-const CTP_TAB_ITEMS = CTP_VIEWS.map((v) => ({ id: v.key, label: v.label, icon: v.icon, title: v.hint }));
+/** Vistas que YA muestran los pendientes en detalle: la tira arriba sobraría. */
+const SIN_TIRA: CtpView[] = ["cumplimiento", "cierre"];
+/** Vistas que no leen el período: Análisis (6 meses fijos), Cierre (por mes) y
+ *  Ficha (identidad). Con el selector visible parecería que no hace nada. */
+const SIN_PERIODO: CtpView[] = ["analisis", "cierre", "ficha"];
 
 export default function CTPLibroOperaciones() {
   /** Un solo estado de cierres para el asistente y el historial. */
@@ -94,7 +130,7 @@ export default function CTPLibroOperaciones() {
   const [view, setView] = useState<CtpView>(() => {
     if (typeof window === "undefined") return "ingresos";
     const saved = localStorage.getItem(`admin-last-tab-${CTP_MODULE_ID}`);
-    return saved && CTP_VIEWS.some((v) => v.key === saved) ? (saved as CtpView) : "ingresos";
+    return saved && CTP_VIEW_KEYS.includes(saved) ? (saved as CtpView) : "ingresos";
   });
   useEffect(() => {
     try {
@@ -118,6 +154,13 @@ export default function CTPLibroOperaciones() {
   const [ingresosKey, setIngresosKey] = useState(0);
 
   const period = useMemo(() => resolveCtpPeriod(periodKey, custom), [periodKey, custom]);
+
+  /** Qué falta hacer en el libro. Vive en el shell y no en la tira: los avisos
+   *  de la cabina y la tira leen la MISMA carga (antes cada uno fetcheaba). */
+  const pendientes = useCtpPendientes(period);
+
+  /** Estable: la cabina y los paneles la pasan a efectos (atajos de teclado). */
+  const irA = useCallback((v: string) => setView(v as CtpView), []);
 
   // Levanta el handoff de sessionStorage → abre Ingresos pre-llenado. Se
   // dispara al montar (tab abierto en frío) y cada vez que el tab se re-activa
@@ -159,128 +202,134 @@ export default function CTPLibroOperaciones() {
     }
   }
 
+  /** Un pendiente que se resuelve en una pestaña se anuncia EN esa pestaña:
+   *  el número aparece en el grupo y el punto en la vista. Misma fuente que la
+   *  tira de abajo — no puede decir "3" arriba y listar dos. */
+  const alertasPorVista = useMemo(
+    () => pendientes.lista.reduce<Record<string, number>>((acc, p) => {
+      acc[p.vista] = (acc[p.vista] ?? 0) + p.cantidad;
+      return acc;
+    }, {}),
+    [pendientes.lista],
+  );
+
+  /** Importar/exportar/informar se usan una vez por mes: van plegadas en el
+   *  menú, no ocupando dos filas de la cabecera todo el tiempo. */
+  const acciones: LibroAction[] = useMemo(
+    () => [
+      {
+        id: "oficial",
+        label: "Formato oficial SERFOR",
+        hint: "LO-CTP (RDE D000025-2023): portada + los 3 registros + existencias",
+        icon: ShieldCheck,
+        tone: "dark",
+        busy: exporting === "oficial",
+        disabled: exporting !== null,
+        onSelect: () => void exportar("oficial"),
+      },
+      {
+        id: "informe",
+        label: "Informe ARFFS",
+        hint: "Imprimible para presentar: ficha + movimientos + existencias + cumplimiento",
+        icon: FileText,
+        busy: exporting === "informe",
+        disabled: exporting !== null,
+        onSelect: () => void exportar("informe"),
+      },
+      {
+        id: "interno",
+        label: "Exportar libro (Excel)",
+        hint: "Ingresos, Producción, Despacho y Saldos del período — vista interna",
+        icon: FileSpreadsheet,
+        busy: exporting === "interno",
+        disabled: exporting !== null,
+        onSelect: () => void exportar("interno"),
+      },
+      {
+        id: "importar",
+        label: "Importar libro",
+        hint: "Desde el Excel oficial LO-CTP — etapa 1: ingresos",
+        icon: Upload,
+        onSelect: () => setShowImport(true),
+      },
+    ],
+    // `exportar` se redefine en cada render (usa `period`): la lista depende del
+    // período y del export en curso, que es lo que realmente cambia el menú.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [exporting, period],
+  );
+
   return (
-    <div className="space-y-6">
-      <AdminModuleHeader
-        eyebrow="Forestal · Especialización"
-        title="Libro de Operaciones CTP"
-        description="Registro de ingresos de madera al Centro de Transformación Primaria. Compatible con LOE-CTP SERFOR (interno, no oficial)."
-        icon={TreePine}
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowImport(true)}
-            title="Importar el Libro de Operaciones desde el Excel oficial LO-CTP (SERFOR) — etapa 1: ingresos"
-            className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-          >
-            <Upload className="h-4 w-4" />
-            <span>Importar libro</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => exportar("interno")}
-            disabled={exporting !== null}
-            title="Descarga el libro del período (Ingresos, Producción, Despacho, Saldos) en Excel — vista interna"
-            className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
-          >
-            {exporting === "interno" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
-            <span>Exportar libro</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => exportar("informe")}
-            disabled={exporting !== null}
-            title="Informe de operaciones del período para presentar a la ARFFS (imprimible): ficha del CTP + movimientos + existencias + cumplimiento"
-            className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
-          >
-            {exporting === "informe" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-            <span>Informe ARFFS</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => exportar("oficial")}
-            disabled={exporting !== null}
-            title="Formato oficial LO-CTP (RDE D000025-2023-SERFOR): portada con datos del CTP + los 3 registros con columnas oficiales + existencias"
-            className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--brand-ink)] bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
-          >
-            {exporting === "oficial" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-            <span>Formato oficial SERFOR</span>
-          </button>
-        </div>
-      </AdminModuleHeader>
-
-      {/* El selector de período solo aplica a las vistas period-scoped. Análisis
-          (tendencia fija de 6 meses), Cierre (por mes) y Ficha (identidad) NO lo
-          usan — mostrarlo ahí hacía parecer que "el selector no hace nada". */}
-      {!["analisis", "cierre", "ficha"].includes(view) && (
-        <CtpPeriodPicker
-          periodKey={periodKey}
-          custom={custom}
-          period={period}
-          onKeyChange={setPeriodKey}
-          onCustomChange={setCustom}
-        />
-      )}
-
-      <CtpAsistente />
-
-      {exportError && (
-        <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
-          <strong>No se pudo exportar:</strong> {exportError}
-        </div>
-      )}
-
-      {/* Sub-tabs del Libro CTP: flujo materia prima → producto → salida.
-          AdminTabBar = coherencia con el resto del admin (reorden por drag,
-          registro en sidebar). El semáforo del período va en rightSlot. */}
-      <AdminTabBar
+    <>
+      <LibroChrome
         moduleId={CTP_MODULE_ID}
-        tabs={CTP_TAB_ITEMS}
-        activeTab={view}
-        onTabChange={(id) => setView(id as CtpView)}
-        rightSlot={
+        eyebrow="Forestal · LO-CTP SERFOR"
+        title="Libro de Operaciones CTP"
+        icon={TreePine}
+        groups={CTP_GROUPS}
+        view={view}
+        onView={irA}
+        alerts={alertasPorVista}
+        status={
           view !== "cumplimiento" ? (
             <CtpHealthChip period={period} onNavigate={() => setView("cumplimiento")} />
           ) : undefined
         }
-      >
-        {/* Lo que falta hacer, antes de la vista: el Libro tiene 12 pestañas y
-            la respuesta a "¿qué me falta?" estaba repartida entre todas. */}
-        <div className="mt-6">
-          <CtpPatioBandeja cola={cola} />
-          <CtpPendientes period={period} onIr={(v) => setView(v as CtpView)} />
-        </div>
-
-        <div className="mt-6">
-          {view === "ingresos" && (
-            <CtpIngresosView
-              key={ingresosKey}
+        context={
+          // El período no aplica a Análisis (tendencia fija de 6 meses), Cierre
+          // (por mes) ni Ficha (identidad): mostrarlo ahí hacía parecer que "el
+          // selector no hace nada".
+          SIN_PERIODO.includes(view) ? undefined : (
+            <CtpPeriodPicker
+              periodKey={periodKey}
+              custom={custom}
               period={period}
-              openGtf={pendingIngresoGtf}
-              onOpenConsumed={() => setPendingIngresoGtf(null)}
+              onKeyChange={setPeriodKey}
+              onCustomChange={setCustom}
             />
-          )}
-          {view === "produccion" && <CtpEntriesView key={`prod-${ingresosKey}`} section="produccion" period={period} />}
-          {view === "despacho" && <CtpEntriesView key={`desp-${ingresosKey}`} section="despacho" period={period} />}
-          {view === "radar" && <CtpTrazaRadar period={period} />}
-          {view === "planta" && <CtpPlantaView period={period} />}
-          {view === "saldos" && <CtpSaldosView period={period} />}
-          {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
-          {view === "cierre" && (
-            <div className="space-y-6">
-              {/* El asistente ordena el trabajo; el panel de abajo sigue siendo
-                  el historial de cierres (y el único lugar para reabrir). */}
-              <CtpCierreAsistido onIr={(v) => setView(v as CtpView)} cierres={cierres} />
-              <CtpCierrePanel estado={cierres} />
-            </div>
-          )}
-          {view === "eudr" && <CtpEudrPanel period={period} />}
-          {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
-          {view === "analisis" && <CtpAnalisis />}
-          {view === "ficha" && <CtpFichaEditor />}
-        </div>
-      </AdminTabBar>
+          )
+        }
+        tools={<CtpAsistente />}
+        actions={acciones}
+      >
+        {exportError && (
+          <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+            <strong>No se pudo exportar:</strong> {exportError}
+          </div>
+        )}
+
+        {/* Lo anotado sin señal y lo que falta hacer: semáforo de camino, no
+            contenido — una tira de chips arriba de la vista. */}
+        <CtpPatioBandeja cola={cola} />
+        {!SIN_TIRA.includes(view) && <CtpPendientes estado={pendientes} onIr={irA} />}
+
+        {view === "ingresos" && (
+          <CtpIngresosView
+            key={ingresosKey}
+            period={period}
+            openGtf={pendingIngresoGtf}
+            onOpenConsumed={() => setPendingIngresoGtf(null)}
+          />
+        )}
+        {view === "produccion" && <CtpEntriesView key={`prod-${ingresosKey}`} section="produccion" period={period} />}
+        {view === "despacho" && <CtpEntriesView key={`desp-${ingresosKey}`} section="despacho" period={period} />}
+        {view === "radar" && <CtpTrazaRadar period={period} />}
+        {view === "planta" && <CtpPlantaView period={period} />}
+        {view === "saldos" && <CtpSaldosView period={period} />}
+        {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
+        {view === "cierre" && (
+          <div className="space-y-6">
+            {/* El asistente ordena el trabajo; el panel de abajo sigue siendo
+                el historial de cierres (y el único lugar para reabrir). */}
+            <CtpCierreAsistido onIr={irA} cierres={cierres} />
+            <CtpCierrePanel estado={cierres} />
+          </div>
+        )}
+        {view === "eudr" && <CtpEudrPanel period={period} />}
+        {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
+        {view === "analisis" && <CtpAnalisis />}
+        {view === "ficha" && <CtpFichaEditor />}
+      </LibroChrome>
 
       {showImport && (
         <CtpImportModal
@@ -288,6 +337,6 @@ export default function CTPLibroOperaciones() {
           onImported={(reg) => { setIngresosKey((k) => k + 1); setView(reg === "produccion" ? "produccion" : reg === "salida" ? "despacho" : "ingresos"); }}
         />
       )}
-    </div>
+    </>
   );
 }
