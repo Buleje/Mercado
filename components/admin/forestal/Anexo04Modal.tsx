@@ -13,22 +13,22 @@
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { FileText, Minus, Plus, X } from "@buleje/design-system/icons";
+import { FileText, X } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { construirAnexo04, fmtAnexo, type DatosAnexo04 } from "@/lib/forestal/anexo04-serfor";
 import { validarAnexo04, anexoPresentable, type DeclaradoEnLibro } from "@/lib/forestal/anexo04-validacion";
 import { useAnexo04Datos } from "@/hooks/use-anexo04-datos";
-import { exportarAnexo04PDF, exportarAnexosPDF } from "@/lib/forestal/anexo04-pdf";
-import { exportarAnexo04Excel } from "@/lib/forestal/anexo04-excel";
-import Anexo04Hoja, { ANEXO04_CSS } from "./Anexo04Hoja";
 import Anexo04Campos from "./Anexo04Campos";
 import Anexo04Origen, { ORIGEN_ACTUAL } from "./Anexo04Origen";
 import Anexo04Historial, { ICONO_HISTORIAL } from "./Anexo04Historial";
 import Anexo04Checklist from "./Anexo04Checklist";
+import Anexo04Preview from "./Anexo04Preview";
+import { ANEXO04_CSS } from "./Anexo04Hoja";
 import Anexo04Acciones from "./Anexo04Acciones";
 import type { AnexoEmitido } from "@/lib/forestal/anexo04-registro";
 import { useAnexosEmitidos } from "@/hooks/use-anexos-emitidos";
-import { csrfHeaders } from "@/lib/csrf-client";
+import { useAnexo04Salidas } from "@/hooks/use-anexo04-salidas";
+import { useFichaCtp } from "@/hooks/use-ficha-ctp";
 
 const A4_PX = 794; // ancho de una hoja A4 a 96 dpi
 
@@ -70,7 +70,6 @@ export default function Anexo04Modal({
   const [datos, set] = useAnexo04Datos({ gtfInicial, observacionesIniciales, onError: (msg) => onAviso?.(msg, "error") });
   const [factor, setFactor] = useState(1);      // multiplica el ajuste automático
   const [fit, setFit] = useState(0.9);          // escala para que la hoja entre a lo ancho
-  const [generando, setGenerando] = useState(false);
   /** Origen de las medidas: el lote del cubicador o una cubicación guardada. */
   const [origen, setOrigen] = useState(ORIGEN_ACTUAL);
   const [piezasGuardadas, setPiezasGuardadas] = useState<PiezaCubicada[] | null>(null);
@@ -81,9 +80,24 @@ export default function Anexo04Modal({
   /** Los emitidos alimentan la bandeja Y el checklist (N° repetido, volumen ya
    *  amparado por otra emisión de la misma guía): por eso se cargan siempre. */
   const { lista: emitidos, cargando: cargandoEmitidos, quitar } = useAnexosEmitidos(historialToken);
+  /** Identidad legal del CTP: completa lo que esté vacío y coteja el resto. */
+  const ficha = useFichaCtp();
 
   const areaRef = useRef<HTMLDivElement>(null);
   const hojasRef = useRef<HTMLDivElement>(null);
+
+  // Autocompleta SÓLO lo que está vacío: si el operario escribió algo, manda él.
+  const fichaAplicada = useRef(false);
+  useEffect(() => {
+    if (!ficha || fichaAplicada.current) return;
+    fichaAplicada.current = true;
+    const patch: Partial<DatosAnexo04> = {};
+    if (!datos.empresa.trim() && ficha.razonSocial) patch.empresa = ficha.razonSocial;
+    if (!datos.firmante.trim() && ficha.representante) patch.firmante = ficha.representante;
+    if (!datos.documento.trim() && ficha.representanteDni) patch.documento = ficha.representanteDni;
+    if (Object.keys(patch).length > 0) set(patch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- una sola vez, cuando llega la ficha
+  }, [ficha]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onCerrar(); };
@@ -112,47 +126,18 @@ export default function Anexo04Modal({
     [filas, datos.unidadV, datos.modo, especie],
   );
   const escala = Math.max(0.25, fit * factor);
+  const { generando, descargarPdf, descargarExcel, reDescargar, pdfDeLote } = useAnexo04Salidas({
+    filas, datos, especieGlobal: especie, ctpEntryId, onAviso,
+    onRegistrado: () => setHistorialToken((t) => t + 1),
+  });
   // Checklist de emisión: lo que la ARFFS devuelve (errores) y lo que un
   // fiscalizador va a preguntar (avisos). No bloquea: la hoja en blanco para
   // llenar a mano es un uso legítimo del formato.
   const avisos = useMemo(
-    () => validarAnexo04(datos, anexo, filas, { declarado, emitidos, ctpEntryId }),
-    [datos, anexo, filas, declarado, emitidos, ctpEntryId],
+    () => validarAnexo04(datos, anexo, filas, { declarado, emitidos, ctpEntryId, ficha }),
+    [datos, anexo, filas, declarado, emitidos, ctpEntryId, ficha],
   );
   const presentable = anexoPresentable(avisos);
-
-  /**
-   * Deja el papel registrado en la bandeja. Fire-and-forget: si el servidor
-   * falla, el PDF ya se descargó y el operario no puede hacer nada al respecto
-   * — se avisa y sigue.
-   */
-  const registrarEmision = (piezas: PiezaCubicada[], d: DatosAnexo04) => {
-    if (piezas.length === 0) return;
-    fetch("/api/admin/forestal/anexos", {
-      method: "POST",
-      credentials: "include",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        numero: d.numero, gtf: d.gtf, empresa: d.empresa, firmante: d.firmante,
-        documento: d.documento, cargo: d.cargo, observaciones: d.observaciones,
-        unidadV: d.unidadV, modo: d.modo, especieGlobal: especie ?? null,
-        ctpEntryId: ctpEntryId ?? null, piezas,
-      }),
-    })
-      .then((r) => { if (r.ok) setHistorialToken((t) => t + 1); })
-      .catch((err) => onAviso?.(`El PDF salió, pero no quedó en el historial (${String(err).slice(0, 60)}).`, "error"));
-  };
-
-  const descargar = () => {
-    setGenerando(true);
-    exportarAnexo04PDF(filas, datos, { especieGlobal: especie })
-      .then(() => {
-        onAviso?.("Anexo N° 04 descargado y registrado", "success");
-        registrarEmision(filas, datos);
-      })
-      .catch(() => onAviso?.("No se pudo generar el PDF.", "error"))
-      .finally(() => setGenerando(false));
-  };
 
   /** Trae una emisión pasada al formulario (datos + medidas exactas). */
   const cargarEmision = (a: AnexoEmitido) => {
@@ -165,29 +150,6 @@ export default function Anexo04Modal({
     setEspecieOrigen(undefined);
     setOrigen(`emitido:${a.id}`);
     setVerHistorial(false);
-  };
-
-  /** Todos los anexos visibles en un PDF: el archivo del mes, listo para imprimir. */
-  const pdfDeLote = (seleccion: AnexoEmitido[]) => {
-    if (seleccion.length === 0) { onAviso?.("No hay anexos para imprimir.", "error"); return; }
-    exportarAnexosPDF(
-      seleccion.map((a) => ({ piezas: a.piezas, datos: { ...datos, ...a }, especieGlobal: a.especieGlobal })),
-    )
-      .then(() => onAviso?.(`${seleccion.length} anexos en un PDF`, "success"))
-      .catch(() => onAviso?.("No se pudo generar el PDF del lote.", "error"));
-  };
-
-  /** Re-descarga un anexo tal como se emitió, sin tocar lo que hay en pantalla. */
-  const reDescargar = (a: AnexoEmitido) => {
-    exportarAnexo04PDF(a.piezas, { ...datos, ...a }, { especieGlobal: a.especieGlobal })
-      .then(() => onAviso?.("Anexo re-descargado", "success"))
-      .catch(() => onAviso?.("No se pudo generar el PDF.", "error"));
-  };
-
-  const descargarExcel = () => {
-    exportarAnexo04Excel(filas, datos, { especieGlobal: especie })
-      .then(() => onAviso?.("Excel del anexo descargado", "success"))
-      .catch(() => onAviso?.("No se pudo generar el Excel.", "error"));
   };
 
   const imprimir = () => {
@@ -232,7 +194,7 @@ export default function Anexo04Modal({
         <div className="grid gap-4 lg:grid-cols-[19rem_1fr]">
           {/* Datos del formato */}
           <div className="lg:max-h-[74vh] lg:overflow-y-auto lg:pr-1">
-            <Anexo04Campos datos={datos} onChange={set} onError={(msg) => onAviso?.(msg, "error")} />
+            <Anexo04Campos datos={datos} onChange={set} ficha={ficha} onError={(msg) => onAviso?.(msg, "error")} />
             <div className="mt-3 border-t-2 border-[var(--rule-soft)] pt-3">
               <button
                 type="button"
@@ -262,38 +224,28 @@ export default function Anexo04Modal({
 
           {/* Preview del papel */}
           <div ref={areaRef} className="min-w-0 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <Anexo04Origen
-                piezasActuales={rows.length}
-                valor={origen}
-                despachoId={ctpEntryId}
-                onCambio={(id, piezas, registro) => {
-                  setOrigen(id);
-                  setPiezasGuardadas(piezas);
-                  // La guardada trae su especie predominante: sirve de fallback para
-                  // las piezas que se cargaron sin especie propia.
-                  setEspecieOrigen(registro?.especie);
-                }}
-              />
-              <div className="flex items-center gap-1">
-                <button type="button" onClick={() => setFactor((f) => Math.max(0.5, f - 0.25))} aria-label="Alejar" className="rounded-lg border border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><Minus className="h-3.5 w-3.5" /></button>
-                <span className="w-12 text-center font-mono text-xs font-bold text-[var(--text-secondary)]">{Math.round(escala * 100)}%</span>
-                <button type="button" onClick={() => setFactor((f) => Math.min(3, f + 0.25))} aria-label="Acercar" className="rounded-lg border border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><Plus className="h-3.5 w-3.5" /></button>
-              </div>
-            </div>
-            <Anexo04Checklist avisos={avisos} presentable={presentable} onSugerencia={(campo, valor) => set({ [campo]: valor })} />
-            <style>{ANEXO04_CSS}</style>
-            <div className="max-h-[64vh] overflow-auto">
-              <div ref={hojasRef} style={{ width: A4_PX * escala }}>
-                {anexo.hojas.map((hoja, i) => (
-                  <div key={i} className="mb-3 shadow-[var(--shadow-md)]" style={{ width: A4_PX * escala, height: 1123 * escala }}>
-                    <div style={{ transform: `scale(${escala})`, transformOrigin: "top left" }}>
-                      <Anexo04Hoja hoja={hoja} datos={datos} anexo={anexo} nro={i + 1} total={anexo.hojas.length} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Anexo04Preview
+              ref={hojasRef}
+              anexo={anexo}
+              datos={datos}
+              escala={escala}
+              onZoom={(paso) => setFactor((f) => Math.min(3, Math.max(0.5, f + paso)))}
+              origen={
+                <Anexo04Origen
+                  piezasActuales={rows.length}
+                  valor={origen}
+                  despachoId={ctpEntryId}
+                  onCambio={(id, piezas, registro) => {
+                    setOrigen(id);
+                    setPiezasGuardadas(piezas);
+                    // La guardada trae su especie predominante: fallback para las
+                    // piezas que se cargaron sin especie propia.
+                    setEspecieOrigen(registro?.especie);
+                  }}
+                />
+              }
+              checklist={<Anexo04Checklist avisos={avisos} presentable={presentable} onSugerencia={(campo, valor) => set({ [campo]: valor })} />}
+            />
           </div>
         </div>
 
@@ -303,7 +255,7 @@ export default function Anexo04Modal({
           onPdfDetallado={onPdfDetallado}
           onExcel={descargarExcel}
           onImprimir={imprimir}
-          onDescargar={descargar}
+          onDescargar={descargarPdf}
         />
       </div>
     </div>

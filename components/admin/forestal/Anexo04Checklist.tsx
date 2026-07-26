@@ -7,7 +7,7 @@
  * llenarla a mano es un uso legítimo del formato oficial.
  */
 import { AlertTriangle, Check, Wand2 } from "@buleje/design-system/icons";
-import type { AvisoAnexo04 } from "@/lib/forestal/anexo04-validacion";
+import type { AvisoAnexo04, CampoSugerible } from "@/lib/forestal/anexo04-validacion";
 
 export default function Anexo04Checklist({
   avisos, presentable, onSugerencia,
@@ -15,7 +15,7 @@ export default function Anexo04Checklist({
   avisos: AvisoAnexo04[];
   presentable: boolean;
   /** Aplica el arreglo que propone un aviso (p. ej. el correlativo libre). */
-  onSugerencia?: (campo: "numero", valor: string) => void;
+  onSugerencia?: (campo: CampoSugerible, valor: string) => void;
 }) {
   if (avisos.length === 0) {
     return (

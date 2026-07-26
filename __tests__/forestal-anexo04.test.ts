@@ -11,7 +11,7 @@ import {
   FILAS_OFICIAL, PAGINA,
 } from "@/lib/forestal/anexo04-serfor";
 import { formulaV } from "@/lib/forestal/anexo04-excel";
-import { validarAnexo04, anexoPresentable } from "@/lib/forestal/anexo04-validacion";
+import { validarAnexo04, anexoPresentable, type IdentidadCtp } from "@/lib/forestal/anexo04-validacion";
 import {
   filtrarEmisiones, mesesDeEmisiones, emisionesDelMes, etiquetaMes, siguienteLibre, construirEmision,
   type AnexoEmitido,
@@ -485,5 +485,44 @@ describe("fidelidad de la re-impresión", () => {
     expect(emision.totalPt).toBe(160);
     expect(emision.totalPiezas).toBe(10);
     expect(emision.hojas).toBe(1);
+  });
+});
+
+describe("cotejo con la Ficha legal del CTP", () => {
+  const DATOS = {
+    numero: "1", gtf: "G", empresa: "Maderera San Martín S.A.C.", observaciones: "",
+    firmante: "Brandon Buleje", documento: "71234567", cargo: "Jefe", unidadV: "pt", modo: "oficial",
+  } as const;
+  const UNA = [pieza(10, 2, 8, 12)];
+  const conFicha = (ficha: IdentidadCtp | null) =>
+    validarAnexo04(DATOS, construirAnexo04(UNA, DATOS), UNA, { ficha });
+
+  it("cuando coincide con lo registrado no dice nada (ignora mayúsculas y espacios)", () => {
+    expect(conFicha({
+      razonSocial: "  maderera san martín s.a.c. ",
+      representante: "Brandon Buleje",
+      representanteDni: "71234567",
+    })).toEqual([]);
+  });
+
+  it("razón social distinta a la registrada = aviso con arreglo de un click", () => {
+    const avisos = conFicha({ razonSocial: "Maderera Ucayali E.I.R.L." });
+    expect(avisos).toHaveLength(1);
+    expect(avisos[0].nivel).toBe("aviso");
+    expect(avisos[0].sugerencia).toEqual({
+      campo: "empresa", valor: "Maderera Ucayali E.I.R.L.", label: "Usar Maderera Ucayali E.I.R.L.",
+    });
+  });
+
+  it("emisor y documento distintos también se avisan (puede firmar un apoderado)", () => {
+    const avisos = conFicha({ representante: "Rosa Laura", representanteDni: "70000001" });
+    expect(avisos.map((a) => a.sugerencia?.campo)).toEqual(["firmante", "documento"]);
+    expect(anexoPresentable(avisos)).toBe(true);
+  });
+
+  it("sin ficha, o con la ficha vacía, no inventa avisos", () => {
+    expect(conFicha(null)).toEqual([]);
+    expect(conFicha({})).toEqual([]);
+    expect(conFicha({ razonSocial: "   " })).toEqual([]);
   });
 });

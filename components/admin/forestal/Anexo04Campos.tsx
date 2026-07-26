@@ -75,10 +75,12 @@ function ImagenCampo({ src, label, alto = "h-11 w-14", onArchivo, onQuitar }: {
 }
 
 export default function Anexo04Campos({
-  datos, onChange, onError,
+  datos, onChange, ficha, onError,
 }: {
   datos: DatosAnexo04;
   onChange: (patch: Partial<DatosAnexo04>) => void;
+  /** Identidad legal del CTP, para llenar la cabecera con lo registrado. */
+  ficha?: { razonSocial?: string; representante?: string; representanteDni?: string } | null;
   onError?: (msg: string) => void;
 }) {
   const [emisores, setEmisores] = useState<EmisorGuardado[]>([]);
@@ -117,7 +119,23 @@ export default function Anexo04Campos({
     <div className="space-y-2.5">
       {/* Logo + razón social */}
       <div>
-        <span className={LABEL}>Logo y razón social del emisor</span>
+        <div className="flex items-center justify-between gap-2">
+          <span className={LABEL}>Logo y razón social del emisor</span>
+          {ficha && (ficha.razonSocial || ficha.representante) && (
+            <button
+              type="button"
+              onClick={() => onChange({
+                ...(ficha.razonSocial ? { empresa: ficha.razonSocial } : {}),
+                ...(ficha.representante ? { firmante: ficha.representante } : {}),
+                ...(ficha.representanteDni ? { documento: ficha.representanteDni } : {}),
+              })}
+              title="Traer razón social, representante y DNI de la Ficha legal del CTP"
+              className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:underline"
+            >
+              Traer de la ficha
+            </button>
+          )}
+        </div>
         <div className="mt-1 flex items-center gap-2">
           <ImagenCampo
             src={datos.logo}

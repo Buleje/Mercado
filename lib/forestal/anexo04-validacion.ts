@@ -33,16 +33,28 @@ export interface ContextoEmision {
   emitidos?: AnexoEmitido[];
   /** Despacho actual: acumula sólo los anexos de ESA guía. */
   ctpEntryId?: string;
+  /** Ficha legal del CTP: el papel debe salir a nombre de lo registrado. */
+  ficha?: IdentidadCtp | null;
 }
 
 export type NivelAviso = "error" | "aviso";
+
+/** Campos que un aviso puede corregir solo. */
+export type CampoSugerible = "numero" | "empresa" | "firmante" | "documento";
+
+/** Identidad legal del CTP, como está registrada ante la ARFFS. */
+export interface IdentidadCtp {
+  razonSocial?: string;
+  representante?: string;
+  representanteDni?: string;
+}
 
 export interface AvisoAnexo04 {
   nivel: NivelAviso;
   /** Qué falta o qué llama la atención, en una línea y en criollo. */
   mensaje: string;
   /** Arreglo de un click, cuando el aviso tiene una respuesta obvia. */
-  sugerencia?: { campo: "numero"; valor: string; label: string };
+  sugerencia?: { campo: CampoSugerible; valor: string; label: string };
 }
 
 /** Bloques sin especie identificada (el anexo pide (4) Especie sí o sí). */
@@ -82,7 +94,7 @@ export function validarAnexo04(
   piezas: PiezaCubicada[],
   ctx: ContextoEmision = {},
 ): AvisoAnexo04[] {
-  const { declarado, emitidos = [], ctpEntryId } = ctx;
+  const { declarado, emitidos = [], ctpEntryId, ficha } = ctx;
   const avisos: AvisoAnexo04[] = [];
   const vacio = (v: string | undefined) => !v || !v.trim();
 
@@ -130,6 +142,7 @@ export function validarAnexo04(
 
   avisos.push(...cotejarConLibro(anexo, piezas, declarado, otrosDelDespacho(datos, emitidos, ctpEntryId)));
   avisos.push(...numeroRepetido(datos, emitidos));
+  avisos.push(...discrepanciasConFicha(datos, ficha));
 
   return avisos.sort((a, b) => (a.nivel === b.nivel ? 0 : a.nivel === "error" ? -1 : 1));
 }
@@ -222,6 +235,37 @@ function numeroRepetido(datos: DatosAnexo04, emitidos: AnexoEmitido[]): AvisoAne
       ? { sugerencia: { campo: "numero" as const, valor: libre, label: `Usar ${libre}` } }
       : {}),
   }];
+}
+
+/**
+ * Compara la cabecera del anexo con la Ficha legal del CTP. Es AVISO, no error:
+ * un CTP puede tener nombre comercial distinto del registrado, o firmar un
+ * apoderado. Pero que el papel salga a nombre de otro sin que nadie lo note es
+ * justo lo que un fiscalizador marca — y se arregla de un click.
+ */
+function discrepanciasConFicha(datos: DatosAnexo04, ficha?: IdentidadCtp | null): AvisoAnexo04[] {
+  if (!ficha) return [];
+  const igual = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+  const avisos: AvisoAnexo04[] = [];
+
+  const par = (
+    campo: CampoSugerible,
+    actual: string,
+    registrado: string | undefined,
+    queEs: string,
+  ) => {
+    if (!registrado?.trim() || !actual.trim() || igual(actual, registrado)) return;
+    avisos.push({
+      nivel: "aviso",
+      mensaje: `${queEs} del anexo ("${actual.trim()}") no coincide con la ficha del CTP ("${registrado.trim()}").`,
+      sugerencia: { campo, valor: registrado.trim(), label: `Usar ${registrado.trim()}` },
+    });
+  };
+
+  par("empresa", datos.empresa, ficha.razonSocial, "La razón social");
+  par("firmante", datos.firmante, ficha.representante, "El emisor (14)");
+  par("documento", datos.documento, ficha.representanteDni, "El documento (15)");
+  return avisos;
 }
 
 /** ¿Se puede presentar tal como está? (sin errores; los avisos no invalidan). */
