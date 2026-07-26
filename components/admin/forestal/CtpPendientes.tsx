@@ -11,15 +11,10 @@
  *
  * No agrega endpoints: usa los que las propias pestañas ya consumen.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowRight, CheckCircle2, ClipboardList, Loader2 } from "@buleje/design-system/icons";
-import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
-import { pendientesDelLibro, resumenPendientes, type DatosPendientes, type Pendiente } from "@/lib/forestal/ctp-pendientes";
-
-const VACIO: DatosPendientes = {
-  ingresosPendientes: 0, fueraDePlazo: 0, guiasSinIngresar: 0,
-  despachosSinGtf: 0, despachosSinAnexo: 0, corridasSinOrigen: 0, saldosNegativos: 0,
-};
+import type { CtpPeriod } from "@/lib/forestal/ctp-period";
+import { resumenPendientes, type Pendiente } from "@/lib/forestal/ctp-pendientes";
+import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
 
 const TONO: Record<Pendiente["urgencia"], string> = {
   bloquea: "border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]",
@@ -27,63 +22,13 @@ const TONO: Record<Pendiente["urgencia"], string> = {
   pendiente: "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]",
 };
 
-const json = (url: string) => fetch(url, { credentials: "include", cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-
 export default function CtpPendientes({ period, onIr }: {
   period: CtpPeriod;
   /** Salta a la pestaña donde se resuelve ese pendiente. */
   onIr: (vista: string) => void;
 }) {
-  const [datos, setDatos] = useState<DatosPendientes>(VACIO);
-  const [cargando, setCargando] = useState(true);
-  /** Si el cálculo falla, NO se puede decir "al día": sería mentir. */
-  const [falló, setFalló] = useState(false);
-  /**
-   * Cambiar de período dispara otra carga; si la primera responde DESPUÉS,
-   * pisaba los datos buenos con los del período viejo y el panel mostraba
-   * "al día" habiendo pendientes. Sólo la última carga puede escribir.
-   */
-  const cargaRef = useRef(0);
+  const { lista, cargando, falló, recargar } = useCtpPendientes(period);
 
-  const cargar = useCallback(() => {
-    const miCarga = ++cargaRef.current;
-    setCargando(true);
-    const p = new URLSearchParams();
-    applyCtpPeriodParams(p, period);
-    const q = p.toString();
-    setFalló(false);
-    const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
-    Promise.all([
-      json(`/api/admin/forestal/wood-entries?stats=1&limit=1&${q}`),
-      json("/api/admin/forestal/gtf?sinIngresar=1"),
-      json(`/api/admin/forestal/ctp?section=despacho&${q}`),
-      json("/api/admin/forestal/anexos"),
-      json(`/api/admin/forestal/ctp?saldos=1&${q}`),
-    ]).then(([we, gtf, desp, anexos, saldos]) => {
-      if (miCarga !== cargaRef.current) return;   // llegó tarde: manda la más nueva
-      const despachos = arr<{ status?: string; gtfNumber?: string | null; id: string }>(desp?.entries)
-        .filter((e) => e.status === "registrado");
-      const conAnexo = new Set(arr<{ ctpEntryId?: string }>(anexos?.anexos).map((a) => a.ctpEntryId).filter(Boolean));
-      const neg =
-        arr<{ negativa?: boolean }>(saldos?.saldos?.materiaPrima).filter((s) => s.negativa).length +
-        arr<{ negativo?: boolean }>(saldos?.saldos?.productos).filter((s) => s.negativo).length;
-      setDatos({
-        ingresosPendientes: we?.stats?.byStatus?.pendiente ?? 0,
-        fueraDePlazo: we?.stats?.lateCount ?? 0,
-        guiasSinIngresar: (gtf?.gtfs ?? []).length,
-        despachosSinGtf: despachos.filter((e) => !e.gtfNumber?.trim()).length,
-        despachosSinAnexo: despachos.filter((e) => !conAnexo.has(e.id)).length,
-        corridasSinOrigen: 0,   // requiere la trazabilidad completa: se mira en Radar
-        saldosNegativos: neg,
-      });
-    })
-      .catch(() => { if (miCarga === cargaRef.current) setFalló(true); })
-      .finally(() => { if (miCarga === cargaRef.current) setCargando(false); });
-  }, [period]);
-
-  useEffect(cargar, [cargar]);
-
-  const lista = pendientesDelLibro(datos);
 
   if (cargando) {
     return (
@@ -98,7 +43,7 @@ export default function CtpPendientes({ period, onIr }: {
     return (
       <p className="flex items-center justify-between gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-xs text-[var(--text-tertiary)]">
         <span>No se pudo revisar qué falta en el libro.</span>
-        <button type="button" onClick={cargar} className="font-bold text-[var(--accent)] hover:underline">Reintentar</button>
+        <button type="button" onClick={recargar} className="font-bold text-[var(--accent)] hover:underline">Reintentar</button>
       </p>
     );
   }

@@ -49,6 +49,8 @@ import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
 import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
 import CtpCierrePanel from "./CtpCierrePanel";
+import { useCtpCierres } from "@/hooks/use-ctp-cierres";
+import CtpCierreAsistido from "./CtpCierreAsistido";
 import CtpEudrPanel from "./CtpEudrPanel";
 import CtpRentabilidadPanel from "./CtpRentabilidadPanel";
 import CtpImportModal from "./CtpImportModal";
@@ -83,6 +85,8 @@ const CTP_MODULE_ID = "ctp-libro";
 const CTP_TAB_ITEMS = CTP_VIEWS.map((v) => ({ id: v.key, label: v.label, icon: v.icon, title: v.hint }));
 
 export default function CTPLibroOperaciones() {
+  /** Un solo estado de cierres para el asistente y el historial. */
+  const cierres = useCtpCierres();
   const [view, setView] = useState<CtpView>(() => {
     if (typeof window === "undefined") return "ingresos";
     const saved = localStorage.getItem(`admin-last-tab-${CTP_MODULE_ID}`);
@@ -258,7 +262,14 @@ export default function CTPLibroOperaciones() {
           {view === "planta" && <CtpPlantaView period={period} />}
           {view === "saldos" && <CtpSaldosView period={period} />}
           {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
-          {view === "cierre" && <CtpCierrePanel />}
+          {view === "cierre" && (
+            <div className="space-y-6">
+              {/* El asistente ordena el trabajo; el panel de abajo sigue siendo
+                  el historial de cierres (y el único lugar para reabrir). */}
+              <CtpCierreAsistido onIr={(v) => setView(v as CtpView)} cierres={cierres} />
+              <CtpCierrePanel estado={cierres} />
+            </div>
+          )}
           {view === "eudr" && <CtpEudrPanel period={period} />}
           {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
           {view === "analisis" && <CtpAnalisis />}

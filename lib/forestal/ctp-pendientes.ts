@@ -31,6 +31,34 @@ export interface DatosPendientes {
   /** Especies con saldo negativo (se despachó más de lo que entró). */ saldosNegativos: number;
 }
 
+/** Día calendario de una fecha *date-only* (guardada a medianoche UTC). */
+export function diaDeFechaOnly(iso: string | Date | null | undefined): string {
+  if (!iso) return "";
+  const d = iso instanceof Date ? iso : new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+}
+
+/** Día calendario de un límite de período (construido en hora LOCAL). */
+export function diaDeLimiteLocal(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * ¿Ese día cae dentro del período? Se compara por día calendario y no por
+ * instante: `to` es "31 a las 23:59 hora local" y la fecha del documento es
+ * medianoche UTC — restarlos como instantes corre el mes de un día (Lima UTC-5).
+ * Sin límites (todo el histórico) entra todo.
+ */
+export function diaEnPeriodo(dia: string, desde: string, hasta: string): boolean {
+  if (!dia) return false;
+  if (desde && dia < desde) return false;
+  if (hasta && dia > hasta) return false;
+  return true;
+}
+
 const ORDEN: Record<UrgenciaPendiente, number> = { bloquea: 0, atrasado: 1, pendiente: 2 };
 
 /**

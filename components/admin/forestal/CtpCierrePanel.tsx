@@ -1,14 +1,16 @@
 "use client";
 
 /**
- * CtpCierrePanel — cierre de período fiscal del Libro CTP (ADR-139).
+ * CtpCierrePanel — historial de períodos cerrados del Libro CTP (ADR-139).
  *
- * Cerrar un mes: congela costos + snapshotea la existencia de cierre + BLOQUEA
- * toda edición de ese mes. Es lo que vuelve al libro un acta inmutable. Reabrir
- * (owner) deja de bloquear, pero los costos congelados siguen congelados.
+ * Cerrar un mes congela costos, snapshotea la existencia de cierre y BLOQUEA
+ * toda edición de ese mes: es lo que vuelve al libro un acta inmutable. Cerrar
+ * lo hace el asistente de arriba (único selector de mes); acá vive lo que ya se
+ * cerró y el único camino de vuelta: reabrir (owner), que deja de bloquear pero
+ * NO descongela los costos.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -19,152 +21,39 @@ import {
   ShieldCheck,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
-import { csrfHeaders } from "@/lib/csrf-client";
 import type { CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
-
-const URL = "/api/admin/forestal/ctp/cierre";
+import type { CtpCierresState } from "@/hooks/use-ctp-cierres";
 const fmt4 = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 4 });
 const fmtFecha = (iso: string) => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
-interface MonthOpt { key: string; label: string; year: number; month: number }
-function buildMonths(): MonthOpt[] {
-  const out: MonthOpt[] = [];
-  const now = new Date();
-  // Desde el mes ANTERIOR hacia atrás (un mes se cierra una vez terminado).
-  for (let i = 1; i <= 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    out.push({
-      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
-      label: d.toLocaleDateString("es-PE", { month: "long", year: "numeric" }),
-      year: d.getFullYear(),
-      month: d.getMonth() + 1,
-    });
-  }
-  return out;
-}
-
-export default function CtpCierrePanel() {
-  const [cierres, setCierres] = useState<CtpCierrePeriodo[] | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export default function CtpCierrePanel({ estado }: { estado: CtpCierresState }) {
+  const { cierres, error, busy } = estado;
   const [okMsg, setOkMsg] = useState<string | null>(null);
-  const [sel, setSel] = useState<string>("");
   const [expanded, setExpanded] = useState<string | null>(null);
-
-  const months = useMemo(buildMonths, []);
-
-  const load = useCallback(async () => {
-    try {
-      const r = await fetch(URL, { credentials: "include" });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
-      setCierres(Array.isArray(j.cierres) ? j.cierres : []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setCierres([]);
-    }
-  }, []);
-  useEffect(() => { void load(); }, [load]);
-
-  const closedKeys = useMemo(() => new Set((cierres ?? []).filter((c) => !c.reabierto).map((c) => c.periodKey)), [cierres]);
-  useEffect(() => {
-    if (!sel) { const first = months.find((m) => !closedKeys.has(m.key)); if (first) setSel(first.key); }
-  }, [months, closedKeys, sel]);
-
-  const selMonth = months.find((m) => m.key === sel);
-  const selCerrado = closedKeys.has(sel);
-
-  async function cerrar() {
-    if (!selMonth || busy) return;
-    setBusy(true); setError(null); setOkMsg(null);
-    try {
-      const r = await fetch(URL, {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify({ action: "cerrar", year: selMonth.year, month: selMonth.month }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
-      setCierres(Array.isArray(j.cierres) ? j.cierres : cierres);
-      const t = j.cierre?.totales;
-      setOkMsg(`Período ${selMonth.label} cerrado${t ? ` · ${t.corridasCongeladas} corridas congeladas${t.corridasSinCostear ? `, ${t.corridasSinCostear} sin costear` : ""}` : ""}. Quedó bloqueado.`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function reabrir(c: CtpCierrePeriodo) {
     const motivo = window.prompt(`Reabrir ${c.label}. Los costos ya congelados siguen congelados; el período vuelve a admitir ediciones.\n\nMotivo (obligatorio, queda auditado):`);
     if (!motivo || !motivo.trim()) return;
-    setBusy(true); setError(null); setOkMsg(null);
-    try {
-      const r = await fetch(URL, {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify({ action: "reabrir", periodKey: c.periodKey, motivo: motivo.trim() }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
-      setCierres(Array.isArray(j.cierres) ? j.cierres : cierres);
-      setOkMsg(`Período ${c.label} reabierto.`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
+    setOkMsg(null);
+    const r = await estado.reabrir(c, motivo.trim());
+    if (r.ok) setOkMsg(r.msg);
   }
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <div className="flex items-start gap-3">
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-dark)]"><Lock className="h-5 w-5" /></span>
-          <div className="min-w-0">
-            <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Cerrar un mes del libro</CardTitle>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">Al cerrar, se congela el costo de las corridas del mes, se guarda la existencia de cierre (apertura del mes siguiente) y el período queda <strong>bloqueado</strong>: no se pueden agregar, anular ni reatribuir líneas de ese mes.</p>
-          </div>
+      {error && (
+        <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><div><strong>Error:</strong> {error}</div>
         </div>
-
-        {error && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><div><strong>Error:</strong> {error}</div>
-          </div>
-        )}
-        {okMsg && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 text-sm text-[var(--data-success-700)]">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /><div>{okMsg}</div>
-          </div>
-        )}
-
-        <div className="mt-4 flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-bold text-[var(--text-secondary)]">Mes a cerrar</span>
-            <select value={sel} onChange={(e) => setSel(e.target.value)} disabled={busy} className="h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-bold text-[var(--text-primary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]">
-              {months.map((m) => (
-                <option key={m.key} value={m.key} disabled={closedKeys.has(m.key)}>
-                  {m.label}{closedKeys.has(m.key) ? " — cerrado" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
-            onClick={() => void cerrar()}
-            disabled={busy || selCerrado || !selMonth}
-            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-            {selCerrado ? "Ya cerrado" : `Cerrar ${selMonth?.label ?? ""}`}
-          </button>
+      )}
+      {okMsg && (
+        <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 text-sm text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /><div>{okMsg}</div>
         </div>
-      </div>
+      )}
 
       {/* Períodos cerrados */}
       <div>
