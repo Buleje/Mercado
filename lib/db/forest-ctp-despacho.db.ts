@@ -436,9 +436,22 @@ export class ForestCtpDespachoDB {
   static async setValorVenta(tenantId: string, despachoEntryId: string, valorVenta: number | null, user = "unknown"): Promise<void> {
     if (!tenantId) throw new Error("tenantId is required");
     if (valorVenta != null && valorVenta < 0) throw new Error("El valor de venta no puede ser negativo");
-    const e = await prisma.forestCtpEntry.findFirst({ where: { id: despachoEntryId, tenantId, deletedAt: null }, select: { section: true, lineNo: true } });
+    const e = await prisma.forestCtpEntry.findFirst({ where: { id: despachoEntryId, tenantId, deletedAt: null }, select: { section: true, lineNo: true, entryDate: true } });
     if (!e) throw new Error("Despacho no encontrado");
     if (e.section !== "despacho") throw new Error("El valor de venta solo aplica a una línea de despacho");
+
+    // Cierre de período (ADR-139): el P&L NO se congela en el cierre — se deriva
+    // on-read de `valorVenta`. Sin este guard, editar la venta de un despacho de
+    // un mes cerrado cambiaba el margen de un período ya cerrado, mientras el
+    // resto del libro seguía inmutable.
+    const cerradoVenta = await ForestCtpCierreDB.closedPeriodOf(tenantId, e.entryDate);
+    if (cerradoVenta) {
+      throw new CtpInvariantError(
+        `El período ${cerradoVenta.label} está cerrado: no se puede cambiar el valor de venta de un despacho de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerradoVenta.periodKey },
+      );
+    }
     await prisma.forestCtpEntry.update({
       where: { id: despachoEntryId, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
       data: { valorVenta: valorVenta != null ? new Prisma.Decimal(valorVenta) : null },
@@ -699,6 +712,18 @@ export class ForestCtpDespachoDB {
     if (!tenantId) throw new Error("tenantId is required");
     if (!despachoEntryId) throw new Error("despachoEntryId is required");
     if (!user?.trim()) throw new Error("user is required");
+
+    // Cierre de período (ADR-139): numerar la GTF de salida ESCRIBE `gtfNumber`
+    // en la línea, y una línea de un mes cerrado es inmutable como cualquier otra.
+    const despFecha = await prisma.forestCtpEntry.findFirst({ where: { id: despachoEntryId, tenantId }, select: { entryDate: true } });
+    const cerradoGtf = despFecha ? await ForestCtpCierreDB.closedPeriodOf(tenantId, despFecha.entryDate) : null;
+    if (cerradoGtf) {
+      throw new CtpInvariantError(
+        `El período ${cerradoGtf.label} está cerrado: no se puede emitir la GTF de un despacho de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerradoGtf.periodKey },
+      );
+    }
 
     const ficha = await ForestCtpFichaDB.get(tenantId);
     const serie = ficha.gtfSerie.trim();

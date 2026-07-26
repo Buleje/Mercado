@@ -236,8 +236,10 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
     }
     return NextResponse.json({ entry: await ForestCtpDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason, auth.username ?? "unknown") });
   } catch (err) {
-    logger.error("[ctp.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    // Los invariantes del libro (período cerrado, stock, atribución) tienen que
+    // llegar al operario con su motivo: con un 500 genérico veía "error interno"
+    // al anular una línea de un mes cerrado y no entendía por qué.
+    return ctpErrorResponse(err, "ctp.PATCH", auth.tenantId);
   }
 });
 
@@ -254,7 +256,6 @@ export const DELETE = withApiHandler("forestal-ctp-delete", async (req: NextRequ
     await ForestCtpDB.softDelete(auth.tenantId, id, auth.username ?? "unknown");
     return NextResponse.json({ ok: true });
   } catch (err) {
-    logger.error("[ctp.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    return ctpErrorResponse(err, "ctp.DELETE", auth.tenantId);
   }
 });
