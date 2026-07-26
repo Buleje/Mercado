@@ -11,7 +11,7 @@
  * anexo — y no puede depender de que alguien despliegue este panel.
  */
 import { useMemo, useState } from "react";
-import { Download, FileSpreadsheet, History, Loader2, RotateCcw, Search, Trash2 } from "@buleje/design-system/icons";
+import { Download, FileSpreadsheet, History, Loader2, Printer, RotateCcw, Search, Trash2 } from "@buleje/design-system/icons";
 import {
   etiquetaEmision, filtrarEmisiones, mesesDeEmisiones, emisionesDelMes, etiquetaMes,
   type AnexoEmitido,
@@ -27,7 +27,7 @@ const fecha = (iso: string) => {
 const ICONO = "rounded-lg border border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]";
 
 export default function Anexo04Historial({
-  lista, cargando, ctpEntryId, onCargar, onDescargar, onQuitar, onError,
+  lista, cargando, ctpEntryId, onCargar, onDescargar, onQuitar, onPdfLote, onError,
 }: {
   lista: AnexoEmitido[];
   cargando: boolean;
@@ -38,6 +38,8 @@ export default function Anexo04Historial({
   /** Re-descarga el PDF exactamente como se emitió. */
   onDescargar: (a: AnexoEmitido) => void;
   onQuitar: (id: string) => Promise<boolean>;
+  /** Un solo PDF con todos los anexos que se están viendo (archivo del mes). */
+  onPdfLote: (lista: AnexoEmitido[]) => void;
   onError?: (msg: string) => void;
 }) {
   const [busqueda, setBusqueda] = useState("");
@@ -85,6 +87,15 @@ export default function Anexo04Historial({
             ? `${lista.length} anexo${lista.length === 1 ? "" : "s"} emitido${lista.length === 1 ? "" : "s"}`
             : `${visibles.length} de ${lista.length}`}
         </span>
+        <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onPdfLote(visibles)}
+          title="Un solo PDF con los anexos que estás viendo, para imprimir y archivar"
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-2.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          <Printer className="h-3.5 w-3.5" /> PDF
+        </button>
         <button
           type="button"
           onClick={() => exportarBandejaAnexos(visibles).catch(() => onError?.("No se pudo generar el Excel de la bandeja."))}
@@ -93,6 +104,7 @@ export default function Anexo04Historial({
         >
           <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
         </button>
+        </div>
       </div>
 
       {(lista.length > 4 || meses.length > 1) && (

@@ -18,7 +18,7 @@ import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { construirAnexo04, fmtAnexo, type DatosAnexo04 } from "@/lib/forestal/anexo04-serfor";
 import { validarAnexo04, anexoPresentable, type DeclaradoEnLibro } from "@/lib/forestal/anexo04-validacion";
 import { useAnexo04Datos } from "@/hooks/use-anexo04-datos";
-import { exportarAnexo04PDF } from "@/lib/forestal/anexo04-pdf";
+import { exportarAnexo04PDF, exportarAnexosPDF } from "@/lib/forestal/anexo04-pdf";
 import { exportarAnexo04Excel } from "@/lib/forestal/anexo04-excel";
 import Anexo04Hoja, { ANEXO04_CSS } from "./Anexo04Hoja";
 import Anexo04Campos from "./Anexo04Campos";
@@ -167,9 +167,19 @@ export default function Anexo04Modal({
     setVerHistorial(false);
   };
 
+  /** Todos los anexos visibles en un PDF: el archivo del mes, listo para imprimir. */
+  const pdfDeLote = (seleccion: AnexoEmitido[]) => {
+    if (seleccion.length === 0) { onAviso?.("No hay anexos para imprimir.", "error"); return; }
+    exportarAnexosPDF(
+      seleccion.map((a) => ({ piezas: a.piezas, datos: { ...datos, ...a }, especieGlobal: a.especieGlobal })),
+    )
+      .then(() => onAviso?.(`${seleccion.length} anexos en un PDF`, "success"))
+      .catch(() => onAviso?.("No se pudo generar el PDF del lote.", "error"));
+  };
+
   /** Re-descarga un anexo tal como se emitió, sin tocar lo que hay en pantalla. */
   const reDescargar = (a: AnexoEmitido) => {
-    exportarAnexo04PDF(a.piezas, { ...datos, ...a }, {})
+    exportarAnexo04PDF(a.piezas, { ...datos, ...a }, { especieGlobal: a.especieGlobal })
       .then(() => onAviso?.("Anexo re-descargado", "success"))
       .catch(() => onAviso?.("No se pudo generar el PDF.", "error"));
   };
@@ -242,6 +252,7 @@ export default function Anexo04Modal({
                     onCargar={cargarEmision}
                     onDescargar={reDescargar}
                     onQuitar={quitar}
+                    onPdfLote={pdfDeLote}
                     onError={(msg) => onAviso?.(msg, "error")}
                   />
                 </div>

@@ -200,16 +200,37 @@ function dibujarHoja(doc: jsPDF, hoja: HojaAnexo04, datos: DatosAnexo04, anexo: 
 const nombreArchivo = (datos: DatosAnexo04) =>
   `anexo04-productos-transformados${datos.gtf ? `-${datos.gtf.replace(/[^\w-]+/g, "")}` : ""}-${new Date().toISOString().slice(0, 10)}.pdf`;
 
+/** Agrega las hojas de UN anexo al documento (la 1ª página ya existe). */
+function agregarAnexo(doc: jsPDF, rows: PiezaCubicada[], datos: DatosAnexo04, opts: { especieGlobal?: string }, esPrimero: boolean) {
+  const anexo = construirAnexo04(rows, datos, opts);
+  anexo.hojas.forEach((hoja, i) => {
+    if (!esPrimero || i > 0) doc.addPage();
+    dibujarHoja(doc, hoja, datos, anexo, i + 1, anexo.hojas.length);
+  });
+}
+
 /** Construye el documento (compartido por descarga y cualquier otra salida). */
 async function construirDoc(rows: PiezaCubicada[], datos: DatosAnexo04, opts: { especieGlobal?: string } = {}) {
   const { jsPDF: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "pt", format: "a4" });
-  const anexo = construirAnexo04(rows, datos, opts);
-  anexo.hojas.forEach((hoja, i) => {
-    if (i > 0) doc.addPage();
-    dibujarHoja(doc, hoja, datos, anexo, i + 1, anexo.hojas.length);
-  });
+  agregarAnexo(doc, rows, datos, opts, true);
   return doc;
+}
+
+/**
+ * Varios anexos en UN solo PDF, uno atrás del otro: el archivo del mes que el
+ * regente imprime y archiva de una vez. La numeración "Hoja X de Y" sigue siendo
+ * por anexo — cada documento se lee solo, aunque viajen juntos.
+ */
+export async function exportarAnexosPDF(
+  items: Array<{ piezas: PiezaCubicada[]; datos: DatosAnexo04; especieGlobal?: string }>,
+  nombre = `anexos-04-${new Date().toISOString().slice(0, 10)}.pdf`,
+): Promise<void> {
+  if (items.length === 0) return;
+  const { jsPDF: JsPDF } = await import("jspdf");
+  const doc = new JsPDF({ unit: "pt", format: "a4" });
+  items.forEach((it, i) => agregarAnexo(doc, it.piezas, it.datos, { especieGlobal: it.especieGlobal }, i === 0));
+  doc.save(nombre);
 }
 
 /** Descarga el ANEXO N° 04 del lote cubicado. */

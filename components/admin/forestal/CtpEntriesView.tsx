@@ -65,6 +65,8 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
   // Filtro por estado (chips, como Ingresos) + orden por columna, client-side
   // sobre el set completo del período (search es server-side, sin paginación).
   const [statusFilter, setStatusFilter] = useState<"" | "registrado" | "anulado">("");
+  /** Sólo las guías que todavía no tienen su ANEXO N° 04 emitido. */
+  const [soloSinAnexo, setSoloSinAnexo] = useState(false);
   const [sort, setSort] = useState<{ by: "fecha" | "cantidad" | "rend" | null; dir: "asc" | "desc" }>({ by: null, dir: "desc" });
 
   const load = useCallback(async () => {
@@ -158,15 +160,25 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
 
   // Filtro por estado + orden. La media/KPIs no cambian (siguen sobre todo el set);
   // esto solo cambia lo que se LISTA en la tabla/cards.
+  /** Guías vivas que todavía no tienen anexo: lo que le falta emitir al regente. */
+  const sinAnexo = useMemo(
+    () => (section === "despacho" ? entries.filter((e) => e.status === "registrado" && !conAnexo.has(e.id)).length : 0),
+    [entries, conAnexo, section],
+  );
+
   const visible = useMemo(() => {
-    const list = statusFilter ? entries.filter((e) => e.status === statusFilter) : entries;
+    const porEstado = statusFilter ? entries.filter((e) => e.status === statusFilter) : entries;
+    // "Sin anexo" sólo tiene sentido sobre líneas vivas: una anulada no se ampara.
+    const list = soloSinAnexo
+      ? porEstado.filter((e) => e.status === "registrado" && !conAnexo.has(e.id))
+      : porEstado;
     if (!sort.by) return list;
     const val = (e: CtpEntry) =>
       sort.by === "fecha" ? new Date(e.entryDate).getTime()
       : sort.by === "cantidad" ? Number(e.quantity ?? 0)
       : Number(e.rendimientoPct ?? 0);
     return [...list].sort((a, b) => { const d = val(a) - val(b); return sort.dir === "asc" ? d : -d; });
-  }, [entries, statusFilter, sort]);
+  }, [entries, statusFilter, sort, soloSinAnexo, conAnexo]);
 
   const toggleSort = (by: "fecha" | "cantidad" | "rend") =>
     setSort((s) => (s.by === by ? { by, dir: s.dir === "asc" ? "desc" : "asc" } : { by, dir: "desc" }));
@@ -219,6 +231,15 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
       {statusCounts.total > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <EntryChip label="Todos" count={statusCounts.total} active={statusFilter === ""} onClick={() => setStatusFilter("")} />
+          {section === "despacho" && sinAnexo > 0 && (
+            <EntryChip
+              label="Sin anexo 04"
+              count={sinAnexo}
+              active={soloSinAnexo}
+              tone="muted"
+              onClick={() => setSoloSinAnexo((v) => !v)}
+            />
+          )}
           <EntryChip label="Registrados" count={statusCounts.registrado} active={statusFilter === "registrado"} onClick={() => setStatusFilter((f) => (f === "registrado" ? "" : "registrado"))} />
           {statusCounts.anulado > 0 && (
             <EntryChip label="Anulados" count={statusCounts.anulado} active={statusFilter === "anulado"} tone="muted" onClick={() => setStatusFilter((f) => (f === "anulado" ? "" : "anulado"))} />

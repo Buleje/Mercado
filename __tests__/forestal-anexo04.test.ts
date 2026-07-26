@@ -13,7 +13,8 @@ import {
 import { formulaV } from "@/lib/forestal/anexo04-excel";
 import { validarAnexo04, anexoPresentable } from "@/lib/forestal/anexo04-validacion";
 import {
-  filtrarEmisiones, mesesDeEmisiones, emisionesDelMes, etiquetaMes, siguienteLibre, type AnexoEmitido,
+  filtrarEmisiones, mesesDeEmisiones, emisionesDelMes, etiquetaMes, siguienteLibre, construirEmision,
+  type AnexoEmitido,
 } from "@/lib/forestal/anexo04-registro";
 
 let seq = 0;
@@ -453,5 +454,36 @@ describe("siguienteLibre — el correlativo que sí se puede usar", () => {
     });
     const dup = avisos.find((a) => a.sugerencia);
     expect(dup?.sugerencia).toEqual({ campo: "numero", valor: "2-19-0461364", label: "Usar 2-19-0461364" });
+  });
+});
+
+describe("fidelidad de la re-impresión", () => {
+  it("la emisión guarda la especie del lote: sin ella el anexo reimpreso diría SIN ESPECIE", () => {
+    const sinEspeciePropia = [{ ...pieza(4, 2, 8, 10), especie: undefined }];
+    const emision = construirEmision({
+      datos: {
+        numero: "1", gtf: "G", empresa: "", firmante: "", documento: "", cargo: "",
+        observaciones: "", unidadV: "pt", modo: "compacto",
+      },
+      piezas: sinEspeciePropia,
+      especieGlobal: "Capirona",
+    });
+    expect(emision.especieGlobal).toBe("Capirona");
+    // Y con ese dato el papel vuelve a salir rotulado igual que el original.
+    const reimpreso = construirAnexo04(emision.piezas, emision, { especieGlobal: emision.especieGlobal });
+    expect(reimpreso.hojas[0].bloques[0].especie).toBe("CAPIRONA");
+  });
+
+  it("los totales de la emisión salen de las piezas, no de lo que diga el cliente", () => {
+    const emision = construirEmision({
+      datos: {
+        numero: "1", gtf: "G", empresa: "", firmante: "", documento: "", cargo: "",
+        observaciones: "", unidadV: "pt", modo: "oficial",
+      },
+      piezas: [pieza(10, 2, 8, 12)],   // 160 PT · 10 piezas
+    });
+    expect(emision.totalPt).toBe(160);
+    expect(emision.totalPiezas).toBe(10);
+    expect(emision.hojas).toBe(1);
   });
 });

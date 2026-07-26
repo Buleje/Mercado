@@ -28,6 +28,9 @@ export interface AnexoEmitido {
   /** (3) VOLUMEN TOTAL en m³. */ totalM3: number;
   /** Las medidas exactas que se imprimieron: sin esto no se puede re-emitir. */
   piezas: PiezaCubicada[];
+  /** Especie del lote al emitir: sin ella, una pieza sin especie propia
+   *  reimprimiría "SIN ESPECIE" y el papel no sería el mismo. */
+  especieGlobal?: string;
   /** Despacho del Libro CTP del que salió, si se emitió desde ahí. */ ctpEntryId?: string;
   createdAt: string;
   createdBy?: string;
@@ -73,6 +76,7 @@ export function construirEmision(input: EntradaEmision): AnexoEmitido {
     totalPt: anexo.totalPt,
     totalM3: anexo.totalM3,
     piezas,
+    especieGlobal: input.especieGlobal,
     ctpEntryId: input.ctpEntryId,
     createdAt: input.createdAt ?? ahora,
     createdBy: input.createdBy,
