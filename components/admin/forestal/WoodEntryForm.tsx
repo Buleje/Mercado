@@ -507,8 +507,41 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
   // ═════════════════════════════════════════════════════════════════════
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[1280px]">
-      <div className="flex h-full max-h-[94vh] flex-col bg-[var(--surface-raised)]">
+    <AdminModal
+      open
+      onClose={onClose}
+      variant="wide"
+      hideCloseButton
+      className="sm:max-w-[1280px]"
+      // El pie va por prop: dentro del scroll quedaba fuera del modal y el
+      // botón "Registrar ingreso" no se veía (medido: modal 925px, footer 942px).
+      footer={
+        <div className="flex items-center justify-between gap-3 px-5 py-3.5 sm:px-6">
+          <div className="hidden items-center gap-1.5 text-xs text-[var(--text-tertiary)] sm:flex">
+            {isValid ? (
+              <>
+                <Check className="h-3.5 w-3.5 text-[var(--data-success-600)]" />
+                <span>Listo para guardar</span>
+              </>
+            ) : (
+              <span>
+                Faltan <span className="font-semibold text-[var(--text-secondary)]">{missing.length}</span>{" "}
+                {missing.length === 1 ? "campo" : "campos"}
+              </span>
+            )}
+          </div>
+
+          <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+            <Btn variant="ghost" onClick={onClose} disabled={submitting}>Cancelar</Btn>
+            <Btn variant="secondary" onClick={(e) => handleSubmit(e, true)} disabled={!isValid || submitting}>Guardar y otro</Btn>
+            <Btn variant="primary" type="submit" form="wood-entry-form" disabled={!isValid || submitting}>
+              {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar ingreso"}
+            </Btn>
+          </div>
+        </div>
+      }
+    >
+      <div className="flex h-full flex-col bg-[var(--surface-raised)]">
         {/* ── Header ──────────────────────────────────────────────────── */}
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
@@ -566,7 +599,9 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
             {/* ─── 1 · GTF ─────────────────────────────────────────── */}
             <Section index={1} title="Guía de Transporte Forestal">
               <Field label="N° GTF" required hint="Escribí el número y tocá «Cargar guía» para traer todos los datos.">
-                <div className="flex gap-2">
+                {/* El número manda: fila propia. Con los tres botones al lado,
+                    al input le quedaban 35px de ancho y no se veía lo tipeado. */}
+                <div className="flex flex-wrap gap-2">
                   <input
                     type="text"
                     value={data.gtfNumber}
@@ -575,7 +610,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
                     placeholder="0001234"
                     autoFocus
                     required
-                    className={`${cls.input} flex-1`}
+                    className={`${cls.input} w-full font-mono`}
                   />
                   <button
                     type="button"
@@ -1110,30 +1145,6 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
           </aside>
         </div>
 
-        {/* ── Footer ──────────────────────────────────────────────────── */}
-        <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3.5 sm:px-6">
-          <div className="hidden items-center gap-1.5 text-xs text-[var(--text-tertiary)] sm:flex">
-            {isValid ? (
-              <>
-                <Check className="h-3.5 w-3.5 text-[var(--data-success-600)]" />
-                <span>Listo para guardar</span>
-              </>
-            ) : (
-              <span>
-                Faltan <span className="font-semibold text-[var(--text-secondary)]">{missing.length}</span>{" "}
-                {missing.length === 1 ? "campo" : "campos"}
-              </span>
-            )}
-          </div>
-
-          <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-            <Btn variant="ghost" onClick={onClose} disabled={submitting}>Cancelar</Btn>
-            <Btn variant="secondary" onClick={(e) => handleSubmit(e, true)} disabled={!isValid || submitting}>Guardar y otro</Btn>
-            <Btn variant="primary" type="submit" form="wood-entry-form" disabled={!isValid || submitting}>
-              {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar ingreso"}
-            </Btn>
-          </div>
-        </footer>
       </div>
     </AdminModal>
   );

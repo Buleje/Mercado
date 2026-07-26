@@ -250,8 +250,50 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
   }
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="!max-w-[940px]">
-      <div className="flex h-full max-h-[90vh] flex-col bg-[var(--surface-raised)]">
+    <AdminModal
+      open
+      onClose={onClose}
+      variant="wide"
+      hideCloseButton
+      className="!max-w-[940px]"
+      // Fuera del scroll: si no, "Registrar lote" queda debajo del borde.
+      footer={
+        <div className="flex items-center justify-end gap-2 px-5 py-3.5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={(e) => submit(e, true)}
+            disabled={!isValid || submitting}
+            className="inline-flex h-10 items-center rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+          >
+            Guardar y otro
+          </button>
+          <button
+            type="submit"
+            form="cacao-lote-form"
+            disabled={!isValid || submitting}
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Guardando
+              </>
+            ) : (
+              "Registrar lote"
+            )}
+          </button>
+        </div>
+      }
+    >
+      <div className="flex h-full flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
@@ -633,39 +675,6 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
           </div>
         </div>
 
-        <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-3.5">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={submitting}
-            className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={(e) => submit(e, true)}
-            disabled={!isValid || submitting}
-            className="inline-flex h-10 items-center rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
-          >
-            Guardar y otro
-          </button>
-          <button
-            type="submit"
-            form="cacao-lote-form"
-            disabled={!isValid || submitting}
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Guardando
-              </>
-            ) : (
-              "Registrar lote"
-            )}
-          </button>
-        </footer>
       </div>
     </AdminModal>
   );
@@ -688,7 +697,7 @@ function Section({
         <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--surface-sunken)] text-[var(--accent)]">
           <Icon className="h-4 w-4" />
         </span>
-        <h3 className="text-sm font-bold text-[var(--text-primary)]">{title}</h3>
+        <CardTitle className="text-sm font-bold">{title}</CardTitle>
         {hint && <span className="text-xs text-[var(--text-tertiary)]">· {hint}</span>}
       </div>
       {children}

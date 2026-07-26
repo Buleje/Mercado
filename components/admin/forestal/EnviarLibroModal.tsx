@@ -7,7 +7,8 @@
  * Libro — acá no se fuerza, para no fabricar orígenes inventados (invariantes I2/I5).
  */
 import { useEffect, useState } from "react";
-import { AlertTriangle, Boxes, Check, Loader2, Send, X } from "@buleje/design-system/icons";
+import { AlertTriangle, Boxes, Check, Loader2, Send } from "@buleje/design-system/icons";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 const GRADES = ["", "Exportación", "Grado A", "Grado B", "Grado C", "Primera", "Segunda"];
 
@@ -33,16 +34,9 @@ export default function EnviarLibroModal({
   }, [onCerrar, enviando]);
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-[8vh]" onClick={() => { if (!enviando) onCerrar(); }}>
-      <div className="w-full max-w-md rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)]" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h3 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
-            <Send className="h-5 w-5 text-[var(--accent)]" /> Enviar al Libro CTP
-          </h3>
-          <button type="button" onClick={onCerrar} disabled={enviando} aria-label="Cerrar" className="rounded-lg p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-50">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    // AdminModal: mientras se envía, el cierre queda bloqueado (igual que antes).
+    <AdminModal open onClose={() => { if (!enviando) onCerrar(); }} title="Enviar al Libro CTP" icon={Send}>
+      <div className="p-5">
 
         {/* Resumen de lo que se registra */}
         <div className="mb-3 rounded-xl bg-[var(--accent-soft)]/40 px-4 py-3">
@@ -83,6 +77,6 @@ export default function EnviarLibroModal({
           </button>
         </div>
       </div>
-    </div>
+    </AdminModal>
   );
 }

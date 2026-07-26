@@ -9,7 +9,8 @@
  * recién ahí confirma. Nada se agrega a ciegas.
  */
 import { useCallback, useRef, useState } from "react";
-import { AlertTriangle, Check, Download, FileSpreadsheet, Loader2, Upload, X } from "@buleje/design-system/icons";
+import { AlertTriangle, Check, Download, FileSpreadsheet, Loader2, Upload } from "@buleje/design-system/icons";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import { parsearFilasImportadas, PLANTILLA_IMPORT, type PiezaImportada, type ResultadoImport } from "@/lib/forestal/cubicacion-import";
 import { leerArchivoAFilas } from "@/lib/forestal/cubicacion-import-file";
 import { descargarPlantillaImport } from "@/lib/forestal/cubicador-export";
@@ -61,16 +62,16 @@ export default function ImportarCubicacionModal({
   const raras = resultado?.piezas.filter((p) => p.sospechosa).length ?? 0;
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-[6vh]" onClick={onCerrar}>
-      <div className="w-full max-w-2xl rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)]" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h3 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
-            <FileSpreadsheet className="h-5 w-5 text-[var(--accent)]" /> Importar cubicación desde Excel
-          </h3>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="rounded-lg p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    // AdminModal (Radix): trae Escape, focus trap, scroll lock y bottom-sheet en
+    // móvil — este modal no tenía ninguno de los cuatro.
+    <AdminModal
+      open
+      onClose={onCerrar}
+      variant="wide"
+      title="Importar cubicación desde Excel"
+      icon={FileSpreadsheet}
+    >
+      <div className="p-5">
 
         <p className="mb-3 text-sm text-[var(--text-secondary)]">
           El archivo tiene que tener las columnas <b>Especie · Cantidad · Espesor · Ancho · Largo</b> (Cantidad opcional; por defecto 1). El espesor y el ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad.
@@ -181,6 +182,6 @@ export default function ImportarCubicacionModal({
           </div>
         )}
       </div>
-    </div>
+    </AdminModal>
   );
 }

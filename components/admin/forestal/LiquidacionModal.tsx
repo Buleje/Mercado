@@ -6,7 +6,8 @@
  * a impresión, PDF o WhatsApp. Reusa el precio por especie del cubicador.
  */
 import { useEffect, useMemo, useState } from "react";
-import { Download, MessageCircle, Printer, Receipt, X } from "@buleje/design-system/icons";
+import { Download, MessageCircle, Printer, Receipt } from "@buleje/design-system/icons";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import {
   construirLiquidacion, liquidacionAHtml, liquidacionAWhatsApp,
@@ -57,16 +58,9 @@ export default function LiquidacionModal({
   const conValor = liq.total > 0;
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-[5vh]" onClick={onCerrar}>
-      <div className="w-full max-w-2xl rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)]" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h3 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
-            <Receipt className="h-5 w-5 text-[var(--accent)]" /> Liquidación para el cliente
-          </h3>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="rounded-lg p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    // AdminModal: focus trap + scroll lock + bottom-sheet en móvil.
+    <AdminModal open onClose={onCerrar} variant="wide" title="Liquidación para el cliente" icon={Receipt}>
+      <div className="p-5">
 
         {/* Datos del comprobante */}
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -139,6 +133,6 @@ export default function LiquidacionModal({
           </button>
         </div>
       </div>
-    </div>
+    </AdminModal>
   );
 }

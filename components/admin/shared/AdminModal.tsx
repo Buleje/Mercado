@@ -69,6 +69,8 @@ interface AdminModalProps {
   icon?: LucideIcon;
   variant?: Variant;
   children: React.ReactNode;
+  /** Acciones fijas al pie (fuera del área scrolleable). */
+  footer?: React.ReactNode;
   className?: string;
   hideCloseButton?: boolean;
 }
@@ -118,6 +120,7 @@ export default function AdminModal({
   icon: Icon,
   variant = "default",
   children,
+  footer,
   className,
   hideCloseButton,
 }: AdminModalProps) {
@@ -156,7 +159,10 @@ export default function AdminModal({
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0 gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 {Icon && (
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                  // `bg-[var(--accent-soft)]` como clase pierde el alpha en
+                  // Tailwind 4 y compila a un color claro sólido: en dark el
+                  // chip era una mancha blanca. `bg-primary/10` sí es alpha real.
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20">
                     <Icon className="h-5 w-5" strokeWidth={1.75} />
                   </span>
                 )}
@@ -186,8 +192,18 @@ export default function AdminModal({
             </div>
           )}
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto">{children}</div>
+          {/* Content — `min-h-0` es lo que permite que este hijo se ENCOJA:
+              sin él, en un flex-col el área scrolleable crece hasta el alto de
+              su contenido y empuja lo que venga después fuera del modal (el
+              footer de los formularios de alta quedaba invisible, con el botón
+              "Registrar" incluido). */}
+          <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+
+          {/* Footer fijo — vive FUERA del scroll: las acciones de un formulario
+              largo no deberían exigir llegar al final para aparecer. */}
+          {footer && (
+            <div className="shrink-0 border-t border-[var(--rule-base)] bg-[var(--surface-raised)]">{footer}</div>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
 

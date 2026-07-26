@@ -11,7 +11,8 @@
  */
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, Check, Loader2, Upload, X, XCircle } from "@buleje/design-system/icons";
+import { AlertTriangle, Check, Loader2, Table, Upload, XCircle } from "@buleje/design-system/icons";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import {
   filasImportables,
   parseCensoTabla,
@@ -51,32 +52,36 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
   };
 
   return (
-    <div
-      className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Importar censo forestal"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="flex max-h-[90vh] w-full max-w-[64rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
-        <header className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3">
-          <div>
-            <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">Importar censo forestal</p>
-            <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
-              Pegá la hoja del regente con sus encabezados — se detectan solos, en cualquier orden
-            </p>
-          </div>
+    // AdminModal: Escape, focus trap y scroll lock — no tenía ninguno.
+    <AdminModal
+      open
+      onClose={onClose}
+      variant="info"
+      title="Importar censo forestal"
+      description="Pegá la hoja del regente con sus encabezados — se detectan solos, en cualquier orden"
+      icon={Table}
+      footer={
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-12 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
-            <X className="h-4 w-4" />
+            Cancelar
           </button>
-        </header>
+          <button
+            type="button"
+            disabled={listas.length === 0 || importing}
+            onClick={() => onImport(listas)}
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40"
+          >
+            {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            Importar {listas.length} árbol(es)
+          </button>
+        </div>
+      }
+    >
+      <div className="flex flex-col">
 
         <div className="flex-1 space-y-3 overflow-auto px-5 py-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -173,25 +178,8 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
           )}
         </div>
 
-        <footer className="flex items-center justify-end gap-2 border-t-2 border-[var(--rule-base)] px-5 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-12 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            disabled={listas.length === 0 || importing}
-            onClick={() => onImport(listas)}
-            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40"
-          >
-            {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-            Importar {listas.length} árbol(es)
-          </button>
-        </footer>
       </div>
-    </div>
+    </AdminModal>
   );
 }
+
