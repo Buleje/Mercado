@@ -20,7 +20,7 @@ type CtpSection = "produccion" | "despacho";
 interface Props {
   section: CtpSection;
   onClose: () => void;
-  onSaved: (opts?: { keepOpen?: boolean }) => void;
+  onSaved: (opts?: { keepOpen?: boolean; /** Quedó anotado en el patio, no en el libro. */ offline?: boolean }) => void;
 }
 
 interface SourceItem {
@@ -207,7 +207,20 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
         payload.destino = destino.trim() || null;
         if (origenes.length) payload.origenes = origenes.map((o) => ({ produccionEntryId: o.produccionEntryId, quantity: Number(o.quantity) }));
       }
-      const r = await fetch("/api/admin/forestal/ctp", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(payload) });
+      let r: Response;
+      try {
+        r = await fetch("/api/admin/forestal/ctp", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(payload) });
+      } catch (netErr) {
+        // Sin señal en el patio: se anota en el equipo y sube sola después. El
+        // dato NO se pierde y NO se dice que quedó en el libro (no quedó).
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+          const { anotar, URL_CTP } = await import("@/lib/forestal/patio-cola");
+          await anotar(section, payload, URL_CTP);
+          onSaved({ offline: true });
+          return;
+        }
+        throw netErr;
+      }
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
       if (keepOpen) {
         setMateriaPrimaRef(""); setVolumeInputM3(""); setVolumeTouched(false); setQuantity(""); setPieces(""); setGtfNumber(""); setDestino(""); setObservations("");

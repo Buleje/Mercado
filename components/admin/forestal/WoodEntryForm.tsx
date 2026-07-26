@@ -35,7 +35,7 @@ import {
 
 interface Props {
   onClose: () => void;
-  onSaved: (opts?: { keepOpen?: boolean }) => void;
+  onSaved: (opts?: { keepOpen?: boolean; /** Quedó anotado en el patio, no en el libro. */ offline?: boolean }) => void;
   /** Bandeja monte→planta: abre el form con esta guía ya cargada (sin doble digitación). */
   initialGtfNumber?: string;
 }
@@ -450,12 +450,25 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
         photos: null,
       };
 
-      const res = await fetch("/api/admin/forestal/wood-entries", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
+      let res: Response;
+      try {
+        res = await fetch("/api/admin/forestal/wood-entries", {
+          method: "POST",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
+      } catch (netErr) {
+        // Sin señal en el patio: la guía queda anotada en el equipo y sube sola.
+        // Es esto o el cuaderno (que después se tipea tarde y fuera de plazo).
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+          const { anotar, URL_INGRESO } = await import("@/lib/forestal/patio-cola");
+          await anotar("ingresos", payload, URL_INGRESO);
+          onSaved({ offline: true });
+          return;
+        }
+        throw netErr;
+      }
 
       if (!res.ok) {
         const r = await res.json().catch(() => ({}));

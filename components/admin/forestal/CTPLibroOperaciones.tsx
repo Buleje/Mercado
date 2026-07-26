@@ -50,6 +50,8 @@ import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
 import CtpCierrePanel from "./CtpCierrePanel";
 import { useCtpCierres } from "@/hooks/use-ctp-cierres";
+import CtpPatioBandeja from "./CtpPatioBandeja";
+import { usePatioCola } from "@/hooks/use-patio-cola";
 import CtpCierreAsistido from "./CtpCierreAsistido";
 import CtpEudrPanel from "./CtpEudrPanel";
 import CtpRentabilidadPanel from "./CtpRentabilidadPanel";
@@ -87,6 +89,8 @@ const CTP_TAB_ITEMS = CTP_VIEWS.map((v) => ({ id: v.key, label: v.label, icon: v
 export default function CTPLibroOperaciones() {
   /** Un solo estado de cierres para el asistente y el historial. */
   const cierres = useCtpCierres();
+  /** Lo anotado en el patio sin señal, esperando subir al libro. */
+  const cola = usePatioCola();
   const [view, setView] = useState<CtpView>(() => {
     if (typeof window === "undefined") return "ingresos";
     const saved = localStorage.getItem(`admin-last-tab-${CTP_MODULE_ID}`);
@@ -244,6 +248,7 @@ export default function CTPLibroOperaciones() {
         {/* Lo que falta hacer, antes de la vista: el Libro tiene 12 pestañas y
             la respuesta a "¿qué me falta?" estaba repartida entre todas. */}
         <div className="mt-6">
+          <CtpPatioBandeja cola={cola} />
           <CtpPendientes period={period} onIr={(v) => setView(v as CtpView)} />
         </div>
 

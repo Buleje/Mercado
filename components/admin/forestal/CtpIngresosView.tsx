@@ -35,6 +35,7 @@ import WoodEntryForm from "./WoodEntryForm";
 import SpeciesAggregateChart from "./SpeciesAggregateChart";
 import CtpEntryDetailModal from "./CtpEntryDetailModal";
 import CtpIngresoCadenaModal from "./CtpIngresoCadenaModal";
+import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import CtpIngresosTable from "./CtpIngresosTable";
 import CtpGuiasBandeja from "./CtpGuiasBandeja";
 import { STATUS_META, type WoodEntry, type WoodEntryStatus } from "./ctp-shared";
@@ -77,6 +78,7 @@ export default function CtpIngresosView({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const { toasts, push: pushToast, dismiss: dismissToast } = useActionToasts();
   const [showDashboard, setShowDashboard] = useState(false);
   // Bandeja monte→planta: guía elegida para pre-cargar el form + key para refrescarla tras guardar.
   const [formGtf, setFormGtf] = useState<string | null>(null);
@@ -343,17 +345,26 @@ export default function CtpIngresosView({
         <WoodEntryForm
           initialGtfNumber={formGtf ?? undefined}
           onClose={() => { setShowForm(false); setFormGtf(null); }}
-          onSaved={() => {
+          onSaved={(o) => {
             setShowForm(false);
             setFormGtf(null);
             setBandejaKey((k) => k + 1); // la guía ingresada sale de la bandeja
             void reload();
+            // Sin señal el ingreso NO está en el libro: decirlo, no dar por guardado.
+            if (o?.offline) {
+              pushToast({
+                tono: "warning",
+                msg: "Sin señal: quedó anotado en el patio",
+                detail: "El ingreso todavía NO está en el libro. Sube solo cuando vuelva la conexión.",
+              });
+            }
           }}
         />
       )}
 
       {detail && <CtpEntryDetailModal entry={detail} onClose={() => setDetail(null)} />}
       {chainEntry && <CtpIngresoCadenaModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
+      <ActionToasts toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }

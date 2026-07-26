@@ -396,7 +396,7 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
       )}
       {loading && <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>}
 
-      {showForm && <CtpEntryForm section={section} onClose={() => setShowForm(false)} onSaved={(o) => { if (!o?.keepOpen) setShowForm(false); load(); }} />}
+      {showForm && <CtpEntryForm section={section} onClose={() => setShowForm(false)} onSaved={(o) => { if (!o?.keepOpen) setShowForm(false); load(); if (o?.offline) pushToast({ tono: "warning", msg: "Sin señal: quedó anotado en el patio", detail: "Todavía NO está en el libro. Sube solo cuando vuelva la conexión." }); }} />}
       {verBandeja && (
         <Anexo04Modal
           rows={[]}
