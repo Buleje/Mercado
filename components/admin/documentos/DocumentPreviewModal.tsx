@@ -6,6 +6,7 @@ import { esTextoEditable, esTextoLegible } from "@/lib/documentos/texto-docx";
 import { esPresentacion } from "@/lib/documentos/presentacion";
 import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import BarraHerramientasDoc, { type AccionesDoc } from "./BarraHerramientasDoc";
+import UbicacionDoc from "./UbicacionDoc";
 import { esImagenRenderizable, esImagenConvertible } from "@/lib/documents/tipos-archivo";
 import dynamic from "next/dynamic";
 
@@ -184,10 +185,25 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
             </span>
             <div className="min-w-0">
               <p className="text-base font-extrabold text-[var(--text-primary)] truncate">{doc.name}</p>
-              <p className="text-xs text-[var(--text-tertiary)] tabular-nums truncate">
-                {formatBytes(doc.size)} · {doc.mimeType} · {new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
-                {doc.versionCount ? ` · v${doc.versionCount + 1}` : ""}
-              </p>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                {/* Dónde vive el archivo: se ve sin cambiar de pestaña y se
+                    puede mover desde acá mismo. */}
+                <UbicacionDoc
+                  compacto
+                  folderId={doc.folderId}
+                  folders={folders ?? []}
+                  onMover={async (destino) => {
+                    await patchDocument(docId, { folderId: destino });
+                    const r = await getDocumentDetail(docId);
+                    setDoc(r.document);
+                    onRefresh?.();
+                  }}
+                />
+                <p className="text-xs text-[var(--text-tertiary)] tabular-nums truncate">
+                  {formatBytes(doc.size)} · {new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
+                  {doc.versionCount ? ` · v${doc.versionCount + 1}` : ""}
+                </p>
+              </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -433,7 +449,7 @@ function VersionsTab({
   }
 
   return (
-    <div className="p-5 space-y-4">
+    <div className="mx-auto max-w-4xl space-y-4 p-5">
       <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4">
         <p className="text-sm font-bold text-[var(--text-primary)] mb-2">Subir nueva versión</p>
         <p className="text-xs text-[var(--text-tertiary)] mb-3">Reemplaza el archivo activo y guarda la versión actual como histórico.</p>
@@ -597,7 +613,7 @@ function DescriptionSection({ doc }: { doc: DbDocument }) {
   if (!description && !hasEntities) return null;
   return (
     <section className="rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent)]/5 p-4">
-      <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+      <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
         <Sparkles className="h-4 w-4 text-[var(--accent)]" /> Descripción (IA)
       </p>
       {description && <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{description}</p>}
@@ -646,7 +662,7 @@ function StructuredCard({ doc }: { doc: DbDocument }) {
   if (rows.length === 0) return null;
   return (
     <section className="rounded-2xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 p-4 dark:bg-[var(--data-success-500)]/12">
-      <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+      <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
         <FileSpreadsheet className="h-4 w-4 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" /> Datos extraídos por IA
       </p>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3">
@@ -688,7 +704,7 @@ function RelatedSection({ doc, allDocs, onChanged }: { doc: DbDocument; allDocs:
 
   return (
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <p className="mb-1 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+      <p className="mb-1 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
         <LinkChain className="h-4 w-4 text-primary" /> Documentos relacionados
       </p>
       <p className="mb-3 text-xs text-[var(--text-tertiary)]">Vinculá este documento con otros (contrato ↔ adenda, factura ↔ recibo).</p>
@@ -762,7 +778,9 @@ function ApprovalSection({ doc, onChanged }: { doc: DbDocument; onChanged: (d: D
 
   return (
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <p className="mb-1 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+      {/* `flex` y no `inline-flex`: un párrafo inline no corta la línea, así
+          que el botón de abajo se le subía al lado y le pisaba el título. */}
+      <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
         <Shield className="h-4 w-4 text-primary" /> Aprobación
         {badge && <span className={cn("ml-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold", badge.cls)}>{badge.label}</span>}
       </p>
@@ -814,7 +832,7 @@ function PermissionsSection({ doc, onChanged }: { doc: DbDocument; onChanged: (d
 
   return (
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <p className="mb-1 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+      <p className="mb-1 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
         <Lock className="h-4 w-4 text-primary" /> Permisos
       </p>
       <p className="mb-3 text-xs text-[var(--text-tertiary)]">
@@ -897,7 +915,11 @@ function DetailsTab({ doc, allDocs, folders, onPatched }: { doc: DbDocument; all
   const arbolCarpetas = flattenAll(buildChildrenMap(folders));
 
   return (
-    <div className="p-5 space-y-4 max-w-2xl mx-auto">
+    // Dos columnas en pantallas grandes: con el visor a pantalla casi completa,
+    // una sola columna angosta dejaba media pantalla vacía. Va con grid y no
+    // con `columns-*`: las columnas de CSS parten las tarjetas por la mitad y
+    // el botón de una sección terminaba pisando el título de la otra.
+    <div className="mx-auto grid max-w-6xl grid-cols-1 items-start gap-4 p-5 xl:grid-cols-2">
       {/* Carpeta — dónde vive el documento, y mover sin salir del detalle */}
       <section className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4">
         <p className="text-sm font-bold text-[var(--text-primary)] mb-2 inline-flex items-center gap-1.5">
@@ -1065,7 +1087,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
   }
 
   return (
-    <div className="p-5 space-y-4">
+    <div className="mx-auto max-w-4xl space-y-4 p-5">
       <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4">
         <p className="text-sm font-bold text-[var(--text-primary)] mb-3">Crear link público</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1268,7 +1290,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
   }
 
   return (
-    <div className="p-5 space-y-4">
+    <div className="mx-auto max-w-4xl space-y-4 p-5">
       <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-5">
         <div className="flex items-center gap-2 mb-3">
           <PencilLine className="h-5 w-5 text-primary" />
@@ -1381,7 +1403,7 @@ const ACTION_META: Record<string, { color: string; label: string }> = {
 
 function AuditTab({ logs }: { logs: DbDocumentAuditLog[] }) {
   return (
-    <div className="p-5">
+    <div className="mx-auto max-w-4xl p-5">
       <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden">
         <p className="text-sm font-bold text-[var(--text-primary)] px-4 py-3 border-b border-[var(--rule-base)]">Registro de actividad</p>
         {logs.length === 0 ? (

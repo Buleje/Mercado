@@ -530,6 +530,8 @@ export async function patchDocument(
   id: string,
   body: Partial<{
     name: string;
+    /** Carpeta destino; `null` = raíz. Lo usa el selector de ubicación. */
+    folderId: string | null;
     expiresAt: string | null;
     allowedRoles: string[];
     customerId: string | null;
