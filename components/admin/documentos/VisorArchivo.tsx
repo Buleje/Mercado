@@ -18,8 +18,8 @@
  * del navegador los muestra de a pedazos.
  */
 
-import { useEffect, useState } from "react";
-import { Loader2 } from "@buleje/design-system/icons";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, Search } from "@buleje/design-system/icons";
 import { pedirArchivo } from "@/lib/documentos/archivo-remoto";
 import { VERSION_MINIATURA } from "@/lib/documents/miniatura-version";
 import AvisoArchivo from "./AvisoArchivo";
@@ -77,6 +77,10 @@ function VisorPdfPaginas({ docId, nombre }: { docId: string; nombre: string }) {
   const [intento, setIntento] = useState(0);
   /** 1 = la página llena el ancho del modal. */
   const [zoom, setZoom] = useState(1);
+  /** Texto por página; `null` mientras se pide, `[]` si el PDF no tiene texto. */
+  const [textoPdf, setTextoPdf] = useState<string[] | null>(null);
+  const [busqueda, setBusqueda] = useState("");
+  const [indice, setIndice] = useState(0);
 
   useEffect(() => {
     let vivo = true;
@@ -89,6 +93,37 @@ function VisorPdfPaginas({ docId, nombre }: { docId: string; nombre: string }) {
       .catch((e) => { if (vivo) setError(e); });
     return () => { vivo = false; };
   }, [docId, intento]);
+
+  // El texto se pide una sola vez, y recién cuando alguien empieza a buscar:
+  // extraerlo de un PDF grande no es gratis y la mayoría sólo mira.
+  useEffect(() => {
+    if (textoPdf !== null || !busqueda.trim()) return;
+    let vivo = true;
+    pedirArchivo(`/api/admin/documents/${docId}/text`)
+      .then((r) => r.json())
+      .then((d) => { if (vivo) setTextoPdf(Array.isArray(d.paginas) ? d.paginas : []); })
+      .catch(() => { if (vivo) setTextoPdf([]); });
+    return () => { vivo = false; };
+  }, [busqueda, docId, textoPdf]);
+
+  /** Páginas (1-based) donde aparece lo buscado. */
+  const coincidencias = useMemo(() => {
+    const aguja = busqueda.trim().toLowerCase();
+    if (!aguja || !textoPdf) return [];
+    return textoPdf
+      .map((t, i) => (t.toLowerCase().includes(aguja) ? i + 1 : 0))
+      .filter((n) => n > 0);
+  }, [busqueda, textoPdf]);
+
+  useEffect(() => { setIndice(0); }, [busqueda]);
+
+  const saltar = (delta: number) => {
+    if (coincidencias.length === 0) return;
+    const siguiente = (indice + delta + coincidencias.length) % coincidencias.length;
+    setIndice(siguiente);
+    document.querySelector(`img[data-pagina="${coincidencias[siguiente]}"]`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   if (error) {
     return (
@@ -110,9 +145,33 @@ function VisorPdfPaginas({ docId, nombre }: { docId: string; nombre: string }) {
   }
   return (
     <div className="relative h-[78vh] w-full overflow-auto rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-      {/* Zoom: el ancho por defecto llena el modal, pero un plano o una tabla
-          chica necesitan acercarse. Queda fijo arriba mientras se scrollea. */}
-      <div className="sticky top-0 z-10 mb-2 flex items-center justify-center gap-1">
+      {/* Zoom y buscador: fijos arriba mientras se scrollea. El Ctrl+F del
+          navegador no sirve acá —las páginas son imágenes—, así que el buscador
+          consulta el texto del PDF y salta a la página donde está. */}
+      <div className="sticky top-0 z-10 mb-2 flex flex-wrap items-center justify-center gap-1.5">
+        <div className="inline-flex items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-1.5 py-1 shadow-sm">
+          <Search className="ml-1 h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+          <input
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar en el documento"
+            aria-label="Buscar en el documento"
+            className="w-40 bg-transparent px-1 py-0.5 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
+          />
+          {busqueda.trim() && (
+            <span className="whitespace-nowrap px-1 text-xs font-bold tabular-nums text-[var(--text-secondary)]">
+              {coincidencias.length === 0
+                ? (textoPdf === null ? "…" : "0")
+                : `${indice + 1}/${coincidencias.length}`}
+            </span>
+          )}
+          {coincidencias.length > 0 && (
+            <>
+              <button onClick={() => saltar(-1)} className="rounded-lg px-1.5 py-0.5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]" aria-label="Coincidencia anterior">‹</button>
+              <button onClick={() => saltar(1)} className="rounded-lg px-1.5 py-0.5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]" aria-label="Coincidencia siguiente">›</button>
+            </>
+          )}
+        </div>
         <div className="inline-flex items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-1.5 py-1 shadow-sm">
           <button
             onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))}

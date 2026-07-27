@@ -25,7 +25,7 @@ import {
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive, Loader2,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
-  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Presentation, Link2,
+  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Presentation, Link2, Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -52,6 +52,7 @@ import { FolderShareModal } from "./FolderShareModal";
 import { FolderGlyph } from "./folder-visuals";
 import { ActivityView } from "./ActivityView";
 import { EnlacesView } from "./EnlacesView";
+import DuplicadosView from "./DuplicadosView";
 import { CalendarView } from "./CalendarView";
 import { StampModal } from "./StampModal";
 import { DashboardView } from "./DashboardView";
@@ -207,7 +208,7 @@ function MatchSnippet({ text, term }: { text: string | null; term: string }) {
 }
 
 interface BuiltinCategory {
-  id: "all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "activity" | "enlaces" | "trash";
+  id: "all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "activity" | "enlaces" | "duplicados" | "trash";
   label: string;
   icon: typeof Folder;
   color: string;
@@ -223,6 +224,7 @@ const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "calendar", label: "Calendario", icon: CalendarDays, color: "text-primary" },
   { id: "activity", label: "Actividad", icon: History, color: "text-[var(--accent)]" },
   { id: "enlaces", label: "Enlaces", icon: Link2, color: "text-[var(--accent)]" },
+  { id: "duplicados", label: "Repetidos", icon: Copy, color: "text-[var(--text-tertiary)]" },
   { id: "trash", label: "Papelera", icon: Trash2, color: "text-[var(--text-tertiary)]" },
 ];
 
@@ -230,7 +232,7 @@ const BUILTIN_CATEGORIES: BuiltinCategory[] = [
  * Vistas que dibujan su propio contenido en vez de la lista de documentos: no
  * les corresponde la toolbar de búsqueda/orden ni el filtro por estado.
  */
-const VISTAS_CON_CONTENIDO_PROPIO = new Set(["dashboard", "assistant", "activity", "calendar", "enlaces"]);
+const VISTAS_CON_CONTENIDO_PROPIO = new Set(["dashboard", "assistant", "activity", "calendar", "enlaces", "duplicados"]);
 
 // ADR-119 — almacenamiento orientativo por plan (bytes). Sin gate duro: solo
 // para el anillo visual. El límite real lo aplica el bucket (50 MB/archivo).
@@ -256,7 +258,7 @@ export default function DocumentosModule() {
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [semantic, setSemantic] = useState(false);
-  const [filterMode, setFilterMode] = useState<"all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "folder" | "activity" | "enlaces" | "trash" | "smart">("all");
+  const [filterMode, setFilterMode] = useState<"all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "folder" | "activity" | "enlaces" | "duplicados" | "trash" | "smart">("all");
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<{ name: string; expiresAt: string | null } | null>(null);
   // Resultado del análisis IA de contenido (resumen + datos clave).
@@ -1644,6 +1646,11 @@ export default function DocumentosModule() {
             <ActivityView />
           ) : filterMode === "enlaces" ? (
             <EnlacesView onOpenDoc={(id) => { const d = documents.find((x) => x.id === id); if (d) setPreview(d); }} />
+          ) : filterMode === "duplicados" ? (
+            <DuplicadosView
+              onOpenDoc={(d) => setPreview(d)}
+              onEliminar={async (ids) => { await bulk("delete", ids); }}
+            />
           ) : loading && documents.length === 0 ? (
             <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-10 text-center text-sm text-[var(--text-tertiary)]">
               Cargando…

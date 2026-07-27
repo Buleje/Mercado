@@ -1070,6 +1070,60 @@ export class DocumentsDB {
       .slice(0, take);
   }
 
+  /**
+   * Documentos que parecen repetidos, agrupados.
+   *
+   * El criterio barato y certero para el caso real (la misma carpeta importada
+   * dos veces, o el mismo adjunto subido por dos personas) es **mismo peso
+   * exacto + mismo nombre base**. Dos archivos distintos casi nunca coinciden
+   * al byte; y comparar el contenido de todo el drive sería bajarlo entero.
+   * Quien decida borrar puede pedir la comparación real (`hashDeDocumentos`).
+   */
+  static async gruposDuplicados(
+    tenantId: string,
+    opts: { minBytes?: number } = {}
+  ): Promise<{ clave: string; nombre: string; size: number; docs: DbDocument[] }[]> {
+    // Un archivo vacío o minúsculo (un .txt de 12 bytes) coincide con cualquier
+    // otro igual de chico sin ser el mismo: no vale la pena mirarlos.
+    const minBytes = opts.minBytes ?? 1024;
+
+    const docs = await prisma.document.findMany({
+      where: { tenantId, deletedAt: null, size: { gte: minBytes } },
+      orderBy: { uploadedAt: "desc" },
+      include: { _count: { select: { versions: true, shares: true } } },
+    });
+
+    /** "informe final.pdf" y "informe final (1).pdf" son el mismo documento. */
+    const nombreBase = (n: string) =>
+      n.toLowerCase()
+        .replace(/\.[^.]+$/, "")
+        .replace(/[ _-]*\(\d+\)$/, "")
+        .replace(/[ _-]*(copia|copy)\s*\d*$/, "")
+        .trim();
+
+    const grupos = new Map<string, { clave: string; nombre: string; size: number; docs: DbDocument[] }>();
+    for (const d of docs) {
+      const clave = `${d.size}:${nombreBase(d.name)}`;
+      const g = grupos.get(clave);
+      if (g) g.docs.push(mapDoc(d));
+      else grupos.set(clave, { clave, nombre: d.name, size: d.size, docs: [mapDoc(d)] });
+    }
+
+    return [...grupos.values()]
+      .filter((g) => g.docs.length > 1)
+      // Primero donde más espacio se recupera.
+      .sort((a, b) => b.size * (b.docs.length - 1) - a.size * (a.docs.length - 1));
+  }
+
+  /** storagePath de varios documentos (para comparar su contenido de verdad). */
+  static async rutasDe(tenantId: string, ids: string[]): Promise<{ id: string; storagePath: string }[]> {
+    const docs = await prisma.document.findMany({
+      where: { id: { in: ids }, tenantId, deletedAt: null },
+      select: { id: true, storagePath: true },
+    });
+    return docs;
+  }
+
   /** Revoca de una sola vez todos los enlaces vivos del tenant (botón de pánico). */
   static async revokeAllShares(tenantId: string): Promise<number> {
     const [docs, folders] = await Promise.all([
