@@ -1807,6 +1807,9 @@ export default function DocumentosModule() {
             onRefresh={refresh}
             onPrev={idx > 0 ? () => setPreview(displayDocs[idx - 1]) : undefined}
             onNext={idx >= 0 && idx < displayDocs.length - 1 ? () => setPreview(displayDocs[idx + 1]) : undefined}
+            // Vecinos: el visor los precarga para que pasar con las flechas no
+            // arranque de cero cada vez.
+            vecinos={[displayDocs[idx - 1], displayDocs[idx + 1]].filter(Boolean)}
             position={idx >= 0 ? { current: idx + 1, total: displayDocs.length } : undefined}
             // Las mismas herramientas del menú de la lista, para no tener que
             // cerrar el documento y buscarlo de nuevo para sellarlo o rotarlo.
@@ -1819,6 +1822,25 @@ export default function DocumentosModule() {
               onMove: () => setMovingDoc(preview),
               onSign: () => setSignDoc(preview),
               onSetStatus: (s: string) => patch(preview.id, { status: s }),
+              onToggleFav: () => patch(preview.id, { favorite: !preview.favorite }),
+              onPrint: () => window.open(`/api/admin/documents/${preview.id}/raw`, "_blank", "noopener"),
+              onRename: () => {
+                const nuevo = prompt("Nuevo nombre del archivo:", preview.name);
+                if (nuevo && nuevo.trim() && nuevo.trim() !== preview.name) {
+                  patch(preview.id, { name: nuevo.trim() });
+                }
+              },
+              onTag: () => {
+                const etiqueta = prompt("Etiqueta a agregar:");
+                if (etiqueta && etiqueta.trim()) {
+                  patch(preview.id, { tags: [...(preview.tags ?? []), etiqueta.trim().toLowerCase()] });
+                }
+              },
+              onDelete: () => {
+                if (confirm(`¿Eliminar "${preview.name}"?\n\nVa a la papelera: se puede restaurar.`)) {
+                  bulk("delete", [preview.id]).then(() => setPreview(null));
+                }
+              },
             }}
           />
         );

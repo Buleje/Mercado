@@ -112,26 +112,27 @@ const legible = await page.evaluate(async (id) => {
 // las curvas de las letras. Mismo PDF: ~6.5 KB en tofu, ~16.8 KB legible.
 decir(legible.bytes > 11_000, `la página se lee: ${legible.bytes} bytes, ${legible.tonos} tonos (en tofu pesa ~6.5 KB)`);
 
-// ── Herramientas y zoom dentro del modal ──────────────────────────────────
-// Nombre EXACTO: el sidebar tiene "Herramientas Forestales" y un regex laxo
-// clickeaba ese, que está tapado por el modal.
-const herr = page.getByRole("button", { name: "Herramientas", exact: true });
-decir(await herr.count() > 0, "el modal ofrece el menú de Herramientas");
-if (await herr.count()) {
-  await herr.first().click();
-  await page.waitForTimeout(900);
-  const items = await page.evaluate(() => {
-    const m = document.querySelector('[class*="fixed inset-0 z-50"]');
-    return [...(m?.querySelectorAll("button") ?? [])].map((b) => b.textContent?.trim()).filter(Boolean);
-  });
-  const esperadas = ["Analizar con IA", "Sellar", "Rotar 90°", "Editar páginas", "Dividir en páginas"];
-  const faltan = esperadas.filter((e) => !items.some((i) => i?.includes(e)));
-  decir(faltan.length === 0, `las herramientas están en el modal${faltan.length ? " — faltan: " + faltan.join(", ") : ""}`);
-  decir(items.some((i) => i?.includes("Está bien")), "y se puede marcar el estado desde el modal");
-  // Escape cerraría el MODAL entero; el backdrop del menú tapa la pantalla
-  // mientras está abierto, así que se cierra con el propio botón (toggle).
-  await page.getByRole("button", { name: "Cerrar el menú" }).click();
-  await page.waitForTimeout(900);
+// ── Herramientas al costado, sin desplegar nada ───────────────────────────
+const barra = await page.evaluate(() => {
+  const aside = document.querySelector('aside[aria-label="Herramientas del documento"]');
+  if (!aside) return { hay: false };
+  const textos = [...aside.querySelectorAll("button")].map((b) => b.textContent?.trim()).filter(Boolean);
+  const r = aside.getBoundingClientRect();
+  const modal = document.querySelector('[class*="fixed inset-0 z-50"] > div')?.getBoundingClientRect();
+  return {
+    hay: true, textos, visible: r.width > 0 && r.height > 0,
+    anchoModal: Math.round(modal?.width ?? 0), altoModal: Math.round(modal?.height ?? 0),
+    ventana: { w: window.innerWidth, h: window.innerHeight },
+  };
+});
+decir(barra.hay && barra.visible, "las herramientas están al costado, siempre a la vista");
+if (barra.hay) {
+  const esperadas = ["Enviar por WhatsApp", "Cambiar el nombre", "Mover a carpeta", "Analizar con IA", "Sellar", "Rotar 90°", "Descargar", "Eliminar", "Está bien"];
+  const faltan = esperadas.filter((e) => !barra.textos.some((t) => t?.includes(e)));
+  decir(faltan.length === 0, `están las herramientas pedidas (${barra.textos.length} en total)${faltan.length ? " — faltan: " + faltan.join(", ") : ""}`);
+  const ocupa = barra.anchoModal / barra.ventana.w;
+  decir(ocupa > 0.9, `el modal usa el ancho de la pantalla: ${barra.anchoModal}px de ${barra.ventana.w} (${Math.round(ocupa * 100)}%)`);
+  decir(barra.altoModal / barra.ventana.h > 0.9, `y el alto: ${barra.altoModal}px de ${barra.ventana.h}`);
 }
 
 // El click va por DOM: el backdrop del menú que se acaba de cerrar puede

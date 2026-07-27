@@ -5,6 +5,7 @@ import { esHojaEditable, esHojaLegible } from "@/lib/documentos/hoja-calculo";
 import { esTextoEditable, esTextoLegible } from "@/lib/documentos/texto-docx";
 import { esPresentacion } from "@/lib/documentos/presentacion";
 import { urlMiniatura } from "@/lib/documents/miniatura-version";
+import BarraHerramientasDoc, { type AccionesDoc } from "./BarraHerramientasDoc";
 import { esImagenRenderizable, esImagenConvertible } from "@/lib/documents/tipos-archivo";
 import dynamic from "next/dynamic";
 
@@ -58,20 +59,13 @@ interface Props {
   onPrev?: () => void;
   onNext?: () => void;
   position?: { current: number; total: number };
+  /** Documento anterior y siguiente, para ir trayéndolos por adelantado. */
+  vecinos?: DbDocument[];
   /**
    * Las acciones del menú de la lista, para poder usarlas sin cerrar el
    * documento. Opcional: donde no se pasen, el menú no aparece.
    */
-  herramientas?: {
-    onAnalyze?: () => void;
-    onStamp?: () => void;
-    onRotate?: () => void;
-    onSplit?: () => void;
-    onEditPages?: () => void;
-    onMove?: () => void;
-    onSign?: () => void;
-    onSetStatus?: (estado: string) => void;
-  };
+  herramientas?: AccionesDoc;
 }
 
 function formatBytes(b: number): string {
@@ -91,8 +85,7 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
 }
 
-export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position, herramientas }: Props) {
-  const [menuAbierto, setMenuAbierto] = useState(false);
+export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position, herramientas, vecinos }: Props) {
   const [tab, setTab] = useState<Tab>("preview");
   const [doc, setDoc] = useState<DbDocument | null>(null);
   const [versions, setVersions] = useState<DbDocumentVersion[]>([]);
@@ -115,15 +108,23 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, onPrev, onNext]);
 
+  // La lista ya tiene el documento: se muestra ESE de entrada y el detalle
+  // completo (versiones, enlaces, permisos) llega después y lo reemplaza. Sin
+  // esto, abrir o pasar al siguiente mostraba un "Cargando…" en cada paso
+  // aunque el nombre, el tipo y el tamaño ya estuvieran a mano.
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
+    const conocido = allDocs?.find((d) => d.id === docId) ?? null;
+    setDoc(conocido);
+    setLoading(!conocido);
     getDocumentDetail(docId).then((r) => {
       if (!mounted) return;
       setDoc(r.document);
       setLoading(false);
     }).catch(() => setLoading(false));
     return () => { mounted = false; };
+  // `allDocs` cambia de identidad en cada render del padre; el id es lo que manda.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docId]);
 
   // Vista previa same-origin: servimos el archivo desde nuestro proxy (/raw) en vez
@@ -164,12 +165,15 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
+      {/* Casi toda la pantalla: un contrato o una planilla se leen mejor
+          grandes, y la barra de herramientas de la derecha necesita su lugar
+          sin comerle ancho al documento. */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-6xl max-h-[92vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-2xl flex flex-col"
+        className="flex h-[96vh] w-full max-w-[1800px] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-2xl"
       >
         {/* Header — en un celular los botones bajan a una segunda línea en vez
             de aplastar el nombre del archivo hasta partirlo letra por letra. */}
@@ -254,66 +258,6 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
             >
               <Download className="h-3.5 w-3.5" /> Descargar
             </a>
-            {/* Herramientas: lo mismo que ofrece el menú de la lista, pero sin
-                tener que cerrar el documento y volver a buscarlo. */}
-            {herramientas && (
-              <div className="relative">
-                <button
-                  onClick={() => setMenuAbierto((v) => !v)}
-                  title="Herramientas"
-                  aria-expanded={menuAbierto}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] transition-colors"
-                >
-                  <Wrench className="h-3.5 w-3.5" /> Herramientas
-                </button>
-                {menuAbierto && (
-                  <>
-                    <button className="fixed inset-0 z-10 cursor-default" aria-label="Cerrar el menú" onClick={() => setMenuAbierto(false)} />
-                    <div className="absolute right-0 top-full z-20 mt-1 w-60 overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl">
-                      {herramientas.onSetStatus && (
-                        <div className="border-b border-[var(--rule-soft)] px-3 py-2">
-                          <p className="mb-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Marcar como</p>
-                          <div className="flex flex-wrap gap-1">
-                            {[
-                              { e: "approved", t: "Está bien", c: "bg-[var(--data-success-500)]" },
-                              { e: "observado", t: "Corregir", c: "bg-[var(--data-error-500)]" },
-                              { e: "review", t: "En revisión", c: "bg-[var(--data-warning-500)]" },
-                            ].map(({ e, t, c }) => (
-                              <button
-                                key={e}
-                                onClick={() => { herramientas.onSetStatus?.(e); setMenuAbierto(false); }}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary"
-                              >
-                                <span className={cn("h-2 w-2 rounded-full", c)} aria-hidden /> {t}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {([
-                        ["Analizar con IA", Sparkles, herramientas.onAnalyze, true],
-                        ["Mover a carpeta", FolderIcon, herramientas.onMove, true],
-                        ["Solicitar firma", PencilLine, herramientas.onSign, isPdf],
-                        ["Sellar", Stamp, herramientas.onStamp, isPdf],
-                        ["Rotar 90°", RotateCw, herramientas.onRotate, isPdf],
-                        ["Editar páginas", FileStack, herramientas.onEditPages, isPdf],
-                        ["Dividir en páginas", Scissors, herramientas.onSplit, isPdf],
-                      ] as const).map(([texto, Icono, accion, aplica]) =>
-                        accion && aplica ? (
-                          <button
-                            key={texto}
-                            onClick={() => { accion(); setMenuAbierto(false); }}
-                            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-                          >
-                            <Icono className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" /> {texto}
-                          </button>
-                        ) : null,
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
             <button
               onClick={onClose}
               className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
@@ -334,7 +278,10 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
           <TabBtn icon={Shield} active={tab === "audit"} onClick={() => setTab("audit")}>Auditoría</TabBtn>
         </nav>
 
-        {/* Body */}
+        {/* Body — el documento a la izquierda, las herramientas siempre a la
+            vista a la derecha (en pantallas chicas la barra se oculta y quedan
+            las acciones del encabezado). */}
+        <div className="flex min-h-0 flex-1">
         <div className="flex-1 overflow-auto bg-[var(--surface-sunken)] min-h-0">
           {tab === "preview" && (
             <div className="h-full flex items-center justify-center p-4">
@@ -395,6 +342,21 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
           {tab === "audit" && (
             <AuditTab logs={audit} />
           )}
+        </div>
+
+        {herramientas && (
+          <BarraHerramientasDoc
+            acciones={{
+              ...herramientas,
+              onWhatsApp: () => setEnviando(true),
+              onShare: () => setTab("share"),
+              onDownload: () => { window.location.href = `${rawUrl}?download=1`; },
+            }}
+            esPdf={isPdf}
+            favorito={!!doc.favorite}
+            estado={doc.status ?? "none"}
+          />
+        )}
         </div>
       </div>
 

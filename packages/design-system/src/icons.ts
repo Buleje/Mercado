@@ -129,6 +129,8 @@ export {
   Edit2,
   Edit3,
   Pencil,
+  PencilLine,
+  FolderInput,
   Crop,
   Scissors,
   // Food/category fallback icons (audit P0 UX #2)
