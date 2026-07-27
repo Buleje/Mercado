@@ -25,7 +25,7 @@ import {
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive, Loader2,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
-  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack,
+  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Presentation,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -40,6 +40,7 @@ import { SendWhatsAppModal } from "./SendWhatsAppModal";
 import ImportarCarpetaModal from "./ImportarCarpetaModal";
 import { archivosDesdeDrop } from "@/lib/documentos/importar-arbol";
 import { useImportCarpeta } from "@/contexts/import-carpeta-context";
+import { familiaDe, etiquetaTipo, esImagenRenderizable, type FamiliaArchivo } from "@/lib/documents/tipos-archivo";
 import { MoveToFolderModal } from "./MoveToFolderModal";
 import { FolderEditModal } from "./FolderEditModal";
 import { FolderShareModal } from "./FolderShareModal";
@@ -79,16 +80,28 @@ function sugDescartadasKey(): string {
 const fmtFechaCorta = (iso: string) =>
   new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 
-function getFileIcon(type: string): { Icon: typeof FileIcon; tint: string; bg: string } {
-  // Tints por tipo de archivo (paleta categórica); con variante dark para que
-  // el fondo no quede claro sobre el tema oscuro.
-  if (type.startsWith("image/")) return { Icon: ImageIcon, tint: "text-[var(--accent)]", bg: "bg-pink-50 dark:bg-pink-500/15" };
-  if (type.startsWith("video/")) return { Icon: Film, tint: "text-[var(--accent)]", bg: "bg-violet-50 dark:bg-violet-500/15" };
-  if (type.startsWith("audio/")) return { Icon: Music, tint: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/15" };
-  if (type === "application/pdf") return { Icon: FileText, tint: "text-red-500", bg: "bg-red-50 dark:bg-red-500/15" };
-  if (type.includes("spreadsheet") || type.includes("excel") || type.includes("csv")) return { Icon: FileSpreadsheet, tint: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/15" };
-  if (type.includes("word") || type.includes("document")) return { Icon: FileText, tint: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/15" };
-  return { Icon: FileIcon, tint: "text-[var(--text-tertiary)]", bg: "bg-[var(--surface-sunken)]" };
+/**
+ * Ícono y tinte por FAMILIA (no por MIME crudo): el drive guarda casi cualquier
+ * formato y el navegador manda la mitad como `octet-stream`, así que el tipo se
+ * resuelve por extensión. Sin esto, un .ods o una foto HEIC salían con el ícono
+ * genérico de "archivo".
+ */
+const ICONO_POR_FAMILIA: Record<FamiliaArchivo, { Icon: typeof FileIcon; tint: string; bg: string }> = {
+  imagen: { Icon: ImageIcon, tint: "text-[var(--accent)]", bg: "bg-pink-50 dark:bg-pink-500/15" },
+  video: { Icon: Film, tint: "text-[var(--accent)]", bg: "bg-violet-50 dark:bg-violet-500/15" },
+  audio: { Icon: Music, tint: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/15" },
+  pdf: { Icon: FileText, tint: "text-red-500", bg: "bg-red-50 dark:bg-red-500/15" },
+  planilla: { Icon: FileSpreadsheet, tint: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/15" },
+  texto: { Icon: FileText, tint: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/15" },
+  presentacion: { Icon: Presentation, tint: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/15" },
+  comprimido: { Icon: FileArchive, tint: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/15" },
+  correo: { Icon: MessageCircle, tint: "text-sky-500", bg: "bg-sky-50 dark:bg-sky-500/15" },
+  plano: { Icon: Scan, tint: "text-teal-500", bg: "bg-teal-50 dark:bg-teal-500/15" },
+  otro: { Icon: FileIcon, tint: "text-[var(--text-tertiary)]", bg: "bg-[var(--surface-sunken)]" },
+};
+
+function getFileIcon(type: string, nombre = ""): { Icon: typeof FileIcon; tint: string; bg: string } {
+  return ICONO_POR_FAMILIA[familiaDe(nombre, type)];
 }
 
 /**
@@ -98,7 +111,9 @@ function getFileIcon(type: string): { Icon: typeof FileIcon; tint: string; bg: s
  * reintentar en loop.
  */
 function DocThumb({ doc, Icon, tint, bg }: { doc: DbDocument; Icon: typeof FileIcon; tint: string; bg: string }) {
-  const isImage = doc.mimeType.startsWith("image/");
+  // HEIC, TIFF o PSD son imágenes que el navegador NO dibuja: pedirlas en un
+  // <img> daba un roto y recién ahí caía al ícono. Se filtra antes.
+  const isImage = esImagenRenderizable(doc.name, doc.mimeType);
   const isPdf = doc.mimeType === "application/pdf";
   const [failed, setFailed] = useState(false);
 
@@ -1615,7 +1630,7 @@ export default function DocumentosModule() {
                 </thead>
                 <tbody className="divide-y divide-[var(--rule-soft,#f1f5f9)]">
                   {displayDocs.map((doc) => {
-                    const { Icon, tint, bg } = getFileIcon(doc.mimeType);
+                    const { Icon, tint, bg } = getFileIcon(doc.mimeType, doc.name);
                     return (
                       <tr key={doc.id} className={cn("hover:bg-[var(--surface-sunken)] transition-colors", selectedIds.has(doc.id) && "bg-primary/5")}>
                         <td className="px-3 py-3">
@@ -2047,7 +2062,7 @@ function DocCard({
   onDragEnd: () => void;
   dragging: boolean;
 }) {
-  const { Icon, tint, bg } = getFileIcon(doc.mimeType);
+  const { Icon, tint, bg } = getFileIcon(doc.mimeType, doc.name);
   return (
     <div
       draggable
@@ -2121,8 +2136,12 @@ function DocCard({
           </button>
         )}
         <div className="flex items-center justify-between mt-1 text-[length:var(--ts-2xs,11px)]">
-          <span className="capitalize text-[var(--text-tertiary)]">{doc.category}</span>
-          <span className="tabular-nums text-[var(--text-tertiary)]">{formatBytes(doc.size)}</span>
+          {/* Qué ES el archivo, no su MIME: "Hoja de cálculo · ODS" se entiende,
+              "application/vnd.oasis.opendocument.spreadsheet" no. */}
+          <span className="min-w-0 truncate text-[var(--text-tertiary)]" title={doc.category}>
+            {etiquetaTipo(doc.name, doc.mimeType)}
+          </span>
+          <span className="shrink-0 tabular-nums text-[var(--text-tertiary)]">{formatBytes(doc.size)}</span>
         </div>
         {searchTerm && !doc.name.toLowerCase().includes(searchTerm.trim().toLowerCase()) && (
           <MatchSnippet text={doc.ocrText} term={searchTerm} />
@@ -2255,7 +2274,7 @@ function PapeleraView({ docs, onRestore, onPurge }: { docs: DbDocument[]; onRest
       </div>
       <ul className="divide-y divide-[var(--rule-soft)]">
         {docs.map((d) => {
-          const { Icon, tint, bg } = getFileIcon(d.mimeType);
+          const { Icon, tint, bg } = getFileIcon(d.mimeType, d.name);
           return (
             <li key={d.id} className="flex items-center gap-3 px-4 py-3">
               <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", bg)}>

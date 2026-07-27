@@ -9,6 +9,7 @@ import { DocumentsDB } from "@/lib/db/documents.db";
 import { buildStoragePath, isMimeAllowed, uploadToStorage } from "@/lib/documents/storage";
 import { aiCategorize } from "@/lib/documents/ai-categorize";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
+import { resolverMime } from "@/lib/documents/tipos-archivo";
 import { SUPERADMIN_DOCS_TENANT } from "@/lib/documents/superadmin-vault";
 
 /**
@@ -81,8 +82,11 @@ export async function POST(req: NextRequest) {
     if (file.size > MAX_UPLOAD_SIZE) {
       return NextResponse.json({ error: "too_large", maxBytes: MAX_UPLOAD_SIZE }, { status: 413 });
     }
-    const mime = file.type || "application/octet-stream";
-    if (!isMimeAllowed(mime)) {
+    // El navegador deja en blanco (u octet-stream) todo lo que su tabla no
+    // conoce: HEIC del iPhone, .ods de LibreOffice, un .dwg. Guardar ESO hace
+    // que después el drive no sepa ni qué ícono poner. Se resuelve por extensión.
+    const mime = resolverMime(file.name, file.type);
+    if (!isMimeAllowed(mime, file.name)) {
       return NextResponse.json({ error: "mime_not_allowed", mime }, { status: 415 });
     }
 

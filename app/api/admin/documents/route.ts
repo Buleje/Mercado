@@ -12,6 +12,7 @@ import {
 import { aiCategorize } from "@/lib/documents/ai-categorize";
 import { analyzeDocumentContent, isAnalyzableMime } from "@/lib/documents/analyze-document";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
+import { resolverMime } from "@/lib/documents/tipos-archivo";
 import { assertCsrf } from "@/lib/auth/csrf";
 
 
@@ -101,8 +102,13 @@ export async function POST(req: NextRequest) {
         { status: 413 }
       );
     }
-    const mime = file.type || "application/octet-stream";
-    if (!isMimeAllowed(mime)) {
+    // El navegador deja en blanco (u octet-stream) todo lo que su tabla no
+    // conoce: HEIC del iPhone, .ods de LibreOffice, un .dwg. Guardar ESO hace
+    // que después el drive no sepa ni qué ícono poner. Se resuelve por extensión.
+    const mime = resolverMime(file.name, file.type);
+    // El NOMBRE importa: la extensión es la que decide qué hace el sistema
+    // operativo al abrirlo, y es más difícil de disfrazar que el MIME.
+    if (!isMimeAllowed(mime, file.name)) {
       return NextResponse.json({ error: "mime_not_allowed", mime }, { status: 415 });
     }
 

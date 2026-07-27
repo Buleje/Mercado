@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { DocumentsDB } from "@/lib/db/documents.db";
-import { downloadFromStorage } from "@/lib/documents/storage";
+import { downloadFromStorage, esInlineSeguro } from "@/lib/documents/storage";
 
 /**
  * GET /api/public/folders/[token]/docs/[docId]/raw — sirve un documento que pertenece
@@ -23,7 +23,9 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     if (!buf) return NextResponse.json({ error: "storage_unavailable" }, { status: 502 });
 
     const safeName = doc.name.replace(/[^\w.-]+/g, "_") || "documento";
-    const disposition = req.nextUrl.searchParams.get("download") === "1" ? "attachment" : "inline";
+    const pidenDescarga = req.nextUrl.searchParams.get("download") === "1";
+    // Igual que el share por documento: inline sólo lo que es seguro mostrar.
+    const disposition = pidenDescarga || !esInlineSeguro(doc.mimeType, doc.name) ? "attachment" : "inline";
     return new NextResponse(new Uint8Array(buf), {
       status: 200,
       headers: {
@@ -32,6 +34,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
         "Content-Length": String(buf.length),
         "Cache-Control": "private, max-age=60",
         "X-Frame-Options": "SAMEORIGIN",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch (e) {

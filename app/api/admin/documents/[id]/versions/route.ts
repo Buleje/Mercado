@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { resolverMime } from "@/lib/documents/tipos-archivo";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import {
   buildStoragePath,
@@ -51,8 +52,8 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     if (file.size > MAX_UPLOAD_SIZE) {
       return NextResponse.json({ error: "too_large" }, { status: 413 });
     }
-    const mime = file.type || "application/octet-stream";
-    if (!isMimeAllowed(mime)) {
+    const mime = resolverMime(file.name, file.type);
+    if (!isMimeAllowed(mime, file.name)) {
       return NextResponse.json({ error: "mime_not_allowed", mime }, { status: 415 });
     }
     const changeNote = (form.get("changeNote") as string | null) ?? undefined;

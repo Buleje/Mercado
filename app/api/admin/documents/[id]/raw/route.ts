@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { DocumentsDB } from "@/lib/db/documents.db";
-import { downloadFromStorage } from "@/lib/documents/storage";
+import { downloadFromStorage, esInlineSeguro } from "@/lib/documents/storage";
 
 /**
  * GET /api/admin/documents/[id]/raw — sirve el archivo del documento desde NUESTRO
@@ -46,7 +46,13 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     const safeName = doc.name.replace(/[^\w.-]+/g, "_") || "documento";
     // ?download=1 → fuerza la descarga (attachment); por defecto se muestra inline
     // (para la vista previa dentro del modal).
-    const disposition = req.nextUrl.searchParams.get("download") === "1" ? "attachment" : "inline";
+    //
+    // Y aunque no lo pidan: lo que no sea seguro de MOSTRAR va como descarga.
+    // El drive guarda casi cualquier formato (esa es la gracia), pero un SVG o
+    // un HTML servidos inline desde NUESTRO origen ejecutan scripts con las
+    // cookies de la sesión. Guardarlos, sí; abrirlos en una pestaña nuestra, no.
+    const pidenDescarga = req.nextUrl.searchParams.get("download") === "1";
+    const disposition = pidenDescarga || !esInlineSeguro(doc.mimeType, doc.name) ? "attachment" : "inline";
     // Los documentos con permisos restringidos NO se cachean en el navegador
     // (evita servir contenido cacheado tras cambiar de sesión en un equipo compartido).
     const cache = doc.allowedRoles.length > 0 ? "private, no-store" : "private, no-cache";
@@ -59,6 +65,9 @@ export async function GET(req: NextRequest, ctx: Ctx) {
         "Cache-Control": cache,
         ETag: etag,
         "X-Frame-Options": "SAMEORIGIN",
+        // Sin esto el navegador adivina el tipo y puede tratar como HTML algo
+        // que declaramos de otra forma.
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch (e) {

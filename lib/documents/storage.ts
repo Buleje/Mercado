@@ -82,4 +82,4 @@ export async function downloadFromStorage(path: string): Promise<Buffer | null> 
 /** Sanea el mime contra una allowlist amplia de tipos de oficina/imágen. */
 // La lista vive en `upload-limits.ts` (client-safe) para que el navegador
 // pueda avisar ANTES de subir con la misma regla que aplica el servidor.
-export { ALLOWED_MIME_PREFIXES, isMimeAllowed } from "./upload-limits";
+export { isMimeAllowed, esMimePermitido, esInlineSeguro, extensionDe } from "./upload-limits";
