@@ -16,6 +16,17 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     const rl = await applyRateLimit(req, "MODERATE", "public:folder:doc");
     if (rl) return rl;
     const { token, docId } = await ctx.params;
+
+    // La clave del enlace se valida TAMBIÉN acá: si sólo la pidiera el listado,
+    // bastaría con tener el id del documento para bajarlo sin clave.
+    const stored = await DocumentsDB.getFolderShareRawPassword(token);
+    if (stored) {
+      const intento = req.nextUrl.searchParams.get("password") ?? "";
+      if (!DocumentsDB.verifySharePassword(stored, intento)) {
+        return NextResponse.json({ error: "password_required" }, { status: 401 });
+      }
+    }
+
     const doc = await DocumentsDB.getFolderShareDocPath(token, docId);
     if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
@@ -32,7 +43,9 @@ export async function GET(req: NextRequest, ctx: Ctx) {
         "Content-Type": doc.mimeType || "application/octet-stream",
         "Content-Disposition": `${disposition}; filename="${safeName}"`,
         "Content-Length": String(buf.length),
-        "Cache-Control": "private, max-age=60",
+        // Con clave nunca se cachea: el navegador serviría el archivo de nuevo
+        // sin volver a pedirla (mismo problema que tuvieron raw/thumbnail).
+        "Cache-Control": stored ? "private, no-store" : "private, max-age=60",
         "X-Frame-Options": "SAMEORIGIN",
         "X-Content-Type-Options": "nosniff",
       },

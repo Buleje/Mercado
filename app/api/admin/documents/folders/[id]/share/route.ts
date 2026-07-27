@@ -10,7 +10,10 @@ import { logger } from "@/lib/logger";
  * POST /api/admin/documents/folders/[id]/share — genera un link público para toda
  * una carpeta (`/c/{token}`), con todos sus documentos directos.
  */
-const Body = z.object({ expiresInDays: z.number().int().min(1).max(90).optional() });
+const Body = z.object({
+  expiresInDays: z.number().int().min(1).max(90).optional(),
+  password: z.string().min(4).max(120).optional(),
+});
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function POST(req: NextRequest, ctx: Ctx) {
@@ -29,10 +32,11 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     const share = await DocumentsDB.createFolderShare(auth.tenantId, id, {
       createdById: auth.username,
       expiresInDays: parsed.success ? parsed.data.expiresInDays : undefined,
+      password: parsed.success ? parsed.data.password : undefined,
     });
     if (!share) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-    return NextResponse.json({ token: share.token, expiresAt: share.expiresAt });
+    return NextResponse.json({ token: share.token, expiresAt: share.expiresAt, hasPassword: share.hasPassword });
   } catch (e) {
     logger.error("[folder.share] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });

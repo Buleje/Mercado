@@ -909,8 +909,8 @@ export class DocumentsDB {
   static async createFolderShare(
     tenantId: string,
     folderId: string,
-    input: { createdById: string; expiresInDays?: number }
-  ): Promise<{ token: string; expiresAt: string } | null> {
+    input: { createdById: string; expiresInDays?: number; password?: string }
+  ): Promise<{ token: string; expiresAt: string; hasPassword: boolean } | null> {
     const folder = await prisma.documentFolder.findFirst({
       where: { id: folderId, tenantId },
       select: { id: true },
@@ -919,9 +919,30 @@ export class DocumentsDB {
     const ttlDays = Math.max(1, Math.min(90, input.expiresInDays ?? 30));
     const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
     const s = await prisma.documentFolderShare.create({
-      data: { folderId, tenantId, token: randomToken(24), expiresAt, createdById: input.createdById },
+      data: {
+        folderId,
+        tenantId,
+        token: randomToken(24),
+        expiresAt,
+        password: input.password ? hashPassword(input.password) : null,
+        createdById: input.createdById,
+      },
     });
-    return { token: s.token, expiresAt: s.expiresAt.toISOString() };
+    return { token: s.token, expiresAt: s.expiresAt.toISOString(), hasPassword: !!s.password };
+  }
+
+  /**
+   * Hash de la clave de un enlace de carpeta (null si no tiene). Lo usan TODAS
+   * las rutas públicas de la carpeta — la del listado y la que sirve cada
+   * archivo: validar sólo el listado dejaría la clave de adorno, porque con el
+   * id del documento se bajaría igual.
+   */
+  static async getFolderShareRawPassword(token: string): Promise<string | null> {
+    const share = await prisma.documentFolderShare.findUnique({
+      where: { token },
+      select: { password: true },
+    });
+    return share?.password ?? null;
   }
 
   /**
@@ -932,6 +953,7 @@ export class DocumentsDB {
     folder: { id: string; name: string };
     docs: { id: string; name: string; mimeType: string; size: number; uploadedAt: string }[];
     expiresAt: string;
+    hasPassword: boolean;
   } | null> {
     const share = await prisma.documentFolderShare.findUnique({
       where: { token },
@@ -947,6 +969,7 @@ export class DocumentsDB {
       folder: { id: share.folder.id, name: share.folder.name },
       docs: docs.map((d) => ({ id: d.id, name: d.name, mimeType: d.mimeType, size: d.size, uploadedAt: d.uploadedAt.toISOString() })),
       expiresAt: share.expiresAt.toISOString(),
+      hasPassword: !!share.password,
     };
   }
 

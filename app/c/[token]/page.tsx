@@ -28,7 +28,15 @@ export default async function PublicFolderPage({ params }: Props) {
     );
   }
 
+  // Con clave, el servidor NO entrega la lista: la pide el cliente contra la API
+  // pública mandando la clave. Si no, el listado viajaría en el HTML igual.
   return (
-    <PublicFolderView token={token} folderName={found.folder.name} docs={found.docs} expiresAt={found.expiresAt} />
+    <PublicFolderView
+      token={token}
+      folderName={found.hasPassword ? "" : found.folder.name}
+      docs={found.hasPassword ? [] : found.docs}
+      expiresAt={found.expiresAt}
+      requierePassword={found.hasPassword}
+    />
   );
 }

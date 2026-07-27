@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { FolderArchive, X, Link2, Copy, Check, Loader2, MessageCircle } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { FolderArchive, X, Link2, Copy, Check, Loader2, MessageCircle, Lock } from "lucide-react";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -14,21 +14,36 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
   const [creating, setCreating] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  /** Con clave, el enlace se genera recién al escribirla: uno creado sin clave
+   *  ya quedaría abierto aunque después se genere otro. */
+  const [conClave, setConClave] = useState(false);
+  const [clave, setClave] = useState("");
+
+  const generar = useCallback(async (password?: string) => {
+    setCreating(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/documents/folders/${folder.id}/share`, {
+        method: "POST",
+        credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ expiresInDays: 30, ...(password ? { password } : {}) }),
+      });
+      if (!res.ok) throw new Error("No se pudo generar el enlace");
+      const d = await res.json();
+      setLink(`${window.location.origin}/c/${d.token}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCreating(false);
+    }
+  }, [folder.id]);
 
   useEffect(() => {
-    let alive = true;
-    fetch(`/api/admin/documents/folders/${folder.id}/share`, {
-      method: "POST",
-      credentials: "include",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ expiresInDays: 30 }),
-    })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("No se pudo generar el enlace"))))
-      .then((d) => { if (alive) setLink(`${window.location.origin}/c/${d.token}`); })
-      .catch((e) => { if (alive) setError(e instanceof Error ? e.message : String(e)); })
-      .finally(() => { if (alive) setCreating(false); });
-    return () => { alive = false; };
-  }, [folder.id]);
+    if (conClave) { setCreating(false); return; }
+    if (link) return;
+    generar();
+  }, [conClave, link, generar]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -58,13 +73,58 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
         </div>
 
         <div className="space-y-4 p-5">
-          <p className="text-xs text-[var(--text-secondary)]">Cualquiera con este enlace podrá ver y descargar los documentos de la carpeta. Caduca en 30 días.</p>
+          <p className="text-xs text-[var(--text-secondary)]">
+            {conClave
+              ? "Sólo quien tenga la clave podrá ver y descargar los documentos. Caduca en 30 días."
+              : "Cualquiera con este enlace podrá ver y descargar los documentos de la carpeta. Caduca en 30 días."}
+          </p>
+
+          <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+            <div className="flex items-start gap-2.5">
+              <input
+                id="carpeta-con-clave"
+                type="checkbox"
+                checked={conClave}
+                onChange={(e) => { setConClave(e.target.checked); setClave(""); setLink(null); }}
+                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[var(--accent)]"
+              />
+              <div className="min-w-0">
+                <label htmlFor="carpeta-con-clave" className="flex cursor-pointer items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+                  <Lock className="h-3.5 w-3.5" /> Pedir una clave para abrirla
+                </label>
+                <p className="mt-0.5 text-xs text-[var(--text-secondary)]">Pasale la clave por otro lado, no en el mismo mensaje que el enlace.</p>
+              </div>
+            </div>
+
+            {conClave && (
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  value={clave}
+                  onChange={(e) => setClave(e.target.value)}
+                  placeholder="Clave (mínimo 4 caracteres)"
+                  className="h-11 min-w-[180px] flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"
+                />
+                <button
+                  onClick={() => generar(clave.trim())}
+                  disabled={creating || clave.trim().length < 4}
+                  className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-white disabled:opacity-40"
+                >
+                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+                  {link ? "Rehacer con clave" : "Generar el enlace"}
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             <div className="mb-1.5 flex items-center gap-1.5 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               <Link2 className="h-3.5 w-3.5" /> Enlace de la carpeta
             </div>
             {creating ? (
               <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"><Loader2 className="h-4 w-4 animate-spin" /> Generando enlace…</p>
+            ) : !link && conClave ? (
+              <p className="text-sm text-[var(--text-tertiary)]">Escribí la clave acá arriba y generá el enlace.</p>
             ) : error ? (
               <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>
             ) : (
