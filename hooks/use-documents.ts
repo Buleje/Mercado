@@ -72,7 +72,7 @@ export interface UseDocumentsResult {
   /** Árbol completo en una llamada (importador de carpetas): ruta → id. */
   createFolderTree: (parentId: string | null, rutas: string[]) => Promise<{ idPorRuta: Record<string, string>; creadas: number }>;
   /** Nombre+peso de lo que ya hay en esas carpetas (clave "" = raíz). */
-  existingNames: (folderIds: (string | null)[]) => Promise<Record<string, { name: string; size: number }[]>>;
+  existingNames: (folderIds: (string | null)[]) => Promise<Record<string, { id: string; name: string; size: number }[]>>;
   moveFolder: (id: string, parentId: string | null) => Promise<void>;
   updateFolder: (id: string, patch: { name?: string; color?: string | null; icon?: string | null; allowedRoles?: string[] }) => Promise<void>;
   deleteFolder: (id: string) => Promise<void>;
@@ -325,7 +325,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
    * importador para no volver a subir lo que ya está. Clave "" = raíz.
    */
   const existingNames = useCallback(async (folderIds: (string | null)[]) => {
-    const r = await http<{ porCarpeta: Record<string, { name: string; size: number }[]> }>(`${BASE}/existing`, {
+    const r = await http<{ porCarpeta: Record<string, { id: string; name: string; size: number }[]> }>(`${BASE}/existing`, {
       method: "POST",
       body: JSON.stringify({ folderIds }),
     });

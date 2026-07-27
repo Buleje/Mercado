@@ -191,6 +191,7 @@ export {
   FolderOpen,
   FolderTree,
   Presentation,
+  SkipForward,
 
   // ── Science / AI / industry ──────────────────────────────────
   FlaskConical,

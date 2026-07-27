@@ -27,6 +27,8 @@ import {
   type CarpetaExistente, type PlanImport,
 } from "@/lib/documentos/importar-arbol";
 import { useImportCarpeta } from "@/contexts/import-carpeta-context";
+import { clasificarConflictos, type Resolucion } from "@/lib/documentos/conflictos";
+import ConflictosImport, { type FilaConflicto } from "./ConflictosImport";
 import type { EstadoArchivo } from "./ImportarProgreso";
 
 type Fase = "elegir" | "revisar";
@@ -48,7 +50,7 @@ export interface ImportarCarpetaProps {
    */
   crearArbol: (parentId: string | null, rutas: string[]) => Promise<{ idPorRuta: Record<string, string>; creadas: number }>;
   /** Nombre+peso de lo que ya hay en esas carpetas, para no subirlo dos veces. */
-  yaSubidos: (folderIds: (string | null)[]) => Promise<Record<string, { name: string; size: number }[]>>;
+  yaSubidos: (folderIds: (string | null)[]) => Promise<Record<string, { id: string; name: string; size: number }[]>>;
   /**
    * Sube archivos a una carpeta concreta (pool + compresión del drive).
    * `onEstado` es lo que alimenta la lista archivo-por-archivo del progreso.
@@ -99,28 +101,52 @@ export default function ImportarCarpetaModal({
    * archivos volvía a subir los 300 y el drive quedaba con todo duplicado.
    */
   const [duplicados, setDuplicados] = useState<Set<File>>(new Set());
+  /** Mismo nombre, otro contenido: acá se PREGUNTA, como el explorador. */
+  const [conflictos, setConflictos] = useState<Map<File, FilaConflicto & { idExistente?: string }>>(new Map());
+  /** Reemplazar es el default seguro: el drive versiona, no se pierde nada. */
+  const [resolucion, setResolucion] = useState<Resolucion>("reemplazar");
   const [buscandoDuplicados, setBuscandoDuplicados] = useState(false);
   useEffect(() => {
-    if (!plan || plan.archivos.length === 0) { setDuplicados(new Set()); return; }
+    if (!plan || plan.archivos.length === 0) { setDuplicados(new Set()); setConflictos(new Map()); return; }
     // Sólo hay con qué chocar en las carpetas que ya existían (y en el destino).
     const idPorRuta = new Map<string, string | null>([["", destino]]);
     for (const [ruta, id] of reuso) idPorRuta.set(ruta, id);
     const aConsultar = [...new Set(plan.archivos.map((a) => idPorRuta.get(a.carpeta)).filter((v) => v !== undefined))];
-    if (aConsultar.length === 0) { setDuplicados(new Set()); return; }
+    if (aConsultar.length === 0) { setDuplicados(new Set()); setConflictos(new Map()); return; }
 
     let vigente = true;
     setBuscandoDuplicados(true);
     yaSubidos(aConsultar)
       .then((porCarpeta) => {
         if (!vigente) return;
-        const dup = new Set<File>();
+        // El servidor responde por id de carpeta; el plan piensa en rutas.
+        const porRuta: Record<string, { name: string; size: number; id?: string }[]> = {};
         for (const a of plan.archivos) {
           const id = idPorRuta.get(a.carpeta);
-          if (id === undefined) continue;
-          const previos = porCarpeta[id ?? ""] ?? [];
-          if (previos.some((p) => p.name === a.file.name && p.size === a.file.size)) dup.add(a.file);
+          if (id !== undefined) porRuta[a.carpeta] ??= porCarpeta[id ?? ""] ?? [];
         }
+        const clasificados = clasificarConflictos(
+          plan.archivos.map((a) => ({ item: a.file, carpeta: a.carpeta, nombre: a.file.name, size: a.file.size })),
+          porRuta,
+        );
+        const dup = new Set<File>();
+        const conf = new Map<File, FilaConflicto & { idExistente?: string }>();
+        clasificados.forEach((c, i) => {
+          const a = plan.archivos[i];
+          if (c.estado === "identico") dup.add(c.item);
+          else if (c.estado === "conflicto") {
+            conf.set(c.item, {
+              ruta: a.carpeta ? `${a.carpeta}/${a.file.name}` : a.file.name,
+              nombre: a.file.name,
+              carpeta: a.carpeta,
+              size: a.file.size,
+              sizeExistente: c.existente?.size ?? 0,
+              idExistente: c.existente?.id,
+            });
+          }
+        });
         setDuplicados(dup);
+        setConflictos(conf);
       })
       .catch((err) => {
         // Si no se pudo consultar, se sube todo: duplicar es molesto, no
@@ -138,8 +164,12 @@ export default function ImportarCarpetaModal({
    * hay que volver — la segunda vuelta omite sola lo que ya está.
    */
   const pendientes = useMemo(
-    () => (plan?.archivos ?? []).filter((a) => !duplicados.has(a.file)),
-    [plan, duplicados],
+    () => (plan?.archivos ?? []).filter((a) => {
+      if (duplicados.has(a.file)) return false;             // idéntico: nada que subir
+      if (conflictos.has(a.file)) return resolucion !== "omitir";
+      return true;
+    }),
+    [plan, duplicados, conflictos, resolucion],
   );
   const aSubir = useMemo(() => pendientes.slice(0, ARCHIVOS_POR_TANDA), [pendientes]);
   const paraLaProxima = pendientes.length - aSubir.length;
@@ -197,6 +227,11 @@ export default function ImportarCarpetaModal({
       archivos: aSubir,
       paraLaProxima,
       duplicados: duplicados.size,
+      // Qué hacer con los que chocan, y contra qué documento versionar.
+      resolucion,
+      versionarEn: new Map(
+        [...conflictos].map(([file, c]) => [file, c.idExistente]).filter(([, id]) => Boolean(id)) as [File, string][],
+      ),
       crearArbol,
       subir,
     });
@@ -353,6 +388,12 @@ export default function ImportarCarpetaModal({
                 </span>
               </p>
             )}
+
+            <ConflictosImport
+              filas={[...conflictos.values()]}
+              resolucion={resolucion}
+              onCambiar={setResolucion}
+            />
 
             {duplicados.size > 0 && (
               <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-secondary)]">

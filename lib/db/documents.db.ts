@@ -655,7 +655,7 @@ export class DocumentsDB {
   static async listNamesInFolders(
     tenantId: string,
     folderIds: (string | null)[],
-  ): Promise<Record<string, { name: string; size: number }[]>> {
+  ): Promise<Record<string, { id: string; name: string; size: number }[]>> {
     const ids = folderIds.filter((f): f is string => typeof f === "string");
     const incluirRaiz = folderIds.includes(null);
     if (ids.length === 0 && !incluirRaiz) return {};
@@ -670,13 +670,15 @@ export class DocumentsDB {
             ? { folderId: null }
             : { folderId: { in: ids } }),
       },
-      select: { folderId: true, name: true, originalName: true, size: true },
+      // El id hace falta para REEMPLAZAR: sin él no se sabe a qué documento
+      // subirle la versión nueva y el importador terminaba duplicando.
+      select: { id: true, folderId: true, name: true, originalName: true, size: true },
     });
 
-    const out: Record<string, { name: string; size: number }[]> = {};
+    const out: Record<string, { id: string; name: string; size: number }[]> = {};
     for (const d of docs) {
       const k = d.folderId ?? "";
-      (out[k] ??= []).push({ name: d.originalName || d.name, size: d.size });
+      (out[k] ??= []).push({ id: d.id, name: d.originalName || d.name, size: d.size });
     }
     return out;
   }

@@ -111,20 +111,27 @@ const doc = prisma.document as unknown as { findMany: ReturnType<typeof vi.fn> }
 describe("DocumentsDB.listNamesInFolders", () => {
   beforeEach(() => doc.findMany.mockResolvedValue([]));
 
+  it("devuelve el ID: sin él, 'reemplazar' no sabe a qué documento versionar", async () => {
+    doc.findMany.mockResolvedValue([{ id: "d7", folderId: "f1", name: "a.pdf", originalName: "a.pdf", size: 10 }]);
+    const r = await DocumentsDB.listNamesInFolders(T, ["f1"]);
+    expect(r["f1"][0]).toEqual({ id: "d7", name: "a.pdf", size: 10 });
+    expect(doc.findMany.mock.calls[0][0].select.id).toBe(true);
+  });
+
   it("agrupa por carpeta y usa la raíz como clave vacía", async () => {
     doc.findMany.mockResolvedValue([
-      { folderId: "f1", name: "a.pdf", originalName: "a.pdf", size: 10 },
-      { folderId: "f1", name: "b.pdf", originalName: "b.pdf", size: 20 },
-      { folderId: null, name: "suelto.pdf", originalName: "suelto.pdf", size: 30 },
+      { id: "d1", folderId: "f1", name: "a.pdf", originalName: "a.pdf", size: 10 },
+      { id: "d2", folderId: "f1", name: "b.pdf", originalName: "b.pdf", size: 20 },
+      { id: "d3", folderId: null, name: "suelto.pdf", originalName: "suelto.pdf", size: 30 },
     ]);
     const r = await DocumentsDB.listNamesInFolders(T, ["f1", null]);
     expect(r["f1"]).toHaveLength(2);
-    expect(r[""]).toEqual([{ name: "suelto.pdf", size: 30 }]);
+    expect(r[""]).toEqual([{ id: "d3", name: "suelto.pdf", size: 30 }]);
   });
 
   it("devuelve el nombre ORIGINAL: es con el que compara el importador", async () => {
     doc.findMany.mockResolvedValue([
-      { folderId: "f1", name: "Contrato renombrado", originalName: "alquiler-local.pdf", size: 10 },
+      { id: "d4", folderId: "f1", name: "Contrato renombrado", originalName: "alquiler-local.pdf", size: 10 },
     ]);
     const r = await DocumentsDB.listNamesInFolders(T, ["f1"]);
     expect(r["f1"][0].name).toBe("alquiler-local.pdf");

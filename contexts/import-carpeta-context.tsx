@@ -18,6 +18,8 @@ import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
 } from "react";
 import type { ArchivoPlan } from "@/lib/documentos/importar-arbol";
+import { nombreLibre, type Resolucion } from "@/lib/documentos/conflictos";
+import { uploadVersion } from "@/hooks/use-documents";
 import type { EstadoArchivo, FilaArchivo } from "@/components/admin/documentos/ImportarProgreso";
 
 /** Todo lo que el importador necesita para trabajar solo. */
@@ -34,6 +36,10 @@ export interface EncargoImport {
   paraLaProxima: number;
   /** Cuántos se omitieron por estar ya subidos. */
   duplicados: number;
+  /** Qué hacer con los que chocan por nombre (decisión del usuario). */
+  resolucion?: Resolucion;
+  /** Para "reemplazar": a qué documento existente subirle la versión. */
+  versionarEn?: Map<File, string>;
   crearArbol: (parentId: string | null, rutas: string[]) => Promise<{ idPorRuta: Record<string, string>; creadas: number }>;
   subir: (files: File[], opts?: {
     folderIdDe?: (file: File) => string | null | undefined;
@@ -215,13 +221,73 @@ export function ImportCarpetaProvider({ children }: { children: React.ReactNode 
           }
         }
 
-        // 2 · Todos los archivos en UNA tanda, con su carpeta resuelta.
-        const rutaDe = new Map(encargo.archivos.map((a) => [a.file, a.carpeta ? `${a.carpeta}/${a.file.name}` : a.file.name]));
-        const carpetaDe = new Map(encargo.archivos.map((a) => [a.file, idPorRuta.get(a.carpeta) ?? encargo.destino]));
+        // 2a · "Reemplazar": los que chocan van como VERSIÓN nueva del documento
+        //      que ya estaba, no como archivo aparte. Uno por uno: el endpoint
+        //      de versiones es por documento.
+        const versionar = encargo.resolucion === "reemplazar" ? (encargo.versionarEn ?? new Map()) : new Map<File, string>();
+        const paraSubir = encargo.archivos.filter((a) => !versionar.has(a.file));
 
-        parche({ paso: `Subiendo ${encargo.archivos.length} archivo${encargo.archivos.length === 1 ? "" : "s"}` });
+        if (versionar.size > 0) {
+          parche({ paso: `Reemplazando ${versionar.size} archivo${versionar.size === 1 ? "" : "s"}…` });
+          for (const [file, docId] of versionar) {
+            if (abortRef.current?.signal.aborted) break;
+            const clave = encargo.archivos.find((a) => a.file === file);
+            const ruta = clave?.carpeta ? `${clave.carpeta}/${file.name}` : file.name;
+            parche((p) => ({ estados: { ...p.estados, [ruta]: "subiendo" } }));
+            try {
+              await uploadVersion(docId, file, "Reemplazado al importar la carpeta");
+              parche((p) => ({
+                estados: { ...p.estados, [ruta]: "listo" },
+                bytesListos: p.bytesListos + file.size,
+                subidosOk: p.subidosOk + 1,
+              }));
+            } catch (e) {
+              parche((p) => ({
+                estados: { ...p.estados, [ruta]: "error" },
+                motivos: { ...p.motivos, [ruta]: mensajeError(e) },
+                fallados: p.fallados + 1,
+              }));
+            }
+          }
+        }
+
+        // 2b · "Conservar los dos": se sube con otro nombre, como el explorador.
+        //
+        // El set de nombres ocupados arranca CON los que ya están en el drive
+        // (justamente los que chocan): vacío, `nombreLibre` devolvía el mismo
+        // nombre y no renombraba nada. Y va por carpeta — dos "boleta.pdf" en
+        // carpetas distintas no se estorban.
+        const renombrar = encargo.resolucion === "conservar-ambos" && (encargo.versionarEn?.size ?? 0) > 0;
+        const usadosPorCarpeta = new Map<string, Set<string>>();
+        if (renombrar) {
+          for (const a of encargo.archivos) {
+            if (!encargo.versionarEn?.has(a.file)) continue;
+            const set = usadosPorCarpeta.get(a.carpeta) ?? new Set<string>();
+            set.add(a.file.name.trim().toLowerCase());
+            usadosPorCarpeta.set(a.carpeta, set);
+          }
+        }
+
+        // 2 · Todos los archivos en UNA tanda, con su carpeta resuelta.
+        const rutaDe = new Map(paraSubir.map((a) => [a.file, a.carpeta ? `${a.carpeta}/${a.file.name}` : a.file.name]));
+        const carpetaDe = new Map(paraSubir.map((a) => [a.file, idPorRuta.get(a.carpeta) ?? encargo.destino]));
+
+        // El File es inmutable: para renombrar hay que envolverlo (no se copia
+        // el contenido, apunta al mismo blob).
+        const aMandar = paraSubir.map((a) => {
+          if (!renombrar || !encargo.versionarEn?.has(a.file)) return a.file;
+          const usados = usadosPorCarpeta.get(a.carpeta) ?? new Set<string>();
+          usadosPorCarpeta.set(a.carpeta, usados);
+          const nuevo = new File([a.file], nombreLibre(a.file.name, usados), { type: a.file.type });
+          rutaDe.set(nuevo, rutaDe.get(a.file) ?? nuevo.name);
+          carpetaDe.set(nuevo, carpetaDe.get(a.file) ?? encargo.destino);
+          return nuevo;
+        });
+
+        if (paraSubir.length === 0) { parche({ fase: "listo", paso: "" }); setTerminados((n) => n + 1); return; }
+        parche({ paso: `Subiendo ${paraSubir.length} archivo${paraSubir.length === 1 ? "" : "s"}` });
         try {
-          await encargo.subir(encargo.archivos.map((a) => a.file), {
+          await encargo.subir(aMandar, {
             signal: abortRef.current?.signal,
             folderIdDe: (f) => carpetaDe.get(f) ?? encargo.destino,
             onEstado: (file, est, motivo) => {
