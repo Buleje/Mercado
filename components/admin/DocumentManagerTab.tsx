@@ -32,7 +32,7 @@ type Doc = {
 
 interface ContratoAPI {
   id: string;
-  número: string;
+  numero: string;
   tipo: string;
   estado: string;
   clienteNombre: string;
@@ -114,7 +114,7 @@ export default function DocumentManagerTab() {
 
             return {
               id: c.id,
-              name: `${c.número} - ${c.tipo} - ${c.clienteNombre}`,
+              name: `${c.numero} - ${c.tipo} - ${c.clienteNombre}`,
               category: "contrato" as DocCategory,
               status,
               uploadDate: c.createdAt?.split("T")[0] || "",
@@ -123,7 +123,7 @@ export default function DocumentManagerTab() {
               relatedTo: c.clienteNombre,
               notes: c.descripcion?.substring(0, 100) || "",
               isContrato: true,
-              contratoNumero: c.número,
+              contratoNumero: c.numero,
               contratoMonto: c.monto,
             };
           });

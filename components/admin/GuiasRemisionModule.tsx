@@ -27,7 +27,8 @@ type GuiaItem = {
 
 type GuiaRemision = {
   id: string;
-  número: string;
+  /** Ya viene formateado del backend (ej. "T001-0001"). */
+  numero: string;
   tenantId: string;
   orderId?: string;
   fechaTraslado: string;
@@ -164,7 +165,7 @@ function GuiaPreview({ guia }: { guia: GuiaRemision }) {
   return (
     <div className="w-75 bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs text-[var(--text-secondary)]">{guia.número}</span>
+        <span className="font-mono text-xs text-[var(--text-secondary)]">{guia.numero}</span>
         <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", meta.bg, meta.color)}>
           <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />{meta.label}
         </span>
@@ -334,7 +335,7 @@ function printGuiaSunat(g: GuiaRemision, formatDate: (d: string) => string) {
     condition ? '<div class="row"><span class="row-label">' + label + ':</span><span class="row-value">' + value + "</span></div>" : "";
 
   const html = [
-    '<!DOCTYPE html><html><head><title>GRR ' + g.número + "</title><style>",
+    '<!DOCTYPE html><html><head><title>GRR ' + g.numero + "</title><style>",
     "@media print { @page { size: A4; margin: 15mm; } }",
     "body { font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; padding: 20px; font-size: 13px; }",
     "h1 { text-align: center; font-size: 18px; margin: 0; }",
@@ -351,7 +352,7 @@ function printGuiaSunat(g: GuiaRemision, formatDate: (d: string) => string) {
     "</style></head><body>",
     '<div class="sep-double"></div>',
     "<h1>GUIA DE REMISION REMITENTE</h1>",
-    "<h2>N. " + g.número + "</h2>",
+    "<h2>N. " + g.numero + "</h2>",
     '<div class="sep-double"></div>',
     '<div class="section"><div class="section-title">Remitente</div>',
     '<div class="row"><span class="row-label">Nombre/Razon Social:</span><span class="row-value">Buleje</span></div>',
@@ -694,7 +695,7 @@ export default function GuiasRemisionModule() {
     const items = g.items ?? [];
     const pesoTotal = items.reduce((sum, it) => sum + it.cantidad * (it.pesoUnitario || 0), 0);
     const verifyUrl = `buleje.pe/verify/guia/${g.id}`;
-    const html = `<!DOCTYPE html><html><head><title>GRR ${g.número}</title><style>
+    const html = `<!DOCTYPE html><html><head><title>GRR ${g.numero}</title><style>
       @media print { @page { size: A4; margin: 15mm; } }
       body { font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; padding: 20px; font-size: 13px; }
       h1 { text-align: center; font-size: 18px; margin: 0; }
@@ -718,7 +719,7 @@ export default function GuiasRemisionModule() {
     </style></head><body>
       <div class="sep-double"></div>
       <h1>GUIA DE REMISION REMITENTE</h1>
-      <h2>N.&deg; ${g.número}</h2>
+      <h2>N.&deg; ${g.numero}</h2>
       <div class="sep-double"></div>
       <div class="section">
         <div class="section-title">Remitente</div>
@@ -899,7 +900,7 @@ export default function GuiasRemisionModule() {
                         <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
                           {/* Mejora 17: Preview al hover */}
                           <GuiaHoverRow preview={<GuiaPreview guia={g} />}>
-                            <span>{g.número}</span>
+                            <span>{g.numero}</span>
                           </GuiaHoverRow>
                         </td>
                         <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">{formatDate(g.fechaTraslado)}</td>
@@ -955,7 +956,7 @@ export default function GuiasRemisionModule() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-bold text-[var(--text-primary)] font-mono">{selected.número}</CardTitle>
+                    <CardTitle className="text-lg font-bold text-[var(--text-primary)] font-mono">{selected.numero}</CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">Creada: {formatDateTime(selected.createdAt)}</p>
                   </div>
                   <div className="flex items-center gap-2">

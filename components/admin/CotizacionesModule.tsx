@@ -38,7 +38,8 @@ type CotizacionItem = {
 
 type Cotizacion = {
   id: string;
-  número: number;
+  /** Ya viene formateado del backend (ej. "Buleje-COT-0001"): no re-prefijar ni padStart. */
+  numero: string;
   clienteNombre: string;
   clienteRuc?: string;
   customerId?: string;
@@ -78,7 +79,7 @@ function CotizacionPreview({ cotizacion }: { cotizacion: Cotizacion }) {
   return (
     <div className="w-[300px] bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs text-[var(--text-secondary)]">COT-{String(cotizacion.número).padStart(4, "0")}</span>
+        <span className="font-mono text-xs text-[var(--text-secondary)]">{cotizacion.numero}</span>
         <span className={cn("inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold", meta.bg, meta.color)}>{meta.label}</span>
       </div>
       <p className="font-bold text-[var(--text-primary)] text-sm">{cotizacion.clienteNombre}</p>
@@ -758,7 +759,7 @@ export default function CotizacionesModule() {
                   description={
                     <>
                       <span className="line-clamp-2 block">
-                        {vencidas.slice(0, 3).map(c => `COT-${String(c.número).padStart(4, "0")} para ${c.clienteNombre} (${formatCurrency(c.total)})`).join(" \u00B7 ")}
+                        {vencidas.slice(0, 3).map(c => `${c.numero} para ${c.clienteNombre} (${formatCurrency(c.total)})`).join(" \u00B7 ")}
                         {vencidas.length > 3 && ` y ${vencidas.length - 3} mas...`}
                       </span>
                       <div className="flex gap-2 mt-3">
@@ -845,7 +846,7 @@ export default function CotizacionesModule() {
                       return (
                         <div key={c.id} onClick={() => openDetail(c)} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden  hover:shadow-[var(--shadow-lg)] cursor-pointer transition-all group">
                           <div className={cn("px-4 py-2 flex items-center justify-between", headerColor)}>
-                            <span className="font-mono text-xs font-bold text-[var(--text-secondary)]">COT-{String(c.número).padStart(4, "0")}</span>
+                            <span className="font-mono text-xs font-bold text-[var(--text-secondary)]">{c.numero}</span>
                             <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold", meta.bg, meta.color)}>{meta.label}</span>
                           </div>
                           <div className="p-4 space-y-2">
@@ -856,7 +857,7 @@ export default function CotizacionesModule() {
                             </div>
                             <div className="flex gap-2 pt-2 border-t border-[var(--rule-soft)]">
                               <button onClick={(e) => { e.stopPropagation(); openDetail(c); }} className="flex-1 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 py-1.5 rounded-lg transition-colors">Ver</button>
-                              <button onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/?text=${encodeURIComponent(`Cotización COT-${String(c.número).padStart(4, "0")} por ${formatCurrency(c.total)}`)}`, "_blank"); }} className="flex-1 text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 py-1.5 rounded-lg transition-colors">WhatsApp</button>
+                              <button onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/?text=${encodeURIComponent(`Cotización ${c.numero} por ${formatCurrency(c.total)}`)}`, "_blank"); }} className="flex-1 text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 py-1.5 rounded-lg transition-colors">WhatsApp</button>
                             </div>
                           </div>
                         </div>
@@ -887,7 +888,7 @@ export default function CotizacionesModule() {
                             <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
                               {/* Mejora 17: Preview al hover */}
                               <HoverPreviewRow preview={<CotizacionPreview cotizacion={c} />}>
-                                <span>{String(c.número).padStart(4, "0")}</span>
+                                <span>{c.numero}</span>
                               </HoverPreviewRow>
                             </td>
                             <td className="px-4 py-3">
@@ -1195,7 +1196,7 @@ export default function CotizacionesModule() {
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Cotización #{String(selected.número).padStart(4, "0")}</CardTitle>
+                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Cotización {selected.numero}</CardTitle>
                   <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
@@ -1306,7 +1307,7 @@ export default function CotizacionesModule() {
                     }
                     if (diasEnviada > 3) {
                       const _phone = selected.customerId || "";
-                      const waText = `Hola ${selected.clienteNombre}, te enviamos la cotización ${String(selected.número).padStart(4, "0")} por S/${Number(selected.total).toFixed(2)}. ¿Te interesa?`;
+                      const waText = `Hola ${selected.clienteNombre}, te enviamos la cotización ${selected.numero} por S/${Number(selected.total).toFixed(2)}. ¿Te interesa?`;
                       return (
                         <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-3 space-y-2">
                           <p className="text-xs font-bold text-[var(--data-warning-500)]">Sin respuesta hace {diasEnviada} días — ¿Enviar recordatorio?</p>
@@ -1361,7 +1362,7 @@ export default function CotizacionesModule() {
                         `${i + 1}. ${it.descripcion} x ${it.cantidad} — S/ ${Number(it.subtotal).toFixed(2)}`
                       ).join("\n");
                       const texto = [
-                        `*Cotizacion #${String(c.número).padStart(4, "0")} — Buleje*`,
+                        `*Cotización ${c.numero} — Buleje*`,
                         `Cliente: ${c.clienteNombre}`,
                         `Fecha: ${formatDate(c.createdAt)}`,
                         `Valida hasta: ${formatDate(c.validoHasta)}`,

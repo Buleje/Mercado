@@ -31,7 +31,8 @@ type NCStatus = "BORRADOR" | "EMITIDA" | "ANULADA";
 
 type NotaCredito = {
   id: string;
-  número: string;
+  /** Ya viene formateado del backend (ej. "NC01-0001"). */
+  numero: string;
   tenantId: string;
   orderId?: string;
   saleId?: string;
@@ -76,7 +77,7 @@ type SaleDoc = {
 
 type PickerDocType = "all" | "factura" | "boleta" | "ticket";
 type DocType = "all" | "factura" | "boleta" | "nota_credito";
-type SortField = "número" | "total" | "createdAt" | "status";
+type SortField = "numero" | "total" | "createdAt" | "status";
 type SortDir = "asc" | "desc";
 type ViewMode = "table" | "cards" | "kanban";
 
@@ -205,8 +206,8 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
         <div className="flex-1 min-w-0" onClick={onSelect}>
           <div className="flex items-center justify-between mb-1">
             <span className="flex items-center gap-1.5">
-              <span className="text-lg">{getDocIcon(nc.número)}</span>
-              <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.número}</span>
+              <span className="text-lg">{getDocIcon(nc.numero)}</span>
+              <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.numero}</span>
             </span>
             <span className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", meta.bg, meta.color)}>
               <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />
@@ -588,7 +589,7 @@ export default function NotasCreditoModule() {
     if (maxAmount) list = list.filter(nc => nc.total <= parseFloat(maxAmount));
     list.sort((a, b) => {
       let cmp = 0;
-      if (sortField === "número") cmp = a.número.localeCompare(b.número);
+      if (sortField === "numero") cmp = a.numero.localeCompare(b.numero);
       else if (sortField === "total") cmp = a.total - b.total;
       else if (sortField === "createdAt") cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       else if (sortField === "status") cmp = a.status.localeCompare(b.status);
@@ -624,7 +625,7 @@ export default function NotasCreditoModule() {
   const exportCSV = () => {
     const items = someChecked ? filteredNotas.filter(nc => checkedIds.has(nc.id)) : filteredNotas;
     const header = "Número,Motivo,Codigo,Monto,IGV,Total,Status,Fecha\n";
-    const rows = items.map(nc => `${nc.número},"${nc.descripcionMotivo}",${nc.codigoMotivo},${nc.monto},${nc.igv},${nc.total},${nc.status},${nc.createdAt.slice(0, 10)}`).join("\n");
+    const rows = items.map(nc => `${nc.numero},"${nc.descripcionMotivo}",${nc.codigoMotivo},${nc.monto},${nc.igv},${nc.total},${nc.status},${nc.createdAt.slice(0, 10)}`).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `notas-credito-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
@@ -735,7 +736,7 @@ export default function NotasCreditoModule() {
     doc.setTextColor(60, 60, 60);
     const col1 = 20, col2 = 120;
     const rows = [
-      ["N° Documento:", nc.número],
+      ["N° Documento:", nc.numero],
       ["Fecha:", formatDate(nc.createdAt)],
       ["Estado:", STATUS_META[nc.status].label],
       ["Cliente:", nc.clienteNombre ?? "—"],
@@ -765,12 +766,12 @@ export default function NotasCreditoModule() {
     if (nc.notas) { doc.setFontSize(10); doc.setTextColor(120, 120, 120); doc.setFont("helvetica", "italic"); doc.text(`Notas: ${nc.notas}`, col1, y + 8); }
     doc.setFontSize(8); doc.setTextColor(160, 160, 160);
     doc.text("Documento generado por Buleje", 105, 285, { align: "center" });
-    doc.save(`NC-${nc.número}-${nc.createdAt.slice(0, 10)}.pdf`);
+    doc.save(`NC-${nc.numero}-${nc.createdAt.slice(0, 10)}.pdf`);
   };
 
   // ── Enviar por WhatsApp ───────────────────────────────────────────────────
   const sendWhatsApp = (nc: NotaCredito) => {
-    const text = `*Nota de Crédito ${nc.número}*\nMotivo: [${nc.codigoMotivo}] ${nc.descripcionMotivo}\nCliente: ${nc.clienteNombre ?? "—"}\nTotal: ${formatCurrency(nc.total)}\nEstado: ${STATUS_META[nc.status].label}\nFecha: ${formatDate(nc.createdAt)}`;
+    const text = `*Nota de Crédito ${nc.numero}*\nMotivo: [${nc.codigoMotivo}] ${nc.descripcionMotivo}\nCliente: ${nc.clienteNombre ?? "—"}\nTotal: ${formatCurrency(nc.total)}\nEstado: ${STATUS_META[nc.status].label}\nFecha: ${formatDate(nc.createdAt)}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -1066,7 +1067,7 @@ export default function NotasCreditoModule() {
                       onClick={() => setSelected(nc)}
                       className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-lg p-3 cursor-pointer hover:shadow-[var(--shadow-sm)] hover:border-primary/40 transition-all">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{nc.número}</span>
+                        <span className="font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{nc.numero}</span>
                         <span className="text-sm font-extrabold text-[var(--text-primary)]">{formatCurrency(nc.total)}</span>
                       </div>
                       <p className="text-xs text-[var(--text-secondary)] truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
@@ -1135,8 +1136,8 @@ export default function NotasCreditoModule() {
                         {allChecked && <span className="text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
                       </button>
                     </th>
-                    <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] cursor-pointer select-none" onClick={() => toggleSort("número")}>
-                      <span className="flex items-center gap-1">Documento <SortIcon field="número" /></span>
+                    <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] cursor-pointer select-none" onClick={() => toggleSort("numero")}>
+                      <span className="flex items-center gap-1">Documento <SortIcon field="numero" /></span>
                     </th>
                     <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">Referencia</th>
                     <th className="px-3 py-3 font-semibold text-[var(--text-secondary)]">Motivo</th>
@@ -1165,8 +1166,8 @@ export default function NotasCreditoModule() {
                         </td>
                         <td className="px-3 py-3 cursor-pointer" onClick={() => setSelected(nc)}>
                           <span className="flex items-center gap-2">
-                            <span className="text-base">{getDocIcon(nc.número)}</span>
-                            <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.número}</span>
+                            <span className="text-base">{getDocIcon(nc.numero)}</span>
+                            <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.numero}</span>
                           </span>
                           {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{nc.clienteNombre}</p>}
                         </td>
@@ -1239,8 +1240,8 @@ export default function NotasCreditoModule() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
-                      <span className="text-xl">{getDocIcon(selected.número)}</span>
-                      NC {selected.número}
+                      <span className="text-xl">{getDocIcon(selected.numero)}</span>
+                      NC {selected.numero}
                     </CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">Creada {formatDateTime(selected.createdAt)}</p>
                   </div>

@@ -56,7 +56,8 @@ interface ContractVersion {
 
 type ContratoAPI = {
   id: string;
-  número: string;
+  /** Ya viene formateado del backend (ej. "CONT-2026-0001"). */
+  numero: string;
   tenantId: string;
   tipo: ContratoTipo;
   clienteNombre: string;
@@ -987,7 +988,7 @@ export default function ContratosModule() {
     let list = contratos;
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
-      list = list.filter(c => c.clienteNombre.toLowerCase().includes(q) || c.número.toLowerCase().includes(q) || c.descripcion.toLowerCase().includes(q));
+      list = list.filter(c => c.clienteNombre.toLowerCase().includes(q) || c.numero.toLowerCase().includes(q) || c.descripcion.toLowerCase().includes(q));
     }
     if (filterTipo !== "ALL") list = list.filter(c => c.tipo === filterTipo);
     if (filterEstado !== "ALL") list = list.filter(c => getEstado(c) === filterEstado);
@@ -1186,7 +1187,7 @@ export default function ContratosModule() {
   const downloadPDF = (c: ContratoAPI) => {
     const { content, summary } = getContractContent(c);
     const tipoLabel = TIPO_LABELS[c.tipo] || c.tipo;
-    const html = `<!DOCTYPE html><html><head><title>Contrato ${c.número}</title>
+    const html = `<!DOCTYPE html><html><head><title>Contrato ${c.numero}</title>
 <style>
 @media print { @page { size: A4; margin: 25mm; } body { margin: 0; } }
 body { font-family: 'Times New Roman', Georgia, serif; max-width: 680px; margin: 0 auto; padding: 40px 30px; font-size: 12.5px; line-height: 1.7; color: #111; }
@@ -1201,7 +1202,7 @@ h1 { font-size: 16px; text-transform: uppercase; letter-spacing: 3px; margin: 0 
 .firma-line { border-top: 1px solid #000; padding-top: 8px; font-size: 11px; margin-top: 60px; }
 .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 10px; }
 </style></head><body>
-<div class="header"><h1>CONTRATO DE ${tipoLabel.toUpperCase()}</h1><div class="número">N.o ${c.número}</div></div>
+<div class="header"><h1>CONTRATO DE ${tipoLabel.toUpperCase()}</h1><div class="número">N.o ${c.numero}</div></div>
 ${summary ? `<div class="summary"><strong>RESUMEN:</strong> ${summary}</div>` : ""}
 ${content.split("\n\n").map(p => `<div class="clause">${p}</div>`).join("")}
 <div class="firmas">
@@ -1217,9 +1218,9 @@ ${content.split("\n\n").map(p => `<div class="clause">${p}</div>`).join("")}
   const downloadWord = (c: ContratoAPI) => {
     const { content, summary } = getContractContent(c);
     const tipoLabel = TIPO_LABELS[c.tipo] || c.tipo;
-    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Contrato ${c.número}</title>
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Contrato ${c.numero}</title>
 <style>body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.6;}h1{text-align:center;font-size:14pt;text-transform:uppercase;}p{text-align:justify;margin:8pt 0;}</style></head>
-<body><h1>CONTRATO DE ${tipoLabel.toUpperCase()}</h1><p style="text-align:center;color:#555;">N.o ${c.número}</p>
+<body><h1>CONTRATO DE ${tipoLabel.toUpperCase()}</h1><p style="text-align:center;color:#555;">N.o ${c.numero}</p>
 ${summary ? `<p style="background:#f0f0e0;padding:10px;border-left:4px solid var(--accent);"><b>RESUMEN:</b> ${summary}</p>` : ""}
 ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 <br/><br/><table width="100%"><tr><td width="45%" style="border-top:1px solid #000;text-align:center;padding-top:8px;">PRIMERA PARTE</td><td width="10%"></td><td width="45%" style="border-top:1px solid #000;text-align:center;padding-top:8px;">SEGUNDA PARTE</td></tr></table>
@@ -1227,24 +1228,24 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
     const blob = new Blob(["\ufeff" + html], { type: "application/msword" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `Contrato_${c.número}.doc`; a.click();
+    a.href = url; a.download = `Contrato_${c.numero}.doc`; a.click();
     URL.revokeObjectURL(url);
   };
 
   const downloadTxt = (c: ContratoAPI) => {
     const { content, summary } = getContractContent(c);
     const tipoLabel = TIPO_LABELS[c.tipo] || c.tipo;
-    const text = `CONTRATO DE ${tipoLabel.toUpperCase()}\nN.o ${c.número}\n${"=".repeat(50)}\n\nRESUMEN: ${summary}\n\n${"=".repeat(50)}\n\n${content}\n\n${"=".repeat(50)}\n\n_________________________          _________________________\n    PRIMERA PARTE                      SEGUNDA PARTE\n\nFecha: ${new Date().toLocaleDateString("es-PE")}`;
+    const text = `CONTRATO DE ${tipoLabel.toUpperCase()}\nN.o ${c.numero}\n${"=".repeat(50)}\n\nRESUMEN: ${summary}\n\n${"=".repeat(50)}\n\n${content}\n\n${"=".repeat(50)}\n\n_________________________          _________________________\n    PRIMERA PARTE                      SEGUNDA PARTE\n\nFecha: ${new Date().toLocaleDateString("es-PE")}`;
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `Contrato_${c.número}.txt`; a.click();
+    a.href = url; a.download = `Contrato_${c.numero}.txt`; a.click();
     URL.revokeObjectURL(url);
   };
 
   const copyToClipboard = async (c: ContratoAPI) => {
     const { content, summary } = getContractContent(c);
-    const text = `CONTRATO N.o ${c.número}\n\nRESUMEN: ${summary}\n\n${content}`;
+    const text = `CONTRATO N.o ${c.numero}\n\nRESUMEN: ${summary}\n\n${content}`;
     try { await navigator.clipboard.writeText(text); } catch { /* noop */ }
   };
 
@@ -1425,7 +1426,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <div className="space-y-2">
                       {contratos.filter(c => getEstado(c) === "POR_VENCER").slice(0, 5).map(c => (
                         <div key={c.id} className="flex items-center justify-between text-xs">
-                          <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{c.clienteNombre} — {c.número} — vence {formatDatePeru(c.fechaVencimiento!)}</span>
+                          <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{c.clienteNombre} — {c.numero} — vence {formatDatePeru(c.fechaVencimiento!)}</span>
                           <button onClick={() => { setSelected(c); }} className="px-2 py-1 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] font-bold hover:bg-[var(--data-warning-500)] transition-colors">
                             Ver
                           </button>
@@ -1523,7 +1524,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <div className="p-4 space-y-3">
                             <div className="flex items-start justify-between">
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs text-[var(--text-tertiary)] font-mono">{c.número}</p>
+                                <p className="text-xs text-[var(--text-tertiary)] font-mono">{c.numero}</p>
                                 <p className="text-sm font-bold text-[var(--text-primary)] mt-0.5">{TIPO_LABELS[c.tipo] || c.tipo}</p>
                               </div>
                               <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold shrink-0 ml-2", ESTADO_STYLES[estado])}>
@@ -1573,7 +1574,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             const estado = getEstado(c);
                             return (
                               <tr key={c.id} onClick={() => setSelected(c)} className="border-b border-gray-50 dark:border-white/5 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 cursor-pointer transition-colors">
-                                <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">{c.número}</td>
+                                <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">{c.numero}</td>
                                 <td className="px-4 py-3">
                                   <p className="font-medium text-[var(--text-primary)] truncate">{c.clienteNombre}</p>
                                   <p className="text-xs text-[var(--text-tertiary)]">{c.clienteDocumento}</p>
@@ -2105,7 +2106,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Contrato {selected.número}</CardTitle>
+                    <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Contrato {selected.numero}</CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">{TIPO_LABELS[selected.tipo] || selected.tipo}</p>
                   </div>
                   <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5">
