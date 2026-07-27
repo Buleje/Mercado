@@ -11,10 +11,12 @@
  *       sistema, cada letra se dibujaba como un cuadradito vacío.
  *   3 — las fuentes estándar del PDF (Helvetica y compañía) también se
  *       registran: un recibo que no las incrusta ya no sale en cuadraditos.
+ *   4 — se registran además las de Office (Calibri y compañía) y las que el
+ *       propio PDF declara: un Excel exportado a PDF ya se lee.
  *
  * Client-safe a propósito: lo usan la grilla y el visor.
  */
-export const VERSION_MINIATURA = 3;
+export const VERSION_MINIATURA = 4;
 
 /** URL de la miniatura de un documento, ya versionada. */
 export function urlMiniatura(docId: string): string {

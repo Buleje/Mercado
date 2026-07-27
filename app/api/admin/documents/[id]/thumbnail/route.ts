@@ -65,7 +65,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
       // Sin esto, un PDF que use las fuentes estándar (Helvetica y compañía)
       // se dibuja como una página de cuadraditos: pdf.js se las pide al
       // sistema y el servidor no las tiene.
-      await asegurarFuentesPdf();
+      await asegurarFuentesPdf(buf);
       // `s` = escala del dibujo. La miniatura de la tarjeta se conforma con
       // 1.2 (~700 px de ancho); el visor pide 2 para que al ampliar el texto
       // siga siendo nítido y no un borrón.

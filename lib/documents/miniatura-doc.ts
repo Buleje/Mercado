@@ -98,10 +98,25 @@ export async function fuenteParaMiniaturas(): Promise<string | null> {
  * que el lector la tenga.
  */
 const FUENTES_PDF = [
+  // Las 14 estándar del formato PDF.
   "Helvetica", "Helvetica-Bold", "Helvetica-Oblique", "Helvetica-BoldOblique",
   "Times-Roman", "Times-Bold", "Times-Italic", "Times-BoldItalic",
   "Courier", "Courier-Bold", "Courier-Oblique", "Courier-BoldOblique",
-  "Arial", "Symbol", "ZapfDingbats",
+  "Symbol", "ZapfDingbats",
+  // Las de Office, que son las que aparecen de verdad: un Excel exportado a PDF
+  // pide Calibri, y un Word viejo, Times New Roman. Ninguna se incrusta y
+  // ninguna existe en un servidor Linux — sin esto, la hoja sale en cuadraditos.
+  "Calibri", "Calibri-Bold", "Calibri-Italic", "Calibri Light",
+  "Arial", "Arial-Bold", "Arial-Italic", "Arial Narrow", "Arial Black", "ArialMT", "Arial-BoldMT",
+  "Times New Roman", "TimesNewRoman", "TimesNewRomanPSMT",
+  "Courier New", "CourierNew",
+  "Cambria", "Candara", "Consolas", "Corbel", "Constantia",
+  "Segoe UI", "Tahoma", "Verdana", "Georgia", "Trebuchet MS",
+  "Century Gothic", "Garamond", "Book Antiqua", "Bookman Old Style",
+  "Comic Sans MS", "Impact", "Lucida Sans", "Palatino Linotype", "Rockwell",
+  "MS Sans Serif", "MS Gothic", "Wingdings", "Webdings",
+  // Genéricas: algunos generadores escriben directamente el nombre de familia.
+  "sans-serif", "serif", "monospace", "Sans", "Serif", "Mono",
 ];
 
 let fuentesPdfListas = false;
@@ -115,25 +130,51 @@ let fuentesPdfListas = false;
  * usan las miniaturas bajo cada uno de esos nombres: no es idéntica a la
  * original, pero se lee, que es de lo que se trata.
  */
-export async function asegurarFuentesPdf(): Promise<void> {
-  if (fuentesPdfListas) return;
+export async function asegurarFuentesPdf(datos?: Buffer | Uint8Array): Promise<void> {
   // Fuerza la búsqueda del .ttf (deja `rutaFuente` cargada).
   const familia = await fuenteParaMiniaturas();
   if (!familia || !rutaFuente) return;
 
   const { GlobalFonts } = await import("@napi-rs/canvas");
-  for (const nombre of FUENTES_PDF) {
-    if (GlobalFonts.has(nombre)) continue;
+  const registrar = (nombre: string) => {
+    if (!nombre || GlobalFonts.has(nombre)) return;
     try {
       // Se registra el MISMO archivo bajo cada nombre. `setAlias` no alcanza:
       // apunta al nombre interno de la fuente, no al alias con el que se
       // registró, así que pdf.js seguía sin encontrar "Helvetica".
-      GlobalFonts.registerFromPath(rutaFuente, nombre);
+      GlobalFonts.registerFromPath(rutaFuente!, nombre);
     } catch (err) {
       logger.warn("miniatura.alias_pdf.fallo", { nombre, err: String(err) });
     }
+  };
+
+  if (!fuentesPdfListas) {
+    for (const nombre of FUENTES_PDF) registrar(nombre);
+    fuentesPdfListas = true;
   }
-  fuentesPdfListas = true;
+
+  // Y lo que pida ESTE PDF en particular. Una lista fija nunca alcanza: un
+  // informe hecho con la fuente de la empresa pide un nombre que no está en
+  // ningún catálogo. Los nombres viajan en el propio archivo (`/BaseFont`), así
+  // que se leen de ahí y se registran tal cual — incluido el prefijo de subset
+  // (`ABCDEF+Calibri`), que es como pdf.js los busca.
+  if (datos) {
+    try {
+      const texto = Buffer.from(datos.buffer ?? datos, 0, Math.min(datos.byteLength, 4 * 1024 * 1024)).toString("latin1");
+      const vistos = new Set<string>();
+      for (const m of texto.matchAll(/\/BaseFont\s*\/([A-Za-z0-9+\-,._]{1,64})/g)) {
+        const nombre = m[1];
+        if (vistos.has(nombre)) continue;
+        vistos.add(nombre);
+        registrar(nombre);
+        // "ABCDEF+Calibri-Bold" también se pide como "Calibri-Bold".
+        const sinSubset = nombre.includes("+") ? nombre.split("+").pop()! : "";
+        if (sinSubset) registrar(sinSubset);
+      }
+    } catch (err) {
+      logger.warn("miniatura.fuentes_del_pdf.fallo", { err: String(err) });
+    }
+  }
 }
 
 /** Filas de una planilla, ya como texto. Devuelve `null` si no se pudo leer. */

@@ -42,6 +42,9 @@ const decir = (ok, txt) => { if (!ok) fallas++; console.log(`${ok ? "OK  " : "MA
 
 // ── Subir el PDF ───────────────────────────────────────────────────────────
 const bytes = [...(await readFile("/tmp/contrato-qa.pdf"))];
+// Segundo caso: un PDF que pide Calibri sin incrustarla, como el que exporta
+// Excel. Es el que salía todo en cuadraditos.
+const bytesCalibri = [...(await readFile("/tmp/calibri-qa.pdf"))];
 await page.evaluate(async ({ nombre, datos }) => {
   const input = [...document.querySelectorAll('input[type="file"][multiple]')].find((i) => !i.hasAttribute("webkitdirectory"));
   const dt = new DataTransfer();
@@ -154,6 +157,41 @@ if (zoom.hay) {
   decir(zoom.alcanzable, "el botón de zoom no está tapado por nada");
   decir(zoom.despues > zoom.antes, `el zoom amplía de verdad: ${Math.round(zoom.antes)} → ${Math.round(zoom.despues)} px`);
 }
+
+// ── Un PDF con fuente de Office (Calibri), que es el caso real ────────────
+await page.keyboard.press("Escape");
+await page.waitForTimeout(1200);
+await page.evaluate(async ({ nombre, datos }) => {
+  const input = [...document.querySelectorAll('input[type="file"][multiple]')].find((i) => !i.hasAttribute("webkitdirectory"));
+  const dt = new DataTransfer();
+  dt.items.add(new File([Uint8Array.from(datos)], nombre, { type: "application/pdf" }));
+  input.files = dt.files;
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+}, { nombre: "calibri-qa.pdf", datos: bytesCalibri });
+await page.waitForTimeout(6000);
+
+const docCal = await page.evaluate(async () => {
+  const r = await fetch("/api/admin/documents?limit=200", { credentials: "include" });
+  const { documents = [] } = await r.json();
+  return documents.find((d) => d.name === "calibri-qa.pdf") ?? null;
+});
+if (docCal) {
+  const legibleCal = await page.evaluate(async (id) => {
+    const r = await fetch(`/api/admin/documents/${id}/thumbnail?page=1&r=98`, { credentials: "include" });
+    if (!r.ok) return { estado: r.status, bytes: 0 };
+    const b = await r.blob();
+    return { estado: r.status, bytes: b.size };
+  }, docCal.id);
+  // En cuadraditos pesaba 9761 con este mismo PDF; legible, más del doble.
+  decir(legibleCal.bytes > 15_000, `un PDF con Calibri (como los de Excel) se lee: ${legibleCal.bytes} bytes (en cuadraditos eran ~9.7 KB)`);
+  await page.evaluate(async (id) => {
+    const csrf = document.cookie.match(/csrf-token=([^;]+)/)?.[1] ?? "";
+    await fetch(`/api/admin/documents/${id}?purge=1`, { method: "DELETE", credentials: "include", headers: { "x-csrf-token": csrf } });
+  }, docCal.id);
+} else {
+  decir(false, "no se pudo subir el PDF con Calibri");
+}
+
 
 if (violacionesCsp.length) console.log("\nCSP:\n" + violacionesCsp.join("\n"));
 if (erroresJs.length) console.log("\nJS:\n" + erroresJs.join("\n"));
