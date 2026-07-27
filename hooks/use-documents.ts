@@ -13,8 +13,18 @@ import type {
 } from "@/lib/types/documents";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { comprimirImagen } from "@/lib/documents/compress-image";
+import { motivoRechazo } from "@/lib/documents/upload-limits";
 
 const BASE = "/api/admin/documents";
+
+/** El error crudo de una subida, dicho en castellano y sin códigos HTTP. */
+function motivoSubida(msg: string): string {
+  if (/failed to fetch|network|load failed/i.test(msg)) return "se cortó la conexión";
+  if (msg.includes("413") || msg.includes("too_large")) return "pesa más de lo permitido";
+  if (msg.includes("415") || msg.includes("mime_not_allowed")) return "el drive no acepta ese tipo";
+  if (msg.includes("429")) return "el servidor pidió esperar";
+  return "no se pudo subir";
+}
 
 async function http<T>(url: string, init?: RequestInit): Promise<T> {
   // CSRF: los endpoints de documentos validan x-csrf-token en mutaciones.
@@ -41,7 +51,7 @@ export interface UseDocumentsResult {
   upload: (files: File[], opts?: {
     folderId?: string | null;
     onProgress?: (done: number, total: number) => void;
-    onEstado?: (nombre: string, estado: "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error") => void;
+    onEstado?: (nombre: string, estado: "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error", motivo?: string) => void;
   }) => Promise<DbDocument[]>;
   scan: (file: File, opts?: { folderId?: string | null }) => Promise<{ document: DbDocument; scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null } }>;
   patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; status: string; expiresAt: string | null; allowedRoles: string[]; customerId: string | null; orderId: string | null; supplierId: string | null }>) => Promise<void>;
@@ -127,7 +137,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
         folderId?: string | null;
         onProgress?: (done: number, total: number) => void;
         /** Estado por archivo, con su nombre ORIGINAL (el panel de progreso). */
-        onEstado?: (nombre: string, estado: "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error") => void;
+        onEstado?: (nombre: string, estado: "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error", motivo?: string) => void;
       },
     ) => {
       // Las fotos grandes se comprimen ANTES de subir (varias veces más
@@ -139,6 +149,18 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
         return c;
       }));
 
+      // Lo que el servidor va a rechazar igual (pesado, tipo no admitido) se
+      // descarta ACÁ: mandar 50 MB para recibir un 413 es tirar la subida a la
+      // basura. Se mide DESPUÉS de comprimir: una foto de 12 MB puede entrar.
+      const rechazos = new Map<number, string>();
+      listos.forEach((f, i) => {
+        const motivo = motivoRechazo(f);
+        if (motivo) {
+          rechazos.set(i, motivo);
+          opts?.onEstado?.(files[i].name, "error", motivo);
+        }
+      });
+
       // Pool de 3 subidas en paralelo: subir de a una hacía esperar N viajes
       // completos; más de 3 satura conexiones lentas sin ganar tiempo.
       const out: DbDocument[] = [];
@@ -148,6 +170,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
         for (;;) {
           const idx = siguiente++;
           if (idx >= listos.length) return;
+          if (rechazos.has(idx)) { hechos++; opts?.onProgress?.(hechos, listos.length); continue; }
           const f = listos[idx];
           const nombreOriginal = files[idx].name; // la compresión pudo renombrar
           const fd = new FormData();
@@ -156,13 +179,32 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
             fd.append("folderId", opts.folderId);
           }
           opts?.onEstado?.(nombreOriginal, "subiendo");
-          try {
-            const r = await http<{ document: DbDocument }>(BASE, { method: "POST", body: fd });
-            out.push(r.document);
-            opts?.onEstado?.(nombreOriginal, "listo");
-          } catch (e) {
-            console.error("upload_fail", f.name, e);
-            opts?.onEstado?.(nombreOriginal, "error");
+          // Un corte de red daba el archivo por muerto sin reintentar: subiendo
+          // una carpeta con datos móviles se perdían archivos de a montones y
+          // el usuario sólo veía "error". Se reintenta SOLO el corte de red (un
+          // 413/415/429 fallaría igual); el riesgo es duplicar un archivo que
+          // sí había llegado, y en un drive duplicar se ve y se borra —
+          // perderlo, no.
+          for (let intento = 1; ; intento++) {
+            try {
+              const r = await http<{ document: DbDocument }>(BASE, { method: "POST", body: fd });
+              out.push(r.document);
+              opts?.onEstado?.(nombreOriginal, "listo");
+              break;
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : String(e);
+              const esRed = e instanceof TypeError || /failed to fetch|network|load failed/i.test(msg);
+              if (!esRed || intento >= 3) {
+                // warn y no error: la falla está MANEJADA (el archivo queda
+                // marcado en rojo en el panel). Un console.error acá levanta el
+                // overlay de Next en dev como si nada lo hubiera atrapado.
+                console.warn("upload_fail", f.name, msg);
+                opts?.onEstado?.(nombreOriginal, "error", motivoSubida(msg));
+                break;
+              }
+              await new Promise((r) => setTimeout(r, intento * 1000));
+              opts?.onEstado?.(nombreOriginal, "subiendo");
+            }
           }
           hechos++;
           opts?.onProgress?.(hechos, listos.length);

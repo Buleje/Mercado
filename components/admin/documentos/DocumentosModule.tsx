@@ -230,7 +230,8 @@ export default function DocumentosModule() {
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   /** Estado por archivo de la subida en curso (panel abajo a la derecha). */
-  const [estadoSubida, setEstadoSubida] = useState<Map<string, EstadoArchivo> | null>(null);
+  /** Estado por archivo de la subida en curso, con el motivo si falló. */
+  const [estadoSubida, setEstadoSubida] = useState<Map<string, { estado: EstadoArchivo; motivo?: string }> | null>(null);
   /** Sugerencias IA descartadas por el usuario (persisten por tenant). */
   const [sugDescartadas, setSugDescartadas] = useState<Set<string>>(new Set());
   const [dragOver, setDragOver] = useState(false);
@@ -505,22 +506,29 @@ export default function DocumentosModule() {
       });
       if (aSubir.length === 0) return;
       setUploadProgress({ done: 0, total: aSubir.length });
-      setEstadoSubida(new Map(aSubir.map((f) => [f.name, "en-cola" as EstadoArchivo])));
+      setEstadoSubida(new Map(aSubir.map((f) => [f.name, { estado: "en-cola" as EstadoArchivo }])));
       try {
         await upload(aSubir, {
           folderId: activeFolderId,
           onProgress: (done, total) => setUploadProgress({ done, total }),
-          onEstado: (nombre, estado) =>
+          onEstado: (nombre, estado, motivo) =>
             setEstadoSubida((prev) => {
               const m = new Map(prev ?? []);
-              m.set(nombre, estado);
+              m.set(nombre, { estado, ...(motivo ? { motivo } : {}) });
               return m;
             }),
         });
       } finally {
         setUploadProgress(null);
-        // Dejar ver los ✓ un instante antes de cerrar el panel.
-        setTimeout(() => setEstadoSubida(null), 2500);
+        // Si todo salió bien, el panel se va solo tras un vistazo. Si algo
+        // falló, se QUEDA: un archivo que no subió y desaparece de la pantalla
+        // es un archivo perdido sin que nadie se entere.
+        setTimeout(() => {
+          setEstadoSubida((prev) => {
+            if (prev && [...prev.values()].some((v) => v.estado === "error")) return prev;
+            return null;
+          });
+        }, 2500);
       }
     },
     [upload, activeFolderId, documents]
@@ -1681,11 +1689,16 @@ export default function DocumentosModule() {
       {estadoSubida && estadoSubida.size > 0 && (
         <div className="fixed bottom-24 right-4 z-50 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-xl">
           <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-            Subiendo {[...estadoSubida.values()].filter((e) => e === "listo").length}/{estadoSubida.size}
+            Subiendo {[...estadoSubida.values()].filter((v) => v.estado === "listo").length}/{estadoSubida.size}
+            {[...estadoSubida.values()].some((v) => v.estado === "error") && (
+              <span className="ml-2 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                · {[...estadoSubida.values()].filter((v) => v.estado === "error").length} sin subir
+              </span>
+            )}
           </p>
           <ul className="max-h-48 space-y-1.5 overflow-y-auto">
-            {[...estadoSubida].map(([nombre, estado]) => (
-              <li key={nombre} className="flex items-center gap-2 text-sm">
+            {[...estadoSubida].map(([nombre, { estado, motivo }]) => (
+              <li key={nombre} className="flex flex-wrap items-center gap-x-2 text-sm">
                 {estado === "listo" ? (
                   <Check className="h-4 w-4 shrink-0 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" />
                 ) : estado === "error" ? (
@@ -1696,9 +1709,15 @@ export default function DocumentosModule() {
                   <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--accent)]" />
                 )}
                 <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">{nombre}</span>
-                <span className="shrink-0 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-tertiary)]">
+                <span className={`shrink-0 text-[length:var(--ts-2xs,11px)] font-bold ${estado === "error" ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"}`}>
                   {estado === "comprimiendo" ? "comprimiendo" : estado === "subiendo" ? "subiendo" : estado === "listo" ? "listo" : estado === "error" ? "falló" : "en cola"}
                 </span>
+                {motivo && (
+                  // El motivo es lo unico accionable: "pesa 62 MB" se arregla, "fallo" no.
+                  <span className="w-full pl-6 text-[length:var(--ts-2xs,11px)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                    {motivo}
+                  </span>
+                )}
               </li>
             ))}
           </ul>
