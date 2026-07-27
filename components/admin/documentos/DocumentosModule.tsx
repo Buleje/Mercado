@@ -1499,9 +1499,11 @@ export default function DocumentosModule() {
             </div>
           )}
 
-          {/* Bulk bar */}
+          {/* Bulk bar — `flex-wrap` porque con las acciones de estado ya no
+              entra en una línea y los textos se montaban unos sobre otros
+              ("EliminarCancelar"). Que baje de renglón es preferible. */}
           {selectedIds.size > 0 && (
-            <div className="sticky top-2 z-30 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-primary text-white shadow-lg">
+            <div className="sticky top-2 z-30 flex flex-wrap items-center gap-x-2 gap-y-1.5 px-4 py-2.5 rounded-2xl bg-primary text-white shadow-lg">
               <span className="text-sm font-bold tabular-nums">{selectedIds.size} seleccionado(s)</span>
               <button onClick={selectAll} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold">
                 Seleccionar todos ({displayDocs.length})
@@ -1678,7 +1680,10 @@ export default function DocumentosModule() {
                   onSetStatus={(s) => patch(doc.id, { status: s })}
                   onRemove={async () => {
                     if (!confirm(`¿Eliminar "${doc.name}"?`)) return;
-                    await patch(doc.id, {}); // no-op, but ensures patch path warm
+                    // Acá había un `patch(doc.id, {})` "para calentar el
+                    // camino": un PATCH sin campos que el servidor rechaza, y
+                    // que reventaba el borrado con un error en pantalla antes
+                    // de llegar a borrar nada.
                     await bulk("delete", [doc.id]);
                   }}
                   onStartRename={() => startRename(doc)}
