@@ -127,4 +127,113 @@ const final = await page.evaluate(() => {
 });
 console.log("cierre:\n  " + final.join("\n  "));
 
+// ── Detener a mitad ────────────────────────────────────────────────────────
+// Con 400 archivos, equivocarse de carpeta y no poder frenar es un castigo.
+await page.reload({ waitUntil: "domcontentloaded" });
+await page.waitForTimeout(3500);
+subidas = 0;
+await page.route("**/api/admin/documents/folders/tree", (route) => {
+  const body = JSON.parse(route.request().postData() ?? "{}");
+  const idPorRuta = Object.fromEntries(body.rutas.map((r, i) => [r, `fake-${i}`]));
+  return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ idPorRuta, creadas: 0 }) });
+});
+await page.route("**/api/admin/documents", async (route) => {
+  if (route.request().method() !== "POST") return route.continue();
+  subidas++;
+  await new Promise((r) => setTimeout(r, 60)); // subida lenta, para poder frenar
+  await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ document: { id: `d-${subidas}`, name: "x", size: 1024, tags: [], aiTags: [], allowedRoles: [] } }) });
+});
+await page.route("**/api/admin/documents/existing", (route) =>
+  route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ porCarpeta: {} }) }));
+
+await page.getByRole("button", { name: /Importar carpeta/i }).click();
+await page.waitForTimeout(600);
+await page.evaluate((rs) => {
+  const input = document.querySelector("input[webkitdirectory]");
+  const dt = new DataTransfer();
+  for (const r of rs) {
+    const f = new File([new Uint8Array(1024)], r.split("/").pop(), { type: "application/pdf" });
+    Object.defineProperty(f, "webkitRelativePath", { value: r });
+    dt.items.add(f);
+  }
+  input.files = dt.files;
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+}, ARBOL);
+await page.getByText(/Importar \d+ archivos/).waitFor({ timeout: 30_000 });
+await page.getByRole("button", { name: /^Importar \d+ archivos?$/ }).click();
+await page.waitForTimeout(2500);
+const antesDeFrenar = subidas;
+await page.getByRole("button", { name: "Detener" }).click();
+await page.getByText(/Lo detuviste/).waitFor({ timeout: 30_000 });
+await page.waitForTimeout(1500);
+const despues = subidas;
+await page.screenshot({ path: `${OUT}/16-detenido.png` });
+const cartel = await page.evaluate(() => {
+  const d = document.querySelector('[role="dialog"]');
+  return (d?.innerText ?? "").split("\n").find((l) => l.includes("detuviste")) ?? "(sin cartel)";
+});
+console.log(`\nfrenado: ${antesDeFrenar} subidas al apretar, ${despues} al final (${despues - antesDeFrenar} en vuelo que ya no se pueden cortar)`);
+console.log("cartel:", cartel);
+console.log("¿siguió subiendo después de frenar?", despues - antesDeFrenar > 6 ? "SÍ — mal" : "no (correcto)");
+
+const mensajes = [];
+page.on("console", (m) => mensajes.push(`${m.type()}: ${m.text().slice(0, 160)}`));
+page.on("pageerror", (e) => mensajes.push("pageerror: " + e.message.slice(0, 160)));
+
+// ── Soltar una CARPETA en el drive abre el importador ──────────────────────
+// El navegador no deja fabricar un drop de carpeta real, pero la app sólo usa
+// `webkitGetAsEntry`: se falsifica esa API y se ejercita el camino entero.
+await page.reload({ waitUntil: "domcontentloaded" });
+await page.waitForTimeout(3500);
+
+const abrio = await page.evaluate(() => {
+  const archivo = (nombre) => ({
+    isFile: true, isDirectory: false, name: nombre,
+    file: (cb) => cb(new File([new Uint8Array(2048)], nombre, { type: "application/pdf" })),
+  });
+  const hijos = [archivo("contrato-1.pdf"), archivo("contrato-2.pdf")];
+  const carpeta = {
+    isFile: false, isDirectory: true, name: "Soltada QA",
+    createReader: () => {
+      let dado = false;
+      // OJO: marcar la tanda ANTES de llamar al callback. El lector reentra en
+      // readEntries desde el propio callback; al revés es recursión infinita.
+      return {
+        readEntries: (cb) => {
+          const tanda = dado ? [] : hijos;
+          dado = true;
+          cb(tanda);
+        },
+      };
+    },
+  };
+  const dataTransfer = { items: [{ kind: "file", webkitGetAsEntry: () => carpeta }], files: [], types: ["Files"] };
+  // El onDrop vive en el contenedor del módulo; hay que disparar DENTRO (los
+  // eventos suben, no bajan). Los KPIs siempre están adentro.
+  // El texto del KPI va en minúsculas en el DOM (la mayúscula es CSS).
+  const destino = [...document.querySelectorAll("p, span, div")]
+    .reverse()
+    .find((d) => /total archivos/i.test(d.textContent ?? "") && d.children.length === 0)
+    ?? document.body;
+  const ev = new Event("drop", { bubbles: true, cancelable: true });
+  Object.defineProperty(ev, "dataTransfer", { value: dataTransfer });
+  // ¿Alguien lo escuchó? Un listener propio confirma que el evento llega al
+  // contenedor del módulo (si no, el problema es el destino, no la app).
+  let llego = false;
+  const espia = () => { llego = true; };
+  destino.addEventListener("drop", espia);
+  destino.dispatchEvent(ev);
+  destino.removeEventListener("drop", espia);
+  return { llego, destino: destino.className.slice(0, 40) };
+});
+
+await page.waitForTimeout(2000);
+const trasSoltar = await page.evaluate(() => {
+  const d = document.querySelector('[role="dialog"]');
+  return d ? d.innerText.split("\n").filter(Boolean).slice(0, 8) : ["(no abrió el modal)"];
+});
+await page.screenshot({ path: `${OUT}/17-carpeta-soltada.png` });
+console.log(`\ndrop de carpeta (llegó al DOM: ${abrio.llego}, destino: ${abrio.destino}):\n  ` + trasSoltar.join("\n  "));
+console.log("consola durante el drop:\n  " + mensajes.filter((m) => !m.includes("Failed to load")).slice(-6).join("\n  "));
+
 await browser.close();

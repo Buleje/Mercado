@@ -59,6 +59,8 @@ export interface UseDocumentsResult {
      * llamada por carpeta.
      */
     folderIdDe?: (file: File) => string | null | undefined;
+    /** Para frenar la subida a mitad (400 archivos son varios minutos). */
+    signal?: AbortSignal;
   }) => Promise<DbDocument[]>;
   scan: (file: File, opts?: { folderId?: string | null }) => Promise<{ document: DbDocument; scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null } }>;
   patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; status: string; expiresAt: string | null; allowedRoles: string[]; customerId: string | null; orderId: string | null; supplierId: string | null }>) => Promise<void>;
@@ -151,6 +153,8 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
      * llamada por carpeta.
      */
     folderIdDe?: (file: File) => string | null | undefined;
+    /** Para frenar la subida a mitad (400 archivos son varios minutos). */
+    signal?: AbortSignal;
       },
     ) => {
       // Las fotos grandes se comprimen ANTES de subir (varias veces más
@@ -181,6 +185,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
       let siguiente = 0;
       const subirUno = async () => {
         for (;;) {
+          if (opts?.signal?.aborted) return;
           const idx = siguiente++;
           if (idx >= listos.length) return;
           if (rechazos.has(idx)) { hechos++; opts?.onProgress?.(hechos, listos.length); continue; }
@@ -199,11 +204,13 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
           // perderlo, no.
           for (let intento = 1; ; intento++) {
             try {
-              const r = await http<{ document: DbDocument }>(BASE, { method: "POST", body: fd });
+              const r = await http<{ document: DbDocument }>(BASE, { method: "POST", body: fd, signal: opts?.signal });
               out.push(r.document);
               opts?.onEstado?.(original, "listo");
               break;
             } catch (e) {
+              // Frenado a propósito: el archivo no falló, simplemente no le tocó.
+              if (opts?.signal?.aborted) { opts?.onEstado?.(original, "en-cola"); return; }
               const msg = e instanceof Error ? e.message : String(e);
               const esRed = e instanceof TypeError || /failed to fetch|network|load failed/i.test(msg);
               if (!esRed || intento >= 3) {

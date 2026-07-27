@@ -38,6 +38,7 @@ import { DocumentPreviewModal } from "./DocumentPreviewModal";
 import { TemplateGenerator } from "./TemplateGenerator";
 import { SendWhatsAppModal } from "./SendWhatsAppModal";
 import ImportarCarpetaModal from "./ImportarCarpetaModal";
+import { archivosDesdeDrop } from "@/lib/documentos/importar-arbol";
 import { MoveToFolderModal } from "./MoveToFolderModal";
 import { FolderEditModal } from "./FolderEditModal";
 import { FolderShareModal } from "./FolderShareModal";
@@ -226,6 +227,8 @@ export default function DocumentosModule() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   /** Import masivo de una carpeta con su árbol. */
   const [importandoCarpeta, setImportandoCarpeta] = useState(false);
+  /** Lo que se soltó en el drive cuando era una carpeta: entra derecho al importador. */
+  const [soltado, setSoltado] = useState<{ file: File; ruta: string }[] | null>(null);
   const [preview, setPreview] = useState<DbDocument | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
@@ -538,6 +541,23 @@ export default function DocumentosModule() {
     (e: React.DragEvent) => {
       e.preventDefault();
       setDragOver(false);
+      // Si lo que soltaron es una CARPETA, `files` trae el directorio como si
+      // fuera un archivo (0 bytes, sin tipo) y la subida normal lo tiraba a la
+      // basura. Se detecta con la API de entries y se abre el importador con
+      // el árbol ya cargado — arrastrar la carpeta y listo.
+      //
+      // OJO: `dataTransfer.items` se VACÍA al salir del handler, así que hay
+      // que empezar a leer el árbol acá mismo (archivosDesdeDrop toma las
+      // entries de forma síncrona antes de su primer await); guardar la lista
+      // para leerla después devuelve una lista vacía.
+      const hayCarpeta = Array.from(e.dataTransfer.items).some((i) => i.webkitGetAsEntry?.()?.isDirectory);
+      if (hayCarpeta) {
+        setImportandoCarpeta(true);
+        archivosDesdeDrop(e.dataTransfer.items)
+          .then((conRuta) => setSoltado(conRuta))
+          .catch((err) => console.warn("[drive] no pude leer la carpeta soltada", err));
+        return;
+      }
       if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
     },
     [handleFiles]
@@ -1753,8 +1773,9 @@ export default function DocumentosModule() {
           existentes={folders}
           crearArbol={createFolderTree}
           yaSubidos={existingNames}
+          soltado={soltado}
           subir={upload}
-          onClose={() => setImportandoCarpeta(false)}
+          onClose={() => { setImportandoCarpeta(false); setSoltado(null); }}
           onListo={() => { void refresh(); }}
         />
       )}

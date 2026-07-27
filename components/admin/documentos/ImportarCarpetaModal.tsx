@@ -85,14 +85,20 @@ export interface ImportarCarpetaProps {
     folderIdDe?: (file: File) => string | null | undefined;
     onProgress?: (done: number, total: number) => void;
     onEstado?: (file: File, estado: EstadoArchivo, motivo?: string) => void;
+    signal?: AbortSignal;
   }) => Promise<unknown>;
+  /**
+   * Carpeta que el usuario soltó DIRECTO en el drive: el modal arranca con el
+   * plan ya armado, sin pedirle que la vuelva a elegir.
+   */
+  soltado?: { file: File; ruta: string }[] | null;
   onClose: () => void;
   /** Al terminar, para refrescar la vista. */
   onListo: () => void;
 }
 
 export default function ImportarCarpetaModal({
-  destino, destinoNombre, existentes, crearArbol, yaSubidos, subir, onClose, onListo,
+  destino, destinoNombre, existentes, crearArbol, yaSubidos, subir, soltado, onClose, onListo,
 }: ImportarCarpetaProps) {
   const [fase, setFase] = useState<Fase>("elegir");
   const [plan, setPlan] = useState<PlanImport | null>(null);
@@ -102,6 +108,9 @@ export default function ImportarCarpetaModal({
   const [errores, setErrores] = useState<string[]>([]);
   /** El import ni arrancó (falló el árbol): no hay nada que mostrar como progreso. */
   const [abortado, setAbortado] = useState(false);
+  /** Frenar a mitad: 400 archivos son minutos y a veces te equivocaste de carpeta. */
+  const [detenido, setDetenido] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Progreso fino de la subida: estado por archivo + bytes confirmados + reloj.
@@ -223,6 +232,17 @@ export default function ImportarCarpetaModal({
     setFase(p.archivos.length > 0 ? "revisar" : "elegir");
   }, [existentes]);
 
+  // Si el modal se abrió porque soltaron una carpeta en el drive, el plan se
+  // arma solo: pedirle al usuario que la elija otra vez sería una burla.
+  const yaTomado = useRef(false);
+  useEffect(() => {
+    if (!soltado || yaTomado.current) return;
+    yaTomado.current = true;
+    if (soltado.length === 0) return;
+    const mapa = new Map(soltado.map((x) => [x.file, x.ruta]));
+    tomarArchivos(soltado.map((x) => x.file), (f) => mapa.get(f) ?? f.name);
+  }, [soltado, tomarArchivos]);
+
   const onDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setArrastrando(false);
@@ -239,6 +259,8 @@ export default function ImportarCarpetaModal({
     setFase("subiendo");
     setErrores([]);
     setAbortado(false);
+    setDetenido(false);
+    abortRef.current = new AbortController();
     setEstados({});
     setMotivos({});
     setBytesListos(0);
@@ -278,6 +300,7 @@ export default function ImportarCarpetaModal({
     setPaso(`Subiendo ${plural(aSubir.length, "archivo", "archivos")} en ${plural(plan.carpetas.length, "carpeta", "carpetas")}`);
     try {
       await subir(aSubir.map((a) => a.file), {
+        signal: abortRef.current?.signal,
         folderIdDe: (f) => carpetaDe.get(f) ?? destino,
         onProgress: (done) => setProgreso((p) => ({ ...p, archivos: done })),
         onEstado: (file, estado, motivo) => {
@@ -290,7 +313,7 @@ export default function ImportarCarpetaModal({
         },
       });
     } catch (e) {
-      setErrores((prev) => [...prev, mensajeError(e)]);
+      if (!abortRef.current?.signal.aborted) setErrores((prev) => [...prev, mensajeError(e)]);
     }
 
     setPaso("");
@@ -314,7 +337,9 @@ export default function ImportarCarpetaModal({
   return (
     <AdminModal
       open
-      onClose={fase === "subiendo" ? () => {} : onClose}
+      // Cerrar con la X o con Escape a mitad de la subida la DETIENE en vez de
+      // dejarla corriendo a ciegas contra un modal que ya no existe.
+      onClose={() => { if (fase === "subiendo") { setDetenido(true); abortRef.current?.abort(); } else onClose(); }}
       variant="wide"
       title="Importar carpeta"
       description={destinoNombre ? `Se agrega dentro de ${destinoNombre}` : "Se agrega en la raíz del drive"}
@@ -335,14 +360,26 @@ export default function ImportarCarpetaModal({
                 Elegir otra
               </button>
             )}
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={fase === "subiendo"}
-              className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
-            >
-              {fase === "listo" ? "Cerrar" : "Cancelar"}
-            </button>
+            {fase === "subiendo" ? (
+              // Cancelar deshabilitado dejaba al usuario mirando 400 archivos
+              // que no quería subir. Lo ya subido queda; el resto no arranca.
+              <button
+                type="button"
+                onClick={() => { setDetenido(true); abortRef.current?.abort(); }}
+                disabled={detenido}
+                className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-50 dark:text-[var(--data-error-500)]"
+              >
+                {detenido ? "Deteniendo…" : "Detener"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              >
+                {fase === "listo" ? "Cerrar" : "Cancelar"}
+              </button>
+            )}
             {fase === "revisar" && (
               <button
                 type="button"
@@ -492,7 +529,12 @@ export default function ImportarCarpetaModal({
             {fase === "listo" && !abortado && (
               // Verde sólo si de verdad entró todo; si algo quedó afuera, el
               // cartel lo dice en vez de festejar por los que sí subieron.
-              fallados === 0 ? (
+              detenido ? (
+                <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)]">
+                  <AlertCircle className="h-4 w-4 shrink-0" /> Lo detuviste: subieron {subidosOk} de {total}.
+                  Los que ya están quedan en el drive; reimportá la carpeta cuando quieras seguir.
+                </p>
+              ) : fallados === 0 ? (
                 <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] px-3 py-2 text-sm font-bold text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]">
                   <Check className="h-4 w-4 shrink-0" /> {plural(subidosOk, "archivo subido", "archivos subidos")}
                   {aCrear > 0 && ` · ${plural(aCrear, "carpeta nueva", "carpetas nuevas")}`}
