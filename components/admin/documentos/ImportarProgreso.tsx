@@ -172,6 +172,11 @@ export default function ImportarProgreso({
             <li
               key={a.ruta}
               ref={esActivo ? activoRef : undefined}
+              // content-visibility: el navegador se saltea el layout de las
+              // filas fuera de pantalla. Con 400 archivos, pintarlas todas
+              // trababa el modal en cada tick del progreso; el alto declarado
+              // mantiene la barra de scroll honesta.
+              style={{ contentVisibility: "auto", containIntrinsicSize: "0 28px" }}
               className={`flex items-center gap-2 rounded-lg px-2 py-1 ${
                 estado === "subiendo" || estado === "comprimiendo" ? "bg-[var(--surface-raised)]" : ""
               }`}

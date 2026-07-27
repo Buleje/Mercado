@@ -173,6 +173,31 @@ export function planReuso(
   return reuso;
 }
 
+/**
+ * Cuántas rutas acepta el endpoint del árbol por llamada. Un año de contratos
+ * puede tener más carpetas que eso, así que el cliente parte en lotes.
+ */
+export const CARPETAS_POR_LLAMADA = 400;
+
+/**
+ * Cuántos archivos se pueden subir de una sentada (preset DRIVE del rate limit:
+ * 400 cada 15 min, y cada archivo es un request). Pasado ese número el servidor
+ * empieza a devolver 429, así que conviene avisar ANTES y partir en tandas.
+ */
+export const ARCHIVOS_POR_TANDA = 400;
+
+/**
+ * Parte una lista en lotes conservando el orden. Para el árbol eso alcanza:
+ * como viene en profundidad, el padre siempre cae en el mismo lote que sus
+ * hijos o en uno anterior — nunca después.
+ */
+export function enLotes<T>(items: T[], tamano: number): T[][] {
+  if (items.length <= tamano) return items.length > 0 ? [items] : [];
+  const lotes: T[][] = [];
+  for (let i = 0; i < items.length; i += tamano) lotes.push(items.slice(i, i + tamano));
+  return lotes;
+}
+
 /** Tamaño legible para el resumen del plan. */
 export function bytesLegibles(n: number): string {
   if (n < 1024) return `${n} B`;

@@ -19,7 +19,7 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import {
-  archivosDesdeDrop, bytesLegibles, planificarImport, planReuso,
+  archivosDesdeDrop, bytesLegibles, planificarImport, planReuso, ARCHIVOS_POR_TANDA,
   type ArchivoPlan, type CarpetaExistente, type PlanImport,
 } from "@/lib/documentos/importar-arbol";
 import ImportarProgreso, { type EstadoArchivo } from "./ImportarProgreso";
@@ -81,8 +81,10 @@ export interface ImportarCarpetaProps {
    */
   subir: (files: File[], opts?: {
     folderId?: string | null;
+    /** Carpeta por archivo: una sola tanda para todo el import. */
+    folderIdDe?: (file: File) => string | null | undefined;
     onProgress?: (done: number, total: number) => void;
-    onEstado?: (nombre: string, estado: EstadoArchivo, motivo?: string) => void;
+    onEstado?: (file: File, estado: EstadoArchivo, motivo?: string) => void;
   }) => Promise<unknown>;
   onClose: () => void;
   /** Al terminar, para refrescar la vista. */
@@ -170,11 +172,18 @@ export default function ImportarCarpetaModal({
     return () => { vigente = false; };
   }, [plan, reuso, destino, yaSubidos]);
 
-  /** Lo que realmente se va a subir. */
-  const aSubir = useMemo(
+  /**
+   * Lo que realmente se va a subir EN ESTA TANDA. El servidor acepta 400
+   * archivos cada 15 minutos (preset DRIVE): mandar 900 no los sube más
+   * rápido, los últimos 500 rebotan con 429. Se sube el tope y se avisa que
+   * hay que volver — la segunda vuelta omite sola lo que ya está.
+   */
+  const pendientes = useMemo(
     () => (plan?.archivos ?? []).filter((a) => !duplicados.has(a.file)),
     [plan, duplicados],
   );
+  const aSubir = useMemo(() => pendientes.slice(0, ARCHIVOS_POR_TANDA), [pendientes]);
+  const paraLaProxima = pendientes.length - aSubir.length;
   const total = aSubir.length;
   const pesoASubir = useMemo(() => aSubir.reduce((s, a) => s + a.file.size, 0), [aSubir]);
 
@@ -258,40 +267,30 @@ export default function ImportarCarpetaModal({
       }
     }
 
-    // 2 · Archivos agrupados por carpeta: una tanda por carpeta aprovecha el
-    //     pool de subida sin mezclar destinos. Los que ya estaban arriba
-    //     (mismo nombre y peso) quedaron fuera de `aSubir`.
-    const porCarpeta = new Map<string, File[]>();
-    for (const a of aSubir) {
-      const lista = porCarpeta.get(a.carpeta) ?? [];
-      lista.push(a.file);
-      porCarpeta.set(a.carpeta, lista);
-    }
+    // 2 · Todos los archivos en UNA tanda, con la carpeta resuelta por archivo.
+    //     Agrupar por carpeta parecía prolijo pero era una llamada por carpeta:
+    //     400 expedientes de 1 archivo = 400 tandas secuenciales, el pool de 3
+    //     nunca se usaba y cada tanda refrescaba el listado. Medido: ~4 min
+    //     contra ~40 s.
+    const rutaDe = new Map(aSubir.map((a) => [a.file, a.carpeta ? `${a.carpeta}/${a.file.name}` : a.file.name]));
+    const carpetaDe = new Map(aSubir.map((a) => [a.file, idPorRuta.get(a.carpeta) ?? destino]));
 
-    let subidos = 0;
-    for (const [ruta, files] of porCarpeta) {
-      setPaso(ruta ? `Subiendo en ${ruta}` : "Subiendo en la raíz");
-      // El pool reporta por NOMBRE de archivo; dentro de una carpeta el nombre
-      // es único, así que la clave completa se arma con la carpeta de la tanda.
-      const pesoDe = new Map(files.map((f) => [f.name, f.size]));
-      try {
-        await subir(files, {
-          folderId: idPorRuta.get(ruta) ?? destino,
-          onProgress: (done) => setProgreso((p) => ({ ...p, archivos: subidos + done })),
-          onEstado: (nombre, estado, motivo) => {
-            const clave = ruta ? `${ruta}/${nombre}` : nombre;
-            setEstados((prev) => ({ ...prev, [clave]: estado }));
-            if (motivo) setMotivos((prev) => ({ ...prev, [clave]: motivo }));
-            // Los bytes se cuentan cuando el archivo termina: es el único
-            // momento en que el navegador sabe que de verdad llegó.
-            if (estado === "listo") setBytesListos((b) => b + (pesoDe.get(nombre) ?? 0));
-          },
-        });
-      } catch (e) {
-        setErrores((prev) => [...prev, `${ruta || "raíz"}: ${mensajeError(e)}`]);
-      }
-      subidos += files.length;
-      setProgreso((p) => ({ ...p, archivos: subidos }));
+    setPaso(`Subiendo ${plural(aSubir.length, "archivo", "archivos")} en ${plural(plan.carpetas.length, "carpeta", "carpetas")}`);
+    try {
+      await subir(aSubir.map((a) => a.file), {
+        folderIdDe: (f) => carpetaDe.get(f) ?? destino,
+        onProgress: (done) => setProgreso((p) => ({ ...p, archivos: done })),
+        onEstado: (file, estado, motivo) => {
+          const clave = rutaDe.get(file) ?? file.name;
+          setEstados((prev) => ({ ...prev, [clave]: estado }));
+          if (motivo) setMotivos((prev) => ({ ...prev, [clave]: motivo }));
+          // Los bytes se cuentan cuando el archivo termina: es el único
+          // momento en que el navegador sabe que de verdad llegó.
+          if (estado === "listo") setBytesListos((b) => b + file.size);
+        },
+      });
+    } catch (e) {
+      setErrores((prev) => [...prev, mensajeError(e)]);
     }
 
     setPaso("");
@@ -308,8 +307,9 @@ export default function ImportarCarpetaModal({
     ];
     if (reuso.size > 0) partes.splice(1, 0, `${reuso.size} que ya existía${reuso.size === 1 ? "" : "n"}`);
     if (duplicados.size > 0) partes.push(`${duplicados.size} ya subido${duplicados.size === 1 ? "" : "s"}`);
+    if (paraLaProxima > 0) partes.push(`${paraLaProxima} para la próxima tanda`);
     return partes.join(" · ");
-  }, [plan, aCrear, reuso.size, total, pesoASubir, duplicados.size]);
+  }, [plan, aCrear, reuso.size, total, pesoASubir, duplicados.size, paraLaProxima]);
 
   return (
     <AdminModal
@@ -439,6 +439,17 @@ export default function ImportarCarpetaModal({
               </ul>
             </div>
 
+            {paraLaProxima > 0 && (
+              <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-3 py-2 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>
+                  Son {pendientes.length} archivos y el servidor acepta {ARCHIVOS_POR_TANDA} cada 15 minutos.
+                  Ahora suben los primeros {ARCHIVOS_POR_TANDA}; dentro de un rato volvé a importar
+                  la misma carpeta y sigue por {paraLaProxima === 1 ? "el que falta" : `los ${paraLaProxima} que faltan`}.
+                </span>
+              </p>
+            )}
+
             {duplicados.size > 0 && (
               <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-secondary)]">
                 <Check className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" />
@@ -486,6 +497,7 @@ export default function ImportarCarpetaModal({
                   <Check className="h-4 w-4 shrink-0" /> {plural(subidosOk, "archivo subido", "archivos subidos")}
                   {aCrear > 0 && ` · ${plural(aCrear, "carpeta nueva", "carpetas nuevas")}`}
                   {duplicados.size > 0 && ` · ${duplicados.size} que ya estaban`}.
+                  {paraLaProxima > 0 && ` Quedan ${paraLaProxima} para la próxima tanda: reimportá la carpeta en un rato.`}
                 </p>
               ) : (
                 <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-3 py-2 text-sm font-bold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">

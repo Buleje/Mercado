@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  planificarImport, planReuso, limpiarNombre, bytesLegibles, PROFUNDIDAD_MAX,
+  planificarImport, planReuso, limpiarNombre, bytesLegibles, enLotes, PROFUNDIDAD_MAX,
 } from "@/lib/documentos/importar-arbol";
 
 /** File de mentira con la ruta que da el navegador al elegir una carpeta. */
@@ -172,6 +172,28 @@ describe("limpiarNombre", () => {
   });
   it("corta los nombres kilométricos", () => {
     expect(limpiarNombre("x".repeat(200))).toHaveLength(120);
+  });
+});
+
+describe("enLotes", () => {
+  it("no parte nada si entra en un solo viaje", () => {
+    expect(enLotes([1, 2, 3], 400)).toEqual([[1, 2, 3]]);
+  });
+
+  it("parte conservando el orden — el padre nunca cae después del hijo", () => {
+    const rutas = ["A", "A/1", "A/2", "B", "B/1"];
+    const lotes = enLotes(rutas, 2);
+    expect(lotes).toEqual([["A", "A/1"], ["A/2", "B"], ["B/1"]]);
+    // Reconstruido, es exactamente la lista original.
+    expect(lotes.flat()).toEqual(rutas);
+  });
+
+  it("una lista vacía no genera llamadas", () => {
+    expect(enLotes([], 400)).toEqual([]);
+  });
+
+  it("un múltiplo exacto no deja un lote vacío al final", () => {
+    expect(enLotes([1, 2, 3, 4], 2)).toHaveLength(2);
   });
 });
 

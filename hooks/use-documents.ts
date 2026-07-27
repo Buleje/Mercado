@@ -14,6 +14,7 @@ import type {
 import { csrfHeaders } from "@/lib/csrf-client";
 import { comprimirImagen } from "@/lib/documents/compress-image";
 import { motivoRechazo } from "@/lib/documents/upload-limits";
+import { enLotes, CARPETAS_POR_LLAMADA } from "@/lib/documentos/importar-arbol";
 
 const BASE = "/api/admin/documents";
 
@@ -51,7 +52,13 @@ export interface UseDocumentsResult {
   upload: (files: File[], opts?: {
     folderId?: string | null;
     onProgress?: (done: number, total: number) => void;
-    onEstado?: (nombre: string, estado: "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error", motivo?: string) => void;
+    onEstado?: (file: File, estado: "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error", motivo?: string) => void;
+    /**
+     * Carpeta POR archivo (el importador manda todo junto). Si está, gana sobre
+     * `folderId`: permite una sola tanda con el pool aprovechado en vez de una
+     * llamada por carpeta.
+     */
+    folderIdDe?: (file: File) => string | null | undefined;
   }) => Promise<DbDocument[]>;
   scan: (file: File, opts?: { folderId?: string | null }) => Promise<{ document: DbDocument; scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null } }>;
   patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; status: string; expiresAt: string | null; allowedRoles: string[]; customerId: string | null; orderId: string | null; supplierId: string | null }>) => Promise<void>;
@@ -137,15 +144,21 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
         folderId?: string | null;
         onProgress?: (done: number, total: number) => void;
         /** Estado por archivo, con su nombre ORIGINAL (el panel de progreso). */
-        onEstado?: (nombre: string, estado: "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error", motivo?: string) => void;
+        onEstado?: (file: File, estado: "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error", motivo?: string) => void;
+    /**
+     * Carpeta POR archivo (el importador manda todo junto). Si está, gana sobre
+     * `folderId`: permite una sola tanda con el pool aprovechado en vez de una
+     * llamada por carpeta.
+     */
+    folderIdDe?: (file: File) => string | null | undefined;
       },
     ) => {
       // Las fotos grandes se comprimen ANTES de subir (varias veces más
       // rápido con datos móviles); lo que no es imagen sale intacto.
       const listos = await Promise.all(files.map(async (f) => {
-        if (f.type.startsWith("image/")) opts?.onEstado?.(f.name, "comprimiendo");
+        if (f.type.startsWith("image/")) opts?.onEstado?.(f, "comprimiendo");
         const c = await comprimirImagen(f);
-        opts?.onEstado?.(f.name, "en-cola");
+        opts?.onEstado?.(f, "en-cola");
         return c;
       }));
 
@@ -157,7 +170,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
         const motivo = motivoRechazo(f);
         if (motivo) {
           rechazos.set(i, motivo);
-          opts?.onEstado?.(files[i].name, "error", motivo);
+          opts?.onEstado?.(files[i], "error", motivo);
         }
       });
 
@@ -172,13 +185,12 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
           if (idx >= listos.length) return;
           if (rechazos.has(idx)) { hechos++; opts?.onProgress?.(hechos, listos.length); continue; }
           const f = listos[idx];
-          const nombreOriginal = files[idx].name; // la compresión pudo renombrar
+          const original = files[idx]; // la compresión pudo renombrar
           const fd = new FormData();
           fd.append("file", f);
-          if (opts?.folderId !== undefined && opts.folderId !== null) {
-            fd.append("folderId", opts.folderId);
-          }
-          opts?.onEstado?.(nombreOriginal, "subiendo");
+          const carpeta = opts?.folderIdDe ? opts.folderIdDe(original) : opts?.folderId;
+          if (carpeta !== undefined && carpeta !== null) fd.append("folderId", carpeta);
+          opts?.onEstado?.(original, "subiendo");
           // Un corte de red daba el archivo por muerto sin reintentar: subiendo
           // una carpeta con datos móviles se perdían archivos de a montones y
           // el usuario sólo veía "error". Se reintenta SOLO el corte de red (un
@@ -189,7 +201,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
             try {
               const r = await http<{ document: DbDocument }>(BASE, { method: "POST", body: fd });
               out.push(r.document);
-              opts?.onEstado?.(nombreOriginal, "listo");
+              opts?.onEstado?.(original, "listo");
               break;
             } catch (e) {
               const msg = e instanceof Error ? e.message : String(e);
@@ -199,11 +211,11 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
                 // marcado en rojo en el panel). Un console.error acá levanta el
                 // overlay de Next en dev como si nada lo hubiera atrapado.
                 console.warn("upload_fail", f.name, msg);
-                opts?.onEstado?.(nombreOriginal, "error", motivoSubida(msg));
+                opts?.onEstado?.(original, "error", motivoSubida(msg));
                 break;
               }
               await new Promise((r) => setTimeout(r, intento * 1000));
-              opts?.onEstado?.(nombreOriginal, "subiendo");
+              opts?.onEstado?.(original, "subiendo");
             }
           }
           hechos++;
@@ -284,12 +296,21 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
    * chocaba con el rate limit y dejaba el árbol a medio crear (ADR-306).
    */
   const createFolderTree = useCallback(async (parentId: string | null, rutas: string[]) => {
-    const r = await http<{ idPorRuta: Record<string, string>; creadas: number }>(`${BASE}/folders/tree`, {
-      method: "POST",
-      body: JSON.stringify({ parentId, rutas }),
-    });
+    // El endpoint acepta 400 rutas por llamada; un archivo de un año entero
+    // puede tener más carpetas. Como el plan viene en profundidad, partirlo en
+    // lotes ordenados es seguro: el padre nunca queda para después del hijo.
+    const idPorRuta: Record<string, string> = {};
+    let creadas = 0;
+    for (const lote of enLotes(rutas, CARPETAS_POR_LLAMADA)) {
+      const r = await http<{ idPorRuta: Record<string, string>; creadas: number }>(`${BASE}/folders/tree`, {
+        method: "POST",
+        body: JSON.stringify({ parentId, rutas: lote }),
+      });
+      Object.assign(idPorRuta, r.idPorRuta);
+      creadas += r.creadas;
+    }
     await fetchAll();
-    return r;
+    return { idPorRuta, creadas };
   }, [fetchAll]);
 
   /**

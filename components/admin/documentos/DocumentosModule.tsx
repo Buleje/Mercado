@@ -511,10 +511,10 @@ export default function DocumentosModule() {
         await upload(aSubir, {
           folderId: activeFolderId,
           onProgress: (done, total) => setUploadProgress({ done, total }),
-          onEstado: (nombre, estado, motivo) =>
+          onEstado: (file, estado, motivo) =>
             setEstadoSubida((prev) => {
               const m = new Map(prev ?? []);
-              m.set(nombre, { estado, ...(motivo ? { motivo } : {}) });
+              m.set(file.name, { estado, ...(motivo ? { motivo } : {}) });
               return m;
             }),
         });
