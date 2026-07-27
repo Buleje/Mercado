@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { ESTADOS_DOC } from "@/lib/documents/estados-doc";
 
 
 const Body = z.discriminatedUnion("action", [
@@ -26,6 +27,13 @@ const Body = z.discriminatedUnion("action", [
     action: z.literal("favorite"),
     ids: z.array(z.string()).min(1).max(200),
     favorite: z.boolean(),
+  }),
+  // Marcar varios de una: seleccionar diez boletas y ponerlas todas en
+  // "aprobado" era, hasta ahora, abrir el menú de estado diez veces.
+  z.object({
+    action: z.literal("status"),
+    ids: z.array(z.string()).min(1).max(200),
+    status: z.enum(ESTADOS_DOC),
   }),
 ]);
 
@@ -64,6 +72,13 @@ export async function POST(req: NextRequest) {
         }
         break;
       }
+      case "status": {
+        for (const id of data.ids) {
+          const r = await DocumentsDB.update(auth.tenantId, id, { status: data.status });
+          if (r) affected++;
+        }
+        break;
+      }
     }
 
     // Audit: una entrada por id afectado (siempre que tengamos un id válido)
@@ -71,7 +86,7 @@ export async function POST(req: NextRequest) {
       DocumentsDB.log(auth.tenantId, {
         documentId: id,
         actorId: auth.username,
-        action: data.action === "delete" ? "delete" : data.action === "move" ? "move" : data.action === "tag" ? "tag" : "tag",
+        action: data.action === "delete" ? "delete" : data.action === "move" ? "move" : "tag",
         metadata: { bulk: true, ...data },
       }).catch((err) => logger.warn("documents.audit.fail", { err: String(err) }));
     }

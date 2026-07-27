@@ -36,6 +36,9 @@ import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds
 import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
 import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import { precargarVisor } from "./precargar-visores";
+import {
+  META_ESTADO, ORDEN_ESTADOS, estadoDe as estadoDeDoc, type EstadoDoc, type TonoEstado,
+} from "@/lib/documents/estados-doc";
 import { DocumentPreviewModal } from "./DocumentPreviewModal";
 import { TemplateGenerator } from "./TemplateGenerator";
 import { SendWhatsAppModal } from "./SendWhatsAppModal";
@@ -637,6 +640,12 @@ export default function DocumentosModule() {
   const bulkMove = async (folderId: string | null) => {
     if (selectedIds.size === 0) return;
     await bulk("move", Array.from(selectedIds), { folderId });
+    clearSelection();
+  };
+  /** Marcar todo lo seleccionado con el mismo estado (revisar una pila de una). */
+  const bulkStatus = async (status: EstadoDoc) => {
+    if (selectedIds.size === 0) return;
+    await bulk("status", Array.from(selectedIds), { status });
     clearSelection();
   };
   const bulkTag = async (tag: string) => {
@@ -1498,6 +1507,39 @@ export default function DocumentosModule() {
               <button onClick={() => bulkFavorite(true)} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1">
                 <Star className="h-3 w-3" /> Favorito
               </button>
+
+              {/* Los dos veredictos de todos los días, a un clic. El resto de
+                  estados vive en el menú de al lado. */}
+              <span className="ml-1 h-5 w-px bg-white/30" aria-hidden />
+              <button
+                onClick={() => bulkStatus("approved")}
+                className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1.5"
+                title="Marcar como aprobado: está bien, se puede usar"
+              >
+                <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)] ring-1 ring-white/70" aria-hidden />
+                Está bien
+              </button>
+              <button
+                onClick={() => bulkStatus("observado")}
+                className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1.5"
+                title="Marcar para corregir: tiene algo mal"
+              >
+                <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-500)] ring-1 ring-white/70" aria-hidden />
+                Hay que corregir
+              </button>
+              <select
+                onChange={(e) => { const v = e.target.value; if (v) bulkStatus(v as EstadoDoc); e.currentTarget.selectedIndex = 0; }}
+                defaultValue=""
+                className="text-xs px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white font-bold outline-none cursor-pointer [&>option]:text-[var(--text-primary)]"
+                title="Marcar con otro estado"
+                aria-label="Marcar con otro estado"
+              >
+                <option value="" disabled>Otro estado…</option>
+                {ORDEN_ESTADOS.map((e) => (
+                  <option key={e} value={e}>{META_ESTADO[e].label}</option>
+                ))}
+                <option value="none">Quitar el estado</option>
+              </select>
               <select
                 onChange={(e) => { const v = e.target.value; if (v) { bulkMove(v === "__none__" ? null : v); } e.currentTarget.selectedIndex = 0; }}
                 defaultValue=""
@@ -1993,13 +2035,45 @@ function ExpiryBadge({ expiresAt, className }: { expiresAt: string | null; class
 }
 
 // ── Estados / workflow del documento ──
-const STATUS_META: Record<string, { label: string; dot: string; text: string; bg: string }> = {
-  draft: { label: "Borrador", dot: "bg-[var(--text-tertiary)]", text: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
-  review: { label: "En revisión", dot: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15" },
-  approved: { label: "Aprobado", dot: "bg-[var(--data-success-500)]", text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/15" },
-  archived: { label: "Archivado", dot: "bg-[var(--data-info-500)]", text: "text-[var(--data-info-700)] dark:text-[var(--data-info-500)]", bg: "bg-[var(--data-info-100)] dark:bg-[var(--data-info-500)]/15" },
+/**
+ * Cómo se pinta cada tono de estado. La lista de estados y sus etiquetas viven
+ * en `lib/documents/estados-doc` (la comparten los endpoints); acá sólo el
+ * vestuario: el punto del chip, el texto, el fondo y —lo que hace que se vean
+ * de lejos— el borde y la franja de la tarjeta.
+ */
+const TONO_CLASES: Record<TonoEstado, { dot: string; text: string; bg: string; borde: string; franja: string }> = {
+  neutro: {
+    dot: "bg-[var(--text-tertiary)]", text: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]",
+    borde: "border-[var(--rule-strong)]", franja: "bg-[var(--text-tertiary)]",
+  },
+  aviso: {
+    dot: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15",
+    borde: "border-[var(--data-warning-500)]", franja: "bg-[var(--data-warning-500)]",
+  },
+  alerta: {
+    dot: "bg-[var(--data-error-500)]", text: "text-[var(--data-error)]", bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15",
+    borde: "border-[var(--data-error-500)]", franja: "bg-[var(--data-error-500)]",
+  },
+  ok: {
+    dot: "bg-[var(--data-success-500)]", text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/15",
+    borde: "border-[var(--data-success-500)]", franja: "bg-[var(--data-success-500)]",
+  },
+  info: {
+    dot: "bg-[var(--data-info-500)]", text: "text-[var(--data-info-700)] dark:text-[var(--data-info-500)]", bg: "bg-[var(--data-info-100)] dark:bg-[var(--data-info-500)]/15",
+    borde: "border-[var(--data-info-500)]", franja: "bg-[var(--data-info-500)]",
+  },
 };
-const STATUS_ORDER = ["draft", "review", "approved", "archived"];
+
+/** Clases + etiqueta de un estado, en un solo lugar. */
+function pinta(estado: string) {
+  const e = estadoDeDoc(estado);
+  return { ...TONO_CLASES[META_ESTADO[e].tono], label: META_ESTADO[e].label, ayuda: META_ESTADO[e].ayuda, estado: e };
+}
+
+const STATUS_META: Record<string, { label: string; dot: string; text: string; bg: string }> = Object.fromEntries(
+  ORDEN_ESTADOS.map((e) => [e, pinta(e)]),
+);
+const STATUS_ORDER: string[] = ORDEN_ESTADOS;
 
 // Chip de estado que además abre un dropdown (fixed) para cambiarlo. "none" = sin estado.
 function StatusControl({ status, onChange }: { status: string; onChange: (s: string) => void }) {
@@ -2102,6 +2176,8 @@ function DocCard({
   dragging: boolean;
 }) {
   const { Icon, tint, bg } = getFileIcon(doc.mimeType, doc.name);
+  // `none` no pinta nada: si todo tuviera color, el color no diría nada.
+  const marca = doc.status && doc.status !== "none" ? pinta(doc.status) : null;
   return (
     <div
       draggable
@@ -2112,9 +2188,19 @@ function DocCard({
       onMouseEnter={() => precargarVisor(familiaDe(doc.name, doc.mimeType))}
       className={cn(
         "group relative overflow-hidden rounded-2xl border-2 bg-white transition-all cursor-grab active:cursor-grabbing",
-        selected ? "border-primary shadow-md" : "border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md",
+        // El estado manda sobre el borde: es lo que permite barrer la carpeta
+        // con la vista y ver cuáles hay que corregir sin leer un solo nombre.
+        // La selección gana, porque es lo que estás haciendo en ese momento.
+        selected ? "border-primary shadow-md"
+          : marca ? cn(marca.borde, "hover:shadow-md")
+          : "border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md",
         dragging && "opacity-40"
       )}>
+      {/* Franja del estado: el color se ve incluso con la tarjeta llena de texto. */}
+      {marca && !selected && (
+        <span aria-hidden className={cn("absolute inset-x-0 top-0 z-10 h-1.5", marca.franja)} />
+      )}
+
       {/* Checkbox */}
       <input
         type="checkbox"

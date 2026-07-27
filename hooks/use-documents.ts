@@ -68,7 +68,7 @@ export interface UseDocumentsResult {
   remove: (id: string) => Promise<void>;
   restore: (id: string) => Promise<void>;
   purge: (id: string) => Promise<void>;
-  bulk: (action: "delete" | "move" | "tag" | "favorite", ids: string[], extra?: Record<string, unknown>) => Promise<number>;
+  bulk: (action: "delete" | "move" | "tag" | "favorite" | "status", ids: string[], extra?: Record<string, unknown>) => Promise<number>;
   createFolder: (input: { name: string; parentId?: string | null; color?: string; icon?: string }) => Promise<DbDocumentFolder>;
   /** Árbol completo en una llamada (importador de carpetas): ruta → id. */
   createFolderTree: (parentId: string | null, rutas: string[]) => Promise<{ idPorRuta: Record<string, string>; creadas: number }>;
@@ -275,7 +275,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
 
   const bulk = useCallback(
     async (
-      action: "delete" | "move" | "tag" | "favorite",
+      action: "delete" | "move" | "tag" | "favorite" | "status",
       ids: string[],
       extra: Record<string, unknown> = {}
     ): Promise<number> => {

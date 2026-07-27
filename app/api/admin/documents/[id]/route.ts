@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { getSignedUrl, deleteFromStorage } from "@/lib/documents/storage";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { ESTADOS_DOC } from "@/lib/documents/estados-doc";
 
 
 const PatchBody = z.object({
@@ -14,7 +15,7 @@ const PatchBody = z.object({
   category: z.string().max(40).optional(),
   tags: z.array(z.string().min(1).max(40)).max(20).optional(),
   favorite: z.boolean().optional(),
-  status: z.enum(["none", "draft", "review", "approved", "archived"]).optional(),
+  status: z.enum(ESTADOS_DOC).optional(),
   expiresAt: z.string().nullable().optional(),
   // Permisos por documento (roles admin que pueden verlo; vacío = todos).
   allowedRoles: z.array(z.string().max(30)).max(10).optional(),
