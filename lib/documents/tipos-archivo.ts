@@ -178,6 +178,19 @@ export function etiquetaTipo(nombre: string, mime?: string | null): string {
   return ext ? `${ETIQUETA[fam]} · ${ext.toUpperCase()}` : ETIQUETA[fam];
 }
 
+/**
+ * Imágenes que el navegador NO dibuja pero el servidor sí puede convertir a
+ * PNG (`/preview-image`). El SVG entra acá aunque el navegador lo dibuje: tal
+ * cual ejecuta scripts, rasterizado no.
+ */
+const CONVERTIBLES = new Set(["heic", "heif", "tif", "tiff", "svg", "avif"]);
+
+export function esImagenConvertible(nombre: string, mime?: string | null): boolean {
+  const m = resolverMime(nombre, mime).toLowerCase();
+  return CONVERTIBLES.has(extensionDe(nombre))
+    || ["image/heic", "image/heif", "image/tiff", "image/svg+xml", "image/avif"].includes(m);
+}
+
 /** ¿El navegador puede dibujarla en un `<img>`? (HEIC y TIFF no, por ejemplo.) */
 export function esImagenRenderizable(nombre: string, mime?: string | null): boolean {
   const m = resolverMime(nombre, mime).toLowerCase();

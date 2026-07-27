@@ -40,7 +40,7 @@ import { SendWhatsAppModal } from "./SendWhatsAppModal";
 import ImportarCarpetaModal from "./ImportarCarpetaModal";
 import { archivosDesdeDrop } from "@/lib/documentos/importar-arbol";
 import { useImportCarpeta } from "@/contexts/import-carpeta-context";
-import { familiaDe, etiquetaTipo, esImagenRenderizable, type FamiliaArchivo } from "@/lib/documents/tipos-archivo";
+import { familiaDe, etiquetaTipo, esImagenRenderizable, esImagenConvertible, type FamiliaArchivo } from "@/lib/documents/tipos-archivo";
 import { MoveToFolderModal } from "./MoveToFolderModal";
 import { FolderEditModal } from "./FolderEditModal";
 import { FolderShareModal } from "./FolderShareModal";
@@ -114,13 +114,18 @@ function DocThumb({ doc, Icon, tint, bg }: { doc: DbDocument; Icon: typeof FileI
   // HEIC, TIFF o PSD son imágenes que el navegador NO dibuja: pedirlas en un
   // <img> daba un roto y recién ahí caía al ícono. Se filtra antes.
   const isImage = esImagenRenderizable(doc.name, doc.mimeType);
+  // HEIC, TIFF y SVG los convierte el servidor a PNG: antes eran un ícono gris
+  // y había que bajar el archivo para saber qué foto era.
+  const convertible = !isImage && esImagenConvertible(doc.name, doc.mimeType);
   const isPdf = doc.mimeType === "application/pdf";
   const [failed, setFailed] = useState(false);
 
-  if ((isImage || isPdf) && !failed) {
+  if ((isImage || convertible || isPdf) && !failed) {
     const src = isImage
       ? `/api/admin/documents/${doc.id}/raw`
-      : `/api/admin/documents/${doc.id}/thumbnail`;
+      : convertible
+        ? `/api/admin/documents/${doc.id}/preview-image?max=420`
+        : `/api/admin/documents/${doc.id}/thumbnail`;
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img

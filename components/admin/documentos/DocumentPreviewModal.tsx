@@ -3,6 +3,15 @@
 import { useState, useEffect, useRef } from "react";
 import { esHojaEditable } from "@/lib/documentos/hoja-calculo";
 import { esTextoEditable } from "@/lib/documentos/texto-docx";
+import { esPresentacion } from "@/lib/documentos/presentacion";
+import { esImagenRenderizable, esImagenConvertible } from "@/lib/documents/tipos-archivo";
+import dynamic from "next/dynamic";
+
+/** El visor arrastra jszip: entra sólo cuando se abre una presentación. */
+const PresentacionPreview = dynamic(() => import("./PresentacionPreview"), {
+  ssr: false,
+  loading: () => <p className="py-16 text-center text-sm text-[var(--text-tertiary)]">Abriendo la presentación…</p>,
+});
 import {
   X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check, Table,
   Pencil as PencilLine, Sparkles, Clock as AlarmClock, Link2, Users, Truck, ExternalLink,
@@ -107,7 +116,11 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
   }
 
   const isPdf = doc.mimeType === "application/pdf";
-  const isImage = doc.mimeType.startsWith("image/");
+  const isImage = esImagenRenderizable(doc.name, doc.mimeType);
+  /** HEIC/TIFF/SVG: el navegador no las dibuja, el servidor las convierte a PNG. */
+  const imagenConvertible = !isImage && esImagenConvertible(doc.name, doc.mimeType);
+  /** .pptx/.odp: se muestra el guion de las diapositivas. */
+  const esPresenta = esPresentacion(doc.mimeType, doc.name);
   const isVideo = doc.mimeType.startsWith("video/");
 
   return (
@@ -219,6 +232,19 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
               {isImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={rawUrl} alt={doc.name} className="max-w-full max-h-full object-contain rounded-lg shadow-md" />
+              ) : imagenConvertible ? (
+                // Convertida en el servidor: una foto HEIC del celular o un
+                // escaneo TIFF se ven acá en vez de un ícono gris.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={`/api/admin/documents/${doc.id}/preview-image`}
+                  alt={doc.name}
+                  className="max-w-full max-h-full object-contain rounded-lg shadow-md"
+                />
+              ) : esPresenta ? (
+                <div className="max-h-[78vh] w-full">
+                  <PresentacionPreview url={rawUrl} nombre={doc.name} />
+                </div>
               ) : isPdf ? (
                 <iframe src={rawUrl} title={doc.name} className="w-full h-[78vh] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)]" />
               ) : isVideo ? (
