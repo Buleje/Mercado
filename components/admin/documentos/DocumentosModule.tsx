@@ -34,6 +34,8 @@ import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, s
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
 import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
+import { urlMiniatura } from "@/lib/documents/miniatura-version";
+import { precargarVisor } from "./precargar-visores";
 import { DocumentPreviewModal } from "./DocumentPreviewModal";
 import { TemplateGenerator } from "./TemplateGenerator";
 import { SendWhatsAppModal } from "./SendWhatsAppModal";
@@ -131,7 +133,7 @@ function DocThumb({ doc, Icon, tint, bg }: { doc: DbDocument; Icon: typeof FileI
       ? `/api/admin/documents/${doc.id}/raw`
       : convertible
         ? `/api/admin/documents/${doc.id}/preview-image?max=420`
-        : `/api/admin/documents/${doc.id}/thumbnail`;
+        : urlMiniatura(doc.id);
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
@@ -2105,6 +2107,9 @@ function DocCard({
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      // Pasar el mouse ya trae el visor: cuando hace clic, el chunk pesado
+      // (exceljs / jszip) suele estar listo y la vista previa abre de una.
+      onMouseEnter={() => precargarVisor(familiaDe(doc.name, doc.mimeType))}
       className={cn(
         "group relative overflow-hidden rounded-2xl border-2 bg-white transition-all cursor-grab active:cursor-grabbing",
         selected ? "border-primary shadow-md" : "border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md",

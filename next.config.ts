@@ -57,6 +57,15 @@ const nextConfig: NextConfig = {
   // `@prisma/client/runtime/client` que Turbopack intenta bundlear como un
   // alias hasheado y falla ("Cannot find module @prisma/client-<hash>/runtime/client").
   // Marcar estos como externals fuerza que se resuelvan vía Node module system.
+  // La miniatura de Excel/Word dibuja con @napi-rs/canvas, que NO trae fuentes:
+  // sin un .ttf de verdad cada letra sale como un cuadradito. Se usa el Geist
+  // que ya viaja dentro de `next`, pero hay que pedir explícitamente que el
+  // archivo viaje al bundle de la función serverless.
+  outputFileTracingIncludes: {
+    "/api/admin/documents/[id]/thumbnail": [
+      "./node_modules/next/dist/compiled/@vercel/og/*.ttf",
+    ],
+  },
   serverExternalPackages: [
     "@prisma/client",
     "@prisma/adapter-pg",

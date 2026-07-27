@@ -22,7 +22,13 @@ import AvisoArchivo from "./AvisoArchivo";
 /** Cuántos párrafos se muestran antes de cortar (un contrato largo no se lee acá). */
 const MAX_BLOQUES = 120;
 
-export default function TextoPreview({ url, mimeType, nombre }: { url: string; mimeType: string | null; nombre: string }) {
+export default function TextoPreview({ url, mimeType, nombre, miniaturaUrl }: {
+  url: string;
+  mimeType: string | null;
+  nombre: string;
+  /** Miniatura del archivo, para mostrar algo real mientras se lee. */
+  miniaturaUrl?: string;
+}) {
   const [doc, setDoc] = useState<DocumentoTexto | null>(null);
   const [error, setError] = useState<unknown>(null);
   /** Sube con cada "reintentar": vuelve a pedir el archivo. */
@@ -77,8 +83,21 @@ export default function TextoPreview({ url, mimeType, nombre }: { url: string; m
 
   if (!doc) {
     return (
-      <div className="flex items-center justify-center gap-2 py-16 text-sm text-[var(--text-tertiary)]">
-        <Loader2 className="h-4 w-4 animate-spin" /> Leyendo el documento…
+      <div className="relative flex h-full min-h-[320px] items-center justify-center py-6">
+        {/* Igual que en la planilla: la miniatura ya está cacheada, así que se
+            ve el documento de verdad mientras se termina de leer. */}
+        {miniaturaUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={miniaturaUrl}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 m-auto max-h-full w-auto max-w-full object-contain opacity-40 blur-[1px]"
+          />
+        )}
+        <span className="relative inline-flex items-center gap-2 rounded-xl bg-[var(--surface-raised)]/90 px-3 py-2 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-sm)]">
+          <Loader2 className="h-4 w-4 animate-spin" /> Leyendo el documento…
+        </span>
       </div>
     );
   }

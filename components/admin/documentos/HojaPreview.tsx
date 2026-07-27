@@ -39,12 +39,14 @@ const MAX_COINCIDENCIAS = 500;
 
 const RANGO_INICIAL: Rango = { ancla: { fila: 0, columna: 0 }, foco: { fila: 0, columna: 0 } };
 
-export default function HojaPreview({ url, mimeType, nombre, onEnviar }: {
+export default function HojaPreview({ url, mimeType, nombre, onEnviar, miniaturaUrl }: {
   url: string;
   mimeType: string | null;
   nombre: string;
   /** Mandar este archivo por WhatsApp desde la misma vista previa. */
   onEnviar?: () => void;
+  /** Miniatura del archivo, para mostrar algo real mientras se lee. */
+  miniaturaUrl?: string;
 }) {
   const [hojas, setHojas] = useState<HojaFormato[] | null>(null);
   const [activa, setActiva] = useState(0);
@@ -191,8 +193,22 @@ export default function HojaPreview({ url, mimeType, nombre, onEnviar }: {
 
   if (!hojas || !hoja) {
     return (
-      <div className="flex items-center justify-center gap-2 py-16 text-sm text-[var(--text-tertiary)]">
-        <Loader2 className="h-4 w-4 animate-spin" /> Leyendo la planilla…
+      <div className="relative flex h-full min-h-[320px] items-center justify-center py-6">
+        {/* La miniatura ya está en la caché del navegador (la pidió la grilla):
+            se ve al instante, así que la espera muestra el archivo de verdad en
+            vez de una pantalla vacía. */}
+        {miniaturaUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={miniaturaUrl}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 m-auto max-h-full w-auto max-w-full object-contain opacity-40 blur-[1px]"
+          />
+        )}
+        <span className="relative inline-flex items-center gap-2 rounded-xl bg-[var(--surface-raised)]/90 px-3 py-2 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-sm)]">
+          <Loader2 className="h-4 w-4 animate-spin" /> Leyendo la planilla…
+        </span>
       </div>
     );
   }

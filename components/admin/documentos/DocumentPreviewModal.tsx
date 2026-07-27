@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { esHojaEditable, esHojaLegible } from "@/lib/documentos/hoja-calculo";
 import { esTextoEditable, esTextoLegible } from "@/lib/documentos/texto-docx";
 import { esPresentacion } from "@/lib/documentos/presentacion";
+import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import { esImagenRenderizable, esImagenConvertible } from "@/lib/documents/tipos-archivo";
 import dynamic from "next/dynamic";
 
@@ -114,6 +115,9 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
   // → "contenido bloqueado"). El proxy es same-origin, así que la CSP `frame-src 'self'`
   // lo permite y las cookies autentican el GET.
   const rawUrl = `/api/admin/documents/${docId}/raw`;
+  // La grilla ya pidió esta miniatura, así que sale de la caché del navegador:
+  // sirve de vista previa instantánea mientras se lee el archivo completo.
+  const miniaturaUrl = urlMiniatura(docId);
 
   // Lazy load por tab
   useEffect(() => {
@@ -280,11 +284,11 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
                 // tabla scrollea por dentro y la barra de estado queda a la
                 // vista en vez de empujarse fuera del modal.
                 <div className="h-[70vh] w-full self-stretch">
-                  <HojaPreview url={rawUrl} mimeType={doc.mimeType} nombre={doc.name} onEnviar={() => setEnviando(true)} />
+                  <HojaPreview url={rawUrl} mimeType={doc.mimeType} nombre={doc.name} onEnviar={() => setEnviando(true)} miniaturaUrl={miniaturaUrl} />
                 </div>
               ) : esTexto ? (
                 <div className="h-[70vh] w-full self-stretch">
-                  <TextoPreview url={rawUrl} mimeType={doc.mimeType} nombre={doc.name} />
+                  <TextoPreview url={rawUrl} mimeType={doc.mimeType} nombre={doc.name} miniaturaUrl={miniaturaUrl} />
                 </div>
               ) : (
                 <div className="text-center py-10">

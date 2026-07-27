@@ -14,6 +14,9 @@ import "server-only";
  * PDF —una imagen cacheable— así que la grilla no paga nada extra.
  */
 
+import { existsSync } from "fs";
+import path from "path";
+import { logger } from "@/lib/logger";
 import { extensionDe } from "./tipos-archivo";
 
 /** Lo que entra en un cuadradito de 420 px sin volverse ilegible. */
@@ -21,6 +24,70 @@ const MAX_FILAS = 10;
 const MAX_COLS = 5;
 const MAX_LINEAS = 16;
 const LADO = 420;
+
+/**
+ * ⚠️ El canvas nativo NO trae fuentes: en Linux, sin registrar una, cada letra
+ * se dibuja como un cuadradito vacío (tofu) y la miniatura sale peor que el
+ * ícono que reemplaza. Hay que registrar una explícitamente.
+ */
+const FAMILIA = "MiniaturaBuleje";
+
+/** Candidatas, de la más confiable a la menos. Geist viaja dentro de `next`,
+ *  así que existe también en el servidor de producción, no sólo en la máquina
+ *  de desarrollo. Las del sistema son el plan B en local. */
+const FUENTES = [
+  "node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf",
+  "node_modules/next/dist/compiled/@vercel/og/noto-sans-v27-latin-regular.ttf",
+  "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+  "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+  "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+];
+
+/** `undefined` = todavía no se buscó; `null` = no hay ninguna disponible. */
+let fuenteRegistrada: string | null | undefined;
+
+/**
+ * Registra una fuente para el canvas. Devuelve la familia a usar, o `null` si
+ * no se encontró ninguna — en ese caso NO hay que dibujar: sin fuente sólo
+ * saldrían cuadraditos.
+ */
+export async function fuenteParaMiniaturas(): Promise<string | null> {
+  if (fuenteRegistrada !== undefined) return fuenteRegistrada;
+
+  const { GlobalFonts } = await import("@napi-rs/canvas");
+  for (const candidata of FUENTES) {
+    const ruta = candidata.startsWith("/") ? candidata : path.join(process.cwd(), candidata);
+    if (!existsSync(ruta)) continue;
+    try {
+      if (GlobalFonts.registerFromPath(ruta, FAMILIA)) {
+        fuenteRegistrada = FAMILIA;
+        return fuenteRegistrada;
+      }
+    } catch (err) {
+      logger.warn("miniatura.fuente.fallo", { ruta, err: String(err) });
+    }
+  }
+
+  // Último intento: barrer los directorios de fuentes del sistema, si los hay.
+  for (const dir of ["/usr/share/fonts", "/usr/local/share/fonts"]) {
+    if (!existsSync(dir)) continue;
+    try {
+      if (GlobalFonts.loadFontsFromDir(dir) > 0) {
+        const alguna = GlobalFonts.families[0]?.family;
+        if (alguna) {
+          fuenteRegistrada = alguna;
+          return fuenteRegistrada;
+        }
+      }
+    } catch (err) {
+      logger.warn("miniatura.fuente.sistema_fallo", { dir, err: String(err) });
+    }
+  }
+
+  logger.warn("miniatura.sin_fuente", { intentadas: FUENTES.length });
+  fuenteRegistrada = null;
+  return null;
+}
 
 /** Filas de una planilla, ya como texto. Devuelve `null` si no se pudo leer. */
 export async function filasDePlanilla(
@@ -84,8 +151,12 @@ export async function lineasDeDocumento(
   }
 }
 
-/** Miniatura PNG de una planilla: una tablita con su encabezado. */
-export async function dibujarPlanilla(filas: string[][]): Promise<Buffer> {
+/** Miniatura PNG de una planilla: una tablita con su encabezado. `null` si no
+ *  hay fuente (dibujarla igual daría una grilla de cuadraditos). */
+export async function dibujarPlanilla(filas: string[][]): Promise<Buffer | null> {
+  const familia = await fuenteParaMiniaturas();
+  if (!familia) return null;
+
   const { createCanvas } = await import("@napi-rs/canvas");
   const canvas = createCanvas(LADO, LADO);
   const ctx = canvas.getContext("2d");
@@ -97,11 +168,37 @@ export async function dibujarPlanilla(filas: string[][]): Promise<Buffer> {
   const anchoCol = LADO / Math.min(cols, MAX_COLS);
   const altoFila = Math.min(44, LADO / Math.max(filas.length, 7));
 
-  ctx.font = "17px sans-serif";
+  ctx.font = `17px ${familia}`;
   ctx.textBaseline = "middle";
+
+  // Una celda combinada de título llega repetida en todas las columnas ("GUÍAS
+  // DE…" cinco veces). Se dibuja como una sola banda, que es como se ve en Excel.
+  const primera = filas[0]?.filter((c) => c.trim()) ?? [];
+  const tituloUnico =
+    primera.length > 1 && primera.every((c) => c.trim() === primera[0].trim())
+      ? primera[0].trim()
+      : null;
 
   for (let f = 0; f < filas.length; f++) {
     const y = f * altoFila;
+
+    if (f === 0 && tituloUnico) {
+      ctx.fillStyle = "#e8f5f5";
+      ctx.fillRect(0, y, LADO, altoFila);
+      ctx.strokeStyle = "#e5e7eb";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0, y, LADO, altoFila);
+      ctx.fillStyle = "#0f766e";
+      ctx.font = `bold 17px ${familia}`;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(5, y, LADO - 10, altoFila);
+      ctx.clip();
+      ctx.fillText(tituloUnico, 8, y + altoFila / 2);
+      ctx.restore();
+      continue;
+    }
+
     // La primera fila con datos se pinta como encabezado: es lo que hace que
     // la miniatura se lea como "una tabla" y no como manchas de texto.
     if (f === 0) {
@@ -119,7 +216,7 @@ export async function dibujarPlanilla(filas: string[][]): Promise<Buffer> {
       const valor = (filas[f]?.[c] ?? "").trim();
       if (!valor) continue;
       ctx.fillStyle = f === 0 ? "#0f766e" : "#111827";
-      ctx.font = f === 0 ? "bold 17px sans-serif" : "17px sans-serif";
+      ctx.font = f === 0 ? `bold 17px ${familia}` : `17px ${familia}`;
       ctx.save();
       ctx.beginPath();
       ctx.rect(x + 3, y, anchoCol - 6, altoFila);
@@ -131,8 +228,12 @@ export async function dibujarPlanilla(filas: string[][]): Promise<Buffer> {
   return canvas.toBuffer("image/png");
 }
 
-/** Miniatura PNG de un documento: una hoja con sus primeras líneas. */
-export async function dibujarDocumento(lineas: string[]): Promise<Buffer> {
+/** Miniatura PNG de un documento: una hoja con sus primeras líneas. `null` si
+ *  no hay fuente disponible. */
+export async function dibujarDocumento(lineas: string[]): Promise<Buffer | null> {
+  const familia = await fuenteParaMiniaturas();
+  if (!familia) return null;
+
   const { createCanvas } = await import("@napi-rs/canvas");
   const canvas = createCanvas(LADO, LADO);
   const ctx = canvas.getContext("2d");
@@ -147,7 +248,7 @@ export async function dibujarDocumento(lineas: string[]): Promise<Buffer> {
   let y = 30;
   for (const [i, linea] of lineas.entries()) {
     const esTitulo = i === 0;
-    ctx.font = esTitulo ? "bold 22px sans-serif" : "16px sans-serif";
+    ctx.font = esTitulo ? `bold 22px ${familia}` : `16px ${familia}`;
     ctx.fillStyle = esTitulo ? "#0f172a" : "#334155";
     for (const trozo of envolver(ctx, linea, LADO - 56)) {
       if (y > LADO - 24) return canvas.toBuffer("image/png");

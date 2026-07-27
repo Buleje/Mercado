@@ -70,11 +70,17 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     } else if (familia === "planilla") {
       const filas = await filasDePlanilla(buf, doc.name);
       if (!filas || filas.length === 0) return NextResponse.json({ error: "vacio" }, { status: 422 });
-      png = toArrayBuffer(await dibujarPlanilla(filas));
+      const dibujo = await dibujarPlanilla(filas);
+      // Sin fuente en el sistema el canvas dibuja cuadraditos: es preferible
+      // que la tarjeta muestre su ícono a que muestre una miniatura ilegible.
+      if (!dibujo) return NextResponse.json({ error: "sin_fuente" }, { status: 415 });
+      png = toArrayBuffer(dibujo);
     } else {
       const lineas = await lineasDeDocumento(buf, doc.name);
       if (!lineas || lineas.length === 0) return NextResponse.json({ error: "vacio" }, { status: 422 });
-      png = toArrayBuffer(await dibujarDocumento(lineas));
+      const dibujo = await dibujarDocumento(lineas);
+      if (!dibujo) return NextResponse.json({ error: "sin_fuente" }, { status: 415 });
+      png = toArrayBuffer(dibujo);
     }
 
     return new NextResponse(png, {
