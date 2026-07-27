@@ -11,55 +11,29 @@
  * El orden importa: primero las carpetas padre→hijo (así el hijo siempre
  * encuentra a su padre), después los archivos con el pool de subida que ya
  * usaba el drive.
+ *
+ * La SUBIDA no vive acá: al apretar Importar el trabajo se le encarga al motor
+ * de segundo plano (`import-carpeta-context`) y este modal se cierra. Así se
+ * puede seguir cobrando o mirando pedidos mientras suben 400 archivos.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertCircle, Check, FolderOpen, FolderTree, Loader2, Upload, X as XIcon,
+  AlertCircle, Check, FolderOpen, FolderTree, Loader2, Upload,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import {
   archivosDesdeDrop, bytesLegibles, planificarImport, planReuso, ARCHIVOS_POR_TANDA,
-  type ArchivoPlan, type CarpetaExistente, type PlanImport,
+  type CarpetaExistente, type PlanImport,
 } from "@/lib/documentos/importar-arbol";
-import ImportarProgreso, { type EstadoArchivo } from "./ImportarProgreso";
+import { useImportCarpeta } from "@/contexts/import-carpeta-context";
+import type { EstadoArchivo } from "./ImportarProgreso";
 
-type Fase = "elegir" | "revisar" | "subiendo" | "listo";
+type Fase = "elegir" | "revisar";
 
 /** "1 archivo" / "5 archivos" — el "(s)" queda para los formularios de banco. */
 function plural(n: number, singular: string, plural_: string): string {
   return `${n} ${n === 1 ? singular : plural_}`;
-}
-
-/**
- * Un corte de red no puede tumbar un import de 300 archivos: en el celular de
- * una bodega pasa todo el tiempo. Reintenta SÓLO los errores de red — un 400 o
- * un 429 se reintentan solos igual de mal, así que esos suben tal cual.
- */
-async function conReintento<T>(fn: () => Promise<T>, aviso: (intento: number) => void): Promise<T> {
-  let ultimo: unknown;
-  for (let i = 1; i <= 3; i++) {
-    try {
-      return await fn();
-    } catch (e) {
-      ultimo = e;
-      const msg = e instanceof Error ? e.message : String(e);
-      const esRed = e instanceof TypeError || /failed to fetch|network|load failed/i.test(msg);
-      if (!esRed || i === 3) break;
-      aviso(i + 1);
-      await new Promise((r) => setTimeout(r, i * 1500));
-    }
-  }
-  throw ultimo;
-}
-
-/** Un "HTTP 429: {...}" no le dice nada a nadie; esto sí. */
-function mensajeError(e: unknown): string {
-  const crudo = e instanceof Error ? e.message : String(e);
-  if (crudo.includes("429")) return "el servidor pidió esperar (demasiadas subidas seguidas). Probá de nuevo en unos minutos.";
-  if (crudo.includes("413") || crudo.includes("too_large")) return "hay archivos más pesados de lo permitido.";
-  if (crudo.includes("415") || crudo.includes("mime_not_allowed")) return "hay tipos de archivo que el drive no acepta.";
-  return crudo.slice(0, 160);
 }
 
 export interface ImportarCarpetaProps {
@@ -93,40 +67,16 @@ export interface ImportarCarpetaProps {
    */
   soltado?: { file: File; ruta: string }[] | null;
   onClose: () => void;
-  /** Al terminar, para refrescar la vista. */
-  onListo: () => void;
 }
 
 export default function ImportarCarpetaModal({
-  destino, destinoNombre, existentes, crearArbol, yaSubidos, subir, soltado, onClose, onListo,
+  destino, destinoNombre, existentes, crearArbol, yaSubidos, subir, soltado, onClose,
 }: ImportarCarpetaProps) {
   const [fase, setFase] = useState<Fase>("elegir");
   const [plan, setPlan] = useState<PlanImport | null>(null);
   const [arrastrando, setArrastrando] = useState(false);
-  const [progreso, setProgreso] = useState({ carpetas: 0, archivos: 0 });
-  const [paso, setPaso] = useState("");
-  const [errores, setErrores] = useState<string[]>([]);
-  /** El import ni arrancó (falló el árbol): no hay nada que mostrar como progreso. */
-  const [abortado, setAbortado] = useState(false);
-  /** Frenar a mitad: 400 archivos son minutos y a veces te equivocaste de carpeta. */
-  const [detenido, setDetenido] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Progreso fino de la subida: estado por archivo + bytes confirmados + reloj.
-  const [estados, setEstados] = useState<Record<string, EstadoArchivo>>({});
-  const [motivos, setMotivos] = useState<Record<string, string>>({});
-  const [bytesListos, setBytesListos] = useState(0);
-  const [inicio, setInicio] = useState<number | null>(null);
-  const [segundos, setSegundos] = useState(0);
-  useEffect(() => {
-    if (fase !== "subiendo" || inicio === null) return;
-    const t = setInterval(() => setSegundos((Date.now() - inicio) / 1000), 500);
-    return () => clearInterval(t);
-  }, [fase, inicio]);
-  /** Los que de verdad llegaron (no los intentados): el resumen no debe mentir. */
-  const subidosOk = useMemo(() => Object.values(estados).filter((e) => e === "listo").length, [estados]);
-  const fallados = useMemo(() => Object.values(estados).filter((e) => e === "error").length, [estados]);
+  const { iniciar } = useImportCarpeta();
 
   /**
    * Qué carpetas del plan ya están en el drive: se fusiona con ellas.
@@ -196,26 +146,6 @@ export default function ImportarCarpetaModal({
   const total = aSubir.length;
   const pesoASubir = useMemo(() => aSubir.reduce((s, a) => s + a.file.size, 0), [aSubir]);
 
-  /**
-   * Las filas del panel de progreso, en el MISMO orden en que se van a subir
-   * (agrupadas por carpeta). Si la lista no siguiera ese orden, el auto-scroll
-   * saltaría de un lado a otro en vez de bajar.
-   */
-  const filas = useMemo(() => {
-    const porCarpeta = new Map<string, ArchivoPlan[]>();
-    for (const a of aSubir) {
-      const lista = porCarpeta.get(a.carpeta) ?? [];
-      lista.push(a);
-      porCarpeta.set(a.carpeta, lista);
-    }
-    return [...porCarpeta.values()].flat().map((a) => ({
-      ruta: a.carpeta ? `${a.carpeta}/${a.file.name}` : a.file.name,
-      nombre: a.file.name,
-      carpeta: a.carpeta,
-      size: a.file.size,
-    }));
-  }, [aSubir]);
-
   // Contar una vez, no una vez por carpeta: un import de 2.000 archivos hacía
   // un filter completo por cada fila del árbol.
   const archivosPorCarpeta = useMemo(() => {
@@ -253,72 +183,24 @@ export default function ImportarCarpetaModal({
     tomarArchivos(conRuta.map((x) => x.file), (f) => mapa.get(f) ?? f.name);
   }, [tomarArchivos]);
 
-  /** Crea el árbol de una y después sube los archivos, carpeta por carpeta. */
-  const importar = async () => {
+  /**
+   * Le pasa el trabajo al motor de segundo plano y cierra: el panel flotante
+   * muestra el progreso desde cualquier pestaña del admin.
+   */
+  const importar = () => {
     if (!plan) return;
-    setFase("subiendo");
-    setErrores([]);
-    setAbortado(false);
-    setDetenido(false);
-    abortRef.current = new AbortController();
-    setEstados({});
-    setMotivos({});
-    setBytesListos(0);
-    setInicio(Date.now());
-
-    // 1 · El árbol entero en UNA llamada. El servidor reusa lo que ya existe,
-    //     así que reimportar fusiona en vez de duplicar carpetas.
-    const idPorRuta = new Map<string, string | null>([["", destino]]);
-    if (plan.carpetas.length > 0) {
-      setPaso(`Creando ${plural(aCrear, "carpeta", "carpetas")}…`);
-      try {
-        const { idPorRuta: ids } = await conReintento(
-          () => crearArbol(destino, plan.carpetas.map((c) => c.ruta)),
-          (intento) => setPaso(`Se cortó la conexión — reintentando (${intento} de 3)…`),
-        );
-        for (const [ruta, id] of Object.entries(ids)) idPorRuta.set(ruta, id);
-        setProgreso((p) => ({ ...p, carpetas: plan.carpetas.length }));
-      } catch (e) {
-        // Sin árbol no se sigue: tirar 300 archivos sueltos en la raíz es peor
-        // que no importar nada — dejarlos ahí después es imposible de ordenar.
-        setErrores([`No se pudo crear el árbol de carpetas: ${mensajeError(e)}`]);
-        setPaso("");
-        setAbortado(true);
-        setFase("listo");
-        return;
-      }
-    }
-
-    // 2 · Todos los archivos en UNA tanda, con la carpeta resuelta por archivo.
-    //     Agrupar por carpeta parecía prolijo pero era una llamada por carpeta:
-    //     400 expedientes de 1 archivo = 400 tandas secuenciales, el pool de 3
-    //     nunca se usaba y cada tanda refrescaba el listado. Medido: ~4 min
-    //     contra ~40 s.
-    const rutaDe = new Map(aSubir.map((a) => [a.file, a.carpeta ? `${a.carpeta}/${a.file.name}` : a.file.name]));
-    const carpetaDe = new Map(aSubir.map((a) => [a.file, idPorRuta.get(a.carpeta) ?? destino]));
-
-    setPaso(`Subiendo ${plural(aSubir.length, "archivo", "archivos")} en ${plural(plan.carpetas.length, "carpeta", "carpetas")}`);
-    try {
-      await subir(aSubir.map((a) => a.file), {
-        signal: abortRef.current?.signal,
-        folderIdDe: (f) => carpetaDe.get(f) ?? destino,
-        onProgress: (done) => setProgreso((p) => ({ ...p, archivos: done })),
-        onEstado: (file, estado, motivo) => {
-          const clave = rutaDe.get(file) ?? file.name;
-          setEstados((prev) => ({ ...prev, [clave]: estado }));
-          if (motivo) setMotivos((prev) => ({ ...prev, [clave]: motivo }));
-          // Los bytes se cuentan cuando el archivo termina: es el único
-          // momento en que el navegador sabe que de verdad llegó.
-          if (estado === "listo") setBytesListos((b) => b + file.size);
-        },
-      });
-    } catch (e) {
-      if (!abortRef.current?.signal.aborted) setErrores((prev) => [...prev, mensajeError(e)]);
-    }
-
-    setPaso("");
-    setFase("listo");
-    onListo();
+    iniciar({
+      destino,
+      destinoNombre,
+      rutasCarpetas: plan.carpetas.map((c) => c.ruta),
+      aCrear,
+      archivos: aSubir,
+      paraLaProxima,
+      duplicados: duplicados.size,
+      crearArbol,
+      subir,
+    });
+    onClose();
   };
 
   const resumen = useMemo(() => {
@@ -337,9 +219,7 @@ export default function ImportarCarpetaModal({
   return (
     <AdminModal
       open
-      // Cerrar con la X o con Escape a mitad de la subida la DETIENE en vez de
-      // dejarla corriendo a ciegas contra un modal que ya no existe.
-      onClose={() => { if (fase === "subiendo") { setDetenido(true); abortRef.current?.abort(); } else onClose(); }}
+      onClose={onClose}
       variant="wide"
       title="Importar carpeta"
       description={destinoNombre ? `Se agrega dentro de ${destinoNombre}` : "Se agrega en la raíz del drive"}
@@ -360,26 +240,13 @@ export default function ImportarCarpetaModal({
                 Elegir otra
               </button>
             )}
-            {fase === "subiendo" ? (
-              // Cancelar deshabilitado dejaba al usuario mirando 400 archivos
-              // que no quería subir. Lo ya subido queda; el resto no arranca.
-              <button
-                type="button"
-                onClick={() => { setDetenido(true); abortRef.current?.abort(); }}
-                disabled={detenido}
-                className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-50 dark:text-[var(--data-error-500)]"
-              >
-                {detenido ? "Deteniendo…" : "Detener"}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onClose}
-                className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-              >
-                {fase === "listo" ? "Cerrar" : "Cancelar"}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            >
+              Cancelar
+            </button>
             {fase === "revisar" && (
               <button
                 type="button"
@@ -509,59 +376,6 @@ export default function ImportarCarpetaModal({
           </>
         )}
 
-        {(fase === "subiendo" || fase === "listo") && plan && (
-          <div className="space-y-3">
-            <ImportarProgreso
-              archivos={filas}
-              estados={estados}
-              motivos={motivos}
-              bytesListos={bytesListos}
-              bytesTotal={pesoASubir}
-              archivosListos={subidosOk}
-              carpetasListas={progreso.carpetas}
-              carpetasTotal={plan.carpetas.length}
-              segundos={segundos}
-              terminado={fase === "listo"}
-              abortado={abortado}
-              paso={paso}
-            />
-
-            {fase === "listo" && !abortado && (
-              // Verde sólo si de verdad entró todo; si algo quedó afuera, el
-              // cartel lo dice en vez de festejar por los que sí subieron.
-              detenido ? (
-                <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)]">
-                  <AlertCircle className="h-4 w-4 shrink-0" /> Lo detuviste: subieron {subidosOk} de {total}.
-                  Los que ya están quedan en el drive; reimportá la carpeta cuando quieras seguir.
-                </p>
-              ) : fallados === 0 ? (
-                <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] px-3 py-2 text-sm font-bold text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]">
-                  <Check className="h-4 w-4 shrink-0" /> {plural(subidosOk, "archivo subido", "archivos subidos")}
-                  {aCrear > 0 && ` · ${plural(aCrear, "carpeta nueva", "carpetas nuevas")}`}
-                  {duplicados.size > 0 && ` · ${duplicados.size} que ya estaban`}.
-                  {paraLaProxima > 0 && ` Quedan ${paraLaProxima} para la próxima tanda: reimportá la carpeta en un rato.`}
-                </p>
-              ) : (
-                <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-3 py-2 text-sm font-bold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
-                  <AlertCircle className="h-4 w-4 shrink-0" /> Subieron {subidosOk} de {total}.{" "}
-                  {plural(fallados, "archivo quedó", "archivos quedaron")} afuera — volvé a importar la
-                  misma carpeta y sólo se reintentan esos.
-                </p>
-              )
-            )}
-
-            {errores.length > 0 && (
-              <div className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] p-3 dark:bg-[var(--data-error-500)]/12">
-                <p className="mb-1 flex items-center gap-1.5 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-                  <XIcon className="h-4 w-4" /> {plural(errores.length, "problema", "problemas")}
-                </p>
-                <ul className="max-h-28 space-y-0.5 overflow-auto text-xs text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-                  {errores.slice(0, 20).map((e, i) => <li key={i} className="truncate">{e}</li>)}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </AdminModal>
   );

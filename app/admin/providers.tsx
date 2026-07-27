@@ -10,6 +10,7 @@ import AdminMotionProvider from "@/components/admin/providers/AdminMotionProvide
 import { UndoToastProvider } from "@/components/admin/shared/UndoToast";
 import { ConfirmDialogProvider } from "@/components/admin/shared/ConfirmDialog";
 import { KeyboardShortcutsHelp } from "@/components/admin/shared/KeyboardShortcutsHelp";
+import { ImportCarpetaProvider } from "@/contexts/import-carpeta-context";
 
 const NotificationToast = dynamic(
   () => import("@/components/admin/shared/NotificationToast"),
@@ -17,6 +18,13 @@ const NotificationToast = dynamic(
 );
 
 // Ola 4 v4.1 — QuickActionsFab global. Lazy loaded para no afectar TBT.
+// El panel del import de carpetas: sólo aparece cuando hay uno corriendo, así
+// que entra lazy — no debe pesar en el arranque del panel.
+const ImportacionFlotante = dynamic(
+  () => import("@/components/admin/documentos/ImportacionFlotante"),
+  { ssr: false },
+);
+
 const QuickActionsFab = dynamic(
   () => import("@/components/admin/ux/QuickActionsFab").then((m) => ({ default: m.QuickActionsFab })),
   { ssr: false },
@@ -103,7 +111,9 @@ function AdminProvidersBare({ children }: { children: React.ReactNode }) {
         <VocabularyProvider>
           <ModuleTabsProvider>
             <UndoToastProvider>
-              <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
+              <ConfirmDialogProvider>
+                <ImportCarpetaProvider>{children}</ImportCarpetaProvider>
+              </ConfirmDialogProvider>
             </UndoToastProvider>
           </ModuleTabsProvider>
         </VocabularyProvider>
@@ -158,7 +168,12 @@ function AdminProvidersInner({ children }: { children: React.ReactNode }) {
           <ModuleTabsProvider>
             <UndoToastProvider>
               <ConfirmDialogProvider>
-                {children}
+                {/* Por ENCIMA del router de tabs: el import sigue corriendo
+                    aunque te vayas de Documentos a Ventas. */}
+                <ImportCarpetaProvider>
+                  {children}
+                  <ImportacionFlotante />
+                </ImportCarpetaProvider>
                 <NotificationToast />
                 {showFab && <QuickActionsFab />}
                 <KeyboardShortcutsHelp open={showShortcuts} onClose={() => setShowShortcuts(false)} />

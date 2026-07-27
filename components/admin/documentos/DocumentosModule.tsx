@@ -39,6 +39,7 @@ import { TemplateGenerator } from "./TemplateGenerator";
 import { SendWhatsAppModal } from "./SendWhatsAppModal";
 import ImportarCarpetaModal from "./ImportarCarpetaModal";
 import { archivosDesdeDrop } from "@/lib/documentos/importar-arbol";
+import { useImportCarpeta } from "@/contexts/import-carpeta-context";
 import { MoveToFolderModal } from "./MoveToFolderModal";
 import { FolderEditModal } from "./FolderEditModal";
 import { FolderShareModal } from "./FolderShareModal";
@@ -227,6 +228,9 @@ export default function DocumentosModule() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   /** Import masivo de una carpeta con su árbol. */
   const [importandoCarpeta, setImportandoCarpeta] = useState(false);
+  // El import corre en segundo plano (puede terminar con el drive cerrado):
+  // cuando avisa que terminó, se recarga la lista.
+  const { terminados: importsTerminados } = useImportCarpeta();
   /** Lo que se soltó en el drive cuando era una carpeta: entra derecho al importador. */
   const [soltado, setSoltado] = useState<{ file: File; ruta: string }[] | null>(null);
   const [preview, setPreview] = useState<DbDocument | null>(null);
@@ -298,6 +302,13 @@ export default function DocumentosModule() {
     documents, folders, loading, error, refresh,
     upload, scan, patch, bulk, restore, purge, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, deleteFolder,
   } = useDocuments(filters);
+
+  // Un import terminado (aunque haya sido desde otra pestaña) trae documentos
+  // nuevos: recargar. El 0 inicial se saltea para no duplicar el fetch de montaje.
+  useEffect(() => {
+    if (importsTerminados === 0) return;
+    void refresh();
+  }, [importsTerminados, refresh]);
 
   // ── Escaneo desde cámara (móvil) ──
   const handleScan = useCallback(
@@ -1776,7 +1787,6 @@ export default function DocumentosModule() {
           soltado={soltado}
           subir={upload}
           onClose={() => { setImportandoCarpeta(false); setSoltado(null); }}
-          onListo={() => { void refresh(); }}
         />
       )}
 

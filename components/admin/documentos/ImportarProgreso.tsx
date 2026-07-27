@@ -71,6 +71,7 @@ export default function ImportarProgreso({
   carpetasListas, carpetasTotal, segundos, terminado, abortado, paso,
 }: ImportarProgresoProps) {
   const total = archivos.length;
+  const conError = archivos.filter((a) => estados[a.ruta] === "error").length;
   // El porcentaje sale SIEMPRE de los bytes confirmados, también al terminar:
   // forzar 100% al final tapaba los archivos que habían fallado.
   const crudo = bytesTotal === 0 ? 0 : (bytesListos / bytesTotal) * 100;
@@ -105,7 +106,6 @@ export default function ImportarProgreso({
     }
   }, [archivosListos, terminado]);
 
-  const conError = archivos.filter((a) => estados[a.ruta] === "error").length;
   let activoMarcado = false;
 
   // Si nunca arrancó, una barra en 0% y 300 filas "en cola" sólo confunden: el
@@ -142,8 +142,15 @@ export default function ImportarProgreso({
           className="absolute inset-y-0 left-0 rounded-full bg-[var(--accent)]/30 transition-[width] duration-[var(--dur-base)]"
           style={{ width: `${pctEnVuelo}%` }}
         />
+        {/* Verde al terminar bien: el panel flota sobre cualquier módulo y
+            hereda su acento — en Inventario (naranja) una barra al 100% se leía
+            como alerta. Terminado y sin fallas es verde en cualquier pantalla. */}
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-linear-to-r from-[var(--accent)] to-[var(--accent-dark)] transition-[width] duration-[var(--dur-base)]"
+          className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-[var(--dur-base)] ${
+            terminado && conError === 0
+              ? "bg-[var(--data-success-500)]"
+              : "bg-linear-to-r from-[var(--accent)] to-[var(--accent-dark)]"
+          }`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -208,9 +215,11 @@ export default function ImportarProgreso({
       </ul>
 
       {!terminado && (
+        // Ya no hay que quedarse mirando: el import corre por encima del router
+        // de tabs. Lo único que lo mata es cerrar o recargar el navegador.
         <p className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
           <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-          No cierres esta ventana hasta que termine.
+          Podés seguir trabajando — no cierres ni recargues el navegador.
         </p>
       )}
     </div>

@@ -65,6 +65,24 @@ async function asegurarEstilos(page) {
   return false;
 }
 
+/** El progreso ya no vive en el modal: está en el panel flotante del admin. */
+const textoPanel = (page) =>
+  page.evaluate(() => {
+    const p = [...document.querySelectorAll("div")].find(
+      (d) => d.className.includes("fixed") && /Importando|Importación/.test(d.textContent ?? ""),
+    );
+    return p ? p.innerText.replace(/\n{2,}/g, "\n") : "(sin panel flotante)";
+  });
+
+/** Cierra el panel flotante ya terminado (la X sólo aparece al final). */
+async function cerrarPanel(page) {
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll("button")].find((x) => x.getAttribute("aria-label") === "Cerrar el panel de importación");
+    b?.click();
+  });
+  await page.waitForTimeout(500);
+}
+
 const textoModal = (page) =>
   page.evaluate(() => {
     const d = document.querySelector('[role="dialog"]');
@@ -160,20 +178,22 @@ async function main() {
 
   // ── 2 · Importación real ───────────────────────────────────────────────────
   await page.getByRole("button", { name: /^Importar \d+ archivos?$/ }).click();
-  // Frames DURANTE la subida: el progreso archivo-por-archivo sólo existe acá.
+  // El modal se cierra SOLO: de acá en más el progreso está en el panel flotante.
+  await page.waitForTimeout(900);
+  console.log("modal cerrado tras Importar:", (await page.locator('[role="dialog"]').count()) === 0);
   for (let i = 1; i <= 4; i++) {
-    await page.waitForTimeout(i === 1 ? 500 : 1100);
+    await page.waitForTimeout(i === 1 ? 400 : 1100);
     const vivo = await page.getByText("Importación terminada").count();
     if (vivo) break;
     await page.screenshot({ path: `${OUT}/02b-progreso-${i}.png` });
-    if (i === 1) console.log("\n=== PROGRESO EN VIVO ===\n" + (await textoModal(page)));
+    if (i === 1) console.log("\n=== PROGRESO EN VIVO ===\n" + (await textoPanel(page)));
   }
   await page.getByText("Importación terminada").waitFor({ timeout: 120_000 });
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${OUT}/03-listo.png` });
-  console.log("\n=== RESULTADO ===\n" + (await textoModal(page)));
-  await page.getByRole("button", { name: "Cerrar", exact: true }).and(page.locator("button:not([aria-label])")).click();
-  await page.waitForTimeout(1500);
+  console.log("\n=== RESULTADO ===\n" + (await textoPanel(page)));
+  await cerrarPanel(page);
+  await page.waitForTimeout(1200);
   await page.screenshot({ path: `${OUT}/04-drive-post-import.png` });
 
   // ── 3 · Reimportar: "ya existe" en carpetas y NADA para subir ──────────────
@@ -234,7 +254,7 @@ async function main() {
 
   // ── 3c · El progreso en dark y en celular ──────────────────────────────────
   await page.getByRole("button", { name: /^Importar \d+ archivos?$/ }).click();
-  await page.waitForTimeout(700);
+  await page.waitForTimeout(900);
   await page.screenshot({ path: `${OUT}/08-progreso-mobile-dark.png` });
   await page.setViewportSize({ width: 1440, height: 950 });
   await page.waitForTimeout(700);
@@ -242,9 +262,9 @@ async function main() {
   await page.getByText("Importación terminada").waitFor({ timeout: 120_000 });
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${OUT}/10-listo-dark.png` });
-  console.log("\n=== RESULTADO (dark, 3 nuevos) ===\n" + (await textoModal(page)));
-  await page.getByRole("button", { name: "Cerrar", exact: true }).and(page.locator("button:not([aria-label])")).click();
-  await page.waitForTimeout(1200);
+  console.log("\n=== RESULTADO (dark, 3 nuevos) ===\n" + (await textoPanel(page)));
+  await cerrarPanel(page);
+  await page.waitForTimeout(1000);
 
   // ── 3d · Un archivo que falla: el resumen NO debe decir 100% ───────────────
   await abrirModal(page);
@@ -260,13 +280,15 @@ async function main() {
     return route.continue();
   });
   await page.getByRole("button", { name: /^Importar \d+ archivos?$/ }).click();
-  await page.getByText(/Subieron \d+ de \d+|archivos subidos/).waitFor({ timeout: 120_000 });
+  // OJO: "en el drive" a secas matchea el título del panel ("Importando en el
+  // drive") y daba por terminado un import que recién arrancaba.
+  await page.getByText(/Subieron \d+ de \d+|\d+ archivos? en el drive/).waitFor({ timeout: 120_000 });
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${OUT}/11-con-un-error-dark.png` });
-  console.log("\n=== SUBIDA PARCIAL ===\n" + (await textoModal(page)));
+  console.log("\n=== SUBIDA PARCIAL ===\n" + (await textoPanel(page)));
   await page.unroute("**/api/admin/documents");
-  await page.getByRole("button", { name: "Cerrar", exact: true }).and(page.locator("button:not([aria-label])")).click();
-  await page.waitForTimeout(1000);
+  await cerrarPanel(page);
+  await page.waitForTimeout(800);
 
   // ── 4 · Limpieza: nada de basura de QA en el drive ─────────────────────────
   console.log("\n=== LIMPIEZA ===", JSON.stringify(await limpiar(page, RAIZ)));
