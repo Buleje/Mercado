@@ -6,7 +6,7 @@ import { DocumentsDB } from "@/lib/db/documents.db";
 import { downloadFromStorage } from "@/lib/documents/storage";
 import { familiaDe } from "@/lib/documents/tipos-archivo";
 import {
-  dibujarDocumento, dibujarPlanilla, filasDePlanilla, lineasDeDocumento,
+  asegurarFuentesPdf, dibujarDocumento, dibujarPlanilla, filasDePlanilla, lineasDeDocumento,
 } from "@/lib/documents/miniatura-doc";
 
 /** Tope para leer un archivo sólo para dibujar su miniatura. */
@@ -62,6 +62,10 @@ export async function GET(req: NextRequest, ctx: Ctx) {
       // ?page=N (1-based) → miniatura de esa página; por defecto la 1ª.
       const pageParam = Number(req.nextUrl.searchParams.get("page") || "1");
       const page = Number.isFinite(pageParam) && pageParam >= 1 ? Math.floor(pageParam) : 1;
+      // Sin esto, un PDF que use las fuentes estándar (Helvetica y compañía)
+      // se dibuja como una página de cuadraditos: pdf.js se las pide al
+      // sistema y el servidor no las tiene.
+      await asegurarFuentesPdf();
       const { renderPageAsImage } = await import("unpdf");
       png = await renderPageAsImage(new Uint8Array(buf), page, {
         canvasImport: () => import("@napi-rs/canvas"),

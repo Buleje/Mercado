@@ -363,6 +363,14 @@ describe("buildCSP", () => {
     expect(buildCSP("/")).toContain("object-src 'none'");
   });
 
+  // Sin frame-src explícito se hereda `default-src 'self'`, que no incluye
+  // blob:, y la vista previa del drive (que arma un blob para poder leer el
+  // status antes de mostrar el archivo) quedaba bloqueada por el navegador.
+  it("frame-src allows blob: so the document preview can render", () => {
+    const csp = buildCSP("/admin", "n");
+    expect(csp).toContain("frame-src 'self' blob: data:");
+  });
+
   it("includes upgrade-insecure-requests", () => {
     expect(buildCSP("/")).toContain("upgrade-insecure-requests");
   });

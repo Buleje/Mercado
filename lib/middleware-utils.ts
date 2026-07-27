@@ -255,6 +255,12 @@ export function buildCSP(pathname: string, nonce?: string): string {
     "font-src":                  "'self' data: https://fonts.gstatic.com",
     "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com",
     "media-src":                 "'self'",
+    // frame-src: sin declararlo hereda `default-src 'self'`, que NO incluye
+    // blob: — y la vista previa del drive arma un blob con el archivo para
+    // poder leer el status antes de mostrarlo. Resultado: el navegador
+    // bloqueaba el PDF con "Este contenido está bloqueado" (Brandon 2026-07-27).
+    // blob:/data: son de la propia app: no agregan superficie externa.
+    "frame-src":                 "'self' blob: data:",
     "object-src":                "'none'",
     "base-uri":                  "'self'",
     "form-action":               "'self'",

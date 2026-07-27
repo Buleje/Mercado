@@ -275,7 +275,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
               ) : isPdf ? (
                 // Por blob y no `src={rawUrl}`: así un 429 sale como aviso y no
                 // dibujado como texto adentro del visor.
-                <VisorPdf url={rawUrl} nombre={doc.name} tamano={doc.size} />
+                <VisorPdf url={rawUrl} nombre={doc.name} tamano={doc.size} docId={docId} />
               ) : isVideo ? (
                 <video src={rawUrl} controls className="max-w-full max-h-full rounded-lg" />
               ) : esHoja ? (

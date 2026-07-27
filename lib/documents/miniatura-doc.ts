@@ -45,6 +45,8 @@ const FUENTES = [
 
 /** `undefined` = todavía no se buscó; `null` = no hay ninguna disponible. */
 let fuenteRegistrada: string | null | undefined;
+/** Ruta del .ttf que se terminó usando (la reusa el registro para los PDF). */
+let rutaFuente: string | null = null;
 
 /**
  * Registra una fuente para el canvas. Devuelve la familia a usar, o `null` si
@@ -61,6 +63,7 @@ export async function fuenteParaMiniaturas(): Promise<string | null> {
     try {
       if (GlobalFonts.registerFromPath(ruta, FAMILIA)) {
         fuenteRegistrada = FAMILIA;
+        rutaFuente = ruta;
         return fuenteRegistrada;
       }
     } catch (err) {
@@ -87,6 +90,50 @@ export async function fuenteParaMiniaturas(): Promise<string | null> {
   logger.warn("miniatura.sin_fuente", { intentadas: FUENTES.length });
   fuenteRegistrada = null;
   return null;
+}
+
+/**
+ * Las 14 fuentes "estándar" que un PDF puede usar sin incrustarlas. Casi todo
+ * PDF generado por un sistema (recibos, reportes) pide Helvetica y confía en
+ * que el lector la tenga.
+ */
+const FUENTES_PDF = [
+  "Helvetica", "Helvetica-Bold", "Helvetica-Oblique", "Helvetica-BoldOblique",
+  "Times-Roman", "Times-Bold", "Times-Italic", "Times-BoldItalic",
+  "Courier", "Courier-Bold", "Courier-Oblique", "Courier-BoldOblique",
+  "Arial", "Symbol", "ZapfDingbats",
+];
+
+let fuentesPdfListas = false;
+
+/**
+ * Deja disponibles las fuentes estándar antes de dibujar un PDF.
+ *
+ * pdf.js no incrusta esas fuentes: se las pide al sistema, y en un servidor
+ * Linux pelado no hay ninguna — así que un recibo hecho con Helvetica se
+ * renderizaba como una página de cuadraditos. Se registra la misma fuente que
+ * usan las miniaturas bajo cada uno de esos nombres: no es idéntica a la
+ * original, pero se lee, que es de lo que se trata.
+ */
+export async function asegurarFuentesPdf(): Promise<void> {
+  if (fuentesPdfListas) return;
+  // Fuerza la búsqueda del .ttf (deja `rutaFuente` cargada).
+  const familia = await fuenteParaMiniaturas();
+  if (!familia || !rutaFuente) return;
+
+  const { GlobalFonts } = await import("@napi-rs/canvas");
+  for (const nombre of FUENTES_PDF) {
+    if (GlobalFonts.has(nombre)) continue;
+    try {
+      // Se registra el MISMO archivo bajo cada nombre. `setAlias` no alcanza:
+      // apunta al nombre interno de la fuente, no al alias con el que se
+      // registró, así que pdf.js seguía sin encontrar "Helvetica".
+      GlobalFonts.registerFromPath(rutaFuente, nombre);
+    } catch (err) {
+      logger.warn("miniatura.alias_pdf.fallo", { nombre, err: String(err) });
+    }
+  }
+  fuentesPdfListas = true;
 }
 
 /** Filas de una planilla, ya como texto. Devuelve `null` si no se pudo leer. */
