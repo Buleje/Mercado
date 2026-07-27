@@ -28,6 +28,7 @@ import {
   Pencil as PencilLine, Sparkles, Clock as AlarmClock, Link2, Users, Truck, ExternalLink,
   ChevronLeft, ChevronRight, GitCompareArrows as GitCompare,
   FileSpreadsheet, Plus, Link as LinkChain, Save, Folder as FolderIcon,
+  Wrench, Stamp, RotateCw, FileStack, Scissors,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { VisorImagen, VisorPdf } from "./VisorArchivo";
@@ -57,6 +58,20 @@ interface Props {
   onPrev?: () => void;
   onNext?: () => void;
   position?: { current: number; total: number };
+  /**
+   * Las acciones del menú de la lista, para poder usarlas sin cerrar el
+   * documento. Opcional: donde no se pasen, el menú no aparece.
+   */
+  herramientas?: {
+    onAnalyze?: () => void;
+    onStamp?: () => void;
+    onRotate?: () => void;
+    onSplit?: () => void;
+    onEditPages?: () => void;
+    onMove?: () => void;
+    onSign?: () => void;
+    onSetStatus?: (estado: string) => void;
+  };
 }
 
 function formatBytes(b: number): string {
@@ -76,7 +91,8 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
 }
 
-export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position }: Props) {
+export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position, herramientas }: Props) {
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [tab, setTab] = useState<Tab>("preview");
   const [doc, setDoc] = useState<DbDocument | null>(null);
   const [versions, setVersions] = useState<DbDocumentVersion[]>([]);
@@ -238,6 +254,66 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
             >
               <Download className="h-3.5 w-3.5" /> Descargar
             </a>
+            {/* Herramientas: lo mismo que ofrece el menú de la lista, pero sin
+                tener que cerrar el documento y volver a buscarlo. */}
+            {herramientas && (
+              <div className="relative">
+                <button
+                  onClick={() => setMenuAbierto((v) => !v)}
+                  title="Herramientas"
+                  aria-expanded={menuAbierto}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] transition-colors"
+                >
+                  <Wrench className="h-3.5 w-3.5" /> Herramientas
+                </button>
+                {menuAbierto && (
+                  <>
+                    <button className="fixed inset-0 z-10 cursor-default" aria-label="Cerrar el menú" onClick={() => setMenuAbierto(false)} />
+                    <div className="absolute right-0 top-full z-20 mt-1 w-60 overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl">
+                      {herramientas.onSetStatus && (
+                        <div className="border-b border-[var(--rule-soft)] px-3 py-2">
+                          <p className="mb-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Marcar como</p>
+                          <div className="flex flex-wrap gap-1">
+                            {[
+                              { e: "approved", t: "Está bien", c: "bg-[var(--data-success-500)]" },
+                              { e: "observado", t: "Corregir", c: "bg-[var(--data-error-500)]" },
+                              { e: "review", t: "En revisión", c: "bg-[var(--data-warning-500)]" },
+                            ].map(({ e, t, c }) => (
+                              <button
+                                key={e}
+                                onClick={() => { herramientas.onSetStatus?.(e); setMenuAbierto(false); }}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary"
+                              >
+                                <span className={cn("h-2 w-2 rounded-full", c)} aria-hidden /> {t}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {([
+                        ["Analizar con IA", Sparkles, herramientas.onAnalyze, true],
+                        ["Mover a carpeta", FolderIcon, herramientas.onMove, true],
+                        ["Solicitar firma", PencilLine, herramientas.onSign, isPdf],
+                        ["Sellar", Stamp, herramientas.onStamp, isPdf],
+                        ["Rotar 90°", RotateCw, herramientas.onRotate, isPdf],
+                        ["Editar páginas", FileStack, herramientas.onEditPages, isPdf],
+                        ["Dividir en páginas", Scissors, herramientas.onSplit, isPdf],
+                      ] as const).map(([texto, Icono, accion, aplica]) =>
+                        accion && aplica ? (
+                          <button
+                            key={texto}
+                            onClick={() => { accion(); setMenuAbierto(false); }}
+                            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                          >
+                            <Icono className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" /> {texto}
+                          </button>
+                        ) : null,
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             <button
               onClick={onClose}
               className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"

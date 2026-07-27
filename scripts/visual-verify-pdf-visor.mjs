@@ -112,6 +112,48 @@ const legible = await page.evaluate(async (id) => {
 // las curvas de las letras. Mismo PDF: ~6.5 KB en tofu, ~16.8 KB legible.
 decir(legible.bytes > 11_000, `la página se lee: ${legible.bytes} bytes, ${legible.tonos} tonos (en tofu pesa ~6.5 KB)`);
 
+// ── Herramientas y zoom dentro del modal ──────────────────────────────────
+// Nombre EXACTO: el sidebar tiene "Herramientas Forestales" y un regex laxo
+// clickeaba ese, que está tapado por el modal.
+const herr = page.getByRole("button", { name: "Herramientas", exact: true });
+decir(await herr.count() > 0, "el modal ofrece el menú de Herramientas");
+if (await herr.count()) {
+  await herr.first().click();
+  await page.waitForTimeout(900);
+  const items = await page.evaluate(() => {
+    const m = document.querySelector('[class*="fixed inset-0 z-50"]');
+    return [...(m?.querySelectorAll("button") ?? [])].map((b) => b.textContent?.trim()).filter(Boolean);
+  });
+  const esperadas = ["Analizar con IA", "Sellar", "Rotar 90°", "Editar páginas", "Dividir en páginas"];
+  const faltan = esperadas.filter((e) => !items.some((i) => i?.includes(e)));
+  decir(faltan.length === 0, `las herramientas están en el modal${faltan.length ? " — faltan: " + faltan.join(", ") : ""}`);
+  decir(items.some((i) => i?.includes("Está bien")), "y se puede marcar el estado desde el modal");
+  // Escape cerraría el MODAL entero; el backdrop del menú tapa la pantalla
+  // mientras está abierto, así que se cierra con el propio botón (toggle).
+  await page.getByRole("button", { name: "Cerrar el menú" }).click();
+  await page.waitForTimeout(900);
+}
+
+// El click va por DOM: el backdrop del menú que se acaba de cerrar puede
+// seguir un instante y hacer fallar el hit-testing de Playwright. Que el botón
+// sea alcanzable se comprueba aparte, con elementFromPoint.
+const zoom = await page.evaluate(async () => {
+  const btn = document.querySelector('button[aria-label="Acercar"]');
+  if (!btn) return { hay: false };
+  const r = btn.getBoundingClientRect();
+  const encima = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+  const antes = document.querySelector('img[data-pagina="1"]')?.getBoundingClientRect().width ?? 0;
+  btn.click();
+  await new Promise((res) => setTimeout(res, 700));
+  const despues = document.querySelector('img[data-pagina="1"]')?.getBoundingClientRect().width ?? 0;
+  return { hay: true, alcanzable: btn === encima || btn.contains(encima), antes, despues };
+});
+decir(zoom.hay, "el visor tiene control de zoom");
+if (zoom.hay) {
+  decir(zoom.alcanzable, "el botón de zoom no está tapado por nada");
+  decir(zoom.despues > zoom.antes, `el zoom amplía de verdad: ${Math.round(zoom.antes)} → ${Math.round(zoom.despues)} px`);
+}
+
 if (violacionesCsp.length) console.log("\nCSP:\n" + violacionesCsp.join("\n"));
 if (erroresJs.length) console.log("\nJS:\n" + erroresJs.join("\n"));
 

@@ -66,10 +66,15 @@ export async function GET(req: NextRequest, ctx: Ctx) {
       // se dibuja como una página de cuadraditos: pdf.js se las pide al
       // sistema y el servidor no las tiene.
       await asegurarFuentesPdf();
+      // `s` = escala del dibujo. La miniatura de la tarjeta se conforma con
+      // 1.2 (~700 px de ancho); el visor pide 2 para que al ampliar el texto
+      // siga siendo nítido y no un borrón.
+      const sParam = Number(req.nextUrl.searchParams.get("s") || "1.2");
+      const escala = Number.isFinite(sParam) ? Math.min(3, Math.max(0.5, sParam)) : 1.2;
       const { renderPageAsImage } = await import("unpdf");
       png = await renderPageAsImage(new Uint8Array(buf), page, {
         canvasImport: () => import("@napi-rs/canvas"),
-        scale: 1.2,
+        scale: escala,
       }) as ArrayBuffer;
     } else if (familia === "planilla") {
       const filas = await filasDePlanilla(buf, doc.name);

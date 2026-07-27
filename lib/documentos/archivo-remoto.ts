@@ -37,7 +37,7 @@ export class ErrorArchivo extends Error {
 
 const MENSAJES: Record<MotivoArchivo, string> = {
   limite: "El servidor recibió muchas solicitudes seguidas y pidió esperar un momento.",
-  permiso: "No tenés permiso para ver este archivo (o la sesión venció).",
+  permiso: "Tu sesión venció o no tenés permiso para ver este archivo. Probá de nuevo; si sigue igual, volvé a entrar al panel.",
   "no-esta": "El archivo ya no está en el drive.",
   servidor: "El servidor no pudo entregar el archivo.",
   red: "No se pudo conectar con el servidor.",
@@ -75,15 +75,30 @@ async function esperaDe(res: Response): Promise<number> {
  * trae el archivo; cualquier otra cosa sale como `ErrorArchivo`.
  */
 export async function pedirArchivo(url: string, init?: RequestInit): Promise<Response> {
-  let res: Response;
-  try {
-    res = await fetch(url, { credentials: "include", ...init });
-  } catch (e) {
-    // AbortController: el visor se cerró o cambió de documento; no es un error
-    // que haya que mostrarle a nadie.
-    if (e instanceof DOMException && e.name === "AbortError") throw e;
-    throw new ErrorArchivo("red", 0, 0, MENSAJES.red);
+  const traer = async () => {
+    try {
+      return await fetch(url, { credentials: "include", ...init });
+    } catch (e) {
+      // AbortController: el visor se cerró o cambió de documento; no es un error
+      // que haya que mostrarle a nadie.
+      if (e instanceof DOMException && e.name === "AbortError") throw e;
+      throw new ErrorArchivo("red", 0, 0, MENSAJES.red);
+    }
+  };
+
+  let res = await traer();
+
+  // El token de acceso dura 15 minutos. Si el panel quedó abierto un rato, el
+  // primer archivo que se abre contesta 401 y el visor mostraba un crudo
+  // "HTTP 401". La sesión se renueva sola y se reintenta una vez: el usuario
+  // no tiene por qué enterarse de que su token venció.
+  if (res.status === 401) {
+    const { refrescarSesion } = await import("@/lib/auth/session-refresh");
+    if (await refrescarSesion({ forzar: true, motivo: "drive:archivo" })) {
+      res = await traer();
+    }
   }
+
   if (res.ok) return res;
   const motivo = motivoDe(res.status);
   throw new ErrorArchivo(motivo, res.status, motivo === "limite" ? await esperaDe(res) : 0, MENSAJES[motivo]);

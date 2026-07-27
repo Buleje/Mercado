@@ -76,6 +76,7 @@ export {
   Receipt,
   FileText,
   FileSpreadsheet,
+  FileStack,
   FileBarChart,
   BadgePercent,
   Percent,

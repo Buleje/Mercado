@@ -1808,6 +1808,18 @@ export default function DocumentosModule() {
             onPrev={idx > 0 ? () => setPreview(displayDocs[idx - 1]) : undefined}
             onNext={idx >= 0 && idx < displayDocs.length - 1 ? () => setPreview(displayDocs[idx + 1]) : undefined}
             position={idx >= 0 ? { current: idx + 1, total: displayDocs.length } : undefined}
+            // Las mismas herramientas del menú de la lista, para no tener que
+            // cerrar el documento y buscarlo de nuevo para sellarlo o rotarlo.
+            herramientas={{
+              onAnalyze: () => handleAnalyze(preview),
+              onStamp: () => setStampTarget(preview),
+              onRotate: () => handleRotate(preview),
+              onSplit: () => handleSplit(preview),
+              onEditPages: () => setPageEditorDoc(preview),
+              onMove: () => setMovingDoc(preview),
+              onSign: () => setSignDoc(preview),
+              onSetStatus: (s: string) => patch(preview.id, { status: s }),
+            }}
           />
         );
       })()}

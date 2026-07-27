@@ -27,6 +27,9 @@ import AvisoArchivo from "./AvisoArchivo";
 /** Arriba de esto se prefiere el streaming del navegador al blob en memoria. */
 const MAX_BLOB = 40 * 1024 * 1024;
 
+/** Tope de páginas que se dibujan de una: más que esto es un libro, no un doc. */
+const MAX_PAGINAS = 60;
+
 /** Trae el archivo a un blob URL. `null` mientras carga; lanza al fallar. */
 function useBlobDelArchivo(url: string, activo: boolean, intento: number) {
   const [blob, setBlob] = useState<string | null>(null);
@@ -72,13 +75,17 @@ function VisorPdfPaginas({ docId, nombre }: { docId: string; nombre: string }) {
   const [paginas, setPaginas] = useState<number | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [intento, setIntento] = useState(0);
+  /** 1 = la página llena el ancho del modal. */
+  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     let vivo = true;
     setError(null);
-    fetch(`/api/admin/documents/${docId}/pages`, { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((d) => { if (vivo) setPaginas(Math.max(1, Math.min(60, Number(d.pageCount) || 1))); })
+    // `pedirArchivo` y no un fetch pelado: renueva la sesión vencida sola y
+    // traduce el error (antes acá salía un "HTTP 401" crudo en pantalla).
+    pedirArchivo(`/api/admin/documents/${docId}/pages`)
+      .then((r) => r.json())
+      .then((d) => { if (vivo) setPaginas(Math.max(1, Math.min(MAX_PAGINAS, Number(d.pageCount) || 1))); })
       .catch((e) => { if (vivo) setError(e); });
     return () => { vivo = false; };
   }, [docId, intento]);
@@ -102,14 +109,54 @@ function VisorPdfPaginas({ docId, nombre }: { docId: string; nombre: string }) {
     );
   }
   return (
-    <div className="h-[78vh] w-full overflow-auto rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-      <div className="mx-auto flex max-w-3xl flex-col gap-3">
+    <div className="relative h-[78vh] w-full overflow-auto rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+      {/* Zoom: el ancho por defecto llena el modal, pero un plano o una tabla
+          chica necesitan acercarse. Queda fijo arriba mientras se scrollea. */}
+      <div className="sticky top-0 z-10 mb-2 flex items-center justify-center gap-1">
+        <div className="inline-flex items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-1.5 py-1 shadow-sm">
+          <button
+            onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))}
+            disabled={zoom <= 0.5}
+            className="rounded-lg px-2 py-0.5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-40"
+            aria-label="Alejar"
+          >
+            −
+          </button>
+          <span className="min-w-[3.5rem] text-center text-xs font-bold tabular-nums text-[var(--text-secondary)]">
+            {Math.round(zoom * 100)}%
+          </span>
+          <button
+            onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))}
+            disabled={zoom >= 3}
+            className="rounded-lg px-2 py-0.5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-40"
+            aria-label="Acercar"
+          >
+            +
+          </button>
+          {zoom !== 1 && (
+            <button
+              onClick={() => setZoom(1)}
+              className="ml-1 rounded-lg px-2 py-0.5 text-xs font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary"
+            >
+              Ajustar
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* `width` y no `max-width`: max-width sólo limita, nunca agranda, y el
+          zoom no hacía nada. Con el ancho por encima del 100% el contenedor de
+          arriba scrollea en horizontal, que es lo que se espera al acercar. */}
+      <div
+        className="mx-auto flex flex-col gap-3 transition-[width] duration-150"
+        style={{ width: `${Math.round(zoom * 100)}%` }}
+      >
         {Array.from({ length: paginas }, (_, i) => (
           // eslint-disable-next-line @next/next/no-img-element -- imagen del propio servidor
           <img
             key={i}
             data-pagina={i + 1}
-            src={`/api/admin/documents/${docId}/thumbnail?page=${i + 1}&r=${VERSION_MINIATURA}`}
+            src={`/api/admin/documents/${docId}/thumbnail?page=${i + 1}&s=2&r=${VERSION_MINIATURA}`}
             alt={`${nombre} — página ${i + 1} de ${paginas}`}
             loading={i < 2 ? "eager" : "lazy"}
             className="w-full rounded-md border border-[var(--rule-base)] bg-white shadow-sm"
