@@ -67,6 +67,23 @@ peso) se marcan "ya estaban" y se omiten. Reimportar una carpeta a la que le
 agregaste 3 archivos sube 3, no 300 otra vez. Es una lectura por POST porque la
 lista de carpetas no entra en una query string.
 
+**7 · Una sola tanda de subida, no una por carpeta.** Agrupar los archivos por
+carpeta parecía prolijo, pero con 411 expedientes de un archivo cada uno eran
+411 llamadas secuenciales: el pool de 3 nunca se usaba y cada tanda refrescaba
+el listado. Ahora `upload` acepta `folderIdDe(file)` y todo va en una pasada
+(medido: 4 min → 24 s). Como consecuencia `onEstado` identifica el archivo por
+`File` y no por nombre — en una tanda única, dos `factura.pdf` de carpetas
+distintas se pisaban.
+
+**8 · Se puede frenar.** La subida corre contra un `AbortController`; cerrar el
+modal o apretar "Detener" corta lo que falta. Lo ya subido queda y la
+reimportación continúa por donde iba (por el punto 6).
+
+**9 · Los topes se avisan antes.** El plan compara contra los dos límites reales
+(400 rutas por llamada al árbol, 400 archivos cada 15 min) y lo dice en la vista
+previa: sube el tope, avisa cuántos quedan y el árbol se parte en lotes
+ordenados (`enLotes`) para no romper el endpoint.
+
 ## Consecuencias
 
 **A favor**
