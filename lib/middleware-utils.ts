@@ -68,6 +68,19 @@ const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 60;
 
 /**
+ * Presupuesto aparte para la LECTURA del drive (`GET /api/admin/documents/*`).
+ *
+ * Mirar una carpeta del panel gasta muchas requests baratas: la miniatura de
+ * cada archivo, el archivo servido en la vista previa, la ficha, las versiones.
+ * Con el techo general de 60/min, revisar una carpeta de 300 documentos moría a
+ * los pocos archivos con un 429 — y el visor lo dibujaba como si fuera el
+ * contenido del archivo. Sólo aplica a GET: las mutaciones (subir, borrar,
+ * compartir) siguen con el techo general.
+ */
+const DRIVE_READ_MAX_REQUESTS = 300;
+const DRIVE_READ_PREFIX = "/api/admin/documents";
+
+/**
  * Legacy alias — kept so existing unit tests that import `RateLimitEntry`
  * from this module keep compiling. New code should not reference it.
  */
@@ -96,6 +109,23 @@ function getEdgeLimiter(): DistributedRateLimiter {
     windowMs: WINDOW_MS,
   });
   return _edgeLimiter;
+}
+
+/** Limitador propio de la lectura del drive — namespace y cupo aparte. */
+let _driveReadLimiter: DistributedRateLimiter | null = null;
+function getDriveReadLimiter(): DistributedRateLimiter {
+  if (_driveReadLimiter) return _driveReadLimiter;
+  _driveReadLimiter = createDistributedRateLimiter({
+    key: "mw:drive-read",
+    maxRequests: DRIVE_READ_MAX_REQUESTS,
+    windowMs: WINDOW_MS,
+  });
+  return _driveReadLimiter;
+}
+
+/** ¿Es una lectura del drive (le corresponde el cupo grande)? */
+export function esLecturaDeDrive(req: NextRequest): boolean {
+  return req.method === "GET" && req.nextUrl.pathname.startsWith(DRIVE_READ_PREFIX);
 }
 
 export function getIP(req: NextRequest): string {
@@ -148,7 +178,7 @@ export async function checkRateLimit(req: NextRequest): Promise<NextResponse | n
   const tenantId = req.headers.get("x-tenant-id") ?? "global";
   const identifier = `${tenantId}:${ip}`;
 
-  const limiter = getEdgeLimiter();
+  const limiter = esLecturaDeDrive(req) ? getDriveReadLimiter() : getEdgeLimiter();
   const allowed = await limiter.check(identifier);
   if (allowed) return null;
 
@@ -167,6 +197,7 @@ export async function checkRateLimit(req: NextRequest): Promise<NextResponse | n
  */
 export function __resetEdgeLimiterForTests(): void {
   _edgeLimiter = null;
+  _driveReadLimiter = null;
   rlStore.clear();
 }
 

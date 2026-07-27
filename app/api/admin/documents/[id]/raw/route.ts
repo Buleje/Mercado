@@ -17,7 +17,7 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, ctx: Ctx) {
   try {
-    const rl = await applyRateLimit(req, "MODERATE", "documents:raw");
+    const rl = await applyRateLimit(req, "DRIVE_READ", "documents:raw");
     if (rl) return rl;
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;

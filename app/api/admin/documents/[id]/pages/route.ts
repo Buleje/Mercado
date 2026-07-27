@@ -13,7 +13,7 @@ type Ctx = { params: Promise<{ id: string }> };
 
 /** GET → cantidad de páginas del PDF (para el editor). */
 export async function GET(req: NextRequest, ctx: Ctx) {
-  const rl = await applyRateLimit(req, "MODERATE", "documents:pages-info");
+  const rl = await applyRateLimit(req, "DRIVE_READ", "documents:pages-info");
   if (rl) return rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;

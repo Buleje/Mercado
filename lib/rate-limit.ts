@@ -391,6 +391,15 @@ export const RateLimitPresets = {
   // lo frena el lockout PER-USERNAME (5 fallos/15min), no este límite por IP.
   // Prod 20/h por IP corta credential-stuffing masivo sin lockear compañeros.
   LOGIN: { maxReqs: IS_DEV ? 100 : 20, windowSec: 60 * 60 },
+  // DRIVE_READ — LECTURA del drive del panel (servir un archivo, abrir la ficha,
+  // listar versiones/auditoría). MODERATE (20 cada 5 min) convertía el uso normal
+  // en un bloqueo: la vista previa gasta 1 request por documento, así que pasar
+  // con las flechas por 20 archivos de una carpeta de 292 dejaba el drive muerto
+  // 5 minutos — y peor, el 429 se dibujaba DENTRO del visor como si fuera el
+  // contenido del archivo. Leer es barato y quien llega acá ya pasó requireAdmin
+  // + aislamiento por tenant; 600 cada 5 min (2/s sostenido) cubre revisar una
+  // carpeta entera y sigue cortando un bucle desbocado.
+  DRIVE_READ: { maxReqs: 600, windowSec: 5 * 60 },
   // DRIVE — subida de documentos del panel admin. STRICT (10 cada 15 min) daba
   // un drive que no podía recibir una carpeta: cada archivo es un request, así
   // que importar 30 boletas moría al décimo. Quien llega acá ya pasó

@@ -6,6 +6,7 @@ import type {
   DbDocumentFolder,
   DbDocumentVersion,
   DbDocumentShare,
+  DbSharedLink,
   DbDocumentAuditLog,
   DbDocumentActivity,
   DbDocumentTemplate,
@@ -485,6 +486,21 @@ export async function createShare(id: string, body: { expiresInDays?: number; pa
 
 export async function revokeShare(shareId: string): Promise<void> {
   await http(`${BASE}/share/${shareId}`, { method: "DELETE" });
+}
+
+/** Centro de enlaces: todos los links publicos vivos del tenant (docs + carpetas). */
+export async function fetchSharedLinks(): Promise<DbSharedLink[]> {
+  const r = await http<{ links: DbSharedLink[] }>(`${BASE}/shares`);
+  return r.links;
+}
+
+export async function revokeSharedLink(id: string, kind: "doc" | "folder"): Promise<void> {
+  await http(`${BASE}/shares/${id}?kind=${kind}`, { method: "DELETE" });
+}
+
+export async function revokeAllSharedLinks(): Promise<number> {
+  const r = await http<{ revoked: number }>(`${BASE}/shares`, { method: "DELETE" });
+  return r.revoked;
 }
 
 export async function fetchTemplates(): Promise<DbDocumentTemplate[]> {

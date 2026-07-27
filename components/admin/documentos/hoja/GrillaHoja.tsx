@@ -19,14 +19,15 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CeldaHoja, HojaFormato } from "@/lib/documentos/xlsx-formato";
-import { colorMuyOscuro, numeroALetra } from "@/lib/documentos/xlsx-formato";
+import { numeroALetra } from "@/lib/documentos/xlsx-formato";
+import { estiloDeCeldaCss } from "@/lib/documentos/hoja-estilo";
 import { useTheme } from "@/contexts/theme-context";
 import {
   aTsv, celdasDe, dentro, desdeTsv, destinoPegado, normalizar,
   type Punto, type Rango,
 } from "@/lib/documentos/hoja-rango";
 import {
-  anchoEnPantalla, anchoParaArchivo, FUENTE_HOJA, ptAPx, TAMANO_BASE_PX,
+  anchoEnPantalla, anchoParaArchivo, FUENTE_HOJA, TAMANO_BASE_PX,
 } from "@/lib/documentos/hoja-metricas";
 
 export type Seleccion = Punto;
@@ -34,6 +35,21 @@ export type Seleccion = Punto;
 const ANCHO_CANAL = 46;
 const MARGEN_FILAS = 8;
 const ALTO_ENCABEZADO = 26;
+
+/**
+ * Excel no muestra "la tabla": muestra una HOJA. Abajo y a la derecha de los
+ * datos sigue habiendo celdas vacías donde se puede escribir, y eso es lo que
+ * hace que se vea (y se use) como una planilla y no como un cuadro pegado en
+ * una esquina. Acá se dibujan siempre celdas de más: las que hagan falta para
+ * llenar la pantalla, y como mínimo estas.
+ */
+const FILAS_EXTRA = 30;
+const COLUMNAS_EXTRA = 6;
+/** Medidas por defecto de una celda vacía (las de Excel). */
+const ALTO_DEFECTO = 20;
+const ANCHO_DEFECTO = 64;
+/** Celda inexistente: se dibuja vacía y al escribirla el modelo crece solo. */
+const CELDA_VACIA: CeldaHoja = { texto: "", crudo: "" };
 
 /** Excel deja ~3 px a cada lado; con más, el texto entra donde no debería. */
 const PADDING_CELDA = 3;
@@ -79,6 +95,7 @@ export default function GrillaHoja({
   const [borrador, setBorrador] = useState("");
   const [scrollTop, setScrollTop] = useState(0);
   const [alto, setAlto] = useState(600);
+  const [ancho, setAncho] = useState(900);
   const arrastrando = useRef(false);
   /** Columna que se está redimensionando y desde qué x empezó. */
   const resize = useRef<{ columna: number; xInicial: number; anchoInicial: number } | null>(null);
@@ -107,9 +124,31 @@ export default function GrillaHoja({
    * filas estén dibujadas — que es exactamente el ancho "que se mueve solo"
    * al hacer scroll.
    */
-  const totalCols = useMemo(
+  const colsDatos = useMemo(
     () => Math.max(hoja.anchos.length, ...hoja.filas.map((f) => f.length), 1),
     [hoja.anchos.length, hoja.filas],
+  );
+
+  /**
+   * Columnas dibujadas: las del archivo más las que hagan falta para que la
+   * cuadrícula llegue al borde derecho. Sin esto, una planilla de 5 columnas
+   * dejaba media pantalla en blanco y no había dónde escribir la sexta.
+   */
+  const totalCols = useMemo(() => {
+    const entran = Math.ceil((ancho - ANCHO_CANAL) / (ANCHO_DEFECTO * zoom)) + 1;
+    return Math.max(colsDatos + COLUMNAS_EXTRA, entran, 12);
+  }, [ancho, colsDatos, zoom]);
+
+  /** Filas dibujadas: las del archivo más las que llenan el alto visible. */
+  const totalFilas = useMemo(() => {
+    const entran = Math.ceil(alto / (ALTO_DEFECTO * zoom)) + 1;
+    return Math.max(hoja.filas.length + FILAS_EXTRA, entran);
+  }, [alto, hoja.filas.length, zoom]);
+
+  /** La fila del archivo, o una vacía si es una de las que se agregan. */
+  const filaEn = useCallback(
+    (f: number): CeldaHoja[] => hoja.filas[f] ?? [],
+    [hoja.filas],
   );
 
   /**
@@ -127,19 +166,19 @@ export default function GrillaHoja({
 
   /** Alto de cada fila con el zoom aplicado. */
   const altos = useMemo(
-    () => hoja.filas.map((_, i) => Math.round((hoja.altos[i] ?? 20) * zoom)),
-    [hoja.altos, hoja.filas, zoom],
+    () => Array.from({ length: totalFilas }, (_, i) => Math.round((hoja.altos[i] ?? ALTO_DEFECTO) * zoom)),
+    [hoja.altos, totalFilas, zoom],
   );
 
   const sel = useMemo(() => normalizar(rango), [rango]);
 
   const offsets = useMemo(() => {
     const out = [0];
-    for (let i = 0; i < hoja.filas.length; i++) {
-      out.push(out[i] + (hoja.filasOcultas[i] ? 0 : altos[i] ?? 20));
+    for (let i = 0; i < totalFilas; i++) {
+      out.push(out[i] + (hoja.filasOcultas[i] ? 0 : altos[i] ?? ALTO_DEFECTO));
     }
     return out;
-  }, [altos, hoja.filas.length, hoja.filasOcultas]);
+  }, [altos, totalFilas, hoja.filasOcultas]);
 
   const fijas = Math.min(hoja.congelado.filas, hoja.filas.length);
   const fijasCol = Math.min(hoja.congelado.columnas, totalCols);
@@ -170,15 +209,16 @@ export default function GrillaHoja({
 
   const visible = useMemo(() => {
     const desde = Math.max(fijas, buscarFila(offsets, scrollTop) - MARGEN_FILAS);
-    const hasta = Math.min(hoja.filas.length, buscarFila(offsets, scrollTop + alto) + MARGEN_FILAS);
+    const hasta = Math.min(totalFilas, buscarFila(offsets, scrollTop + alto) + MARGEN_FILAS);
     return { desde, hasta: Math.max(desde, hasta) };
-  }, [offsets, scrollTop, alto, hoja.filas.length, fijas]);
+  }, [offsets, scrollTop, alto, totalFilas, fijas]);
 
   useEffect(() => {
     const el = contenedor.current;
     if (!el) return;
     setAlto(el.clientHeight);
-    const ro = new ResizeObserver(() => setAlto(el.clientHeight));
+    setAncho(el.clientWidth);
+    const ro = new ResizeObserver(() => { setAlto(el.clientHeight); setAncho(el.clientWidth); });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -226,12 +266,12 @@ export default function GrillaHoja({
     acciones.editar([{ fila: seleccion.fila, columna: seleccion.columna, valor: borrador }]);
     setEditando(false);
     if (mover) {
-      const destino = { fila: Math.min(hoja.filas.length - 1, seleccion.fila + 1), columna: seleccion.columna };
+      const destino = { fila: Math.min(totalFilas - 1, seleccion.fila + 1), columna: seleccion.columna };
       onSeleccion(destino);
       onRango({ ancla: destino, foco: destino });
     }
     contenedor.current?.focus();
-  }, [acciones, borrador, hoja.filas.length, onRango, onSeleccion, seleccion]);
+  }, [acciones, borrador, totalFilas, onRango, onSeleccion, seleccion]);
 
   const asegurarVisible = useCallback((f: number) => {
     const el = contenedor.current;
@@ -360,7 +400,7 @@ export default function GrillaHoja({
 
     const irA = (f: number, c: number, extender: boolean) => {
       const destino = {
-        fila: Math.max(0, Math.min(hoja.filas.length - 1, f)),
+        fila: Math.max(0, Math.min(totalFilas - 1, f)),
         columna: Math.max(0, Math.min(totalCols - 1, c)),
       };
       onSeleccion(destino);
@@ -379,7 +419,7 @@ export default function GrillaHoja({
       case "PageDown": return irA(fila + 20, columna, e.shiftKey);
       case "PageUp": return irA(fila - 20, columna, e.shiftKey);
       case "Home": return irA(e.ctrlKey ? 0 : fila, 0, e.shiftKey);
-      case "End": return irA(e.ctrlKey ? hoja.filas.length - 1 : fila, totalCols - 1, e.shiftKey);
+      case "End": return irA(e.ctrlKey ? totalFilas - 1 : fila, totalCols - 1, e.shiftKey);
       case "Enter": case "F2":
         e.preventDefault();
         return abrirEditor(crudoDe(fila, columna));
@@ -389,7 +429,7 @@ export default function GrillaHoja({
       case "a": case "A":
         if (e.ctrlKey || e.metaKey) {
           e.preventDefault();
-          onRango({ ancla: { fila: 0, columna: 0 }, foco: { fila: hoja.filas.length - 1, columna: totalCols - 1 } });
+          onRango({ ancla: { fila: 0, columna: 0 }, foco: { fila: totalFilas - 1, columna: totalCols - 1 } });
         }
         return;
       default:
@@ -402,8 +442,8 @@ export default function GrillaHoja({
   };
 
   const renderFila = (f: number, fija: boolean) => {
-    const fila = hoja.filas[f];
-    if (!fila || hoja.filasOcultas[f]) return null;
+    if (hoja.filasOcultas[f]) return null;
+    const fila = filaEn(f);
     const top = fija ? ALTO_ENCABEZADO + (offsets[f] - offsets[0]) : undefined;
     const filaEnSeleccion = f >= sel.filaIni && f <= sel.filaFin;
 
@@ -434,7 +474,8 @@ export default function GrillaHoja({
             className="absolute bottom-0 left-0 h-1.5 w-full cursor-row-resize hover:bg-[var(--accent)]"
           />
         </th>
-        {fila.map((celda, c) => {
+        {Array.from({ length: totalCols }, (_, c) => {
+          const celda = fila[c] ?? CELDA_VACIA;
           if (celda.tapada) return null;
           const activa = f === seleccion.fila && c === seleccion.columna;
           const esResaltado = resaltado?.fila === f && resaltado?.columna === c;
@@ -479,7 +520,7 @@ export default function GrillaHoja({
               }}
               onDoubleClick={() => abrirEditor(crudoDe(f, c))}
               style={{
-                ...estiloTd(celda, tema, zoom),
+                ...estiloDeCeldaCss(celda, tema, zoom),
                 ...pegado,
                 paddingLeft: PADDING_CELDA,
                 paddingRight: PADDING_CELDA,
@@ -551,7 +592,7 @@ export default function GrillaHoja({
       aria-label={`Hoja ${hoja.nombre}`}
     >
       <table
-        className="border-collapse select-none"
+        className="hoja-grilla border-collapse select-none"
         style={{
           tableLayout: "fixed",
           width: anchoTotal,
@@ -575,7 +616,7 @@ export default function GrillaHoja({
                 onMouseDown={(e) => {
                   if ((e.target as HTMLElement).dataset.asa) return; // el asa de resize manda
                   onSeleccion({ fila: 0, columna: c });
-                  onRango({ ancla: { fila: 0, columna: c }, foco: { fila: hoja.filas.length - 1, columna: c } });
+                  onRango({ ancla: { fila: 0, columna: c }, foco: { fila: totalFilas - 1, columna: c } });
                 }}
                 style={c < fijasCol ? { position: "sticky", left: izquierdas[c], zIndex: 28 } : undefined}
                 className={`sticky top-0 z-20 cursor-pointer border border-[var(--rule-base)] px-1 text-[length:var(--ts-2xs)] font-bold ${
@@ -608,9 +649,9 @@ export default function GrillaHoja({
               <td colSpan={totalCols + 1} />
             </tr>
           )}
-          {hoja.filas.slice(visible.desde, visible.hasta).map((_, i) => renderFila(visible.desde + i, false))}
-          {visible.hasta < hoja.filas.length && (
-            <tr style={{ height: offsets[hoja.filas.length] - offsets[visible.hasta] }} aria-hidden>
+          {Array.from({ length: visible.hasta - visible.desde }, (_, i) => renderFila(visible.desde + i, false))}
+          {visible.hasta < totalFilas && (
+            <tr style={{ height: offsets[totalFilas] - offsets[visible.hasta] }} aria-hidden>
               <td colSpan={totalCols + 1} />
             </tr>
           )}
@@ -618,36 +659,6 @@ export default function GrillaHoja({
       </table>
     </div>
   );
-}
-
-/** Estilo de la celda tal como viene del archivo. */
-function estiloTd(celda: CeldaHoja, tema: "light" | "dark", zoom: number): React.CSSProperties {
-  const e = celda.estilo;
-  // Excel alinea el contenido ABAJO de la celda cuando no se dice otra cosa;
-  // con el centrado del navegador, una fila alta se ve flotando.
-  if (!e) return { verticalAlign: "bottom" };
-  return {
-    fontWeight: e.negrita ? 700 : undefined,
-    fontStyle: e.cursiva ? "italic" : undefined,
-    textDecoration: e.subrayado ? "underline" : undefined,
-    // Un color de letra oscuro fijado por el archivo, en una celda SIN relleno
-    // propio, sería ilegible en modo oscuro: ahí manda el color del tema. Si la
-    // celda tiene su propio fondo, el color del archivo se respeta tal cual.
-    color: tema === "dark" && !e.fondo && e.color && colorMuyOscuro(e.color)
-      ? undefined
-      : e.color,
-    backgroundColor: e.fondo,
-    // El tamaño del archivo está en PUNTOS: aplicarlo como píxeles hacía que
-    // un título de 16 pt se viera igual de chico que el texto normal.
-    fontSize: e.tamano ? `${ptAPx(e.tamano) * zoom}px` : undefined,
-    textAlign: e.alineacion,
-    verticalAlign: e.alineacionVertical ?? "bottom",
-    whiteSpace: e.ajustarTexto ? "normal" : undefined,
-    borderTopColor: e.bordes?.arriba ? "var(--rule-strong)" : undefined,
-    borderBottomColor: e.bordes?.abajo ? "var(--rule-strong)" : undefined,
-    borderLeftColor: e.bordes?.izq ? "var(--rule-strong)" : undefined,
-    borderRightColor: e.bordes?.der ? "var(--rule-strong)" : undefined,
-  };
 }
 
 /** Primera fila cuyo final pasa `y` — búsqueda binaria sobre los acumulados. */

@@ -47,6 +47,18 @@ export function esHojaEditable(mimeType: string | null | undefined, nombre?: str
   return n.endsWith(".xlsx") || n.endsWith(".csv");
 }
 
+/**
+ * ¿Se puede MOSTRAR como planilla? Incluye .ods, que se lee pero NO se edita:
+ * el editor guarda en xlsx y devolver un xlsx donde había un ods sería
+ * romperle el archivo al que lo abre en LibreOffice.
+ */
+export function esHojaLegible(mimeType: string | null | undefined, nombre?: string | null): boolean {
+  if (esHojaEditable(mimeType, nombre)) return true;
+  const m = (mimeType ?? "").toLowerCase();
+  const n = (nombre ?? "").toLowerCase();
+  return m.includes("opendocument.spreadsheet") || n.endsWith(".ods");
+}
+
 export function formatoDe(mimeType: string | null | undefined, nombre?: string | null): "xlsx" | "csv" {
   const m = (mimeType ?? "").toLowerCase();
   const n = (nombre ?? "").toLowerCase();

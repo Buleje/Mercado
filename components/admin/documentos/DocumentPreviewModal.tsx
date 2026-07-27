@@ -1,24 +1,37 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { esHojaEditable } from "@/lib/documentos/hoja-calculo";
-import { esTextoEditable } from "@/lib/documentos/texto-docx";
+import { esHojaEditable, esHojaLegible } from "@/lib/documentos/hoja-calculo";
+import { esTextoEditable, esTextoLegible } from "@/lib/documentos/texto-docx";
 import { esPresentacion } from "@/lib/documentos/presentacion";
 import { esImagenRenderizable, esImagenConvertible } from "@/lib/documents/tipos-archivo";
 import dynamic from "next/dynamic";
 
-/** El visor arrastra jszip: entra sólo cuando se abre una presentación. */
-const PresentacionPreview = dynamic(() => import("./PresentacionPreview"), {
+/** El visor arrastra exceljs: entra sólo cuando se abre una planilla. */
+const HojaPreview = dynamic(() => import("./HojaPreview"), {
   ssr: false,
-  loading: () => <p className="py-16 text-center text-sm text-[var(--text-tertiary)]">Abriendo la presentación…</p>,
+  loading: () => <p className="py-16 text-center text-sm text-[var(--text-tertiary)]">Abriendo la planilla…</p>,
+});
+
+/** Las presentaciones también: jszip sólo cuando se abre una. */
+const PresentacionPreview = dynamic(() => import("./PresentacionPreview"), {
+  ssr: false, loading: () => <p className="py-16 text-center text-sm text-[var(--text-tertiary)]">Abriendo la presentación…</p>, });
+
+/** Ídem para los documentos de texto (jszip para leer el .docx). */
+const TextoPreview = dynamic(() => import("./TextoPreview"), {
+  ssr: false,
+  loading: () => <p className="py-16 text-center text-sm text-[var(--text-tertiary)]">Abriendo el documento…</p>,
 });
 import {
-  X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check, Table,
+  X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check, Table, MessageCircle,
   Pencil as PencilLine, Sparkles, Clock as AlarmClock, Link2, Users, Truck, ExternalLink,
   ChevronLeft, ChevronRight, GitCompareArrows as GitCompare,
   FileSpreadsheet, Plus, Link as LinkChain, Save, Folder as FolderIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { VisorImagen, VisorPdf } from "./VisorArchivo";
+import { SendWhatsAppModal } from "./SendWhatsAppModal";
+import CompararVersiones from "./CompararVersiones";
 import {
   getDocumentDetail, fetchVersions, fetchAudit, fetchShares, createShare, revokeShare,
   uploadVersion, signDocument, patchDocument, relateDoc, docApproval,
@@ -69,6 +82,8 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
   const [audit, setAudit] = useState<DbDocumentAuditLog[]>([]);
   const [shares, setShares] = useState<DbDocumentShare[]>([]);
   const [loading, setLoading] = useState(true);
+  /** Mandar ESTE archivo por WhatsApp sin volver a la grilla. */
+  const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -122,6 +137,10 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
   /** .pptx/.odp: se muestra el guion de las diapositivas. */
   const esPresenta = esPresentacion(doc.mimeType, doc.name);
   const isVideo = doc.mimeType.startsWith("video/");
+  /** .xlsx/.csv/.ods: se muestran como planilla en vez del cartel "sin vista previa". */
+  const esHoja = esHojaLegible(doc.mimeType, doc.name);
+  /** .docx/.txt/.md/.odt: se leen en el modal como documento. */
+  const esTexto = esTextoLegible(doc.mimeType, doc.name);
 
   return (
     <div
@@ -132,21 +151,22 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-6xl max-h-[92vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-2xl flex flex-col"
       >
-        {/* Header */}
-        <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
+        {/* Header — en un celular los botones bajan a una segunda línea en vez
+            de aplastar el nombre del archivo hasta partirlo letra por letra. */}
+        <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1 basis-56">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-sunken)] shrink-0">
               <FileText className="h-5 w-5 text-[var(--text-secondary)]" />
             </span>
             <div className="min-w-0">
               <p className="text-base font-extrabold text-[var(--text-primary)] truncate">{doc.name}</p>
-              <p className="text-xs text-[var(--text-tertiary)] tabular-nums">
+              <p className="text-xs text-[var(--text-tertiary)] tabular-nums truncate">
                 {formatBytes(doc.size)} · {doc.mimeType} · {new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
                 {doc.versionCount ? ` · v${doc.versionCount + 1}` : ""}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             {(onPrev || onNext) && (
               <div className="mr-1 flex items-center gap-1">
                 <button
@@ -196,6 +216,15 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
                   : <><PencilLine className="h-3.5 w-3.5" /> Editar documento</>}
               </a>
             )}
+            {/* Mandar el archivo por WhatsApp sin cerrar la ficha: mirarlo y
+                mandarlo es el mismo gesto (llega el archivo, no un enlace). */}
+            <button
+              onClick={() => setEnviando(true)}
+              title="Mandar este archivo por WhatsApp"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] transition-colors"
+            >
+              <MessageCircle className="h-3.5 w-3.5" /> Enviar
+            </button>
             {/* Descarga vía nuestro proxy (?download=1): confiable y con auth, no
                 depende de la URL firmada que expira. */}
             <a
@@ -230,25 +259,33 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
           {tab === "preview" && (
             <div className="h-full flex items-center justify-center p-4">
               {isImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={rawUrl} alt={doc.name} className="max-w-full max-h-full object-contain rounded-lg shadow-md" />
+                <VisorImagen url={rawUrl} nombre={doc.name} />
               ) : imagenConvertible ? (
                 // Convertida en el servidor: una foto HEIC del celular o un
                 // escaneo TIFF se ven acá en vez de un ícono gris.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={`/api/admin/documents/${doc.id}/preview-image`}
-                  alt={doc.name}
-                  className="max-w-full max-h-full object-contain rounded-lg shadow-md"
-                />
+                <VisorImagen url={`/api/admin/documents/${doc.id}/preview-image`} nombre={doc.name} />
               ) : esPresenta ? (
                 <div className="max-h-[78vh] w-full">
                   <PresentacionPreview url={rawUrl} nombre={doc.name} />
                 </div>
               ) : isPdf ? (
-                <iframe src={rawUrl} title={doc.name} className="w-full h-[78vh] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)]" />
+                // Por blob y no `src={rawUrl}`: así un 429 sale como aviso y no
+                // dibujado como texto adentro del visor.
+                <VisorPdf url={rawUrl} nombre={doc.name} tamano={doc.size} />
               ) : isVideo ? (
                 <video src={rawUrl} controls className="max-w-full max-h-full rounded-lg" />
+              ) : esHoja ? (
+                // Las planillas se leen acá mismo: antes había que bajarlas para
+                // saber si era la lista correcta. Alto FIJO (no `max-h`): la
+                // tabla scrollea por dentro y la barra de estado queda a la
+                // vista en vez de empujarse fuera del modal.
+                <div className="h-[70vh] w-full self-stretch">
+                  <HojaPreview url={rawUrl} mimeType={doc.mimeType} nombre={doc.name} onEnviar={() => setEnviando(true)} />
+                </div>
+              ) : esTexto ? (
+                <div className="h-[70vh] w-full self-stretch">
+                  <TextoPreview url={rawUrl} mimeType={doc.mimeType} nombre={doc.name} />
+                </div>
               ) : (
                 <div className="text-center py-10">
                   <FileText className="h-16 w-16 mx-auto text-[var(--text-tertiary)] mb-3" />
@@ -264,7 +301,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
           )}
 
           {tab === "versions" && (
-            <VersionsTab docId={docId} versions={versions} reload={() => fetchVersions(docId).then(setVersions)} onRefresh={onRefresh} />
+            <VersionsTab doc={doc} docId={docId} versions={versions} reload={() => fetchVersions(docId).then(setVersions)} onRefresh={onRefresh} />
           )}
 
           {tab === "share" && (
@@ -280,6 +317,11 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
           )}
         </div>
       </div>
+
+      {/* El envío se monta sobre la ficha; al cerrarlo se vuelve al documento. */}
+      {enviando && (
+        <SendWhatsAppModal docs={[doc]} onClose={() => { setEnviando(false); fetchAudit(docId).then(setAudit); }} />
+      )}
     </div>
   );
 }
@@ -291,7 +333,9 @@ function TabBtn({
     <button
       onClick={onClick}
       className={cn(
-        "px-3 py-2.5 text-sm font-bold inline-flex items-center gap-1.5 border-b-2 -mb-px transition-colors whitespace-nowrap",
+        // `shrink-0`: la barra scrollea de costado en un celular en vez de
+        // apretar las pestañas hasta que se pisan entre ellas.
+        "px-3 py-2.5 text-sm font-bold inline-flex shrink-0 items-center gap-1.5 border-b-2 -mb-px transition-colors whitespace-nowrap",
         active ? "border-primary text-primary" : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
       )}
     >
@@ -303,13 +347,36 @@ function TabBtn({
 // ─────────── Versions tab ───────────
 
 function VersionsTab({
-  docId, versions, reload, onRefresh,
-}: { docId: string; versions: DbDocumentVersion[]; reload: () => void; onRefresh?: () => void }) {
+  doc, docId, versions, reload, onRefresh,
+}: { doc: DbDocument; docId: string; versions: DbDocumentVersion[]; reload: () => void; onRefresh?: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [note, setNote] = useState("");
   const [uploading, setUploading] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
+  /** Muestra el diff de contenido (no sólo tamaño y fecha). */
+  const [verDiff, setVerDiff] = useState(false);
+
+  /**
+   * La versión ACTUAL entra a la lista de comparables: la pregunta más común
+   * es "¿qué cambió desde la v3 hasta lo que estoy viendo?", y el archivo
+   * activo no vive en el historial (ese guarda las anteriores).
+   */
+  const actual: DbDocumentVersion = {
+    id: "actual",
+    documentId: docId,
+    versionNumber: (versions[0]?.versionNumber ?? 0) + 1,
+    changeNote: "Versión actual",
+    mimeType: doc.mimeType,
+    size: doc.size,
+    storagePath: doc.storagePath,
+    uploadedById: doc.uploadedById,
+    uploadedAt: doc.updatedAt || doc.uploadedAt,
+  };
+  const comparables = [actual, ...versions];
+  const urlDe = (id: string) => id === "actual"
+    ? `/api/admin/documents/${docId}/raw`
+    : `/api/admin/documents/${docId}/versions/${id}/raw`;
 
   async function handleFile(f: File) {
     setUploading(true);
@@ -353,9 +420,9 @@ function VersionsTab({
       <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden">
         <div className="flex items-center justify-between border-b border-[var(--rule-base)] px-4 py-3">
           <p className="text-sm font-bold text-[var(--text-primary)]">Historial</p>
-          {versions.length >= 2 && (
+          {versions.length >= 1 && (
             <button
-              onClick={() => { setCompareMode((c) => !c); setPicked([]); }}
+              onClick={() => { setCompareMode((c) => !c); setPicked([]); setVerDiff(false); }}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors",
                 compareMode ? "bg-primary text-white" : "border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-primary"
@@ -371,18 +438,26 @@ function VersionsTab({
             {picked.length < 2 ? (
               <p className="text-xs text-[var(--text-secondary)]">Elegí <strong>2 versiones</strong> para comparar ({picked.length}/2).</p>
             ) : (() => {
-              const [a, b] = picked
-                .map((id) => versions.find((v) => v.id === id))
+              // Se busca en `comparables` (incluye la versión ACTUAL): buscar
+              // sólo en el historial dejaba `b` en undefined y la ficha se caía
+              // con "Algo salió mal" apenas se elegía la actual.
+              const elegidas = picked
+                .map((id) => comparables.find((v) => v.id === id))
                 .filter((v): v is DbDocumentVersion => !!v)
                 .sort((x, y) => x.versionNumber - y.versionNumber);
+              if (elegidas.length < 2) {
+                return <p className="text-xs text-[var(--text-secondary)]">Elegí <strong>2 versiones</strong> para comparar.</p>;
+              }
+              const [a, b] = elegidas;
+              const etiqueta = (v: DbDocumentVersion) => (v.id === "actual" ? "Actual" : `v${v.versionNumber}`);
               const delta = b.size - a.size;
               return (
                 <div>
-                  <p className="mb-2 text-sm font-bold text-primary">v{a.versionNumber} → v{b.versionNumber}</p>
+                  <p className="mb-2 text-sm font-bold text-primary">{etiqueta(a)} → {etiqueta(b)}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {[a, b].map((v) => (
                       <div key={v.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2.5">
-                        <p className="text-xs font-bold text-[var(--text-primary)]">v{v.versionNumber}</p>
+                        <p className="text-xs font-bold text-[var(--text-primary)]">{etiqueta(v)}</p>
                         <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">{v.changeNote ?? "Sin nota"}</p>
                         <p className="mt-0.5 text-[length:var(--ts-2xs,11px)] tabular-nums text-[var(--text-tertiary)]">{formatBytes(v.size)} · {relativeTime(v.uploadedAt)}</p>
                         <p className="truncate text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">por {v.uploadedById}</p>
@@ -393,6 +468,27 @@ function VersionsTab({
                     Tamaño: {delta === 0 ? "sin cambio" : `${delta > 0 ? "+" : "−"}${formatBytes(Math.abs(delta))}`}
                     {" · "}{b.versionNumber - a.versionNumber} versión(es) de diferencia
                   </p>
+
+                  {/* El tamaño no dice QUÉ cambió: esto lo lee y lo lista. */}
+                  {!verDiff ? (
+                    <button
+                      onClick={() => setVerDiff(true)}
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
+                    >
+                      <GitCompare className="h-3.5 w-3.5" /> Ver qué cambió
+                    </button>
+                  ) : (
+                    <div className="mt-3 border-t border-[var(--rule-base)] pt-3">
+                      <CompararVersiones
+                        urlAntes={urlDe(a.id)}
+                        urlDespues={urlDe(b.id)}
+                        etiquetaAntes={etiqueta(a)}
+                        etiquetaDespues={etiqueta(b)}
+                        mimeType={doc.mimeType}
+                        nombre={doc.name}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })()}
@@ -403,7 +499,7 @@ function VersionsTab({
           <p className="text-xs text-[var(--text-tertiary)] italic px-4 py-6">Aún no hay versiones previas. Subí una nueva para crear la primera entrada.</p>
         ) : (
           <ul className="divide-y divide-[var(--rule-soft)]">
-            {versions.map((v) => {
+            {(compareMode ? comparables : versions).map((v) => {
               const isPicked = picked.includes(v.id);
               return (
                 <li key={v.id} className={cn("px-4 py-3 flex items-center gap-3", compareMode && isPicked && "bg-primary/5")}>
@@ -411,7 +507,7 @@ function VersionsTab({
                     <input
                       type="checkbox"
                       checked={isPicked}
-                      onChange={() => setPicked((p) => (p.includes(v.id) ? p.filter((x) => x !== v.id) : [...p, v.id].slice(-2)))}
+                      onChange={() => { setVerDiff(false); setPicked((p) => (p.includes(v.id) ? p.filter((x) => x !== v.id) : [...p, v.id].slice(-2))); }}
                       className="h-4 w-4 shrink-0 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
                       aria-label={`Comparar v${v.versionNumber}`}
                     />
@@ -1238,6 +1334,7 @@ const ACTION_META: Record<string, { color: string; label: string }> = {
   version: { color: "bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]", label: "Nueva versión" },
   move: { color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", label: "Movido" },
   tag: { color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", label: "Tag" },
+  whatsapp_send: { color: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]", label: "Enviado por WhatsApp" },
 };
 
 function AuditTab({ logs }: { logs: DbDocumentAuditLog[] }) {

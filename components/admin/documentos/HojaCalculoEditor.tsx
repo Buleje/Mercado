@@ -17,13 +17,17 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, Check, Download, Loader2, Printer, Save, Table } from "@buleje/design-system/icons";
+import { ArrowLeft, Check, Download, Loader2, Printer, Save, Table } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { formatearValor, leerXlsxConFormato, numeroALetra, type HojaFormato } from "@/lib/documentos/xlsx-formato";
+import { leerXlsxConFormato, numeroALetra, type HojaFormato } from "@/lib/documentos/xlsx-formato";
 import { abrirPaquete, guardarCambios } from "@/lib/documentos/xlsx-escritura";
-import { formatoDe, generarCsv, parsearCsv } from "@/lib/documentos/hoja-calculo";
+import { formatoDe, generarCsv } from "@/lib/documentos/hoja-calculo";
+import { hojaDesdeCsv } from "@/lib/documentos/hoja-lectura";
+import { descargarArchivo } from "@/lib/documentos/archivo-remoto";
+import AvisoArchivo from "./AvisoArchivo";
 import { celdasDe, etiquetaRango, normalizar, type Punto, type Rango } from "@/lib/documentos/hoja-rango";
-import { esFormula, evaluarFormula } from "@/lib/documentos/hoja-formulas";
+import { esFormula } from "@/lib/documentos/hoja-formulas";
+import { calcularHoja } from "@/lib/documentos/hoja-calcular";
 import type { CambioFormato } from "@/lib/documentos/xlsx-estilos";
 import { filasOcultasPorFiltro, ordenDeFilas, resumir, type Direccion } from "@/lib/documentos/hoja-analisis";
 import { imprimirHoja } from "@/lib/documentos/documentos-print";
@@ -35,6 +39,7 @@ import PestanasHojas from "./hoja/PestanasHojas";
 import BarraHerramientas from "./hoja/BarraHerramientas";
 import { mergesDe } from "./hoja/estado-hoja";
 import BuscarReemplazar from "./hoja/BuscarReemplazar";
+import ReglaResaltado from "./hoja/ReglaResaltado";
 import BarraEstado from "./hoja/BarraEstado";
 import MenuContextual from "./hoja/MenuContextual";
 import FiltroColumna from "./hoja/FiltroColumna";
@@ -55,7 +60,9 @@ export default function HojaCalculoEditor({
 }) {
   const [inicial, setInicial] = useState<HojaFormato[] | null>(null);
   const [estado, setEstado] = useState<Estado>("cargando");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  /** Sube con cada "reintentar": vuelve a disparar la carga. */
+  const [intento, setIntento] = useState(0);
   const [guardadoEn, setGuardadoEn] = useState<Date | null>(null);
   const [buscando, setBuscando] = useState(false);
   const [resaltado, setResaltado] = useState<Punto | null>(null);
@@ -66,13 +73,13 @@ export default function HojaCalculoEditor({
   // ── Cargar ────────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelado = false;
+    setEstado("cargando");
+    setError(null);
     (async () => {
       try {
         // `no-store`: con una copia cacheada se abriría una versión anterior y
         // el próximo guardado pisaría cambios ya guardados.
-        const r = await fetch(`/api/admin/documents/${docId}/raw`, { credentials: "include", cache: "no-store" });
-        if (!r.ok) throw new Error(`No se pudo abrir el archivo (HTTP ${r.status})`);
-        const buf = await r.arrayBuffer();
+        const buf = await descargarArchivo(`/api/admin/documents/${docId}/raw`, { cache: "no-store" });
 
         if (formato === "csv") {
           if (cancelado) return;
@@ -86,25 +93,32 @@ export default function HojaCalculoEditor({
         setEstado("listo");
       } catch (e) {
         if (cancelado) return;
-        setError(e instanceof Error ? e.message : String(e));
+        setError(e);
         setEstado("error");
       }
     })();
     return () => { cancelado = true; };
-  }, [docId, formato]);
+  }, [docId, formato, intento]);
 
+  // El error va PRIMERO: cuando la carga falla no hay `inicial`, así que un
+  // guard por `!inicial` adelante dejaba la pantalla girando para siempre en
+  // "Abriendo la planilla…" y el aviso no se mostraba nunca.
+  if (estado === "error") {
+    return (
+      <AvisoArchivo
+        error={error}
+        titulo="No se pudo abrir la planilla"
+        sugerencia="Si el problema sigue, descargala y abrila en Excel."
+        urlDescarga={`/api/admin/documents/${docId}/raw`}
+        onReintentar={() => setIntento((n) => n + 1)}
+      />
+    );
+  }
   if (estado === "cargando" || !inicial) {
     return (
       <div className="p-16 text-center text-[var(--text-tertiary)]">
         <Loader2 className="mx-auto h-6 w-6 animate-spin" />
         <p className="mt-2 text-sm">Abriendo la planilla…</p>
-      </div>
-    );
-  }
-  if (estado === "error") {
-    return (
-      <div className="m-6 rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-6 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
-        <AlertTriangle className="mb-2 h-6 w-6" /> {error}
       </div>
     );
   }
@@ -161,6 +175,8 @@ function EditorCargado({
   const [menu, setMenu] = useState<{ x: number; y: number; fila: number; columna: number } | null>(null);
   /** Escala de la vista. Se acota para que la planilla siga siendo usable. */
   const [zoom, setZoom] = useState(1);
+  /** Diálogo de "resaltar por regla" sobre la selección. */
+  const [reglaAbierta, setReglaAbierta] = useState(false);
 
   const cambiarZoom = useCallback((delta: number | null) => {
     setZoom((z) => (delta === null ? 1 : Math.min(2, Math.max(0.5, Math.round((z + delta) * 10) / 10))));
@@ -182,34 +198,10 @@ function EditorCargado({
    * sin nombre lee la hoja activa; con nombre busca la hoja en el libro (sin
    * distinguir mayúsculas, como Excel) y `null` si no existe → `#¡REF!`.
    */
-  const hojaCalculada = useMemo(() => {
-    if (!hoja) return hoja;
-    const conFormula = hoja.filas.some((f) => f.some((c) => c.formula));
-    if (!conFormula) return hoja;
-    const leer = (f: number, c: number, nombre?: string) => {
-      const origen = nombre === undefined || nombre.toLowerCase() === hoja.nombre.toLowerCase()
-        ? hoja
-        : hojas.find((h) => h.nombre.toLowerCase() === nombre.toLowerCase());
-      if (!origen) return null;
-      const celda = origen.filas[f]?.[c];
-      if (!celda) return "";
-      return celda.formula ? `=${celda.formula}` : celda.crudo;
-    };
-    return {
-      ...hoja,
-      filas: hoja.filas.map((fila) => fila.map((celda) => {
-        if (!celda.formula) return celda;
-        const resultado = evaluarFormula(`=${celda.formula}`, leer, hoja.nombre);
-        // El resultado se vuelve a vestir con el formato de la celda: si no,
-        // una columna de importes pasa de "S/ 56,650.00" a "56650" al editar.
-        const n = Number(resultado);
-        const texto = Number.isFinite(n) && resultado !== ""
-          ? formatearValor(n, celda.numFmt)
-          : resultado;
-        return { ...celda, texto };
-      })),
-    };
-  }, [hoja, hojas]);
+  const hojaCalculada = useMemo(
+    () => (hoja ? calcularHoja(hoja, hojas) : hoja),
+    [hoja, hojas],
+  );
 
   /**
    * La hoja que se dibuja: la calculada, con las filas que el filtro esconde.
@@ -348,6 +340,7 @@ function EditorCargado({
 
   const acciones = useMemo(() => ({
     formato: (f: CambioFormato) => ejecutar({ tipo: "formato", celdas: celdasDe(sel), formato: f }),
+    regla: () => setReglaAbierta(true),
     insertar: (eje: "fila" | "columna") =>
       ejecutar({ tipo: "estructura", eje, indice: (eje === "fila" ? sel.filaIni : sel.colIni) + 1, delta: 1 }),
     eliminar: (eje: "fila" | "columna") =>
@@ -621,6 +614,20 @@ function EditorCargado({
         />
       )}
 
+      {/* Resaltar por regla: se calcula sobre lo que se VE (con las fórmulas
+          ya resueltas) y se aplica como un solo paso de deshacer. */}
+      {reglaAbierta && hojaCalculada && (
+        <ReglaResaltado
+          filas={hojaCalculada.filas}
+          rango={sel}
+          etiquetaRango={etiquetaRango(sel)}
+          onAplicar={(celdas, color) => {
+            if (celdas.length > 0) ejecutar({ tipo: "formato", celdas, formato: { fondo: color } });
+          }}
+          onCerrar={() => setReglaAbierta(false)}
+        />
+      )}
+
       {/* Barra de fórmulas: qué celda es y qué tiene realmente adentro. */}
       <div className="flex items-center gap-2 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5">
         <span className="w-20 shrink-0 rounded-md border border-[var(--rule-base)] px-2 py-0.5 text-center text-xs font-bold text-[var(--text-secondary)]">
@@ -746,23 +753,6 @@ function copiaDeHoja(hoja: HojaFormato, nombre: string): HojaFormato {
     columnasOcultas: [...hoja.columnasOcultas],
     filasOcultas: [...hoja.filasOcultas],
     congelado: { ...hoja.congelado },
-    oculta: false,
-  };
-}
-
-/** Un .csv no tiene formato: se muestra como una hoja simple. */
-function hojaDesdeCsv(texto: string): HojaFormato {
-  const filas = parsearCsv(texto);
-  const cols = Math.max(1, ...filas.map((f) => f.length));
-  return {
-    nombre: "Hoja1",
-    filas: filas.map((f) => Array.from({ length: cols }, (_, i) => ({ texto: f[i] ?? "", crudo: f[i] ?? "" }))),
-    anchos: new Array(cols).fill(140),
-    altos: new Array(filas.length || 1).fill(24),
-    columnasOcultas: new Array(cols).fill(false),
-    filasOcultas: new Array(filas.length || 1).fill(false),
-    congelado: { filas: 0, columnas: 0 },
-    tieneFormulas: false,
     oculta: false,
   };
 }

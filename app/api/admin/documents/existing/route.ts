@@ -22,7 +22,7 @@ const Body = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const rl = await applyRateLimit(req, "GENEROUS", "documents:existing");
+    const rl = await applyRateLimit(req, "DRIVE_READ", "documents:existing");
     if (rl) return rl;
     const csrfFail = assertCsrf(req);
     if (csrfFail) return csrfFail;

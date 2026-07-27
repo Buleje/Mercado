@@ -27,7 +27,7 @@ const PROFUNDIDAD_MAX = 6;
 
 export async function POST(req: NextRequest) {
   try {
-    const rl = await applyRateLimit(req, "MODERATE", "documents:folders:tree");
+    const rl = await applyRateLimit(req, "DRIVE_READ", "documents:folders:tree");
     if (rl) return rl;
     const csrfFail = assertCsrf(req);
     if (csrfFail) return csrfFail;

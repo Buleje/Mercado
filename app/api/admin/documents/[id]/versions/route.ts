@@ -16,7 +16,7 @@ import { assertCsrf } from "@/lib/auth/csrf";
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, ctx: Ctx) {
-  const rl = await applyRateLimit(req, "MODERATE", "documents:versions:list");
+  const rl = await applyRateLimit(req, "DRIVE_READ", "documents:versions:list");
   if (rl) return rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   // diez minutos de edición seguida agotaban el presupuesto y el guardado
   // empezaba a fallar en medio del trabajo. Sigue siendo un admin autenticado
   // subiendo archivos a su propio tenant, con el tope de tamaño aparte.
-  const rl = await applyRateLimit(req, "MODERATE", "documents:version:upload");
+  const rl = await applyRateLimit(req, "DRIVE", "documents:version:upload");
   if (rl) return rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;

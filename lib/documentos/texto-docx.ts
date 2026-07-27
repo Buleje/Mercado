@@ -56,6 +56,18 @@ export function esTextoEditable(mimeType: string | null | undefined, nombre?: st
   return n.endsWith(".docx") || n.endsWith(".txt") || n.endsWith(".md");
 }
 
+/**
+ * ¿Se puede LEER en el visor de texto? Suma .odt, que se muestra pero no se
+ * edita: la edición reescribe el .docx original tramo por tramo y un ODF es
+ * otro formato — guardarlo desde acá lo empeoraría.
+ */
+export function esTextoLegible(mimeType: string | null | undefined, nombre?: string | null): boolean {
+  if (esTextoEditable(mimeType, nombre)) return true;
+  const m = (mimeType ?? "").toLowerCase();
+  const n = (nombre ?? "").toLowerCase();
+  return m.includes("opendocument.text") || n.endsWith(".odt");
+}
+
 export function formatoTextoDe(mimeType: string | null | undefined, nombre?: string | null): FormatoTexto {
   const m = (mimeType ?? "").toLowerCase();
   const n = (nombre ?? "").toLowerCase();

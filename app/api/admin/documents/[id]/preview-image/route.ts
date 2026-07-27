@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
   try {
     // GENEROUS como el thumbnail: la grilla pide una por documento sin que el
     // usuario haga nada (ADR-306).
-    const rl = await applyRateLimit(req, "GENEROUS", "documents:preview-image");
+    const rl = await applyRateLimit(req, "DRIVE_READ", "documents:preview-image");
     if (rl) return rl;
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;

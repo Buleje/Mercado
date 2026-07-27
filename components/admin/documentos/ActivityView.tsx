@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  Upload, Eye, Download, Pencil, Trash2, RotateCcw, Share2, Ban, PenTool, FileText, FolderInput, Tag, History, Loader2, User, Sparkles, ScanLine, Stamp, Link2, Combine,
+  Upload, Eye, Download, Pencil, Trash2, RotateCcw, Share2, Ban, PenTool, FileText, FolderInput, Tag, History, Loader2, User, Sparkles, ScanLine, Stamp, Link2, Combine, MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DbDocumentActivity, DocAction } from "@/lib/types/documents";
@@ -22,6 +22,7 @@ const ACTION_META: Record<DocAction, { verb: string; Icon: typeof Upload; cls: s
   version: { verb: "subió una versión de", Icon: FileText, cls: "bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]" },
   move: { verb: "movió", Icon: FolderInput, cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
   tag: { verb: "etiquetó", Icon: Tag, cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
+  whatsapp_send: { verb: "mandó por WhatsApp", Icon: MessageCircle, cls: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]" },
   ai_categorize: { verb: "clasificó con IA", Icon: Sparkles, cls: "bg-[var(--accent)]/15 text-[var(--accent)]" },
   ocr: { verb: "escaneó (OCR)", Icon: ScanLine, cls: "bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]" },
   stamp: { verb: "selló", Icon: Stamp, cls: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]" },

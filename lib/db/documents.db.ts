@@ -16,6 +16,7 @@ import type {
   DbDocumentFolder,
   DbDocumentVersion,
   DbDocumentShare,
+  DbSharedLink,
   DbDocumentAuditLog,
   DbDocumentActivity,
   DbDocumentTemplate,
@@ -972,6 +973,93 @@ export class DocumentsDB {
       where: { token },
       data: { accessCount: { increment: 1 }, lastAccessAt: new Date() },
     });
+  }
+
+  static async revokeFolderShare(tenantId: string, shareId: string): Promise<boolean> {
+    const r = await prisma.documentFolderShare.updateMany({
+      where: { id: shareId, tenantId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    return r.count > 0;
+  }
+
+  // ── Centro de enlaces (documentos + carpetas en una sola lista) ─────────────
+
+  /**
+   * Todos los enlaces públicos del tenant, de documentos y de carpetas, en una
+   * lista única ordenada por fecha de creación. El token viaja completo porque
+   * el admin necesita poder copiar el enlace para reenviarlo.
+   */
+  static async listTenantShares(
+    tenantId: string,
+    opts: { limit?: number } = {}
+  ): Promise<DbSharedLink[]> {
+    const take = Math.max(1, Math.min(500, opts.limit ?? 200));
+
+    const [docShares, folderShares] = await Promise.all([
+      prisma.documentShare.findMany({
+        where: { tenantId, document: { deletedAt: null } },
+        include: { document: { select: { id: true, name: true } } },
+        orderBy: { createdAt: "desc" },
+        take,
+      }),
+      prisma.documentFolderShare.findMany({
+        where: { tenantId },
+        include: { folder: { select: { id: true, name: true } } },
+        orderBy: { createdAt: "desc" },
+        take,
+      }),
+    ]);
+
+    const links: DbSharedLink[] = [
+      ...docShares.map((s) => ({
+        id: s.id,
+        kind: "doc" as const,
+        targetId: s.document.id,
+        targetName: s.document.name,
+        token: s.token,
+        expiresAt: toISOReq(s.expiresAt),
+        hasPassword: !!s.password,
+        createdById: s.createdById,
+        createdAt: toISOReq(s.createdAt),
+        accessCount: s.accessCount,
+        lastAccessAt: toISO(s.lastAccessAt),
+        revokedAt: toISO(s.revokedAt),
+      })),
+      ...folderShares.map((s) => ({
+        id: s.id,
+        kind: "folder" as const,
+        targetId: s.folder.id,
+        targetName: s.folder.name,
+        token: s.token,
+        expiresAt: toISOReq(s.expiresAt),
+        hasPassword: !!s.password,
+        createdById: s.createdById,
+        createdAt: toISOReq(s.createdAt),
+        accessCount: s.accessCount,
+        lastAccessAt: toISO(s.lastAccessAt),
+        revokedAt: toISO(s.revokedAt),
+      })),
+    ];
+
+    return links
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, take);
+  }
+
+  /** Revoca de una sola vez todos los enlaces vivos del tenant (botón de pánico). */
+  static async revokeAllShares(tenantId: string): Promise<number> {
+    const [docs, folders] = await Promise.all([
+      prisma.documentShare.updateMany({
+        where: { tenantId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+      prisma.documentFolderShare.updateMany({
+        where: { tenantId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
+    return docs.count + folders.count;
   }
 
   // ── Audit log ──────────────────────────────────────────────────────────────

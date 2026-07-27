@@ -12,34 +12,42 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, Presentation } from "@buleje/design-system/icons";
 import { leerPresentacion, type Diapositiva } from "@/lib/documentos/presentacion";
+import { descargarArchivo } from "@/lib/documentos/archivo-remoto";
+import AvisoArchivo from "./AvisoArchivo";
 
 export default function PresentacionPreview({ url, nombre }: { url: string; nombre: string }) {
   const [diapos, setDiapos] = useState<Diapositiva[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  /** Sube con cada "reintentar": vuelve a pedir el archivo. */
+  const [intento, setIntento] = useState(0);
 
   useEffect(() => {
     let vigente = true;
+    setDiapos(null);
+    setError(null);
     void (async () => {
       try {
         // jszip entra por dynamic import: sólo pesa cuando se abre una presentación.
-        const [{ default: JSZip }, res] = await Promise.all([import("jszip"), fetch(url, { credentials: "include" })]);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const zip = await JSZip.loadAsync(await res.arrayBuffer());
+        const [{ default: JSZip }, datos] = await Promise.all([import("jszip"), descargarArchivo(url)]);
+        const zip = await JSZip.loadAsync(datos);
         const d = await leerPresentacion(zip, nombre);
         if (vigente) setDiapos(d);
       } catch (e) {
-        if (vigente) setError(e instanceof Error ? e.message : String(e));
+        if (vigente) setError(e);
       }
     })();
     return () => { vigente = false; };
-  }, [url, nombre]);
+  }, [url, nombre, intento]);
 
   if (error) {
     return (
-      <p className="flex items-center gap-2 p-6 text-sm text-[var(--text-secondary)]">
-        <AlertCircle className="h-4 w-4 shrink-0 text-[var(--data-error-500)]" />
-        No se pudo leer la presentación ({error}). Descargala para abrirla.
-      </p>
+      <AvisoArchivo
+        error={error}
+        titulo="No se pudo leer la presentación"
+        sugerencia="También podés descargarla y abrirla en PowerPoint."
+        urlDescarga={url}
+        onReintentar={() => setIntento((n) => n + 1)}
+      />
     );
   }
 

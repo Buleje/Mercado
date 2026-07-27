@@ -23,6 +23,7 @@ export const DOC_ACTIONS = [
   "stamp",
   "link",
   "merge",
+  "whatsapp_send",
 ] as const;
 export type DocAction = (typeof DOC_ACTIONS)[number];
 
@@ -99,6 +100,25 @@ export interface DbDocumentShare {
   id: string;
   documentId: string;
   tenantId: string;
+  token: string;
+  expiresAt: string;
+  hasPassword: boolean;
+  createdById: string;
+  createdAt: string;
+  accessCount: number;
+  lastAccessAt: string | null;
+  revokedAt: string | null;
+}
+
+/**
+ * Enlace público vivo del tenant — unifica los de documento y los de carpeta
+ * para el centro de "Enlaces compartidos" del drive.
+ */
+export interface DbSharedLink {
+  id: string;
+  kind: "doc" | "folder";
+  targetId: string;
+  targetName: string;
   token: string;
   expiresAt: string;
   hasPassword: boolean;

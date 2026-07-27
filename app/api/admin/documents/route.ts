@@ -34,7 +34,7 @@ const ListQuery = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const rl = await applyRateLimit(req, "GENEROUS", "documents:list");
+  const rl = await applyRateLimit(req, "DRIVE_READ", "documents:list");
   if (rl) return rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;

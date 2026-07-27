@@ -25,7 +25,7 @@ import {
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive, Loader2,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
-  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Presentation,
+  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Presentation, Link2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -46,6 +46,7 @@ import { FolderEditModal } from "./FolderEditModal";
 import { FolderShareModal } from "./FolderShareModal";
 import { FolderGlyph } from "./folder-visuals";
 import { ActivityView } from "./ActivityView";
+import { EnlacesView } from "./EnlacesView";
 import { CalendarView } from "./CalendarView";
 import { StampModal } from "./StampModal";
 import { DashboardView } from "./DashboardView";
@@ -118,9 +119,14 @@ function DocThumb({ doc, Icon, tint, bg }: { doc: DbDocument; Icon: typeof FileI
   // y había que bajar el archivo para saber qué foto era.
   const convertible = !isImage && esImagenConvertible(doc.name, doc.mimeType);
   const isPdf = doc.mimeType === "application/pdf";
+  // Excel y Word también tienen carita: el servidor dibuja las primeras filas
+  // de la planilla o las primeras líneas del documento. Antes eran todos el
+  // mismo ícono y había que abrirlos de a uno para saber cuál era cuál.
+  const familia = familiaDe(doc.name, doc.mimeType);
+  const dibujable = familia === "planilla" || familia === "texto";
   const [failed, setFailed] = useState(false);
 
-  if ((isImage || convertible || isPdf) && !failed) {
+  if ((isImage || convertible || isPdf || dibujable) && !failed) {
     const src = isImage
       ? `/api/admin/documents/${doc.id}/raw`
       : convertible
@@ -133,7 +139,7 @@ function DocThumb({ doc, Icon, tint, bg }: { doc: DbDocument; Icon: typeof FileI
         alt={doc.name}
         loading="lazy"
         onError={() => setFailed(true)}
-        className={cn("w-full h-full object-cover", isPdf && "object-top bg-white")}
+        className={cn("w-full h-full object-cover", (isPdf || dibujable) && "object-top bg-white")}
       />
     );
   }
@@ -196,7 +202,7 @@ function MatchSnippet({ text, term }: { text: string | null; term: string }) {
 }
 
 interface BuiltinCategory {
-  id: "all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "activity" | "trash";
+  id: "all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "activity" | "enlaces" | "trash";
   label: string;
   icon: typeof Folder;
   color: string;
@@ -211,8 +217,15 @@ const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "expiring", label: "Por vencer", icon: AlarmClock, color: "text-red-500" },
   { id: "calendar", label: "Calendario", icon: CalendarDays, color: "text-primary" },
   { id: "activity", label: "Actividad", icon: History, color: "text-[var(--accent)]" },
+  { id: "enlaces", label: "Enlaces", icon: Link2, color: "text-[var(--accent)]" },
   { id: "trash", label: "Papelera", icon: Trash2, color: "text-[var(--text-tertiary)]" },
 ];
+
+/**
+ * Vistas que dibujan su propio contenido en vez de la lista de documentos: no
+ * les corresponde la toolbar de búsqueda/orden ni el filtro por estado.
+ */
+const VISTAS_CON_CONTENIDO_PROPIO = new Set(["dashboard", "assistant", "activity", "calendar", "enlaces"]);
 
 // ADR-119 — almacenamiento orientativo por plan (bytes). Sin gate duro: solo
 // para el anillo visual. El límite real lo aplica el bucket (50 MB/archivo).
@@ -238,7 +251,7 @@ export default function DocumentosModule() {
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [semantic, setSemantic] = useState(false);
-  const [filterMode, setFilterMode] = useState<"all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "folder" | "activity" | "trash" | "smart">("all");
+  const [filterMode, setFilterMode] = useState<"all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "folder" | "activity" | "enlaces" | "trash" | "smart">("all");
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<{ name: string; expiresAt: string | null } | null>(null);
   // Resultado del análisis IA de contenido (resumen + datos clave).
@@ -278,7 +291,8 @@ export default function DocumentosModule() {
   const [rootDropActive, setRootDropActive] = useState(false);
   // Modales por-documento (mover a carpeta / enviar por WhatsApp).
   const [movingDoc, setMovingDoc] = useState<DbDocument | null>(null);
-  const [whatsappDoc, setWhatsappDoc] = useState<DbDocument | null>(null);
+  /** Documentos a mandar por WhatsApp: uno desde la ficha, varios desde la selección. */
+  const [whatsappDoc, setWhatsappDoc] = useState<DbDocument[] | null>(null);
   const [signDoc, setSignDoc] = useState<DbDocument | null>(null);
   const [stampTarget, setStampTarget] = useState<DbDocument | null>(null);
   const [merging, setMerging] = useState(false);
@@ -1329,8 +1343,8 @@ export default function DocumentosModule() {
 
         {/* ─── Main list ─── */}
         <div className="space-y-4">
-          {/* Toolbar — solo en vistas tipo lista (no en resumen/asistente/actividad/calendario) */}
-          {filterMode !== "dashboard" && filterMode !== "assistant" && filterMode !== "activity" && filterMode !== "calendar" && (
+          {/* Toolbar — solo en vistas tipo lista (no en resumen/asistente/actividad/calendario/enlaces) */}
+          {!VISTAS_CON_CONTENIDO_PROPIO.has(filterMode) && (
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex-1 min-w-[220px] relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
@@ -1498,6 +1512,22 @@ export default function DocumentosModule() {
               <button onClick={bulkDownloadZip} disabled={zipping} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1 disabled:opacity-60">
                 <FileArchive className="h-3 w-3" /> {zipping ? "Comprimiendo…" : "ZIP"}
               </button>
+              {/* Mandar la selección entera por WhatsApp: un enlace por
+                  documento en un solo mensaje. Antes había que abrir la ficha
+                  de cada uno y repetir el envío. */}
+              <button
+                onClick={() => {
+                  // Tope de 10: el endpoint de compartir corre con preset STRICT
+                  // (10 cada 15 min). Mandar 20 dejaría al usuario sin poder
+                  // compartir nada por un cuarto de hora.
+                  const elegidos = documents.filter((d) => selectedIds.has(d.id)).slice(0, 10);
+                  if (elegidos.length > 0) setWhatsappDoc(elegidos);
+                }}
+                title={selectedIds.size > 10 ? "Se enviarán los primeros 10 (límite del servidor: 10 enlaces cada 15 min)" : "Enviar los documentos seleccionados por WhatsApp"}
+                className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1"
+              >
+                <MessageCircle className="h-3 w-3" /> WhatsApp
+              </button>
               {selectedIds.size >= 2 && (
                 <button onClick={handleMerge} disabled={merging} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1 disabled:opacity-60" title="Combinar en un PDF">
                   <Combine className="h-3 w-3" /> {merging ? "Combinando…" : "Combinar PDF"}
@@ -1522,7 +1552,7 @@ export default function DocumentosModule() {
           )}
 
           {/* Filtro por estado (workflow) */}
-          {filterMode !== "activity" && filterMode !== "trash" && filterMode !== "assistant" && (statusFilter !== null || STATUS_ORDER.some((k) => statusCounts[k] > 0)) && (
+          {!VISTAS_CON_CONTENIDO_PROPIO.has(filterMode) && filterMode !== "trash" && (statusFilter !== null || STATUS_ORDER.some((k) => statusCounts[k] > 0)) && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Estado</span>
               <button
@@ -1555,7 +1585,7 @@ export default function DocumentosModule() {
             <AssistantView
               onOpenDoc={(id) => { const d = documents.find((x) => x.id === id); if (d) setPreview(d); }}
               onSign={(id) => { const d = documents.find((x) => x.id === id); if (d) setSignDoc(d); }}
-              onShare={(id) => { const d = documents.find((x) => x.id === id); if (d) setWhatsappDoc(d); }}
+              onShare={(id) => { const d = documents.find((x) => x.id === id); if (d) setWhatsappDoc([d]); }}
               onApprove={(id) => { patch(id, { status: "approved" }); }}
               indexableCount={indexableDocs.length}
               onIndexAll={handleIndexAll}
@@ -1568,6 +1598,8 @@ export default function DocumentosModule() {
             <CalendarView docs={documents} onOpenDoc={setPreview} />
           ) : filterMode === "activity" ? (
             <ActivityView />
+          ) : filterMode === "enlaces" ? (
+            <EnlacesView onOpenDoc={(id) => { const d = documents.find((x) => x.id === id); if (d) setPreview(d); }} />
           ) : loading && documents.length === 0 ? (
             <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-10 text-center text-sm text-[var(--text-tertiary)]">
               Cargando…
@@ -1591,7 +1623,7 @@ export default function DocumentosModule() {
                   onSelect={() => toggleSelect(doc.id)}
                   onPreview={() => setPreview(doc)}
                   onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
-                  onWhatsApp={() => setWhatsappDoc(doc)}
+                  onWhatsApp={() => setWhatsappDoc([doc])}
                   onSetStatus={(s) => patch(doc.id, { status: s })}
                   onRemove={async () => {
                     if (!confirm(`¿Eliminar "${doc.name}"?`)) return;
@@ -1697,7 +1729,7 @@ export default function DocumentosModule() {
                             onAnalyze={() => handleAnalyze(doc)}
                             onRename={() => startRename(doc)}
                             onMove={() => setMovingDoc(doc)}
-                            onWhatsApp={() => setWhatsappDoc(doc)}
+                            onWhatsApp={() => setWhatsappDoc([doc])}
                             onSign={() => setSignDoc(doc)}
                             onStamp={() => setStampTarget(doc)}
                             onRotate={() => handleRotate(doc)}
@@ -1778,10 +1810,10 @@ export default function DocumentosModule() {
       {showTemplates && (
         <TemplateGenerator
           onClose={() => setShowTemplates(false)}
-          onGenerated={() => {
-            setShowTemplates(false);
-            refresh();
-          }}
+          // Antes cerraba el modal apenas terminaba: el documento se generaba
+          // PARA mandarlo, así que ahora queda abierto en el paso de envío y
+          // sólo se refresca la lista de atrás.
+          onGenerated={() => { refresh(); }}
         />
       )}
 
@@ -1811,11 +1843,11 @@ export default function DocumentosModule() {
       )}
 
       {whatsappDoc && (
-        <SendWhatsAppModal doc={whatsappDoc} onClose={() => setWhatsappDoc(null)} />
+        <SendWhatsAppModal docs={whatsappDoc} onClose={() => setWhatsappDoc(null)} />
       )}
 
       {signDoc && (
-        <SendWhatsAppModal doc={signDoc} mode="sign" onClose={() => setSignDoc(null)} />
+        <SendWhatsAppModal docs={[signDoc]} mode="sign" onClose={() => setSignDoc(null)} />
       )}
 
       {stampTarget && (

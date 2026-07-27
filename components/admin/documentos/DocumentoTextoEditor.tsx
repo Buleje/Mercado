@@ -20,7 +20,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle, ArrowLeft, Check, Download, FileText, Loader2, Plus, Printer, Redo2, Save, Undo2,
+  ArrowLeft, Check, Download, FileText, Loader2, Plus, Printer, Redo2, Save, Undo2,
 } from "@buleje/design-system/icons";
 import { imprimirTexto } from "@/lib/documentos/documentos-print";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -28,6 +28,8 @@ import {
   escribirDocx, formatoTextoDe, generarPlano, leerDocx, leerPlano,
   type BloqueTexto, type DocumentoTexto,
 } from "@/lib/documentos/texto-docx";
+import { descargarArchivo } from "@/lib/documentos/archivo-remoto";
+import AvisoArchivo from "./AvisoArchivo";
 import FilaBloqueTexto from "./FilaBloqueTexto";
 
 type Estado = "cargando" | "listo" | "guardando" | "error";
@@ -50,6 +52,10 @@ export default function DocumentoTextoEditor({
   const [bloques, setBloques] = useState<BloqueTexto[]>([]);
   const [estado, setEstado] = useState<Estado>("cargando");
   const [error, setError] = useState<string | null>(null);
+  /** Error al ABRIR el archivo: se muestra con su motivo y su reintento. */
+  const [errorCarga, setErrorCarga] = useState<unknown>(null);
+  /** Sube con cada "reintentar": vuelve a pedir el archivo. */
+  const [intento, setIntento] = useState(0);
   const [sucio, setSucio] = useState(false);
   const [guardadoEn, setGuardadoEn] = useState<Date | null>(null);
   const formato = useMemo(() => formatoTextoDe(mimeType, nombre), [mimeType, nombre]);
@@ -68,11 +74,13 @@ export default function DocumentoTextoEditor({
 
   useEffect(() => {
     let cancelado = false;
+    setEstado("cargando");
+    setErrorCarga(null);
     (async () => {
       try {
-        const r = await fetch(`/api/admin/documents/${docId}/raw`, { credentials: "include", cache: "no-store" });
-        if (!r.ok) throw new Error(`No se pudo abrir el archivo (HTTP ${r.status})`);
-        const buf = await r.arrayBuffer();
+        // `no-store`: con una copia cacheada se abriría una versión anterior y
+        // el próximo guardado pisaría cambios ya guardados.
+        const buf = await descargarArchivo(`/api/admin/documents/${docId}/raw`, { cache: "no-store" });
         const doc = formato === "docx" ? await leerDocx(buf) : leerPlano(new TextDecoder().decode(buf));
         if (cancelado) return;
         originales.current = doc.bloques.map((b) => ({ ...b }));
@@ -81,12 +89,12 @@ export default function DocumentoTextoEditor({
         setEstado("listo");
       } catch (e) {
         if (cancelado) return;
-        setError(e instanceof Error ? e.message : String(e));
+        setErrorCarga(e);
         setEstado("error");
       }
     })();
     return () => { cancelado = true; };
-  }, [docId, formato]);
+  }, [docId, formato, intento]);
 
   const generarBlob = useCallback(async (): Promise<Blob> => {
     if (!documento) throw new Error("El documento todavía no cargó.");
@@ -280,18 +288,24 @@ export default function DocumentoTextoEditor({
   );
   const caracteres = useMemo(() => bloques.reduce((n, b) => n + b.texto.length, 0), [bloques]);
 
+  // El error de apertura va ANTES del spinner: si no, una carga fallida deja la
+  // pantalla girando para siempre en "Abriendo el documento…".
+  if (estado === "error" && bloques.length === 0) {
+    return (
+      <AvisoArchivo
+        error={errorCarga}
+        titulo="No se pudo abrir el documento"
+        sugerencia="Si el problema sigue, descargalo y abrilo en Word."
+        urlDescarga={`/api/admin/documents/${docId}/raw`}
+        onReintentar={() => setIntento((n) => n + 1)}
+      />
+    );
+  }
   if (estado === "cargando") {
     return (
       <div className="p-16 text-center text-[var(--text-tertiary)]">
         <Loader2 className="mx-auto h-6 w-6 animate-spin" />
         <p className="mt-2 text-sm">Abriendo el documento…</p>
-      </div>
-    );
-  }
-  if (estado === "error" && bloques.length === 0) {
-    return (
-      <div className="m-6 rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-6 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
-        <AlertTriangle className="mb-2 h-6 w-6" /> {error}
       </div>
     );
   }

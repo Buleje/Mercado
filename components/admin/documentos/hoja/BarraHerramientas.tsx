@@ -13,7 +13,7 @@ import { useState } from "react";
 import {
   AlignCenter, AlignLeft, AlignRight, ArrowDownAZ, ArrowUpAZ, Bold, CalendarDays, Combine,
   Filter, Grid3x3, Italic, Paintbrush, Palette, Percent, Plus, Redo2, Search, Sigma,
-  Snowflake, Trash2, Underline, Undo2,
+  Snowflake, Trash2, Underline, Undo2, Wand2,
 } from "@buleje/design-system/icons";
 import type { CambioFormato } from "@/lib/documentos/xlsx-estilos";
 import { ajustarDecimales, FORMATOS } from "@/lib/documentos/xlsx-estilos";
@@ -36,6 +36,8 @@ export interface AccionesBarra {
   deshacer: () => void;
   rehacer: () => void;
   buscar: () => void;
+  /** Pintar por regla ("todo lo que baje de 5"). */
+  regla: () => void;
 }
 
 const BOTON = "flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-secondary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-35 disabled:hover:bg-transparent";
@@ -140,6 +142,9 @@ export default function BarraHerramientas({
 
       <button type="button" className={BOTON} onClick={acciones.autosuma} title="Sumar la columna y poner el total abajo">
         <Sigma className="h-4 w-4" aria-hidden /><span className="sr-only">Autosuma</span>
+      </button>
+      <button type="button" className={BOTON} onClick={acciones.regla} title="Resaltar las celdas que cumplen una regla">
+        <Wand2 className="h-4 w-4" aria-hidden /><span className="sr-only">Resaltar por regla</span>
       </button>
       <button type="button" className={BOTON} onClick={acciones.buscar} title="Buscar y reemplazar (Ctrl+F)">
         <Search className="h-4 w-4" aria-hidden /><span className="sr-only">Buscar</span>

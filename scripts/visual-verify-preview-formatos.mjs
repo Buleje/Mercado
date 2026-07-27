@@ -41,6 +41,38 @@ async function pptx() {
   return zip.generateAsync({ type: "nodebuffer" });
 }
 
+/** Un .ods como los que genera LibreOffice, CON celdas repetidas y relleno. */
+async function ods() {
+  const zip = new JSZip();
+  zip.file("mimetype", "application/vnd.oasis.opendocument.spreadsheet");
+  const c = (v) => `<table:table-cell office:value-type="string"><text:p>${v}</text:p></table:table-cell>`;
+  zip.file("content.xml", `<?xml version="1.0"?><office:document-content xmlns:office="o" xmlns:table="t" xmlns:text="x"><office:body><office:spreadsheet>
+    <table:table table:name="Caja julio">
+      <table:table-row>${c("Día")}${c("Ingreso")}${c("Egreso")}</table:table-row>
+      <table:table-row>${c("Lunes")}${c("420.50")}${c("120.00")}</table:table-row>
+      <table:table-row>${c("Martes")}<table:table-cell table:number-columns-repeated="2"/></table:table-row>
+      <table:table-row table:number-rows-repeated="900"><table:table-cell table:number-columns-repeated="16384"/></table:table-row>
+      <table:table-row>${c("Total")}<table:table-cell table:formula="of:=SUM([.B2:.B3])" office:value="420.5"><text:p>420.5</text:p></table:table-cell></table:table-row>
+    </table:table>
+    <table:table table:name="Proveedores"><table:table-row>${c("Kola Real")}</table:table-row></table:table>
+  </office:spreadsheet></office:body></office:document-content>`);
+  return zip.generateAsync({ type: "nodebuffer" });
+}
+
+/** Un .odt con título, subtítulo y párrafos. */
+async function odt() {
+  const zip = new JSZip();
+  zip.file("mimetype", "application/vnd.oasis.opendocument.text");
+  zip.file("content.xml", `<?xml version="1.0"?><office:document-content xmlns:office="o" xmlns:text="x"><office:body><office:text>
+    <text:h text:outline-level="1">Contrato de alquiler</text:h>
+    <text:h text:outline-level="2">Primera cláusula</text:h>
+    <text:p>El arrendatario pagará S/ 1.500 mensuales por el local de Jirón Ucayali 450.</text:p>
+    <text:p/>
+    <text:p>La garantía es de S/ 3.000 y se devuelve al terminar.</text:p>
+  </office:text></office:body></office:document-content>`);
+  return zip.generateAsync({ type: "nodebuffer" });
+}
+
 /** Un .odp mínimo: todo en content.xml. */
 async function odp() {
   const zip = new JSZip();
@@ -68,6 +100,8 @@ const ARCHIVOS = [
   { nombre: "logo-qa.svg", buf: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><circle cx="150" cy="100" r="80" fill="#00a0a0"/></svg>'), tipo: "image/svg+xml" },
   { nombre: "charla-qa.pptx", buf: await pptx(), tipo: "" },
   { nombre: "cacao-qa.odp", buf: await odp(), tipo: "" },
+  { nombre: "caja-qa.ods", buf: await ods(), tipo: "" },
+  { nombre: "contrato-qa.odt", buf: await odt(), tipo: "" },
 ];
 
 await mkdir(OUT, { recursive: true });
@@ -113,7 +147,7 @@ for (const nombre of ["foto-qa.heic", "escaneo-qa.tiff", "logo-qa.svg"]) {
 
 // 2 · La vista previa en el modal, formato por formato
 console.log("\n=== VISTA PREVIA EN EL MODAL ===");
-for (const [i, nombre] of ["foto-qa.heic", "charla-qa.pptx", "cacao-qa.odp"].entries()) {
+for (const [i, nombre] of ["foto-qa.heic", "charla-qa.pptx", "cacao-qa.odp", "caja-qa.ods", "contrato-qa.odt"].entries()) {
   const doc = mios.find((d) => d.name === nombre);
   if (!doc) continue;
   await page.getByRole("button", { name: `Ver ${nombre}` }).first().click();
@@ -128,11 +162,11 @@ for (const [i, nombre] of ["foto-qa.heic", "charla-qa.pptx", "cacao-qa.odp"].ent
     const d = [...document.querySelectorAll("div")].find((x) => x.className.includes("fixed inset-0") && x.textContent?.includes("Vista previa"));
     if (!d) return false;
     const txt = d.textContent ?? "";
-    const img = d.querySelector('img[src*="preview-image"]');
+    const img = d.querySelector("img");
     // `complete` + naturalWidth: que el <img> EXISTA no significa que ya cargó
     // (medía 0x0 y parecía roto).
     if (img) return img.complete && img.naturalWidth > 0;
-    return /diapositivas?|No se pudo leer/.test(txt);
+    return /diapositivas?|No se pudo leer|Caja julio|Contrato de alquiler|no se pudo mostrar/i.test(txt);
   }, { timeout: 40_000 }).catch(() => {});
   await page.waitForTimeout(600);
   // OJO: sin el modal NO hay que caer al body — la grilla de atrás también
@@ -140,16 +174,24 @@ for (const [i, nombre] of ["foto-qa.heic", "charla-qa.pptx", "cacao-qa.odp"].ent
   const visto = await page.evaluate(() => {
     const d = [...document.querySelectorAll("div")].find((x) => x.className.includes("fixed inset-0") && x.textContent?.includes("Vista previa"));
     if (!d) return { falta: true };
-    const img = d.querySelector('img[src*="preview-image"]');
+    const img = d.querySelector("img");
     const cuerpo = (d.textContent ?? "").replace(/\s+/g, " ");
+    // Para ODS/ODT interesa el CUERPO, no la cabecera del modal.
+    const tabla = d.querySelector("table");
     return {
       imagen: img ? `${img.naturalWidth}x${img.naturalHeight}` : null,
       diapos: /(\d+) diapositivas?/.exec(cuerpo)?.[0] ?? null,
+      celdas: tabla ? [...tabla.querySelectorAll("tbody td")].map((td) => td.textContent).filter(Boolean).slice(0, 8).join(" | ") : null,
+      parrafos: [...d.querySelectorAll("p, h1, h2, h3")].map((x) => x.textContent?.trim()).filter((x) => x && x.length > 8).slice(0, 3).join(" / "),
       muestra: cuerpo.slice(0, 200),
     };
   });
   if (visto.falta) console.log(`  MAL ${nombre}: no se abrió el modal`);
-  else console.log(`  ${nombre}: ${visto.imagen ? `imagen ${visto.imagen}` : visto.diapos ? `${visto.diapos} → ${visto.muestra.slice(0, 120)}` : `(sin vista) ${visto.muestra.slice(0, 120)}`}`);
+  else if (visto.imagen) console.log(`  ${nombre}: imagen ${visto.imagen}`);
+  else if (visto.diapos) console.log(`  ${nombre}: ${visto.diapos}`);
+  else if (visto.celdas) console.log(`  ${nombre}: tabla → ${visto.celdas}`);
+  else if (visto.parrafos) console.log(`  ${nombre}: texto → ${visto.parrafos}`);
+  else console.log(`  MAL ${nombre}: (sin vista) ${visto.muestra.slice(0, 120)}`);
   await page.screenshot({ path: `${OUT}/24-preview-${i + 1}-${nombre.split(".").pop()}.png` });
   await page.keyboard.press("Escape");
   await page.waitForFunction(() =>

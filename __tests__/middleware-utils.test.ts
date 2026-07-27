@@ -282,6 +282,29 @@ describe("checkRateLimit (distributed — Upstash fallback path)", () => {
     expect(body.error).toBeTruthy();
     expect(typeof body.error).toBe("string");
   });
+
+  // Leer el drive (miniaturas + archivo servido + ficha) gasta muchas requests
+  // baratas: con el techo general de 60/min, revisar una carpeta grande moría a
+  // los pocos archivos y el 429 se dibujaba dentro del visor.
+  it("GET del drive: la request 61 sigue permitida (cupo propio)", async () => {
+    const req = makeReq("http://localhost/api/admin/documents/abc/raw", { "x-forwarded-for": "10.5.0.1" });
+    for (let i = 0; i < 60; i++) await checkRateLimit(req);
+    expect(await checkRateLimit(req)).toBeNull();
+  });
+
+  it("GET del drive: se corta igual al pasar su propio cupo", async () => {
+    const req = makeReq("http://localhost/api/admin/documents/abc/raw", { "x-forwarded-for": "10.5.0.2" });
+    for (let i = 0; i < 300; i++) await checkRateLimit(req);
+    expect(await checkRateLimit(req)).not.toBeNull();
+  });
+
+  it("el cupo del drive NO se gasta desde el resto de la API", async () => {
+    const drive = makeReq("http://localhost/api/admin/documents/abc/raw", { "x-forwarded-for": "10.5.0.3" });
+    const otra = makeReq("http://localhost/api/orders", { "x-forwarded-for": "10.5.0.3" });
+    for (let i = 0; i < 60; i++) await checkRateLimit(otra);
+    expect(await checkRateLimit(otra)).not.toBeNull(); // el general sí se agotó
+    expect(await checkRateLimit(drive)).toBeNull();    // el del drive sigue libre
+  });
 });
 
 // ── buildCSP ──────────────────────────────────────────────────────────────────

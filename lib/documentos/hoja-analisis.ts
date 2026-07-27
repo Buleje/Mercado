@@ -7,7 +7,7 @@
  * abrirlo en Excel, que es justo lo que este editor vino a evitar.
  */
 
-import type { CeldaHoja } from "./xlsx-formato";
+import { numeroALetra, type CeldaHoja } from "./xlsx-formato";
 import type { RangoNormal } from "./hoja-rango";
 
 /** Resumen de la selección, como el que Excel muestra abajo a la derecha. */
@@ -71,6 +71,81 @@ export function resumir(filas: CeldaHoja[][], rango: RangoNormal): Resumen {
     minimo: numeros.length ? Math.min(...numeros) : 0,
     maximo: numeros.length ? Math.max(...numeros) : 0,
   };
+}
+
+// ── Totales de las columnas de plata ─────────────────────────────────────────
+
+export interface TotalColumna {
+  columna: number;
+  /** Encabezado de la columna, o "Columna D" si no tiene. */
+  titulo: string;
+  suma: number;
+  /** Cuántas celdas entraron en la suma. */
+  cuenta: number;
+}
+
+/**
+ * ¿El valor VISIBLE de la celda es un número que se puede sumar?
+ *
+ * Más estricto que `comoNumeroVisible` a propósito. Aquel limpia prefijos para
+ * entender "S/ 1,250.00", y con eso "Partida 7" también le da 7: una columna de
+ * descripciones terminaba con un total inventado. Acá el texto tiene que SER un
+ * número (con moneda y separadores, nada más).
+ *
+ * Los porcentajes quedan afuera: sumar "18% + 18% + 18%" no significa nada.
+ */
+function numeroSumable(celda: CeldaHoja): number | null {
+  const t = (celda.texto ?? "").trim();
+  if (t === "" || t.endsWith("%")) return null;
+  if (!/^[-(]?\s*(S\/|US\$|\$|€|£)?\s*\d[\d.,]*\)?$/i.test(t)) return null;
+  return comoNumeroVisible(celda);
+}
+
+/**
+ * Las columnas que son plata o cantidades, con su total.
+ *
+ * Es lo primero que se busca al abrir un presupuesto ajeno: cuánto suma. Se
+ * exige que la columna sea numérica de VERDAD (mayoría de sus celdas con datos)
+ * para no ofrecer el total de una columna de códigos.
+ */
+export function totalesDeColumnas(
+  hoja: { filas: CeldaHoja[][]; anchos: number[]; columnasOcultas: boolean[] },
+  max = 6,
+): TotalColumna[] {
+  const out: TotalColumna[] = [];
+  const columnas = Math.max(hoja.anchos.length, ...hoja.filas.map((f) => f.length), 0);
+
+  for (let c = 0; c < columnas; c++) {
+    if (hoja.columnasOcultas[c]) continue;
+    let suma = 0, numeros = 0, conDatos = 0;
+    for (const fila of hoja.filas) {
+      const celda = fila?.[c];
+      if (!celda || celda.tapada) continue;
+      if ((celda.texto ?? "").trim() === "") continue;
+      conDatos++;
+      const n = numeroSumable(celda);
+      if (n !== null) { suma += n; numeros++; }
+    }
+    // Tres números sueltos en una columna de texto no son una columna numérica.
+    if (numeros < 3 || numeros < conDatos * 0.6) continue;
+
+    // El encabezado es el texto MÁS CERCANO a los datos dentro de las primeras
+    // filas, y nunca una celda tapada por una combinada: el título combinado de
+    // arriba ("Presupuesto de obra — julio 2026") se repite en todas las
+    // columnas y las bautizaba a todas igual.
+    const cabecera = hoja.filas.slice(0, 5)
+      .map((fila) => fila?.[c])
+      .filter((celda) => celda && !celda.tapada && !celda.continuaArriba
+        && numeroSumable(celda) === null && (celda.texto ?? "").trim() !== "")
+      .pop();
+    out.push({
+      columna: c,
+      titulo: (cabecera?.texto ?? `Columna ${numeroALetra(c + 1)}`).trim().slice(0, 28),
+      suma,
+      cuenta: numeros,
+    });
+  }
+  return out.slice(0, max);
 }
 
 export type Direccion = "asc" | "desc";
