@@ -4,6 +4,9 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { applySignature } from "@/lib/documents/sign-document";
+import {
+  estadoDeRonda, firmantePorToken, registrarFirma, type Ronda,
+} from "@/lib/documents/firma-multi";
 
 /**
  * POST /api/public/documents/[token]/sign — firma pública por link.
@@ -40,6 +43,31 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       }
     }
 
+    // Si el documento tiene una ronda de firmas, el token dice QUIÉN es y la
+    // ronda dice si le toca. Es la regla que sostiene todo: un contrato donde
+    // el segundo firmó antes que el primero no vale.
+    const meta = (found.doc.ocrMetadata ?? {}) as { firmaRonda?: Ronda };
+    const ronda = meta.firmaRonda ?? null;
+    const firmante = firmantePorToken(ronda, token);
+    if (ronda && firmante) {
+      const estado = estadoDeRonda(ronda);
+      if (estado === "frenada") {
+        return NextResponse.json({ error: "ronda_frenada", mensaje: "Alguien rechazó el documento: la firma quedó suspendida." }, { status: 409 });
+      }
+      if (estado === "completada" || firmante.estado === "firmado") {
+        return NextResponse.json({ error: "ya_firmado", mensaje: "Este documento ya fue firmado." }, { status: 409 });
+      }
+      try {
+        // Lanza si no es su turno.
+        registrarFirma(ronda, firmante.id);
+      } catch (err) {
+        return NextResponse.json({
+          error: "no_es_su_turno",
+          mensaje: err instanceof Error ? err.message : "Todavía no es su turno de firmar.",
+        }, { status: 409 });
+      }
+    }
+
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined;
     const result = await applySignature(found.doc.tenantId, found.doc.id, {
       signerName: parsed.data.signerName,
@@ -50,7 +78,24 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     });
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
 
-    return NextResponse.json({ ok: true, signedAt: result.signedAt });
+    // Recién cuando la firma quedó guardada se avanza la ronda: si el sellado
+    // del PDF falla, el firmante sigue teniendo su turno.
+    let rondaFinal: Ronda | null = ronda;
+    if (ronda && firmante) {
+      const r = registrarFirma(ronda, firmante.id, result.signedAt);
+      rondaFinal = r.ronda;
+      await DocumentsDB.update(found.doc.tenantId, found.doc.id, {
+        ocrMetadata: { ...(found.doc.ocrMetadata ?? {}), firmaRonda: rondaFinal },
+      });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      signedAt: result.signedAt,
+      ...(rondaFinal ? {
+        ronda: { estado: estadoDeRonda(rondaFinal), firmados: rondaFinal.firmantes.filter((f) => f.estado === "firmado").length, total: rondaFinal.firmantes.length },
+      } : {}),
+    });
   } catch (e) {
     logger.error("[public.documents.sign] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
