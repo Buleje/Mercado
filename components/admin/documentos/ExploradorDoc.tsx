@@ -179,9 +179,10 @@ export default function ExploradorDoc({
               onClick={() =>
                 setElegidos(elegidos.size === archivos.length ? new Set() : new Set(archivos.map((d) => d.id)))
               }
+              title={`Elige los ${archivos.length} de esta carpeta`}
               className="shrink-0 text-[length:var(--ts-2xs)] font-bold text-primary hover:underline"
             >
-              {elegidos.size === archivos.length ? "Ninguno" : "Elegir todos"}
+              {elegidos.size === archivos.length ? "Ninguno" : `Elegir los ${archivos.length}`}
             </button>
           )}
         </div>
@@ -322,12 +323,23 @@ export default function ExploradorDoc({
             <span className="text-xs font-bold tabular-nums">
               {elegidos.size} elegido{elegidos.size === 1 ? "" : "s"}
             </span>
-            <button
-              onClick={() => setElegidos(new Set())}
-              className="text-[length:var(--ts-2xs)] font-bold underline opacity-90 hover:opacity-100"
-            >
-              Soltar
-            </button>
+            <span className="flex items-center gap-2">
+              {elegidos.size < archivos.length && (
+                <button
+                  onClick={() => setElegidos(new Set(archivos.map((x) => x.id)))}
+                  className="text-[length:var(--ts-2xs)] font-bold underline opacity-90 hover:opacity-100"
+                  title="Extender la selección a todo lo que hay en esta carpeta"
+                >
+                  Elegir los {archivos.length}
+                </button>
+              )}
+              <button
+                onClick={() => setElegidos(new Set())}
+                className="text-[length:var(--ts-2xs)] font-bold underline opacity-90 hover:opacity-100"
+              >
+                Soltar
+              </button>
+            </span>
           </div>
           <div className="grid grid-cols-2 gap-1">
             <button

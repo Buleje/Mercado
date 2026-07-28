@@ -647,7 +647,22 @@ export default function DocumentosModule() {
     });
   };
   const clearSelection = () => setSelectedIds(new Set());
+  /**
+   * Elegir de una todo lo que está a la vista — que con filtros o búsqueda
+   * puestos NO es todo el drive, sino justo lo que acabás de acotar. Ese es el
+   * atajo que importa: filtrás "Excel, vencidos", tocás uno, y de ahí a
+   * borrarlos todos hay un clic.
+   */
   const selectAll = () => setSelectedIds(new Set(displayDocs.map((d) => d.id)));
+  const todosElegidos = displayDocs.length > 0 && selectedIds.size === displayDocs.length;
+  /** ¿Hay algo acotando la lista? Cambia el texto del atajo, para no prometer
+   *  "todos" cuando en realidad son los que sobrevivieron al filtro. */
+  const hayFiltroPuesto =
+    cuantosFiltrosActivos(filtros) > 0
+    || terminosBusqueda.length > 0
+    || statusFilter !== "all"
+    || soloSinDescribir
+    || filterMode === "folder";
 
   // ── Upload handlers ──
   const handleFiles = useCallback(
@@ -1636,8 +1651,20 @@ export default function DocumentosModule() {
           {selectedIds.size > 0 && (
             <div className="sticky top-2 z-30 flex flex-wrap items-center gap-x-2 gap-y-1.5 px-4 py-2.5 rounded-2xl bg-primary text-white shadow-lg">
               <span className="text-sm font-bold tabular-nums">{selectedIds.size} seleccionado(s)</span>
-              <button onClick={selectAll} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold">
-                Seleccionar todos ({displayDocs.length})
+              <button
+                onClick={() => (todosElegidos ? setSelectedIds(new Set()) : selectAll())}
+                className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold"
+                title={
+                  hayFiltroPuesto
+                    ? "Elige todo lo que quedó tras filtrar, no todo el drive"
+                    : "Elige todos los que están a la vista"
+                }
+              >
+                {todosElegidos
+                  ? "Ninguno"
+                  : hayFiltroPuesto
+                    ? `Elegir los ${displayDocs.length} filtrados`
+                    : `Elegir los ${displayDocs.length}`}
               </button>
               <button onClick={() => bulkFavorite(true)} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1">
                 <Star className="h-3 w-3" /> Favorito
