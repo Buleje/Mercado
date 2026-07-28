@@ -367,7 +367,11 @@ function printGuiaSunat(g: GuiaRemision, formatDate: (d: string) => string) {
     '<div class="section"><div class="section-title">Transporte</div>',
     conditionalRow(g.transportistaNombre, "Transportista", g.transportistaNombre || ""),
     conditionalRow(g.transportistaRuc, "RUC", g.transportistaRuc || ""),
-    conditionalRow(g.transportistaPlaca, "Placa", g.transportistaPlaca || ""),
+    // La placa se guarda como `vehiculoPlaca`; `transportistaPlaca` es el
+    // nombre viejo. Preguntando sólo por el viejo, la guía impresa salía SIN
+    // placa — y una guía de remisión sin placa del vehículo no sirve en un
+    // control de carretera. `placaDe` ya sabe leer las dos.
+    conditionalRow(getPlaca(g), "Placa", getPlaca(g)),
     conditionalRow(g.conductorNombre, "Conductor", g.conductorNombre || ""),
     conditionalRow(g.conductorDni, "DNI Conductor", g.conductorDni || ""),
     "</div>",

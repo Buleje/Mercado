@@ -37,8 +37,8 @@ type NotaCredito = {
   orderId?: string;
   saleId?: string;
   orderNumero?: string;
-  codigoMotivo: string;
-  descripcionMotivo: string;
+  motivoCodigo: string;
+  motivoDesc: string;
   monto: number;
   igv: number;
   total: number;
@@ -214,7 +214,7 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
               {meta.label}
             </span>
           </div>
-          <p className="text-xs text-[var(--text-secondary)] truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
+          <p className="text-xs text-[var(--text-secondary)] truncate mb-1">[{nc.motivoCodigo}] {nc.motivoDesc}</p>
           {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-1">{nc.clienteNombre}</p>}
           {nc.orderNumero && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] mb-2">
@@ -625,7 +625,7 @@ export default function NotasCreditoModule() {
   const exportCSV = () => {
     const items = someChecked ? filteredNotas.filter(nc => checkedIds.has(nc.id)) : filteredNotas;
     const header = "Número,Motivo,Codigo,Monto,IGV,Total,Status,Fecha\n";
-    const rows = items.map(nc => `${nc.numero},"${nc.descripcionMotivo}",${nc.codigoMotivo},${nc.monto},${nc.igv},${nc.total},${nc.status},${nc.createdAt.slice(0, 10)}`).join("\n");
+    const rows = items.map(nc => `${nc.numero},"${nc.motivoDesc}",${nc.motivoCodigo},${nc.monto},${nc.igv},${nc.total},${nc.status},${nc.createdAt.slice(0, 10)}`).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `notas-credito-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
@@ -669,7 +669,7 @@ export default function NotasCreditoModule() {
   };
 
   const handleDuplicate = (nc: NotaCredito) => {
-    setForm({ orderId: nc.saleId ?? nc.orderId ?? "", codigoMotivo: nc.codigoMotivo, descripcionMotivo: nc.descripcionMotivo, monto: String(nc.monto), notasText: nc.notas ?? "" });
+    setForm({ orderId: nc.saleId ?? nc.orderId ?? "", codigoMotivo: nc.motivoCodigo, descripcionMotivo: nc.motivoDesc, monto: String(nc.monto), notasText: nc.notas ?? "" });
     setShowNew(true); setWizardStep(1); setSelected(null);
   };
 
@@ -750,9 +750,9 @@ export default function NotasCreditoModule() {
       y += 8;
     });
     y += 4;
-    doc.setFont("helvetica", "bold"); doc.text(`[${nc.codigoMotivo}] Motivo:`, col1, y);
+    doc.setFont("helvetica", "bold"); doc.text(`[${nc.motivoCodigo}] Motivo:`, col1, y);
     doc.setFont("helvetica", "normal");
-    doc.text(nc.descripcionMotivo, col2, y);
+    doc.text(nc.motivoDesc, col2, y);
     y += 12;
     doc.line(15, y, 195, y); y += 8;
     doc.setFontSize(12);
@@ -771,7 +771,7 @@ export default function NotasCreditoModule() {
 
   // ── Enviar por WhatsApp ───────────────────────────────────────────────────
   const sendWhatsApp = (nc: NotaCredito) => {
-    const text = `*Nota de Crédito ${nc.numero}*\nMotivo: [${nc.codigoMotivo}] ${nc.descripcionMotivo}\nCliente: ${nc.clienteNombre ?? "—"}\nTotal: ${formatCurrency(nc.total)}\nEstado: ${STATUS_META[nc.status].label}\nFecha: ${formatDate(nc.createdAt)}`;
+    const text = `*Nota de Crédito ${nc.numero}*\nMotivo: [${nc.motivoCodigo}] ${nc.motivoDesc}\nCliente: ${nc.clienteNombre ?? "—"}\nTotal: ${formatCurrency(nc.total)}\nEstado: ${STATUS_META[nc.status].label}\nFecha: ${formatDate(nc.createdAt)}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -787,7 +787,7 @@ export default function NotasCreditoModule() {
     const prevTotal = ncMesAnt.reduce((s, nc) => s + nc.total, 0);
     const trend = prevTotal > 0 ? ((total - prevTotal) / prevTotal) * 100 : 0;
     const motivoCounts: Record<string, number> = {};
-    for (const nc of ncMes) { const m = MOTIVOS_SUNAT.find(x => x.code === nc.codigoMotivo)?.label ?? nc.codigoMotivo; motivoCounts[m] = (motivoCounts[m] ?? 0) + 1; }
+    for (const nc of ncMes) { const m = MOTIVOS_SUNAT.find(x => x.code === nc.motivoCodigo)?.label ?? nc.motivoCodigo; motivoCounts[m] = (motivoCounts[m] ?? 0) + 1; }
     const topMotivo = Object.entries(motivoCounts).sort((a, b) => b[1] - a[1])[0];
     return { count, total, trend, topMotivo };
   }, [notas]);
@@ -812,9 +812,9 @@ export default function NotasCreditoModule() {
     const ncMes = notas.filter(nc => nc.createdAt.startsWith(mesActual));
     const motivoMap = new Map<string, { desc: string; count: number }>();
     for (const nc of ncMes) {
-      const desc = MOTIVOS_SUNAT.find(m => m.code === nc.codigoMotivo)?.label || nc.descripcionMotivo || "Otro";
-      const existing = motivoMap.get(nc.codigoMotivo);
-      if (existing) existing.count++; else motivoMap.set(nc.codigoMotivo, { desc, count: 1 });
+      const desc = MOTIVOS_SUNAT.find(m => m.code === nc.motivoCodigo)?.label || nc.motivoDesc || "Otro";
+      const existing = motivoMap.get(nc.motivoCodigo);
+      if (existing) existing.count++; else motivoMap.set(nc.motivoCodigo, { desc, count: 1 });
     }
     const motivoColors: Record<string, string> = { "01": "var(--data-error)", "06": "var(--data-warning)", "07": "var(--data-warning)", "02": "var(--text-secondary)", "03": "var(--text-secondary)", "04": "var(--text-tertiary)", "05": "var(--text-tertiary)" };
     return Array.from(motivoMap.entries()).map(([code, { desc, count }]) => ({ name: desc, value: count, color: motivoColors[code] || "#9ca3af" }));
@@ -1070,7 +1070,7 @@ export default function NotasCreditoModule() {
                         <span className="font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{nc.numero}</span>
                         <span className="text-sm font-extrabold text-[var(--text-primary)]">{formatCurrency(nc.total)}</span>
                       </div>
-                      <p className="text-xs text-[var(--text-secondary)] truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
+                      <p className="text-xs text-[var(--text-secondary)] truncate mb-1">[{nc.motivoCodigo}] {nc.motivoDesc}</p>
                       {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{nc.clienteNombre}</p>}
                       <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--rule-soft)]">
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{formatDate(nc.createdAt)}</span>
@@ -1179,8 +1179,8 @@ export default function NotasCreditoModule() {
                           ) : <span className="text-[var(--text-tertiary)]">{"\u2014"}</span>}
                         </td>
                         <td className="px-3 py-3 text-[var(--text-primary)] truncate max-w-45">
-                          <span className="text-xs text-[var(--text-tertiary)] mr-1">[{nc.codigoMotivo}]</span>
-                          {nc.descripcionMotivo}
+                          <span className="text-xs text-[var(--text-tertiary)] mr-1">[{nc.motivoCodigo}]</span>
+                          {nc.motivoDesc}
                         </td>
                         <td className="px-3 py-3 text-right font-bold text-[var(--text-primary)]">{formatCurrency(nc.total)}</td>
                         <td className="px-3 py-3">
@@ -1282,7 +1282,7 @@ export default function NotasCreditoModule() {
                 </div>
 
                 <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-3">
-                  <p className="text-sm font-bold text-[var(--text-primary)]">[{selected.codigoMotivo}] {selected.descripcionMotivo}</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)]">[{selected.motivoCodigo}] {selected.motivoDesc}</p>
                   {selected.clienteNombre && (
                     <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                       <span>Cliente: <strong className="text-[var(--text-primary)]">{selected.clienteNombre}</strong></span>
