@@ -1830,6 +1830,7 @@ export default function DocumentosModule() {
               onMover: async (folderId) => { await patch(preview.id, { folderId }); },
               onCrear: async (nombre, parentId) => { await createFolder({ name: nombre, parentId }); },
               onRenombrar: async (id, nombre) => { await updateFolder(id, { name: nombre }); },
+              onBorrar: async (id) => { await deleteFolder(id); },
             }}
             // Las mismas herramientas del menú de la lista, para no tener que
             // cerrar el documento y buscarlo de nuevo para sellarlo o rotarlo.

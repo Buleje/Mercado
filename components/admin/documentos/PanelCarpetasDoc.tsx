@@ -15,16 +15,18 @@
 
 import { useMemo, useState } from "react";
 import {
-  Folder as FolderIcon, FolderPlus, ChevronRight, ChevronDown, Check, Loader2, Pencil, X,
+  Folder as FolderIcon, FolderPlus, ChevronRight, ChevronDown, Check, Loader2, Pencil, X, Trash2, Search,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocumentFolder } from "@/lib/types/documents";
-import { buildChildrenMap, folderPath } from "@/lib/documentos/folder-tree";
+import { buildChildrenMap, descendantIds, folderPath } from "@/lib/documentos/folder-tree";
 
 export interface AccionesCarpeta {
   onMover: (folderId: string | null) => Promise<void> | void;
   onCrear: (nombre: string, parentId: string | null) => Promise<void> | void;
   onRenombrar: (id: string, nombre: string) => Promise<void> | void;
+  /** Opcional: si no se pasa, el panel no ofrece borrar. */
+  onBorrar?: (id: string) => Promise<void> | void;
 }
 
 interface Props {
@@ -48,6 +50,41 @@ export default function PanelCarpetasDoc({ folders, folderId, acciones }: Props)
   const [editando, setEditando] = useState<string | null>(null);
   const [nombreEdit, setNombreEdit] = useState("");
   const [ocupado, setOcupado] = useState(false);
+  const [filtro, setFiltro] = useState("");
+
+  /**
+   * Qué pasa AL BORRAR, comprobado contra la base y no contra el schema: el
+   * schema declara borrado en cascada, pero la base no lo aplica — las
+   * subcarpetas y los documentos NO se pierden, quedan sueltos en la raíz.
+   * El aviso dice eso, que es lo que va a ver el usuario después.
+   */
+  const borrar = async (carpeta: DbDocumentFolder) => {
+    if (!acciones.onBorrar || ocupado) return;
+    const dentro = descendantIds(hijosDe, carpeta.id);
+    const docsSueltos = [carpeta.id, ...dentro]
+      .reduce((t, id) => t + (porId.get(id)?.documentCount ?? 0), 0);
+
+    const partes = [`¿Borrar la carpeta "${carpeta.name}"?`, ""];
+    if (dentro.size > 0) {
+      partes.push(`Sus ${dentro.size} subcarpeta${dentro.size === 1 ? "" : "s"} NO se borran: quedan sueltas, fuera de toda carpeta.`);
+      partes.push([...dentro].map((id) => `  · ${porId.get(id)?.name ?? id}`).join("\n"));
+      partes.push("");
+    }
+    partes.push(
+      docsSueltos > 0
+        ? `Los ${docsSueltos} documento${docsSueltos === 1 ? "" : "s"} que hay adentro tampoco se borran: quedan sin carpeta.`
+        : "No hay documentos adentro.",
+    );
+    partes.push("", "Se borra sólo la carpeta, y eso no se puede deshacer.");
+
+    if (!confirm(partes.join("\n"))) return;
+    setOcupado(true);
+    try {
+      await acciones.onBorrar(carpeta.id);
+    } finally {
+      setOcupado(false);
+    }
+  };
 
   const alternar = (id: string) =>
     setAbiertas((s) => {
@@ -129,6 +166,13 @@ export default function PanelCarpetasDoc({ folders, folderId, acciones }: Props)
               <span className={cn("truncate", esLaDelArchivo ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-secondary)]")}>
                 {carpeta.name}
               </span>
+              {/* Cuántos hay adentro: dice de un vistazo dónde está lo que
+                  buscás, sin entrar a cada carpeta. */}
+              {!!carpeta.documentCount && (
+                <span className="ml-auto shrink-0 rounded-full bg-[var(--surface-sunken)] px-1.5 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
+                  {carpeta.documentCount}
+                </span>
+              )}
               {esLaDelArchivo && <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-primary" />}
             </button>
           )}
@@ -151,6 +195,16 @@ export default function PanelCarpetasDoc({ folders, folderId, acciones }: Props)
               >
                 <Pencil className="h-3.5 w-3.5" />
               </button>
+              {acciones.onBorrar && (
+                <button
+                  onClick={() => borrar(carpeta)}
+                  title="Borrar la carpeta"
+                  aria-label={`Borrar la carpeta ${carpeta.name}`}
+                  className="rounded p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error)]"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
             </span>
           )}
         </div>
@@ -188,6 +242,12 @@ export default function PanelCarpetasDoc({ folders, folderId, acciones }: Props)
   }
 
   const raiz = hijosDe.get(null) ?? [];
+  /** Con el buscador escrito se listan planas: el árbol sólo estorba. */
+  const coincidencias = useMemo(() => {
+    const aguja = filtro.trim().toLowerCase();
+    if (!aguja) return [];
+    return folders.filter((f) => f.name.toLowerCase().includes(aguja));
+  }, [filtro, folders]);
 
   return (
     <aside
@@ -205,6 +265,24 @@ export default function PanelCarpetasDoc({ folders, folderId, acciones }: Props)
           <FolderPlus className="h-4 w-4" />
         </button>
       </div>
+
+      {folders.length > 6 && (
+        <div className="flex items-center gap-1.5 border-b border-[var(--rule-soft)] px-2 py-1.5">
+          <Search className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+          <input
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value)}
+            placeholder="Buscar carpeta"
+            aria-label="Buscar carpeta"
+            className="min-w-0 flex-1 bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
+          />
+          {filtro && (
+            <button onClick={() => setFiltro("")} className="rounded p-0.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" aria-label="Limpiar la búsqueda">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
 
       <ul className="flex-1 px-1.5 py-1.5">
         {/* La raíz también es un destino: sacar el archivo de toda carpeta. */}
@@ -245,7 +323,15 @@ export default function PanelCarpetasDoc({ folders, folderId, acciones }: Props)
           </li>
         )}
 
-        {raiz.map((f) => <Rama key={f.id} carpeta={f} nivel={0} />)}
+        {filtro.trim()
+          ? coincidencias.map((f) => <Rama key={f.id} carpeta={f} nivel={0} />)
+          : raiz.map((f) => <Rama key={f.id} carpeta={f} nivel={0} />)}
+
+        {filtro.trim() && coincidencias.length === 0 && (
+          <li className="px-2 py-3 text-xs text-[var(--text-tertiary)]">
+            Ninguna carpeta se llama así.
+          </li>
+        )}
 
         {folders.length === 0 && creandoEn === undefined && (
           <li className="px-2 py-3 text-xs text-[var(--text-tertiary)]">

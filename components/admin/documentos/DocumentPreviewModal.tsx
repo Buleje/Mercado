@@ -8,6 +8,7 @@ import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import BarraHerramientasDoc, { type AccionesDoc } from "./BarraHerramientasDoc";
 import UbicacionDoc from "./UbicacionDoc";
 import PanelCarpetasDoc, { type AccionesCarpeta } from "./PanelCarpetasDoc";
+import ComentariosDoc from "./ComentariosDoc";
 import { esImagenRenderizable, esImagenConvertible } from "@/lib/documents/tipos-archivo";
 import dynamic from "next/dynamic";
 
@@ -47,7 +48,7 @@ import type {
   DbDocument, DbDocumentFolder, DbDocumentVersion, DbDocumentAuditLog, DbDocumentShare,
 } from "@/lib/types/documents";
 
-type Tab = "preview" | "details" | "versions" | "audit" | "share" | "sign";
+type Tab = "preview" | "details" | "versions" | "audit" | "share" | "sign" | "comentarios";
 
 interface Props {
   docId: string;
@@ -294,6 +295,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
           <TabBtn icon={History} active={tab === "versions"} onClick={() => setTab("versions")}>Versiones{doc.versionCount ? ` (${(doc.versionCount ?? 0) + 1})` : ""}</TabBtn>
           <TabBtn icon={Share2} active={tab === "share"} onClick={() => setTab("share")}>Compartir{doc.shareCount ? ` (${doc.shareCount})` : ""}</TabBtn>
           {isPdf && <TabBtn icon={PencilLine} active={tab === "sign"} onClick={() => setTab("sign")}>Firmar</TabBtn>}
+          <TabBtn icon={MessageCircle} active={tab === "comentarios"} onClick={() => setTab("comentarios")}>Observaciones</TabBtn>
           <TabBtn icon={Shield} active={tab === "audit"} onClick={() => setTab("audit")}>Auditoría</TabBtn>
         </nav>
 
@@ -361,6 +363,10 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
 
           {tab === "sign" && (
             <SignTab docId={docId} onSigned={() => { fetchVersions(docId).then(setVersions); fetchAudit(docId).then(setAudit); onRefresh?.(); }} />
+          )}
+
+          {tab === "comentarios" && (
+            <ComentariosDoc docId={docId} />
           )}
 
           {tab === "audit" && (
