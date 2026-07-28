@@ -1823,6 +1823,14 @@ export default function DocumentosModule() {
             // arranque de cero cada vez.
             vecinos={[displayDocs[idx - 1], displayDocs[idx + 1]].filter(Boolean)}
             position={idx >= 0 ? { current: idx + 1, total: displayDocs.length } : undefined}
+            // Carpetas: crear, renombrar y mover el documento sin salir del
+            // visor. Todo pasa por el mismo hook que usa el drive, así la
+            // barra de la izquierda se entera del cambio al instante.
+            carpetas={{
+              onMover: async (folderId) => { await patch(preview.id, { folderId }); },
+              onCrear: async (nombre, parentId) => { await createFolder({ name: nombre, parentId }); },
+              onRenombrar: async (id, nombre) => { await updateFolder(id, { name: nombre }); },
+            }}
             // Las mismas herramientas del menú de la lista, para no tener que
             // cerrar el documento y buscarlo de nuevo para sellarlo o rotarlo.
             herramientas={{

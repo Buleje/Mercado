@@ -7,6 +7,7 @@ import { esPresentacion } from "@/lib/documentos/presentacion";
 import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import BarraHerramientasDoc, { type AccionesDoc } from "./BarraHerramientasDoc";
 import UbicacionDoc from "./UbicacionDoc";
+import PanelCarpetasDoc, { type AccionesCarpeta } from "./PanelCarpetasDoc";
 import { esImagenRenderizable, esImagenConvertible } from "@/lib/documents/tipos-archivo";
 import dynamic from "next/dynamic";
 
@@ -67,6 +68,8 @@ interface Props {
    * documento. Opcional: donde no se pasen, el menú no aparece.
    */
   herramientas?: AccionesDoc;
+  /** Crear/renombrar carpetas y mover el documento desde el propio visor. */
+  carpetas?: AccionesCarpeta;
 }
 
 function formatBytes(b: number): string {
@@ -86,7 +89,7 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
 }
 
-export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position, herramientas, vecinos }: Props) {
+export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position, herramientas, vecinos, carpetas }: Props) {
   const [tab, setTab] = useState<Tab>("preview");
   const [doc, setDoc] = useState<DbDocument | null>(null);
   const [versions, setVersions] = useState<DbDocumentVersion[]>([]);
@@ -298,6 +301,11 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
             vista a la derecha (en pantallas chicas la barra se oculta y quedan
             las acciones del encabezado). */}
         <div className="flex min-h-0 flex-1">
+        {/* Carpetas a la izquierda: se ve dónde está guardado y se acomoda sin
+            cerrar el documento. */}
+        {carpetas && (
+          <PanelCarpetasDoc folders={folders ?? []} folderId={doc.folderId} acciones={carpetas} />
+        )}
         <div className="flex-1 overflow-auto bg-[var(--surface-sunken)] min-h-0">
           {tab === "preview" && (
             <div className="h-full flex items-center justify-center p-4">

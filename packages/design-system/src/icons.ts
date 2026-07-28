@@ -131,6 +131,7 @@ export {
   Pencil,
   PencilLine,
   FolderInput,
+  FolderPlus,
   Crop,
   Scissors,
   // Food/category fallback icons (audit P0 UX #2)
