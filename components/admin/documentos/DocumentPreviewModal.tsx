@@ -133,7 +133,14 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
   // aunque el nombre, el tipo y el tamaño ya estuvieran a mano.
   useEffect(() => {
     let mounted = true;
-    const conocido = allDocs?.find((d) => d.id === docId) ?? null;
+    // El que se eligió en la columna del medio ya viene entero: se muestra al
+    // instante en vez de un "Abriendo el documento…". Sin esto, elegir un
+    // archivo de otra carpeta parpadeaba en blanco, porque el drive no lo
+    // tenía cargado y había que esperar al servidor para dibujar hasta el
+    // nombre.
+    const conocido =
+      allDocs?.find((d) => d.id === docId)
+      ?? (elegidoRef.current?.id === docId ? elegidoRef.current : null);
     setDoc(conocido);
     setLoading(!conocido);
     getDocumentDetail(docId).then((r) => {
@@ -146,6 +153,11 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docId]);
 
+  /** El documento que se acaba de elegir en el explorador, para no parpadear. */
+  const elegidoRef = useRef<DbDocument | null>(null);
+  /** Sube al mover un archivo: le avisa al explorador que su lista cambió. */
+  const [revisionCarpeta, setRevisionCarpeta] = useState(0);
+
   /**
    * La carpeta que se está mirando en el explorador. Arranca donde vive el
    * documento abierto —que es de donde uno viene— pero después va por su
@@ -156,9 +168,11 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
     () => allDocs?.find((d) => d.id === docId)?.folderId ?? null,
   );
   // Al saltar a un documento de OTRA carpeta (un "parecido", o el prev/next),
-  // el explorador lo acompaña: si no, mostraría el contenido de una carpeta que
-  // ya no tiene nada que ver con lo que estás viendo.
+  // el explorador lo acompaña. Pero si el salto salió de la columna del medio,
+  // NO: ahí ya estás parado donde querés estar, y moverte la carpeta debajo de
+  // los pies es exactamente lo contrario de lo que pediste.
   useEffect(() => {
+    if (elegidoRef.current?.id === docId) return;
     const destino = allDocs?.find((d) => d.id === docId)?.folderId ?? null;
     setCarpetaMirada(destino);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -346,7 +360,18 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
             folders={folders ?? []}
             folderId={doc.folderId}
             carpetaActiva={carpetaMirada}
-            acciones={{ ...carpetas, onNavegar: setCarpetaMirada }}
+            acciones={{
+              ...carpetas,
+              onNavegar: setCarpetaMirada,
+              onMoverDoc: carpetas.onMoverDoc
+                ? async (id, folderId) => {
+                    await carpetas.onMoverDoc?.(id, folderId);
+                    // El archivo ya no está donde estaba: la columna del medio
+                    // tiene que volver a mirar.
+                    setRevisionCarpeta((n) => n + 1);
+                  }
+                : undefined,
+            }}
           />
         )}
         {/* Y en el medio, qué hay en esa carpeta: se salta de un documento a
@@ -360,7 +385,8 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
               carpetaActiva={carpetaMirada}
               onNavegar={setCarpetaMirada}
               docActivoId={docId}
-              onAbrirDoc={(d) => onAbrirOtro?.(d)}
+              revision={revisionCarpeta}
+              onAbrirDoc={(d) => { elegidoRef.current = d; onAbrirOtro?.(d); }}
             />
           </div>
         )}

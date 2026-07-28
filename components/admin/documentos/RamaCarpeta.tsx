@@ -23,6 +23,12 @@ export interface AccionesCarpeta {
    * disparada por el gesto más común de un explorador de archivos.
    */
   onNavegar?: (folderId: string | null) => void;
+  /**
+   * Soltar un archivo cualquiera en una carpeta, arrastrándolo. `onMover` sólo
+   * sabe mover el documento abierto; acá el que se arrastra puede ser
+   * cualquiera de los que están a la vista.
+   */
+  onMoverDoc?: (docId: string, folderId: string | null) => Promise<void> | void;
   onCrear: (nombre: string, parentId: string | null) => Promise<void> | void;
   onRenombrar: (id: string, nombre: string) => Promise<void> | void;
   /** Opcional: si no se pasa, el panel no ofrece borrar. */
@@ -36,6 +42,9 @@ export interface EstadoArbol {
   folderId: string | null;
   /** Carpeta que se está mirando ahora (puede no ser la del documento). */
   carpetaActiva?: string | null;
+  /** Carpeta sobre la que se está soltando un archivo ahora mismo. */
+  carpetaRecibiendo?: string | null;
+  marcarRecibiendo: (id: string | null | undefined) => void;
   abiertas: Set<string>;
   alternar: (id: string) => void;
   acciones: AccionesCarpeta;
@@ -68,13 +77,34 @@ export default function RamaCarpeta({
   const abierta = arbol.abiertas.has(carpeta.id);
   const esLaDelArchivo = carpeta.id === arbol.folderId;
   const esLaQueMiro = arbol.carpetaActiva !== undefined && carpeta.id === arbol.carpetaActiva;
+  const recibiendo = arbol.carpetaRecibiendo === carpeta.id;
   const editando = arbol.editando === carpeta.id;
 
   return (
     <li>
       <div
+        // Se puede soltar un archivo acá, como en el explorador de Windows.
+        onDragOver={(e) => {
+          if (!arbol.acciones.onMoverDoc) return;
+          if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          arbol.marcarRecibiendo(carpeta.id);
+        }}
+        onDragLeave={() => arbol.marcarRecibiendo(undefined)}
+        onDrop={(e) => {
+          const id = e.dataTransfer.getData("application/x-doc-id");
+          arbol.marcarRecibiendo(undefined);
+          if (!id || !arbol.acciones.onMoverDoc) return;
+          e.preventDefault();
+          e.stopPropagation();
+          arbol.acciones.onMoverDoc(id, carpeta.id);
+        }}
         className={cn(
           "group/carpeta flex items-center gap-1 rounded-lg pr-1 transition-colors",
+          // Mientras el archivo está encima, la carpeta lo dice: sin esto no se
+          // sabe dónde va a caer y se suelta en la de al lado.
+          recibiendo && "ring-2 ring-primary bg-primary/20",
           esLaQueMiro
             ? "bg-primary/15 ring-1 ring-primary/40"
             : esLaDelArchivo

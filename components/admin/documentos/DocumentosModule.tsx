@@ -2008,6 +2008,9 @@ export default function DocumentosModule() {
             // barra de la izquierda se entera del cambio al instante.
             carpetas={{
               onMover: async (folderId) => { await patch(preview.id, { folderId }); },
+              // Arrastrar CUALQUIER archivo de la columna del medio a una
+              // carpeta del árbol, no sólo el que está abierto.
+              onMoverDoc: async (docId, folderId) => { await patch(docId, { folderId }); },
               onCrear: async (nombre, parentId) => { await createFolder({ name: nombre, parentId }); },
               onRenombrar: async (id, nombre) => { await updateFolder(id, { name: nombre }); },
               onBorrar: async (id) => { await deleteFolder(id); },

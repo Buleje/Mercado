@@ -58,6 +58,8 @@ export default function PanelCarpetasDoc({ folders, folderId, carpetaActiva, acc
     const ruta = folderId ? folderPath(porId, folderId) : [];
     return new Set(ruta.map((f) => f.id));
   });
+  /** Sobre qué carpeta está flotando el archivo que se está arrastrando. */
+  const [recibiendo, setRecibiendo] = useState<string | null | undefined>(undefined);
   const [creandoEn, setCreandoEn] = useState<string | null | undefined>(undefined);
   const [nombreNuevo, setNombreNuevo] = useState("");
   const [editando, setEditando] = useState<string | null>(null);
@@ -135,6 +137,7 @@ export default function PanelCarpetasDoc({ folders, folderId, carpetaActiva, acc
 
   const arbol: EstadoArbol = {
     hijosDe, folderId, carpetaActiva, abiertas, alternar, acciones, ocupado,
+    carpetaRecibiendo: recibiendo, marcarRecibiendo: setRecibiendo,
     editando, nombreEdit, setNombreEdit,
     iniciarEdicion: (c) => { setEditando(c.id); setNombreEdit(c.name); },
     cancelarEdicion: () => setEditando(null),
@@ -222,11 +225,27 @@ export default function PanelCarpetasDoc({ folders, folderId, carpetaActiva, acc
           {/* La raíz también es un destino: sacar el archivo de toda carpeta. */}
           <li>
             <button
-              onClick={() => acciones.onMover(null)}
-              disabled={folderId === null}
+              onClick={() => (acciones.onNavegar ? acciones.onNavegar(null) : acciones.onMover(null))}
+              onDragOver={(e) => {
+                if (!acciones.onMoverDoc) return;
+                if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                setRecibiendo(null);
+              }}
+              onDragLeave={() => setRecibiendo(undefined)}
+              onDrop={(e) => {
+                const id = e.dataTransfer.getData("application/x-doc-id");
+                setRecibiendo(undefined);
+                if (!id || !acciones.onMoverDoc) return;
+                e.preventDefault();
+                acciones.onMoverDoc(id, null);
+              }}
               className={cn(
-                "flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors disabled:cursor-default",
-                folderId === null ? "bg-primary/10 font-bold text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
+                "flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors",
+                recibiendo === null && "ring-2 ring-primary bg-primary/20",
+                carpetaActiva === null ? "bg-primary/15 ring-1 ring-primary/40 font-bold text-[var(--text-primary)]"
+                  : folderId === null ? "bg-primary/10 font-bold text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
               )}
             >
               <FolderIcon className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />

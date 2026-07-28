@@ -34,6 +34,11 @@ interface Props {
   onNavegar: (folderId: string | null) => void;
   docActivoId: string;
   onAbrirDoc: (doc: DbDocument) => void;
+  /**
+   * Sube cuando algo se movió de carpeta: la lista tiene que volver a pedirse
+   * porque el archivo que se arrastró ya no está donde estaba.
+   */
+  revision?: number;
 }
 
 /** ¿Este archivo tiene carita dibujable, o va con ícono? */
@@ -51,7 +56,7 @@ function pesoCorto(bytes: number): string {
 }
 
 export default function ExploradorDoc({
-  docs, folders, carpetaActiva, onNavegar, docActivoId, onAbrirDoc,
+  docs, folders, carpetaActiva, onNavegar, docActivoId, onAbrirDoc, revision = 0,
 }: Props) {
   const hijosDe = useMemo(() => buildChildrenMap(folders), [folders]);
   const porId = useMemo(() => new Map(folders.map((f) => [f.id, f])), [folders]);
@@ -89,7 +94,7 @@ export default function ExploradorDoc({
       .catch((err) => console.warn("[drive] no se pudo leer la carpeta", err))
       .finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };
-  }, [carpetaActiva]);
+  }, [carpetaActiva, revision]);
 
   const archivos = traidos ?? yaCargados;
 
@@ -168,12 +173,21 @@ export default function ExploradorDoc({
             <button
               key={d.id}
               onClick={() => onAbrirDoc(d)}
+              // Agarrar y soltar en una carpeta del árbol, como en el
+              // explorador de Windows. El tipo `x-doc-id` es el mismo que usa
+              // el drive, así que las zonas de destino ya saben leerlo.
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData("application/x-doc-id", d.id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
               // El navegador se saltea las tarjetas fuera de pantalla: una
               // carpeta con cientos de archivos no tiene por qué maquetarse
               // entera para mostrar diez.
               style={{ contentVisibility: "auto", containIntrinsicSize: "auto 68px" }}
               className={cn(
                 "flex w-full items-center gap-2 rounded-lg border p-1.5 text-left transition-colors",
+                "cursor-grab active:cursor-grabbing",
                 activo
                   ? "border-primary bg-primary/10"
                   : "border-transparent hover:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]",
