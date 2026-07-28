@@ -188,6 +188,8 @@ export default function ContratosModule() {
   const [wizardData, setWizardData] = useState<Record<string, string>>({});
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  /** Vencimiento cargado a mano cuando la plantilla no define ninguno. */
+  const [vencimientoManual, setVencimientoManual] = useState("");
 
   // -- Auto-fill from settings
   const [storeSettings, setStoreSettings] = useState<Record<string, string>>({});
@@ -364,6 +366,7 @@ export default function ContratosModule() {
     setFieldErrors({});
     setCustomSelectValues({});
     setGeoResult(null);
+    setVencimientoManual("");
 
     // Auto-fill emisor fields from settings + date + city
     const autoData: Record<string, string> = {};
@@ -439,8 +442,10 @@ export default function ContratosModule() {
       const fecha = inicioDelContrato(wizardData);
       // El vencimiento sale de la fecha de fin o del plazo en meses/años de la
       // plantilla. Antes no se mandaba nunca: todos los contratos quedaban
-      // vigentes para siempre y los avisos jamás se disparaban.
-      const fechaVencimiento = vencimientoDelContrato(selectedTemplate, wizardData);
+      // vigentes para siempre y los avisos jamás se disparaban. Si la plantilla
+      // no lo define, lo cargó a mano en el último paso.
+      const fechaVencimiento =
+        vencimientoDelContrato(selectedTemplate, wizardData) || vencimientoManual.trim() || null;
 
       const clausulasArr = content.split("\n\n").filter(c => c.trim());
 
@@ -472,12 +477,19 @@ export default function ContratosModule() {
         const err = await res.json().catch(() => ({ error: "Error al crear" }));
         throw new Error(typeof err.error === "string" ? err.error : JSON.stringify(err.error));
       }
+      const creado: ContratoAPI = await res.json();
 
       setSelectedTemplate(null);
       setWizardData({});
+      setVencimientoManual("");
       setWizardStep(0);
       setActiveTab("contratos");
-      fetchContratos();
+      await fetchContratos();
+      // El asistente terminaba tirándote al listado, y definir quién firma o
+      // revisar el contrato quedaba como algo que había que descubrir después.
+      // Ahora se abre la ficha recién creada, que es donde están el revisor,
+      // los firmantes y el envío por WhatsApp, todo seguido.
+      setSelected(creado);
     } catch (e) {
       setCreateError(e instanceof Error ? e.message : "Error desconocido");
     } finally {
@@ -1324,6 +1336,41 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-4">
                             <p className="text-sm text-[var(--text-secondary)]">{generateSummary()}</p>
                           </div>
+
+                          {/* Cuándo deja de valer. Si la plantilla no lo pide (ni fecha
+                              de fin ni plazo), acá se pregunta en vez de guardar el
+                              contrato sin vencimiento y que nadie te avise nunca. */}
+                          {(() => {
+                            const delaPlantilla = vencimientoDelContrato(selectedTemplate, wizardData);
+                            if (delaPlantilla) {
+                              return (
+                                <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                                  <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
+                                  Vence el <strong className="text-[var(--text-primary)]">{formatDatePeru(delaPlantilla)}</strong>.
+                                  Te vamos a avisar 30 días antes.
+                                </div>
+                              );
+                            }
+                            return (
+                              <div className="rounded-xl border border-[var(--rule-base)] dark:border-white/10 p-3 space-y-2">
+                                <label className="block text-sm font-semibold text-[var(--text-primary)]" htmlFor="venc-manual">
+                                  ¿Hasta cuándo vale este contrato?
+                                </label>
+                                <p className="text-xs text-[var(--text-secondary)]">
+                                  Esta plantilla no pide fecha de término. Si la cargás, te avisamos
+                                  30 días antes de que venza; si la dejás vacía, no te avisa nadie.
+                                </p>
+                                <input
+                                  id="venc-manual"
+                                  type="date"
+                                  value={vencimientoManual}
+                                  min={inicioDelContrato(wizardData)}
+                                  onChange={e => setVencimientoManual(e.target.value)}
+                                  className="w-full sm:w-auto px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)]"
+                                />
+                              </div>
+                            );
+                          })()}
 
                           {createError && <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold bg-[var(--data-error-50)] dark:bg-red-950/20 p-3 rounded-lg">{createError}</p>}
                         </div>
