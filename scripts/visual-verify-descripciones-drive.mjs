@@ -67,13 +67,27 @@ await page.screenshot({ path: `${OUT}/ficha-descripcion.png` });
 const MIA = `Es el contrato del puesto 3 — QA ${process.pid}`;
 await bloque.getByRole("button", { name: /descripción/i }).first().click();
 await page.locator("textarea").first().fill(MIA);
+// Esperar la RESPUESTA del servidor, no un reloj: el clic sólo despacha el
+// pedido, y leer la pantalla antes de que conteste da un falso negativo.
+const guardado = page.waitForResponse(
+  (r) => r.url().includes("/api/admin/documents/") && r.request().method() === "PATCH",
+  { timeout: 60_000 },
+);
 await page.getByRole("button", { name: /^Guardar$/ }).click();
-await page.waitForTimeout(2500);
+const respuesta = await guardado;
+ok(respuesta.ok(), `el servidor guardó la descripción (HTTP ${respuesta.status()})`);
+await bloque.getByText(MIA).waitFor({ timeout: 15_000 }).catch(() => {});
 ok((await bloque.innerText()).includes(MIA), "la descripción propia queda guardada y visible");
 
 // Y entra al buscador: es el punto de todo esto.
 const guardada = await page.evaluate(async (frag) => {
-  const r = await fetch(`/api/admin/documents?q=${encodeURIComponent(frag)}`, { credentials: "include" });
+  // Con el token CSRF: el drive lo exige hasta en las lecturas, y sin él la
+  // respuesta es un error que se leería como "no hay resultados".
+  const csrf = document.cookie.split("; ").find((c) => c.startsWith("csrf-token="))?.split("=")[1] ?? "";
+  const r = await fetch(`/api/admin/documents?q=${encodeURIComponent(frag)}`, {
+    credentials: "include",
+    headers: { "x-csrf-token": decodeURIComponent(csrf) },
+  });
   const { documents = [] } = await r.json();
   return documents.map((d) => d.name);
 }, `puesto 3 — QA ${process.pid}`);

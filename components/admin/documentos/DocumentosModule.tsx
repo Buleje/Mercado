@@ -26,7 +26,7 @@ import {
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive, Loader2,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
   CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Presentation, Link2, Copy,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
@@ -91,6 +91,11 @@ const fmtFechaCorta = (iso: string) =>
   new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 
 /**
+ * Los colores de acá son DECORATIVOS a propósito y no usan los tokens
+ * `--data-{success,warning,error}`: sirven para distinguir un PDF de una
+ * planilla de un audio de un vistazo. Un PDF no es un "error" ni una planilla
+ * un "éxito" — mapearlos a tokens de estado se vería igual y significaría mal.
+ *
  * Ícono y tinte por FAMILIA (no por MIME crudo): el drive guarda casi cualquier
  * formato y el navegador manda la mitad como `octet-stream`, así que el tipo se
  * resuelve por extensión. Sin esto, un .ods o una foto HEIC salían con el ícono
@@ -1130,8 +1135,8 @@ export default function DocumentosModule() {
 
       {/* Resultado del escaneo IA */}
       {scanResult && (
-        <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-emerald-50 border-2 border-emerald-200 text-emerald-800">
-          <Wand2 className="h-5 w-5 shrink-0 mt-0.5 text-emerald-600" />
+        <div className="flex items-start gap-3 p-3.5 rounded-2xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+          <Wand2 className="h-5 w-5 shrink-0 mt-0.5" />
           <div className="min-w-0 text-sm">
             <p className="font-extrabold">Escaneado: {scanResult.name}</p>
             {scanResult.expiresAt ? (
@@ -1141,7 +1146,7 @@ export default function DocumentosModule() {
                 {" "}— te avisaré por WhatsApp antes.
               </p>
             ) : (
-              <p className="mt-0.5 text-emerald-700">La IA lo nombró y clasificó. Si vence, agregá la fecha desde el documento.</p>
+              <p className="mt-0.5">La IA lo nombró y clasificó. Si vence, agregá la fecha desde el documento.</p>
             )}
           </div>
           <button onClick={() => setScanResult(null)} className="ml-auto p-1 rounded-md hover:bg-emerald-100" aria-label="Cerrar"><X className="h-4 w-4" /></button>
@@ -1696,7 +1701,7 @@ export default function DocumentosModule() {
                   className="w-24 bg-transparent py-1 text-xs font-bold text-white placeholder-white/60 outline-none"
                 />
               </div>
-              <button onClick={bulkDelete} className="text-xs px-2.5 py-1 rounded-md bg-red-500 hover:bg-red-600 font-bold inline-flex items-center gap-1">
+              <button onClick={bulkDelete} className="text-xs px-2.5 py-1 rounded-md bg-[var(--data-error-500)] hover:brightness-110 font-bold inline-flex items-center gap-1">
                 <Trash2 className="h-3 w-3" /> Eliminar
               </button>
               <button onClick={clearSelection} className="ml-auto text-xs px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 font-bold">Cancelar</button>
@@ -1919,7 +1924,7 @@ export default function DocumentosModule() {
                               <span className="font-bold text-[var(--text-primary)] truncate max-w-[280px]">{doc.name}</span>
                               {doc.favorite && <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />}
                               {doc.versionCount && doc.versionCount > 0 && (
-                                <span className="text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-bold">v{doc.versionCount + 1}</span>
+                                <span className="text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded bg-[var(--data-info-500)]/15 text-[var(--data-info-700)] dark:text-[var(--data-info-500)] font-bold">v{doc.versionCount + 1}</span>
                               )}
                               <ExpiryBadge expiresAt={doc.expiresAt} />
                             </button>
