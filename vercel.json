@@ -64,6 +64,10 @@
       "schedule": "0 9 * * *"
     },
     {
+      "path": "/api/cron/contratos-vencimiento",
+      "schedule": "10 9 * * *"
+    },
+    {
       "path": "/api/cron/adelantos-recordatorios",
       "schedule": "0 8 * * *"
     },

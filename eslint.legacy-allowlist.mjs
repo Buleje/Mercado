@@ -143,7 +143,6 @@ export const PRISMA_DIRECT_LEGACY = [
   "app/api/compras/sugerencias/route.ts",
   "app/api/contact/route.ts",
   "app/api/contratos/[id]/route.ts",
-  "app/api/contratos/export/route.ts",
   "app/api/contratos/route.ts",
   "app/api/cotizaciones/[id]/convertir/route.ts",
   "app/api/coupons/active/route.ts",

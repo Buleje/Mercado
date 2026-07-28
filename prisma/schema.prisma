@@ -1782,6 +1782,115 @@ model Note {
   @@index([tenantId])
 }
 
+// ─── Contratos (ADR-307) ─────────────────────────────────
+// Antes vivían serializados como Note con title "CONTRATO: …" y el texto del
+// contrato sólo existía en el localStorage del navegador que lo creó.
+model Contract {
+  id       String @id @default(cuid())
+  tenantId String
+
+  numero String // correlativo por tenant: CONT-2026-0001
+  // VENTA | SERVICIO | TRABAJO | PROVEEDOR | DISTRIBUCION | ALQUILER |
+  // CONSIGNACION | MUTUO | TRANSPORTE | NDA | FORESTAL | LOCACION
+  tipo   String
+  // BORRADOR | PENDIENTE_FIRMA | VIGENTE | VENCIDO | RENOVADO | TERMINADO | ANULADO
+  estado String @default("BORRADOR")
+
+  clienteNombre String
+  clienteDoc    String @default("")
+  customerId    String?
+  supplierId    String?
+
+  descripcion String  @default("")
+  resumen     String  @default("")
+  monto       Decimal @default(0) @db.Decimal(12, 2)
+  moneda      String  @default("PEN")
+
+  fechaInicio      DateTime
+  fechaVencimiento DateTime?
+
+  plantillaId String?
+  contenido   String   @default("") // texto completo generado
+  datos       Json? // valores del wizard, para regenerar o renovar
+  clausulas   String[] @default([])
+  lugarFirma  String   @default("Pucallpa")
+  condiciones String   @default("")
+
+  documentId String? // copia viva en el Drive (Documentación)
+
+  hashSha256 String? // integridad del PDF firmado
+  firmadoEn  DateTime?
+
+  renovadoDeId String? // contrato del que salió esta renovación
+  revisionIa   Json? // último informe del revisor de cláusulas
+
+  recordatorioEnviadoEn DateTime? // anti-spam del cron de vencimiento
+
+  creadoPor String    @default("")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  firmantes ContractSigner[]
+  eventos   ContractEvent[]
+
+  @@unique([tenantId, numero])
+  @@index([tenantId, estado])
+  @@index([tenantId, fechaVencimiento])
+  @@index([tenantId, tipo])
+  @@index([tenantId, createdAt])
+}
+
+model ContractSigner {
+  id         String @id @default(cuid())
+  contractId String
+  tenantId   String
+
+  orden     Int    @default(1) // firman en orden: 1, 2, 3…
+  rol       String @default("CONTRAPARTE") // EMISOR | CONTRAPARTE | TESTIGO
+  nombre    String
+  documento String @default("")
+  telefono  String @default("")
+  email     String?
+
+  estado        String    @default("PENDIENTE") // PENDIENTE | FIRMADO | RECHAZADO
+  token         String    @unique
+  tokenExpiraEn DateTime?
+  firmaDataUrl  String? // trazo de la firma (PNG data URL)
+  firmadoEn     DateTime?
+  ip            String?
+  userAgent     String?
+  motivoRechazo String?
+  enviadoEn     DateTime?
+
+  createdAt DateTime @default(now())
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId, orden])
+  @@index([tenantId])
+}
+
+model ContractEvent {
+  id         String @id @default(cuid())
+  contractId String
+  tenantId   String
+
+  // CREADO | EDITADO | PDF_GENERADO | ENVIADO_FIRMA | FIRMADO | RECHAZADO |
+  // VENCIMIENTO_AVISADO | RENOVADO | ANULADO | REVISADO_IA
+  tipo     String
+  detalle  String @default("")
+  actor    String @default("")
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId, createdAt])
+  @@index([tenantId, createdAt])
+}
+
 // ─── Message Templates ───────────────────────────────────
 model MessageTemplate {
   id            String   @id @default(cuid())

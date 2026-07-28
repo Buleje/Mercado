@@ -156,6 +156,11 @@ export function validateCsrfToken(request: NextRequest): boolean {
     // con el token unguessable + rate-limit STRICT. El único write es POST /sign
     // (los demás bajo el prefijo son GET, que igual no pasan por CSRF).
     "/api/public/documents/",
+    // Firma pública de CONTRATOS: el trabajador o el proveedor recibe un link
+    // por WhatsApp y firma desde su celular, sin cuenta ni sesión. Mismo modelo
+    // de protección: token unguessable e irrepetible por firmante, con
+    // vencimiento propio, rate-limit STRICT y un único write (POST /firmar).
+    "/api/public/contratos/",
   ];
   if (webhookPaths.some((p) => pathname.startsWith(p) || pathname === p)) {
     return true;
