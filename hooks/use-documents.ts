@@ -19,6 +19,25 @@ import { enLotes, CARPETAS_POR_LLAMADA } from "@/lib/documentos/importar-arbol";
 
 const BASE = "/api/admin/documents";
 
+/**
+ * Manda al servidor cuánto tardó un tramo del drive, para poder comparar si una
+ * ronda de mejoras sirvió o si algo se puso lento con el tiempo.
+ *
+ * `keepalive` para que sobreviva si la persona se va de la pantalla justo
+ * después; y todo el envío es a prueba de fallas: una medición perdida no vale
+ * ni un error en pantalla.
+ */
+function reportarVelocidad(tramo: "listado" | "miniaturas" | "visor", ms: number, docs = 0): void {
+  if (!Number.isFinite(ms) || ms <= 0) return;
+  fetch(`${BASE}/velocidad`, {
+    method: "POST",
+    credentials: "include",
+    keepalive: true,
+    headers: csrfHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ muestras: [{ tramo, ms: Math.round(ms), docs }] }),
+  }).catch((err) => console.warn("[drive] no se pudo reportar la velocidad", err));
+}
+
 /** El error crudo de una subida, dicho en castellano y sin códigos HTTP. */
 function motivoSubida(msg: string): string {
   if (/failed to fetch|network|load failed/i.test(msg)) return "se cortó la conexión";
@@ -105,6 +124,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
   const fetchAll = useCallback(async (opciones?: { silencioso?: boolean; soloDocumentos?: boolean }) => {
     if (!opciones?.silencioso) setLoading(true);
     setError(null);
+    const arranque = performance.now();
     try {
       const f = filtersRef.current;
       const qs = new URLSearchParams();
@@ -133,6 +153,13 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
       // decir POR QUÉ apareció cada documento (y resaltar el término que pegó).
       setSemanticTerms(docsResp.semanticTerms ?? []);
       if (foldersResp) setFolders(foldersResp.folders);
+
+      // Cuánto tardó de verdad, del lado de quien lo usa. Sólo se reporta la
+      // apertura completa (no los refrescos silenciosos, que son otra cosa) y
+      // el envío es best-effort: medir no puede frenar ni romper el drive.
+      if (!opciones?.silencioso) {
+        reportarVelocidad("listado", performance.now() - arranque, docsResp.documents.length);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {

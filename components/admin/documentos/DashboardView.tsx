@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { FileText, HardDrive, AlarmClock, Receipt, Tag as TagIcon, TrendingUp, FileSpreadsheet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BulejeDonutChart } from "@/components/ui-system/charts";
+import VelocidadDrive from "@/components/admin/documentos/VelocidadDrive";
 import type { DbDocument } from "@/lib/types/documents";
 
 /**
@@ -176,6 +177,9 @@ export function DashboardView({ docs }: { docs: DbDocument[] }) {
           <p className="py-6 text-center text-sm text-[var(--text-tertiary)]">Todavía no hay etiquetas. Analizá documentos con IA para generarlas.</p>
         )}
       </section>
+
+      {/* Velocidad real: para saber si una ronda de mejoras sirvió de verdad. */}
+      <VelocidadDrive />
     </div>
   );
 }
