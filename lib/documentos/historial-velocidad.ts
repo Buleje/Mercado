@@ -19,7 +19,7 @@ const KEY_PREFIX = "drive-perf:";
 const MAX_DIAS = 30;
 
 /** Los tramos que se miden por separado, porque se arreglan de formas distintas. */
-export type TramoDrive = "listado" | "miniaturas" | "visor";
+export type TramoDrive = "listado" | "miniaturas" | "visor" | "subida";
 
 export interface TramoAgg {
   /** Suma de milisegundos, para el promedio. */

@@ -16,27 +16,9 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { comprimirImagen } from "@/lib/documents/compress-image";
 import { motivoRechazo } from "@/lib/documents/upload-limits";
 import { enLotes, CARPETAS_POR_LLAMADA } from "@/lib/documentos/importar-arbol";
+import { reportarVelocidad } from "@/lib/documentos/reportar-velocidad";
 
 const BASE = "/api/admin/documents";
-
-/**
- * Manda al servidor cuánto tardó un tramo del drive, para poder comparar si una
- * ronda de mejoras sirvió o si algo se puso lento con el tiempo.
- *
- * `keepalive` para que sobreviva si la persona se va de la pantalla justo
- * después; y todo el envío es a prueba de fallas: una medición perdida no vale
- * ni un error en pantalla.
- */
-function reportarVelocidad(tramo: "listado" | "miniaturas" | "visor", ms: number, docs = 0): void {
-  if (!Number.isFinite(ms) || ms <= 0) return;
-  fetch(`${BASE}/velocidad`, {
-    method: "POST",
-    credentials: "include",
-    keepalive: true,
-    headers: csrfHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify({ muestras: [{ tramo, ms: Math.round(ms), docs }] }),
-  }).catch((err) => console.warn("[drive] no se pudo reportar la velocidad", err));
-}
 
 /** El error crudo de una subida, dicho en castellano y sin códigos HTTP. */
 function motivoSubida(msg: string): string {
@@ -288,7 +270,14 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
           opts?.onProgress?.(hechos, listos.length);
         }
       };
+      const arranqueSubida = performance.now();
       await Promise.all(Array.from({ length: Math.min(POOL, listos.length) }, subirUno));
+      // Cuánto tardó por archivo: el total de una tanda de 400 no se puede
+      // comparar con el de una de 3, y lo que se quiere saber es si subir se
+      // puso más lento.
+      if (out.length > 0) {
+        reportarVelocidad("subida", (performance.now() - arranqueSubida) / out.length, out.length);
+      }
       await fetchAll({ silencioso: true, soloDocumentos: true });
       return out;
     },

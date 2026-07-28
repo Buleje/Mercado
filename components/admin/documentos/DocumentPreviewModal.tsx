@@ -5,6 +5,7 @@ import { esHojaEditable, esHojaLegible } from "@/lib/documentos/hoja-calculo";
 import { esTextoEditable, esTextoLegible } from "@/lib/documentos/texto-docx";
 import { esPresentacion } from "@/lib/documentos/presentacion";
 import { urlMiniatura } from "@/lib/documents/miniatura-version";
+import { reportarVelocidad } from "@/lib/documentos/reportar-velocidad";
 import BarraHerramientasDoc, { type AccionesDoc } from "./BarraHerramientasDoc";
 import UbicacionDoc from "./UbicacionDoc";
 import PanelCarpetasDoc, { type AccionesCarpeta } from "./PanelCarpetasDoc";
@@ -149,10 +150,15 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
       ?? (elegidoRef.current?.id === docId ? elegidoRef.current : null);
     setDoc(conocido);
     setLoading(!conocido);
+    const arranque = performance.now();
     getDocumentDetail(docId).then((r) => {
       if (!mounted) return;
       setDoc(r.document);
       setLoading(false);
+      // Cuánto se espera para abrir un documento: es el otro momento donde la
+      // gente mira la pantalla sin hacer nada, y hasta ahora sólo se medía
+      // abrir el drive.
+      reportarVelocidad("visor", performance.now() - arranque);
     }).catch(() => setLoading(false));
     return () => { mounted = false; };
   // `allDocs` cambia de identidad en cada render del padre; el id es lo que manda.

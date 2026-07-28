@@ -15,7 +15,7 @@ import {
  */
 
 const MuestraSchema = z.object({
-  tramo: z.enum(["listado", "miniaturas", "visor"]),
+  tramo: z.enum(["listado", "miniaturas", "visor", "subida"]),
   ms: z.number().nonnegative().max(120_000),
   docs: z.number().int().nonnegative().max(5000).optional(),
 });

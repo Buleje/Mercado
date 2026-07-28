@@ -64,6 +64,17 @@ export default function VelocidadDrive() {
   }
 
   const ultimo = conListado[conListado.length - 1];
+  // Los otros dos momentos en que se mira la pantalla sin hacer nada.
+  const otrosTramos = ([
+    ["visor", "Abrir un documento"],
+    ["subida", "Subir un archivo"],
+  ] as const)
+    .map(([clave, texto]) => {
+      const conDato = (dias ?? []).filter((d) => (d.tramos[clave]?.n ?? 0) > 0);
+      const ultimoDia = conDato[conDato.length - 1]?.tramos[clave];
+      return ultimoDia ? { texto, ms: ultimoDia.promedio, n: ultimoDia.n } : null;
+    })
+    .filter((x) => x !== null);
   const anterior = conListado.length > 1 ? conListado[conListado.length - 2] : null;
   const hoyMs = ultimo.tramos.listado?.promedio ?? 0;
   const ayerMs = anterior?.tramos.listado?.promedio ?? null;
@@ -110,6 +121,18 @@ export default function VelocidadDrive() {
             : tendencia === "peor" ? `Más lento que el día anterior (${segundos(ayerMs)})`
             : `Igual que el día anterior (${segundos(ayerMs)})`}
         </div>
+      )}
+
+      {otrosTramos.length > 0 && (
+        <ul className="flex flex-wrap gap-3 border-t border-[var(--rule-soft)] pt-2">
+          {otrosTramos.map((t) => (
+            <li key={t.texto} className="text-[length:var(--ts-2xs)]">
+              <span className="text-[var(--text-tertiary)]">{t.texto}: </span>
+              <strong className={cn("tabular-nums", colorDe(t.ms))}>{segundos(t.ms)}</strong>
+              <span className="text-[var(--text-tertiary)]"> ({t.n})</span>
+            </li>
+          ))}
+        </ul>
       )}
 
       {/* Barras simples: la comparación entre días es lo único que hay que leer. */}
