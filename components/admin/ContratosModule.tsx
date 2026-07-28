@@ -41,6 +41,7 @@ import {
 import type { DbContract, EstadoVisible } from "@/lib/types/contracts";
 import PanelFirmantes from "@/components/admin/contratos/PanelFirmantes";
 import PanelRevision from "@/components/admin/contratos/PanelRevision";
+import VinculoContraparte from "@/components/admin/contratos/VinculoContraparte";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1624,6 +1625,18 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     </ol>
                   </div>
                 )}
+
+                {/* Con quién es de verdad: atado a su ficha, no texto suelto */}
+                <VinculoContraparte
+                  contratoId={selected.id}
+                  clienteNombre={selected.clienteNombre}
+                  customerId={(detalle ?? selected).customerId}
+                  supplierId={(detalle ?? selected).supplierId}
+                  onVinculado={(patch) => {
+                    setDetalle(d => (d ? { ...d, ...patch } : d));
+                    setContratos(prev => prev.map(c => (c.id === selected.id ? { ...c, ...patch } : c)));
+                  }}
+                />
 
                 {/* Revisor de cláusulas */}
                 <PanelRevision
