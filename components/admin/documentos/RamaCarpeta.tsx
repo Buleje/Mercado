@@ -10,13 +10,19 @@
  */
 
 import {
-  Folder as FolderIcon, FolderPlus, ChevronRight, ChevronDown, Check, Loader2, Pencil, X, Trash2,
+  Folder as FolderIcon, FolderPlus, FolderInput, ChevronRight, ChevronDown, Check, Loader2, Pencil, X, Trash2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 
 export interface AccionesCarpeta {
   onMover: (folderId: string | null) => Promise<void> | void;
+  /**
+   * Entrar a la carpeta para mirar lo que tiene. Es lo que hace el clic en el
+   * nombre: antes ese clic MOVÍA el documento, que es una acción destructiva
+   * disparada por el gesto más común de un explorador de archivos.
+   */
+  onNavegar?: (folderId: string | null) => void;
   onCrear: (nombre: string, parentId: string | null) => Promise<void> | void;
   onRenombrar: (id: string, nombre: string) => Promise<void> | void;
   /** Opcional: si no se pasa, el panel no ofrece borrar. */
@@ -28,6 +34,8 @@ export interface EstadoArbol {
   hijosDe: Map<string | null, DbDocumentFolder[]>;
   /** Carpeta donde vive el documento abierto. */
   folderId: string | null;
+  /** Carpeta que se está mirando ahora (puede no ser la del documento). */
+  carpetaActiva?: string | null;
   abiertas: Set<string>;
   alternar: (id: string) => void;
   acciones: AccionesCarpeta;
@@ -59,6 +67,7 @@ export default function RamaCarpeta({
   const hijos = arbol.hijosDe.get(carpeta.id) ?? [];
   const abierta = arbol.abiertas.has(carpeta.id);
   const esLaDelArchivo = carpeta.id === arbol.folderId;
+  const esLaQueMiro = arbol.carpetaActiva !== undefined && carpeta.id === arbol.carpetaActiva;
   const editando = arbol.editando === carpeta.id;
 
   return (
@@ -66,7 +75,11 @@ export default function RamaCarpeta({
       <div
         className={cn(
           "group/carpeta flex items-center gap-1 rounded-lg pr-1 transition-colors",
-          esLaDelArchivo ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]",
+          esLaQueMiro
+            ? "bg-primary/15 ring-1 ring-primary/40"
+            : esLaDelArchivo
+              ? "bg-primary/10"
+              : "hover:bg-[var(--surface-sunken)]",
         )}
         style={{ paddingLeft: `${nivel * 12}px` }}
       >
@@ -95,10 +108,13 @@ export default function RamaCarpeta({
           />
         ) : (
           <button
-            onClick={() => arbol.acciones.onMover(carpeta.id)}
-            disabled={esLaDelArchivo}
-            title={esLaDelArchivo ? "El documento ya está acá" : `Mover el documento a ${carpeta.name}`}
-            className="flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-sm disabled:cursor-default"
+            onClick={() =>
+              arbol.acciones.onNavegar
+                ? arbol.acciones.onNavegar(carpeta.id)
+                : arbol.acciones.onMover(carpeta.id)
+            }
+            title={arbol.acciones.onNavegar ? `Ver lo que hay en ${carpeta.name}` : `Mover el documento a ${carpeta.name}`}
+            className="flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-sm"
           >
             <FolderIcon className={cn("h-3.5 w-3.5 shrink-0", esLaDelArchivo ? "text-primary" : "text-[var(--text-tertiary)]")} />
             <span className={cn("truncate", esLaDelArchivo ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-secondary)]")}>
@@ -117,6 +133,16 @@ export default function RamaCarpeta({
 
         {!editando && (
           <span className="flex shrink-0 items-center opacity-0 transition-opacity group-hover/carpeta:opacity-100">
+            {arbol.acciones.onNavegar && !esLaDelArchivo && (
+              <button
+                onClick={() => arbol.acciones.onMover(carpeta.id)}
+                title={`Mover el documento a ${carpeta.name}`}
+                aria-label={`Mover el documento a ${carpeta.name}`}
+                className="rounded p-1 text-[var(--text-tertiary)] hover:text-primary"
+              >
+                <FolderInput className="h-3.5 w-3.5" />
+              </button>
+            )}
             <button
               onClick={() => arbol.iniciarCreacion(carpeta.id)}
               title="Crear una subcarpeta acá"

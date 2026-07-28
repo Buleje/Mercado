@@ -8,6 +8,7 @@ import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import BarraHerramientasDoc, { type AccionesDoc } from "./BarraHerramientasDoc";
 import UbicacionDoc from "./UbicacionDoc";
 import PanelCarpetasDoc, { type AccionesCarpeta } from "./PanelCarpetasDoc";
+import ExploradorDoc from "./ExploradorDoc";
 import ComentariosDoc from "./ComentariosDoc";
 import DescripcionDoc from "./DescripcionDoc";
 import ParecidosDoc from "./ParecidosDoc";
@@ -142,6 +143,24 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
     }).catch(() => setLoading(false));
     return () => { mounted = false; };
   // `allDocs` cambia de identidad en cada render del padre; el id es lo que manda.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docId]);
+
+  /**
+   * La carpeta que se está mirando en el explorador. Arranca donde vive el
+   * documento abierto —que es de donde uno viene— pero después va por su
+   * cuenta: podés estar leyendo un contrato y curiosear las facturas al lado
+   * sin que el visor te devuelva al lugar de origen.
+   */
+  const [carpetaMirada, setCarpetaMirada] = useState<string | null>(
+    () => allDocs?.find((d) => d.id === docId)?.folderId ?? null,
+  );
+  // Al saltar a un documento de OTRA carpeta (un "parecido", o el prev/next),
+  // el explorador lo acompaña: si no, mostraría el contenido de una carpeta que
+  // ya no tiene nada que ver con lo que estás viendo.
+  useEffect(() => {
+    const destino = allDocs?.find((d) => d.id === docId)?.folderId ?? null;
+    setCarpetaMirada(destino);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docId]);
 
@@ -320,10 +339,30 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
             vista a la derecha (en pantallas chicas la barra se oculta y quedan
             las acciones del encabezado). */}
         <div className="flex min-h-0 flex-1">
-        {/* Carpetas a la izquierda: se ve dónde está guardado y se acomoda sin
-            cerrar el documento. */}
+        {/* Carpetas a la izquierda: se ve dónde está guardado, se navega entre
+            ellas y se acomoda el archivo sin cerrar el documento. */}
         {carpetas && (
-          <PanelCarpetasDoc folders={folders ?? []} folderId={doc.folderId} acciones={carpetas} />
+          <PanelCarpetasDoc
+            folders={folders ?? []}
+            folderId={doc.folderId}
+            carpetaActiva={carpetaMirada}
+            acciones={{ ...carpetas, onNavegar: setCarpetaMirada }}
+          />
+        )}
+        {/* Y en el medio, qué hay en esa carpeta: se salta de un documento a
+            otro sin cerrar el visor. Se oculta en pantallas chicas, donde no
+            entran tres columnas. */}
+        {carpetas && allDocs && allDocs.length > 0 && (
+          <div className="hidden lg:flex">
+            <ExploradorDoc
+              docs={allDocs}
+              folders={folders ?? []}
+              carpetaActiva={carpetaMirada}
+              onNavegar={setCarpetaMirada}
+              docActivoId={docId}
+              onAbrirDoc={(d) => onAbrirOtro?.(d)}
+            />
+          </div>
         )}
         <div className="flex-1 overflow-auto bg-[var(--surface-sunken)] min-h-0">
           {tab === "preview" && (

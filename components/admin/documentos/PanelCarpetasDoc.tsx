@@ -38,10 +38,12 @@ interface Props {
   folders: DbDocumentFolder[];
   /** Carpeta donde vive el documento abierto. */
   folderId: string | null;
+  /** Carpeta que se está mirando en el explorador (puede ser otra). */
+  carpetaActiva?: string | null;
   acciones: AccionesCarpeta;
 }
 
-export default function PanelCarpetasDoc({ folders, folderId, acciones }: Props) {
+export default function PanelCarpetasDoc({ folders, folderId, carpetaActiva, acciones }: Props) {
   const hijosDe = useMemo(() => buildChildrenMap(folders), [folders]);
   const porId = useMemo(() => new Map(folders.map((f) => [f.id, f])), [folders]);
   const { ancho, arrastrando, colapsado, alternarColapso, propsDivisor } = useAnchoPanel({
@@ -132,7 +134,7 @@ export default function PanelCarpetasDoc({ folders, folderId, acciones }: Props)
   }, [acciones, nombreEdit, ocupado]);
 
   const arbol: EstadoArbol = {
-    hijosDe, folderId, abiertas, alternar, acciones, ocupado,
+    hijosDe, folderId, carpetaActiva, abiertas, alternar, acciones, ocupado,
     editando, nombreEdit, setNombreEdit,
     iniciarEdicion: (c) => { setEditando(c.id); setNombreEdit(c.name); },
     cancelarEdicion: () => setEditando(null),
