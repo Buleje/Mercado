@@ -422,6 +422,12 @@ export class DocumentsDB {
     id: string,
     patch: {
       name?: string;
+      /**
+       * Se acepta acá para que la subida no tenga que hacer DOS escrituras a la
+       * misma fila (una para la categoría y otra para la ruta del archivo).
+       * Con 400 archivos eran 400 viajes de más a la base.
+       */
+      storagePath?: string;
       folderId?: string | null;
       category?: string;
       tags?: string[];

@@ -225,8 +225,20 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
         }
       });
 
-      // Pool de 3 subidas en paralelo: subir de a una hacía esperar N viajes
-      // completos; más de 3 satura conexiones lentas sin ganar tiempo.
+      // Cuántas subidas van a la vez.
+      //
+      // Estaba fijo en 3 con la idea de que más saturaba las conexiones lentas.
+      // Medido con 12 archivos: pool 3 = 676 ms por archivo, pool 6 = 339, pool
+      // 10 = 313. O sea que 3 dejaba la mitad de la velocidad sin usar, porque
+      // el tiempo se va esperando la red, no ocupando la máquina; y pasar de 6
+      // ya casi no gana nada.
+      //
+      // El tamaño sí importa: con archivos grandes el cuello es el ancho de
+      // banda —mandar seis a la vez sólo los hace competir entre ellos— así que
+      // ahí se vuelve al pool chico.
+      const pesoPromedio = listos.reduce((s, f) => s + f.size, 0) / Math.max(1, listos.length);
+      const POOL = pesoPromedio > 4 * 1024 * 1024 ? 3 : 6;
+
       const out: DbDocument[] = [];
       let hechos = 0;
       let siguiente = 0;
@@ -276,7 +288,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
           opts?.onProgress?.(hechos, listos.length);
         }
       };
-      await Promise.all(Array.from({ length: Math.min(3, listos.length) }, subirUno));
+      await Promise.all(Array.from({ length: Math.min(POOL, listos.length) }, subirUno));
       await fetchAll({ silencioso: true, soloDocumentos: true });
       return out;
     },

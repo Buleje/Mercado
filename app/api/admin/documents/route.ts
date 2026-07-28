@@ -160,14 +160,15 @@ export async function POST(req: NextRequest) {
       textSnippet: mime.startsWith("text/") ? buffer.slice(0, 4096).toString("utf8") : undefined,
     });
 
+    // Una sola escritura: la categoría y la ruta del archivo se guardan juntas.
+    // Eran dos viajes a la base por archivo, y en un import de 400 eso se nota.
     const updated = await DocumentsDB.update(auth.tenantId, draft.id, {
+      storagePath,
       category: heur.category,
       tags: heur.tags,
       aiCategory: heur.source === "ai" ? heur.category : undefined,
       aiTags: heur.source === "ai" ? heur.tags : undefined,
     });
-
-    await DocumentsDB.setStoragePath(auth.tenantId, draft.id, storagePath);
 
     DocumentsDB.log(auth.tenantId, {
       documentId: draft.id,
