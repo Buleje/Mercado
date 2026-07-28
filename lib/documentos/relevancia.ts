@@ -115,8 +115,16 @@ export function descripcionDe(doc: DocBuscable): { texto: string; fuente: "usuar
   return ia ? { texto: ia, fuente: "ia" } : null;
 }
 
-/** ¿Ya sabemos qué es este documento? */
+/**
+ * ¿Ya sabemos qué es este documento?
+ *
+ * El listado no manda la descripción entera (son ~5 KB por documento que la
+ * grilla no dibuja): manda una marca. Acá se acepta cualquiera de las dos, así
+ * el filtro de "sin describir" y el contador de "faltan indexar" siguen dando
+ * lo mismo vengan del listado o del detalle.
+ */
 export function tieneDescripcion(doc: DocBuscable): boolean {
+  if (doc.ocrMetadata?.tieneDescripcionIa === true) return true;
   return descripcionDe(doc) !== null;
 }
 

@@ -2422,6 +2422,11 @@ function DocCard({
       // Pasar el mouse ya trae el visor: cuando hace clic, el chunk pesado
       // (exceljs / jszip) suele estar listo y la vista previa abre de una.
       onMouseEnter={() => precargarVisor(familiaDe(doc.name, doc.mimeType))}
+      // El navegador se saltea el cálculo y el dibujo de las tarjetas que no
+      // están en pantalla. En una carpeta con 292 documentos eso es casi todo:
+      // antes se maquetaban las 292 aunque se vieran diez. El alto declarado
+      // evita que la barra de scroll salte al entrar y salir cada tarjeta.
+      style={{ contentVisibility: "auto", containIntrinsicSize: "auto 320px" }}
       className={cn(
         "group relative overflow-hidden rounded-2xl border-2 bg-white transition-all cursor-grab active:cursor-grabbing",
         // El estado manda sobre el borde: es lo que permite barrer la carpeta

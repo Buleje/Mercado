@@ -12,6 +12,7 @@ import {
 import { aiCategorize } from "@/lib/documents/ai-categorize";
 import { analyzeDocumentContent, isAnalyzableMime } from "@/lib/documents/analyze-document";
 import { enColaDeAnalisis } from "@/lib/documents/cola-analisis";
+import { precalcularMiniatura } from "@/lib/documents/precalcular-miniatura";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
 import { resolverMime } from "@/lib/documents/tipos-archivo";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -185,6 +186,13 @@ export async function POST(req: NextRequest) {
         analyzeDocumentContent(auth.tenantId, draft.id, auth.username, auth.role),
       ).catch((err) => logger.warn("documents.autoanalyze_fail", { err: String(err) }));
     }
+
+    // La carita del archivo se dibuja ahora, no cuando alguien abra la carpeta.
+    // Sin esto, quien sube los archivos es justamente quien paga el render de
+    // todos ellos al volver a la grilla.
+    precalcularMiniatura(storagePath, originalName, mime, file.size).catch((err) =>
+      logger.warn("documents.miniatura.precalculo_fail", { err: String(err) }),
+    );
 
     return NextResponse.json({
       document: {

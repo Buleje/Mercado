@@ -37,6 +37,34 @@ import type {
  */
 let modoUnaccent: "extensions" | "publico" | "no" | null = null;
 
+/**
+ * Lo único de `ocrMetadata` que la grilla dibuja.
+ *
+ * El resto —la descripción rica, el resumen, los datos clave, las entidades—
+ * pesa unos 8 KB de los 12 que ocupa el campo, y sólo lo mira el visor, que ya
+ * pide el documento completo por su cuenta al abrirlo. La descripción se
+ * reemplaza por una marca de "sí, ya sabemos qué es esto", que es lo único que
+ * la grilla necesita para el filtro de sin-describir y para contar cuántos
+ * faltan indexar.
+ *
+ * Cuando hay una búsqueda escrita esto NO se aplica: ahí el cliente sí usa los
+ * datos clave y las entidades para ordenar por relevancia y explicar por qué
+ * apareció cada documento.
+ */
+function metadataDeGrilla(meta: Record<string, unknown> | null): Record<string, unknown> | null {
+  if (!meta) return null;
+  const texto = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const reducida: Record<string, unknown> = {};
+  for (const clave of [
+    "structured", "sugerencias", "analyzedAt", "analyzedVia",
+    "descripcionUsuario", "descripcionUsuarioAt", "leidoComoEscaneo", "paginasLeidas",
+  ]) {
+    if (meta[clave] !== undefined) reducida[clave] = meta[clave];
+  }
+  if (texto(meta.description) || texto(meta.summary)) reducida.tieneDescripcionIa = true;
+  return reducida;
+}
+
 function toISO(d: Date | null | undefined): string | null {
   return d ? d.toISOString() : null;
 }
@@ -307,9 +335,10 @@ export class DocumentsDB {
     });
     // Con `omit` el campo no viene en la fila; el mapeo lo repone en null para
     // que el tipo del documento siga siendo uno solo en toda la app.
-    const mapped = docs.map((d) =>
-      mapDoc({ ...d, ocrText: (d as { ocrText?: string | null }).ocrText ?? null }),
-    );
+    const mapped = docs.map((d) => {
+      const doc = mapDoc({ ...d, ocrText: (d as { ocrText?: string | null }).ocrText ?? null });
+      return filters.conTextoCompleto ? doc : { ...doc, ocrMetadata: metadataDeGrilla(doc.ocrMetadata) };
+    });
 
     // Permisos por doc/carpeta: los roles no privilegiados solo ven lo permitido.
     if (viewerRole && !isPrivilegedRole(viewerRole)) {
