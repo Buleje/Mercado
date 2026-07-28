@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import {
   Folder as FolderIcon, ChevronRight, Home, ArrowUp, FileText,
+  MessageCircle, Download, Star, Trash2, Check, Loader2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { urlMiniatura } from "@/lib/documents/miniatura-version";
@@ -39,6 +40,19 @@ interface Props {
    * porque el archivo que se arrastró ya no está donde estaba.
    */
   revision?: number;
+  /**
+   * Qué se puede hacer con varios archivos a la vez. Son las mismas acciones
+   * de la barra del drive: si acá no estuvieran, habría que cerrar el visor
+   * para borrar dos boletas o mandarle tres facturas al contador.
+   */
+  lote?: AccionesEnLote;
+}
+
+export interface AccionesEnLote {
+  onWhatsApp: (docs: DbDocument[]) => void;
+  onDescargarZip: (docs: DbDocument[]) => Promise<void> | void;
+  onFavorito: (ids: string[]) => Promise<void> | void;
+  onEliminar: (ids: string[]) => Promise<void> | void;
 }
 
 /** ¿Este archivo tiene carita dibujable, o va con ícono? */
@@ -56,8 +70,11 @@ function pesoCorto(bytes: number): string {
 }
 
 export default function ExploradorDoc({
-  docs, folders, carpetaActiva, onNavegar, docActivoId, onAbrirDoc, revision = 0,
+  docs, folders, carpetaActiva, onNavegar, docActivoId, onAbrirDoc, revision = 0, lote,
 }: Props) {
+  /** Los tildados. Se vacía al cambiar de carpeta: lo de allá ya no está a la vista. */
+  const [elegidos, setElegidos] = useState<Set<string>>(() => new Set());
+  const [ocupado, setOcupado] = useState(false);
   const hijosDe = useMemo(() => buildChildrenMap(folders), [folders]);
   const porId = useMemo(() => new Map(folders.map((f) => [f.id, f])), [folders]);
 
@@ -98,6 +115,33 @@ export default function ExploradorDoc({
 
   const archivos = traidos ?? yaCargados;
 
+  // Cambiar de carpeta limpia la selección: seguir con archivos tildados que
+  // ya no se ven es la forma más fácil de borrar algo sin querer.
+  useEffect(() => { setElegidos(new Set()); }, [carpetaActiva]);
+
+  const alternar = (id: string) =>
+    setElegidos((prev) => {
+      const siguiente = new Set(prev);
+      if (siguiente.has(id)) siguiente.delete(id);
+      else siguiente.add(id);
+      return siguiente;
+    });
+
+  const elegidosDocs = archivos.filter((d) => elegidos.has(d.id));
+
+  /** Corre la acción y limpia, con el botón bloqueado mientras tanto. */
+  const conLote = async (fn: () => Promise<void> | void, limpiar = true) => {
+    setOcupado(true);
+    try {
+      await fn();
+      if (limpiar) setElegidos(new Set());
+    } catch (err) {
+      console.warn("[drive] no se pudo completar la acción en lote", err);
+    } finally {
+      setOcupado(false);
+    }
+  };
+
   const madre = ruta.length > 1 ? ruta[ruta.length - 2].id : null;
   const nombreActual = ruta.length > 0 ? ruta[ruta.length - 1].name : "Todos los documentos";
 
@@ -125,10 +169,22 @@ export default function ExploradorDoc({
           ))}
         </nav>
         <p className="mt-1 truncate text-sm font-bold text-[var(--text-primary)]">{nombreActual}</p>
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-          {cargando && traidos === null ? "…" : archivos.length} archivo{archivos.length === 1 ? "" : "s"}
-          {subcarpetas.length > 0 ? ` · ${subcarpetas.length} carpeta${subcarpetas.length === 1 ? "" : "s"}` : ""}
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            {cargando && traidos === null ? "…" : archivos.length} archivo{archivos.length === 1 ? "" : "s"}
+            {subcarpetas.length > 0 ? ` · ${subcarpetas.length} carpeta${subcarpetas.length === 1 ? "" : "s"}` : ""}
+          </p>
+          {lote && archivos.length > 0 && (
+            <button
+              onClick={() =>
+                setElegidos(elegidos.size === archivos.length ? new Set() : new Set(archivos.map((d) => d.id)))
+              }
+              className="shrink-0 text-[length:var(--ts-2xs)] font-bold text-primary hover:underline"
+            >
+              {elegidos.size === archivos.length ? "Ninguno" : "Elegir todos"}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-2 space-y-1.5">
@@ -170,15 +226,24 @@ export default function ExploradorDoc({
         {archivos.map((d) => {
           const activo = d.id === docActivoId;
           return (
-            <button
+            <div
               key={d.id}
-              onClick={() => onAbrirDoc(d)}
+              // Sirve para apuntarle a una tarjeta concreta desde afuera (las
+              // verificaciones automáticas la buscaban por su forma y agarraban
+              // cualquier cosa del drive que quedó detrás del visor).
+              data-doc-id={d.id}
               // Agarrar y soltar en una carpeta del árbol, como en el
               // explorador de Windows. El tipo `x-doc-id` es el mismo que usa
-              // el drive, así que las zonas de destino ya saben leerlo.
+              // el drive, así que las zonas de destino ya saben leerlo; si el
+              // archivo que arrastrás está tildado, se llevan TODOS los
+              // tildados, como espera cualquiera que haya usado una PC.
               draggable
               onDragStart={(e) => {
+                const enLote = elegidos.has(d.id) ? [...elegidos] : [];
                 e.dataTransfer.setData("application/x-doc-id", d.id);
+                if (enLote.length > 1) {
+                  e.dataTransfer.setData("application/x-doc-ids", JSON.stringify(enLote));
+                }
                 e.dataTransfer.effectAllowed = "move";
               }}
               // El navegador se saltea las tarjetas fuera de pantalla: una
@@ -186,14 +251,36 @@ export default function ExploradorDoc({
               // entera para mostrar diez.
               style={{ contentVisibility: "auto", containIntrinsicSize: "auto 68px" }}
               className={cn(
-                "flex w-full items-center gap-2 rounded-lg border p-1.5 text-left transition-colors",
+                "group/fila flex w-full items-center gap-1.5 rounded-lg border p-1.5 text-left transition-colors",
                 "cursor-grab active:cursor-grabbing",
+                elegidos.has(d.id) && "ring-1 ring-primary",
                 activo
                   ? "border-primary bg-primary/10"
                   : "border-transparent hover:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]",
               )}
-              aria-current={activo ? "true" : undefined}
             >
+              {lote && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); alternar(d.id); }}
+                  title={elegidos.has(d.id) ? "Sacar de la selección" : "Elegir este archivo"}
+                  aria-label={elegidos.has(d.id) ? `Sacar ${d.name} de la selección` : `Elegir ${d.name}`}
+                  aria-pressed={elegidos.has(d.id)}
+                  className={cn(
+                    "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
+                    elegidos.has(d.id)
+                      ? "border-primary bg-primary text-white"
+                      : "border-[var(--rule-mid)] bg-[var(--surface-raised)] opacity-0 group-hover/fila:opacity-100",
+                    elegidos.size > 0 && "opacity-100",
+                  )}
+                >
+                  {elegidos.has(d.id) && <Check className="h-3 w-3" />}
+                </button>
+              )}
+              <button
+                onClick={() => onAbrirDoc(d)}
+                aria-current={activo ? "true" : undefined}
+                className="flex min-w-0 flex-1 items-center gap-2 text-left"
+              >
               <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-[var(--surface-sunken)]">
                 {tieneMiniatura(d) ? (
                   <Image
@@ -223,10 +310,67 @@ export default function ExploradorDoc({
                   {pesoCorto(d.size)}
                 </span>
               </span>
-            </button>
+              </button>
+            </div>
           );
         })}
       </div>
+
+      {lote && elegidos.size > 0 && (
+        <div className="border-t border-[var(--rule-base)] bg-primary p-2 text-white dark:border-white/10">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <span className="text-xs font-bold tabular-nums">
+              {elegidos.size} elegido{elegidos.size === 1 ? "" : "s"}
+            </span>
+            <button
+              onClick={() => setElegidos(new Set())}
+              className="text-[length:var(--ts-2xs)] font-bold underline opacity-90 hover:opacity-100"
+            >
+              Soltar
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              onClick={() => conLote(() => lote.onWhatsApp(elegidosDocs), false)}
+              disabled={ocupado}
+              className="inline-flex items-center justify-center gap-1 rounded-md bg-white/20 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold hover:bg-white/30 disabled:opacity-60"
+            >
+              <MessageCircle className="h-3 w-3" /> WhatsApp
+            </button>
+            <button
+              onClick={() => conLote(() => lote.onDescargarZip(elegidosDocs), false)}
+              disabled={ocupado}
+              className="inline-flex items-center justify-center gap-1 rounded-md bg-white/20 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold hover:bg-white/30 disabled:opacity-60"
+            >
+              {ocupado ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />} Descargar
+            </button>
+            <button
+              onClick={() => conLote(() => lote.onFavorito([...elegidos]))}
+              disabled={ocupado}
+              className="inline-flex items-center justify-center gap-1 rounded-md bg-white/20 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold hover:bg-white/30 disabled:opacity-60"
+            >
+              <Star className="h-3 w-3" /> Favorito
+            </button>
+            <button
+              onClick={() => {
+                // Borrar varios de una es justo lo que no se puede deshacer de
+                // memoria: se dice cuántos y cuáles antes de tocar nada.
+                const nombres = elegidosDocs.slice(0, 4).map((d) => d.name).join(", ");
+                const resto = elegidosDocs.length > 4 ? ` y ${elegidosDocs.length - 4} más` : "";
+                if (!confirm(`¿Eliminar ${elegidos.size} archivo(s)?\n\n${nombres}${resto}`)) return;
+                conLote(() => lote.onEliminar([...elegidos]));
+              }}
+              disabled={ocupado}
+              className="inline-flex items-center justify-center gap-1 rounded-md bg-white/20 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold hover:bg-white/30 disabled:opacity-60"
+            >
+              <Trash2 className="h-3 w-3" /> Eliminar
+            </button>
+          </div>
+          <p className="mt-1.5 text-center text-[length:var(--ts-2xs)] opacity-80">
+            O arrastralos a una carpeta para moverlos todos.
+          </p>
+        </div>
+      )}
     </aside>
   );
 }

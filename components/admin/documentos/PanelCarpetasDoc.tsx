@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, descendantIds, folderPath } from "@/lib/documentos/folder-tree";
 import { useAnchoPanel } from "@/hooks/use-ancho-panel";
-import RamaCarpeta, { type AccionesCarpeta, type EstadoArbol } from "./RamaCarpeta";
+import RamaCarpeta, { idsArrastrados, type AccionesCarpeta, type EstadoArbol } from "./RamaCarpeta";
 
 export type { AccionesCarpeta };
 
@@ -235,11 +235,12 @@ export default function PanelCarpetasDoc({ folders, folderId, carpetaActiva, acc
               }}
               onDragLeave={() => setRecibiendo(undefined)}
               onDrop={(e) => {
-                const id = e.dataTransfer.getData("application/x-doc-id");
                 setRecibiendo(undefined);
-                if (!id || !acciones.onMoverDoc) return;
+                if (!acciones.onMoverDoc) return;
+                const ids = idsArrastrados(e.dataTransfer);
+                if (ids.length === 0) return;
                 e.preventDefault();
-                acciones.onMoverDoc(id, null);
+                for (const id of ids) acciones.onMoverDoc(id, null);
               }}
               className={cn(
                 "flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors",

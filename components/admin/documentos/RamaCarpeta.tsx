@@ -15,6 +15,24 @@ import {
 import { cn } from "@/lib/utils";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 
+/**
+ * Qué archivos vienen en el arrastre. Puede ser uno solo o una selección
+ * entera; si es una selección, el archivo que se agarró va incluido.
+ */
+export function idsArrastrados(dt: DataTransfer): string[] {
+  const varios = dt.getData("application/x-doc-ids");
+  if (varios) {
+    try {
+      const lista = JSON.parse(varios);
+      if (Array.isArray(lista)) return lista.filter((x) => typeof x === "string");
+    } catch {
+      /* si el JSON viene roto, cae al de a uno */
+    }
+  }
+  const uno = dt.getData("application/x-doc-id");
+  return uno ? [uno] : [];
+}
+
 export interface AccionesCarpeta {
   onMover: (folderId: string | null) => Promise<void> | void;
   /**
@@ -93,12 +111,13 @@ export default function RamaCarpeta({
         }}
         onDragLeave={() => arbol.marcarRecibiendo(undefined)}
         onDrop={(e) => {
-          const id = e.dataTransfer.getData("application/x-doc-id");
           arbol.marcarRecibiendo(undefined);
-          if (!id || !arbol.acciones.onMoverDoc) return;
+          if (!arbol.acciones.onMoverDoc) return;
+          const ids = idsArrastrados(e.dataTransfer);
+          if (ids.length === 0) return;
           e.preventDefault();
           e.stopPropagation();
-          arbol.acciones.onMoverDoc(id, carpeta.id);
+          for (const id of ids) arbol.acciones.onMoverDoc(id, carpeta.id);
         }}
         className={cn(
           "group/carpeta flex items-center gap-1 rounded-lg pr-1 transition-colors",

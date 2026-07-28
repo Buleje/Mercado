@@ -2006,6 +2006,21 @@ export default function DocumentosModule() {
             // Carpetas: crear, renombrar y mover el documento sin salir del
             // visor. Todo pasa por el mismo hook que usa el drive, así la
             // barra de la izquierda se entera del cambio al instante.
+            // Las mismas acciones en lote de la barra del drive, para los
+            // archivos elegidos en la columna del medio del visor.
+            lote={{
+              onWhatsApp: (docs) => setWhatsappDoc(docs),
+              onDescargarZip: async (docs) => {
+                await zipAndDownload(docs, `documentos-${docs.length}.zip`);
+              },
+              onFavorito: async (ids) => { await bulk("favorite", ids, { favorite: true }); },
+              onEliminar: async (ids) => {
+                await bulk("delete", ids);
+                // Si el que estabas mirando se fue con la tanda, el visor no
+                // puede quedarse abierto sobre algo que ya no existe.
+                if (ids.includes(preview.id)) setPreview(null);
+              },
+            }}
             carpetas={{
               onMover: async (folderId) => { await patch(preview.id, { folderId }); },
               // Arrastrar CUALQUIER archivo de la columna del medio a una

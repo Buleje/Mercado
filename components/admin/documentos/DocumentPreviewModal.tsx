@@ -8,7 +8,7 @@ import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import BarraHerramientasDoc, { type AccionesDoc } from "./BarraHerramientasDoc";
 import UbicacionDoc from "./UbicacionDoc";
 import PanelCarpetasDoc, { type AccionesCarpeta } from "./PanelCarpetasDoc";
-import ExploradorDoc from "./ExploradorDoc";
+import ExploradorDoc, { type AccionesEnLote } from "./ExploradorDoc";
 import ComentariosDoc from "./ComentariosDoc";
 import DescripcionDoc from "./DescripcionDoc";
 import ParecidosDoc from "./ParecidosDoc";
@@ -69,6 +69,12 @@ interface Props {
   /** Documento anterior y siguiente, para ir trayéndolos por adelantado. */
   vecinos?: DbDocument[];
   /**
+   * Qué hacer con varios archivos elegidos en la columna del medio. Son las
+   * mismas acciones de la barra del drive: sin ellas habría que cerrar el
+   * visor para borrar dos boletas o mandarle tres facturas al contador.
+   */
+  lote?: AccionesEnLote;
+  /**
    * Las acciones del menú de la lista, para poder usarlas sin cerrar el
    * documento. Opcional: donde no se pasen, el menú no aparece.
    */
@@ -96,7 +102,7 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
 }
 
-export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position, herramientas, vecinos, carpetas, onAbrirOtro }: Props) {
+export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position, herramientas, vecinos, carpetas, lote, onAbrirOtro }: Props) {
   const [tab, setTab] = useState<Tab>("preview");
   const [doc, setDoc] = useState<DbDocument | null>(null);
   const [versions, setVersions] = useState<DbDocumentVersion[]>([]);
@@ -386,6 +392,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
               onNavegar={setCarpetaMirada}
               docActivoId={docId}
               revision={revisionCarpeta}
+              lote={lote}
               onAbrirDoc={(d) => { elegidoRef.current = d; onAbrirOtro?.(d); }}
             />
           </div>
