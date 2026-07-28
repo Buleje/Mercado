@@ -34,7 +34,10 @@ import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, s
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
 import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
+import { ordenarPorRelevancia, tieneDescripcion } from "@/lib/documentos/relevancia";
+import { palabrasUtiles } from "@/lib/documentos/terminos-busqueda";
 import { urlMiniatura } from "@/lib/documents/miniatura-version";
+import PorQueAparecio, { TerminosIA } from "./PorQueAparecio";
 import { precargarVisor } from "./precargar-visores";
 import {
   META_ESTADO, ORDEN_ESTADOS, estadoDe as estadoDeDoc, type EstadoDoc, type TonoEstado,
@@ -184,27 +187,23 @@ function StructuredChip({ doc }: { doc: DbDocument }) {
 }
 
 /**
- * Fragmento del contenido (ocrText) alrededor de la 1ª coincidencia del término
- * de búsqueda, con el match resaltado. Muestra DÓNDE matcheó dentro del doc —
- * la búsqueda ya matchea por ocrText en el backend, esto lo hace visible.
+ * El texto en castellano que viene adentro de un error HTTP del drive
+ * (`HTTP 503: {"error":"…","message":"…"}`). Sin esto, la pantalla mostraría el
+ * cuerpo crudo de la respuesta, que no le sirve a nadie.
  */
-function MatchSnippet({ text, term }: { text: string | null; term: string }) {
-  if (!text || !term || term.trim().length < 2) return null;
-  const t = term.trim();
-  const idx = text.toLowerCase().indexOf(t.toLowerCase());
-  if (idx === -1) return null;
-  const start = Math.max(0, idx - 28);
-  const end = Math.min(text.length, idx + t.length + 44);
-  const before = (start > 0 ? "…" : "") + text.slice(start, idx);
-  const match = text.slice(idx, idx + t.length);
-  const after = text.slice(idx + t.length, end) + (end < text.length ? "…" : "");
-  return (
-    <p className="mt-1.5 line-clamp-2 text-[length:var(--ts-2xs,11px)] leading-snug text-[var(--text-tertiary)]">
-      {before}
-      <mark className="rounded bg-[var(--data-warning-500)]/25 px-0.5 text-[var(--text-primary)] dark:bg-[var(--data-warning-500)]/35 dark:text-[var(--text-primary)]">{match}</mark>
-      {after}
-    </p>
-  );
+function mensajeDeError(msg: string, porDefecto = "No se pudo completar."): string {
+  const json = msg.slice(msg.indexOf("{"));
+  try {
+    const parsed = JSON.parse(json) as { message?: string; error?: string };
+    return parsed.message || parsed.error || porDefecto;
+  } catch {
+    // El cuerpo llega RECORTADO (el cliente corta a 200 caracteres), así que
+    // parsearlo como JSON falla justo cuando el mensaje es largo — que es
+    // cuando más falta hace leerlo. Se rescata el texto a mano, respetando las
+    // comillas escapadas de adentro.
+    const crudo = /"message"\s*:\s*"((?:[^"\\]|\\.)*)/.exec(msg)?.[1];
+    return crudo ? crudo.replace(/\\"/g, '"').replace(/\\\\/g, "\\") : porDefecto;
+  }
 }
 
 interface BuiltinCategory {
@@ -253,8 +252,14 @@ function daysUntil(iso: string | null): number | null {
 
 export default function DocumentosModule() {
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [sortBy, setSortBy] = useState<"recent" | "name" | "size" | "expiry">("recent");
+  const [sortBy, setSortBy] = useState<"recent" | "name" | "size" | "expiry" | "relevancia">("recent");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  /** Ver sólo lo que todavía no tiene descripción (lo que no se puede buscar). */
+  const [soloSinDescribir, setSoloSinDescribir] = useState(false);
+  /** Progreso de "describir todo lo que falta" (una llamada IA por documento). */
+  const [progresoDesc, setProgresoDesc] = useState<{ hechos: number; total: number } | null>(null);
+  /** Por qué la IA no pudo describir (sin cupo, sin clave, sin modelo de visión). */
+  const [avisoIA, setAvisoIA] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [semantic, setSemantic] = useState(false);
@@ -340,9 +345,25 @@ export default function DocumentosModule() {
   );
 
   const {
-    documents, folders, loading, error, refresh,
+    documents, semanticTerms, folders, loading, error, refresh,
     upload, scan, patch, bulk, restore, purge, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, deleteFolder,
   } = useDocuments(filters);
+
+  /**
+   * Con qué se compara cada documento para decir POR QUÉ apareció: la frase
+   * entera, sus palabras sueltas y —en modo IA— los sinónimos con los que el
+   * servidor amplió la búsqueda. Sin eso, un documento traído por el sinónimo
+   * "arriendo" se mostraría sin explicación de por qué está ahí.
+   */
+  const terminosBusqueda = useMemo(() => {
+    const q = searchDebounced.trim();
+    if (!q) return [];
+    // Las mismas palabras que usó el servidor para filtrar (sin "de", "del"…):
+    // si acá se colaran, la lista resaltaría en amarillo un "de" que no fue el
+    // que trajo el documento.
+    return Array.from(new Set([q.toLowerCase(), ...palabrasUtiles(q), ...semanticTerms]))
+      .filter((t) => t.length >= 2);
+  }, [searchDebounced, semanticTerms]);
 
   // Un import terminado (aunque haya sido desde otra pestaña) trae documentos
   // nuevos: recargar. El 0 inicial se saltea para no duplicar el fetch de montaje.
@@ -372,6 +393,20 @@ export default function DocumentosModule() {
     [scan, activeFolderId]
   );
 
+  /**
+   * Buscando, lo natural es que arriba esté lo más parecido a lo que pediste,
+   * no lo último que subiste; al limpiar la búsqueda vuelve a lo de siempre.
+   * Sólo se toca el orden "por defecto": si el usuario eligió tamaño o nombre,
+   * manda el suyo.
+   */
+  const hayBusqueda = terminosBusqueda.length > 0;
+  useEffect(() => {
+    setSortBy((prev) => {
+      if (hayBusqueda) return prev === "recent" ? "relevancia" : prev;
+      return prev === "relevancia" ? "recent" : prev;
+    });
+  }, [hayBusqueda]);
+
   // ── Filtrado (recent) + orden client-side ──
   const displayDocs = useMemo(() => {
     let list = documents;
@@ -384,6 +419,8 @@ export default function DocumentosModule() {
       if (sf) list = list.filter((d) => matchesSmartFolder(d, sf.rules));
     }
     if (statusFilter) list = list.filter((d) => d.status === statusFilter);
+    if (soloSinDescribir) list = list.filter((d) => !tieneDescripcion(d));
+    if (sortBy === "relevancia") return ordenarPorRelevancia(list, terminosBusqueda);
     const sorted = [...list];
     sorted.sort((a, b) => {
       switch (sortBy) {
@@ -403,7 +440,7 @@ export default function DocumentosModule() {
       }
     });
     return sorted;
-  }, [documents, filterMode, sortBy, statusFilter, activeSmartId, smartFolders]);
+  }, [documents, filterMode, sortBy, statusFilter, activeSmartId, smartFolders, soloSinDescribir, terminosBusqueda]);
 
   const statusCounts = useMemo(() => {
     const m: Record<string, number> = { draft: 0, review: 0, approved: 0, archived: 0 };
@@ -411,14 +448,12 @@ export default function DocumentosModule() {
     return m;
   }, [documents]);
 
-  // Docs analizables (PDF/texto/Word/Excel — single-source en analyzable-mime)
-  // que todavía no fueron indexados por la IA.
+  // Lo que la IA puede leer (PDF/texto/Word/Excel/fotos — single-source en
+  // analyzable-mime) y todavía NO tiene descripción. Es la medida honesta de
+  // "cuánto de mi drive no se puede buscar por su contenido": un documento
+  // analizado cuya descripción quedó vacía sigue sin servir para buscar.
   const indexableDocs = useMemo(
-    () =>
-      documents.filter((d) => {
-        const indexed = !!(d.ocrMetadata && (d.ocrMetadata as Record<string, unknown>).analyzedAt);
-        return isAnalyzableMime(d.mimeType) && !indexed;
-      }),
+    () => documents.filter((d) => isAnalyzableMime(d.mimeType) && !tieneDescripcion(d)),
     [documents]
   );
   // Todos los documentos analizables, estén o no ya indexados. Sirve para
@@ -431,8 +466,29 @@ export default function DocumentosModule() {
     async (list: DbDocument[], onProgress: (done: number, total: number) => void) => {
       onProgress(0, list.length);
       let done = 0;
+      // Si no hay modelo de visión configurado, la 1ª foto lo revela: seguir
+      // pidiendo por las otras 200 sería quemar tiempo para el mismo error.
+      let sinVision = false;
       for (const d of list) {
-        await analyzeDoc(d.id).catch((err) => console.warn("[documentos] analyze fail", d.id, err));
+        const esFoto = d.mimeType.startsWith("image/");
+        if (!(sinVision && esFoto)) {
+          const r = await analyzeDoc(d.id).catch((err) => {
+            const msg = err instanceof Error ? err.message : String(err);
+            if (esFoto && /vision_unavailable/.test(msg)) {
+              sinVision = true;
+              setAvisoIA(mensajeDeError(msg));
+            }
+            console.warn("[documentos] analyze fail", d.id, msg);
+            return null;
+          });
+          // El servidor guardó el texto pero la IA no describió (sin cupo, sin
+          // clave): seguir con los otros 200 da el mismo resultado. Se corta y
+          // se dice por qué, en vez de terminar con el contador igual.
+          if (r?.aviso) {
+            setAvisoIA(r.aviso);
+            break;
+          }
+        }
         done += 1;
         onProgress(done, list.length);
       }
@@ -444,6 +500,16 @@ export default function DocumentosModule() {
     (onProgress: (done: number, total: number) => void) => runIndex(indexableDocs, onProgress),
     [indexableDocs, runIndex]
   );
+  /** Describir de una vez todo lo que falta, sin irse al asistente. */
+  const describirFaltantes = useCallback(async () => {
+    if (progresoDesc || indexableDocs.length === 0) return;
+    setProgresoDesc({ hechos: 0, total: indexableDocs.length });
+    try {
+      await runIndex(indexableDocs, (hechos, total) => setProgresoDesc({ hechos, total }));
+    } finally {
+      setTimeout(() => setProgresoDesc(null), 1200);
+    }
+  }, [indexableDocs, progresoDesc, runIndex]);
   const handleReindexAll = useCallback(
     (onProgress: (done: number, total: number) => void) => runIndex(reindexableDocs, onProgress),
     [reindexableDocs, runIndex]
@@ -1389,6 +1455,9 @@ export default function DocumentosModule() {
               aria-label="Ordenar documentos"
               title="Ordenar documentos"
             >
+              {/* Buscando, el orden por defecto pasa a ser el parecido con lo
+                  que pediste; sin búsqueda no tiene sentido ofrecerlo. */}
+              {terminosBusqueda.length > 0 && <option value="relevancia">Más parecidos</option>}
               <option value="recent">Más recientes</option>
               <option value="name">Nombre A–Z</option>
               <option value="size">Tamaño</option>
@@ -1629,6 +1698,67 @@ export default function DocumentosModule() {
             </div>
           )}
 
+          {/* Lo que todavía no se puede buscar por lo que dice. Es la deuda
+              real del drive: un archivo sin descripción sólo aparece si te
+              acordás de su nombre. */}
+          {!VISTAS_CON_CONTENIDO_PROPIO.has(filterMode) && filterMode !== "trash" && (indexableDocs.length > 0 || soloSinDescribir) && (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border-2 border-dashed border-[var(--accent)]/35 bg-[var(--accent)]/5 px-3 py-2">
+              <Sparkles className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
+              <p className="min-w-0 flex-1 text-xs font-semibold text-[var(--text-secondary)]">
+                {indexableDocs.length > 0 ? (
+                  <>
+                    <span className="tabular-nums font-bold text-[var(--text-primary)]">{indexableDocs.length}</span>{" "}
+                    {indexableDocs.length === 1 ? "documento no tiene descripción" : "documentos no tienen descripción"}: no
+                    aparecen cuando buscás por lo que dicen adentro.
+                  </>
+                ) : (
+                  "Ya está todo descrito."
+                )}
+              </p>
+              <button
+                onClick={() => setSoloSinDescribir((v) => !v)}
+                className={cn(
+                  "shrink-0 rounded-lg border-2 px-2.5 py-1 text-xs font-bold transition-colors",
+                  soloSinDescribir
+                    ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]"
+                    : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-[var(--accent)]/50 dark:bg-[var(--surface-raised)]",
+                )}
+              >
+                {soloSinDescribir ? "Ver todos" : "Ver cuáles"}
+              </button>
+              {indexableDocs.length > 0 && (
+                <button
+                  onClick={describirFaltantes}
+                  disabled={!!progresoDesc}
+                  title="La IA lee cada uno y escribe de qué se trata (tarda unos segundos por documento)"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-2.5 py-1 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                >
+                  {progresoDesc ? (
+                    <>
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      <span className="tabular-nums">{progresoDesc.hechos}/{progresoDesc.total}</span>
+                    </>
+                  ) : (
+                    <><Sparkles className="h-3 w-3" /> Describirlos con IA</>
+                  )}
+                </button>
+              )}
+              {/* Cuando la IA no puede (sin cupo por hoy, sin credencial, o
+                  sin modelo que MIRE las fotos) se dice acá, con lo que hay que
+                  hacer, en vez de dejar el contador clavado sin explicación. */}
+              {avisoIA && (
+                <p className="w-full text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                  {avisoIA}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* En modo IA: con qué sinónimos se amplió la búsqueda. */}
+          {semantic && semanticTerms.length > 0 && !VISTAS_CON_CONTENIDO_PROPIO.has(filterMode) && (
+            <TerminosIA terminos={semanticTerms} />
+          )}
+
           {filterMode === "assistant" ? (
             <AssistantView
               onOpenDoc={(id) => { const d = documents.find((x) => x.id === id); if (d) setPreview(d); }}
@@ -1670,7 +1800,7 @@ export default function DocumentosModule() {
                   selected={selectedIds.has(doc.id)}
                   isRenaming={renaming?.id === doc.id}
                   renameValue={renaming?.id === doc.id ? renaming.value : doc.name}
-                  searchTerm={searchDebounced}
+                  terminos={terminosBusqueda}
                   folderNombre={filterMode === "folder" ? undefined : (doc.folderId ? folderById.get(doc.folderId)?.name ?? null : null)}
                   onOpenFolder={() => { if (doc.folderId) { setFilterMode("folder"); setActiveFolderId(doc.folderId); } }}
                   onSelect={() => toggleSelect(doc.id)}
@@ -1759,6 +1889,11 @@ export default function DocumentosModule() {
                               <ExpiryBadge expiresAt={doc.expiresAt} />
                             </button>
                           )}
+                          {/* Fuera del botón a propósito: un <p> adentro de un
+                              <button> es HTML inválido y rompe el clic. */}
+                          {renaming?.id !== doc.id && (
+                            <PorQueAparecio doc={doc} terminos={terminosBusqueda} variante="list" />
+                          )}
                         </td>
                         <td className="px-4 py-3 hidden sm:table-cell">
                           <div className="flex flex-col items-start gap-1">
@@ -1817,6 +1952,9 @@ export default function DocumentosModule() {
             folders={folders}
             onClose={() => setPreview(null)}
             onRefresh={refresh}
+            // Saltar a un "parecido" sin cerrar: es el gesto natural cuando
+            // buscabas la factura y lo que querías era su comprobante de pago.
+            onAbrirOtro={(d) => setPreview(d)}
             onPrev={idx > 0 ? () => setPreview(displayDocs[idx - 1]) : undefined}
             onNext={idx >= 0 && idx < displayDocs.length - 1 ? () => setPreview(displayDocs[idx + 1]) : undefined}
             // Vecinos: el visor los precarga para que pasar con las flechas no
@@ -2202,7 +2340,7 @@ function StatusControl({ status, onChange }: { status: string; onChange: (s: str
 }
 
 function DocCard({
-  doc, selected, isRenaming, renameValue, searchTerm, folderNombre, onOpenFolder,
+  doc, selected, isRenaming, renameValue, terminos, folderNombre, onOpenFolder,
   onSelect, onPreview, onToggleFav, onRemove, onWhatsApp, onSetStatus,
   onStartRename, onCommitRename, onCancelRename, onRenameChange, onDownload,
   onDragStart, onDragEnd, dragging,
@@ -2211,7 +2349,8 @@ function DocCard({
   selected: boolean;
   isRenaming: boolean;
   renameValue: string;
-  searchTerm: string;
+  /** Términos buscados: deciden si se muestra la descripción o el fragmento. */
+  terminos: string[];
   /** Nombre de la carpeta, null = sin carpeta, undefined = no mostrar el chip. */
   folderNombre?: string | null;
   onOpenFolder?: () => void;
@@ -2326,9 +2465,8 @@ function DocCard({
           </span>
           <span className="shrink-0 tabular-nums text-[var(--text-tertiary)]">{formatBytes(doc.size)}</span>
         </div>
-        {searchTerm && !doc.name.toLowerCase().includes(searchTerm.trim().toLowerCase()) && (
-          <MatchSnippet text={doc.ocrText} term={searchTerm} />
-        )}
+        {/* De qué se trata (o por qué apareció en la búsqueda). */}
+        <PorQueAparecio doc={doc} terminos={terminos} />
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {folderNombre !== undefined && <FolderChip nombre={folderNombre} onClick={onOpenFolder} />}
           <StatusControl status={doc.status} onChange={onSetStatus} />

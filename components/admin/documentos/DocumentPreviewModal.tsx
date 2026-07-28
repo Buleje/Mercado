@@ -9,6 +9,9 @@ import BarraHerramientasDoc, { type AccionesDoc } from "./BarraHerramientasDoc";
 import UbicacionDoc from "./UbicacionDoc";
 import PanelCarpetasDoc, { type AccionesCarpeta } from "./PanelCarpetasDoc";
 import ComentariosDoc from "./ComentariosDoc";
+import DescripcionDoc from "./DescripcionDoc";
+import ParecidosDoc from "./ParecidosDoc";
+import BuscarEnDocumento from "./BuscarEnDocumento";
 import { esImagenRenderizable, esImagenConvertible } from "@/lib/documents/tipos-archivo";
 import dynamic from "next/dynamic";
 
@@ -32,7 +35,7 @@ import {
   Pencil as PencilLine, Sparkles, Clock as AlarmClock, Link2, Users, Truck, ExternalLink,
   ChevronLeft, ChevronRight, GitCompareArrows as GitCompare,
   FileSpreadsheet, Plus, Link as LinkChain, Save, Folder as FolderIcon,
-  Wrench, Stamp, RotateCw, FileStack, Scissors,
+  Wrench, Stamp, RotateCw, FileStack, Scissors, Search,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { VisorImagen, VisorPdf } from "./VisorArchivo";
@@ -48,7 +51,7 @@ import type {
   DbDocument, DbDocumentFolder, DbDocumentVersion, DbDocumentAuditLog, DbDocumentShare,
 } from "@/lib/types/documents";
 
-type Tab = "preview" | "details" | "versions" | "audit" | "share" | "sign" | "comentarios";
+type Tab = "preview" | "texto" | "details" | "versions" | "audit" | "share" | "sign" | "comentarios";
 
 interface Props {
   docId: string;
@@ -71,6 +74,8 @@ interface Props {
   herramientas?: AccionesDoc;
   /** Crear/renombrar carpetas y mover el documento desde el propio visor. */
   carpetas?: AccionesCarpeta;
+  /** Saltar a otro documento sin cerrar (lo usan los "parecidos a este"). */
+  onAbrirOtro?: (doc: DbDocument) => void;
 }
 
 function formatBytes(b: number): string {
@@ -90,7 +95,7 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
 }
 
-export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position, herramientas, vecinos, carpetas }: Props) {
+export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position, herramientas, vecinos, carpetas, onAbrirOtro }: Props) {
   const [tab, setTab] = useState<Tab>("preview");
   const [doc, setDoc] = useState<DbDocument | null>(null);
   const [versions, setVersions] = useState<DbDocumentVersion[]>([]);
@@ -103,6 +108,14 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") { onClose(); return; }
+      // Ctrl/⌘+F con un documento abierto busca ADENTRO del documento, que es
+      // lo que la persona quiere en ese momento (el del navegador sólo ve la
+      // cáscara del visor). Se toma incluso desde un campo de texto.
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        setTab("texto");
+        return;
+      }
       // No navegar entre documentos si el usuario está escribiendo en un campo.
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
@@ -291,6 +304,10 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
         {/* Tabs */}
         <nav className="flex items-center gap-1 px-5 pt-3 border-b border-[var(--rule-base)] shrink-0 overflow-x-auto">
           <TabBtn icon={Eye} active={tab === "preview"} onClick={() => setTab("preview")}>Vista previa</TabBtn>
+          {/* Buscar ADENTRO del documento (Ctrl+F). Sólo si hay texto leído:
+              ofrecer una búsqueda que no puede encontrar nada es peor que no
+              ofrecerla. */}
+          {!!doc.ocrText && <TabBtn icon={Search} active={tab === "texto"} onClick={() => setTab("texto")}>Buscar y preguntar</TabBtn>}
           <TabBtn icon={Link2} active={tab === "details"} onClick={() => setTab("details")}>Detalles{doc.expiresAt || doc.customerId || doc.supplierId ? " •" : ""}</TabBtn>
           <TabBtn icon={History} active={tab === "versions"} onClick={() => setTab("versions")}>Versiones{doc.versionCount ? ` (${(doc.versionCount ?? 0) + 1})` : ""}</TabBtn>
           <TabBtn icon={Share2} active={tab === "share"} onClick={() => setTab("share")}>Compartir{doc.shareCount ? ` (${doc.shareCount})` : ""}</TabBtn>
@@ -349,8 +366,18 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
             </div>
           )}
 
+          {tab === "texto" && (
+            <div className="h-[74vh]">
+              <BuscarEnDocumento
+                docId={docId}
+                ocrText={doc.ocrText}
+                origen={(doc.ocrMetadata as { analyzedVia?: string } | null)?.analyzedVia}
+              />
+            </div>
+          )}
+
           {tab === "details" && (
-            <DetailsTab doc={doc} allDocs={allDocs ?? []} folders={folders ?? []} onPatched={(d) => { setDoc(d); onRefresh?.(); }} />
+            <DetailsTab doc={doc} allDocs={allDocs ?? []} folders={folders ?? []} onPatched={(d) => { setDoc(d); onRefresh?.(); }} onAbrirOtro={onAbrirOtro} />
           )}
 
           {tab === "versions" && (
@@ -609,48 +636,6 @@ function VersionsTab({
 
 interface EntityOpt { id: string; name: string }
 
-// ── Descripción rica generada por IA (buscable) ──────────────────────────────
-type DocEntities = { people?: string[]; orgs?: string[]; places?: string[]; dates?: string[]; amounts?: string[] };
-const ENTITY_LABEL: { key: keyof DocEntities; label: string }[] = [
-  { key: "people", label: "Personas" },
-  { key: "orgs", label: "Empresas" },
-  { key: "places", label: "Lugares" },
-  { key: "dates", label: "Fechas" },
-  { key: "amounts", label: "Montos" },
-];
-
-function DescriptionSection({ doc }: { doc: DbDocument }) {
-  const meta = doc.ocrMetadata as { description?: string; summary?: string; entities?: DocEntities } | null | undefined;
-  const description = meta?.description || meta?.summary;
-  const entities = meta?.entities;
-  const hasEntities = entities && ENTITY_LABEL.some(({ key }) => (entities[key]?.length ?? 0) > 0);
-  if (!description && !hasEntities) return null;
-  return (
-    <section className="rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent)]/5 p-4">
-      <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
-        <Sparkles className="h-4 w-4 text-[var(--accent)]" /> Descripción (IA)
-      </p>
-      {description && <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{description}</p>}
-      {hasEntities && (
-        <div className="mt-3 space-y-1.5">
-          {ENTITY_LABEL.map(({ key, label }) => {
-            const vals = entities?.[key] ?? [];
-            if (vals.length === 0) return null;
-            return (
-              <div key={key} className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] w-16 shrink-0">{label}</span>
-                {vals.map((v, i) => (
-                  <span key={i} className="rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-semibold text-[var(--text-secondary)]">{v}</span>
-                ))}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
-  );
-}
-
 // ── Datos estructurados (facturas/recibos extraídos por IA) ───────────────────
 type StructuredData = { docType?: string | null; ruc?: string | null; razonSocial?: string | null; numero?: string | null; fecha?: string | null; moneda?: string | null; total?: number | string | null; igv?: number | string | null };
 
@@ -881,7 +866,7 @@ function PermissionsSection({ doc, onChanged }: { doc: DbDocument; onChanged: (d
   );
 }
 
-function DetailsTab({ doc, allDocs, folders, onPatched }: { doc: DbDocument; allDocs: DbDocument[]; folders: DbDocumentFolder[]; onPatched: (d: DbDocument) => void }) {
+function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: DbDocument; allDocs: DbDocument[]; folders: DbDocumentFolder[]; onPatched: (d: DbDocument) => void; onAbrirOtro?: (d: DbDocument) => void }) {
   const [saving, setSaving] = useState<string | null>(null);
   const [customers, setCustomers] = useState<EntityOpt[]>([]);
   const [suppliers, setSuppliers] = useState<EntityOpt[]>([]);
@@ -962,14 +947,18 @@ function DetailsTab({ doc, allDocs, folders, onPatched }: { doc: DbDocument; all
         </div>
       </section>
 
-      {/* Descripción rica generada por IA (buscable) */}
-      <DescriptionSection doc={doc} />
+      {/* De qué se trata: descripción de la IA + la que escribe el usuario.
+          Las dos entran al buscador (ver lib/documents/texto-buscable). */}
+      <DescripcionDoc doc={doc} onPatched={onPatched} />
 
       {/* Datos estructurados extraídos por IA (facturas/recibos) */}
       <StructuredCard doc={doc} />
 
-      {/* Documentos relacionados */}
+      {/* Documentos relacionados (vinculados a mano) */}
       <RelatedSection doc={doc} allDocs={allDocs} onChanged={onPatched} />
+
+      {/* Parecidos: los deduce el sistema de lo que dice cada documento */}
+      {onAbrirOtro && <ParecidosDoc doc={doc} todos={allDocs} onAbrir={onAbrirOtro} />}
 
       {/* Flujo de aprobación */}
       <ApprovalSection doc={doc} onChanged={onPatched} />

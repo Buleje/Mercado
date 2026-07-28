@@ -46,6 +46,8 @@ async function http<T>(url: string, init?: RequestInit): Promise<T> {
 
 export interface UseDocumentsResult {
   documents: DbDocument[];
+  /** Sinónimos con los que la búsqueda IA amplió la consulta (vacío sin IA). */
+  semanticTerms: string[];
   folders: DbDocumentFolder[];
   loading: boolean;
   error: string | null;
@@ -81,6 +83,7 @@ export interface UseDocumentsResult {
 
 export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsResult {
   const [documents, setDocuments] = useState<DbDocument[]>([]);
+  const [semanticTerms, setSemanticTerms] = useState<string[]>([]);
   const [folders, setFolders] = useState<DbDocumentFolder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,10 +112,13 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
       if (f.deletedOnly) qs.set("deleted", "1");
 
       const [docsResp, foldersResp] = await Promise.all([
-        http<{ documents: DbDocument[] }>(`${BASE}?${qs.toString()}`),
+        http<{ documents: DbDocument[]; semanticTerms?: string[] }>(`${BASE}?${qs.toString()}`),
         http<{ folders: DbDocumentFolder[] }>(`${BASE}/folders`),
       ]);
       setDocuments(docsResp.documents);
+      // En modo IA el servidor expande la consulta a sinónimos; devolverlos deja
+      // decir POR QUÉ apareció cada documento (y resaltar el término que pegó).
+      setSemanticTerms(docsResp.semanticTerms ?? []);
       setFolders(foldersResp.folders);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -350,7 +356,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     await fetchAll();
   }, [fetchAll]);
 
-  return { documents, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, bulk, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, deleteFolder };
+  return { documents, semanticTerms, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, bulk, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, deleteFolder };
 }
 
 // ── Standalone helpers ──────────────────────────────────────────────────────
@@ -444,7 +450,7 @@ export async function askDocAssistantStream(
 }
 
 /** Analiza el contenido de un doc con IA (texto + descripción rica + datos + entidades + tags). */
-export async function analyzeDoc(id: string): Promise<{ summary: string; description?: string; keyFacts: string[]; tags: string[]; entities?: Record<string, string[]> | null; source: string; message?: string }> {
+export async function analyzeDoc(id: string): Promise<{ summary: string; description?: string; keyFacts: string[]; tags: string[]; entities?: Record<string, string[]> | null; source: string; message?: string; aviso?: string }> {
   return http(`${BASE}/${id}/analyze`, { method: "POST" });
 }
 
@@ -537,6 +543,8 @@ export async function patchDocument(
     customerId: string | null;
     supplierId: string | null;
     orderId: string | null;
+    /** Descripción escrita por el usuario (entra al texto buscable). */
+    descripcion: string;
   }>
 ): Promise<DbDocument> {
   const r = await http<{ document: DbDocument }>(`${BASE}/${id}`, {

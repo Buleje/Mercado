@@ -7,6 +7,7 @@ import { DocumentsDB } from "@/lib/db/documents.db";
 import { getSignedUrl, deleteFromStorage } from "@/lib/documents/storage";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { ESTADOS_DOC } from "@/lib/documents/estados-doc";
+import { conDescripcionPropia } from "@/lib/documents/texto-buscable";
 
 
 const PatchBody = z.object({
@@ -23,6 +24,10 @@ const PatchBody = z.object({
   customerId: z.string().nullable().optional(),
   orderId: z.string().nullable().optional(),
   supplierId: z.string().nullable().optional(),
+  // Descripción escrita por una persona: corrige o refuerza a la de la IA y
+  // entra al texto buscable, así el archivo aparece por lo que vos dijiste
+  // que es. Vacío = borrarla.
+  descripcion: z.string().max(2000).optional(),
 });
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -85,7 +90,24 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         ? null
         : new Date(parsed.data.expiresAt);
 
+    // La descripción propia toca DOS campos: queda guardada aparte (para poder
+    // mostrarla y editarla) y se agrega al final del texto buscable, que es
+    // contra lo que busca el listado.
+    const descripcion = parsed.data.descripcion;
+    const metaDesc =
+      descripcion === undefined
+        ? {}
+        : {
+            ocrMetadata: {
+              ...((before.ocrMetadata ?? {}) as Record<string, unknown>),
+              descripcionUsuario: descripcion.trim(),
+              descripcionUsuarioAt: new Date().toISOString(),
+            },
+            ocrText: conDescripcionPropia(before.ocrText, descripcion),
+          };
+
     const updated = await DocumentsDB.update(auth.tenantId, id, {
+      ...metaDesc,
       name: parsed.data.name,
       folderId: parsed.data.folderId,
       category: parsed.data.category,
@@ -106,6 +128,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     if (parsed.data.name && parsed.data.name !== before.name) changes.push("rename");
     if (parsed.data.folderId !== undefined && parsed.data.folderId !== before.folderId) changes.push("move");
     if (parsed.data.tags) changes.push("tag");
+    if (descripcion !== undefined) changes.push("tag");
     if (parsed.data.expiresAt !== undefined && parsed.data.expiresAt !== before.expiresAt) changes.push("tag");
     if (
       (parsed.data.customerId !== undefined && parsed.data.customerId !== before.customerId) ||

@@ -3,6 +3,8 @@ import { randomBytes, createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { canRoleSeeDoc, isPrivilegedRole } from "@/lib/documents/doc-access";
+import { palabrasUtiles } from "@/lib/documentos/terminos-busqueda";
+import { Prisma } from "@/lib/generated/prisma/client";
 import type {
   Document as PDocument,
   DocumentFolder as PDocumentFolder,
@@ -26,6 +28,14 @@ import type {
 } from "@/lib/types/documents";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Dónde vive `unaccent()` en esta base, averiguado una sola vez: Supabase la
+ * instala en el schema `extensions`, otras instalaciones en `public`, y una
+ * base sin la extensión no la tiene en ningún lado ("no"). Sin este recuerdo,
+ * cada búsqueda pagaría un error de SQL para descubrir lo mismo.
+ */
+let modoUnaccent: "extensions" | "publico" | "no" | null = null;
 
 function toISO(d: Date | null | undefined): string | null {
   return d ? d.toISOString() : null;
@@ -159,6 +169,69 @@ function mapTemplate(t: PDocumentTemplate): DbDocumentTemplate {
 export class DocumentsDB {
   // ── Documents ──────────────────────────────────────────────────────────────
 
+  /**
+   * IDs de documentos que matchean IGNORANDO TILDES.
+   *
+   * Por qué en SQL crudo y no con Prisma: `contains` termina en `ILIKE`, que
+   * distingue "descripción" de "descripcion" — en un drive escrito en
+   * castellano eso deja afuera media búsqueda. `unaccent()` pliega los acentos
+   * de los dos lados. Es un PRE-FILTRO: devuelve ids y el resto del armado
+   * (carpeta, permisos, orden, conteos) sigue en Prisma como siempre.
+   *
+   * Devuelve `null` si la base no tiene la extensión, y el llamador vuelve a la
+   * búsqueda de siempre — un entorno sin `unaccent` busca peor, no se rompe.
+   */
+  private static async buscarIdsSinTildes(
+    tenantId: string,
+    palabras: string[],
+    modo: "todas" | "alguna",
+    soloBorrados: boolean,
+  ): Promise<string[] | null> {
+    if (modoUnaccent === "no" || palabras.length === 0) return null;
+
+    const intentar = async (esquema: "extensions." | ""): Promise<string[]> => {
+      // Todo lo que puede nombrar al documento, en un solo texto plegado.
+      const campos = Prisma.raw(
+        `${esquema}unaccent(lower(coalesce("name",'') || ' ' || coalesce("originalName",'') || ' ' || coalesce("ocrText",'') || ' ' || array_to_string("tags",' ')))`,
+      );
+      const cond = palabras.map(
+        (p) => Prisma.sql`${campos} LIKE '%' || ${Prisma.raw(`${esquema}unaccent`)}(lower(${p})) || '%'`,
+      );
+      const filas = await prisma.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Document"
+        WHERE "tenantId" = ${tenantId}
+          AND ${soloBorrados ? Prisma.sql`"deletedAt" IS NOT NULL` : Prisma.sql`"deletedAt" IS NULL`}
+          AND (${Prisma.join(cond, modo === "todas" ? " AND " : " OR ")})
+        LIMIT 2000`;
+      return filas.map((f) => f.id);
+    };
+
+    try {
+      if (modoUnaccent === null || modoUnaccent === "extensions") {
+        const ids = await intentar("extensions.");
+        modoUnaccent = "extensions";
+        return ids;
+      }
+      return await intentar("");
+    } catch (err) {
+      // Supabase la instala en `extensions`; otras instalaciones, en `public`.
+      // Se prueba el otro camino una vez y se recuerda cuál anduvo.
+      if (modoUnaccent === null) {
+        try {
+          const ids = await intentar("");
+          modoUnaccent = "publico";
+          return ids;
+        } catch (err2) {
+          modoUnaccent = "no";
+          logger.warn("documents.busqueda.sin_unaccent", { err: String(err2).slice(0, 160) });
+          return null;
+        }
+      }
+      logger.warn("documents.busqueda.unaccent_fallo", { err: String(err).slice(0, 160) });
+      return null;
+    }
+  }
+
   static async list(
     tenantId: string,
     filters: DocumentListFilters = {},
@@ -179,23 +252,46 @@ export class DocumentsDB {
     if (filters.supplierId) where.supplierId = filters.supplierId;
     if (filters.tags?.length) where.tags = { hasSome: filters.tags };
 
-    if (filters.q?.trim()) {
+    /** Un término contra todo lo que puede nombrar a un documento. */
+    const enTodoElDoc = (t: string) => [
+      { name: { contains: t, mode: "insensitive" } },
+      { originalName: { contains: t, mode: "insensitive" } },
+      { ocrText: { contains: t, mode: "insensitive" } },
+      { tags: { hasSome: [t.toLowerCase()] } },
+    ];
+
+    // Primero se intenta la búsqueda que IGNORA TILDES (Postgres `ILIKE` no lo
+    // hace). Si sale bien, filtra por id y no hace falta el `contains` de
+    // abajo; si el entorno no tiene la extensión `unaccent`, devuelve null y
+    // seguimos con la búsqueda de siempre.
+    const palabrasQ = filters.q?.trim() ? palabrasUtiles(filters.q) : [];
+    const terminosAny = filters.qAny?.filter((t) => t.trim().length > 1).slice(0, 12) ?? [];
+    const busqueda = palabrasQ.length > 0
+      ? { palabras: palabrasQ, modo: "todas" as const }
+      : terminosAny.length > 0
+      ? { palabras: terminosAny, modo: "alguna" as const }
+      : null;
+    const idsSinTildes = busqueda
+      ? await this.buscarIdsSinTildes(tenantId, busqueda.palabras, busqueda.modo, !!filters.deletedOnly)
+      : null;
+
+    if (idsSinTildes) {
+      where.id = { in: idsSinTildes };
+    } else if (filters.q?.trim()) {
       const q = filters.q.trim();
-      where.OR = [
-        { name: { contains: q, mode: "insensitive" } },
-        { originalName: { contains: q, mode: "insensitive" } },
-        { ocrText: { contains: q, mode: "insensitive" } },
-        { tags: { hasSome: [q.toLowerCase()] } },
-      ];
+      // Varias palabras = TODAS tienen que estar, cada una donde sea. Antes se
+      // buscaba la frase literal: "alquiler del local" no encontraba el
+      // contrato cuya descripción dice "alquiler de un local", que es
+      // exactamente el documento que la persona estaba buscando. Como la frase
+      // exacta contiene todas sus palabras, sigue matcheando; el orden por
+      // relevancia (client-side) es el que la pone primera.
+      const palabras = palabrasUtiles(q);
+      if (palabras.length > 1) where.AND = palabras.map((p) => ({ OR: enTodoElDoc(p) }));
+      else where.OR = enTodoElDoc(q);
     } else if (filters.qAny?.length) {
       // ADR-119 — búsqueda semántica: cualquier término matchea.
       const terms = filters.qAny.filter((t) => t.trim().length > 1).slice(0, 12);
-      where.OR = terms.flatMap((t) => [
-        { name: { contains: t, mode: "insensitive" } },
-        { originalName: { contains: t, mode: "insensitive" } },
-        { ocrText: { contains: t, mode: "insensitive" } },
-        { tags: { hasSome: [t.toLowerCase()] } },
-      ]);
+      where.OR = terms.flatMap((t) => enTodoElDoc(t));
     }
 
     const docs = await prisma.document.findMany({

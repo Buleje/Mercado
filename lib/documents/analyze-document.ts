@@ -1,58 +1,39 @@
 import { generateText } from "ai";
-import { z } from "zod";
-import { DOCX_MIME, isAnalyzableMime, XLSX_MIME } from "./analyzable-mime";
+import { DOCX_MIME, esImagenAnalizable, isAnalyzableMime, XLSX_MIME } from "./analyzable-mime";
 import { DocumentsDB } from "@/lib/db/documents.db";
-import { downloadFromStorage } from "@/lib/documents/storage";
+import { downloadFromStorage, getSignedUrl } from "@/lib/documents/storage";
 import { smartModel, getActiveProvider } from "@/lib/ai/provider";
 import { cleanJSONResponse } from "@/lib/ai-json-parser";
 import { logger } from "@/lib/logger";
+import {
+  flattenEntities,
+  promptDeDescripcion,
+  ResultSchema,
+  type DocEntities,
+  type ResultadoDescripcion,
+  type StructuredData,
+} from "./descripcion-schema";
+import { motivoDeFalloIA } from "./aviso-ia";
+import { construirTextoBuscable } from "./texto-buscable";
+import { describirImagenConVision } from "./vision-describe";
 
 /**
- * Analiza el contenido de un documento: extrae el texto (PDF vía unpdf, o texto
- * plano), lo guarda en `ocrText`, y le pide a la IA un resumen + datos clave + tags
- * (guardados en `ocrMetadata`/`aiTags`). Así el asistente puede responder CON el
- * contenido. Single-source: lo usan el endpoint manual y el auto-análisis al subir.
+ * Analiza el contenido de un documento y responde la pregunta "¿qué es esto?".
+ *
+ * Dos caminos, un solo resultado:
+ *  · TEXTO (PDF vía unpdf, Word, Excel, .txt): se extrae el texto y se lo manda
+ *    al modelo.
+ *  · VISIÓN (fotos y escaneos): el modelo MIRA la imagen y transcribe lo que se
+ *    lee. Antes esto sólo pasaba si la foto entraba por el escáner de cámara;
+ *    ahora cualquier imagen del drive se puede describir.
+ *
+ * Lo que se guarda: el texto buscable en `ocrText` (crudo + descripción +
+ * datos + entidades, ver `texto-buscable`) y el detalle en `ocrMetadata`. Así
+ * el buscador encuentra un archivo por lo que DICE, no por cómo se llama, y el
+ * asistente puede responder con su contenido.
  */
-const StructuredSchema = z
-  .object({
-    docType: z.string().max(40).nullish(),
-    ruc: z.string().max(20).nullish(),
-    razonSocial: z.string().max(160).nullish(),
-    numero: z.string().max(40).nullish(),
-    fecha: z.string().max(20).nullish(),
-    moneda: z.string().max(8).nullish(),
-    total: z.union([z.number(), z.string()]).nullish(),
-    igv: z.union([z.number(), z.string()]).nullish(),
-  })
-  .partial();
 
-const EntitiesSchema = z
-  .object({
-    people: z.array(z.string().max(80)).max(12).default([]),
-    orgs: z.array(z.string().max(80)).max(12).default([]),
-    places: z.array(z.string().max(80)).max(12).default([]),
-    dates: z.array(z.string().max(40)).max(12).default([]),
-    amounts: z.array(z.string().max(40)).max(12).default([]),
-  })
-  .partial();
-
-const ResultSchema = z.object({
-  summary: z.string(),
-  description: z.string().default(""),
-  keyFacts: z.array(z.string()).max(14).default([]),
-  tags: z.array(z.string()).max(14).default([]),
-  entities: EntitiesSchema.nullish(),
-  structured: StructuredSchema.nullish(),
-  sugerencia: z
-    .object({
-      carpeta: z.string().max(120).nullish(),
-      vencimiento: z.string().max(20).nullish(),
-    })
-    .nullish(),
-});
-
-export type StructuredData = z.infer<typeof StructuredSchema>;
-export type DocEntities = z.infer<typeof EntitiesSchema>;
+export type { DocEntities, StructuredData };
 
 export type AnalyzeResult =
   | {
@@ -65,14 +46,10 @@ export type AnalyzeResult =
       structured: StructuredData | null;
       textLength: number;
       source: string;
+      /** Se guardó el texto pero la IA no pudo describirlo, y por qué. */
+      aviso?: string;
     }
   | { ok: false; error: string; status: number };
-
-/** Aplana las entidades en una lista de términos (para buscar). */
-function flattenEntities(e: DocEntities | null | undefined): string[] {
-  if (!e) return [];
-  return [...(e.people ?? []), ...(e.orgs ?? []), ...(e.places ?? []), ...(e.dates ?? []), ...(e.amounts ?? [])].filter(Boolean);
-}
 
 export { isAnalyzableMime };
 
@@ -141,6 +118,9 @@ async function extractDocText(buf: Uint8Array, mimeType: string): Promise<string
   return "";
 }
 
+/** Normaliza el texto extraído: espacios colapsados y tope de contexto. */
+const normalizar = (s: string) => s.replace(/\s+/g, " ").trim().slice(0, 15000);
+
 export async function analyzeDocumentContent(
   tenantId: string,
   docId: string,
@@ -150,87 +130,102 @@ export async function analyzeDocumentContent(
   const doc = await DocumentsDB.getById(tenantId, docId, viewerRole);
   if (!doc) return { ok: false, error: "not_found", status: 404 };
 
-  const buf = await downloadFromStorage(doc.storagePath);
-  if (!buf) return { ok: false, error: "storage_unavailable", status: 502 };
-
-  const raw = await extractDocText(new Uint8Array(buf), doc.mimeType).catch(() => "");
-  const text = raw.replace(/\s+/g, " ").trim().slice(0, 15000);
-  if (!text) return { ok: false, error: "no_text", status: 422 };
-
-  let summary = "";
-  let description = "";
-  let keyFacts: string[] = [];
-  let tags: string[] = [];
-  let entities: DocEntities | null = null;
-  let structured: StructuredData | null = null;
-  let sugerencias: { folderId?: string; folderName?: string; expiresAt?: string } | null = null;
   // Carpetas del drive: la IA elige entre ELLAS (o ninguna) — nunca inventa.
   const carpetas = await DocumentsDB.listFolders(tenantId).catch(() => []);
-  if (getActiveProvider() !== "none") {
-    try {
-      const listaCarpetas = carpetas.length > 0
-        ? `\nCarpetas disponibles del drive: ${carpetas.map((c) => `"${c.name}"`).join(", ")}.`
-        : "";
-      const prompt = `Sos un archivista experto. Analizá a fondo este documento de una bodega/negocio peruano y devolvé SOLO un objeto JSON válido (sin markdown, sin texto extra) con esta forma:
-{"summary": "<resumen en 1-2 frases>", "description": "<DESCRIPCIÓN DETALLADA Y BUSCABLE en 3-5 frases: qué tipo de documento es, quiénes son las partes involucradas, fechas clave, montos, el propósito y cualquier dato que alguien podría usar para encontrarlo después. Escribí en español, natural y completo.>", "keyFacts": ["<dato clave con su valor, ej. 'Renta: S/1500 mensuales'>", ...máximo 12], "tags": ["<etiqueta corta en minúscula; incluí tipo, partes, tema>", ...máximo 12], "entities": {"people": ["<personas mencionadas>"], "orgs": ["<empresas/organizaciones>"], "places": ["<direcciones/lugares>"], "dates": ["<fechas relevantes>"], "amounts": ["<montos, ej. 'S/1500'>"]}, "structured": {"docType": "<factura|boleta|recibo|contrato|guia|cotizacion|carta|otro>", "ruc": "<RUC 11 dígitos o null>", "razonSocial": "<emisor o null>", "numero": "<nº o null>", "fecha": "<AAAA-MM-DD o null>", "moneda": "<PEN|USD o null>", "total": <número o null>, "igv": <número o null>}, "sugerencia": {"carpeta": "<el nombre EXACTO de UNA de las carpetas disponibles si el documento claramente pertenece ahí, o null>", "vencimiento": "<AAAA-MM-DD si el documento tiene fecha de vencimiento, fin de vigencia o caducidad, o null>"}}
+  const nombresCarpetas = carpetas.map((c) => c.name);
 
-La "description" es lo más importante: tiene que ser rica en términos para que el documento aparezca en búsquedas por nombre de persona, empresa, lugar, fecha o tema. En "structured" completá solo si es un comprobante; si no, structured en null. Montos como número sin símbolo.${listaCarpetas} En "sugerencia.carpeta" solo un nombre de esa lista o null; en "vencimiento" SOLO la fecha en que el documento deja de valer (no fechas de emisión).
+  let text = "";
+  let ia: ResultadoDescripcion | null = null;
+  let aviso: string | undefined;
 
-Documento:
-${text.slice(0, 10000)}`;
-      const { text: out } = await generateText({ model: smartModel, prompt, temperature: 0.2 });
-      const parsed = ResultSchema.safeParse(JSON.parse(cleanJSONResponse(out)));
-      if (parsed.success) {
-        summary = parsed.data.summary;
-        description = parsed.data.description;
-        keyFacts = parsed.data.keyFacts;
-        tags = parsed.data.tags;
-        const e = parsed.data.entities;
-        entities = e && flattenEntities(e).length > 0 ? e : null;
-        // Solo guardamos structured si tiene al menos un campo con valor.
-        const s = parsed.data.structured;
-        structured = s && Object.values(s).some((v) => v !== null && v !== undefined && v !== "") ? s : null;
+  if (esImagenAnalizable(doc.mimeType)) {
+    // La visión necesita una URL pública: el modelo baja la imagen desde afuera.
+    const url = await getSignedUrl(doc.storagePath);
+    if (!url) return { ok: false, error: "storage_unavailable", status: 502 };
+    const visto = await describirImagenConVision(
+      // Las dos formas de entregar la imagen: la URL para un modelo en la nube
+      // y los bytes para uno propio (Ollama local no puede bajar nada de acá).
+      { url, mimeType: doc.mimeType, descargar: () => downloadFromStorage(doc.storagePath) },
+      nombresCarpetas,
+    );
+    if (!visto.ok) {
+      // Falta configuración vs. se cayó el servicio: son dos problemas
+      // distintos y quien mira la pantalla tiene que poder distinguirlos.
+      return visto.motivo === "falla"
+        ? { ok: false, error: "vision_fail", status: 502 }
+        : { ok: false, error: "vision_unavailable", status: 503 };
+    }
+    ia = visto.datos;
+    text = normalizar(ia.ocrText ?? "");
+  } else {
+    const buf = await downloadFromStorage(doc.storagePath);
+    if (!buf) return { ok: false, error: "storage_unavailable", status: 502 };
+    text = normalizar(await extractDocText(new Uint8Array(buf), doc.mimeType).catch(() => ""));
+    if (!text) return { ok: false, error: "no_text", status: 422 };
 
-        // Sugerencias de organización: la carpeta debe EXISTIR (se resuelve a
-        // su id, sin inventar) y el vencimiento ser una fecha real AAAA-MM-DD.
-        const sug = parsed.data.sugerencia;
-        if (sug) {
-          const out2: { folderId?: string; folderName?: string; expiresAt?: string } = {};
-          if (sug.carpeta) {
-            const carpeta = carpetas.find((c) => c.name.trim().toLowerCase() === sug.carpeta!.trim().toLowerCase());
-            if (carpeta) { out2.folderId = carpeta.id; out2.folderName = carpeta.name; }
-          }
-          if (sug.vencimiento && /^\d{4}-\d{2}-\d{2}$/.test(sug.vencimiento)) {
-            const fecha = new Date(`${sug.vencimiento}T12:00:00Z`);
-            if (!Number.isNaN(fecha.getTime())) out2.expiresAt = fecha.toISOString();
-          }
-          if (out2.folderId || out2.expiresAt) sugerencias = out2;
-        }
+    if (getActiveProvider() !== "none") {
+      try {
+        const prompt = promptDeDescripcion({ modo: "texto", carpetas: nombresCarpetas, texto: text.slice(0, 10000) });
+        const { text: out } = await generateText({ model: smartModel, prompt, temperature: 0.2 });
+        const parsed = ResultSchema.safeParse(JSON.parse(cleanJSONResponse(out)));
+        if (parsed.success) ia = parsed.data;
+        else aviso = "La IA contestó algo que no pude entender. Probá de nuevo.";
+      } catch (err) {
+        const detalle = err instanceof Error ? err.message : String(err);
+        logger.warn("documents.analyze.ai_fail", { err: detalle });
+        aviso = motivoDeFalloIA(detalle);
       }
-    } catch (err) {
-      logger.warn("documents.analyze.ai_fail", { err: err instanceof Error ? err.message : String(err) });
+    } else {
+      aviso = "No hay ningún servicio de IA configurado, así que sólo se guardó el texto del documento.";
     }
   }
 
-  // ⭐ Texto buscable = texto crudo + enriquecimiento IA. La búsqueda del listado
-  // matchea `ocrText`, así que meter acá la descripción/entidades/datos hace que
-  // el documento aparezca al buscar por cualquier término descrito por la IA.
-  const entitiesFlat = flattenEntities(entities);
-  const searchable = [
-    text,
-    description ? `\n\n[Descripción] ${description}` : "",
-    keyFacts.length ? `\n[Datos] ${keyFacts.join("; ")}` : "",
-    entitiesFlat.length ? `\n[Entidades] ${entitiesFlat.join(", ")}` : "",
-    tags.length ? `\n[Etiquetas] ${tags.join(", ")}` : "",
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .slice(0, 20000);
+  const summary = ia?.summary ?? "";
+  const description = ia?.description ?? "";
+  const keyFacts = ia?.keyFacts ?? [];
+  const tags = ia?.tags ?? [];
+  const entities = ia?.entities && flattenEntities(ia.entities).length > 0 ? ia.entities : null;
+  // Solo guardamos structured si tiene al menos un campo con valor.
+  const structured =
+    ia?.structured && Object.values(ia.structured).some((v) => v !== null && v !== undefined && v !== "")
+      ? ia.structured
+      : null;
+
+  // Sugerencias de organización: la carpeta debe EXISTIR (se resuelve a su id,
+  // sin inventar) y el vencimiento ser una fecha real AAAA-MM-DD.
+  let sugerencias: { folderId?: string; folderName?: string; expiresAt?: string } | null = null;
+  const sug = ia?.sugerencia;
+  if (sug) {
+    const out: { folderId?: string; folderName?: string; expiresAt?: string } = {};
+    if (sug.carpeta) {
+      const carpeta = carpetas.find((c) => c.name.trim().toLowerCase() === sug.carpeta!.trim().toLowerCase());
+      if (carpeta) { out.folderId = carpeta.id; out.folderName = carpeta.name; }
+    }
+    if (sug.vencimiento && /^\d{4}-\d{2}-\d{2}$/.test(sug.vencimiento)) {
+      const fecha = new Date(`${sug.vencimiento}T12:00:00Z`);
+      if (!Number.isNaN(fecha.getTime())) out.expiresAt = fecha.toISOString();
+    }
+    if (out.folderId || out.expiresAt) sugerencias = out;
+  }
+
+  // La descripción escrita a mano sobrevive al re-análisis: es la que corrige a
+  // la IA cuando se equivoca, sería absurdo borrarla al volver a describir.
+  const meta = (doc.ocrMetadata ?? {}) as Record<string, unknown>;
+  const descripcionPropia = typeof meta.descripcionUsuario === "string" ? meta.descripcionUsuario : "";
+
+  const searchable = construirTextoBuscable({
+    texto: text,
+    descripcion: description,
+    keyFacts,
+    entidades: flattenEntities(entities),
+    tags,
+    descripcionPropia,
+  });
 
   await DocumentsDB.update(tenantId, docId, {
     ocrText: searchable,
     ocrMetadata: {
-      ...(doc.ocrMetadata ?? {}),
+      ...meta,
       summary,
       description,
       keyFacts,
@@ -239,6 +234,9 @@ ${text.slice(0, 10000)}`;
       sugerencias,
       rawTextLength: text.length,
       analyzedAt: new Date().toISOString(),
+      // De dónde salió: mirar la foto no es lo mismo que leer el texto, y en la
+      // ficha conviene decirlo (la visión se equivoca distinto).
+      analyzedVia: esImagenAnalizable(doc.mimeType) ? "vision" : "texto",
     },
     aiTags: Array.from(new Set([...doc.aiTags, ...tags.map((t) => t.toLowerCase())])).slice(0, 14),
   });
@@ -247,5 +245,16 @@ ${text.slice(0, 10000)}`;
     logger.warn("documents.analyze.audit_fail", { err: String(err) }),
   );
 
-  return { ok: true, summary, description, keyFacts, tags, entities, structured, textLength: text.length, source: summary ? "ai" : "text-only" };
+  return {
+    ok: true,
+    summary,
+    description,
+    keyFacts,
+    tags,
+    entities,
+    structured,
+    textLength: text.length,
+    source: summary ? "ai" : "text-only",
+    ...(description ? {} : { aviso }),
+  };
 }

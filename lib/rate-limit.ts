@@ -407,6 +407,13 @@ export const RateLimitPresets = {
   // cada 15 min por IP+tenant cubre un import real y sigue cortando un bucle
   // desbocado. El peso lo frena aparte MAX_UPLOAD_SIZE por archivo.
   DRIVE: { maxReqs: 400, windowSec: 15 * 60 },
+  // DRIVE_IA — describir documentos con IA (1 request = 1 documento leído).
+  // Con STRICT, "describir los 40 que faltan" moría en el décimo con un 429 y
+  // el contador quedaba a medias sin explicación. Es una acción que el usuario
+  // pide explícitamente y ya pasó requireAdmin + CSRF; el techo real lo pone
+  // el proveedor de IA (tokens por día), no nosotros. 200 cada 15 min cubre un
+  // drive entero de una bodega y sigue cortando un bucle desbocado.
+  DRIVE_IA: { maxReqs: 200, windowSec: 15 * 60 },
 } as const;
 
 /**
