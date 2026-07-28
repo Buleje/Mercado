@@ -8,6 +8,7 @@ import { familiaDe } from "@/lib/documents/tipos-archivo";
 import {
   asegurarFuentesPdf, dibujarDocumento, dibujarPlanilla, filasDePlanilla, lineasDeDocumento,
 } from "@/lib/documents/miniatura-doc";
+import { miniaturaConCache, ANCHO_MINIATURA } from "@/lib/documents/cache-miniatura";
 
 /** Tope para leer un archivo sólo para dibujar su miniatura. */
 const MAX_BYTES_LECTURA = 8 * 1024 * 1024;
@@ -46,59 +47,84 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
     const familia = familiaDe(doc.name, doc.mimeType);
     const esPdf = doc.mimeType === "application/pdf";
-    if (!esPdf && familia !== "planilla" && familia !== "texto") {
+    // Las fotos también pasan por acá: la tarjeta pedía el archivo ORIGINAL por
+    // `/raw` para dibujar un cuadradito de 200 px — un logo de 657 KB bajaba
+    // entero para eso. Acá se achican una vez y se guardan.
+    const esImagen = doc.mimeType.startsWith("image/") && !doc.mimeType.includes("svg");
+    if (!esPdf && !esImagen && familia !== "planilla" && familia !== "texto") {
       return NextResponse.json({ error: "sin_miniatura" }, { status: 415 });
     }
     // Un archivo enorme no se lee para dibujar un cuadradito de 420 px.
-    if (!esPdf && doc.size > MAX_BYTES_LECTURA) {
+    if (!esPdf && !esImagen && doc.size > MAX_BYTES_LECTURA) {
       return NextResponse.json({ error: "muy_grande" }, { status: 413 });
     }
 
-    const buf = await downloadFromStorage(doc.storagePath);
-    if (!buf) return NextResponse.json({ error: "storage_unavailable" }, { status: 502 });
+    // ?page=N (1-based) → miniatura de esa página; por defecto la 1ª.
+    const pageParam = Number(req.nextUrl.searchParams.get("page") || "1");
+    const page = Number.isFinite(pageParam) && pageParam >= 1 ? Math.floor(pageParam) : 1;
+    // `s` = escala del dibujo. La miniatura de la tarjeta se conforma con
+    // 1.2 (~700 px de ancho); el visor pide 2 para que al ampliar el texto
+    // siga siendo nítido y no un borrón.
+    const sParam = Number(req.nextUrl.searchParams.get("s") || "1.2");
+    const escala = Number.isFinite(sParam) ? Math.min(3, Math.max(0.5, sParam)) : 1.2;
+    // A más escala, más ancho se guarda: el visor necesita el detalle, la
+    // tarjeta no.
+    const ancho = Math.round(ANCHO_MINIATURA * (escala / 1.2));
 
-    let png: ArrayBuffer;
-    if (esPdf) {
-      // ?page=N (1-based) → miniatura de esa página; por defecto la 1ª.
-      const pageParam = Number(req.nextUrl.searchParams.get("page") || "1");
-      const page = Number.isFinite(pageParam) && pageParam >= 1 ? Math.floor(pageParam) : 1;
-      // Sin esto, un PDF que use las fuentes estándar (Helvetica y compañía)
-      // se dibuja como una página de cuadraditos: pdf.js se las pide al
-      // sistema y el servidor no las tiene.
-      await asegurarFuentesPdf(buf);
-      // `s` = escala del dibujo. La miniatura de la tarjeta se conforma con
-      // 1.2 (~700 px de ancho); el visor pide 2 para que al ampliar el texto
-      // siga siendo nítido y no un borrón.
-      const sParam = Number(req.nextUrl.searchParams.get("s") || "1.2");
-      const escala = Number.isFinite(sParam) ? Math.min(3, Math.max(0.5, sParam)) : 1.2;
-      const { renderPageAsImage } = await import("unpdf");
-      png = await renderPageAsImage(new Uint8Array(buf), page, {
-        canvasImport: () => import("@napi-rs/canvas"),
-        scale: escala,
-      }) as ArrayBuffer;
-    } else if (familia === "planilla") {
-      const filas = await filasDePlanilla(buf, doc.name);
-      if (!filas || filas.length === 0) return NextResponse.json({ error: "vacio" }, { status: 422 });
-      const dibujo = await dibujarPlanilla(filas);
-      // Sin fuente en el sistema el canvas dibuja cuadraditos: es preferible
-      // que la tarjeta muestre su ícono a que muestre una miniatura ilegible.
-      if (!dibujo) return NextResponse.json({ error: "sin_fuente" }, { status: 415 });
-      png = toArrayBuffer(dibujo);
-    } else {
-      const lineas = await lineasDeDocumento(buf, doc.name);
-      if (!lineas || lineas.length === 0) return NextResponse.json({ error: "vacio" }, { status: 422 });
-      const dibujo = await dibujarDocumento(lineas);
-      if (!dibujo) return NextResponse.json({ error: "sin_fuente" }, { status: 415 });
-      png = toArrayBuffer(dibujo);
-    }
+    // El dibujo se guarda una vez y se reusa. La clave lleva el `storagePath`,
+    // que cambia con cada versión: subir una versión nueva invalida sola la
+    // miniatura vieja.
+    const variante = esPdf ? `pdf-p${page}-s${escala}` : esImagen ? "imagen" : familia;
 
-    return new NextResponse(png, {
+    const miniatura = await miniaturaConCache(
+      doc.storagePath,
+      variante,
+      async () => {
+        const buf = await downloadFromStorage(doc.storagePath);
+        if (!buf) throw new Error("storage_unavailable");
+
+        if (esPdf) {
+          // Sin esto, un PDF que use las fuentes estándar (Helvetica y compañía)
+          // se dibuja como una página de cuadraditos: pdf.js se las pide al
+          // sistema y el servidor no las tiene.
+          await asegurarFuentesPdf(buf);
+          const { renderPageAsImage } = await import("unpdf");
+          return (await renderPageAsImage(new Uint8Array(buf), page, {
+            canvasImport: () => import("@napi-rs/canvas"),
+            scale: escala,
+          })) as ArrayBuffer;
+        }
+        // Una foto ya es una imagen: no hay que dibujar nada, sólo achicarla
+        // (de eso se encarga `miniaturaConCache` al convertirla a WebP).
+        if (esImagen) return buf;
+        if (familia === "planilla") {
+          const filas = await filasDePlanilla(buf, doc.name);
+          if (!filas || filas.length === 0) throw new Error("vacio");
+          const dibujo = await dibujarPlanilla(filas);
+          // Sin fuente en el sistema el canvas dibuja cuadraditos: es preferible
+          // que la tarjeta muestre su ícono a que muestre una miniatura ilegible.
+          if (!dibujo) throw new Error("sin_fuente");
+          return toArrayBuffer(dibujo);
+        }
+        const lineas = await lineasDeDocumento(buf, doc.name);
+        if (!lineas || lineas.length === 0) throw new Error("vacio");
+        const dibujo = await dibujarDocumento(lineas);
+        if (!dibujo) throw new Error("sin_fuente");
+        return toArrayBuffer(dibujo);
+      },
+      ancho,
+    );
+
+    return new NextResponse(toArrayBuffer(miniatura.bytes), {
       status: 200,
       headers: {
-        "Content-Type": "image/png",
-        // Los docs restringidos no se cachean (evita fuga por caché tras cambio de sesión).
-        "Cache-Control": doc.allowedRoles.length > 0 ? "private, no-store" : "private, max-age=3600",
+        "Content-Type": miniatura.contentType,
+        // Los docs restringidos no se cachean EN EL NAVEGADOR (evita fuga por
+        // caché tras cambio de sesión). El guardado del servidor sí aplica: esa
+        // copia sólo se sirve pasando por este endpoint, que valida el rol.
+        "Cache-Control": doc.allowedRoles.length > 0 ? "private, no-store" : "private, max-age=86400",
         "X-Frame-Options": "SAMEORIGIN",
+        "X-Miniatura": miniatura.origen,
       },
     });
   } catch (e) {

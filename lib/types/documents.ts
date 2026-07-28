@@ -189,6 +189,19 @@ export interface DocumentListFilters {
   expiring?: number;
   /** ADR-119 — activar expansión semántica IA de la query `q`. */
   semantic?: boolean;
+  /**
+   * Traer el `ocrText` completo de cada documento.
+   *
+   * Por defecto NO se trae: es el texto entero del archivo más lo que le agregó
+   * la IA (~4 KB promedio, hasta 17 KB), y en un drive de 292 documentos son
+   * **1,1 MB que viajan de Postgres al navegador en cada listado** — más de
+   * las tres cuartas partes de la respuesta — para algo que la grilla no
+   * dibuja. La búsqueda no lo necesita: filtra en el WHERE, del lado del
+   * servidor. Sólo hace falta cuando el cliente tiene que resaltar la
+   * coincidencia y ordenar por relevancia, o sea cuando hay una búsqueda
+   * escrita. El detalle del documento lo pide aparte.
+   */
+  conTextoCompleto?: boolean;
 }
 
 export const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50 MB hard limit en bucket

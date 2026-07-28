@@ -91,8 +91,19 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
+  /**
+   * Trae documentos y carpetas.
+   *
+   * `silencioso` evita prender el estado de carga: después de marcar un
+   * favorito o renombrar un archivo, la grilla entera parpadeaba a "cargando"
+   * y volvía, aunque lo único que cambió fue una tarjeta.
+   *
+   * `soloDocumentos` se saltea la consulta de carpetas: mover o etiquetar un
+   * archivo no cambia el árbol, y sin embargo se volvía a pedir entero en cada
+   * mutación. Eran dos requests donde alcanza con una.
+   */
+  const fetchAll = useCallback(async (opciones?: { silencioso?: boolean; soloDocumentos?: boolean }) => {
+    if (!opciones?.silencioso) setLoading(true);
     setError(null);
     try {
       const f = filtersRef.current;
@@ -113,13 +124,15 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
 
       const [docsResp, foldersResp] = await Promise.all([
         http<{ documents: DbDocument[]; semanticTerms?: string[] }>(`${BASE}?${qs.toString()}`),
-        http<{ folders: DbDocumentFolder[] }>(`${BASE}/folders`),
+        opciones?.soloDocumentos
+          ? Promise.resolve(null)
+          : http<{ folders: DbDocumentFolder[] }>(`${BASE}/folders`),
       ]);
       setDocuments(docsResp.documents);
       // En modo IA el servidor expande la consulta a sinónimos; devolverlos deja
       // decir POR QUÉ apareció cada documento (y resaltar el término que pegó).
       setSemanticTerms(docsResp.semanticTerms ?? []);
-      setFolders(foldersResp.folders);
+      if (foldersResp) setFolders(foldersResp.folders);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -237,7 +250,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
         }
       };
       await Promise.all(Array.from({ length: Math.min(3, listos.length) }, subirUno));
-      await fetchAll();
+      await fetchAll({ silencioso: true, soloDocumentos: true });
       return out;
     },
     [fetchAll]
@@ -252,7 +265,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
         document: DbDocument;
         scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null };
       }>(`${BASE}/scan`, { method: "POST", body: fd });
-      await fetchAll();
+      await fetchAll({ silencioso: true, soloDocumentos: true });
       return r;
     },
     [fetchAll]
@@ -260,23 +273,23 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
 
   const patch = useCallback(async (id: string, body: Record<string, unknown>) => {
     await http(`${BASE}/${id}`, { method: "PATCH", body: JSON.stringify(body) });
-    await fetchAll();
+    await fetchAll({ silencioso: true, soloDocumentos: true });
   }, [fetchAll]);
 
   const remove = useCallback(async (id: string) => {
     await http(`${BASE}/${id}`, { method: "DELETE" });
-    await fetchAll();
+    await fetchAll({ silencioso: true, soloDocumentos: true });
   }, [fetchAll]);
 
   // Papelera: restaurar (soft-deleted → activo) o borrar definitivamente (purge).
   const restore = useCallback(async (id: string) => {
     await http(`${BASE}/${id}/restore`, { method: "POST" });
-    await fetchAll();
+    await fetchAll({ silencioso: true, soloDocumentos: true });
   }, [fetchAll]);
 
   const purge = useCallback(async (id: string) => {
     await http(`${BASE}/${id}?purge=1`, { method: "DELETE" });
-    await fetchAll();
+    await fetchAll({ silencioso: true, soloDocumentos: true });
   }, [fetchAll]);
 
   const bulk = useCallback(
@@ -289,7 +302,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
         method: "POST",
         body: JSON.stringify({ action, ids, ...extra }),
       });
-      await fetchAll();
+      await fetchAll({ silencioso: true, soloDocumentos: true });
       return r.affected;
     },
     [fetchAll]

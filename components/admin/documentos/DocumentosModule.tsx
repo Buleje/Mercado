@@ -141,8 +141,10 @@ function DocThumb({ doc, Icon, tint, bg }: { doc: DbDocument; Icon: typeof FileI
   const [failed, setFailed] = useState(false);
 
   if ((isImage || convertible || isPdf || dibujable) && !failed) {
+    // Las fotos también van por la miniatura: pedir `/raw` bajaba el archivo
+    // ORIGINAL (un logo de 657 KB) para dibujar un cuadradito de 200 px.
     const src = isImage
-      ? `/api/admin/documents/${doc.id}/raw`
+      ? urlMiniatura(doc.id)
       : convertible
         ? `/api/admin/documents/${doc.id}/preview-image?max=420`
         : urlMiniatura(doc.id);

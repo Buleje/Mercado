@@ -77,6 +77,11 @@ export async function GET(req: NextRequest) {
     orderId: f.orderId,
     supplierId: f.supplierId,
     deletedOnly,
+    // El texto indexado sólo se manda cuando hay una búsqueda escrita: es lo
+    // único que lo usa del lado del cliente (resaltar la coincidencia y
+    // ordenar por relevancia). Abrir el drive es el caso común y ahí no hace
+    // falta ni un byte de contenido.
+    conTextoCompleto: Boolean(f.q?.trim()) || Boolean(qAny?.length),
   }, auth.role);
 
   return NextResponse.json({ documents: docs, ...(semanticTerms ? { semanticTerms } : {}) });

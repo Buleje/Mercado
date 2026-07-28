@@ -294,13 +294,22 @@ export class DocumentsDB {
       where.OR = terms.flatMap((t) => enTodoElDoc(t));
     }
 
+    // El texto indexado sólo viaja cuando alguien está buscando: es quien lo
+    // pide para resaltar la coincidencia y ordenar por relevancia. Abrir el
+    // drive sin buscar nada no tiene por qué arrastrar el contenido de 292
+    // archivos (ver `conTextoCompleto` en DocumentListFilters).
     const docs = await prisma.document.findMany({
       where,
       orderBy: [{ favorite: "desc" }, { uploadedAt: "desc" }],
       include: { _count: { select: { versions: true, shares: true } } },
+      ...(filters.conTextoCompleto ? {} : { omit: { ocrText: true } }),
       take: 500,
     });
-    const mapped = docs.map(mapDoc);
+    // Con `omit` el campo no viene en la fila; el mapeo lo repone en null para
+    // que el tipo del documento siga siendo uno solo en toda la app.
+    const mapped = docs.map((d) =>
+      mapDoc({ ...d, ocrText: (d as { ocrText?: string | null }).ocrText ?? null }),
+    );
 
     // Permisos por doc/carpeta: los roles no privilegiados solo ven lo permitido.
     if (viewerRole && !isPrivilegedRole(viewerRole)) {
