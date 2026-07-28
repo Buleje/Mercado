@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { analyzeDocumentContent } from "@/lib/documents/analyze-document";
+import { enColaDeAnalisis } from "@/lib/documents/cola-analisis";
 import { AVISO_SIN_VISION } from "@/lib/documents/modelo-vision";
 import { logger } from "@/lib/logger";
 
@@ -23,11 +24,15 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
-    const result = await analyzeDocumentContent(auth.tenantId, id, auth.username, auth.role);
+    // Misma cola que el análisis automático: si hay una subida grande en curso,
+    // este pedido espera su turno en vez de competir por la misma máquina.
+    const result = await enColaDeAnalisis(id, () =>
+      analyzeDocumentContent(auth.tenantId, id, auth.username, auth.role),
+    );
     if (!result.ok) {
       const message =
         result.error === "no_text"
-          ? "No pude extraer texto. Si es un PDF escaneado (una foto adentro de un PDF), usá el botón Escanear (OCR)."
+          ? "No pude sacarle texto ni leerlo como imagen. Si es un escaneo, revisá que la página se vea nítida."
           : result.error === "vision_fail"
           ? "No pude leer la imagen: el servicio que la mira no respondió. Probá de nuevo en un momento."
           : result.error === "vision_unavailable"

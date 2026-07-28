@@ -26,6 +26,8 @@ interface Props {
   ocrText: string | null;
   /** "vision" si el texto salió de mirar una foto. */
   origen?: string;
+  /** El PDF era un escaneo: sólo se leyó su primera página. */
+  escaneo?: boolean;
   /** Consulta inicial (la que venías escribiendo en el drive). */
   consultaInicial?: string;
 }
@@ -46,7 +48,7 @@ function posiciones(texto: string, aguja: string): number[] {
   return out;
 }
 
-export default function BuscarEnDocumento({ docId, ocrText, origen, consultaInicial = "" }: Props) {
+export default function BuscarEnDocumento({ docId, ocrText, origen, escaneo, consultaInicial = "" }: Props) {
   const texto = useMemo(() => contenidoCrudo(ocrText).trim(), [ocrText]);
   const [consulta, setConsulta] = useState(consultaInicial);
   const [actual, setActual] = useState(0);
@@ -133,7 +135,9 @@ export default function BuscarEnDocumento({ docId, ocrText, origen, consultaInic
 
       <p className="flex items-center gap-1.5 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-1.5 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
         {origen === "vision" ? <Eye className="h-3 w-3 shrink-0" aria-hidden /> : <FileText className="h-3 w-3 shrink-0" aria-hidden />}
-        {origen === "vision"
+        {escaneo
+          ? "Este PDF es un escaneo: la IA leyó su PRIMERA PÁGINA mirándola. Lo que esté en las otras páginas todavía no se busca."
+          : origen === "vision"
           ? "Este texto lo leyó la IA mirando la foto: puede tener errores de transcripción."
           : "Texto extraído del archivo. Buscá sin preocuparte por tildes ni mayúsculas."}
       </p>

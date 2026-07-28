@@ -11,6 +11,7 @@ import {
 } from "@/lib/documents/storage";
 import { aiCategorize } from "@/lib/documents/ai-categorize";
 import { analyzeDocumentContent, isAnalyzableMime } from "@/lib/documents/analyze-document";
+import { enColaDeAnalisis } from "@/lib/documents/cola-analisis";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
 import { resolverMime } from "@/lib/documents/tipos-archivo";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -173,9 +174,11 @@ export async function POST(req: NextRequest) {
     // Auto-análisis de contenido (fire-and-forget): los PDFs/texto se indexan solos
     // para que el asistente los pueda leer sin apretar "Analizar con IA".
     if (isAnalyzableMime(mime)) {
-      analyzeDocumentContent(auth.tenantId, draft.id, auth.username, auth.role).catch((err) =>
-        logger.warn("documents.autoanalyze_fail", { err: String(err) }),
-      );
+      // En cola: subir una carpeta de 30 fotos disparaba 30 análisis a la vez
+      // y con un modelo local eso tumba la máquina (ver `cola-analisis`).
+      enColaDeAnalisis(draft.id, () =>
+        analyzeDocumentContent(auth.tenantId, draft.id, auth.username, auth.role),
+      ).catch((err) => logger.warn("documents.autoanalyze_fail", { err: String(err) }));
     }
 
     return NextResponse.json({

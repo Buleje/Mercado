@@ -44,6 +44,8 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
     entities?: DocEntities;
     descripcionUsuario?: string;
     analyzedVia?: string;
+    leidoComoEscaneo?: boolean;
+    paginasLeidas?: number;
   };
   const descIA = (meta.description || meta.summary || "").trim();
   const descPropia = (meta.descripcionUsuario ?? "").trim();
@@ -85,7 +87,7 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
       onAnalizado?.();
     } catch (e) {
       setError(e instanceof Error && /422|no_text/.test(e.message)
-        ? "No se pudo sacar texto del archivo. Si es un PDF escaneado, usá Escanear (OCR)."
+        ? "No pude sacarle texto ni leerlo como imagen. Si es un escaneo, revisá que se vea nítido."
         : "No se pudo describir ahora. Probá de nuevo en un momento.");
     } finally {
       setAnalizando(false);
@@ -102,8 +104,14 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
           {/* Mirar una foto no es lo mismo que leer un PDF: decirlo evita que se
               tome como verdad literal lo que el modelo creyó ver. */}
           {meta.analyzedVia === "vision" && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-tertiary)]" title="La IA no leyó texto: miró la imagen">
-              <Eye className="h-3 w-3" /> leído de la imagen
+            <span
+              className="inline-flex items-center gap-1 rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-tertiary)]"
+              title={meta.leidoComoEscaneo
+                ? `Este PDF no tiene texto: por dentro es una foto. La IA leyó su primera página mirándola.`
+                : "La IA no leyó texto: miró la imagen"}
+            >
+              <Eye className="h-3 w-3" />
+              {meta.leidoComoEscaneo ? "leído de la 1ª página escaneada" : "leído de la imagen"}
             </span>
           )}
           <button

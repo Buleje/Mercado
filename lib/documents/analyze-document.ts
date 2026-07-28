@@ -16,6 +16,7 @@ import {
 import { fechaDeVencimientoEnTexto } from "@/lib/documentos/fecha-vencimiento";
 import { motivoDeFalloIA } from "./aviso-ia";
 import { construirTextoBuscable } from "./texto-buscable";
+import { renderizarPaginaPdf } from "./pdf-a-imagen";
 import { describirImagenConVision } from "./vision-describe";
 
 /**
@@ -122,6 +123,30 @@ async function extractDocText(buf: Uint8Array, mimeType: string): Promise<string
 /** Normaliza el texto extraído: espacios colapsados y tope de contexto. */
 const normalizar = (s: string) => s.replace(/\s+/g, " ").trim().slice(0, 15000);
 
+/**
+ * Un reintento que falla NO puede empeorar lo que ya sabíamos. Si el documento
+ * ya estaba leído y hoy el servicio no contesta, se devuelve lo de antes con el
+ * motivo — en vez de un "no tiene texto" que contradice lo que se ve en la
+ * ficha y que haría dudar de datos que estaban bien.
+ */
+function loQueYaSabiamos(doc: { ocrText: string | null; ocrMetadata: Record<string, unknown> | null }, aviso: string): AnalyzeResult | null {
+  const meta = (doc.ocrMetadata ?? {}) as Record<string, unknown>;
+  if (!doc.ocrText?.trim() || !meta.analyzedAt) return null;
+  const lista = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+  return {
+    ok: true,
+    summary: typeof meta.summary === "string" ? meta.summary : "",
+    description: typeof meta.description === "string" ? meta.description : "",
+    keyFacts: lista(meta.keyFacts),
+    tags: lista(meta.tags),
+    entities: (meta.entities as DocEntities | null) ?? null,
+    structured: (meta.structured as StructuredData | null) ?? null,
+    textLength: doc.ocrText.length,
+    source: "previo",
+    aviso,
+  };
+}
+
 export async function analyzeDocumentContent(
   tenantId: string,
   docId: string,
@@ -138,6 +163,8 @@ export async function analyzeDocumentContent(
   let text = "";
   let ia: ResultadoDescripcion | null = null;
   let aviso: string | undefined;
+  /** El PDF no tenía texto y hubo que mirarlo: se dice en la ficha. */
+  let escaneado = false;
 
   if (esImagenAnalizable(doc.mimeType)) {
     // La visión necesita una URL pública: el modelo baja la imagen desde afuera.
@@ -150,6 +177,8 @@ export async function analyzeDocumentContent(
       nombresCarpetas,
     );
     if (!visto.ok) {
+      const previo = loQueYaSabiamos(doc, "No pude releerla ahora: queda lo que ya se había leído.");
+      if (previo) return previo;
       // Falta configuración vs. se cayó el servicio: son dos problemas
       // distintos y quien mira la pantalla tiene que poder distinguirlos.
       return visto.motivo === "falla"
@@ -162,9 +191,34 @@ export async function analyzeDocumentContent(
     const buf = await downloadFromStorage(doc.storagePath);
     if (!buf) return { ok: false, error: "storage_unavailable", status: 502 };
     text = normalizar(await extractDocText(new Uint8Array(buf), doc.mimeType).catch(() => ""));
-    if (!text) return { ok: false, error: "no_text", status: 422 };
 
-    if (getActiveProvider() !== "none") {
+    // PDF ESCANEADO: por dentro es una foto, así que extraer texto no devuelve
+    // nada. Es como llega media contabilidad peruana. En vez de rendirse, se
+    // dibuja la página y se la MIRA, igual que a una foto de celular.
+    if (!text && doc.mimeType === "application/pdf") {
+      const imagen = await renderizarPaginaPdf(buf, 1);
+      if (imagen) {
+        const visto = await describirImagenConVision(
+          { url: "", mimeType: "image/png", descargar: async () => imagen },
+          nombresCarpetas,
+        );
+        if (visto.ok) {
+          ia = visto.datos;
+          text = normalizar(ia.ocrText ?? "");
+          escaneado = true;
+        } else if (visto.motivo !== "sin_proveedor") {
+          logger.warn("documents.analyze.pdf_escaneado_sin_leer", { docId, motivo: visto.motivo });
+        }
+      }
+    }
+
+    if (!text) {
+      const previo = loQueYaSabiamos(doc, "No pude releerlo ahora: queda lo que ya se había leído.");
+      if (previo) return previo;
+      return { ok: false, error: "no_text", status: 422 };
+    }
+
+    if (!ia && getActiveProvider() !== "none") {
       try {
         const prompt = promptDeDescripcion({ modo: "texto", carpetas: nombresCarpetas, texto: text.slice(0, 10000) });
         const { text: out } = await generateText({ model: smartModel, prompt, temperature: 0.2 });
@@ -176,7 +230,7 @@ export async function analyzeDocumentContent(
         logger.warn("documents.analyze.ai_fail", { err: detalle });
         aviso = motivoDeFalloIA(detalle);
       }
-    } else {
+    } else if (!ia) {
       aviso = "No hay ningún servicio de IA configurado, así que sólo se guardó el texto del documento.";
     }
   }
@@ -245,7 +299,10 @@ export async function analyzeDocumentContent(
       analyzedAt: new Date().toISOString(),
       // De dónde salió: mirar la foto no es lo mismo que leer el texto, y en la
       // ficha conviene decirlo (la visión se equivoca distinto).
-      analyzedVia: esImagenAnalizable(doc.mimeType) ? "vision" : "texto",
+      analyzedVia: esImagenAnalizable(doc.mimeType) || escaneado ? "vision" : "texto",
+      // Un PDF escaneado se leyó MIRÁNDOLO, y sólo su primera página: quien
+      // lea la ficha tiene que saber que no es el documento entero.
+      ...(escaneado ? { leidoComoEscaneo: true, paginasLeidas: 1 } : {}),
     },
     aiTags: Array.from(new Set([...doc.aiTags, ...tags.map((t) => t.toLowerCase())])).slice(0, 14),
   });

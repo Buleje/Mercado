@@ -372,6 +372,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
                 docId={docId}
                 ocrText={doc.ocrText}
                 origen={(doc.ocrMetadata as { analyzedVia?: string } | null)?.analyzedVia}
+                escaneo={!!(doc.ocrMetadata as { leidoComoEscaneo?: boolean } | null)?.leidoComoEscaneo}
               />
             </div>
           )}
@@ -648,6 +649,10 @@ function money(v: number | string | null | undefined, moneda?: string | null): s
 
 function StructuredCard({ doc }: { doc: DbDocument }) {
   const s = doc.ocrMetadata?.structured as StructuredData | null | undefined;
+  // Leído MIRANDO (foto o escaneo): un modelo de visión se come un dígito y
+  // nadie lo nota. Estos son los números que la gente copia a la contabilidad,
+  // así que acá se avisa; en un texto extraído del archivo no hace falta.
+  const mirado = (doc.ocrMetadata as { analyzedVia?: string } | null)?.analyzedVia === "vision";
   if (!s || typeof s !== "object") return null;
   const rows = ([
     ["Tipo", s.docType ?? null],
@@ -664,6 +669,11 @@ function StructuredCard({ doc }: { doc: DbDocument }) {
       <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
         <FileSpreadsheet className="h-4 w-4 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" /> Datos extraídos por IA
       </p>
+      {mirado && (
+        <p className="mb-2 text-[length:var(--ts-2xs,11px)] leading-snug text-[var(--text-tertiary)]">
+          Salieron de mirar la imagen: cotejá los números con el papel antes de usarlos en la contabilidad.
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3">
         {rows.map(([k, v]) => (
           <div key={k} className="min-w-0">

@@ -33,7 +33,13 @@ export function configVisionPropia(): ConfigVisionPropia | null {
   return {
     // Se acepta con o sin `/chat/completions` al final: es el error de dedo
     // más común al copiar la URL de la documentación de un proveedor.
-    baseUrl: baseUrl.replace(/\/+$/, "").replace(/\/chat\/completions$/, ""),
+    // Y `localhost` se cambia por 127.0.0.1 a propósito: en WSL, `fetch` de
+    // Node prueba primero ::1 (IPv6) y un servidor local que escucha en IPv4
+    // —Ollama, por ejemplo— responde "fetch failed" mientras curl anda igual.
+    baseUrl: baseUrl
+      .replace(/\/+$/, "")
+      .replace(/\/chat\/completions$/, "")
+      .replace(/^(https?:\/\/)localhost(?=[:/]|$)/i, "$1127.0.0.1"),
     // Ollama no pide credencial, pero el header tiene que existir igual.
     apiKey: process.env.DOC_VISION_API_KEY?.trim() || "no-key",
     modelo: MODELO_VISION,
