@@ -111,6 +111,11 @@
             "type": "command",
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/session-start-autonomy.mjs",
             "timeout": 12
+          },
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/mantener-pantalla-despierta.mjs iniciar",
+            "timeout": 10
           }
         ]
       },
@@ -121,6 +126,11 @@
             "type": "command",
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/session-start-autonomy.mjs",
             "timeout": 12
+          },
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/mantener-pantalla-despierta.mjs iniciar",
+            "timeout": 10
           }
         ]
       }
@@ -133,6 +143,16 @@
             "type": "command",
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/user-prompt-adr-injector.mjs",
             "timeout": 3
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/mantener-pantalla-despierta.mjs iniciar",
+            "timeout": 10
           }
         ]
       }
@@ -188,6 +208,16 @@
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/stop-skill-suggester.mjs",
             "timeout": 5,
             "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/mantener-pantalla-despierta.mjs soltar",
+            "timeout": 10
           }
         ]
       }
