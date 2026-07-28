@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { documentosParecidos, type DocConId } from "@/lib/documentos/parecidos";
+import { diasHasta, textoCorto, textoCuando, tituloAviso } from "@/lib/documentos/aviso-vencimiento";
 
 const doc = (id: string, over: Partial<DocConId> = {}): DocConId => ({
   id,
@@ -70,5 +71,34 @@ describe("documentosParecidos", () => {
 
   it("sin nada guardado no inventa parecidos", () => {
     expect(documentosParecidos(doc("a"), [doc("b"), doc("c")])).toEqual([]);
+  });
+});
+
+describe("aviso de vencimiento — el texto que decide qué hacés", () => {
+  it("distingue por vencer de vencido, y hace cuánto", () => {
+    expect(textoCuando(3)).toBe("vence en 3 días");
+    expect(textoCuando(1)).toBe("vence mañana");
+    expect(textoCuando(0)).toBe("vence HOY");
+    expect(textoCuando(-1)).toBe("venció ayer");
+    expect(textoCuando(-45)).toBe("venció hace 45 días");
+  });
+
+  it("la versión corta del WhatsApp también dice hace cuánto", () => {
+    expect(textoCorto(5)).toBe("en 5d");
+    expect(textoCorto(0)).toBe("vence hoy");
+    expect(textoCorto(-5)).toBe("vencido hace 5d");
+  });
+
+  it("lo vencido manda en el título", () => {
+    expect(tituloAviso([{ dias: 3 }])).toBe("Documento por vencer");
+    expect(tituloAviso([{ dias: 3 }, { dias: 5 }])).toBe("2 documentos por vencer");
+    expect(tituloAviso([{ dias: -2 }])).toBe("Documento VENCIDO");
+    expect(tituloAviso([{ dias: -2 }, { dias: -9 }])).toBe("2 documentos VENCIDOS");
+    expect(tituloAviso([{ dias: -2 }, { dias: 4 }, { dias: 6 }])).toBe("1 vencido y 2 por vencer");
+  });
+
+  it("sin fecha no hay días", () => {
+    expect(diasHasta(null)).toBeNull();
+    expect(diasHasta("no es fecha")).toBeNull();
   });
 });

@@ -465,14 +465,22 @@ export class DocumentsDB {
    * tenant: el caller agrupa por tenantId para resolver el teléfono destino.
    */
   static async listPendingExpiryReminders(
-    withinDays: number
+    withinDays: number,
+    /**
+     * Cuánto hacia ATRÁS se sigue avisando. Antes era 1 día: un documento que
+     * vencía y no se avisaba ese mismo día (el cron falló, o se subió una
+     * licencia ya caída) no avisaba NUNCA, que es justo cuando más importa.
+     * El anti-spam sigue siendo `expiryReminderSentAt`: se avisa una sola vez.
+     */
+    tambienVencidosHaceDias = 60,
   ): Promise<DbDocument[]> {
     const limit = new Date();
     limit.setDate(limit.getDate() + withinDays);
+    const desde = new Date(Date.now() - tambienVencidosHaceDias * 86_400_000);
     const docs = await prisma.document.findMany({
       where: {
         deletedAt: null,
-        expiresAt: { not: null, lte: limit, gte: new Date(Date.now() - 86400000) },
+        expiresAt: { not: null, lte: limit, gte: desde },
         expiryReminderSentAt: null,
       },
       orderBy: [{ expiresAt: "asc" }],

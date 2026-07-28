@@ -13,6 +13,7 @@ import {
   type ResultadoDescripcion,
   type StructuredData,
 } from "./descripcion-schema";
+import { fechaDeVencimientoEnTexto } from "@/lib/documentos/fecha-vencimiento";
 import { motivoDeFalloIA } from "./aviso-ia";
 import { construirTextoBuscable } from "./texto-buscable";
 import { describirImagenConVision } from "./vision-describe";
@@ -206,6 +207,14 @@ export async function analyzeDocumentContent(
       if (!Number.isNaN(fecha.getTime())) out.expiresAt = fecha.toISOString();
     }
     if (out.folderId || out.expiresAt) sugerencias = out;
+  }
+
+  // Respaldo determinístico: los modelos chicos transcriben bien "VÁLIDA HASTA:
+  // 15/01/2027" y dejan el campo vacío igual. La fecha de vencimiento es lo que
+  // dispara el aviso —o sea, lo que evita la multa—, así que se lee del texto.
+  if (!sugerencias?.expiresAt) {
+    const delTexto = fechaDeVencimientoEnTexto(text);
+    if (delTexto) sugerencias = { ...(sugerencias ?? {}), expiresAt: delTexto };
   }
 
   // La descripción escrita a mano sobrevive al re-análisis: es la que corrige a

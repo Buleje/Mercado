@@ -32,22 +32,35 @@ export const EntitiesSchema = z
   })
   .partial();
 
+/**
+ * Tolerante a propósito: un modelo chico (los que corren en tu propia máquina)
+ * suele acertar la descripción y equivocarse en un campo anidado. Si el schema
+ * fuera estricto, un `entities` mal formado tiraría a la basura TODO el
+ * análisis —incluida la descripción, que es lo único imprescindible—. Cada
+ * campo secundario cae solo a su valor vacío con `.catch()`.
+ */
 export const ResultSchema = z.object({
-  summary: z.string(),
-  description: z.string().default(""),
-  keyFacts: z.array(z.string()).max(14).default([]),
-  tags: z.array(z.string()).max(14).default([]),
-  entities: EntitiesSchema.nullish(),
-  structured: StructuredSchema.nullish(),
+  summary: z.string().catch(""),
+  description: z.string().catch(""),
+  keyFacts: z.array(z.string()).max(14).catch([]),
+  tags: z.array(z.string()).max(14).catch([]),
+  entities: EntitiesSchema.nullish().catch(null),
+  structured: StructuredSchema.nullish().catch(null),
   /** Sólo el camino de visión lo devuelve: el texto que se ve en la foto. */
-  ocrText: z.string().nullish(),
+  ocrText: z.string().nullish().catch(null),
   sugerencia: z
     .object({
       carpeta: z.string().max(120).nullish(),
       vencimiento: z.string().max(20).nullish(),
     })
-    .nullish(),
+    .nullish()
+    .catch(null),
 });
+
+/** ¿El análisis sirve para algo? Sin texto ni descripción, no. */
+export function tieneAlgoUtil(r: ResultadoDescripcion): boolean {
+  return !!(r.description?.trim() || r.summary?.trim() || r.ocrText?.trim());
+}
 
 export type StructuredData = z.infer<typeof StructuredSchema>;
 export type DocEntities = z.infer<typeof EntitiesSchema>;

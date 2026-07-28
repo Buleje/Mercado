@@ -581,6 +581,26 @@ export default function DocumentosModule() {
     },
     [patch]
   );
+  /**
+   * Aceptar TODAS de una. Cada vencimiento que queda sin aplicar es un aviso
+   * que nunca va a llegar: el cron mira `expiresAt`, no la sugerencia.
+   */
+  const [aplicandoTodas, setAplicandoTodas] = useState(false);
+  const aplicarTodasLasSugerencias = useCallback(async () => {
+    if (aplicandoTodas) return;
+    setAplicandoTodas(true);
+    try {
+      for (const { doc, carpeta, vence } of sugerenciasIA) {
+        await aplicarSugerencia(doc.id, {
+          ...(carpeta ? { folderId: carpeta.folderId } : {}),
+          ...(vence ? { expiresAt: vence } : {}),
+        }).catch((err) => console.warn("[documentos] sugerencia fail", doc.id, err));
+      }
+      await refresh();
+    } finally {
+      setAplicandoTodas(false);
+    }
+  }, [aplicandoTodas, sugerenciasIA, aplicarSugerencia, refresh]);
   const visibleFolderRows = useMemo(() => flattenVisible(childrenMap, expandedFolders), [childrenMap, expandedFolders]);
   const allFolderRows = useMemo(() => flattenAll(childrenMap), [childrenMap]);
   const activePath = useMemo(
@@ -1053,9 +1073,24 @@ export default function DocumentosModule() {
       {/* Sugerencias IA de organización: carpeta + vencimiento detectados */}
       {sugerenciasIA.length > 0 && (
         <div className="rounded-2xl border-2 border-[var(--accent)]/40 bg-primary/10/40 px-4 py-3">
-          <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)]">
-            <Sparkles className="h-4 w-4" /> La IA sugiere organizar
-          </p>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)]">
+              <Sparkles className="h-4 w-4" /> La IA sugiere organizar
+            </p>
+            {sugerenciasIA.length > 1 && (
+              <button
+                type="button"
+                onClick={() => void aplicarTodasLasSugerencias()}
+                disabled={aplicandoTodas}
+                title="Guardar las carpetas y los vencimientos sugeridos de todos"
+                className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--accent)] px-2.5 py-1 text-xs font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10 disabled:opacity-60"
+              >
+                {aplicandoTodas
+                  ? <><span className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" /> Aplicando…</>
+                  : <>Aplicar las {sugerenciasIA.length}</>}
+              </button>
+            )}
+          </div>
           <div className="space-y-2">
             {sugerenciasIA.map(({ doc, carpeta, vence }) => (
               <div key={doc.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[var(--surface-raised)] px-3 py-2">

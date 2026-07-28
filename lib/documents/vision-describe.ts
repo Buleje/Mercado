@@ -2,7 +2,7 @@ import "server-only";
 import { logger } from "@/lib/logger";
 import { fetchGroqWithRetry } from "@/lib/groq-fetch";
 import { cleanJSONResponse } from "@/lib/ai-json-parser";
-import { promptDeDescripcion, ResultSchema, type ResultadoDescripcion } from "./descripcion-schema";
+import { promptDeDescripcion, ResultSchema, tieneAlgoUtil, type ResultadoDescripcion } from "./descripcion-schema";
 import {
   configVisionPropia, esModeloInexistente, hayProveedorDeVision, MODELO_VISION,
 } from "./modelo-vision";
@@ -54,7 +54,10 @@ async function pedirAEndpointPropio(
   const dataUrl = `data:${imagen.mimeType};base64,${bytes.toString("base64")}`;
 
   const ctrl = new AbortController();
-  const corte = setTimeout(() => ctrl.abort(), 120_000); // un modelo local tarda
+  // Un modelo de visión corriendo en CPU (Ollama) tarda minutos por imagen: la
+  // primera llamada además lo carga en memoria. 2 minutos cortaba justo antes
+  // de que contestara. Configurable porque en la nube alcanza con 60s.
+  const corte = setTimeout(() => ctrl.abort(), Number(process.env.DOC_VISION_TIMEOUT_MS) || 420_000);
   try {
     const resp = await fetch(`${cfg.baseUrl}/chat/completions`, {
       method: "POST",
@@ -80,7 +83,7 @@ async function pedirAEndpointPropio(
     return { ok: true, contenido: contenidoDe(JSON.parse(cuerpo)) };
   } catch (err) {
     const detalle = err instanceof Error ? err.message : String(err);
-    return { ok: false, error: /abort/i.test(detalle) ? "el modelo tardó demasiado (2 min)" : detalle };
+    return { ok: false, error: /abort/i.test(detalle) ? "el modelo tardó demasiado" : detalle };
   } finally {
     clearTimeout(corte);
   }
@@ -148,7 +151,13 @@ export async function describirImagenConVision(
     }
     const parsed = ResultSchema.safeParse(JSON.parse(crudo));
     if (!parsed.success) {
-      logger.warn("documents.vision.json_invalido", { issues: parsed.error.issues.length });
+      // Se recorta una muestra: sin ver QUÉ contestó el modelo, diagnosticar
+      // esto desde los logs es adivinar.
+      logger.warn("documents.vision.json_invalido", { issues: parsed.error.issues.length, muestra: crudo.slice(0, 200) });
+      return { ok: false, motivo: "falla" };
+    }
+    if (!tieneAlgoUtil(parsed.data)) {
+      logger.warn("documents.vision.sin_contenido", { muestra: crudo.slice(0, 200) });
       return { ok: false, motivo: "falla" };
     }
     return { ok: true, datos: parsed.data };
