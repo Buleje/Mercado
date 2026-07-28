@@ -35,6 +35,11 @@ import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
 import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
 import { ordenarPorRelevancia, tieneDescripcion } from "@/lib/documentos/relevancia";
+import FiltrosDoc from "@/components/admin/documentos/FiltrosDoc";
+import {
+  FILTROS_VACIOS, cumpleFiltros, familiasPresentes, cuantosFiltrosActivos,
+  type FiltrosDoc as FiltrosDocumento,
+} from "@/lib/documentos/filtros-doc";
 import { palabrasUtiles } from "@/lib/documentos/terminos-busqueda";
 import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import PorQueAparecio, { TerminosIA } from "./PorQueAparecio";
@@ -263,6 +268,9 @@ export default function DocumentosModule() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   /** Ver sólo lo que todavía no tiene descripción (lo que no se puede buscar). */
   const [soloSinDescribir, setSoloSinDescribir] = useState(false);
+  /** Tipo de archivo, peso, cuándo entró y cuándo vence. */
+  const [filtros, setFiltros] = useState<FiltrosDocumento>(FILTROS_VACIOS);
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   /** Progreso de "describir todo lo que falta" (una llamada IA por documento). */
   const [progresoDesc, setProgresoDesc] = useState<{ hechos: number; total: number } | null>(null);
   /** Por qué la IA no pudo describir (sin cupo, sin clave, sin modelo de visión). */
@@ -427,6 +435,7 @@ export default function DocumentosModule() {
     }
     if (statusFilter) list = list.filter((d) => d.status === statusFilter);
     if (soloSinDescribir) list = list.filter((d) => !tieneDescripcion(d));
+    if (cuantosFiltrosActivos(filtros) > 0) list = list.filter((d) => cumpleFiltros(d, filtros));
     if (sortBy === "relevancia") return ordenarPorRelevancia(list, terminosBusqueda);
     const sorted = [...list];
     sorted.sort((a, b) => {
@@ -447,7 +456,7 @@ export default function DocumentosModule() {
       }
     });
     return sorted;
-  }, [documents, filterMode, sortBy, statusFilter, activeSmartId, smartFolders, soloSinDescribir, terminosBusqueda]);
+  }, [documents, filterMode, sortBy, statusFilter, activeSmartId, smartFolders, soloSinDescribir, terminosBusqueda, filtros]);
 
   const statusCounts = useMemo(() => {
     const m: Record<string, number> = { draft: 0, review: 0, approved: 0, archived: 0 };
@@ -1490,6 +1499,17 @@ export default function DocumentosModule() {
             >
               <Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">IA</span>
             </button>
+            {/* Los tipos que se ofrecen salen de lo que hay en la vista actual,
+                no de una lista fija: cada opción que no filtra nada es una que
+                hay que descartar a mano. */}
+            <FiltrosDoc
+              filtros={filtros}
+              onCambiar={setFiltros}
+              presentes={familiasPresentes(documents)}
+              abierto={filtrosAbiertos}
+              onAlternar={() => setFiltrosAbiertos((v) => !v)}
+              resultados={displayDocs.length}
+            />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
