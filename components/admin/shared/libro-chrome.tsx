@@ -22,6 +22,12 @@ import { ChevronDown, Loader2, type LucideIcon } from "@buleje/design-system/ico
 import { Kicker, PageTitle } from "@buleje/design-system";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
+import Kbd from "./kbd";
+import {
+  useAdminShortcuts,
+  useRegisterShortcuts,
+  type ShortcutSection,
+} from "@/contexts/admin-shortcuts-context";
 
 export interface LibroView {
   key: string;
@@ -29,6 +35,12 @@ export interface LibroView {
   icon: LucideIcon;
   /** Qué se hace acá, en una línea. Va como tooltip, no ocupa pantalla. */
   hint: string;
+  /**
+   * Tecla de salto directo: se llega con `g` y esta letra. Explícita y no
+   * derivada de la inicial, porque "Producción" y "Planta" empiezan igual y
+   * adivinar la letra es peor que no tener atajo.
+   */
+  tecla?: string;
 }
 
 export interface LibroGroup {
@@ -70,6 +82,8 @@ interface LibroChromeProps {
   tools?: ReactNode;
   actions?: LibroAction[];
   actionsLabel?: string;
+  /** Atajos propios de la vista activa — se suman a la hoja que abre `?`. */
+  atajosDeVista?: ShortcutSection[];
   children?: ReactNode;
 }
 
@@ -91,6 +105,7 @@ export default function LibroChrome({
   tools,
   actions,
   actionsLabel = "Acciones",
+  atajosDeVista,
   children,
 }: LibroChromeProps) {
   const { registerSubTabs, registerOnChange, clearSubTabs } = useModuleTabs();
@@ -124,21 +139,78 @@ export default function LibroChrome({
     );
   }, [flat, view, registerSubTabs]);
 
-  // Alt+← / Alt+→ recorren TODAS las vistas en orden de flujo, cruzando grupos:
-  // el atajo sigue el libro, no la caja donde lo dibujamos.
+  /** La hoja de atajos es la del shell (`?`): acá sólo se le aportan secciones. */
+  const { open: abrirAyuda } = useAdminShortcuts();
+  /** Se apretó `g` y se espera la letra del destino. */
+  const esperandoDestino = useRef(false);
+
+  /**
+   * Teclado del libro:
+   * · `Alt+←/→` recorren TODAS las vistas en orden de flujo, cruzando grupos —
+   *   el atajo sigue el libro, no la caja donde lo dibujamos;
+   * · `g` + letra salta directo (con doce vistas, recorrer de a una son once
+   *   pulsaciones para llegar a la última).
+   *
+   * `?` NO se maneja acá: la hoja de ayuda es la del shell del admin y este
+   * componente le aporta sus secciones (si abriera una propia, `?` mostraría
+   * dos modales superpuestos contando cada uno una mitad).
+   *
+   * Todo se apaga mientras se escribe o con un modal abierto, y ningún atajo
+   * usa Ctrl/⌘ para no pisar los del navegador ni la paleta global del admin.
+   */
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (!e.altKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
       if (isEditableTarget(e.target) || isModalOpen()) return;
-      const i = flat.findIndex((v) => v.key === view);
-      if (i === -1) return;
-      e.preventDefault();
-      const paso = e.key === "ArrowRight" ? 1 : -1;
-      onView?.(flat[(i + paso + flat.length) % flat.length].key);
+
+      if (e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+        const i = flat.findIndex((v) => v.key === view);
+        if (i === -1) return;
+        e.preventDefault();
+        const paso = e.key === "ArrowRight" ? 1 : -1;
+        onView?.(flat[(i + paso + flat.length) % flat.length].key);
+        return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      // Secuencia `g` → letra. La ventana se cierra con cualquier otra tecla:
+      // un `g` suelto no debe quedar armado esperando para siempre.
+      if (esperandoDestino.current) {
+        esperandoDestino.current = false;
+        const destino = flat.find((v) => v.tecla && v.tecla.toLowerCase() === e.key.toLowerCase());
+        if (destino) {
+          e.preventDefault();
+          onView?.(destino.key);
+        }
+        return;
+      }
+      if (e.key === "g" || e.key === "G") {
+        esperandoDestino.current = true;
+        window.setTimeout(() => {
+          esperandoDestino.current = false;
+        }, 1500);
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [flat, view, onView]);
+
+  /** Lo que este libro aporta a la hoja del shell: navegación derivada de las
+   *  vistas reales (si mañana se agrega una vista, aparece sola) + la vista activa. */
+  const seccionesAtajos: ShortcutSection[] = useMemo(
+    () => [
+      {
+        title: `Moverse en ${title}`,
+        items: [
+          { keys: ["Alt", "→"], description: "Vista siguiente" },
+          { keys: ["Alt", "←"], description: "Vista anterior" },
+          ...flat.filter((v) => v.tecla).map((v) => ({ keys: ["G", v.tecla!.toUpperCase()], description: v.label })),
+        ],
+      },
+      ...(atajosDeVista ?? []),
+    ],
+    [flat, atajosDeVista, title],
+  );
+  useRegisterShortcuts(`libro:${moduleId}`, seccionesAtajos);
 
   const alertasDe = (g: LibroGroup) =>
     g.views.reduce((n, v) => n + (alerts?.[v.key] ?? 0), 0);
@@ -233,7 +305,7 @@ export default function LibroChrome({
                   type="button"
                   role="tab"
                   aria-selected={activo}
-                  title={v.hint}
+                  title={v.tecla ? `${v.hint}  ·  atajo: g ${v.tecla}` : v.hint}
                   onClick={() => onView?.(v.key)}
                   className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm transition-colors sm:px-3 ${
                     activo
@@ -255,6 +327,19 @@ export default function LibroChrome({
       </section>
 
       {children}
+
+      {/* Descubribilidad: el pie dice que existen los atajos. Sin esto, los usa
+          quien los programó. */}
+      {flat.length > 1 && (
+        <button
+          type="button"
+          onClick={abrirAyuda}
+          className="hidden items-center gap-1.5 text-xs text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)] lg:inline-flex"
+        >
+          <Kbd>?</Kbd> atajos del teclado · <Kbd>g</Kbd> + letra salta de vista
+        </button>
+      )}
+
     </div>
   );
 }

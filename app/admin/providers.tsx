@@ -10,6 +10,8 @@ import AdminMotionProvider from "@/components/admin/providers/AdminMotionProvide
 import { UndoToastProvider } from "@/components/admin/shared/UndoToast";
 import { ConfirmDialogProvider } from "@/components/admin/shared/ConfirmDialog";
 import { KeyboardShortcutsHelp } from "@/components/admin/shared/KeyboardShortcutsHelp";
+import { AdminShortcutsProvider } from "@/contexts/admin-shortcuts-context";
+import ShortcutsHelpConSecciones from "@/components/admin/shared/ShortcutsHelpConSecciones";
 import { ImportCarpetaProvider } from "@/contexts/import-carpeta-context";
 
 const NotificationToast = dynamic(
@@ -107,6 +109,7 @@ export function AdminProviders({ children }: { children: React.ReactNode }) {
 function AdminProvidersBare({ children }: { children: React.ReactNode }) {
   return (
     <AdminMotionProvider>
+      <AdminShortcutsProvider>
       <SettingsProvider>
         <VocabularyProvider>
           <ModuleTabsProvider>
@@ -118,6 +121,7 @@ function AdminProvidersBare({ children }: { children: React.ReactNode }) {
           </ModuleTabsProvider>
         </VocabularyProvider>
       </SettingsProvider>
+      </AdminShortcutsProvider>
     </AdminMotionProvider>
   );
 }
@@ -163,6 +167,7 @@ function AdminProvidersInner({ children }: { children: React.ReactNode }) {
 
   return (
     <AdminMotionProvider>
+      <AdminShortcutsProvider>
       <SettingsProvider>
         <VocabularyProvider>
           <ModuleTabsProvider>
@@ -176,12 +181,15 @@ function AdminProvidersInner({ children }: { children: React.ReactNode }) {
                 </ImportCarpetaProvider>
                 <NotificationToast />
                 {showFab && <QuickActionsFab />}
-                <KeyboardShortcutsHelp open={showShortcuts} onClose={() => setShowShortcuts(false)} />
+                {/* Una sola hoja de atajos: los globales + los que aporta el
+                    módulo abierto (ADR-069 · admin-shortcuts-context). */}
+                <ShortcutsHelpConSecciones open={showShortcuts} onClose={() => setShowShortcuts(false)} />
               </ConfirmDialogProvider>
             </UndoToastProvider>
           </ModuleTabsProvider>
         </VocabularyProvider>
       </SettingsProvider>
+      </AdminShortcutsProvider>
     </AdminMotionProvider>
   );
 }

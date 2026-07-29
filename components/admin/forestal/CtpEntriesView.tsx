@@ -190,6 +190,35 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
     [entries, conAnexo, section],
   );
 
+  /**
+   * Atajos de la vista, los mismos que en Ingresos para no tener que aprender
+   * dos teclados: `N` abre el alta, `/` va al buscador, `R` recarga. Se apagan
+   * mientras se escribe, con modal abierto y con cualquier modificador (Ctrl+N
+   * del navegador no se toca).
+   */
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      const t = ev.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t?.isContentEditable) return;
+      if (showForm || showSim || anexoEntry || chainEntry || verBandeja || annulId) return;
+
+      if (ev.key === "n" || ev.key === "N") {
+        ev.preventDefault();
+        setShowForm(true);
+      } else if (ev.key === "/") {
+        ev.preventDefault();
+        document.getElementById(`ctp-search-${section}`)?.focus();
+      } else if (ev.key === "r" || ev.key === "R") {
+        ev.preventDefault();
+        void load();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [section, load, showForm, showSim, anexoEntry, chainEntry, verBandeja, annulId]);
+
   /** Opciones de los selectores: salen de lo cargado, no de un catálogo. */
   const opciones = useMemo(() => facetasDeSeccion(entries), [entries]);
 

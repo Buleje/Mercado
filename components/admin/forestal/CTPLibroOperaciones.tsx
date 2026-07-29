@@ -35,6 +35,7 @@ import {
   MapPin,
   PackageOpen,
   Scale,
+  Search,
   Share2,
   ShieldCheck,
   TreePine,
@@ -43,6 +44,7 @@ import {
   Upload,
 } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
+import type { ShortcutSection } from "@/contexts/admin-shortcuts-context";
 import { exportarLibroCtp, exportarLibroCtpOficial } from "@/lib/forestal/ctp-export";
 import { printInformePeriodo } from "@/lib/forestal/ctp-informe";
 import { abrirDossierFiscalizacion } from "@/lib/forestal/ctp-dossier-abrir";
@@ -66,6 +68,9 @@ import CtpAsistente from "./CtpAsistente";
 import CtpAnalisis from "./CtpAnalisis";
 import CtpHealthChip from "./CtpHealthChip";
 import CtpPendientes from "./CtpPendientes";
+import CtpBuscarGtf from "./CtpBuscarGtf";
+import CtpEntryDetailModal from "./CtpEntryDetailModal";
+import type { WoodEntry } from "./ctp-shared";
 import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
 import {
   CTP_INGRESAR_GTF_KEY,
@@ -87,36 +92,36 @@ const CTP_GROUPS: LibroGroup[] = [
     id: "operacion",
     label: "Operación",
     views: [
-      { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida" },
-      { key: "produccion", label: "Producción", icon: Boxes, hint: "Transformación" },
-      { key: "despacho", label: "Despacho", icon: Truck, hint: "Salida de producto" },
+      { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida", tecla: "i" },
+      { key: "produccion", label: "Producción", icon: Boxes, hint: "Transformación", tecla: "p" },
+      { key: "despacho", label: "Despacho", icon: Truck, hint: "Salida de producto", tecla: "d" },
     ],
   },
   {
     id: "trazabilidad",
     label: "Trazabilidad",
     views: [
-      { key: "radar", label: "Radar", icon: Share2, hint: "Cadena de custodia visual" },
-      { key: "planta", label: "Planta", icon: MapPin, hint: "Mapa del aserradero" },
-      { key: "eudr", label: "EUDR", icon: Globe, hint: "Geolocalización + dossier UE" },
+      { key: "radar", label: "Radar", icon: Share2, hint: "Cadena de custodia visual", tecla: "r" },
+      { key: "planta", label: "Planta", icon: MapPin, hint: "Mapa del aserradero", tecla: "m" },
+      { key: "eudr", label: "EUDR", icon: Globe, hint: "Geolocalización + dossier UE", tecla: "u" },
     ],
   },
   {
     id: "control",
     label: "Control",
     views: [
-      { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta" },
-      { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Alertas del período" },
-      { key: "cierre", label: "Cierre", icon: Lock, hint: "Cerrar mes · bloquear el acta" },
+      { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta", tecla: "s" },
+      { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Alertas del período", tecla: "c" },
+      { key: "cierre", label: "Cierre", icon: Lock, hint: "Cerrar mes · bloquear el acta", tecla: "x" },
     ],
   },
   {
     id: "gestion",
     label: "Gestión",
     views: [
-      { key: "rentabilidad", label: "Rentabilidad", icon: Coins, hint: "Margen: venta − COGS" },
-      { key: "analisis", label: "Análisis", icon: TrendingUp, hint: "Reorden + tendencias" },
-      { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR" },
+      { key: "rentabilidad", label: "Rentabilidad", icon: Coins, hint: "Margen: venta − COGS", tecla: "b" },
+      { key: "analisis", label: "Análisis", icon: TrendingUp, hint: "Reorden + tendencias", tecla: "a" },
+      { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR", tecla: "f" },
     ],
   },
 ];
@@ -159,6 +164,10 @@ export default function CTPLibroOperaciones() {
   const [showImport, setShowImport] = useState(false);
   // Remonta la vista de Ingresos tras importar → re-fetch de la lista.
   const [ingresosKey, setIngresosKey] = useState(0);
+  /** Buscador de guías del libro (atajo `b`): "¿qué pasó con esta GTF?". */
+  const [buscarGtf, setBuscarGtf] = useState(false);
+  /** Ficha abierta desde el buscador, sin salir de la vista donde estabas. */
+  const [fichaIngreso, setFichaIngreso] = useState<WoodEntry | null>(null);
 
   const period = useMemo(() => resolveCtpPeriod(periodKey, custom), [periodKey, custom]);
 
@@ -217,6 +226,66 @@ export default function CTPLibroOperaciones() {
       setExporting(null);
     }
   }
+
+  /**
+   * `b` abre el buscador de guías desde cualquier vista. Vive en el shell y no
+   * en una vista porque la pregunta ("¿qué pasó con esta guía?") no pertenece a
+   * ninguna: llega por teléfono mientras mirás cualquier pestaña.
+   */
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      const t = ev.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t?.isContentEditable) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      if (ev.key === "b" || ev.key === "B") {
+        ev.preventDefault();
+        setBuscarGtf(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  /** Los atajos de la vista activa, para que la hoja (`?`) los liste junto a los
+   *  de navegación. Declararlos acá y no en la vista mantiene la hoja completa
+   *  aunque la vista todavía no esté montada. */
+  const atajosDeVista = useMemo<ShortcutSection[]>(() => {
+    const global: ShortcutSection = {
+      title: "En todo el Libro CTP",
+      items: [{ keys: ["B"], description: "Buscar una guía (de entrada o de salida)" }],
+    };
+    if (view === "ingresos") {
+      return [
+        global,
+        {
+          title: "En Ingresos",
+          items: [
+            { keys: ["N"], description: "Nuevo ingreso" },
+            { keys: ["/"], description: "Ir al buscador" },
+            { keys: ["V"], description: "Validar lo marcado" },
+            { keys: ["R"], description: "Recargar la lista" },
+            { keys: ["Esc"], description: "Limpiar la selección" },
+          ],
+        },
+      ];
+    }
+    if (view === "produccion" || view === "despacho") {
+      return [
+        global,
+        {
+          title: view === "produccion" ? "En Producción" : "En Despacho",
+          items: [
+            { keys: ["N"], description: view === "produccion" ? "Nueva producción" : "Nuevo despacho" },
+            { keys: ["/"], description: "Ir al buscador" },
+            { keys: ["R"], description: "Recargar la lista" },
+          ],
+        },
+      ];
+    }
+    return [global];
+  }, [view]);
 
   /** Un pendiente que se resuelve en una pestaña se anuncia EN esa pestaña:
    *  el número aparece en el grupo y el punto en la vista. Misma fuente que la
@@ -315,8 +384,23 @@ export default function CTPLibroOperaciones() {
             />
           )
         }
-        tools={<CtpAsistente />}
+        tools={
+          <>
+            <button
+              type="button"
+              onClick={() => setBuscarGtf(true)}
+              title="Buscar una guía en el libro (atajo: B)"
+              aria-label="Buscar una guía en el libro"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)]"
+            >
+              <Search className="h-4 w-4" />
+              <span className="max-lg:sr-only">Buscar guía</span>
+            </button>
+            <CtpAsistente />
+          </>
+        }
         actions={acciones}
+        atajosDeVista={atajosDeVista}
       >
         {exportError && (
           <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
@@ -357,6 +441,16 @@ export default function CTPLibroOperaciones() {
         {view === "analisis" && <CtpAnalisis />}
         {view === "ficha" && <CtpFichaEditor />}
       </LibroChrome>
+
+      {buscarGtf && (
+        <CtpBuscarGtf
+          period={period}
+          onCerrar={() => setBuscarGtf(false)}
+          onVerIngreso={setFichaIngreso}
+          onIrA={irA}
+        />
+      )}
+      {fichaIngreso && <CtpEntryDetailModal entry={fichaIngreso} onClose={() => setFichaIngreso(null)} />}
 
       {showImport && (
         <CtpImportModal
