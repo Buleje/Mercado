@@ -15,7 +15,6 @@
 import { GEO_PLACENAME } from "@/lib/geo";
 import {
   CTP_REPORT_BASE_CSS,
-  ctpIdentityBlock,
   esc,
   openCtpReport,
   type CtpReportFicha,
@@ -29,7 +28,14 @@ import {
 } from "./tramites-catalogo";
 
 const TRAMITE_CSS = `
-  .dest{margin:20px 0 4px;font-size:13px;line-height:1.6}
+  /* Membrete: el nombre del CTP grande con una regla de acento debajo, como un
+     papel con logo impreso. La caja gris genérica se veía a formulario interno. */
+  .membrete{border-bottom:2.5px solid #0f5132;padding-bottom:10px;margin-bottom:4px}
+  .membrete .razon{font-size:19px;font-weight:700;color:#0f5132;letter-spacing:.2px;line-height:1.2}
+  .membrete .linea2{margin-top:3px;font-size:11.5px;color:#555}
+  .membrete .linea2 span+span:before{content:" · ";color:#bbb}
+  .doc-tipo{margin-top:14px;font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:#0f5132;font-weight:700}
+  .dest{margin:16px 0 4px;font-size:13px;line-height:1.6}
   .dest .cargo{font-weight:700;text-transform:uppercase;letter-spacing:.3px}
   .dest .ent{color:#444}
   .meta{margin:14px 0 18px;font-size:12.5px}
@@ -121,9 +127,29 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
     ? `<div class="aviso"><strong>Antes de presentar:</strong> ${esc(formato.advertencia)}</div>`
     : "";
 
-  return `<h1>${esc(formato.nombre)}</h1>
-  <p class="sub">${esc(autoridad.label)} · ${esc(autoridad.detalle)}</p>
-  ${ctpIdentityBlock(ficha)}
+  // Membrete del administrado: razón social grande + los datos que la autoridad
+  // cruza (RUC, Código de CTP, registro ARFFS, dirección). Los vacíos se omiten:
+  // un membrete con "Registro ARFFS: —" declara que no lo tiene.
+  const linea2 = [
+    ficha?.ruc ? `RUC ${ficha.ruc}` : "",
+    ficha?.codigoCtp ? `Código de CTP ${ficha.codigoCtp}` : "",
+    ficha?.registroArffs ? `Registro ARFFS ${ficha.registroArffs}` : "",
+  ].filter(Boolean);
+  const linea3 = [
+    ficha?.direccion,
+    [ficha?.distrito, ficha?.provincia, ficha?.region].filter(Boolean).join(", "),
+  ]
+    .map((x) => (x ?? "").trim())
+    .filter(Boolean);
+
+  const membrete = `<div class="membrete">
+    <div class="razon">${esc(ficha?.razonSocial || ficha?.nombreCtp || "Centro de Transformación Primaria")}</div>
+    ${linea2.length ? `<div class="linea2">${linea2.map((x) => `<span>${esc(x)}</span>`).join("")}</div>` : ""}
+    ${linea3.length ? `<div class="linea2">${linea3.map((x) => `<span>${esc(x)}</span>`).join("")}</div>` : ""}
+  </div>
+  <div class="doc-tipo">${esc(formato.nombre)} · ${esc(autoridad.corto)}</div>`;
+
+  return `${membrete}
   ${destinatario}
   ${meta}
   ${cuerpo}

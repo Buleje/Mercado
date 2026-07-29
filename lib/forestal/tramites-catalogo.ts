@@ -19,20 +19,50 @@
 /** Quién recibe el documento. Define el encabezado y el tratamiento. */
 export type AutoridadTramite = "arffs" | "serfor" | "osinfor" | "otra";
 
-export const AUTORIDADES: Record<AutoridadTramite, { label: string; detalle: string }> = {
+export const AUTORIDADES: Record<
+  AutoridadTramite,
+  { label: string; corto: string; detalle: string; tono: "accent" | "info" | "warning" | "muted" }
+> = {
   arffs: {
     label: "ARFFS (Gobierno Regional)",
+    corto: "ARFFS",
     detalle: "Autoridad Regional Forestal y de Fauna Silvestre — registra el CTP y autoriza el foliado",
+    tono: "accent",
   },
   serfor: {
     label: "SERFOR",
+    corto: "SERFOR",
     detalle: "Autoridad nacional rectora — normativa, registros y SNIFFS",
+    tono: "info",
   },
   osinfor: {
     label: "OSINFOR",
+    corto: "OSINFOR",
     detalle: "Supervisor y fiscalizador de títulos habilitantes",
+    tono: "warning",
   },
-  otra: { label: "Otra autoridad", detalle: "Municipalidad, MINAM, aduanas u otra entidad" },
+  otra: {
+    label: "Otra autoridad",
+    corto: "Otra",
+    detalle: "Municipalidad, MINAM, aduanas u otra entidad",
+    tono: "muted",
+  },
+};
+
+/**
+ * Ícono de cada trámite (Lucide, del barrel del DS). Ocho cards con el mismo
+ * ícono no se distinguen de un vistazo; con el suyo, el operador encuentra el
+ * que busca por la forma antes de leer el título.
+ */
+export const ICONO_TRAMITE: Record<string, string> = {
+  "visado-talonario-gtf": "Stamp",
+  "revision-campo": "Compass",
+  "registro-actualizacion-ctp": "Building2",
+  "presentacion-libro": "BookOpen",
+  "cambio-regente": "UserCog",
+  "descargo-osinfor": "ShieldAlert",
+  "constancia-cites": "Globe",
+  "carta-generica": "PenLine",
 };
 
 export type TipoCampo = "texto" | "textarea" | "numero" | "fecha";
@@ -51,6 +81,12 @@ export interface CampoTramite {
    * `libro` (dato del período). La UI lo pre-llena y el operador lo corrige.
    */
   autollenado?: "ficha" | "libro";
+  /**
+   * Sección del formulario. Trece campos en una grilla plana se leen como un
+   * trámite del Estado; en tres bloques (a quién va · qué se pide · quién firma)
+   * se llena sin perder el hilo. Default: `datos`.
+   */
+  grupo?: "destino" | "datos" | "firma";
 }
 
 /** Datos del formulario: id de campo → valor tipeado por el operador. */
@@ -93,6 +129,7 @@ const CAMPOS_COMUNES: CampoTramite[] = [
     requerido: true,
     placeholder: "Director de la Dirección Regional Forestal y de Fauna Silvestre",
     hint: "El cargo, no el nombre: si cambia la persona el documento sigue valiendo",
+    grupo: "destino",
   },
   {
     id: "destinatarioEntidad",
@@ -100,6 +137,7 @@ const CAMPOS_COMUNES: CampoTramite[] = [
     tipo: "texto",
     requerido: true,
     placeholder: "Gobierno Regional de Ucayali",
+    grupo: "destino",
   },
   {
     id: "firmante",
@@ -108,12 +146,14 @@ const CAMPOS_COMUNES: CampoTramite[] = [
     requerido: true,
     autollenado: "ficha",
     hint: "Titular del CTP o su representante legal",
+    grupo: "firma",
   },
   {
     id: "firmanteDni",
     label: "DNI del firmante",
     tipo: "texto",
     placeholder: "12345678",
+    grupo: "firma",
   },
   {
     id: "lugar",
@@ -121,7 +161,15 @@ const CAMPOS_COMUNES: CampoTramite[] = [
     tipo: "texto",
     autollenado: "ficha",
     hint: "La ciudad que va antes de la fecha (\"Pucallpa, 29 de julio de 2026\")",
+    grupo: "firma",
   },
+];
+
+/** Etiquetas de las secciones del formulario, en el orden en que se llenan. */
+export const GRUPOS_CAMPO: { id: "destino" | "datos" | "firma"; label: string; hint: string }[] = [
+  { id: "destino", label: "A quién va", hint: "El cargo y la entidad que lo recibe" },
+  { id: "datos", label: "Qué se pide", hint: "Los datos propios de este trámite" },
+  { id: "firma", label: "Quién firma", hint: "Aparece al pie, sobre la línea de firma" },
 ];
 
 export const FORMATOS_TRAMITE: FormatoTramite[] = [
