@@ -74,7 +74,9 @@ import type { TrazaGrafo } from "@/lib/db/forest-ctp.db";
 import CtpNodeDetailLoader, { type DetailTarget } from "./CtpNodeDetailLoader";
 import CtpRadarCronologia from "./CtpRadarCronologia";
 import CtpRadarRendimiento from "./CtpRadarRendimiento";
-import CtpRadarCadenaGtf from "./CtpRadarCadenaGtf";
+import CtpRadarResumen from "./CtpRadarResumen";
+import CtpRadarControles from "./CtpRadarControles";
+import { ORDENES, ZOOM_MAX, ZOOM_MIN, type Foco, type Vista } from "./ctp-radar-tipos";
 import {
   BalanceLinea,
   COL_GAP,
@@ -92,26 +94,7 @@ import {
   trunc,
 } from "./ctp-radar-svg";
 
-/** Qué subconjunto de la cadena se ilumina. */
-type Foco = "todos" | "huecos" | "parciales" | "cites";
 
-/** Las tres lecturas del mismo período: qué salió de dónde, cuándo, y con qué rinde. */
-type Vista = "cadena" | "cronologia" | "rendimiento";
-
-const VISTAS: { key: Vista; label: string; icon: typeof Share2; hint: string }[] = [
-  { key: "cadena", label: "Cadena", icon: Share2, hint: "El grafo GTF → corrida → despacho" },
-  { key: "cronologia", label: "Cronología", icon: Clock, hint: "La cadena en el tiempo y las fechas imposibles" },
-  { key: "rendimiento", label: "Rendimiento", icon: Gauge, hint: "Producto por m³ de troza y mermas anómalas" },
-];
-
-const ORDENES: { key: RadarOrden; label: string; hint: string }[] = [
-  { key: "linea", label: "Por línea", hint: "Orden del libro (como se registró)" },
-  { key: "estado", label: "Por estado", hint: "Primero los huecos y las atribuciones incompletas" },
-  { key: "volumen", label: "Por volumen", hint: "De mayor a menor cantidad" },
-];
-
-const ZOOM_MIN = 0.5;
-const ZOOM_MAX = 1.5;
 
 export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   const [g, setG] = useState<TrazaGrafo | null>(null);
@@ -518,232 +501,49 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
 
       {layout && g && a && !isEmpty && (
         <>
-          {/* Los dos números que un fiscalizador lee primero: cuánta salida traza
-              hasta su GTF, y cuánto de lo que entró ya pasó por producción. */}
-          {/* Salud de la cadena en UNA tira: los dos porcentajes que lee un
-              fiscalizador y los cuatro conteos accionables. Antes eran dos
-              filas de tarjetas (≈250px) para seis cifras. */}
-          <div className="space-y-2.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              {a.totales.trazabilidadPct != null && (
-                <Medidor
-                  pct={a.totales.trazabilidadPct}
-                  titulo="Trazabilidad"
-                  detalle={`${a.totales.despachosCompletos} de ${g.despachos.length} despachos llegan a su GTF`}
-                />
-              )}
-              {a.totales.consumoPct != null && (
-                <Medidor
-                  pct={a.totales.consumoPct}
-                  titulo="Materia prima consumida"
-                  detalle={`${fmtNum(a.totales.consumidoM3)} de ${fmtNum(a.totales.ingresoM3)} m³${a.totales.stockSinConsumirM3 > 0 ? ` · ${fmtNum(a.totales.stockSinConsumirM3)} en patio` : ""}`}
-                  neutro
-                />
-              )}
-            </div>
-
-            {/* Píldoras, no tarjetas: cuatro tarjetas con ícono de 40px son 190px
-                de alto para cuatro números. Cada una filtra el grafo al tocarla. */}
-            <div className="flex flex-wrap items-center gap-2 border-t border-[var(--rule-soft)] pt-2.5">
-              <SummaryChip pill icon={CheckCircle2} tone="success" value={a.totales.despachosCompletos} label="con cadena completa" />
-              <SummaryChip pill icon={AlertTriangle} tone="warning" value={a.totales.despachosHueco + a.totales.corridasHuerfanas} label="sin origen" onClick={() => toggleFoco("huecos")} activo={foco === "huecos"} />
-              <SummaryChip pill icon={Boxes} tone="info" value={a.totales.despachosParciales} label="a medio atribuir" onClick={() => toggleFoco("parciales")} activo={foco === "parciales"} />
-              <SummaryChip pill icon={ShieldAlert} tone="danger" value={a.totales.citesCount} label="ingresos CITES" onClick={() => toggleFoco("cites")} activo={foco === "cites"} />
-            </div>
-          </div>
-
-          {/* Tres lecturas del mismo período. Apiladas serían tres pantallas de
-              scroll; como pestañas, cada pregunta tiene su lugar. */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex h-11 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-              {VISTAS.map((v) => {
-                const Icon = v.icon;
-                const alertas = v.key === "cronologia" ? (tiempo?.anomalias.length ?? 0)
-                  : v.key === "rendimiento" ? alertasRendimiento(rendimiento).length
-                  : 0;
-                return (
-                  <button
-                    key={v.key} type="button" title={v.hint} onClick={() => setVista(v.key)} aria-pressed={vista === v.key}
-                    className={`flex h-full items-center gap-1.5 px-3.5 text-sm font-bold transition ${vista === v.key ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`}
-                  >
-                    <Icon className="h-4 w-4" aria-hidden="true" /> {v.label}
-                    {alertas > 0 && (
-                      <span className={`ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 font-mono text-[length:var(--ts-2xs)] font-bold tabular-nums ${vista === v.key ? "bg-white/25 text-white" : "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/20 dark:text-[var(--data-warning-500)]"}`}>
-                        {alertas}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {seguirId && (
-              <button type="button" onClick={() => setSeguirId(null)} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 px-3 text-xs font-bold text-[var(--accent)]">
-                <XIcon className="h-3.5 w-3.5" /> Dejar de seguir la GTF
-              </button>
-            )}
-          </div>
-
-          {/* Seguimiento de una GTF: la vista que se arma a mano cuando OSINFOR
-              pregunta por un ingreso puntual. */}
-          {cadenaSeguida && (
-            <CtpRadarCadenaGtf
-              cadena={cadenaSeguida}
-              onCerrar={() => setSeguirId(null)}
-              onVerNodo={(kind, id, gtf) => setDetail(kind === "ingreso" ? { kind, id, gtf: gtf ?? "" } : { kind, id })}
-            />
-          )}
-
-          {/* Huecos accionables: la cadena rota, con el arreglo a un click. El
-              libro los admite; el certificado exige cadena completa. */}
-          {totalHuecos > 0 && (
-            <div className="rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 dark:bg-[var(--data-warning-500)]/12">
-              <div className="mb-1 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />
-                <p className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                  {totalHuecos} {totalHuecos === 1 ? "eslabón sin cerrar" : "eslabones sin cerrar"}
-                </p>
-              </div>
-              <p className="mb-3 text-sm text-[var(--text-secondary)]">
-                Estos eslabones no trazan (o trazan sólo en parte) hasta su GTF de ingreso. El libro los admite, pero el certificado exige cadena completa — tocá para completarlos.
-              </p>
-              <ul className="space-y-2">
-                {huecoDespachos.map((d) => (
-                  <HuecoFila
-                    key={d.id} icon={Truck} tono="warning"
-                    titulo={`Despacho #${d.lineNo}`}
-                    detalle={`${trunc(d.destino || d.label || "—", 32)} — sin origen atribuido`}
-                    accion="Atribuir origen"
-                    onClick={() => setDetail({ kind: "despacho", id: d.id })}
-                  />
-                ))}
-                {despachosParciales.map((d) => {
-                  const bal = a.despachos.get(d.id)!;
-                  return (
-                    <HuecoFila
-                      key={d.id} icon={Truck} tono="info"
-                      titulo={`Despacho #${d.lineNo}`}
-                      detalle={`${trunc(d.destino || d.label || "—", 26)} — faltan ${fmtNum(bal.sinAtribuir)} ${unidadDe(d.id)} de ${fmtNum(bal.total)} por atribuir`}
-                      accion="Completar origen"
-                      onClick={() => setDetail({ kind: "despacho", id: d.id })}
-                    />
-                  );
-                })}
-                {huerfanaCorridas.map((c) => (
-                  <HuecoFila
-                    key={c.id} icon={Boxes} tono="warning"
-                    titulo={`Corrida #${c.lineNo}`}
-                    detalle={`${trunc(c.label || "—", 32)} — sin materia prima`}
-                    accion="Atribuir materia prima"
-                    onClick={() => setDetail({ kind: "corrida", id: c.id })}
-                  />
-                ))}
-              </ul>
-            </div>
-          )}
+          <CtpRadarResumen
+            g={g}
+            a={a}
+            tiempo={tiempo}
+            rendimiento={rendimiento}
+            foco={foco}
+            onFoco={setFoco}
+            vista={vista}
+            onVista={setVista}
+            seguirId={seguirId}
+            onSeguir={setSeguirId}
+            cadenaSeguida={cadenaSeguida}
+            onDetail={setDetail}
+            totalHuecos={totalHuecos}
+            huecoDespachos={huecoDespachos}
+            despachosParciales={despachosParciales}
+            huerfanaCorridas={huerfanaCorridas}
+            unidadDe={unidadDe}
+          />
 
           {vista === "cadena" && (
             <>
-            {/* Controles: buscar dentro de la cadena, ordenar y escalar el dibujo. */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative min-w-[15rem] flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Buscar GTF, especie, destino o «corrida 2»…"
-                  aria-label="Buscar en la cadena de custodia"
-                  className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-9 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] focus:outline-none"
-                />
-                {query && (
-                  <button type="button" onClick={() => setQuery("")} title="Limpiar búsqueda" className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
-                    <XIcon className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-              {matchIds && (
-                <span className="shrink-0 text-xs font-bold text-[var(--text-secondary)]">
-                  {matchIds.size} {matchIds.size === 1 ? "coincidencia" : "coincidencias"}
-                </span>
-              )}
-
-              {/* Recorrer los eslabones sin cerrar de a uno: los fija y trae la
-                  vista hasta ellos. Buscarlos a ojo en una cadena larga es el
-                  trabajo lento del cierre de mes. */}
-              {idsConProblema.length > 0 && (
-                <button
-                  type="button"
-                  onClick={irAlSiguienteHueco}
-                  title="Fijar el siguiente eslabón sin cerrar y traer la vista hasta él"
-                  className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 text-xs font-bold text-[var(--data-warning-700)] transition hover:brightness-105 dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
-                >
-                  <Locate className="h-3.5 w-3.5" />
-                  Ir al hueco
-                  <span className="font-mono tabular-nums">
-                    {(huecoIdx % idsConProblema.length) + 1}/{idsConProblema.length}
-                  </span>
-                </button>
-              )}
-
-              {/* Orden de las columnas: por línea del libro, por urgencia o por tamaño. */}
-              <div className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-                <span className="flex h-full items-center gap-1.5 border-r-2 border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)]">
-                  <ArrowDownUp className="h-3.5 w-3.5" aria-hidden="true" /> Orden
-                </span>
-                {ORDENES.map((o) => (
-                  <button
-                    key={o.key} type="button" title={o.hint} onClick={() => setOrden(o.key)} aria-pressed={orden === o.key}
-                    className={`h-full px-2.5 text-xs font-bold transition ${orden === o.key ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Zoom: con muchas líneas la cadena no entra; achicar la deja de un vistazo. */}
-              <div className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-                <button type="button" title="Alejar" aria-label="Alejar" onClick={() => setZoom((z) => Math.max(ZOOM_MIN, Number((z - 0.15).toFixed(2))))} disabled={zoom <= ZOOM_MIN} className="flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
-                  <ZoomOut className="h-4 w-4" />
-                </button>
-                <button type="button" title="Restablecer el tamaño" onClick={() => setZoom(1)} className="h-full border-x-2 border-[var(--rule-base)] px-2 font-mono text-xs font-bold tabular-nums text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
-                  {Math.round(zoom * 100)}%
-                </button>
-                <button type="button" title="Ajustar: que la cadena entre entera en la pantalla" aria-label="Ajustar al ancho" onClick={ajustarAlAncho} className="flex h-full w-9 items-center justify-center border-r-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
-                  <Maximize2 className="h-4 w-4" />
-                </button>
-                <button type="button" title="Acercar" aria-label="Acercar" onClick={() => setZoom((z) => Math.min(ZOOM_MAX, Number((z + 0.15).toFixed(2))))} disabled={zoom >= ZOOM_MAX} className="flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
-                  <ZoomIn className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Agrupar: con muchas líneas el grafo no entra en pantalla. Se
-                  activa solo, pero se puede forzar o desarmar a mano. */}
-              <button
-                type="button"
-                onClick={() => setAgruparManual((v) => (v === null ? !hayAgrupacion : !v))}
-                aria-pressed={hayAgrupacion}
-                title={hayAgrupacion ? "Ver línea por línea" : "Agrupar por especie, producto y destino"}
-                className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition ${
-                  hayAgrupacion
-                    ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 text-[var(--accent)]"
-                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-                }`}
-              >
-                <Layers className="h-4 w-4" /> {hayAgrupacion ? "Agrupado" : "Agrupar"}
-              </button>
-              {hayAgrupacion && expandidos.size > 0 && (
-                <button type="button" onClick={() => setExpandidos(new Set())} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
-                  Cerrar los {expandidos.size} grupos abiertos
-                </button>
-              )}
-
-              {foco !== "todos" && (
-                <button type="button" onClick={() => setFoco("todos")} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 px-3 text-xs font-bold text-[var(--accent)]">
-                  <Maximize2 className="h-3.5 w-3.5" /> Ver toda la cadena
-                </button>
-              )}
-            </div>
-
+            <CtpRadarControles
+              query={query}
+              onQuery={setQuery}
+              matchIds={matchIds}
+              idsConProblema={idsConProblema}
+              orden={orden}
+              onOrden={setOrden}
+              zoom={zoom}
+              onZoom={setZoom}
+              onAjustarAlAncho={ajustarAlAncho}
+              onSiguienteHueco={irAlSiguienteHueco}
+              totalHuecos={totalHuecos}
+              huecoIdx={huecoIdx}
+              agruparManual={agruparManual}
+              onAgruparManual={setAgruparManual}
+              hayAgrupacion={hayAgrupacion}
+              expandidos={expandidos}
+              onExpandidos={setExpandidos}
+              foco={foco}
+              onFoco={setFoco}
+            />
             {/* Leyenda */}
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
               <Legend swatch="var(--accent)" icon={PackageOpen} text="Ingreso (GTF)" />
@@ -863,53 +663,3 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
 // ─── Piezas internas ───────────────────────────────────────────────────────
 
 /** Medidor grande: el número que se lee primero, con su barra. */
-function Medidor({ pct, titulo, detalle, neutro }: { pct: number; titulo: string; detalle: string; neutro?: boolean }) {
-  // El consumo de materia prima NO es una nota: tener stock sin procesar es
-  // normal. Sólo la trazabilidad se semaforiza.
-  const tono = neutro
-    ? { texto: "text-[var(--text-primary)]", barra: "bg-[var(--accent)]" }
-    : pct === 100
-      ? { texto: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", barra: "bg-[var(--data-success-500)]" }
-      : pct >= 80
-        ? { texto: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]", barra: "bg-[var(--data-warning-500)]" }
-        : { texto: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]", barra: "bg-[var(--data-error-500)]" };
-  return (
-    // La barra va debajo y a todo el ancho: al costado del texto el `flex-1`
-    // colapsaba a un guioncito y la proporción dejaba de leerse.
-    <div className="space-y-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2.5">
-      <div className="flex items-baseline gap-2">
-        <span className={`font-mono text-2xl font-extrabold tabular-nums leading-none ${tono.texto}`}>{pct}%</span>
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-[var(--text-primary)]">{titulo}</p>
-          <p className="text-xs text-[var(--text-tertiary)]">{detalle}</p>
-        </div>
-      </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--rule-base)]" role="img" aria-label={`${pct}% — ${titulo}`}>
-        <div className={`h-full rounded-full transition-[width] duration-[var(--dur-slow)] ${tono.barra}`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
-
-/** Fila de la lista de eslabones sin cerrar. */
-function HuecoFila({
-  icon: Icon, tono, titulo, detalle, accion, onClick,
-}: {
-  icon: typeof Truck; tono: "warning" | "info"; titulo: string; detalle: string; accion: string; onClick: () => void;
-}) {
-  const color = tono === "warning" ? "text-[var(--data-warning-600)]" : "text-[var(--data-info-500)]";
-  return (
-    <li className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2">
-      <div className="flex min-w-0 items-center gap-2 text-sm">
-        <Icon className={`h-4 w-4 shrink-0 ${color}`} />
-        <span>
-          <span className="font-bold text-[var(--text-primary)]">{titulo}</span>
-          <span className="text-[var(--text-tertiary)]"> · {detalle}</span>
-        </span>
-      </div>
-      <button type="button" onClick={onClick} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)]">
-        <Eye className="h-3.5 w-3.5" /> {accion}
-      </button>
-    </li>
-  );
-}
