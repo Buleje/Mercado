@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Plus, RefreshCw, Search, Boxes, Truck, AlertCircle, X as XIcon,
-  Scale, PackageCheck, PackagePlus, Link2, Calculator, FileText,
+  Scale, PackageCheck, PackagePlus, Link2, Calculator, FileText, Download,
   ArrowUp, ArrowDown, ArrowUpDown,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
@@ -24,11 +24,24 @@ import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
 import CtpSimuladorModal from "./CtpSimuladorModal";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
+import CtpFiltrosPanel, { BotonFiltros, usePanelFiltros } from "./ctp-filtros-panel";
+import {
+  contarFiltros,
+  facetasDeSeccion,
+  filtrarSeccion,
+  totalesDeSeccion,
+  type FiltrosSeccion,
+} from "@/lib/forestal/ctp-secciones-filtro";
+import { nombreArchivoSeccion, seccionACsv } from "@/lib/forestal/ctp-secciones-csv";
 
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
 import { type CtpEntry, type CtpSection, Th, Td, n2 } from "./ctp-section-shared";
 import { IconAction, TablaSkeleton } from "./ctp-shared";
+
+/** Una tarjeta que filtra se ve hundida: si no, nadie sabe por qué la tabla
+ *  de abajo tiene menos filas. */
+const ANILLO_ACTIVO = "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]";
 
 const SECTION_META: Record<CtpSection, { label: string; icon: typeof Boxes; cta: string; empty: string }> = {
   produccion: { label: "Producción", icon: Boxes, cta: "Nueva producción", empty: "Sin transformaciones registradas. Registrá la primera para convertir materia prima en producto." },
@@ -73,6 +86,12 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
   /** Sólo las guías que todavía no tienen su ANEXO N° 04 emitido. */
   const [soloSinAnexo, setSoloSinAnexo] = useState(false);
   const [sort, setSort] = useState<{ by: "fecha" | "cantidad" | "rend" | null; dir: "asc" | "desc" }>({ by: null, dir: "desc" });
+  // Facetas (especie / producto / destino / CITES). Se calculan en el cliente:
+  // esta vista trae TODO el período en una carga, así que la DB no tiene nada
+  // que agregar — y las opciones no pueden mentir sobre lo que hay.
+  const [facetas, setFacetas] = useState<FiltrosSeccion>({});
+  const activos = contarFiltros(facetas);
+  const { panelId, abierto, alternar } = usePanelFiltros(activos);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -171,8 +190,12 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
     [entries, conAnexo, section],
   );
 
+  /** Opciones de los selectores: salen de lo cargado, no de un catálogo. */
+  const opciones = useMemo(() => facetasDeSeccion(entries), [entries]);
+
   const visible = useMemo(() => {
-    const porEstado = statusFilter ? entries.filter((e) => e.status === statusFilter) : entries;
+    const porFaceta = filtrarSeccion(entries, facetas);
+    const porEstado = statusFilter ? porFaceta.filter((e) => e.status === statusFilter) : porFaceta;
     // "Sin anexo" sólo tiene sentido sobre líneas vivas: una anulada no se ampara.
     const list = soloSinAnexo
       ? porEstado.filter((e) => e.status === "registrado" && !conAnexo.has(e.id))
@@ -183,7 +206,27 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
       : sort.by === "cantidad" ? Number(e.quantity ?? 0)
       : Number(e.rendimientoPct ?? 0);
     return [...list].sort((a, b) => { const d = val(a) - val(b); return sort.dir === "asc" ? d : -d; });
-  }, [entries, statusFilter, sort, soloSinAnexo, conAnexo]);
+  }, [entries, facetas, statusFilter, sort, soloSinAnexo, conAnexo]);
+
+  /** Totales de lo que se está viendo (sin anuladas: en el libro no cuentan). */
+  const totalesVista = useMemo(() => totalesDeSeccion(visible), [visible]);
+
+  /** Descarga lo filtrado, con las columnas de la sección. */
+  function descargarCsv() {
+    const csv = seccionACsv(section, visible);
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nombreArchivoSeccion(section, period.label);
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    pushToast({
+      tono: "success",
+      msg: `${visible.length} ${visible.length === 1 ? "línea descargada" : "líneas descargadas"}`,
+      detail: "Se abre en Excel con las columnas ya separadas.",
+    });
+  }
 
   const toggleSort = (by: "fecha" | "cantidad" | "rend") =>
     setSort((s) => (s.by === by ? { by, dir: s.dir === "asc" ? "desc" : "asc" } : { by, dir: "desc" }));
@@ -192,7 +235,15 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <StatCard label="Líneas registradas" value={String(kpis.count)} icon={Icon} emphasis="neutral" />
+        <StatCard
+          label="Líneas registradas"
+          value={String(kpis.count)}
+          subValue={statusFilter === "registrado" ? "Filtrando por estas" : "Ver solo las vigentes"}
+          icon={Icon}
+          emphasis="neutral"
+          onClick={() => setStatusFilter((f) => (f === "registrado" ? "" : "registrado"))}
+          className={statusFilter === "registrado" ? ANILLO_ACTIVO : undefined}
+        />
         <StatCard label={section === "produccion" ? "Producido total" : "Despachado total"} value={n2(kpis.totalQty)} subValue="suma de cantidades" icon={PackageCheck} emphasis="success" />
         {section === "produccion"
           ? <StatCard label="Rendimiento prom." value={`${kpis.avgRend.toFixed(1)}%`} subValue={`ponderado · ${n2(kpis.consumido)} m³ consumidos`} icon={Scale} emphasis={kpis.avgRend > 0 ? "success" : "neutral"} />
@@ -208,6 +259,16 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
         {/* Una sola fila en móvil: los secundarios como cuadrados con tooltip,
             el CTA se estira. Antes cada uno era una caja de ancho completo. */}
         <div className="flex items-center gap-2">
+          <BotonFiltros activos={activos} abierto={abierto} panelId={panelId} onToggle={alternar} />
+          <button
+            type="button"
+            onClick={descargarCsv}
+            disabled={visible.length === 0}
+            title={`Descargar en Excel/CSV las ${visible.length} líneas de este filtro`}
+            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60 max-sm:w-12 max-sm:px-0"
+          >
+            <Download className="h-4 w-4" /> <span className="max-sm:sr-only">Descargar</span>
+          </button>
           <button type="button" onClick={load} disabled={loading} aria-label="Recargar" title="Recargar" className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60 max-sm:w-12 max-sm:px-0">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> <span className="max-sm:sr-only">Recargar</span>
           </button>
@@ -254,6 +315,24 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
             <EntryChip label="Anulados" count={statusCounts.anulado} active={statusFilter === "anulado"} tone="muted" onClick={() => setStatusFilter((f) => (f === "anulado" ? "" : "anulado"))} />
           )}
         </div>
+      )}
+
+      {abierto && (
+        <CtpFiltrosPanel
+          id={panelId}
+          activos={activos}
+          selects={[
+            { id: "species", label: "Especie", value: facetas.species ?? "", options: opciones.species },
+            { id: "product", label: "Producto", value: facetas.product ?? "", options: opciones.products },
+            ...(section === "despacho"
+              ? [{ id: "destino", label: "Destino", value: facetas.destino ?? "", options: opciones.destinos }]
+              : []),
+          ]}
+          toggles={[{ id: "cites", label: "CITES", on: facetas.cites === true }]}
+          onSelect={(id, valor) => setFacetas((f) => ({ ...f, [id]: valor || undefined }))}
+          onToggle={() => setFacetas((f) => ({ ...f, cites: f.cites === true ? undefined : true }))}
+          onLimpiar={() => setFacetas({})}
+        />
       )}
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
@@ -356,6 +435,28 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
               </tr>
             ))}
           </tbody>
+          {visible.length > 0 && (
+            <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+              <tr>
+                <td colSpan={4} className="px-4 py-3 text-sm font-bold text-[var(--text-secondary)]">
+                  {totalesVista.lineas} {totalesVista.lineas === 1 ? "línea vigente" : "líneas vigentes"} en pantalla
+                </td>
+                {section === "produccion" ? (
+                  <>
+                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.consumido.toFixed(4)}</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.cantidad.toFixed(4)}</td>
+                    <td colSpan={3} />
+                  </>
+                ) : (
+                  <>
+                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.cantidad.toFixed(4)}</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.piezas}</td>
+                    <td colSpan={4} />
+                  </>
+                )}
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
 
