@@ -203,6 +203,7 @@ export const SPEC_GATED_MODULE_IDS = new Set<string>([
   "loth-libro-operaciones",
   "gtf-emisor",
   "forestal-herramientas",
+  "forestal-tramites",
   "cacao-acopio",
   "recetas-medicas",
   "cuero-trazabilidad",

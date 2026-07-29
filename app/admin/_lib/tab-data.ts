@@ -53,6 +53,7 @@ import {
   TreePine,
   Layers,
   Wrench,
+  Stamp,
   Leaf,
   Megaphone,
   Gift,
@@ -138,6 +139,7 @@ export const ALL_TABS = [
   { id: "forestal-lotes" as Tab, label: "Lotes de Producción (Forestal)", icon: Layers },
   { id: "loth-libro-operaciones" as Tab, label: "Libro Títulos Hab. (Forestal)", icon: TreePine },
   { id: "forestal-herramientas" as Tab, label: "Herramientas Forestales", icon: Wrench },
+  { id: "forestal-tramites" as Tab, label: "Trámites y Oficios (Forestal)", icon: Stamp },
   { id: "cacao-acopio" as Tab, label: "Acopio de Cacao (Agrícola)", icon: Leaf },
 ] as const;
 

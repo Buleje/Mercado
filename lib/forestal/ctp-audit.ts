@@ -42,6 +42,8 @@ export type CtpAuditEntity =
   // KV: cubicaciones guardadas del cubicador — la medición del lote, previa al
   // libro (al libro entra después como producción, con su propio registro).
   | "ForestCubicacion"
+  /** Trámite/oficio presentado a la autoridad (ADR-308). */
+  | "ForestTramite"
   // KV: ANEXO N° 04 emitido (lista de productos transformados de la GTF). No es
   // modelo Prisma: es el PAPEL que se entregó, guardado para poder re-imprimir
   // el mismo documento ante una fiscalización.
@@ -95,6 +97,11 @@ export type CtpAuditAction =
   | "ctp_planta_asignar"
   // Cubicaciones guardadas del cubicador (la medición del lote, previa al libro)
   | "ctp_cubicacion_create"
+  // Trámites y oficios ante la autoridad (ADR-308): qué se presentó y cuándo es
+  // parte del expediente, no metadata — va al mismo rastro que el libro.
+  | "ctp_tramite_create"
+  | "ctp_tramite_update"
+  | "ctp_tramite_delete"
   | "ctp_cubicacion_update"
   | "ctp_cubicacion_delete"
   // ANEXO N° 04 emitido con la GTF (lista de productos transformados)

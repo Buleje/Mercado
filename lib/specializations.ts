@@ -41,6 +41,7 @@ export type SpecializationKey =
   | "spec:forestal:loth-libro"
   | "spec:forestal:gtf-emisor"
   | "spec:forestal:herramientas"
+  | "spec:forestal:tramites"
   | "spec:agricola:cacao-acopio"
   | "spec:salud:recetas-medicas"
   | "spec:textil:cuero";
@@ -53,6 +54,16 @@ export const SPECIALIZATIONS: Record<SpecializationKey, Specialization> = {
     description:
       "Registra ingresos de madera al Centro de Transformación Primaria. Compatible con LOE-CTP SERFOR (interno, no oficial).",
     moduleId: "ctp-libro-operaciones",
+    recommendedIndustry: "madereria",
+    status: "available",
+  },
+  "spec:forestal:tramites": {
+    key: "spec:forestal:tramites",
+    vertical: "forestal",
+    name: "Trámites y Oficios (Forestal)",
+    description:
+      "Genera las solicitudes que el CTP presenta a la autoridad (visado de talonario de GTF, inspección de campo, actualización de datos, descargo ante supervisión, permiso CITES) con el membrete legal y los datos del Libro, y lleva el expediente de qué se presentó (ADR-308).",
+    moduleId: "forestal-tramites",
     recommendedIndustry: "madereria",
     status: "available",
   },

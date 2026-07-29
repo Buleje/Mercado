@@ -78,6 +78,7 @@ export type Tab =
   | "forestal-lotes"         // Forestal: Lotes de producción/comercialización (ADR-136)
   | "loth-libro-operaciones" // Forestal: LO-TH Títulos Habilitantes (ADR-125)
   | "forestal-herramientas"  // Forestal: Herramientas (cubicador por voz, etc.)
+  | "forestal-tramites"      // Forestal: Trámites y oficios a SERFOR/ARFFS/OSINFOR (ADR-308)
   | "cacao-acopio"; // Agrícola: Acopio & Beneficio de Cacao (ADR-128)
 
 /**
@@ -142,5 +143,6 @@ export const VALID_TABS: readonly Tab[] = [
   "forestal-lotes",
   "loth-libro-operaciones",
   "forestal-herramientas",
+  "forestal-tramites",
   "cacao-acopio",
 ] as const;
