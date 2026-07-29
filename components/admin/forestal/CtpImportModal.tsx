@@ -23,6 +23,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ChevronDown,
+  Columns3,
   Clock,
   Download,
   FileSpreadsheet,
@@ -30,7 +31,14 @@ import {
   Upload,
 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { descargarPlantillaLoCtp, parseProduccionXlsx, parseSalidaXlsx, parseWoodEntriesXlsx } from "@/lib/forestal/ctp-import";
+import { descargarPlantillaLoCtp, filasAIngresos, parseProduccionXlsx, parseSalidaXlsx, parseWoodEntriesXlsx, type FilaCruda } from "@/lib/forestal/ctp-import";
+import {
+  CAMPOS_INGRESO,
+  duplicadosEnArchivo,
+  faltantesDelMapeo,
+  type GrupoDuplicado,
+  type MapeoIngreso,
+} from "@/lib/forestal/ctp-import-mapeo";
 
 type Registro = "ingresos" | "produccion" | "salida";
 type ImportMode = Registro | "completo";
@@ -46,6 +54,19 @@ interface ImportLogRow { detail: string; user: string; createdAt: string; archiv
 
 const IMPORT_URL = "/api/admin/forestal/wood-entries/import";
 
+/** 1 → A, 27 → AA. El operador ubica la columna por su letra en Excel, no por
+ *  el índice: "la B" es una instrucción que puede seguir. */
+function letraColumna(n: number): string {
+  let s = "";
+  let x = n;
+  while (x > 0) {
+    const r = (x - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    x = Math.floor((x - 1) / 26);
+  }
+  return s || "?";
+}
+
 export default function CtpImportModal({ onClose, onImported }: { onClose: () => void; onImported: (registro: Registro) => void }) {
   const [phase, setPhase] = useState<"idle" | "parsing" | "preview" | "committing" | "done">("idle");
   const [mode, setMode] = useState<ImportMode>("completo");
@@ -60,6 +81,15 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<ImportLogRow[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Ajuste de columnas (sólo Ingresos): cabeceras + filas crudas del archivo, el
+  // mapeo vigente y si el panel está abierto. Con esto una planilla propia
+  // ("Guía", "m3 recibidos") se importa sin reescribir el Excel.
+  const [cabeceras, setCabeceras] = useState<string[]>([]);
+  const [filasCrudas, setFilasCrudas] = useState<FilaCruda[]>([]);
+  const [mapeo, setMapeo] = useState<MapeoIngreso | null>(null);
+  const [verMapeo, setVerMapeo] = useState(false);
+  /** GTF repetidas DENTRO del archivo (el server sólo ve las que ya están). */
+  const [duplicados, setDuplicados] = useState<GrupoDuplicado[]>([]);
 
   const isCombined = mode === "completo";
 
@@ -111,6 +141,11 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
         if (res.ingresos.length === 0) throw new Error("El archivo no tiene filas de ingreso en la hoja «1. Ingreso» / «Ingresos».");
         parsedRows = res.ingresos;
         setFormat(res.format);
+        // Guardar lo crudo: re-mapear no vuelve a leer el archivo.
+        setCabeceras(res.cabeceras ?? []);
+        setFilasCrudas(res.filas ?? []);
+        setMapeo(res.mapeo ?? null);
+        setDuplicados(duplicadosEnArchivo(res.ingresos));
       }
       setRows(parsedRows);
       const r = await fetch(IMPORT_URL, {
@@ -130,6 +165,31 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
     }
   }
 
+  /** Cambia la columna de un campo y re-genera la previsualización. El preview
+   *  del server se vuelve a pedir: es el que sabe qué GTF ya está en el libro. */
+  async function cambiarColumna(campo: keyof MapeoIngreso, col: number | null) {
+    if (!mapeo) return;
+    const nuevo: MapeoIngreso = { ...mapeo, [campo]: col };
+    setMapeo(nuevo);
+    const ingresos = filasAIngresos(filasCrudas, nuevo);
+    setRows(ingresos);
+    setDuplicados(duplicadosEnArchivo(ingresos));
+    try {
+      const r = await fetch(IMPORT_URL, {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({ mode: "preview", registro: "ingresos", ingresos }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
+      setDetalle(j.detalle ?? []);
+      setResumen(j.resumen ?? null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
   async function commit() {
     setPhase("committing");
     setError(null);
@@ -138,6 +198,9 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
+        // Se mandan TODAS las filas, duplicadas incluidas: el server las salta
+        // (`seenInBatch`) y las REPORTA fila por fila. Filtrarlas acá haría
+        // desaparecer del informe la fila que el operador quiere entender.
         body: JSON.stringify({ mode: "commit", registro: mode, fileName: fileName ?? undefined, [mode as Registro]: rows }),
       });
       const j = await r.json().catch(() => ({}));
@@ -191,6 +254,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
 
   function reset() {
     setPhase("idle"); setDetalle([]); setResumen(null); setCombined(null); setCreadosPorReg({});
+    setCabeceras([]); setFilasCrudas([]); setMapeo(null); setVerMapeo(false); setDuplicados([]);
   }
 
   async function descargarPlantilla() {
@@ -354,6 +418,79 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               {resumen.difieren > 0 && <Chip tone="warning" label={`${resumen.difieren} difieren`} />}
               {resumen.errores > 0 && <Chip tone="error" label={`${resumen.errores} con error`} />}
             </div>
+
+            {/* Ajuste de columnas — sólo Ingresos y sólo si hay mapeo (el archivo
+                se leyó por columnas, no por hoja fija). Un aserradero con su
+                propia planilla lo necesita antes de poder importar nada. */}
+            {mode === "ingresos" && mapeo && phase !== "done" && (
+              <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+                <button
+                  type="button"
+                  onClick={() => setVerMapeo((v) => !v)}
+                  aria-expanded={verMapeo}
+                  className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"
+                >
+                  <Columns3 className="h-4 w-4" />
+                  Columnas del archivo
+                  <ChevronDown className={`h-4 w-4 transition-transform ${verMapeo ? "rotate-180" : ""}`} />
+                </button>
+                <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                  {faltantesDelMapeo(mapeo).length > 0
+                    ? `Falta asignar: ${faltantesDelMapeo(mapeo).map((f) => f.label).join(", ")}. Sin eso las filas entran incompletas.`
+                    : "Detectadas automáticamente. Abrí si tu planilla usa otros nombres."}
+                </p>
+                {verMapeo && (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {CAMPOS_INGRESO.map((def) => (
+                      <label key={def.campo} className="flex flex-col gap-1.5">
+                        <span className="flex items-center gap-1 text-xs font-bold text-[var(--text-primary)]">
+                          {def.label}
+                          {def.requerido && <span className="text-[var(--data-error-600)]">*</span>}
+                        </span>
+                        <select
+                          value={mapeo[def.campo] ?? ""}
+                          onChange={(e) => void cambiarColumna(def.campo, e.target.value ? Number(e.target.value) : null)}
+                          className={`h-11 w-full rounded-xl border-2 bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none ${
+                            def.requerido && mapeo[def.campo] == null
+                              ? "border-[var(--data-error-500)]"
+                              : "border-[var(--rule-base)]"
+                          }`}
+                        >
+                          <option value="">— sin columna —</option>
+                          {cabeceras.map((h, i) =>
+                            i === 0 || !h ? null : (
+                              <option key={i} value={i}>
+                                {letraColumna(i)} · {h}
+                              </option>
+                            ),
+                          )}
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* GTF repetidas en el MISMO archivo: el server sólo ve las que ya
+                están en el libro, esto es el otro caso (copiar/pegar en Excel). */}
+            {/* GTF repetidas en el MISMO archivo. El server ya importa una sola
+                vez cada una (`seenInBatch`) — acá no hay opción que ofrecer,
+                hay algo que AVISAR: el Excel viene con filas duplicadas y el
+                operador tiene que saberlo antes de mandarlo a su ARFFS. */}
+            {mode === "ingresos" && duplicados.length > 0 && phase !== "done" && (
+              <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  <strong>
+                    {duplicados.length} {duplicados.length === 1 ? "GTF viene repetida" : "GTF vienen repetidas"} en el archivo
+                  </strong>{" "}
+                  — {duplicados.slice(0, 3).map((d) => `${d.gtfNumber} (filas ${d.filas.join(", ")})`).join(" · ")}
+                  {duplicados.length > 3 ? ` y ${duplicados.length - 3} más` : ""}. Cada una se importa{" "}
+                  <strong>una sola vez</strong> (la primera); revisá el archivo si esperabas dos ingresos distintos.
+                </span>
+              </p>
+            )}
 
             {resumen.difieren > 0 && (
               <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-xs text-[var(--data-warning-700)]">

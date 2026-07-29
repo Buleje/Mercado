@@ -13,6 +13,11 @@
  */
 
 import ExcelJS from "exceljs";
+import {
+  detectarMapeo,
+  normalizarCabecera,
+  type MapeoIngreso,
+} from "./ctp-import-mapeo";
 
 export interface ImportedIngreso {
   /** Fila del Excel (1-indexed) — para reportar errores contra el archivo. */
@@ -40,16 +45,22 @@ export interface ParseResult {
   sheet: string | null;
   ingresos: ImportedIngreso[];
   error?: string;
+  /** Cabeceras crudas del Excel (1-based, [0] vacío) — para el ajuste manual. */
+  cabeceras?: string[];
+  /** Filas crudas con su número: permiten re-mapear sin volver a leer el archivo. */
+  filas?: FilaCruda[];
+  /** El mapeo que se usó (el detectado). El operador puede cambiarlo y re-mapear. */
+  mapeo?: MapeoIngreso;
 }
 
-/** Normaliza una cabecera: minúsculas, sin acentos, sin puntuación. */
-const norm = (s: unknown): string =>
-  String(s ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
+/** Una fila del Excel tal cual, con su número visible para el operador. */
+export interface FilaCruda {
+  row: number;
+  valores: unknown[];
+}
+
+/** Alias corto para el uso interno del módulo (se llama en ~8 lugares). */
+const norm = normalizarCabecera;
 
 const ORIGIN_MAP: Record<string, string> = {
   "concesion forestal": "concesion", concesion: "concesion",
@@ -137,75 +148,82 @@ export async function parseWoodEntriesXlsx(buffer: ArrayBuffer, opts?: { strict?
   }));
   if (!ws) return { ok: false, format: "desconocido", sheet: null, ingresos: [], error: "No se encontró una hoja de Ingresos (esperada «1. Ingreso» o «Ingresos»)." };
 
-  const headers: string[] = [];
-  ws.getRow(1).eachCell((cell, col) => { headers[col] = norm(cell.value); });
-  // Prioridad POR KEYWORD: prueba la 1ª keyword en todas las columnas, luego la
-  // 2ª, etc. Así «codigo de origen» gana sobre «n fuente de origen» (ambas tienen
-  // «origen»); si buscara por columna, agarraría la primera que matchee cualquiera.
-  const findCol = (...keys: string[]): number | null => {
-    for (const k of keys) {
-      for (let c = 1; c < headers.length; c++) {
-        if (headers[c]?.includes(k)) return c;
-      }
-    }
-    return null;
-  };
+  const cabeceras: string[] = [];
+  ws.getRow(1).eachCell((cell, col) => { cabeceras[col] = cellText(cell.value); });
 
-  const cGtf = findCol("n de documento", "n gtf", "gtf");
-  const cFecha = findCol("fecha de ingreso", "fecha ingreso", "fecha");
-  const cTitular = findCol("titular");
-  const cEspecie = findCol("especie");
-  const cCientifico = findCol("cientifico");
-  const cPermiso = findCol("permiso cites", "n permiso");
-  const cCites = findCol("cites"); // el 1º con "cites" = la col booleana (antes que "n permiso cites")
-  const cProducto = findCol("tipo de producto", "producto");
-  const cCantidad = findCol("cantidad", "volumen");
-  const cOrigen = findCol("codigo de origen", "origen procedencia", "origen");
-  const cObs = findCol("observaciones", "notas");
+  // Qué columna es cada campo: lo decide `detectarMapeo` (single source con el
+  // ajuste manual del modal). Antes esta función tenía su propio `findCol` y el
+  // operador no tenía forma de corregirlo cuando su planilla no matcheaba.
+  const mapeo = detectarMapeo(cabeceras);
 
   const format: ParseResult["format"] = /1\.?\s*ingreso/i.test(ws.name) ? "oficial" : "interno";
-  const get = (row: ExcelJS.Row, c: number | null): unknown => (c ? row.getCell(c).value : null);
 
-  const ingresos: ImportedIngreso[] = [];
+  const filas: FilaCruda[] = [];
   ws.eachRow((row, rowNum) => {
     if (rowNum === 1) return;
-    const gtf = cellText(get(row, cGtf)).trim();
-    const especie = cellText(get(row, cEspecie)).trim();
-    const cantidad = toNumber(get(row, cCantidad));
-    if (!gtf && !especie && cantidad === 0) return; // fila vacía
+    const valores: unknown[] = [];
+    row.eachCell({ includeEmpty: true }, (cell, col) => { valores[col] = cell.value; });
+    filas.push({ row: rowNum, valores });
+  });
 
-    const obs = cellText(get(row, cObs)).trim();
-    let provider = cellText(get(row, cTitular)).trim();
+  return { ok: true, format, sheet: ws.name, ingresos: filasAIngresos(filas, mapeo), cabeceras, filas, mapeo };
+}
+
+/**
+ * Construye los ingresos desde las filas crudas y un mapeo de columnas.
+ *
+ * Es el mismo camino para el mapeo AUTOMÁTICO y para el que corrige el operador
+ * a mano: si fueran dos, la previsualización mostraría una cosa y la importación
+ * escribiría otra.
+ */
+export function filasAIngresos(filas: FilaCruda[], mapeo: MapeoIngreso): ImportedIngreso[] {
+  const get = (f: FilaCruda, campo: keyof MapeoIngreso): unknown => {
+    const c = mapeo[campo];
+    return c ? f.valores[c] : null;
+  };
+
+  const ingresos: ImportedIngreso[] = [];
+  for (const f of filas) {
+    const gtf = cellText(get(f, "gtfNumber")).trim();
+    const especie = cellText(get(f, "speciesCommonName")).trim();
+    const cantidad = toNumber(get(f, "volumeM3"));
+    if (!gtf && !especie && cantidad === 0) continue; // fila vacía
+
+    const obs = cellText(get(f, "notes")).trim();
+    let provider = cellText(get(f, "providerName")).trim();
     let notes: string | null = obs || null;
+    // Formato oficial: «Observaciones» trae «titular · notas» y no hay columna
+    // de titular. Se parte sólo si el titular no vino por su cuenta.
     if (!provider && obs) {
-      const segs = obs.split("·").map((s) => s.trim());
+      const segs = obs.split("·").map((x) => x.trim());
       provider = segs[0] ?? "";
       notes = segs.slice(1).join(" · ") || null;
     }
 
-    const citesRaw = cCites && cCites !== cPermiso ? norm(get(row, cCites)) : "";
+    const citesRaw = normalizarCabecera(get(f, "speciesCites"));
     const cites = /(^|\s)(si|s|x|true)(\s|$)/.test(citesRaw);
-    const permiso = cellText(get(row, cPermiso)).trim();
-    const origenCell = cellText(get(row, cOrigen)).trim();
-    const { type: originType, region: originRegion } = origenCell ? mapOrigin(origenCell) : { type: "otro", region: null };
-    const productType = mapProduct(cellText(get(row, cProducto)));
+    const permiso = cellText(get(f, "citesPermiso")).trim();
+    const origenCell = cellText(get(f, "originCode")).trim();
+    const { type: originType, region: originRegion } = origenCell
+      ? mapOrigin(origenCell)
+      : { type: "otro", region: null };
+    const productType = mapProduct(cellText(get(f, "productType")));
 
     const issues: string[] = [];
     if (!gtf) issues.push("Sin N° de GTF (origen legal obligatorio)");
     if (!especie) issues.push("Sin especie");
     if (!(cantidad > 0)) issues.push("Cantidad/volumen inválido (≤ 0)");
 
-    const fecha = toISODate(get(row, cFecha));
     ingresos.push({
-      row: rowNum,
+      row: f.row,
       gtfNumber: gtf,
       gtfDate: null,
-      entryDate: fecha,
+      entryDate: toISODate(get(f, "entryDate")),
       providerName: provider || "—",
       originType,
       originRegion,
       speciesCommonName: especie,
-      speciesScientificName: cellText(get(row, cCientifico)).trim() || null,
+      speciesScientificName: cellText(get(f, "speciesScientificName")).trim() || null,
       speciesCites: cites,
       citesPermiso: permiso || null,
       productType,
@@ -213,9 +231,8 @@ export async function parseWoodEntriesXlsx(buffer: ArrayBuffer, opts?: { strict?
       notes: [notes, cites && permiso ? `Permiso CITES: ${permiso}` : ""].filter(Boolean).join(" · ") || null,
       issues,
     });
-  });
-
-  return { ok: true, format, sheet: ws.name, ingresos };
+  }
+  return ingresos;
 }
 
 // ─── Etapa 2: Producción + Consumos (ADR-138) ────────────────────────────────
