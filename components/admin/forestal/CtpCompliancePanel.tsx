@@ -41,14 +41,16 @@ import { useCtpCompliance } from "@/hooks/use-ctp-compliance";
 import { ctpComplianceTone, ctpComplianceBreakdown, type CtpComplianceTone } from "@/lib/forestal/ctp-compliance";
 import { printCumplimiento } from "@/lib/forestal/ctp-cumplimiento-print";
 import { ctpPeriodShortLabel, type CtpPeriod } from "@/lib/forestal/ctp-period";
+import type { CtpIngresosFiltroRapido } from "./ctp-shared";
 
 type ComplianceNavTarget = "ingresos" | "saldos" | "despacho" | "produccion" | "ficha";
 type Severity = "error" | "warning";
 
 interface CtpCompliancePanelProps {
   period: CtpPeriod;
-  /** Salta a la pestaña donde se resuelve la alerta (Ingresos, Saldos, etc.). */
-  onNavigate: (target: ComplianceNavTarget) => void;
+  /** Salta a la pestaña donde se resuelve la alerta (Ingresos, Saldos, etc.),
+   *  con el filtro del caso ya puesto cuando el destino sabe aplicarlo. */
+  onNavigate: (target: ComplianceNavTarget, filtro?: CtpIngresosFiltroRapido) => void;
 }
 
 /** Descriptor de un chequeo: los datos, no el JSX — se ordena y agrupa antes de pintar. */
@@ -62,6 +64,8 @@ interface CheckDescriptor {
   description: string;
   action: string;
   navTarget: ComplianceNavTarget;
+  /** Filtro que deja puesto en el destino (sólo Ingresos lo entiende hoy). */
+  navFiltro?: CtpIngresosFiltroRapido;
   navigateLabel: string;
 }
 
@@ -125,6 +129,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
       description: "SERFOR exige registrar el ingreso dentro de los 2 días hábiles de la operación (RDE D000025-2023).",
       action: "Revisá la columna 'Días registro' en la pestaña Ingresos.",
       navTarget: "ingresos",
+      navFiltro: "fuera-de-plazo",
       navigateLabel: "Ver ingresos",
     },
     {
@@ -137,6 +142,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
       description: "Un ingreso sin validar no cuenta como materia prima disponible en Saldos.",
       action: "Validalos desde la pestaña Ingresos antes de cerrar el período.",
       navTarget: "ingresos",
+      navFiltro: "pendiente",
       navigateLabel: "Ver ingresos",
     },
     {
@@ -155,6 +161,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           ? "Cargá su N° de permiso CITES en la pestaña Ficha CTP."
           : "Verificá que cada una tenga su permiso CITES a mano para una fiscalización.",
       navTarget: cites.length > 0 ? "ficha" : "ingresos",
+      navFiltro: cites.length > 0 ? undefined : "cites",
       navigateLabel: cites.length > 0 ? "Ir a Ficha CTP" : "Ver ingresos",
     },
     {
@@ -170,6 +177,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           : "Cada acta de ingreso CITES acredita su permiso.",
       action: "Cargá el permiso en la Ficha CTP y vinculalo al registrar el ingreso.",
       navTarget: "ingresos",
+      navFiltro: "cites",
       navigateLabel: "Ver ingresos",
     },
     {
@@ -357,7 +365,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {problemas.map((c) => (
-              <ProblemCard key={c.key} check={c} onNavigate={() => onNavigate(c.navTarget)} />
+              <ProblemCard key={c.key} check={c} onNavigate={() => onNavigate(c.navTarget, c.navFiltro)} />
             ))}
           </div>
         </section>

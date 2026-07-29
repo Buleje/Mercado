@@ -28,6 +28,20 @@ export { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermis
 export const CTP_INGRESAR_GTF_KEY = "ctp-ingresar-gtf";
 export const CTP_MODULE_TAB_ID = "ctp-libro-operaciones";
 
+/**
+ * Filtro con el que otra pestaña deja preparada la de Ingresos. Un aviso que
+ * dice "2 ingresos fuera de plazo" y aterriza en la lista completa obliga a
+ * buscar los 2 a ojo; con esto el destino ya muestra exactamente esos.
+ */
+export type CtpIngresosFiltroRapido = "pendiente" | "fuera-de-plazo" | "cites";
+
+/** El filtro + un contador: repetir el mismo salto tiene que volver a aplicarlo
+ *  (si no, la segunda vez el efecto no cambia de valor y no pasa nada). */
+export interface CtpFiltroRapido {
+  tipo: CtpIngresosFiltroRapido;
+  n: number;
+}
+
 export type WoodEntryStatus =
   | "pendiente"
   | "validado"
@@ -69,6 +83,14 @@ export interface WoodEntry {
   createdAt: string;
 }
 
+/** Valor presente en el período + su peso — llena un selector de filtro con lo
+ *  que realmente hay (espejo de `WoodEntryFacet` en la DB class). */
+export interface WoodEntryFacet {
+  value: string;
+  count: number;
+  volumeM3: number;
+}
+
 export interface WoodEntryStats {
   totalCount: number;
   totalVolumeM3: number;
@@ -79,6 +101,10 @@ export interface WoodEntryStats {
   /** Ingresos registrados fuera del plazo SERFOR (>2 días hábiles op→registro). */
   lateCount: number;
   byStatus: Record<WoodEntryStatus, number>;
+  /** Especies / proveedores / productos del período (top 30 por volumen). */
+  species: WoodEntryFacet[];
+  providers: WoodEntryFacet[];
+  products: WoodEntryFacet[];
 }
 
 export const STATUS_META: Record<

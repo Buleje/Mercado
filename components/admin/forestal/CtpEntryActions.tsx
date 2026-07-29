@@ -7,7 +7,7 @@
  * (single source): si cambia una regla de estado, cambia en un solo lugar.
  */
 
-import { Eye, Share2, ThumbsDown, ThumbsUp, XCircle } from "@buleje/design-system/icons";
+import { Copy, Eye, Pencil, Share2, ThumbsDown, ThumbsUp, XCircle } from "@buleje/design-system/icons";
 import { IconAction, type WoodEntry } from "./ctp-shared";
 
 export interface CtpEntryActionsProps {
@@ -24,6 +24,12 @@ export interface CtpEntryActionsProps {
   /** Cadena hacia adelante (¿a dónde fue la madera?). Solo tiene sentido si el
    *  ingreso pudo consumirse — se muestra en validado/procesado. */
   onChain?: (entry: WoodEntry) => void;
+  /** Nuevo ingreso con los datos que se repiten (mismo proveedor, misma
+   *  concesión, misma especie) ya cargados. Un camión trae varias guías. */
+  onDuplicate?: (entry: WoodEntry) => void;
+  /** Corregir un ingreso PENDIENTE (typo de GTF, volumen mal tipeado). Ya
+   *  validado no se edita: se anula con motivo y se registra de nuevo. */
+  onEdit?: (entry: WoodEntry) => void;
   /** mobile-card estira los botones al ancho completo; la tabla los deja inline. */
   block?: boolean;
 }
@@ -40,6 +46,8 @@ export default function CtpEntryActions({
   onValidate,
   onDetail,
   onChain,
+  onDuplicate,
+  onEdit,
   block = false,
 }: CtpEntryActionsProps) {
   if (rejectingId === e.id) {
@@ -86,6 +94,13 @@ export default function CtpEntryActions({
     return (
       <div className="inline-flex items-center gap-1">
         <IconAction icon={Eye} label="Ver ficha completa" onClick={() => onDetail(e)} />
+        {onDuplicate && (
+          <IconAction
+            icon={Copy}
+            label="Nuevo ingreso con estos datos (mismo proveedor, origen y especie)"
+            onClick={() => onDuplicate(e)}
+          />
+        )}
         {onChain && (e.status === "validado" || e.status === "procesado") && (
           <IconAction
             icon={Share2}
@@ -93,6 +108,9 @@ export default function CtpEntryActions({
             label="Cadena: a dónde fue esta madera (corridas y despachos)"
             onClick={() => onChain(e)}
           />
+        )}
+        {onEdit && e.status === "pendiente" && (
+          <IconAction icon={Pencil} label="Corregir los datos del ingreso" onClick={() => onEdit(e)} />
         )}
         {e.status === "pendiente" && (
           <>
@@ -134,6 +152,17 @@ export default function CtpEntryActions({
         <Eye className="h-3.5 w-3.5" />
         Ver
       </button>
+      {onDuplicate && (
+        <button
+          type="button"
+          onClick={() => onDuplicate(e)}
+          title="Nuevo ingreso con estos datos (mismo proveedor, origen y especie)"
+          className={`inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
+        >
+          <Copy className="h-3.5 w-3.5" />
+          Duplicar
+        </button>
+      )}
       {onChain && (e.status === "validado" || e.status === "procesado") && (
         <button
           type="button"
@@ -143,6 +172,17 @@ export default function CtpEntryActions({
         >
           <Share2 className="h-3.5 w-3.5" />
           Cadena
+        </button>
+      )}
+      {onEdit && e.status === "pendiente" && (
+        <button
+          type="button"
+          onClick={() => onEdit(e)}
+          title="Corregir los datos del ingreso"
+          className={`inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          Corregir
         </button>
       )}
       {e.status === "pendiente" && (

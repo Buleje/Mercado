@@ -19,6 +19,12 @@ export interface Pendiente {
   /** Qué hay que hacer, en imperativo. */ titulo: string;
   /** Por qué importa (una línea). */ detalle: string;
   /** Pestaña del Libro donde se resuelve. */ vista: string;
+  /**
+   * Filtro que deja puesta la pestaña de destino, para aterrizar en los casos y
+   * no en la lista entera. Hoy lo entiende Ingresos: `"pendiente"` (estado) y
+   * `"fuera-de-plazo"`.
+   */
+  filtro?: "pendiente" | "fuera-de-plazo";
 }
 
 export interface DatosPendientes {
@@ -115,6 +121,7 @@ export function pendientesDelLibro(d: DatosPendientes): Pendiente[] {
       titulo: "Ingresos por validar",
       detalle: "Hasta validarlos no cuentan como materia prima disponible.",
       vista: "ingresos",
+      filtro: "pendiente",
     },
     {
       clave: "despachos-sin-anexo",

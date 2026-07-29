@@ -54,6 +54,10 @@ export type CtpAuditEntity =
 export type CtpAuditAction =
   // Ingresos de materia prima
   | "ctp_ingreso_create"
+  // Corrección de un ingreso pendiente (typo de GTF, volumen mal tipeado): el
+  // detalle narra campo por campo qué cambió — un libro fiscalizable tiene que
+  // poder responder "¿esto siempre dijo 5.20 m³?".
+  | "ctp_ingreso_update"
   | "ctp_ingreso_validate"
   | "ctp_ingreso_reject"
   | "ctp_ingreso_annul"

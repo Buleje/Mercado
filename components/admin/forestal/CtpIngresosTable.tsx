@@ -11,9 +11,14 @@
  * mobile se sirven cards a medida (CtpIngresoCardMobile). El `hidden` de Tailwind
  * a <640px gana sobre la conversión genérica table→card del shell admin, así que
  * la tabla NO se auto-convierte y no compite con las cards premium.
+ *
+ * 2026-07-29 — orden por columna (el server ordena: con 50 filas por página,
+ * ordenar en el cliente ordenaría sólo la página), cabecera pegajosa y pie con
+ * los totales de lo que se está viendo.
  */
 
-import { TreePine } from "@buleje/design-system/icons";
+import { ArrowDown, ArrowUp, ArrowUpDown, TreePine } from "@buleje/design-system/icons";
+import type { CtpSort, CtpSortField } from "@/hooks/use-ctp-ingresos";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import CtpEntryActions from "./CtpEntryActions";
 import CtpIngresoCardMobile from "./CtpIngresoCardMobile";
@@ -50,6 +55,10 @@ export interface CtpIngresosTableProps {
   onValidate: (id: string) => void;
   onDetail: (entry: WoodEntry) => void;
   onChain: (entry: WoodEntry) => void;
+  onDuplicate: (entry: WoodEntry) => void;
+  onEdit: (entry: WoodEntry) => void;
+  sort: CtpSort;
+  onSort: (field: CtpSortField) => void;
 }
 
 export default function CtpIngresosTable(props: CtpIngresosTableProps) {
@@ -63,6 +72,8 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
     selectedPending,
     setSelectedIds,
     onDetail,
+    sort,
+    onSort,
   } = props;
 
   // Acciones por fila/card: el mismo componente para desktop y mobile.
@@ -77,9 +88,21 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
     onValidate: props.onValidate,
     onDetail,
     onChain: props.onChain,
+    onDuplicate: props.onDuplicate,
+    onEdit: props.onEdit,
   };
   const toggleSelect = (id: string, checked: boolean) =>
     setSelectedIds((prev) => (checked ? [...prev, id] : prev.filter((x) => x !== id)));
+
+  // Totales de lo que está en pantalla. Los KPIs de arriba hablan del período
+  // entero; esto responde "¿y lo que estoy mirando/marcando cuánto suma?".
+  const marcados = entries.filter((e) => selectedIds.includes(e.id));
+  const suma = (rows: WoodEntry[]) => ({
+    vol: rows.reduce((s, e) => s + Number(e.volumeM3 || 0), 0),
+    pz: rows.reduce((s, e) => s + (e.pieces || 0), 0),
+  });
+  const totalPagina = suma(entries);
+  const totalMarcado = suma(marcados);
 
   return (
     <>
@@ -94,9 +117,18 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
       </span>
 
       {/* ── Desktop: tabla (≥640px) ── */}
-      <div className="hidden overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
+      {/* El alto tope + scroll propio sólo se activa con muchas filas: es lo que
+          hace REAL a la cabecera pegajosa (un `sticky` dentro de un contenedor
+          sin scroll no se pega a nada). Con 5 filas no se toca el layout. */}
+      <div
+        className={`hidden overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block ${
+          entries.length > 12 ? "max-h-[75vh] overflow-y-auto" : ""
+        }`}
+      >
         <table className="w-full text-sm">
-          <thead className="bg-[var(--surface-sunken)] text-left">
+          {/* `sticky top-0`: con 50 filas por página, al llegar al final ya no se
+              sabía qué columna era cuál. */}
+          <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left">
             <tr>
               <Th className="w-10">
                 <input
@@ -108,13 +140,13 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                   className="h-4 w-4 accent-[var(--brand-ink)]"
                 />
               </Th>
-              <Th>Fecha</Th>
+              <ThSort field="entryDate" sort={sort} onSort={onSort}>Fecha</ThSort>
               <Th>GTF</Th>
-              <Th>Proveedor / Origen</Th>
-              <Th>Especie</Th>
+              <ThSort field="providerName" sort={sort} onSort={onSort}>Proveedor / Origen</ThSort>
+              <ThSort field="speciesCommonName" sort={sort} onSort={onSort}>Especie</ThSort>
               <Th>Producto</Th>
-              <Th className="text-right">Volumen (m³)</Th>
-              <Th className="text-right">Piezas</Th>
+              <ThSort field="volumeM3" sort={sort} onSort={onSort} align="right">Volumen (m³)</ThSort>
+              <ThSort field="pieces" sort={sort} onSort={onSort} align="right">Piezas</ThSort>
               <Th>Estado</Th>
               <Th className="text-right">Acciones</Th>
             </tr>
@@ -122,17 +154,20 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
           <tbody>
             {entries.map((e) => {
               const tarde = estaFueraDePlazo(e);
+              const marcado = selectedIds.includes(e.id);
               return (
                 <tr
                   key={e.id}
-                  className="border-t border-[var(--rule-soft)] hover:bg-[var(--surface-canvas)]/40"
+                  className={`border-t border-[var(--rule-soft)] transition-colors hover:bg-[var(--surface-canvas)]/40 ${
+                    marcado ? "bg-primary/5" : ""
+                  }`}
                 >
                   <Td>
                     {e.status === "pendiente" && (
                       <input
                         type="checkbox"
                         aria-label={`Seleccionar ingreso ${e.gtfNumber}`}
-                        checked={selectedIds.includes(e.id)}
+                        checked={marcado}
                         onChange={(ev) => toggleSelect(e.id, ev.target.checked)}
                         className="h-4 w-4 accent-[var(--brand-ink)]"
                       />
@@ -143,7 +178,7 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                     {tarde && (
                       <div
                         title={`Registrado ${diasDeRegistro(e)} días después de la operación (plazo ${PLAZO_REGISTRO_DIAS} días hábiles)`}
-                        className="text-xs font-bold text-[var(--data-warning-700)]"
+                        className="text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                       >
                         fuera de plazo
                       </div>
@@ -209,6 +244,24 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
               );
             })}
           </tbody>
+          {entries.length > 0 && (
+            <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+              <tr>
+                <td colSpan={6} className="px-4 py-3 text-sm font-bold text-[var(--text-secondary)]">
+                  {marcados.length > 0
+                    ? `${marcados.length} marcados de ${entries.length} en pantalla`
+                    : `${entries.length} en pantalla`}
+                </td>
+                <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                  {(marcados.length > 0 ? totalMarcado.vol : totalPagina.vol).toFixed(4)}
+                </td>
+                <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                  {marcados.length > 0 ? totalMarcado.pz : totalPagina.pz}
+                </td>
+                <td colSpan={2} />
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
 
@@ -222,8 +275,14 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
               selected={selectedIds.includes(e.id)}
               onToggleSelect={toggleSelect}
               {...actionProps}
+              // Duplicar NO va en la card: en 360px ya conviven Ver, Cadena y
+              // Validar/Rechazar a ancho completo — un cuarto botón los parte.
+              onDuplicate={undefined}
             />
           ))}
+          <p className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm font-bold text-[var(--text-secondary)]">
+            {entries.length} en pantalla · {Number(totalPagina.vol).toFixed(4)} m³ · {totalPagina.pz} piezas
+          </p>
         </div>
       )}
 
@@ -252,6 +311,43 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
 // ─── Piezas internas ───────────────────────────────────────────────────────
 function Th({ children, className }: { children: React.ReactNode; className?: string }) {
   return <th className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}>{children}</th>;
+}
+
+/** Encabezado ordenable. `aria-sort` real (no sólo la flecha) para que un lector
+ *  de pantalla anuncie por qué columna está ordenada la tabla. */
+function ThSort({
+  field,
+  sort,
+  onSort,
+  align = "left",
+  children,
+}: {
+  field: CtpSortField;
+  sort: CtpSort;
+  onSort: (f: CtpSortField) => void;
+  align?: "left" | "right";
+  children: React.ReactNode;
+}) {
+  const activo = sort.by === field;
+  const Icono = !activo ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <th
+      aria-sort={activo ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
+      className={`px-4 py-3 font-bold text-[var(--text-primary)] ${align === "right" ? "text-right" : ""}`}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        title={`Ordenar por ${String(children)}`}
+        className={`inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 font-bold transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] ${
+          align === "right" ? "flex-row-reverse" : ""
+        } ${activo ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}`}
+      >
+        {children}
+        <Icono className={`h-3.5 w-3.5 ${activo ? "" : "opacity-40"}`} aria-hidden="true" />
+      </button>
+    </th>
+  );
 }
 
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {

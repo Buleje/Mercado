@@ -33,11 +33,27 @@ import {
   findSpeciesByCommonName,
 } from "@/data/forestry-species";
 
+/** Lo que se copia al duplicar un ingreso: el camión siguiente del mismo
+ *  proveedor y la misma concesión. Nunca la GTF ni el volumen. */
+export interface WoodEntryPreset {
+  providerName?: string;
+  providerDocument?: string | null;
+  providerDocumentType?: string | null;
+  originType?: string;
+  originCode?: string | null;
+  originRegion?: string | null;
+  originDistrict?: string | null;
+  speciesCommonName?: string;
+  productType?: string;
+}
+
 interface Props {
   onClose: () => void;
   onSaved: (opts?: { keepOpen?: boolean; /** Quedó anotado en el patio, no en el libro. */ offline?: boolean }) => void;
   /** Bandeja monte→planta: abre el form con esta guía ya cargada (sin doble digitación). */
   initialGtfNumber?: string;
+  /** Duplicar: campos repetidos ya cargados (ver WoodEntryPreset). */
+  preset?: WoodEntryPreset;
 }
 
 // Guía emitida (ForestGtf) — para importar sus datos al ingreso.
@@ -154,7 +170,7 @@ const INITIAL: DraftData = {
 // COMPONENT
 // ═════════════════════════════════════════════════════════════════════════
 
-export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Props) {
+export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, preset }: Props) {
   const speciesOptions = useMemo(() => listSpecies(), []);
 
   const [submitting, setSubmitting] = useState(false);
@@ -185,9 +201,10 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
   const [guiaQuery, setGuiaQuery] = useState("");
 
   // Load draft del localStorage. Si el form abre desde la bandeja monte→planta
-  // (initialGtfNumber), la intención es explícita: la guía pisa al borrador.
+  // (initialGtfNumber) o duplicando un ingreso (preset), la intención es
+  // explícita: eso pisa al borrador.
   useEffect(() => {
-    if (initialGtfNumber) return;
+    if (initialGtfNumber || preset) return;
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
       if (raw) {
@@ -197,7 +214,35 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
         }
       }
     } catch {}
-  }, [initialGtfNumber]);
+  }, [initialGtfNumber, preset]);
+
+  // Duplicar un ingreso: lo que se repite camión tras camión (proveedor, origen,
+  // especie, producto) llega armado; lo que cambia (GTF, volumen, piezas) queda
+  // vacío a propósito — un duplicado con la GTF del anterior sería un registro
+  // falso, no un atajo.
+  const presetLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!preset || presetLoadedRef.current) return;
+    presetLoadedRef.current = true;
+    const slug = preset.speciesCommonName
+      ? speciesOptions.find((s) => s.commonName.toLowerCase() === preset.speciesCommonName!.toLowerCase())?.slug
+      : undefined;
+    setData((prev) => ({
+      ...INITIAL,
+      entryDate: prev.entryDate,
+      providerName: preset.providerName ?? "",
+      providerDocument: preset.providerDocument ?? "",
+      providerDocumentType: preset.providerDocumentType ?? INITIAL.providerDocumentType,
+      originType: preset.originType ?? INITIAL.originType,
+      originCode: preset.originCode ?? "",
+      originRegion: preset.originRegion ?? INITIAL.originRegion,
+      originDistrict: preset.originDistrict ?? "",
+      productType: preset.productType ?? INITIAL.productType,
+      speciesSlug: slug ?? (preset.speciesCommonName ? "otro" : INITIAL.speciesSlug),
+      customSpeciesName: slug ? "" : (preset.speciesCommonName ?? ""),
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar con el preset
+  }, [preset]);
 
   // Bandeja monte→planta: pre-cargar la guía apenas abre el form. Ref guard:
   // StrictMode monta doble en dev y sin él la guía se aplicaba 2 veces

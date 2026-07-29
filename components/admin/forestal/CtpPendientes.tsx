@@ -32,8 +32,8 @@ export default function CtpPendientes({
   onIr,
 }: {
   estado: CtpPendientesState;
-  /** Salta a la pestaña donde se resuelve ese pendiente. */
-  onIr: (vista: string) => void;
+  /** Salta a la pestaña donde se resuelve ese pendiente, con su filtro puesto. */
+  onIr: (vista: string, filtro?: Pendiente["filtro"]) => void;
 }) {
   const { lista, cargando, falló, recargar } = estado;
 
@@ -75,7 +75,7 @@ export default function CtpPendientes({
         <button
           key={p.clave}
           type="button"
-          onClick={() => onIr(p.vista)}
+          onClick={() => onIr(p.vista, p.filtro)}
           title={p.detalle}
           className={`inline-flex h-9 items-center gap-2 rounded-full border-2 px-3.5 text-sm transition-colors ${TONO[p.urgencia]}`}
         >

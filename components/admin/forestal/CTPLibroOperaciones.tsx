@@ -29,6 +29,7 @@ import {
   Coins,
   FileSpreadsheet,
   FileText,
+  FolderOpen,
   Globe,
   Lock,
   MapPin,
@@ -44,6 +45,7 @@ import {
 import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import { exportarLibroCtp, exportarLibroCtpOficial } from "@/lib/forestal/ctp-export";
 import { printInformePeriodo } from "@/lib/forestal/ctp-informe";
+import { abrirDossierFiscalizacion } from "@/lib/forestal/ctp-dossier-abrir";
 import { resolveCtpPeriod, type CtpPeriodKey } from "@/lib/forestal/ctp-period";
 import CtpPeriodPicker, { type CtpCustomRange } from "./CtpPeriodPicker";
 import CtpIngresosView from "./CtpIngresosView";
@@ -65,7 +67,12 @@ import CtpAnalisis from "./CtpAnalisis";
 import CtpHealthChip from "./CtpHealthChip";
 import CtpPendientes from "./CtpPendientes";
 import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
-import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
+import {
+  CTP_INGRESAR_GTF_KEY,
+  CTP_MODULE_TAB_ID,
+  type CtpFiltroRapido,
+  type CtpIngresosFiltroRapido,
+} from "./ctp-shared";
 
 type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "planta" | "saldos" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "ficha";
 
@@ -144,7 +151,7 @@ export default function CTPLibroOperaciones() {
   // El cierre mensual está a un click en el selector.
   const [periodKey, setPeriodKey] = useState<CtpPeriodKey>("trimestre");
   const [custom, setCustom] = useState<CtpCustomRange>({ from: "", to: "" });
-  const [exporting, setExporting] = useState<null | "interno" | "oficial" | "informe">(null);
+  const [exporting, setExporting] = useState<null | "interno" | "oficial" | "informe" | "dossier">(null);
   const [exportError, setExportError] = useState<string | null>(null);
   // Puente inverso: GTF que el Libro de Títulos Habilitantes mandó a ingresar.
   const [pendingIngresoGtf, setPendingIngresoGtf] = useState<string | null>(null);
@@ -159,8 +166,16 @@ export default function CTPLibroOperaciones() {
    *  de la cabina y la tira leen la MISMA carga (antes cada uno fetcheaba). */
   const pendientes = useCtpPendientes(period);
 
-  /** Estable: la cabina y los paneles la pasan a efectos (atajos de teclado). */
-  const irA = useCallback((v: string) => setView(v as CtpView), []);
+  /** Filtro que otra pestaña dejó pedido para Ingresos ("mostrame ESOS 2"). */
+  const [filtroIngresos, setFiltroIngresos] = useState<CtpFiltroRapido | null>(null);
+
+  /** Estable: la cabina y los paneles la pasan a efectos (atajos de teclado).
+   *  El 2° argumento deja el destino filtrado — hoy sólo Ingresos lo entiende. */
+  const irA = useCallback((v: string, filtro?: CtpIngresosFiltroRapido) => {
+    setView(v as CtpView);
+    // El contador hace que repetir el MISMO salto vuelva a aplicar el filtro.
+    if (filtro) setFiltroIngresos((prev) => ({ tipo: filtro, n: (prev?.n ?? 0) + 1 }));
+  }, []);
 
   // Levanta el handoff de sessionStorage → abre Ingresos pre-llenado. Se
   // dispara al montar (tab abierto en frío) y cada vez que el tab se re-activa
@@ -188,12 +203,13 @@ export default function CTPLibroOperaciones() {
     return () => window.removeEventListener("admin-tab-activated", onActivated);
   }, [consumirHandoff]);
 
-  async function exportar(kind: "interno" | "oficial" | "informe") {
+  async function exportar(kind: "interno" | "oficial" | "informe" | "dossier") {
     setExporting(kind);
     setExportError(null);
     try {
       if (kind === "informe") await printInformePeriodo(period);
       else if (kind === "oficial") await exportarLibroCtpOficial(period);
+      else if (kind === "dossier") await abrirDossierFiscalizacion(period, period.label);
       else await exportarLibroCtp(period);
     } catch (err) {
       setExportError(err instanceof Error ? err.message : String(err));
@@ -217,6 +233,16 @@ export default function CTPLibroOperaciones() {
    *  menú, no ocupando dos filas de la cabecera todo el tiempo. */
   const acciones: LibroAction[] = useMemo(
     () => [
+      {
+        id: "dossier",
+        label: "Carpeta de fiscalización",
+        hint: "Todo el período en un documento: portada, índice, los 3 registros, existencias, guías y anexos",
+        icon: FolderOpen,
+        tone: "dark",
+        busy: exporting === "dossier",
+        disabled: exporting !== null,
+        onSelect: () => void exportar("dossier"),
+      },
       {
         id: "oficial",
         label: "Formato oficial SERFOR",
@@ -309,6 +335,7 @@ export default function CTPLibroOperaciones() {
             period={period}
             openGtf={pendingIngresoGtf}
             onOpenConsumed={() => setPendingIngresoGtf(null)}
+            filtroRapido={filtroIngresos}
           />
         )}
         {view === "produccion" && <CtpEntriesView key={`prod-${ingresosKey}`} section="produccion" period={period} />}
@@ -316,7 +343,7 @@ export default function CTPLibroOperaciones() {
         {view === "radar" && <CtpTrazaRadar period={period} />}
         {view === "planta" && <CtpPlantaView period={period} />}
         {view === "saldos" && <CtpSaldosView period={period} />}
-        {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
+        {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={irA} />}
         {view === "cierre" && (
           <div className="space-y-6">
             {/* El asistente ordena el trabajo; el panel de abajo sigue siendo

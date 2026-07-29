@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
+import { WoodEntriesDB, WOOD_ENTRY_SORT_FIELDS } from "@/lib/db/wood-entries.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
@@ -57,6 +57,11 @@ const statusEnum = z.enum([
   "procesado",
   "anulado",
 ]);
+
+// Orden del listado — la whitelist vive en la DB class (single source: si se
+// agrega una columna ordenable, el enum de acá se entera solo).
+const sortFieldEnum = z.enum(WOOD_ENTRY_SORT_FIELDS);
+const sortDirEnum = z.enum(["asc", "desc"]);
 
 const createSchema = z.object({
   entryDate: z.coerce.date().optional(),
@@ -130,6 +135,15 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
   const toDate = url.searchParams.get("to");
   const limit = Number(url.searchParams.get("limit") ?? "50");
   const offset = Number(url.searchParams.get("offset") ?? "0");
+  const providerName = url.searchParams.get("provider");
+  const product = url.searchParams.get("product");
+  const cites = url.searchParams.get("cites");
+  const late = url.searchParams.get("late") === "1";
+  // Orden: whitelist en la DB class. Un valor desconocido NO es un 400 —
+  // degrada al default (una URL vieja o un typo no debe romper el listado).
+  const sortParsed = sortFieldEnum.safeParse(url.searchParams.get("sort"));
+  const dirParsed = sortDirEnum.safeParse(url.searchParams.get("dir"));
+  const productParsed = product ? productTypeEnum.safeParse(product) : null;
 
   // Validate status if provided
   const statusParsed = status ? statusEnum.safeParse(status) : null;
@@ -151,6 +165,12 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
     fromDate: parseDate(fromDate),
     toDate: parseDate(toDate),
     search: search ?? undefined,
+    providerName: providerName ?? undefined,
+    productType: productParsed?.success ? productParsed.data : undefined,
+    cites: cites === "1" ? true : cites === "0" ? false : undefined,
+    late: late || undefined,
+    sortBy: sortParsed.success ? sortParsed.data : undefined,
+    sortDir: dirParsed.success ? dirParsed.data : undefined,
     limit,
     offset,
   };

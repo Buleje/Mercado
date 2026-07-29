@@ -66,6 +66,18 @@ export interface WoodEntryCreateInput {
   createdBy: string;
 }
 
+/** Columnas por las que se puede ordenar el listado (whitelist: el `sort` llega
+ *  del cliente y jamás se interpola — se mapea contra esta tabla o se ignora). */
+export const WOOD_ENTRY_SORT_FIELDS = [
+  "entryDate",
+  "volumeM3",
+  "pieces",
+  "providerName",
+  "speciesCommonName",
+  "createdAt",
+] as const;
+export type WoodEntrySortField = (typeof WOOD_ENTRY_SORT_FIELDS)[number];
+
 export interface WoodEntryListFilters {
   status?: WoodEntryStatus;
   speciesCommonName?: string;
@@ -73,6 +85,16 @@ export interface WoodEntryListFilters {
   fromDate?: Date;
   toDate?: Date;
   search?: string; // matches provider/gtf/species
+  /** Proveedor (contains, insensitive) — el chip "solo este proveedor". */
+  providerName?: string;
+  /** Tipo de producto (rolliza/aserrada/…) — igualdad exacta. */
+  productType?: WoodProductType;
+  /** true = solo CITES · false = solo NO-CITES · undefined = ambos. */
+  cites?: boolean;
+  /** true = solo los registrados fuera del plazo SERFOR (días hábiles op→registro). */
+  late?: boolean;
+  sortBy?: WoodEntrySortField;
+  sortDir?: "asc" | "desc";
   limit?: number;
   offset?: number;
 }
@@ -95,6 +117,11 @@ function buildListWhere(
     where.speciesCommonName = { contains: filters.speciesCommonName, mode: "insensitive" };
   }
   if (filters.gtfNumber) where.gtfNumber = filters.gtfNumber;
+  if (filters.providerName) {
+    where.providerName = { contains: filters.providerName, mode: "insensitive" };
+  }
+  if (filters.productType) where.productType = filters.productType;
+  if (filters.cites !== undefined) where.speciesCites = filters.cites;
   if (filters.fromDate || filters.toDate) {
     where.entryDate = {};
     if (filters.fromDate) where.entryDate.gte = filters.fromDate;
@@ -129,6 +156,11 @@ function buildLateConditions(
     conditions.push(Prisma.sql`"speciesCommonName" ILIKE ${`%${filters.speciesCommonName}%`}`);
   }
   if (filters.gtfNumber) conditions.push(Prisma.sql`"gtfNumber" = ${filters.gtfNumber}`);
+  if (filters.providerName) {
+    conditions.push(Prisma.sql`"providerName" ILIKE ${`%${filters.providerName}%`}`);
+  }
+  if (filters.productType) conditions.push(Prisma.sql`"productType" = ${filters.productType}`);
+  if (filters.cites !== undefined) conditions.push(Prisma.sql`"speciesCites" = ${filters.cites}`);
   if (filters.fromDate) conditions.push(Prisma.sql`"entryDate" >= ${filters.fromDate}`);
   if (filters.toDate) conditions.push(Prisma.sql`"entryDate" <= ${filters.toDate}`);
   if (filters.search) {
@@ -138,6 +170,128 @@ function buildLateConditions(
     );
   }
   return conditions;
+}
+
+/**
+ * Fórmula cerrada de "días hábiles(operación → registro) > PLAZO", IDÉNTICA a
+ * `diasHabilesDeRegistro()` en ctp-compliance.ts:
+ *   n  = días calendario = GREATEST(0, floor(epoch(createdAt-entryDate)/86400))
+ *   w0 = isodow(entryDate)  ·  hábiles = floor(n/7)*5 + Σ_{i=1..n%7}[dow(i) ≤ 5]
+ * No descuenta feriados (ADR-137). `entryDate` es timestamp s/tz a medianoche
+ * UTC, así que epoch e isodow se calculan sobre el valor guardado (UTC), igual
+ * que el JS. Vive suelta porque la usan el CONTEO (stats) y el FILTRO (lateIds).
+ */
+const FUERA_DE_PLAZO_SQL = Prisma.sql`(
+        (GREATEST(0, floor(extract(epoch from ("createdAt" - "entryDate")) / 86400)::int) / 7) * 5
+        + (
+          SELECT count(*)::int
+          FROM generate_series(1, GREATEST(0, floor(extract(epoch from ("createdAt" - "entryDate")) / 86400)::int) % 7) AS gi
+          WHERE ((extract(isodow from "entryDate")::int - 1 + gi) % 7) + 1 <= 5
+        )
+      ) > ${PLAZO_REGISTRO_DIAS}`;
+
+/** Condiciones completas de "fuera de plazo": filtros del período + vigencia +
+ *  la fórmula de días hábiles. Single source del predicado entre conteo y filtro. */
+function lateConditions(
+  tenantId: string,
+  filters: Omit<WoodEntryListFilters, "status" | "limit" | "offset">,
+): Prisma.Sql[] {
+  const conditions = buildLateConditions(tenantId, filters);
+  // Un ingreso rechazado/anulado fuera de plazo es irrelevante — no cuenta.
+  conditions.push(Prisma.sql`"status" NOT IN (${Prisma.join(["rechazado", "anulado"])})`);
+  conditions.push(FUERA_DE_PLAZO_SQL);
+  return conditions;
+}
+
+/**
+ * Aplica el filtro "fuera de plazo" a un `where` de Prisma. El predicado es
+ * SQL (comparación columna-columna con días hábiles: la API fluida no lo
+ * expresa), así que se resuelven primero los ids y se intersectan. El período
+ * ya acota el conjunto — un CTP maneja cientos de ingresos por mes, no millones.
+ */
+async function withLateFilter(
+  tenantId: string,
+  filters: WoodEntryListFilters,
+  where: Prisma.WoodEntryWhereInput,
+): Promise<Prisma.WoodEntryWhereInput> {
+  if (!filters.late) return where;
+  const { status: _s, limit: _l, offset: _o, late: _late, ...periodFilters } = filters;
+  const rows = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT "id" FROM "WoodEntry"
+    WHERE ${Prisma.join(lateConditions(tenantId, periodFilters), " AND ")}
+  `;
+  return { ...where, id: { in: rows.map((r) => r.id) } };
+}
+
+/** Campos corregibles de un ingreso pendiente. Fuera quedan `status`,
+ *  `validatedBy/At` y los costos: eso lo mueven acciones propias, no un form. */
+export type WoodEntryUpdateInput = Partial<
+  Pick<
+    WoodEntryCreateInput,
+    | "entryDate"
+    | "gtfNumber"
+    | "gtfDate"
+    | "gtfSeries"
+    | "providerName"
+    | "providerDocument"
+    | "providerDocumentType"
+    | "originType"
+    | "originCode"
+    | "originRegion"
+    | "originDistrict"
+    | "speciesCommonName"
+    | "speciesScientificName"
+    | "speciesCites"
+    | "productType"
+    | "volumeM3"
+    | "pieces"
+    | "avgLengthM"
+    | "avgDiameterCm"
+    | "humidityPct"
+    | "defectsNotes"
+    | "notes"
+  >
+>;
+
+/** Campos que se narran en la auditoría de una corrección, con su etiqueta. */
+const CAMPOS_AUDITABLES: [keyof WoodEntryUpdateInput, string][] = [
+  ["entryDate", "fecha"],
+  ["gtfNumber", "GTF"],
+  ["gtfDate", "fecha GTF"],
+  ["providerName", "proveedor"],
+  ["originType", "origen"],
+  ["originCode", "código de origen"],
+  ["speciesCommonName", "especie"],
+  ["speciesCites", "CITES"],
+  ["productType", "producto"],
+  ["volumeM3", "volumen"],
+  ["pieces", "piezas"],
+];
+
+/** "volumen 5.2000 → 5.4000 · piezas 7 → 8" — el detalle que hace útil el rastro. */
+function describirCambios(
+  antes: Record<string, unknown>,
+  despues: Record<string, unknown>,
+): string {
+  const texto = (v: unknown): string => {
+    if (v == null) return "—";
+    if (v instanceof Date) return v.toISOString().slice(0, 10);
+    return String(v);
+  };
+  return CAMPOS_AUDITABLES.map(([campo, etiqueta]) => {
+    const a = texto(antes[campo]);
+    const b = texto(despues[campo]);
+    return a === b ? null : `${etiqueta} ${a} → ${b}`;
+  })
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/** Valor presente en el período + su peso — alimenta un selector de filtro. */
+export interface WoodEntryFacet {
+  value: string;
+  count: number;
+  volumeM3: number;
 }
 
 export interface WoodEntryStats {
@@ -150,6 +304,10 @@ export interface WoodEntryStats {
   /** Ingresos registrados fuera del plazo SERFOR (>2 días hábiles op→registro). */
   lateCount: number;
   byStatus: Record<WoodEntryStatus, number>;
+  /** Especies / proveedores / productos presentes en el período (top 30 por volumen). */
+  species: WoodEntryFacet[];
+  providers: WoodEntryFacet[];
+  products: WoodEntryFacet[];
 }
 
 export class WoodEntriesDB {
@@ -248,15 +406,23 @@ export class WoodEntriesDB {
   ) {
     if (!tenantId) throw new Error("tenantId is required");
 
-    const where = buildListWhere(tenantId, filters);
+    const where = await withLateFilter(tenantId, filters, buildListWhere(tenantId, filters));
 
     const limit = Math.min(Math.max(filters.limit ?? 50, 1), 500);
     const offset = Math.max(filters.offset ?? 0, 0);
 
+    // Orden pedido + desempate por `createdAt`: con dos ingresos del mismo día
+    // (o el mismo volumen) Postgres no garantiza orden estable, y una lista
+    // inestable duplica/saltea filas al pasar de página.
+    const sortBy = filters.sortBy ?? "entryDate";
+    const sortDir = filters.sortDir ?? "desc";
+    const orderBy: Prisma.WoodEntryOrderByWithRelationInput[] = [{ [sortBy]: sortDir }];
+    if (sortBy !== "createdAt") orderBy.push({ createdAt: "desc" });
+
     const [entries, total] = await Promise.all([
       prisma.woodEntry.findMany({
         where,
-        orderBy: { entryDate: "desc" },
+        orderBy,
         take: limit,
         skip: offset,
       }),
@@ -348,7 +514,9 @@ export class WoodEntriesDB {
     if (!tenantId) throw new Error("tenantId is required");
 
     const { status: _ignored, limit: _l, offset: _o, ...periodFilters } = filters;
-    const where = buildListWhere(tenantId, periodFilters);
+    // El filtro "fuera de plazo" también aplica acá: si la tabla muestra sólo
+    // los tarde, los KPIs que la encabezan tienen que hablar de ESE conjunto.
+    const where = await withLateFilter(tenantId, periodFilters, buildListWhere(tenantId, periodFilters));
     // Las cifras OFICIALES (total, volumen, CITES, especies, fuera de plazo) NO
     // deben contar ingresos RECHAZADOS ni ANULADOS: no forman parte del libro y
     // no pueden aparecer en lo que se declara a SERFOR (QA 2026-07-17). El
@@ -356,27 +524,13 @@ export class WoodEntriesDB {
     // fueron rechazados. `pendiente` sí cuenta: es material registrado real.
     const whereVigente: Prisma.WoodEntryWhereInput = { ...where, status: { notIn: ["rechazado", "anulado"] } };
 
-    const lateConditions = buildLateConditions(tenantId, periodFilters);
-    // Un ingreso rechazado/anulado fuera de plazo es irrelevante — no cuenta.
-    lateConditions.push(Prisma.sql`"status" NOT IN (${Prisma.join(["rechazado", "anulado"])})`);
-    // Fuera de plazo = días HÁBILES(operación → registro) > PLAZO (2, RDE D000025-2023).
-    // Fórmula cerrada IDÉNTICA a `diasHabilesDeRegistro()` en ctp-compliance.ts:
-    //   n  = días calendario = GREATEST(0, floor(epoch(createdAt-entryDate)/86400))
-    //   w0 = isodow(entryDate)  ·  hábiles = floor(n/7)*5 + Σ_{i=1..n%7}[dow(i) ≤ 5]
-    // No descuenta feriados (ADR-137). entryDate es timestamp s/tz a medianoche UTC,
-    // así que epoch e isodow se calculan sobre el valor guardado (UTC), como el JS.
-    lateConditions.push(
-      Prisma.sql`(
-        (GREATEST(0, floor(extract(epoch from ("createdAt" - "entryDate")) / 86400)::int) / 7) * 5
-        + (
-          SELECT count(*)::int
-          FROM generate_series(1, GREATEST(0, floor(extract(epoch from ("createdAt" - "entryDate")) / 86400)::int) % 7) AS gi
-          WHERE ((extract(isodow from "entryDate")::int - 1 + gi) % 7) + 1 <= 5
-        )
-      ) > ${PLAZO_REGISTRO_DIAS}`,
-    );
+    // Fuera de plazo = días HÁBILES(operación → registro) > PLAZO (2, RDE
+    // D000025-2023), con los mismos filtros del período. Mismo predicado que
+    // usa el FILTRO de la tabla (`withLateFilter`): el KPI no puede contar 3 y
+    // la tabla listar 2.
+    const condFueraDePlazo = lateConditions(tenantId, periodFilters);
 
-    const [agg, byStatusRows, speciesRows, citesAgg, lateRows] = await Promise.all([
+    const [agg, byStatusRows, speciesRows, citesAgg, lateRows, providerRows, productRows] = await Promise.all([
       prisma.woodEntry.aggregate({
         where: whereVigente,
         _sum: { volumeM3: true, pieces: true },
@@ -384,7 +538,12 @@ export class WoodEntriesDB {
       }),
       // byStatus usa `where` completo (incluye rechazado/anulado): es el desglose.
       prisma.woodEntry.groupBy({ by: ["status"], where, _count: { _all: true } }),
-      prisma.woodEntry.groupBy({ by: ["speciesCommonName"], where: whereVigente, _count: { _all: true } }),
+      prisma.woodEntry.groupBy({
+        by: ["speciesCommonName"],
+        where: whereVigente,
+        _count: { _all: true },
+        _sum: { volumeM3: true },
+      }),
       prisma.woodEntry.aggregate({
         where: { ...whereVigente, speciesCites: true },
         _sum: { volumeM3: true },
@@ -393,8 +552,18 @@ export class WoodEntriesDB {
       prisma.$queryRaw<{ count: bigint }[]>`
         SELECT COUNT(*)::bigint AS count
         FROM "WoodEntry"
-        WHERE ${Prisma.join(lateConditions, " AND ")}
+        WHERE ${Prisma.join(condFueraDePlazo, " AND ")}
       `,
+      // Facetas del período: alimentan los selectores de filtro con lo que
+      // REALMENTE hay (un desplegable con las 9 especies del catálogo cuando
+      // el mes tuvo 2 obliga a adivinar cuál trae resultados).
+      prisma.woodEntry.groupBy({
+        by: ["providerName"],
+        where: whereVigente,
+        _count: { _all: true },
+        _sum: { volumeM3: true },
+      }),
+      prisma.woodEntry.groupBy({ by: ["productType"], where: whereVigente, _count: { _all: true } }),
     ]);
 
     const byStatus: Record<WoodEntryStatus, number> = {
@@ -407,6 +576,22 @@ export class WoodEntriesDB {
     for (const row of byStatusRows) byStatus[row.status] = row._count._all;
 
     const r4 = (n: number) => Math.round(n * 10000) / 10000;
+    // Facetas ordenadas por volumen (lo que más pesa primero) y acotadas: el
+    // selector es para elegir, no para leer el padrón entero.
+    const faceta = <T extends { _count: { _all: number }; _sum?: { volumeM3: Prisma.Decimal | null } }>(
+      rows: T[],
+      key: (r: T) => string,
+    ): WoodEntryFacet[] =>
+      rows
+        .map((r) => ({
+          value: key(r),
+          count: r._count._all,
+          volumeM3: r4(r._sum?.volumeM3?.toNumber() ?? 0),
+        }))
+        .filter((f) => f.value)
+        .sort((a, b) => b.volumeM3 - a.volumeM3 || b.count - a.count)
+        .slice(0, 30);
+
     return {
       totalCount: agg._count._all,
       totalVolumeM3: r4(agg._sum.volumeM3?.toNumber() ?? 0),
@@ -416,6 +601,9 @@ export class WoodEntriesDB {
       citesVolumeM3: r4(citesAgg._sum.volumeM3?.toNumber() ?? 0),
       lateCount: Number(lateRows[0]?.count ?? 0),
       byStatus,
+      species: faceta(speciesRows, (r) => r.speciesCommonName),
+      providers: faceta(providerRows, (r) => r.providerName),
+      products: faceta(productRows, (r) => r.productType),
     };
   }
 
@@ -441,6 +629,94 @@ export class WoodEntriesDB {
         { periodKey: cerrado.periodKey },
       );
     }
+  }
+
+  /**
+   * Corregir un ingreso YA registrado.
+   *
+   * Reglas del libro (no son opcionales):
+   * 1. Sólo mientras está `pendiente`. Un ingreso validado ya entró al balance
+   *    y puede tener consumos colgando: el camino de corrección ahí es ANULAR
+   *    (con motivo, queda el rastro) y registrar de nuevo.
+   * 2. El mes no puede estar cerrado (mismo guard que validar/anular).
+   * 3. Queda auditado campo por campo — un libro fiscalizable tiene que poder
+   *    responder "¿esto siempre dijo 5.20 m³?".
+   */
+  static async update(
+    tenantId: string,
+    id: string,
+    input: WoodEntryUpdateInput,
+    user: string,
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!id) throw new Error("id is required");
+
+    const actual = await prisma.woodEntry.findFirst({ where: { id, tenantId, deletedAt: null } });
+    if (!actual) throw new Error("Ingreso no encontrado");
+    if (actual.status !== "pendiente") {
+      throw new CtpInvariantError(
+        `Sólo se corrige un ingreso pendiente. Este está ${actual.status}: anulalo con motivo y registralo de nuevo.`,
+        "ESTADO_NO_EDITABLE",
+        { status: actual.status },
+      );
+    }
+    await WoodEntriesDB.assertPeriodoAbierto(tenantId, id, "corregir");
+
+    // Si se mueve la fecha, el mes DESTINO tampoco puede estar cerrado (si no,
+    // se colaría un movimiento dentro de un acta ya firmada).
+    if (input.entryDate) {
+      const cerradoDestino = await ForestCtpCierreDB.closedPeriodOf(tenantId, input.entryDate);
+      if (cerradoDestino) {
+        throw new CtpInvariantError(
+          `El período ${cerradoDestino.label} está cerrado: no se puede mover el ingreso a un mes cerrado.`,
+          "PERIODO_CERRADO",
+          { periodKey: cerradoDestino.periodKey },
+        );
+      }
+    }
+
+    const volumeDecimal = input.volumeM3 != null ? new Prisma.Decimal(input.volumeM3) : null;
+    if (volumeDecimal && volumeDecimal.lte(0)) throw new Error("volumeM3 must be > 0");
+
+    const data: Prisma.WoodEntryUpdateInput = {
+      ...(input.entryDate ? { entryDate: input.entryDate } : {}),
+      ...(input.gtfNumber !== undefined ? { gtfNumber: input.gtfNumber.trim() } : {}),
+      ...(input.gtfDate !== undefined ? { gtfDate: input.gtfDate } : {}),
+      ...(input.gtfSeries !== undefined ? { gtfSeries: input.gtfSeries } : {}),
+      ...(input.providerName !== undefined ? { providerName: input.providerName.trim() } : {}),
+      ...(input.providerDocument !== undefined ? { providerDocument: input.providerDocument } : {}),
+      ...(input.providerDocumentType !== undefined ? { providerDocumentType: input.providerDocumentType } : {}),
+      ...(input.originType !== undefined ? { originType: input.originType } : {}),
+      ...(input.originCode !== undefined ? { originCode: input.originCode } : {}),
+      ...(input.originRegion !== undefined ? { originRegion: input.originRegion } : {}),
+      ...(input.originDistrict !== undefined ? { originDistrict: input.originDistrict } : {}),
+      ...(input.speciesCommonName !== undefined ? { speciesCommonName: input.speciesCommonName.trim() } : {}),
+      ...(input.speciesScientificName !== undefined ? { speciesScientificName: input.speciesScientificName } : {}),
+      ...(input.speciesCites !== undefined ? { speciesCites: input.speciesCites } : {}),
+      ...(input.productType !== undefined ? { productType: input.productType } : {}),
+      ...(volumeDecimal ? { volumeM3: volumeDecimal } : {}),
+      ...(input.pieces !== undefined ? { pieces: input.pieces } : {}),
+      ...(input.avgLengthM !== undefined ? { avgLengthM: input.avgLengthM != null ? new Prisma.Decimal(input.avgLengthM) : null } : {}),
+      ...(input.avgDiameterCm !== undefined ? { avgDiameterCm: input.avgDiameterCm != null ? new Prisma.Decimal(input.avgDiameterCm) : null } : {}),
+      ...(input.humidityPct !== undefined ? { humidityPct: input.humidityPct != null ? new Prisma.Decimal(input.humidityPct) : null } : {}),
+      ...(input.defectsNotes !== undefined ? { defectsNotes: input.defectsNotes } : {}),
+      ...(input.notes !== undefined ? { notes: input.notes } : {}),
+    };
+
+    const entry = await prisma.woodEntry.update({ where: { id }, data });
+
+    // Qué cambió, en el idioma del libro: "volumen 5.2000 → 5.4000".
+    const cambios = describirCambios(actual, entry);
+    auditCtp({
+      tenantId,
+      action: "ctp_ingreso_update",
+      entity: "WoodEntry",
+      entityId: entry.id,
+      detail: `Corrigió el ingreso ${actual.gtfNumber}${cambios ? ` · ${cambios}` : " · sin cambios"}`,
+      user,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    return entry;
   }
 
   /**

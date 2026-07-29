@@ -6,73 +6,70 @@
  *
  * Los KPIs vienen de `?stats=1` (agregado en DB sobre todo el período) y no de
  * sumar la tabla: la tabla está paginada y sumarla diría "total" de una página.
+ *
+ * 2026-07-29 v2 — la vista orquesta y no dibuja: KPIs (CtpIngresosKpis) y
+ * filtros (CtpIngresosFiltros) salieron a sus propios archivos. Suma filtros
+ * por faceta, orden por columna, rechazo en lote, duplicar un ingreso y
+ * descarga de lo filtrado.
  */
 
-import { useEffect, useMemo, useState } from "react";
-// `m` (no `motion`): la app usa LazyMotion strict, que lanza error si se usa el
-// componente `motion` completo (rompe tree-shaking). Alias a `motion` para el JSX.
-import { m as motion } from "framer-motion";
-import {
-  AlertCircle,
-  BarChart3,
-  Boxes,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Plus,
-  RefreshCw,
-  Search,
-  ThumbsUp,
-  TreePine,
-} from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertCircle, ThumbsDown, ThumbsUp } from "@buleje/design-system/icons";
 import BulkActionsBar from "@/components/admin/shared/BulkActionsBar";
-import { staggerContainer, staggerChild } from "@/components/ui-system/motion";
 import { useDebounce } from "@/hooks/use-debounce";
-import { CTP_PAGE_SIZE, useCtpIngresos } from "@/hooks/use-ctp-ingresos";
+import { useGuardarPrefs, usePrefsIniciales } from "@/hooks/use-ctp-ingresos-prefs";
+import {
+  CTP_EXPORT_MAX,
+  CTP_PAGE_SIZE,
+  useCtpIngresos,
+  type CtpSort,
+  type CtpSortField,
+} from "@/hooks/use-ctp-ingresos";
+import { ingresosACsv, nombreArchivoIngresos } from "@/lib/forestal/ctp-ingresos-csv";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
-import WoodEntryForm from "./WoodEntryForm";
+import WoodEntryForm, { type WoodEntryPreset } from "./WoodEntryForm";
 import SpeciesAggregateChart from "./SpeciesAggregateChart";
 import CtpEntryDetailModal from "./CtpEntryDetailModal";
 import CtpIngresoCadenaModal from "./CtpIngresoCadenaModal";
+import CtpIngresoEditModal from "./CtpIngresoEditModal";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import CtpIngresosTable from "./CtpIngresosTable";
+import CtpIngresosKpis from "./CtpIngresosKpis";
+import CtpIngresosFiltros, { type CtpFacetasActivas } from "./CtpIngresosFiltros";
 import CtpGuiasBandeja from "./CtpGuiasBandeja";
-import { STATUS_META, type WoodEntry, type WoodEntryStatus } from "./ctp-shared";
-
-const STATUS_ORDER: WoodEntryStatus[] = [
-  "pendiente",
-  "validado",
-  "procesado",
-  "rechazado",
-  "anulado",
-];
-
-/** Clases del chip ACTIVO por tono de estado + color del punto (identidad DS). */
-const TONE_CHIP: Record<string, { active: string; dot: string }> = {
-  success: { active: "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]", dot: "bg-[var(--data-success-500)]" },
-  warning: { active: "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)]", dot: "bg-[var(--data-warning-500)]" },
-  danger: { active: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]", dot: "bg-[var(--data-error-500)]" },
-  info: { active: "border-[var(--data-info-500)] bg-[var(--data-info-50)] text-[var(--data-info-700)]", dot: "bg-[var(--data-info-500)]" },
-  muted: { active: "border-[var(--rule-strong)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]", dot: "bg-[var(--text-tertiary)]" },
-};
+import CtpIngresosPaginacion from "./CtpIngresosPaginacion";
+import {
+  STATUS_META,
+  originLabel,
+  productLabel,
+  type CtpFiltroRapido,
+  type WoodEntry,
+} from "./ctp-shared";
 
 export default function CtpIngresosView({
   period,
   openGtf,
   onOpenConsumed,
+  filtroRapido,
 }: {
   period: CtpPeriod;
   /** Puente inverso: GTF que el shell mandó a ingresar (abre el form pre-llenado). */
   openGtf?: string | null;
   onOpenConsumed?: () => void;
+  /** Filtro pedido desde otra pestaña (tira de pendientes / Cumplimiento). */
+  filtroRapido?: CtpFiltroRapido | null;
 }) {
+  // Cómo dejó la pestaña la última vez (orden + filtros; la búsqueda no).
+  const prefs = usePrefsIniciales();
   const [searchInput, setSearchInput] = useState("");
   const search = useDebounce(searchInput, 350);
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>(prefs.statusFilter);
+  const [facetas, setFacetas] = useState<CtpFacetasActivas>(prefs.facetas);
+  const [sort, setSort] = useState<CtpSort>(prefs.sort);
   const [page, setPage] = useState(0);
   const [detail, setDetail] = useState<WoodEntry | null>(null);
   const [chainEntry, setChainEntry] = useState<WoodEntry | null>(null);
+  const [editEntry, setEditEntry] = useState<WoodEntry | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -82,21 +79,63 @@ export default function CtpIngresosView({
   const [showDashboard, setShowDashboard] = useState(false);
   // Bandeja monte→planta: guía elegida para pre-cargar el form + key para refrescarla tras guardar.
   const [formGtf, setFormGtf] = useState<string | null>(null);
+  const [formPreset, setFormPreset] = useState<WoodEntryPreset | undefined>(undefined);
   const [bandejaKey, setBandejaKey] = useState(0);
+  // Rechazo en lote: el motivo es obligatorio, así que se pide una vez para todos.
+  const [bulkRejecting, setBulkRejecting] = useState(false);
+  const [bulkReason, setBulkReason] = useState("");
+  const [descargando, setDescargando] = useState(false);
 
-  const { entries, stats, total, loading, error, setError, reload, runAction, validateMany } =
-    useCtpIngresos({ period, status: statusFilter, search, page });
+  const filtros = useMemo(
+    () => ({ status: statusFilter, search, ...facetas }),
+    [statusFilter, search, facetas],
+  );
+
+  useGuardarPrefs(useMemo(() => ({ statusFilter, facetas, sort }), [statusFilter, facetas, sort]));
+
+  const {
+    entries,
+    stats,
+    total,
+    loading,
+    error,
+    setError,
+    reload,
+    runAction,
+    validateMany,
+    rejectMany,
+    fetchAllFiltered,
+  } = useCtpIngresos({ period, filtros, sort, page });
 
   // Un filtro nuevo describe otro conjunto: la página 4 del anterior no existe.
   useEffect(() => {
     setPage(0);
     setSelectedIds([]);
-  }, [search, statusFilter, period]);
+  }, [search, statusFilter, facetas, period, sort]);
+
+  // Llegó desde un aviso ("2 fuera de plazo", "1 CITES sin permiso"): la lista
+  // se abre mostrando ESOS casos. El filtro pedido reemplaza al que hubiera —
+  // dos filtros superpuestos darían un vacío inexplicable.
+  useEffect(() => {
+    if (!filtroRapido) return;
+    setSearchInput("");
+    if (filtroRapido.tipo === "pendiente") {
+      setStatusFilter("pendiente");
+      setFacetas({});
+    } else if (filtroRapido.tipo === "fuera-de-plazo") {
+      setStatusFilter("");
+      setFacetas({ late: true });
+    } else {
+      setStatusFilter("");
+      setFacetas({ cites: true });
+    }
+  }, [filtroRapido]);
 
   // Puente inverso desde Títulos Habilitantes: abre el form con la guía elegida.
   useEffect(() => {
     if (!openGtf) return;
     setFormGtf(openGtf);
+    setFormPreset(undefined);
     setShowForm(true);
     onOpenConsumed?.();
   }, [openGtf, onOpenConsumed]);
@@ -110,9 +149,49 @@ export default function CtpIngresosView({
     [selectedIds, pendingIds],
   );
 
-  const lastPage = Math.max(0, Math.ceil(total / CTP_PAGE_SIZE) - 1);
-  const rangeFrom = total === 0 ? 0 : page * CTP_PAGE_SIZE + 1;
-  const rangeTo = Math.min((page + 1) * CTP_PAGE_SIZE, total);
+  // Atajos del teclado para la carga en tanda: el almacenero valida 20 guías
+  // seguidas y soltar el mouse para cada una cuesta más que la validación.
+  // Se apagan mientras se escribe (input/textarea/select o contenteditable) y
+  // con cualquier modificador — Ctrl+N del navegador no se toca.
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      const t = ev.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t?.isContentEditable) return;
+      // Con un modal abierto manda el modal (Escape lo cierra, no la vista).
+      if (showForm || detail || chainEntry || editEntry) return;
+
+      if (ev.key === "n" || ev.key === "N") {
+        ev.preventDefault();
+        setFormGtf(null);
+        setFormPreset(undefined);
+        setShowForm(true);
+      } else if (ev.key === "/") {
+        ev.preventDefault();
+        document.getElementById("ctp-ing-search")?.focus();
+      } else if (ev.key === "r" || ev.key === "R") {
+        ev.preventDefault();
+        void reload();
+      } else if (ev.key === "v" || ev.key === "V") {
+        // Validar lo seleccionado: sólo si hay selección, y sin confirmación
+        // extra — validar es reversible (se anula con motivo).
+        if (selectedPending.length === 0) return;
+        ev.preventDefault();
+        setBusy("bulk");
+        void validateMany(selectedPending).then(() => {
+          setSelectedIds([]);
+          setBusy(null);
+        });
+      } else if (ev.key === "Escape") {
+        setSelectedIds([]);
+        setBulkRejecting(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showForm, detail, chainEntry, editEntry, selectedPending, reload, validateMany]);
+
 
   // Confirma el motivo: rechaza si el ingreso está pendiente, o ANULA si ya
   // estaba validado (corrección post-validación). Reusa el mismo input de motivo.
@@ -132,128 +211,100 @@ export default function CtpIngresosView({
     setBusy(null);
   }
 
+  /** Duplicar: abre el form con lo que se repite; GTF y volumen quedan vacíos. */
+  const duplicar = useCallback((e: WoodEntry) => {
+    setFormGtf(null);
+    setFormPreset({
+      providerName: e.providerName,
+      providerDocument: e.providerDocument,
+      providerDocumentType: e.providerDocumentType,
+      originType: e.originType,
+      originCode: e.originCode,
+      originRegion: e.originRegion,
+      originDistrict: e.originDistrict,
+      speciesCommonName: e.speciesCommonName,
+      productType: e.productType,
+    });
+    setShowForm(true);
+  }, []);
+
+  /** Ordenar: mismo campo alterna dirección; campo nuevo arranca descendente
+   *  (lo más nuevo / lo más grande primero es lo que se busca el 90% de veces). */
+  const ordenar = useCallback((field: CtpSortField) => {
+    setSort((prev) => (prev.by === field ? { by: field, dir: prev.dir === "asc" ? "desc" : "asc" } : { by: field, dir: "desc" }));
+  }, []);
+
+  async function descargar() {
+    setDescargando(true);
+    try {
+      const { entries: todos, truncated } = await fetchAllFiltered();
+      const csv = ingresosACsv(todos, {
+        origenLabel: originLabel,
+        productoLabel: productLabel,
+        estadoLabel: (s) => STATUS_META[s as keyof typeof STATUS_META]?.label ?? s,
+      });
+      const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nombreArchivoIngresos(period.label, statusFilter || facetas.provider || facetas.species);
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      pushToast({
+        tono: truncated ? "warning" : "success",
+        msg: truncated ? `Descargados los primeros ${CTP_EXPORT_MAX}` : `${todos.length} ingresos descargados`,
+        detail: truncated
+          ? `El filtro tiene más de ${CTP_EXPORT_MAX} registros. Acotá el período para bajar el resto.`
+          : "Se abre en Excel con las columnas ya separadas.",
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDescargando(false);
+    }
+  }
+
+  const hayFiltro = Boolean(statusFilter || search || facetas.species || facetas.provider || facetas.product || facetas.cites !== undefined || facetas.late);
+
   return (
     <div className="space-y-4">
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
-        className="grid grid-cols-2 gap-3 lg:grid-cols-4"
-      >
-        <motion.div variants={staggerChild}>
-          <StatCard
-            label="Ingresos del período"
-            value={stats ? stats.totalCount.toLocaleString("es-PE") : "—"}
-            subValue={stats ? `${stats.totalPieces.toLocaleString("es-PE")} piezas` : undefined}
-            icon={Boxes}
-            emphasis="neutral"
-          />
-        </motion.div>
-        <motion.div variants={staggerChild}>
-          <StatCard
-            label="Volumen del período"
-            value={stats ? `${Number(stats.totalVolumeM3).toFixed(2)} m³` : "—"}
-            subValue={stats ? `${stats.speciesCount} especies` : undefined}
-            icon={TreePine}
-            emphasis="success"
-          />
-        </motion.div>
-        <motion.div variants={staggerChild}>
-          <StatCard
-            label="Pendientes validar"
-            value={stats ? String(stats.byStatus.pendiente) : "—"}
-            subValue={stats?.byStatus.pendiente ? "Requieren acción" : "Todo al día"}
-            icon={Clock}
-            emphasis={stats?.byStatus.pendiente ? "warning" : "neutral"}
-          />
-        </motion.div>
-        <motion.div variants={staggerChild}>
-          <StatCard
-            label="Especies CITES"
-            value={stats ? String(stats.citesCount) : "—"}
-            subValue={stats ? `${Number(stats.citesVolumeM3).toFixed(2)} m³ protegidos` : undefined}
-            icon={AlertCircle}
-            emphasis={stats?.citesCount ? "error" : "neutral"}
-          />
-        </motion.div>
-      </motion.div>
+      <CtpIngresosKpis
+        stats={stats}
+        statusFilter={statusFilter}
+        citesOn={facetas.cites === true}
+        lateOn={facetas.late === true}
+        onStatus={setStatusFilter}
+        onCites={() => setFacetas((f) => ({ ...f, cites: f.cites === true ? undefined : true }))}
+        onLate={() => setFacetas((f) => ({ ...f, late: f.late ? undefined : true }))}
+        onVolumen={() => setShowDashboard((v) => !v)}
+        dashboardOn={showDashboard}
+      />
 
       {showDashboard && <SpeciesAggregateChart period={period} />}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 transition-colors focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]">
-          <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-          <label htmlFor="ctp-ing-search" className="sr-only">
-            Buscar ingresos
-          </label>
-          <input
-            id="ctp-ing-search"
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Buscar por GTF, proveedor o especie..."
-            className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
-          />
-        </div>
-        {/* En móvil los tres van en UNA fila: con `max-sm:sr-only` y ancho
-            completo, Dashboard y Recargar se veían como dos cajas vacías. */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowDashboard((v) => !v)}
-            aria-pressed={showDashboard}
-            title={showDashboard ? "Cerrar el dashboard de especies" : "Dashboard de especies"}
-            className={`inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition max-sm:w-12 max-sm:px-0 ${
-              showDashboard
-                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-            }`}
-          >
-            <BarChart3 className="h-4 w-4" />
-            <span className="max-sm:sr-only">{showDashboard ? "Cerrar dashboard" : "Dashboard"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => void reload()}
-            disabled={loading}
-            aria-label="Recargar"
-            title="Recargar"
-            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60 max-sm:w-12 max-sm:px-0"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            <span className="max-sm:sr-only">Recargar</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white shadow-sm transition hover:shadow-md hover:brightness-110 sm:flex-none"
-          >
-            <Plus className="h-5 w-5" />
-            Nuevo ingreso
-          </button>
-        </div>
-      </div>
-
-      {/* Chips de estado: distribución del período de un vistazo + filtro de 1 clic. */}
-      <div className="flex flex-wrap items-center gap-2">
-        <StatusChip label="Todos" count={stats?.totalCount} active={statusFilter === ""} tone="accent" onClick={() => setStatusFilter("")} />
-        {STATUS_ORDER.map((s) => (
-          <StatusChip
-            key={s}
-            label={STATUS_META[s].label}
-            count={stats?.byStatus[s]}
-            active={statusFilter === s}
-            tone={STATUS_META[s].tone}
-            onClick={() => setStatusFilter(statusFilter === s ? "" : s)}
-          />
-        ))}
-      </div>
+      <CtpIngresosFiltros
+        searchInput={searchInput}
+        onSearch={setSearchInput}
+        statusFilter={statusFilter}
+        onStatus={setStatusFilter}
+        facetas={facetas}
+        onFacetas={setFacetas}
+        stats={stats}
+        loading={loading}
+        dashboardOn={showDashboard}
+        onDashboard={() => setShowDashboard((v) => !v)}
+        onReload={() => void reload()}
+        onNuevo={() => { setFormGtf(null); setFormPreset(undefined); setShowForm(true); }}
+        onDescargar={() => void descargar()}
+        descargando={descargando}
+        totalFiltrado={total}
+      />
 
       {/* Puente monte→planta: guías emitidas en Títulos Habilitantes sin ingresar. */}
-      <CtpGuiasBandeja key={bandejaKey} onIngresar={(n) => { setFormGtf(n); setShowForm(true); }} />
+      <CtpGuiasBandeja key={bandejaKey} onIngresar={(n) => { setFormPreset(undefined); setFormGtf(n); setShowForm(true); }} />
 
       {error && (
-        <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-[var(--data-error-700)]">
+        <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
           <div className="text-sm">
             <strong>Error:</strong> {error}
@@ -272,7 +323,7 @@ export default function CtpIngresosView({
         selectedIds={selectedPending}
         totalCount={pendingIds.length}
         onSelectAll={() => setSelectedIds(pendingIds)}
-        onClearSelection={() => setSelectedIds([])}
+        onClearSelection={() => { setSelectedIds([]); setBulkRejecting(false); }}
         actions={[
           {
             id: "validate",
@@ -285,14 +336,62 @@ export default function CtpIngresosView({
               setBusy(null);
             },
           },
+          {
+            id: "reject",
+            label: "Rechazar seleccionados",
+            icon: ThumbsDown,
+            variant: "danger",
+            // No dispara nada todavía: rechazar exige motivo, y un lote sin
+            // motivo es un rechazo que después nadie puede explicar.
+            onClick: () => { setBulkRejecting(true); setBulkReason(""); },
+          },
         ]}
       />
+
+      {bulkRejecting && selectedPending.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] p-3 dark:bg-[var(--data-error-500)]/12">
+          <label htmlFor="ctp-bulk-reason" className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+            Motivo del rechazo de {selectedPending.length}:
+          </label>
+          <input
+            id="ctp-bulk-reason"
+            type="text"
+            value={bulkReason}
+            onChange={(e) => setBulkReason(e.target.value)}
+            placeholder="Ej: volumen no coincide con la guía (mín. 3 caracteres)"
+            className="h-10 min-w-0 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-error-500)]"
+            autoFocus
+          />
+          <button
+            type="button"
+            disabled={bulkReason.trim().length < 3 || busy === "bulk"}
+            onClick={async () => {
+              setBusy("bulk");
+              await rejectMany(selectedPending, bulkReason.trim());
+              setSelectedIds([]);
+              setBulkRejecting(false);
+              setBulkReason("");
+              setBusy(null);
+            }}
+            className="inline-flex h-10 items-center rounded-xl bg-[var(--data-error-600)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+          >
+            Confirmar rechazo
+          </button>
+          <button
+            type="button"
+            onClick={() => setBulkRejecting(false)}
+            className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)]"
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
 
       <CtpIngresosTable
         entries={entries}
         loading={loading}
         period={period}
-        filtered={Boolean(statusFilter || search)}
+        filtered={hayFiltro}
         pendingIds={pendingIds}
         selectedIds={selectedIds}
         selectedPending={selectedPending}
@@ -313,47 +412,29 @@ export default function CtpIngresosView({
         onValidate={validate}
         onDetail={setDetail}
         onChain={setChainEntry}
+        onDuplicate={duplicar}
+        onEdit={setEditEntry}
+        sort={sort}
+        onSort={ordenar}
       />
 
-      {total > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-[var(--text-tertiary)]">
-            Mostrando <strong className="text-[var(--text-secondary)]">{rangeFrom}–{rangeTo}</strong> de{" "}
-            <strong className="text-[var(--text-secondary)]">{total}</strong> registros
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={page === 0 || loading}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="inline-flex h-10 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Anterior
-            </button>
-            <span className="text-sm font-bold text-[var(--text-secondary)]">
-              {page + 1} / {lastPage + 1}
-            </span>
-            <button
-              type="button"
-              disabled={page >= lastPage || loading}
-              onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
-              className="inline-flex h-10 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
-            >
-              Siguiente
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
+      <CtpIngresosPaginacion
+        total={total}
+        page={page}
+        pageSize={CTP_PAGE_SIZE}
+        loading={loading}
+        onPage={setPage}
+      />
 
       {showForm && (
         <WoodEntryForm
           initialGtfNumber={formGtf ?? undefined}
-          onClose={() => { setShowForm(false); setFormGtf(null); }}
+          preset={formPreset}
+          onClose={() => { setShowForm(false); setFormGtf(null); setFormPreset(undefined); }}
           onSaved={(o) => {
             setShowForm(false);
             setFormGtf(null);
+            setFormPreset(undefined);
             setBandejaKey((k) => k + 1); // la guía ingresada sale de la bandeja
             void reload();
             // Sin señal el ingreso NO está en el libro: decirlo, no dar por guardado.
@@ -370,50 +451,18 @@ export default function CtpIngresosView({
 
       {detail && <CtpEntryDetailModal entry={detail} onClose={() => setDetail(null)} />}
       {chainEntry && <CtpIngresoCadenaModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
+      {editEntry && (
+        <CtpIngresoEditModal
+          entry={editEntry}
+          onClose={() => setEditEntry(null)}
+          onSaved={() => {
+            setEditEntry(null);
+            void reload();
+            pushToast({ tono: "success", msg: "Ingreso corregido", detail: "El cambio quedó registrado en el historial del ingreso." });
+          }}
+        />
+      )}
       <ActionToasts toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
-
-/** Chip de filtro por estado: punto de color + etiqueta + count. Reusa el tono
- *  del estado (STATUS_META) para leerse igual que los badges de la tabla. */
-function StatusChip({
-  label,
-  count,
-  active,
-  tone,
-  onClick,
-}: {
-  label: string;
-  count?: number;
-  active: boolean;
-  tone: "accent" | "success" | "warning" | "danger" | "info" | "muted";
-  onClick: () => void;
-}) {
-  const activeCls =
-    tone === "accent"
-      ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-      : TONE_CHIP[tone].active;
-  const dotCls = tone === "accent" ? "bg-[var(--accent)]" : TONE_CHIP[tone].dot;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`inline-flex h-9 items-center gap-2 rounded-full border-2 px-3.5 text-sm font-bold transition ${
-        active
-          ? activeCls
-          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
-      }`}
-    >
-      <span className={`h-2 w-2 rounded-full ${dotCls}`} aria-hidden="true" />
-      {label}
-      {count != null && (
-        <span className={`rounded-full px-1.5 text-xs tabular-nums ${active ? "bg-black/5 dark:bg-white/10" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}>
-          {count}
-        </span>
-      )}
-    </button>
-  );
-}
-

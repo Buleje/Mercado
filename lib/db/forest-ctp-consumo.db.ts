@@ -86,6 +86,9 @@ export class CtpInvariantError extends Error {
       | "I5_SOBRE_SALIDA_PRODUCCION"
       | "TENANT_MISMATCH"
       | "CONGELADO"
+      /** Se quiso corregir un ingreso que ya no está pendiente: ahí el camino
+       *  es anular con motivo y registrar de nuevo (queda el rastro). */
+      | "ESTADO_NO_EDITABLE"
       // ── Cierre de período fiscal (ADR-139) ──
       /** La línea cae en un mes cerrado: el acta es inmutable hasta reabrir. */
       | "PERIODO_CERRADO",
