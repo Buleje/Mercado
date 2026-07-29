@@ -50,6 +50,8 @@ export interface CtpIngresosFiltros {
   cites?: boolean;
   /** true = solo los registrados fuera del plazo SERFOR. */
   late?: boolean;
+  /** true = solo los que no tienen código de origen (bloquean el EUDR). */
+  sinOrigen?: boolean;
 }
 
 interface UseCtpIngresosArgs {
@@ -120,7 +122,7 @@ export function useCtpIngresos({
   // Descarta respuestas de un fetch viejo que llega tarde y pisaría al nuevo.
   const requestSeq = useRef(0);
 
-  const { status, search, species, provider, product, cites, late } = filtros;
+  const { status, search, species, provider, product, cites, late, sinOrigen } = filtros;
 
   /** Los parámetros del conjunto (sin paginación): los comparten la tabla y la
    *  descarga, así que "exportar" baja EXACTAMENTE lo que se está viendo. */
@@ -133,10 +135,11 @@ export function useCtpIngresos({
     if (product) params.set("product", product);
     if (cites !== undefined) params.set("cites", cites ? "1" : "0");
     if (late) params.set("late", "1");
+    if (sinOrigen) params.set("sin_origen", "1");
     params.set("sort", sort.by);
     params.set("dir", sort.dir);
     return params;
-  }, [period, status, search, species, provider, product, cites, late, sort.by, sort.dir]);
+  }, [period, status, search, species, provider, product, cites, late, sinOrigen, sort.by, sort.dir]);
 
   const load = useCallback(async () => {
     const seq = ++requestSeq.current;

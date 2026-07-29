@@ -23,13 +23,22 @@ import { buildDdsHtml, imprimirDds, type DdsEmisor } from "@/lib/forestal/eudr-p
 import { construirExpedienteEudr, nombreExpediente } from "@/lib/forestal/eudr-expediente";
 import { origenGeolocalizado, computeCtpEudrReadiness, buildOriginsGeoJson, type DdsData, type OrigenGeo } from "@/lib/forestal/eudr-types";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
+import type { CtpIngresosFiltroRapido } from "./ctp-shared";
 
 interface OriginRow { originCode: string; originType: string | null; region: string | null; ingresos: number }
 interface DespachoRow { id: string; lineNo: number; productType: string | null; speciesCommon: string | null; gtfNumber: string | null; destino: string | null }
 
 const EUDR = "/api/admin/forestal/ctp/eudr";
 
-export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
+export default function CtpEudrPanel({
+  period,
+  onNavigate,
+}: {
+  period: CtpPeriod;
+  /** Salta a Ingresos con el filtro puesto — el EUDR no se arregla acá, se
+   *  arregla poniéndole código de origen a los ingresos que no lo tienen. */
+  onNavigate?: (vista: string, filtro?: CtpIngresosFiltroRapido) => void;
+}) {
   const [origins, setOrigins] = useState<OriginRow[] | null>(null);
   const [geo, setGeo] = useState<Record<string, OrigenGeo>>({});
   const [despachos, setDespachos] = useState<DespachoRow[]>([]);
@@ -240,7 +249,25 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
         {origins === null ? (
           <p className="mt-4 flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</p>
         ) : origins.length === 0 ? (
-          <p className="mt-4 rounded-xl border-2 border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">No hay orígenes con código en los ingresos. Cargá ingresos con «Código de Origen» para geolocalizarlos.</p>
+          <div className="mt-4 rounded-xl border-2 border-dashed border-[var(--rule-base)] p-6 text-center">
+            <p className="text-sm text-[var(--text-tertiary)]">
+              No hay orígenes con código en los ingresos: sin el código de la concesión o predio no hay
+              parcela que geolocalizar, y la UE no acepta el embarque sin eso (Reg. 2023/1115).
+            </p>
+            {onNavigate && (
+              <button
+                type="button"
+                onClick={() => onNavigate("ingresos", "sin-origen")}
+                className="mt-3 inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white transition hover:opacity-90"
+              >
+                <MapPin className="h-4 w-4" />
+                Ver los ingresos sin código de origen
+              </button>
+            )}
+            <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+              Se corrige en cada ingreso pendiente con «Corregir» (los validados, anulando y volviendo a registrar).
+            </p>
+          </div>
         ) : (
           <div className="mt-4 space-y-2">
             {origins.map((o) => {

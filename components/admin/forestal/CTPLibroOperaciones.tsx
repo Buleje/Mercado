@@ -352,7 +352,7 @@ export default function CTPLibroOperaciones() {
             <CtpCierrePanel estado={cierres} />
           </div>
         )}
-        {view === "eudr" && <CtpEudrPanel period={period} />}
+        {view === "eudr" && <CtpEudrPanel period={period} onNavigate={irA} />}
         {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
         {view === "analisis" && <CtpAnalisis />}
         {view === "ficha" && <CtpFichaEditor />}

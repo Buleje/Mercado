@@ -139,6 +139,7 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
   const product = url.searchParams.get("product");
   const cites = url.searchParams.get("cites");
   const late = url.searchParams.get("late") === "1";
+  const sinOrigen = url.searchParams.get("sin_origen") === "1";
   // Orden: whitelist en la DB class. Un valor desconocido NO es un 400 —
   // degrada al default (una URL vieja o un typo no debe romper el listado).
   const sortParsed = sortFieldEnum.safeParse(url.searchParams.get("sort"));
@@ -169,6 +170,7 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
     productType: productParsed?.success ? productParsed.data : undefined,
     cites: cites === "1" ? true : cites === "0" ? false : undefined,
     late: late || undefined,
+    sinOrigenCode: sinOrigen || undefined,
     sortBy: sortParsed.success ? sortParsed.data : undefined,
     sortDir: dirParsed.success ? dirParsed.data : undefined,
     limit,

@@ -93,6 +93,9 @@ export interface WoodEntryListFilters {
   cites?: boolean;
   /** true = solo los registrados fuera del plazo SERFOR (días hábiles op→registro). */
   late?: boolean;
+  /** true = solo ingresos SIN código de origen. Son los que dejan el EUDR
+   *  incompleto: sin código no hay parcela que geolocalizar (Reg. 2023/1115). */
+  sinOrigenCode?: boolean;
   sortBy?: WoodEntrySortField;
   sortDir?: "asc" | "desc";
   limit?: number;
@@ -122,6 +125,14 @@ function buildListWhere(
   }
   if (filters.productType) where.productType = filters.productType;
   if (filters.cites !== undefined) where.speciesCites = filters.cites;
+  if (filters.sinOrigenCode) {
+    // Va por AND y no por OR: `where.OR` ya lo usa la búsqueda libre, y
+    // pisarlo haría que buscar + este filtro devolviera cualquier cosa.
+    where.AND = [
+      ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+      { OR: [{ originCode: null }, { originCode: "" }] },
+    ];
+  }
   if (filters.fromDate || filters.toDate) {
     where.entryDate = {};
     if (filters.fromDate) where.entryDate.gte = filters.fromDate;
@@ -161,6 +172,9 @@ function buildLateConditions(
   }
   if (filters.productType) conditions.push(Prisma.sql`"productType" = ${filters.productType}`);
   if (filters.cites !== undefined) conditions.push(Prisma.sql`"speciesCites" = ${filters.cites}`);
+  if (filters.sinOrigenCode) {
+    conditions.push(Prisma.sql`("originCode" IS NULL OR "originCode" = '')`);
+  }
   if (filters.fromDate) conditions.push(Prisma.sql`"entryDate" >= ${filters.fromDate}`);
   if (filters.toDate) conditions.push(Prisma.sql`"entryDate" <= ${filters.toDate}`);
   if (filters.search) {
@@ -303,6 +317,8 @@ export interface WoodEntryStats {
   citesVolumeM3: number;
   /** Ingresos registrados fuera del plazo SERFOR (>2 días hábiles op→registro). */
   lateCount: number;
+  /** Ingresos vigentes sin código de origen — sin eso no hay EUDR posible. */
+  sinOrigenCount: number;
   byStatus: Record<WoodEntryStatus, number>;
   /** Especies / proveedores / productos presentes en el período (top 30 por volumen). */
   species: WoodEntryFacet[];
@@ -530,7 +546,7 @@ export class WoodEntriesDB {
     // la tabla listar 2.
     const condFueraDePlazo = lateConditions(tenantId, periodFilters);
 
-    const [agg, byStatusRows, speciesRows, citesAgg, lateRows, providerRows, productRows] = await Promise.all([
+    const [agg, byStatusRows, speciesRows, citesAgg, lateRows, providerRows, productRows, sinOrigenCount] = await Promise.all([
       prisma.woodEntry.aggregate({
         where: whereVigente,
         _sum: { volumeM3: true, pieces: true },
@@ -564,6 +580,11 @@ export class WoodEntriesDB {
         _sum: { volumeM3: true },
       }),
       prisma.woodEntry.groupBy({ by: ["productType"], where: whereVigente, _count: { _all: true } }),
+      // Ingresos sin código de origen: el gap que deja la pestaña EUDR inerte.
+      // Se cuenta sobre los VIGENTES (un rechazado sin código no bloquea nada).
+      prisma.woodEntry.count({
+        where: { ...whereVigente, OR: [{ originCode: null }, { originCode: "" }] },
+      }),
     ]);
 
     const byStatus: Record<WoodEntryStatus, number> = {
@@ -600,6 +621,7 @@ export class WoodEntriesDB {
       citesCount: citesAgg._count._all,
       citesVolumeM3: r4(citesAgg._sum.volumeM3?.toNumber() ?? 0),
       lateCount: Number(lateRows[0]?.count ?? 0),
+      sinOrigenCount,
       byStatus,
       species: faceta(speciesRows, (r) => r.speciesCommonName),
       providers: faceta(providerRows, (r) => r.providerName),

@@ -34,6 +34,8 @@ export interface CtpFacetasActivas {
   product?: string;
   cites?: boolean;
   late?: boolean;
+  /** Sin código de origen: los ingresos que dejan el EUDR sin parcela. */
+  sinOrigen?: boolean;
 }
 
 export interface CtpIngresosFiltrosProps {
@@ -77,7 +79,8 @@ export default function CtpIngresosFiltros({
     (facetas.provider ? 1 : 0) +
     (facetas.product ? 1 : 0) +
     (facetas.cites !== undefined ? 1 : 0) +
-    (facetas.late ? 1 : 0);
+    (facetas.late ? 1 : 0) +
+    (facetas.sinOrigen ? 1 : 0);
   const { panelId, abierto, alternar } = usePanelFiltros(activos);
 
   const set = (patch: CtpFacetasActivas) => onFacetas({ ...facetas, ...patch });
@@ -182,12 +185,19 @@ export default function CtpIngresosFiltros({
           toggles={[
             { id: "cites", label: "CITES", on: facetas.cites === true },
             { id: "late", label: "Fuera de plazo", on: facetas.late === true },
+            {
+              id: "sinOrigen",
+              label: stats?.sinOrigenCount ? `Sin código de origen (${stats.sinOrigenCount})` : "Sin código de origen",
+              on: facetas.sinOrigen === true,
+            },
           ]}
           onSelect={(id, valor) => set({ [id]: valor || undefined })}
           onToggle={(id) =>
             id === "cites"
               ? set({ cites: facetas.cites === true ? undefined : true })
-              : set({ late: facetas.late ? undefined : true })
+              : id === "late"
+                ? set({ late: facetas.late ? undefined : true })
+                : set({ sinOrigen: facetas.sinOrigen ? undefined : true })
           }
           onLimpiar={() => onFacetas({})}
         />

@@ -125,6 +125,9 @@ export default function CtpIngresosView({
     } else if (filtroRapido.tipo === "fuera-de-plazo") {
       setStatusFilter("");
       setFacetas({ late: true });
+    } else if (filtroRapido.tipo === "sin-origen") {
+      setStatusFilter("");
+      setFacetas({ sinOrigen: true });
     } else {
       setStatusFilter("");
       setFacetas({ cites: true });
@@ -264,7 +267,7 @@ export default function CtpIngresosView({
     }
   }
 
-  const hayFiltro = Boolean(statusFilter || search || facetas.species || facetas.provider || facetas.product || facetas.cites !== undefined || facetas.late);
+  const hayFiltro = Boolean(statusFilter || search || facetas.species || facetas.provider || facetas.product || facetas.cites !== undefined || facetas.late || facetas.sinOrigen);
 
   return (
     <div className="space-y-4">

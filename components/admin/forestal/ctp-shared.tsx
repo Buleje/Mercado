@@ -33,7 +33,7 @@ export const CTP_MODULE_TAB_ID = "ctp-libro-operaciones";
  * dice "2 ingresos fuera de plazo" y aterriza en la lista completa obliga a
  * buscar los 2 a ojo; con esto el destino ya muestra exactamente esos.
  */
-export type CtpIngresosFiltroRapido = "pendiente" | "fuera-de-plazo" | "cites";
+export type CtpIngresosFiltroRapido = "pendiente" | "fuera-de-plazo" | "cites" | "sin-origen";
 
 /** El filtro + un contador: repetir el mismo salto tiene que volver a aplicarlo
  *  (si no, la segunda vez el efecto no cambia de valor y no pasa nada). */
@@ -100,6 +100,8 @@ export interface WoodEntryStats {
   citesVolumeM3: number;
   /** Ingresos registrados fuera del plazo SERFOR (>2 días hábiles op→registro). */
   lateCount: number;
+  /** Ingresos vigentes sin código de origen — sin eso la pestaña EUDR queda inerte. */
+  sinOrigenCount: number;
   byStatus: Record<WoodEntryStatus, number>;
   /** Especies / proveedores / productos del período (top 30 por volumen). */
   species: WoodEntryFacet[];
