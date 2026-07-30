@@ -22,7 +22,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Upload, Search, Grid3x3, List, FolderArchive, FileText, Image as ImageIcon,
   Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
-  Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check, CheckSquare,
+  Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check, CheckSquare, Monitor,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive, Loader2,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
   CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Presentation, Link2, Copy,
@@ -34,6 +34,7 @@ import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, s
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
 import FolderBulkBar from "./FolderBulkBar";
+import SyncEscritorioView from "./SyncEscritorioView";
 import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
 import { ordenarPorRelevancia, tieneDescripcion } from "@/lib/documentos/relevancia";
 import FiltrosDoc from "@/components/admin/documentos/FiltrosDoc";
@@ -242,7 +243,7 @@ function mensajeDeError(msg: string, porDefecto = "No se pudo completar."): stri
 }
 
 interface BuiltinCategory {
-  id: "all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "activity" | "enlaces" | "duplicados" | "trash";
+  id: "all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "activity" | "enlaces" | "duplicados" | "sync" | "trash";
   label: string;
   icon: typeof Folder;
   color: string;
@@ -259,6 +260,7 @@ const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "activity", label: "Actividad", icon: History, color: "text-[var(--accent)]" },
   { id: "enlaces", label: "Enlaces", icon: Link2, color: "text-[var(--accent)]" },
   { id: "duplicados", label: "Repetidos", icon: Copy, color: "text-[var(--text-tertiary)]" },
+  { id: "sync", label: "Mi PC", icon: Monitor, color: "text-primary" },
   { id: "trash", label: "Papelera", icon: Trash2, color: "text-[var(--text-tertiary)]" },
 ];
 
@@ -266,7 +268,7 @@ const BUILTIN_CATEGORIES: BuiltinCategory[] = [
  * Vistas que dibujan su propio contenido en vez de la lista de documentos: no
  * les corresponde la toolbar de búsqueda/orden ni el filtro por estado.
  */
-const VISTAS_CON_CONTENIDO_PROPIO = new Set(["dashboard", "assistant", "activity", "calendar", "enlaces", "duplicados"]);
+const VISTAS_CON_CONTENIDO_PROPIO = new Set(["dashboard", "assistant", "activity", "calendar", "enlaces", "duplicados", "sync"]);
 
 // ADR-119 — almacenamiento orientativo por plan (bytes). Sin gate duro: solo
 // para el anillo visual. El límite real lo aplica el bucket (50 MB/archivo).
@@ -301,7 +303,7 @@ export default function DocumentosModule() {
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [semantic, setSemantic] = useState(false);
-  const [filterMode, setFilterMode] = useState<"all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "folder" | "activity" | "enlaces" | "duplicados" | "trash" | "smart">("all");
+  const [filterMode, setFilterMode] = useState<"all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "folder" | "activity" | "enlaces" | "duplicados" | "sync" | "trash" | "smart">("all");
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<{ name: string; expiresAt: string | null } | null>(null);
   // Resultado del análisis IA de contenido (resumen + datos clave).
@@ -2000,6 +2002,8 @@ export default function DocumentosModule() {
             <ActivityView />
           ) : filterMode === "enlaces" ? (
             <EnlacesView onOpenDoc={(id) => { const d = documents.find((x) => x.id === id); if (d) setPreview(d); }} />
+          ) : filterMode === "sync" ? (
+            <SyncEscritorioView />
           ) : filterMode === "duplicados" ? (
             <DuplicadosView
               onOpenDoc={(d) => setPreview(d)}
