@@ -76,6 +76,10 @@ export interface DbDocumentFolder {
   name: string;
   color: string | null;
   icon: string | null;
+  /** Emoji elegido por el usuario. Gana sobre `icon` al dibujar la carpeta. */
+  emoji: string | null;
+  /** Etiquetas de la CARPETA (distintas de las del documento). */
+  tags: string[];
   /** Permisos por carpeta: vacío = todos los admins; con roles = solo esos. */
   allowedRoles: string[];
   createdAt: string;

@@ -22,7 +22,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Upload, Search, Grid3x3, List, FolderArchive, FileText, Image as ImageIcon,
   Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
-  Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
+  Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check, CheckSquare,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive, Loader2,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
   CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Presentation, Link2, Copy,
@@ -33,6 +33,7 @@ import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, splitDoc } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
+import FolderBulkBar from "./FolderBulkBar";
 import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
 import { ordenarPorRelevancia, tieneDescripcion } from "@/lib/documentos/relevancia";
 import FiltrosDoc from "@/components/admin/documentos/FiltrosDoc";
@@ -130,6 +131,28 @@ function getFileIcon(type: string, nombre = ""): { Icon: typeof FileIcon; tint: 
  * (PDF corrupto, storage caído), cae al ícono del tipo. Estado por-card para no
  * reintentar en loop.
  */
+/**
+ * A qué documento saltar cuando el que estás mirando se borra.
+ *
+ * `undefined` = el abierto no estaba en la tanda, no hay que tocar nada.
+ * `null` = se borró y no queda ninguno: recién ahí se cierra el visor.
+ */
+function sucesorTrasBorrar(
+  lista: DbDocument[],
+  abiertoId: string,
+  borradosIds: string[],
+): DbDocument | null | undefined {
+  const borrados = new Set(borradosIds);
+  if (!borrados.has(abiertoId)) return undefined;
+  const desde = lista.findIndex((d) => d.id === abiertoId);
+  // Primero el siguiente que sobreviva; si no hay ninguno después, el último
+  // que quede antes — que es donde uno espera caer al borrar el final.
+  const siguiente = lista.slice(desde + 1).find((d) => !borrados.has(d.id));
+  if (siguiente) return siguiente;
+  const quedan = lista.filter((d) => !borrados.has(d.id));
+  return quedan[quedan.length - 1] ?? null;
+}
+
 function DocThumb({ doc, Icon, tint, bg }: { doc: DbDocument; Icon: typeof FileIcon; tint: string; bg: string }) {
   // HEIC, TIFF o PSD son imágenes que el navegador NO dibuja: pedirlas en un
   // <img> daba un roto y recién ahí caía al ícono. Se filtra antes.
@@ -307,6 +330,13 @@ export default function DocumentosModule() {
   const [newFolderParent, setNewFolderParent] = useState<string | null | undefined>(undefined);
   const [newFolderName, setNewFolderName] = useState("");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  /**
+   * Selección múltiple de CARPETAS. Es un modo explícito y no un checkbox
+   * siempre visible: la fila ya tiene cuatro acciones al hover y un quinto
+   * control permanente la vuelve ilegible.
+   */
+  const [selectingFolders, setSelectingFolders] = useState(false);
+  const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(new Set());
   const [bulkTagValue, setBulkTagValue] = useState("");
   const [expiryBannerDismissed, setExpiryBannerDismissed] = useState(false);
   const [zipping, setZipping] = useState(false);
@@ -361,7 +391,7 @@ export default function DocumentosModule() {
 
   const {
     documents, semanticTerms, folders, loading, error, refresh,
-    upload, scan, patch, bulk, restore, purge, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, deleteFolder,
+    upload, scan, patch, bulk, restore, purge, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, bulkFolders, deleteFolder,
   } = useDocuments(filters);
 
   /**
@@ -618,6 +648,38 @@ export default function DocumentosModule() {
     }
   }, [aplicandoTodas, sugerenciasIA, aplicarSugerencia, refresh]);
   const visibleFolderRows = useMemo(() => flattenVisible(childrenMap, expandedFolders), [childrenMap, expandedFolders]);
+
+  // ── Selección múltiple de carpetas ──────────────────────────────────────────
+  const toggleFolderSelected = useCallback((id: string) => {
+    setSelectedFolderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const salirSeleccion = useCallback(() => {
+    setSelectingFolders(false);
+    setSelectedFolderIds(new Set());
+  }, []);
+
+  /** Etiquetas ya usadas en carpetas: para reusar en vez de inventar sinónimos. */
+  const folderTagSuggestions = useMemo(
+    () => [...new Set(folders.flatMap((f) => f.tags ?? []))].sort(),
+    [folders],
+  );
+
+  /** Subcarpetas de lo marcado: NO se borran solas (la FK es SET NULL), así que
+   *  la barra pregunta si incluirlas y las manda explícitamente. */
+  const descendientesMarcados = useMemo(() => {
+    const marcadas = new Set(selectedFolderIds);
+    const caen = new Set<string>();
+    for (const id of marcadas) {
+      for (const d of descendantIds(childrenMap, id)) if (!marcadas.has(d)) caen.add(d);
+    }
+    return [...caen];
+  }, [selectedFolderIds, childrenMap]);
   const allFolderRows = useMemo(() => flattenAll(childrenMap), [childrenMap]);
   const activePath = useMemo(
     () => (filterMode === "folder" && activeFolderId ? folderPath(folderById, activeFolderId) : []),
@@ -914,9 +976,11 @@ export default function DocumentosModule() {
   };
   const handleDeleteFolder = async (f: DbDocumentFolder) => {
     const descs = descendantIds(childrenMap, f.id);
+    // Las subcarpetas NO se borran con el padre (la FK es SET NULL): suben a la
+    // raíz. Decirlo, porque antes el texto prometía que se iban con ella.
     const msg =
       descs.size > 0
-        ? `¿Eliminar la carpeta "${f.name}" y sus ${descs.size} subcarpeta(s)? Los documentos pasarán a la raíz.`
+        ? `¿Eliminar la carpeta "${f.name}"?\n\nSus ${descs.size} subcarpeta(s) pasan a la raíz (no se borran), y sus documentos también.`
         : `¿Eliminar la carpeta "${f.name}"? Los documentos pasarán a la raíz.`;
     if (!confirm(msg)) return;
     await deleteFolder(f.id);
@@ -1285,14 +1349,51 @@ export default function DocumentosModule() {
             <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               {draggingFolderId ? "Soltá acá → raíz" : "Carpetas"}
             </p>
-            <button
-              onClick={() => openCreateChild(null)}
-              className="h-6 w-6 inline-flex items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-colors"
-              aria-label="Nueva carpeta"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </button>
+            <div className="flex items-center gap-0.5">
+              {folders.length > 1 && (
+                <button
+                  onClick={() => (selectingFolders ? salirSeleccion() : setSelectingFolders(true))}
+                  aria-pressed={selectingFolders}
+                  className={cn(
+                    "h-6 w-6 inline-flex items-center justify-center rounded-md transition-colors",
+                    selectingFolders
+                      ? "bg-primary text-white"
+                      : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary",
+                  )}
+                  aria-label={selectingFolders ? "Salir de la selección" : "Seleccionar varias carpetas"}
+                  title={selectingFolders ? "Salir de la selección" : "Seleccionar varias carpetas"}
+                >
+                  <CheckSquare className="h-3.5 w-3.5" />
+                </button>
+              )}
+              <button
+                onClick={() => openCreateChild(null)}
+                className="h-6 w-6 inline-flex items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-colors"
+                aria-label="Nueva carpeta"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
+
+          {/* Barra de acciones en lote: aparece con la primera carpeta marcada. */}
+          {selectingFolders && selectedFolderIds.size > 0 && (
+            <FolderBulkBar
+              ids={[...selectedFolderIds]}
+              nombres={[...selectedFolderIds].map((id) => folderById.get(id)?.name ?? id)}
+              descendientesIds={descendientesMarcados}
+              sugerencias={folderTagSuggestions}
+              totalCarpetas={folders.length}
+              onSeleccionarTodas={() => setSelectedFolderIds(new Set(folders.map((f) => f.id)))}
+              onAccion={(accion, ids) => bulkFolders(ids ?? [...selectedFolderIds], accion)}
+              onSalir={salirSeleccion}
+            />
+          )}
+          {selectingFolders && selectedFolderIds.size === 0 && (
+            <p className="mx-1 mb-2 rounded-lg border-2 border-dashed border-[var(--rule-base)] px-3 py-2 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
+              Marcá las carpetas que querés cambiar de una: emoji, etiquetas, color o eliminar.
+            </p>
+          )}
 
           {newFolderParent === null && (
             <div className="flex items-stretch gap-1 px-2 mb-2">
@@ -1357,6 +1458,20 @@ export default function DocumentosModule() {
                     }}
                   >
                     <div className="flex items-stretch" style={{ paddingLeft: depth * 14 }}>
+                      {selectingFolders && (
+                        <label
+                          className="flex shrink-0 cursor-pointer items-center pl-1 pr-0.5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedFolderIds.has(f.id)}
+                            onChange={() => toggleFolderSelected(f.id)}
+                            className="h-3.5 w-3.5 accent-[var(--accent)]"
+                            aria-label={`Seleccionar la carpeta ${f.name}`}
+                          />
+                        </label>
+                      )}
                       {hasChildren ? (
                         <button
                           type="button"
@@ -1379,6 +1494,24 @@ export default function DocumentosModule() {
                       >
                         <FolderGlyph folder={f} active={active} className="h-4 w-4 shrink-0" />
                         <span className="flex-1 text-left truncate">{f.name}</span>
+                        {/* Con el checkbox puesto, el ancho del sidebar no alcanza
+                            para nombre + etiquetas: en modo selección hay que poder
+                            LEER qué se marca, así que los chips se guardan. */}
+                        {(f.tags?.length ?? 0) > 0 && !selectingFolders && (
+                          <span className="hidden shrink-0 items-center gap-0.5 xl:flex" title={`Etiquetas: ${(f.tags ?? []).join(", ")}`}>
+                            {(f.tags ?? []).slice(0, 2).map((t) => (
+                              <span
+                                key={t}
+                                className="rounded-full bg-[var(--surface-sunken)] px-1.5 text-[length:var(--ts-2xs,11px)] font-medium text-[var(--text-tertiary)]"
+                              >
+                                {t}
+                              </span>
+                            ))}
+                            {(f.tags ?? []).length > 2 && (
+                              <span className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">+{(f.tags ?? []).length - 2}</span>
+                            )}
+                          </span>
+                        )}
                         {f.documentCount !== undefined && f.documentCount > 0 && (
                           <span className={cn(
                             "text-[length:var(--ts-2xs,11px)] tabular-nums px-1.5 py-0.5 rounded-md font-bold",
@@ -2062,10 +2195,14 @@ export default function DocumentosModule() {
               },
               onFavorito: async (ids) => { await bulk("favorite", ids, { favorite: true }); },
               onEliminar: async (ids) => {
+                // Si el que estabas mirando se va con la tanda, el visor pasa
+                // al SIGUIENTE que quede en pie en vez de cerrarse: cerrarlo te
+                // sacaba de la carpeta y había que volver a entrar para seguir
+                // borrando. El sucesor se resuelve ANTES de borrar, mientras la
+                // lista todavía los tiene a todos.
+                const sucesor = sucesorTrasBorrar(displayDocs, preview.id, ids);
                 await bulk("delete", ids);
-                // Si el que estabas mirando se fue con la tanda, el visor no
-                // puede quedarse abierto sobre algo que ya no existe.
-                if (ids.includes(preview.id)) setPreview(null);
+                if (sucesor !== undefined) setPreview(sucesor);
               },
             }}
             carpetas={{
@@ -2103,9 +2240,14 @@ export default function DocumentosModule() {
                 }
               },
               onDelete: () => {
-                if (confirm(`¿Eliminar "${preview.name}"?\n\nVa a la papelera: se puede restaurar.`)) {
-                  bulk("delete", [preview.id]).then(() => setPreview(null));
-                }
+                if (!confirm(`¿Eliminar "${preview.name}"?\n\nVa a la papelera: se puede restaurar.`)) return;
+                // Igual que al borrar varios: se pasa al siguiente en vez de
+                // cerrar. Cerrar te sacaba de la carpeta y había que volver a
+                // entrar para seguir limpiando.
+                const sucesor = sucesorTrasBorrar(displayDocs, preview.id, [preview.id]);
+                bulk("delete", [preview.id]).then(() => {
+                  if (sucesor !== undefined) setPreview(sucesor);
+                });
               },
             }}
           />

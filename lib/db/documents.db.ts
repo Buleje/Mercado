@@ -128,6 +128,8 @@ function mapFolder(
     name: f.name,
     color: f.color,
     icon: f.icon,
+    emoji: f.emoji ?? null,
+    tags: f.tags ?? [],
     allowedRoles: f.allowedRoles ?? [],
     createdAt: toISOReq(f.createdAt),
     updatedAt: toISOReq(f.updatedAt),
@@ -835,7 +837,15 @@ export class DocumentsDB {
   static async updateFolder(
     tenantId: string,
     id: string,
-    patch: { name?: string; parentId?: string | null; color?: string | null; icon?: string | null; allowedRoles?: string[] }
+    patch: {
+      name?: string;
+      parentId?: string | null;
+      color?: string | null;
+      icon?: string | null;
+      emoji?: string | null;
+      tags?: string[];
+      allowedRoles?: string[];
+    }
   ): Promise<DbDocumentFolder | null> {
     const existing = await prisma.documentFolder.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
@@ -853,6 +863,69 @@ export class DocumentsDB {
     // documentos pasan a raíz (folderId → null via ON DELETE SET NULL)
     await prisma.documentFolder.delete({ where: { id } });
     return true;
+  }
+
+  /**
+   * Acciones en lote sobre CARPETAS. Devuelve cuántas se tocaron de verdad
+   * (`updateMany` filtrado por tenant: un id de otro tenant no cuenta y no
+   * escribe — el aislamiento es app-level, ADR-134).
+   *
+   * · `emoji` / `color` — `null` LIMPIA el valor (volver al ícono por defecto).
+   * · `addTags` / `removeTags` — suman o quitan sin pisar lo que ya había: con
+   *   varias carpetas seleccionadas, reemplazar el array borraría las etiquetas
+   *   propias de cada una.
+   * · `delete` — cascada a subcarpetas (schema) y los documentos van a raíz.
+   */
+  static async bulkFolders(
+    tenantId: string,
+    ids: string[],
+    accion:
+      | { tipo: "emoji"; emoji: string | null }
+      | { tipo: "color"; color: string | null }
+      | { tipo: "addTags"; tags: string[] }
+      | { tipo: "removeTags"; tags: string[] }
+      | { tipo: "delete" },
+  ): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const limpios = [...new Set(ids.filter((x) => typeof x === "string" && x.trim()))];
+    if (limpios.length === 0) return 0;
+    const where = { id: { in: limpios }, tenantId };
+
+    if (accion.tipo === "delete") {
+      const { count } = await prisma.documentFolder.deleteMany({ where });
+      return count;
+    }
+    if (accion.tipo === "emoji") {
+      const { count } = await prisma.documentFolder.updateMany({ where, data: { emoji: accion.emoji } });
+      return count;
+    }
+    if (accion.tipo === "color") {
+      const { count } = await prisma.documentFolder.updateMany({ where, data: { color: accion.color } });
+      return count;
+    }
+
+    // Etiquetas: se leen las actuales y se escribe carpeta por carpeta. `updateMany`
+    // no sabe hacer unión de arrays, y hacerlo con SQL crudo por una operación de
+    // decenas de filas no paga la deuda de mantener el raw.
+    const actuales = await prisma.documentFolder.findMany({
+      where,
+      select: { id: true, tags: true },
+    });
+    const nuevas = accion.tags.map((t) => t.trim().toLowerCase()).filter(Boolean);
+    let tocadas = 0;
+    for (const f of actuales) {
+      const antes = f.tags ?? [];
+      const despues =
+        accion.tipo === "addTags"
+          ? [...new Set([...antes, ...nuevas])]
+          : antes.filter((t) => !nuevas.includes(t));
+      // Sin cambios no se escribe: así el `updatedAt` sigue contando la última
+      // vez que la carpeta cambió de verdad.
+      if (antes.length === despues.length && antes.every((t, i) => t === despues[i])) continue;
+      await prisma.documentFolder.update({ where: { id: f.id }, data: { tags: despues } });
+      tocadas += 1;
+    }
+    return tocadas;
   }
 
   // ── Versions ───────────────────────────────────────────────────────────────

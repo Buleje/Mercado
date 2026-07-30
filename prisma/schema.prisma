@@ -4797,18 +4797,31 @@ model DocumentFolder {
   name      String
   color     String?
   icon      String?
+  /// Emoji elegido por el dueño de la carpeta. Es CONTENIDO del usuario (como el
+  /// color), no iconografía del design system: gana sobre `icon` al dibujarla.
+  emoji     String?
+  /// Etiquetas de la carpeta ("legal", "sunat"): agrupan carpetas que no están
+  /// juntas en el árbol. Distintas de las etiquetas de documento.
+  tags      String[] @default([])
   // Permisos por carpeta: vacío = todos los admins; con roles = solo esos.
   // Los documentos dentro heredan esta restricción.
   allowedRoles String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  parent    DocumentFolder?  @relation("DocumentFolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  /// SetNull y no Cascade: la FK en la base es `ON DELETE SET NULL` (verificado
+  /// 2026-07-29 contra el catálogo de Postgres) y el schema declaraba Cascade,
+  /// así que la UI prometía un borrado en cascada que nunca ocurrió — las
+  /// subcarpetas quedaban en la raíz. Se alinea la declaración con la realidad;
+  /// borrar el árbol completo es una acción EXPLÍCITA de la UI, no un efecto
+  /// secundario de la FK.
+  parent    DocumentFolder?  @relation("DocumentFolderTree", fields: [parentId], references: [id], onDelete: SetNull)
   children  DocumentFolder[] @relation("DocumentFolderTree")
   documents Document[]
   shares    DocumentFolderShare[]
 
   @@index([tenantId, parentId])
+  @@index([tags], type: Gin)
 }
 
 model DocumentFolderShare {

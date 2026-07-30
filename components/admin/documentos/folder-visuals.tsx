@@ -40,16 +40,29 @@ const ICON_MAP: Record<string, typeof Folder> = Object.fromEntries(
   FOLDER_ICON_OPTIONS.map((o) => [o.key, o.Icon])
 );
 
-/** Renderiza el ícono de una carpeta con su color/ícono custom (o el default). */
+/**
+ * Renderiza el ícono de una carpeta con su color/ícono custom (o el default).
+ *
+ * El EMOJI gana sobre el ícono: si el dueño se tomó el trabajo de ponerle uno,
+ * es lo que quiere ver. Va como texto (no es iconografía del sistema, es
+ * contenido del usuario) y hereda el tamaño de la clase para no descuadrar la fila.
+ */
 export function FolderGlyph({
   folder,
   active,
   className,
 }: {
-  folder: { icon: string | null; color: string | null };
+  folder: { icon: string | null; color: string | null; emoji?: string | null };
   active?: boolean;
   className?: string;
 }) {
+  if (folder.emoji?.trim()) {
+    return (
+      <span className={cn(className, "inline-flex items-center justify-center leading-none")} aria-hidden="true">
+        {folder.emoji}
+      </span>
+    );
+  }
   const Icon = (folder.icon && ICON_MAP[folder.icon]) || Folder;
   const style = folder.color ? { color: folder.color } : undefined;
   const cls = folder.color ? "" : active ? "text-primary" : "text-[var(--text-tertiary)]";

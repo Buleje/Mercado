@@ -45,6 +45,14 @@ async function http<T>(url: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
+/** Acciones en lote sobre carpetas (espejo del Zod del endpoint). */
+export type BulkFolderAccion =
+  | { action: "emoji"; emoji: string | null }
+  | { action: "color"; color: string | null }
+  | { action: "addTags"; tags: string[] }
+  | { action: "removeTags"; tags: string[] }
+  | { action: "delete" };
+
 export interface UseDocumentsResult {
   documents: DbDocument[];
   /** Sinónimos con los que la búsqueda IA amplió la consulta (vacío sin IA). */
@@ -78,7 +86,9 @@ export interface UseDocumentsResult {
   /** Nombre+peso de lo que ya hay en esas carpetas (clave "" = raíz). */
   existingNames: (folderIds: (string | null)[]) => Promise<Record<string, { id: string; name: string; size: number }[]>>;
   moveFolder: (id: string, parentId: string | null) => Promise<void>;
-  updateFolder: (id: string, patch: { name?: string; color?: string | null; icon?: string | null; allowedRoles?: string[] }) => Promise<void>;
+  updateFolder: (id: string, patch: { name?: string; color?: string | null; icon?: string | null; emoji?: string | null; tags?: string[]; allowedRoles?: string[] }) => Promise<void>;
+  /** Acciones sobre VARIAS carpetas. Devuelve cuántas cambió el servidor. */
+  bulkFolders: (ids: string[], accion: BulkFolderAccion) => Promise<number>;
   deleteFolder: (id: string) => Promise<void>;
 }
 
@@ -167,6 +177,45 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     filters.deletedOnly,
     tagsKey,
   ]);
+
+
+  /**
+   * Aplica el cambio en pantalla YA y lo confirma con el servidor detrás.
+   *
+   * Antes cada acción esperaba DOS viajes: el de la mutación y el de recargar
+   * la lista entera. Marcar un favorito, renombrar o borrar tardaba casi un
+   * segundo en verse, y con la conexión de una bodega, más. Ahora la pantalla
+   * cambia al instante; si el servidor rechaza, se vuelve atrás y se avisa —
+   * que es mejor que hacer esperar a todos por si acaso.
+   */
+  const optimista = useCallback(async <T,>(
+    aplicar: () => void,
+    revertir: () => void,
+    pedido: () => Promise<T>,
+  ): Promise<T> => {
+    aplicar();
+    try {
+      return await pedido();
+    } catch (e) {
+      revertir();
+      setError(e instanceof Error ? e.message : String(e));
+      throw e;
+    }
+  }, []);
+
+  /** Cambia unos documentos en la lista local, devolviendo cómo volver atrás. */
+  const cambiarLocal = useCallback((fn: (docs: DbDocument[]) => DbDocument[]) => {
+    let previo: DbDocument[] = [];
+    setDocuments((docs) => { previo = docs; return fn(docs); });
+    return () => setDocuments(previo);
+  }, []);
+
+  /** Lo mismo para las carpetas. */
+  const cambiarCarpetas = useCallback((fn: (f: DbDocumentFolder[]) => DbDocumentFolder[]) => {
+    let previo: DbDocumentFolder[] = [];
+    setFolders((f) => { previo = f; return fn(f); });
+    return () => setFolders(previo);
+  }, []);
 
   const upload = useCallback(
     async (
@@ -278,10 +327,13 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
       if (out.length > 0) {
         reportarVelocidad("subida", (performance.now() - arranqueSubida) / out.length, out.length);
       }
-      await fetchAll({ silencioso: true, soloDocumentos: true });
+      // Los recién subidos se agregan a la lista tal como los devolvió el
+      // servidor: recargar todo para enterarse de lo que uno mismo acaba de
+      // subir es un viaje de más.
+      if (out.length > 0) setDocuments((docs) => [...out, ...docs]);
       return out;
     },
-    [fetchAll]
+    []
   );
 
   const scan = useCallback(
@@ -293,32 +345,37 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
         document: DbDocument;
         scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null };
       }>(`${BASE}/scan`, { method: "POST", body: fd });
-      await fetchAll({ silencioso: true, soloDocumentos: true });
+      setDocuments((docs) => [r.document, ...docs]);
       return r;
     },
-    [fetchAll]
+    []
   );
 
   const patch = useCallback(async (id: string, body: Record<string, unknown>) => {
-    await http(`${BASE}/${id}`, { method: "PATCH", body: JSON.stringify(body) });
-    await fetchAll({ silencioso: true, soloDocumentos: true });
-  }, [fetchAll]);
+    const revertir = cambiarLocal((docs) =>
+      docs.map((d) => (d.id === id ? { ...d, ...(body as Partial<DbDocument>) } : d)),
+    );
+    await optimista(() => {}, revertir, () =>
+      http(`${BASE}/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+    );
+  }, [optimista, cambiarLocal]);
 
   const remove = useCallback(async (id: string) => {
-    await http(`${BASE}/${id}`, { method: "DELETE" });
-    await fetchAll({ silencioso: true, soloDocumentos: true });
-  }, [fetchAll]);
+    const revertir = cambiarLocal((docs) => docs.filter((d) => d.id !== id));
+    await optimista(() => {}, revertir, () => http(`${BASE}/${id}`, { method: "DELETE" }));
+  }, [optimista, cambiarLocal]);
 
   // Papelera: restaurar (soft-deleted → activo) o borrar definitivamente (purge).
+  // En las dos, el documento sale de la vista actual (que es la papelera).
   const restore = useCallback(async (id: string) => {
-    await http(`${BASE}/${id}/restore`, { method: "POST" });
-    await fetchAll({ silencioso: true, soloDocumentos: true });
-  }, [fetchAll]);
+    const revertir = cambiarLocal((docs) => docs.filter((d) => d.id !== id));
+    await optimista(() => {}, revertir, () => http(`${BASE}/${id}/restore`, { method: "POST" }));
+  }, [optimista, cambiarLocal]);
 
   const purge = useCallback(async (id: string) => {
-    await http(`${BASE}/${id}?purge=1`, { method: "DELETE" });
-    await fetchAll({ silencioso: true, soloDocumentos: true });
-  }, [fetchAll]);
+    const revertir = cambiarLocal((docs) => docs.filter((d) => d.id !== id));
+    await optimista(() => {}, revertir, () => http(`${BASE}/${id}?purge=1`, { method: "DELETE" }));
+  }, [optimista, cambiarLocal]);
 
   const bulk = useCallback(
     async (
@@ -326,24 +383,44 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
       ids: string[],
       extra: Record<string, unknown> = {}
     ): Promise<number> => {
-      const r = await http<{ affected: number }>(`${BASE}/bulk`, {
-        method: "POST",
-        body: JSON.stringify({ action, ids, ...extra }),
+      const enLote = new Set(ids);
+      // Cada acción se refleja distinto en pantalla: borrar los saca, las
+      // demás los cambian donde están.
+      const revertir = cambiarLocal((docs) => {
+        if (action === "delete") return docs.filter((d) => !enLote.has(d.id));
+        return docs.map((d) => {
+          if (!enLote.has(d.id)) return d;
+          if (action === "favorite") return { ...d, favorite: Boolean(extra.favorite) };
+          if (action === "status") return { ...d, status: String(extra.status ?? d.status) };
+          if (action === "move") return { ...d, folderId: (extra.folderId as string | null) ?? null };
+          if (action === "tag" && typeof extra.tag === "string") {
+            return d.tags.includes(extra.tag) ? d : { ...d, tags: [...d.tags, extra.tag] };
+          }
+          return d;
+        });
       });
-      await fetchAll({ silencioso: true, soloDocumentos: true });
+      const r = await optimista(() => {}, revertir, () =>
+        http<{ affected: number }>(`${BASE}/bulk`, {
+          method: "POST",
+          body: JSON.stringify({ action, ids, ...extra }),
+        }),
+      );
       return r.affected;
     },
-    [fetchAll]
+    [optimista, cambiarLocal]
   );
 
   const createFolder = useCallback(async (input: { name: string; parentId?: string | null }) => {
+    // Acá NO se puede adivinar: la carpeta necesita el id que asigna el
+    // servidor. Pero con la respuesta alcanza — no hace falta volver a pedir
+    // el árbol entero.
     const r = await http<{ folder: DbDocumentFolder }>(`${BASE}/folders`, {
       method: "POST",
       body: JSON.stringify(input),
     });
-    await fetchAll();
+    setFolders((f) => [...f, r.folder].sort((a, b) => a.name.localeCompare(b.name)));
     return r.folder;
-  }, [fetchAll]);
+  }, []);
 
   /**
    * Crea un árbol entero ("Contratos/2026") en UNA llamada, reusando lo que ya
@@ -382,22 +459,95 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
 
   // Reparentar una carpeta (subcarpetas): parentId null = mover a la raíz.
   const moveFolder = useCallback(async (id: string, parentId: string | null) => {
-    await http(`${BASE}/folders/${id}`, { method: "PATCH", body: JSON.stringify({ parentId }) });
-    await fetchAll();
-  }, [fetchAll]);
+    const revertir = cambiarCarpetas((f) => f.map((c) => (c.id === id ? { ...c, parentId } : c)));
+    await optimista(() => {}, revertir, () =>
+      http(`${BASE}/folders/${id}`, { method: "PATCH", body: JSON.stringify({ parentId }) }),
+    );
+  }, [optimista, cambiarCarpetas]);
 
   // Editar metadata de la carpeta (nombre / color / ícono).
-  const updateFolder = useCallback(async (id: string, patch: { name?: string; color?: string | null; icon?: string | null; allowedRoles?: string[] }) => {
-    await http(`${BASE}/folders/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
-    await fetchAll();
-  }, [fetchAll]);
+  const updateFolder = useCallback(async (id: string, patch: { name?: string; color?: string | null; icon?: string | null; emoji?: string | null; tags?: string[]; allowedRoles?: string[] }) => {
+    const revertir = cambiarCarpetas((f) => f.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+    await optimista(() => {}, revertir, () =>
+      http(`${BASE}/folders/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+    );
+  }, [optimista, cambiarCarpetas]);
+
+  /**
+   * Acciones sobre varias carpetas de una. Se aplica optimista para que la
+   * pantalla responda al instante y se revierte si el servidor dice que no;
+   * después se refresca, porque el conteo de documentos y las cascadas de
+   * borrado los sabe el servidor y no el cliente.
+   */
+  const bulkFolders = useCallback(async (ids: string[], accion: BulkFolderAccion): Promise<number> => {
+    if (ids.length === 0) return 0;
+    const marcadas = new Set(ids);
+    const revertir = cambiarCarpetas((lista) => {
+      if (accion.action === "delete") {
+        // Cascada: se van las marcadas y todo lo que cuelgue de ellas.
+        const muertas = new Set(marcadas);
+        let crecio = true;
+        while (crecio) {
+          crecio = false;
+          for (const c of lista) {
+            if (c.parentId && muertas.has(c.parentId) && !muertas.has(c.id)) {
+              muertas.add(c.id);
+              crecio = true;
+            }
+          }
+        }
+        return lista.filter((c) => !muertas.has(c.id));
+      }
+      return lista.map((c) => {
+        if (!marcadas.has(c.id)) return c;
+        if (accion.action === "emoji") return { ...c, emoji: accion.emoji };
+        if (accion.action === "color") return { ...c, color: accion.color };
+        const nuevas = accion.tags.map((t) => t.trim().toLowerCase()).filter(Boolean);
+        const tags =
+          accion.action === "addTags"
+            ? [...new Set([...(c.tags ?? []), ...nuevas])]
+            : (c.tags ?? []).filter((t) => !nuevas.includes(t));
+        return { ...c, tags };
+      });
+    });
+
+    let count = 0;
+    await optimista(() => {}, revertir, async () => {
+      const res = await http(`${BASE}/folders/bulk`, {
+        method: "POST",
+        body: JSON.stringify({ ...accion, ids }),
+      });
+      count = typeof (res as { count?: number })?.count === "number" ? (res as { count: number }).count : ids.length;
+    });
+    // El conteo de documentos por carpeta lo recalcula el servidor.
+    void fetchAll();
+    return count;
+  }, [optimista, cambiarCarpetas, fetchAll]);
 
   const deleteFolder = useCallback(async (id: string) => {
-    await http(`${BASE}/folders/${id}`, { method: "DELETE" });
-    await fetchAll();
-  }, [fetchAll]);
+    // Borrar una carpeta arrastra a sus subcarpetas (el schema las borra en
+    // cascada) y suelta sus documentos a la raíz: se refleja igual acá para
+    // que la pantalla no muestre carpetas que ya no existen.
+    const hijas = new Set<string>([id]);
+    let crecio = true;
+    const revertirCarpetas = cambiarCarpetas((f) => {
+      while (crecio) {
+        crecio = false;
+        for (const c of f) {
+          if (c.parentId && hijas.has(c.parentId) && !hijas.has(c.id)) { hijas.add(c.id); crecio = true; }
+        }
+      }
+      return f.filter((c) => !hijas.has(c.id));
+    });
+    const revertirDocs = cambiarLocal((docs) =>
+      docs.map((d) => (d.folderId && hijas.has(d.folderId) ? { ...d, folderId: null } : d)),
+    );
+    await optimista(() => {}, () => { revertirCarpetas(); revertirDocs(); }, () =>
+      http(`${BASE}/folders/${id}`, { method: "DELETE" }),
+    );
+  }, [optimista, cambiarCarpetas, cambiarLocal]);
 
-  return { documents, semanticTerms, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, bulk, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, deleteFolder };
+  return { documents, semanticTerms, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, bulk, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, bulkFolders, deleteFolder };
 }
 
 // ── Standalone helpers ──────────────────────────────────────────────────────
