@@ -18,12 +18,94 @@ import type {
 import { invalidateByPrefix } from "@/lib/cache";
 import { PLAZO_REGISTRO_DIAS, estaFueraDePlazo } from "@/lib/forestal/ctp-compliance";
 import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
+import { calcularRetrozado, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
 
+/**
+ * Alta de una GTF de SERFOR completa (ADR-312): la cabecera es del documento y
+ * se repite en cada línea; `lineas` es lo que declara la guía, una por especie.
+ */
+export interface WoodEntryDesdeGtfInput {
+  entryDate?: Date;
+  docType?: string | null;
+  serforNumeroRegistro?: string | null;
+  /** La ficha tal como la devolvió SERFOR AL SERVIDOR (nunca la del navegador). */
+  serforGtf?: Record<string, unknown> | null;
+  gtfNumber: string;
+  gtfDate?: Date | null;
+  gtfSeries?: string | null;
+
+  providerName: string;
+  providerDocument?: string | null;
+  providerDocumentType?: DocumentType | null;
+
+  originType?: WoodOriginType;
+  originCode?: string | null;
+  originSourceNumber?: string | null;
+  originRegion?: string | null;
+  originDistrict?: string | null;
+
+  /** Lo que pone el CTP, no el documento: se repite en las N líneas. */
+  ctpProductCode?: string | null;
+  humidityPct?: number | string | null;
+  notes?: string | null;
+
+  lineas: Array<{
+    especieComun: string;
+    especieCientifica: string | null;
+    cites?: boolean;
+    productType?: WoodProductType;
+    unit?: string | null;
+    /** La presentación que declara ESA línea de la guía (ADR-314). */
+    presentacion?: string | null;
+    volumenM3: number;
+    piezas?: number;
+    trozas: Array<{
+      orden: number;
+      codificacion: string | null;
+      especieComun: string | null;
+      especieCientifica: string | null;
+      dimensiones: string | null;
+      largoM: number | null;
+      diametroCm: number | null;
+      d1Cm: number | null;
+      d2Cm: number | null;
+      cantidad: number | null;
+      volumenM3: number | null;
+    }>;
+  }>;
+
+  createdBy: string;
+}
+
 export interface WoodEntryCreateInput {
+  /**
+   * Lista de trozas de la guía, cuando se carga a mano o desde un Excel
+   * (ADR-320). Se crean en la MISMA transacción que el ingreso: media guía
+   * registrada deja un saldo que no corresponde a ningún documento.
+   */
+  trozas?: Array<{
+    orden: number;
+    codificacion: string | null;
+    especieComun: string | null;
+    especieCientifica: string | null;
+    dimensiones: string | null;
+    largoM: number | null;
+    diametroCm: number | null;
+    d1Cm: number | null;
+    d2Cm: number | null;
+    cantidad: number | null;
+    volumenM3: number | null;
+  }>;
   // Fecha + GTF
   entryDate?: Date; // default now
+  /** (3) Tipo de documento del LO-CTP: GTF | GRR (ADR-311). */
+  docType?: string | null;
+  /** N° de constancia de registro del SNIFFS con el que se consultó la guía. */
+  serforNumeroRegistro?: string | null;
+  /** Ficha oficial devuelta por la consulta pública de SERFOR. */
+  serforGtf?: Record<string, unknown> | null;
   gtfNumber: string;
   gtfDate?: Date | null;
   gtfSeries?: string | null;
@@ -42,7 +124,12 @@ export interface WoodEntryCreateInput {
 
   // Origen
   originType?: WoodOriginType;
+  /** (8) Código de origen/procedencia (concesión, predio, comunidad). */
   originCode?: string | null;
+  /** (5) N° Fuente de origen/procedencia — el documento que ampara la fuente. */
+  originSourceNumber?: string | null;
+  /** (9) Código de CTP: sólo si la materia prima llega de OTRO centro. */
+  ctpProductCode?: string | null;
   originRegion?: string | null;
   originDistrict?: string | null;
 
@@ -53,7 +140,11 @@ export interface WoodEntryCreateInput {
 
   // Producto
   productType?: WoodProductType;
-  volumeM3: number | string; // Decimal-friendly
+  /** (10) Unidad de medida declarada en el documento. El libro calcula en m³. */
+  unit?: string | null;
+  /** "Forma de presentación" del formato (ADR-314). */
+  presentacion?: string | null;
+  volumeM3: number | string; // (11) Cantidad — Decimal-friendly
   pieces?: number;
   avgLengthM?: number | string | null;
   avgDiameterCm?: number | string | null;
@@ -243,6 +334,7 @@ export type WoodEntryUpdateInput = Partial<
   Pick<
     WoodEntryCreateInput,
     | "entryDate"
+    | "docType"
     | "gtfNumber"
     | "gtfDate"
     | "gtfSeries"
@@ -251,12 +343,15 @@ export type WoodEntryUpdateInput = Partial<
     | "providerDocumentType"
     | "originType"
     | "originCode"
+    | "originSourceNumber"
+    | "ctpProductCode"
     | "originRegion"
     | "originDistrict"
     | "speciesCommonName"
     | "speciesScientificName"
     | "speciesCites"
     | "productType"
+    | "unit"
     | "volumeM3"
     | "pieces"
     | "avgLengthM"
@@ -365,38 +460,80 @@ export class WoodEntriesDB {
       );
     }
 
-    const entry = await prisma.woodEntry.create({
-      data: {
-        tenantId,
-        entryDate: input.entryDate ?? new Date(),
-        supplierId: input.supplierId ?? null,
-        costoTotal: input.costoTotal != null ? new Prisma.Decimal(input.costoTotal) : null,
-        moneda: input.moneda ?? "PEN",
-        gtfNumber: input.gtfNumber.trim(),
-        gtfDate: input.gtfDate ?? null,
-        gtfSeries: input.gtfSeries ?? null,
-        providerName: input.providerName.trim(),
-        providerDocument: input.providerDocument ?? null,
-        providerDocumentType: input.providerDocumentType ?? null,
-        originType: input.originType ?? "otro",
-        originCode: input.originCode ?? null,
-        originRegion: input.originRegion ?? null,
-        originDistrict: input.originDistrict ?? null,
-        speciesCommonName: input.speciesCommonName.trim(),
-        speciesScientificName: input.speciesScientificName ?? null,
-        speciesCites: input.speciesCites ?? false,
-        productType: input.productType ?? "rolliza",
-        volumeM3: volumeDecimal,
-        pieces: input.pieces ?? 0,
-        avgLengthM: input.avgLengthM != null ? new Prisma.Decimal(input.avgLengthM) : null,
-        avgDiameterCm: input.avgDiameterCm != null ? new Prisma.Decimal(input.avgDiameterCm) : null,
-        humidityPct: input.humidityPct != null ? new Prisma.Decimal(input.humidityPct) : null,
-        defectsNotes: input.defectsNotes ?? null,
-        notes: input.notes ?? null,
-        photos: input.photos ? (input.photos as Prisma.InputJsonValue) : Prisma.DbNull,
-        status: "pendiente",
-        createdBy: input.createdBy,
-      },
+    // El folio del libro (columna 1 del formato oficial) y el INSERT van en la
+    // MISMA transacción: si se calcula fuera, dos ingresos simultáneos se llevan
+    // el mismo número y el libro queda con folios repetidos — lo primero que
+    // mira un fiscalizador. Mismo patrón que `lineNo` de ForestCtpEntry.
+    const entry = await prisma.$transaction(async (tx) => {
+      const max = await tx.woodEntry.aggregate({
+        where: { tenantId },
+        _max: { libroNro: true },
+      });
+      const libroNro = (max._max.libroNro ?? 0) + 1;
+      const creado = await tx.woodEntry.create({
+        data: {
+          tenantId,
+          libroNro,
+          entryDate: input.entryDate ?? new Date(),
+          supplierId: input.supplierId ?? null,
+          costoTotal: input.costoTotal != null ? new Prisma.Decimal(input.costoTotal) : null,
+          moneda: input.moneda ?? "PEN",
+          docType: input.docType?.trim() || "GTF",
+        serforNumeroRegistro: input.serforNumeroRegistro?.trim() || null,
+        serforGtf: input.serforGtf ? (input.serforGtf as Prisma.InputJsonValue) : Prisma.DbNull,
+          gtfNumber: input.gtfNumber.trim(),
+          gtfDate: input.gtfDate ?? null,
+          gtfSeries: input.gtfSeries ?? null,
+          providerName: input.providerName.trim(),
+          providerDocument: input.providerDocument ?? null,
+          providerDocumentType: input.providerDocumentType ?? null,
+          originType: input.originType ?? "otro",
+          originCode: input.originCode ?? null,
+          originSourceNumber: input.originSourceNumber?.trim() || null,
+          ctpProductCode: input.ctpProductCode?.trim() || null,
+          originRegion: input.originRegion ?? null,
+          originDistrict: input.originDistrict ?? null,
+          speciesCommonName: input.speciesCommonName.trim(),
+          speciesScientificName: input.speciesScientificName ?? null,
+          speciesCites: input.speciesCites ?? false,
+          productType: input.productType ?? "rolliza",
+          unit: input.unit?.trim() || "m3",
+          presentacion: input.presentacion?.trim().toUpperCase() || null,
+          volumeM3: volumeDecimal,
+          pieces: input.pieces ?? 0,
+          avgLengthM: input.avgLengthM != null ? new Prisma.Decimal(input.avgLengthM) : null,
+          avgDiameterCm: input.avgDiameterCm != null ? new Prisma.Decimal(input.avgDiameterCm) : null,
+          humidityPct: input.humidityPct != null ? new Prisma.Decimal(input.humidityPct) : null,
+          defectsNotes: input.defectsNotes ?? null,
+          notes: input.notes ?? null,
+          photos: input.photos ? (input.photos as Prisma.InputJsonValue) : Prisma.DbNull,
+          status: "pendiente",
+          createdBy: input.createdBy,
+        },
+        });
+
+      // La lista de trozas viaja con su guía y en la misma tx (ADR-312/320): si
+      // falla, no queda un ingreso al que después haya que pegarle las piezas.
+      if (input.trozas?.length) {
+        await tx.woodEntryTroza.createMany({
+          data: input.trozas.map((t) => ({
+            tenantId,
+            woodEntryId: creado.id,
+            orden: t.orden,
+            codificacion: t.codificacion,
+            especieComun: t.especieComun,
+            especieCientifica: t.especieCientifica,
+            dimensiones: t.dimensiones,
+            largoM: t.largoM != null ? new Prisma.Decimal(t.largoM) : null,
+            diametroCm: t.diametroCm != null ? new Prisma.Decimal(t.diametroCm) : null,
+            d1Cm: t.d1Cm != null ? new Prisma.Decimal(t.d1Cm) : null,
+            d2Cm: t.d2Cm != null ? new Prisma.Decimal(t.d2Cm) : null,
+            cantidad: t.cantidad,
+            volumenM3: t.volumenM3 != null ? new Prisma.Decimal(t.volumenM3) : null,
+          })),
+        });
+      }
+      return creado;
     });
 
     auditCtp({
@@ -411,6 +548,314 @@ export class WoodEntriesDB {
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
     return entry;
+  }
+
+  /**
+   * Registra una GTF de SERFOR completa: **un ingreso por especie declarada**,
+   * con su lista de trozas, todo en UNA transacción (ADR-312).
+   *
+   * Media guía registrada es peor que ninguna: deja un saldo que no corresponde
+   * a ningún documento y obliga a corregir a mano un libro que ya tiene folio.
+   * Por eso entra entera o no entra.
+   *
+   * `lineas` ya viene repartido por `repartirGtfEnIngresos` a partir de la ficha
+   * que el SERVIDOR le pidió a SERFOR — nunca de la que mandó el navegador.
+   */
+  static async createDesdeGtfSerfor(
+    tenantId: string,
+    input: WoodEntryDesdeGtfInput,
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!input.gtfNumber?.trim()) throw new Error("gtfNumber is required");
+    if (!input.providerName?.trim()) throw new Error("providerName is required");
+    if (!input.createdBy?.trim()) throw new Error("createdBy is required");
+    if (input.lineas.length === 0) throw new Error("La guía no tiene líneas para registrar");
+
+    const fecha = input.entryDate ?? new Date();
+
+    // Cierre de período (ADR-139): mismo guard que el alta manual. Se chequea una
+    // sola vez, antes de abrir la tx — las N líneas comparten fecha.
+    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, fecha);
+    if (cerrado) {
+      throw new CtpInvariantError(
+        `El período ${cerrado.label} está cerrado: no se puede ingresar madera con fecha de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+
+    // Una guía no se registra dos veces. El chequeo va acá y no en un índice
+    // único porque la misma GTF SÍ puede tener varias líneas (una por especie):
+    // lo que no puede es entrar dos veces entera.
+    // ⚠️ Los ingresos ANULADOS no bloquean: anular y volver a cargar es
+    // justamente el camino que el ADR-312 prevé para corregir una guía mal
+    // registrada. Anular una línea pone `status` y NO hace soft-delete, así
+    // que filtrar sólo por `deletedAt` dejaba la guía trabada para siempre.
+    const yaEsta = await prisma.woodEntry.count({
+      where: {
+        tenantId,
+        deletedAt: null,
+        status: { notIn: ["anulado", "rechazado"] },
+        gtfNumber: input.gtfNumber.trim(),
+        ...(input.serforNumeroRegistro ? { serforNumeroRegistro: input.serforNumeroRegistro } : {}),
+      },
+    });
+    if (yaEsta > 0) {
+      throw new CtpInvariantError(
+        `La guía ${input.gtfNumber.trim()} ya está registrada en el libro (${yaEsta} ingreso(s)). Si hay que corregirla, anulá los ingresos y volvé a cargarla.`,
+        "GTF_DUPLICADA",
+        { gtfNumber: input.gtfNumber.trim() },
+      );
+    }
+
+    const creados = await prisma.$transaction(async (tx) => {
+      // El folio se lee UNA vez y avanza en memoria: leerlo por línea dentro de
+      // la misma tx devolvería el mismo máximo y las líneas saldrían con folios
+      // repetidos, que es lo primero que mira un fiscalizador.
+      const max = await tx.woodEntry.aggregate({ where: { tenantId }, _max: { libroNro: true } });
+      let libroNro = (max._max.libroNro ?? 0) + 1;
+
+      const salida = [];
+      for (const linea of input.lineas) {
+        const entry = await tx.woodEntry.create({
+          data: {
+            tenantId,
+            libroNro: libroNro++,
+            entryDate: fecha,
+            docType: input.docType?.trim() || "GTF",
+            serforNumeroRegistro: input.serforNumeroRegistro?.trim() || null,
+            serforGtf: input.serforGtf ? (input.serforGtf as Prisma.InputJsonValue) : Prisma.DbNull,
+            gtfNumber: input.gtfNumber.trim(),
+            gtfDate: input.gtfDate ?? null,
+            gtfSeries: input.gtfSeries ?? null,
+            providerName: input.providerName.trim(),
+            providerDocument: input.providerDocument ?? null,
+            providerDocumentType: input.providerDocumentType ?? null,
+            originType: input.originType ?? "otro",
+            originCode: input.originCode ?? null,
+            originSourceNumber: input.originSourceNumber ?? null,
+            ctpProductCode: input.ctpProductCode ?? null,
+            originRegion: input.originRegion ?? null,
+            originDistrict: input.originDistrict ?? null,
+            speciesCommonName: linea.especieComun,
+            speciesScientificName: linea.especieCientifica,
+            speciesCites: linea.cites ?? false,
+            productType: linea.productType ?? "rolliza",
+            unit: linea.unit ?? "m3",
+            presentacion: linea.presentacion?.trim().toUpperCase() || null,
+            volumeM3: new Prisma.Decimal(linea.volumenM3),
+            pieces: linea.piezas ?? 0,
+            humidityPct: input.humidityPct != null ? new Prisma.Decimal(input.humidityPct) : null,
+            notes: input.notes ?? null,
+            status: "pendiente",
+            createdBy: input.createdBy,
+          },
+        });
+
+        if (linea.trozas.length > 0) {
+          await tx.woodEntryTroza.createMany({
+            data: linea.trozas.map((t) => ({
+              tenantId,
+              woodEntryId: entry.id,
+              orden: t.orden,
+              codificacion: t.codificacion,
+              especieComun: t.especieComun,
+              especieCientifica: t.especieCientifica,
+              dimensiones: t.dimensiones,
+              largoM: t.largoM != null ? new Prisma.Decimal(t.largoM) : null,
+              diametroCm: t.diametroCm != null ? new Prisma.Decimal(t.diametroCm) : null,
+              d1Cm: t.d1Cm != null ? new Prisma.Decimal(t.d1Cm) : null,
+              d2Cm: t.d2Cm != null ? new Prisma.Decimal(t.d2Cm) : null,
+              cantidad: t.cantidad,
+              volumenM3: t.volumenM3 != null ? new Prisma.Decimal(t.volumenM3) : null,
+            })),
+          });
+        }
+        salida.push({ entry, trozas: linea.trozas.length });
+      }
+      return salida;
+    });
+
+    const volumenTotal = creados.reduce((a, c) => a + Number(c.entry.volumeM3), 0);
+    auditCtp({
+      tenantId,
+      action: "ctp_ingreso_create",
+      entity: "WoodEntry",
+      entityId: creados[0]?.entry.id ?? "",
+      detail:
+        `Registró la guía ${input.gtfNumber.trim()} desde SERFOR: ${creados.length} ingreso(s) ` +
+        `(${creados.map((c) => c.entry.speciesCommonName).join(", ")}) · ${m3(volumenTotal)} · ` +
+        `${creados.reduce((a, c) => a + c.trozas, 0)} troza(s)` +
+        (creados[0] && estaFueraDePlazo(creados[0].entry) ? ` · FUERA DE PLAZO (${PLAZO_REGISTRO_DIAS} días)` : ""),
+      user: input.createdBy,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    return creados.map((c) => c.entry);
+  }
+
+  /**
+   * Busca trozas por su codificación (ADR-312). Es lo que cruza un fiscalizador
+   * de OSINFOR contra el POA del título habilitante: dado un código de troza,
+   * de qué GTF entró y a qué ingreso pertenece.
+   */
+  static async buscarTrozas(
+    tenantId: string,
+    codificacion: string,
+    limite = 50,
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const q = codificacion.trim();
+    if (!q) return [];
+    return prisma.woodEntryTroza.findMany({
+      where: {
+        tenantId,
+        codificacion: { contains: q, mode: "insensitive" },
+        // Una troza de un ingreso anulado no cuenta como trazabilidad: se filtra
+        // acá y no en el cliente, para que ninguna vista la muestre por olvido.
+        // Hacen falta las DOS condiciones — anular pone `status`, no borra.
+        entry: { deletedAt: null, status: { notIn: ["anulado", "rechazado"] } },
+      },
+      orderBy: [{ createdAt: "desc" }, { orden: "asc" }],
+      take: Math.min(Math.max(limite, 1), 200),
+      include: {
+        entry: {
+          select: {
+            id: true, libroNro: true, gtfNumber: true, serforNumeroRegistro: true,
+            entryDate: true, providerName: true, speciesCommonName: true,
+            status: true, originCode: true, originRegion: true, originDistrict: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Corta una troza en pedazos (ADR-313).
+   *
+   * El LOCK va sobre la troza madre —el recurso disputado—, no sobre la tabla:
+   * dos operadores cortando la misma troza a la vez leerían los dos el mismo
+   * "ya cortado" y entre los dos pasarían el volumen. Mismo patrón que las
+   * invariantes I1-I5.
+   */
+  static async retrozar(
+    tenantId: string,
+    trozaId: string,
+    pedazos: RetrozoNuevo[],
+    opts: { fecha?: Date; usuario: string },
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!trozaId) throw new Error("trozaId is required");
+
+    return prisma.$transaction(async (tx) => {
+      // Bloquea la fila de la madre hasta el fin de la tx.
+      const bloqueo = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT "id" FROM "WoodEntryTroza"
+        WHERE "id" = ${trozaId} AND "tenantId" = ${tenantId}
+        FOR UPDATE
+      `;
+      if (bloqueo.length === 0) {
+        throw new CtpInvariantError("Esa troza no existe en este tenant.", "TENANT_MISMATCH", { trozaId });
+      }
+
+      const madre = await tx.woodEntryTroza.findFirst({
+        where: { id: trozaId, tenantId },
+        include: {
+          retrozos: { select: { volumenM3: true, largoM: true, descarte: true } },
+          entry: { select: { id: true, gtfNumber: true, status: true, deletedAt: true } },
+        },
+      });
+      if (!madre) throw new CtpInvariantError("Esa troza no existe en este tenant.", "TENANT_MISMATCH", { trozaId });
+      if (madre.entry.deletedAt) {
+        throw new CtpInvariantError("El ingreso de esa troza está anulado: no se puede retrozar.", "ESTADO_NO_EDITABLE", { trozaId });
+      }
+      // Una troza que ya es pedazo de otra no se vuelve a cortar acá: el árbol
+      // de dos niveles alcanza para el libro y uno más profundo haría que el
+      // saldo de la madre dependa de una recursión que nadie audita.
+      if (madre.trozaOrigenId) {
+        throw new CtpInvariantError(
+          `La troza ${madre.codificacion ?? ""} ya es un pedazo de otra: no se puede volver a retrozar.`,
+          "ESTADO_NO_EDITABLE",
+          { trozaId },
+        );
+      }
+
+      const calculo = calcularRetrozado(
+        {
+          id: madre.id,
+          codificacion: madre.codificacion,
+          // Los extremos REALES. Con el promedio (65.5) una troza de 73→58
+          // rechazaba un corte de 73 cm, que es justamente su propia base.
+          d1Cm: madre.d1Cm != null ? Number(madre.d1Cm) : madre.diametroCm != null ? Number(madre.diametroCm) : null,
+          d2Cm: madre.d2Cm != null ? Number(madre.d2Cm) : madre.diametroCm != null ? Number(madre.diametroCm) : null,
+          largoM: madre.largoM != null ? Number(madre.largoM) : null,
+          volumenM3: madre.volumenM3 != null ? Number(madre.volumenM3) : null,
+          retrozosPrevios: madre.retrozos.map((r) => ({
+            volumenM3: r.volumenM3 != null ? Number(r.volumenM3) : null,
+            largoM: r.largoM != null ? Number(r.largoM) : null,
+          })),
+        },
+        pedazos,
+      );
+      if (!calculo.ok) {
+        throw new CtpInvariantError(calculo.errores.join(" "), "R1_SOBRE_RETROZADO", { trozaId, errores: calculo.errores });
+      }
+
+      const fecha = opts.fecha ?? new Date();
+      await tx.woodEntryTroza.createMany({
+        data: calculo.retrozos.map((r) => ({
+          tenantId,
+          woodEntryId: madre.woodEntryId,
+          trozaOrigenId: madre.id,
+          orden: r.orden,
+          codificacion: r.codificacion,
+          especieComun: madre.especieComun,
+          especieCientifica: madre.especieCientifica,
+          dimensiones: `${r.d1Cm} X ${r.d2Cm} X ${r.largoM}`,
+          largoM: new Prisma.Decimal(r.largoM),
+          diametroCm: new Prisma.Decimal((r.d1Cm + r.d2Cm) / 2),
+          d1Cm: new Prisma.Decimal(r.d1Cm),
+          d2Cm: new Prisma.Decimal(r.d2Cm),
+          cantidad: 1,
+          volumenM3: new Prisma.Decimal(r.volumenM3),
+          fechaRetrozo: fecha,
+          descarte: r.descarte ?? false,
+          observaciones: r.observaciones ?? null,
+        })),
+      });
+
+      auditCtp({
+        tenantId,
+        action: "ctp_ingreso_update",
+        entity: "WoodEntryTroza",
+        entityId: madre.id,
+        detail:
+          `Retrozó la troza ${madre.codificacion ?? madre.id} (GTF ${madre.entry.gtfNumber}) en ` +
+          `${calculo.retrozos.length} pedazo(s): ${calculo.retrozos.map((r) => `${r.codificacion} ${m3(r.volumenM3)}`).join(", ")}` +
+          ` · quedan ${m3(calculo.volumenLibre)} sin cortar`,
+        user: opts.usuario,
+      });
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+
+      return {
+        madre: { id: madre.id, codificacion: madre.codificacion },
+        retrozos: calculo.retrozos,
+        volumenRetrozado: calculo.volumenRetrozado,
+        volumenLibre: calculo.volumenLibre,
+      };
+    });
+  }
+
+  /** Las trozas de un ingreso, en el orden en que las lista la guía. */
+  static async trozasDe(tenantId: string, woodEntryId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    // Sólo las trozas de la guía: los pedazos cuelgan de ellas (`retrozos`) para
+    // que la vista los muestre debajo de su madre y no como filas sueltas que
+    // parecerían madera de más.
+    return prisma.woodEntryTroza.findMany({
+      where: { tenantId, woodEntryId, trozaOrigenId: null },
+      orderBy: { orden: "asc" },
+      include: { retrozos: { orderBy: { orden: "asc" } } },
+    });
   }
 
   /**
@@ -705,17 +1150,21 @@ export class WoodEntriesDB {
       ...(input.gtfNumber !== undefined ? { gtfNumber: input.gtfNumber.trim() } : {}),
       ...(input.gtfDate !== undefined ? { gtfDate: input.gtfDate } : {}),
       ...(input.gtfSeries !== undefined ? { gtfSeries: input.gtfSeries } : {}),
+      ...(input.docType !== undefined ? { docType: input.docType?.trim() || null } : {}),
       ...(input.providerName !== undefined ? { providerName: input.providerName.trim() } : {}),
       ...(input.providerDocument !== undefined ? { providerDocument: input.providerDocument } : {}),
       ...(input.providerDocumentType !== undefined ? { providerDocumentType: input.providerDocumentType } : {}),
       ...(input.originType !== undefined ? { originType: input.originType } : {}),
       ...(input.originCode !== undefined ? { originCode: input.originCode } : {}),
+      ...(input.originSourceNumber !== undefined ? { originSourceNumber: input.originSourceNumber?.trim() || null } : {}),
+      ...(input.ctpProductCode !== undefined ? { ctpProductCode: input.ctpProductCode?.trim() || null } : {}),
       ...(input.originRegion !== undefined ? { originRegion: input.originRegion } : {}),
       ...(input.originDistrict !== undefined ? { originDistrict: input.originDistrict } : {}),
       ...(input.speciesCommonName !== undefined ? { speciesCommonName: input.speciesCommonName.trim() } : {}),
       ...(input.speciesScientificName !== undefined ? { speciesScientificName: input.speciesScientificName } : {}),
       ...(input.speciesCites !== undefined ? { speciesCites: input.speciesCites } : {}),
       ...(input.productType !== undefined ? { productType: input.productType } : {}),
+      ...(input.unit !== undefined ? { unit: input.unit?.trim() || null } : {}),
       ...(volumeDecimal ? { volumeM3: volumeDecimal } : {}),
       ...(input.pieces !== undefined ? { pieces: input.pieces } : {}),
       ...(input.avgLengthM !== undefined ? { avgLengthM: input.avgLengthM != null ? new Prisma.Decimal(input.avgLengthM) : null } : {}),

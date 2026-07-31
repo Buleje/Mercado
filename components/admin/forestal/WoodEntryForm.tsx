@@ -14,10 +14,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, Camera, Check, FileText, Loader2, Search, ShieldAlert, ShieldCheck, Sparkles, TreePine, X,
+  ClipboardList,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn, Field, I, Seccion } from "./ctp-shared";
 import CtpParteBarra from "./CtpParteBarra";
+import CtpTrozasImportModal from "./CtpTrozasImportModal";
+import type { TrozaImportada } from "@/lib/forestal/trozas-import";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { DocTipo } from "@/lib/forestal/directorio";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
@@ -200,6 +203,9 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   const directorio = useDirectorioForestal();
   const partesUsadas = useRef<Set<string>>(new Set());
   /** El uso se cuenta con el ingreso ya guardado, no al elegir de la lista. */
+  /** Lista de trozas pegada a mano cuando SERFOR no la trajo (ADR-320). */
+  const [trozasManuales, setTrozasManuales] = useState<TrozaImportada[]>([]);
+  const [importarTrozas, setImportarTrozas] = useState(false);
   const marcarProveedorUsado = () => {
     if (!partesUsadas.current.size) return;
     directorio.marcarUso({ partes: [...partesUsadas.current] });
@@ -761,6 +767,9 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         // (H) El permiso CITES vinculado queda en el acta del ingreso (notes).
         notes: [data.notes.trim(), finalCites && citesPermiso.trim() ? `Permiso CITES: ${citesPermiso.trim()}` : ""].filter(Boolean).join(" · ") || null,
         photos: null,
+        // Las trozas van con su guía y en la misma transacción: media guía
+        // registrada deja un saldo sin documento (ADR-312).
+        trozas: trozasManuales.length ? trozasManuales : undefined,
       };
 
       let res: Response;
@@ -1421,6 +1430,29 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
 
             {/* ─── 5 · Producto y medidas ──────────────────────────── */}
             <Seccion numero={5} title="Producto y medidas" estado={estadoSeccion.producto}>
+              {/* La lista de trozas normalmente viene de SERFOR; cuando el
+                  servicio no responde o el detalle llegó en un Excel, se pega
+                  acá en vez de tipear ochenta filas o quedarse sin trozas. */}
+              <div className="sm:col-span-12 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2">
+                <Btn size="sm" variant="secondary" onClick={() => setImportarTrozas(true)}>
+                  <ClipboardList className="h-4 w-4" />
+                  {trozasManuales.length ? "Cambiar la lista de trozas" : "Pegar lista de trozas"}
+                </Btn>
+                {trozasManuales.length > 0 && (
+                  <>
+                    <span className="text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                      {trozasManuales.length} troza(s) · {trozasManuales.reduce((a, t) => a + (t.volumenM3 ?? 0), 0).toFixed(4)} m³
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setTrozasManuales([])}
+                      className="text-sm font-medium text-[var(--text-tertiary)] underline hover:text-[var(--text-primary)]"
+                    >
+                      Quitar
+                    </button>
+                  </>
+                )}
+              </div>
                 <Field span={6} label="Tipo de producto" required>
                   <select
                     value={data.productType}
@@ -1887,6 +1919,15 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
 
       </div>
       <ActionToasts toasts={toasts} onDismiss={dismissToast} />
+      {importarTrozas && (
+        <CtpTrozasImportModal
+          especie={finalSpeciesName}
+          especieCientifica={finalScientificName}
+          volumenDeclarado={Number(data.volumeM3) || undefined}
+          onAceptar={(t) => setTrozasManuales(t)}
+          onClose={() => setImportarTrozas(false)}
+        />
+      )}
     </AdminModal>
   );
 }

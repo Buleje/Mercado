@@ -7,6 +7,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 import { withApiHandler } from "@/lib/api-handler";
+import { TIPOS_DOCUMENTO_LOCTP, UNIDADES_LOCTP } from "@/lib/forestal/loctp-campos";
 
 /**
  * /api/admin/forestal/wood-entries
@@ -63,8 +64,19 @@ const statusEnum = z.enum([
 const sortFieldEnum = z.enum(WOOD_ENTRY_SORT_FIELDS);
 const sortDirEnum = z.enum(["asc", "desc"]);
 
+// Campos oficiales del formato LO-CTP (ADR-311): los catálogos son los que
+// lista la guía práctica; los CÓDIGOS van como texto porque los emite la ARFFS
+// y su formato varía por región — un patrón inventado rechazaría datos válidos.
+const docTypeEnum = z.enum(TIPOS_DOCUMENTO_LOCTP.map((t) => t.valor) as [string, ...string[]]);
+const unidadEnum = z.enum(UNIDADES_LOCTP.map((u) => u.valor) as [string, ...string[]]);
+
 const createSchema = z.object({
   entryDate: z.coerce.date().optional(),
+  docType: docTypeEnum.optional(),
+  // La ficha de SERFOR viaja tal cual: es un documento de ellos, no se re-valida
+  // campo por campo (sólo su tamaño, para no aceptar cualquier cosa).
+  serforNumeroRegistro: z.string().trim().max(30).nullable().optional(),
+  serforGtf: z.record(z.string(), z.unknown()).nullable().optional(),
   gtfNumber: z.string().trim().min(1).max(50),
   gtfDate: z.coerce.date().nullable().optional(),
   gtfSeries: z.string().trim().max(20).nullable().optional(),
@@ -75,6 +87,8 @@ const createSchema = z.object({
 
   originType: originTypeEnum.optional(),
   originCode: z.string().trim().max(100).nullable().optional(),
+  originSourceNumber: z.string().trim().max(100).nullable().optional(),
+  ctpProductCode: z.string().trim().max(60).nullable().optional(),
   originRegion: z.string().trim().max(80).nullable().optional(),
   originDistrict: z.string().trim().max(80).nullable().optional(),
 
@@ -83,6 +97,9 @@ const createSchema = z.object({
   speciesCites: z.boolean().optional(),
 
   productType: productTypeEnum.optional(),
+  unit: unidadEnum.optional(),
+  /** "Forma de presentación" (ADR-314). Texto libre: el catálogo sugiere, no encierra. */
+  presentacion: z.string().trim().max(40).nullable().optional(),
   volumeM3: z.coerce.number().positive().max(99999),
   pieces: z.coerce.number().int().nonnegative().optional(),
   avgLengthM: z.coerce.number().positive().nullable().optional(),
@@ -92,6 +109,26 @@ const createSchema = z.object({
 
   notes: z.string().trim().max(1000).nullable().optional(),
   photos: z.array(z.string().url()).max(10).nullable().optional(),
+  /** Lista de trozas cargada a mano o desde un Excel (ADR-320). Tope 500: una
+   *  guía real no trae más y sin tope un pegado accidental tumba la request. */
+  trozas: z
+    .array(
+      z.object({
+        orden: z.number().int().min(1),
+        codificacion: z.string().trim().max(60).nullable(),
+        especieComun: z.string().trim().max(120).nullable(),
+        especieCientifica: z.string().trim().max(160).nullable(),
+        dimensiones: z.string().trim().max(80).nullable(),
+        largoM: z.number().nonnegative().max(200).nullable(),
+        diametroCm: z.number().nonnegative().max(999).nullable(),
+        d1Cm: z.number().nonnegative().max(999).nullable(),
+        d2Cm: z.number().nonnegative().max(999).nullable(),
+        cantidad: z.number().int().min(0).max(9999).nullable(),
+        volumenM3: z.number().positive().max(9999).nullable(),
+      }),
+    )
+    .max(500)
+    .optional(),
 });
 
 // ─── Guard ────────────────────────────────────────────────────────────────
