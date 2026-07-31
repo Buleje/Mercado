@@ -4,6 +4,13 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { CONSUMO_VIGENTE } from "@/lib/db/forest-ctp-consumo.db";
+import type {
+  FilaConsumoProveedor,
+  FilaCorridaProveedor,
+  FilaDespachoProveedor,
+  FilaIngresoProveedor,
+} from "@/lib/forestal/proveedor-trazabilidad";
 import {
   normalizarDocumento,
   normalizarNombre,
@@ -385,6 +392,139 @@ export const ForestDirectorioDB = {
         : Promise.resolve(),
     ]);
     this.invalidar(tenantId);
+  },
+
+  // ── Trazabilidad del proveedor ───────────────────────────────────────────
+
+  /**
+   * Todo lo que entró de un titular y qué pasó con eso (ADR-319).
+   *
+   * Se busca por NOMBRE y no por id porque el ingreso guarda `providerName` en
+   * texto (ADR-134): el directorio completa esa identidad, pero migrar el
+   * histórico es otro paso. `contains` insensible para que "Maderera del
+   * Oriente SAC" encuentre también lo que se tipeó sin "SAC".
+   */
+  async trazabilidadProveedor(
+    tenantId: string,
+    nombre: string,
+    opts: { desde?: Date; hasta?: Date } = {},
+  ): Promise<{
+    ingresos: FilaIngresoProveedor[];
+    consumos: FilaConsumoProveedor[];
+    corridas: FilaCorridaProveedor[];
+    despachos: FilaDespachoProveedor[];
+  }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const q = nombre.trim();
+    if (!q) return { ingresos: [], consumos: [], corridas: [], despachos: [] };
+
+    const entries = await prisma.woodEntry.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        providerName: { contains: q, mode: "insensitive" },
+        ...(opts.desde || opts.hasta
+          ? { entryDate: { ...(opts.desde ? { gte: opts.desde } : {}), ...(opts.hasta ? { lte: opts.hasta } : {}) } }
+          : {}),
+      },
+      select: {
+        id: true,
+        gtfNumber: true,
+        serforNumeroRegistro: true,
+        entryDate: true,
+        speciesCommonName: true,
+        speciesCites: true,
+        originCode: true,
+        volumeM3: true,
+        status: true,
+        costoTotal: true,
+      },
+      orderBy: { entryDate: "desc" },
+      take: 1000,
+    });
+
+    const ingresos: FilaIngresoProveedor[] = entries.map((e) => ({
+      woodEntryId: e.id,
+      gtfNumber: e.gtfNumber,
+      serforNumeroRegistro: e.serforNumeroRegistro,
+      entryDate: e.entryDate.toISOString(),
+      especie: e.speciesCommonName ?? "—",
+      cites: e.speciesCites,
+      originCode: e.originCode,
+      volumeM3: Number(e.volumeM3),
+      status: e.status,
+      costoTotal: e.costoTotal == null ? null : Number(e.costoTotal),
+    }));
+    if (!ingresos.length) return { ingresos, consumos: [], corridas: [], despachos: [] };
+
+    const ids = ingresos.map((i) => i.woodEntryId);
+    // Sólo consumos VIGENTES: una corrida anulada devolvió su materia prima al
+    // patio, así que contarla haría desaparecer madera que sigue estando.
+    const filasConsumo = await prisma.forestCtpConsumo.findMany({
+      where: { tenantId, woodEntryId: { in: ids }, ...CONSUMO_VIGENTE },
+      select: { woodEntryId: true, ctpEntryId: true, volumeM3: true },
+    });
+    const consumos: FilaConsumoProveedor[] = filasConsumo.map((c) => ({
+      woodEntryId: c.woodEntryId,
+      produccionEntryId: c.ctpEntryId,
+      volumeM3: Number(c.volumeM3),
+    }));
+
+    const idsCorridas = [...new Set(consumos.map((c) => c.produccionEntryId))];
+    if (!idsCorridas.length) return { ingresos, consumos, corridas: [], despachos: [] };
+
+    const filasCorrida = await prisma.forestCtpEntry.findMany({
+      where: { tenantId, id: { in: idsCorridas }, deletedAt: null },
+      select: {
+        id: true,
+        lineNo: true,
+        entryDate: true,
+        productType: true,
+        speciesCommon: true,
+        lineaProduccion: true,
+        quantity: true,
+        unit: true,
+        // Cuántos ingresos DISTINTOS la alimentaron: >1 ⇒ mezcla de titulares.
+        _count: { select: { consumos: true } },
+      },
+    });
+    const corridas: FilaCorridaProveedor[] = filasCorrida.map((c) => ({
+      produccionEntryId: c.id,
+      lineNo: c.lineNo,
+      fecha: c.entryDate.toISOString(),
+      productType: c.productType,
+      especie: c.speciesCommon,
+      lineaProduccion: c.lineaProduccion,
+      quantity: c.quantity == null ? 0 : Number(c.quantity),
+      unit: c.unit,
+      ingresosDistintos: c._count.consumos,
+    }));
+
+    const filasDespacho = await prisma.forestCtpDespachoOrigen.findMany({
+      where: {
+        tenantId,
+        produccionEntryId: { in: idsCorridas },
+        // Un despacho anulado no sacó nada del patio.
+        despacho: { deletedAt: null, status: "registrado" },
+      },
+      select: {
+        despachoEntryId: true,
+        produccionEntryId: true,
+        quantity: true,
+        despacho: { select: { lineNo: true, entryDate: true, gtfNumber: true, destino: true } },
+      },
+    });
+    const despachos: FilaDespachoProveedor[] = filasDespacho.map((d) => ({
+      despachoEntryId: d.despachoEntryId,
+      produccionEntryId: d.produccionEntryId,
+      lineNo: d.despacho.lineNo,
+      fecha: d.despacho.entryDate.toISOString(),
+      gtfNumber: d.despacho.gtfNumber,
+      destino: d.despacho.destino,
+      quantity: Number(d.quantity),
+    }));
+
+    return { ingresos, consumos, corridas, despachos };
   },
 
   invalidar(tenantId: string): void {

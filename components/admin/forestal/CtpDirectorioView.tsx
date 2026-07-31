@@ -14,7 +14,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Loader2, Pencil, Plus, Search, Trash2, Truck, Users } from "@buleje/design-system/icons";
+import { Share2, Loader2, Pencil, Plus, Search, Trash2, Truck, Users } from "@buleje/design-system/icons";
 import {
   ROLES_PARTE,
   ROL_DESCRIPCION,
@@ -32,6 +32,7 @@ import {
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import CtpParteModal from "./CtpParteModal";
 import CtpVehiculoModal from "./CtpVehiculoModal";
+import CtpProveedorTrazaModal from "./CtpProveedorTrazaModal";
 import { Btn, I, TablaSkeleton, VistaHeader, IconAction } from "./ctp-shared";
 
 type Pestaña = RolParte | "vehiculos";
@@ -50,6 +51,8 @@ export default function CtpDirectorioView() {
   const [q, setQ] = useState("");
   const [editando, setEditando] = useState<{ tipo: "parte"; valor: Parte | null } | { tipo: "vehiculo"; valor: Vehiculo | null } | null>(null);
   const [borrando, setBorrando] = useState<string | null>(null);
+  /** Titular cuya cadena se está mirando (ADR-319). */
+  const [trazando, setTrazando] = useState<string | null>(null);
 
   const esVehiculos = pestaña === "vehiculos";
   const transportistas = useMemo(() => dir.porRol("transportista"), [dir]);
@@ -152,6 +155,7 @@ export default function CtpDirectorioView() {
           partes={partesVisibles}
           rol={pestaña as RolParte}
           borrando={borrando}
+          onTrazar={(p) => setTrazando(p.nombre)}
           onEditar={(p) => setEditando({ tipo: "parte", valor: p })}
           onBorrar={(p) => void borrar(p.id, p.nombre, "parte")}
         />
@@ -167,6 +171,7 @@ export default function CtpDirectorioView() {
           onClose={() => setEditando(null)}
         />
       )}
+      {trazando && <CtpProveedorTrazaModal proveedor={trazando} onClose={() => setTrazando(null)} />}
       {editando?.tipo === "vehiculo" && (
         <CtpVehiculoModal
           vehiculo={editando.valor}
@@ -195,12 +200,15 @@ function ListaPartes({
   borrando,
   onEditar,
   onBorrar,
+  onTrazar,
 }: {
   partes: Parte[];
   rol: RolParte;
   borrando: string | null;
   onEditar: (p: Parte) => void;
   onBorrar: (p: Parte) => void;
+  /** Sólo para proveedores: abre su cadena completa. */
+  onTrazar: (p: Parte) => void;
 }) {
   if (partes.length === 0) {
     return <Vacio texto={`Todavía no hay ${ROL_PLURAL[rol].toLowerCase()} cargados. El primero se agrega acá o desde una guía.`} />;
@@ -241,6 +249,16 @@ function ListaPartes({
               </span>
             )}
             <div className="flex shrink-0 items-center gap-1">
+              {/* Sólo el proveedor tiene cadena hacia adelante: es de quien
+                  entró la madera. Un destinatario no "rinde". */}
+              {rol === "proveedor" && (
+                <IconAction
+                  icon={Share2}
+                  label="Ver todo lo que trajo y en qué terminó"
+                  onClick={() => onTrazar(p)}
+                  tone="accent"
+                />
+              )}
               <IconAction icon={Pencil} label="Editar" onClick={() => onEditar(p)} tone="info" />
               {borrando === p.id ? (
                 <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
