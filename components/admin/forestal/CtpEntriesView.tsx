@@ -52,7 +52,20 @@ const SECTION_META: Record<CtpSection, { label: string; icon: typeof Boxes; cta:
 const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; } };
 const n4 = (v: string | null) => (v == null ? "—" : Number(v).toFixed(4));
 
-export function CtpEntriesView({ section, period }: { section: CtpSection; period: CtpPeriod }) {
+export function CtpEntriesView({
+  section,
+  period,
+  presetProducto,
+  presetEspecie,
+  onPresetUsado,
+}: {
+  section: CtpSection;
+  period: CtpPeriod;
+  /** Producto que llega desde el stock de Saldos: abre el formulario ya cargado. */
+  presetProducto?: string | null;
+  presetEspecie?: string | null;
+  onPresetUsado?: () => void;
+}) {
   const meta = SECTION_META[section];
   const [entries, setEntries] = useState<CtpEntry[]>([]);
   /** Despacho para el que se está emitiendo el ANEXO N° 04 de la GTF. */
@@ -72,6 +85,18 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
   // Sin debounce, `load` se re-creaba en cada tecla → un fetch por caracter.
   const search = useDebounce(searchInput, 350);
   const [showForm, setShowForm] = useState(false);
+  /** Con qué producto abrir el formulario (viene de Saldos; se consume una vez). */
+  const [productoDelStock, setProductoDelStock] = useState<{ producto: string; especie: string | null } | null>(null);
+
+  // El producto que llega desde el stock abre el formulario una sola vez: se
+  // avisa al padre para que lo limpie y volver a Saldos → Despacho no reabra
+  // el modal con lo de la vez pasada.
+  useEffect(() => {
+    if (!presetProducto) return;
+    setProductoDelStock({ producto: presetProducto, especie: presetEspecie ?? null });
+    setShowForm(true);
+    onPresetUsado?.();
+  }, [presetProducto, presetEspecie, onPresetUsado]);
   const [showSim, setShowSim] = useState(false);
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
@@ -527,7 +552,7 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
       )}
       {loading && <TablaSkeleton filas={4} columnas={section === "produccion" ? 8 : 9} />}
 
-      {showForm && <CtpEntryForm section={section} onClose={() => setShowForm(false)} onSaved={(o) => { if (!o?.keepOpen) setShowForm(false); load(); if (o?.offline) pushToast({ tono: "warning", msg: "Sin señal: quedó anotado en el patio", detail: "Todavía NO está en el libro. Sube solo cuando vuelva la conexión." }); }} />}
+      {showForm && <CtpEntryForm section={section} presetProducto={productoDelStock?.producto ?? null} presetEspecie={productoDelStock?.especie ?? null} onClose={() => { setShowForm(false); setProductoDelStock(null); }} onSaved={(o) => { if (!o?.keepOpen) { setShowForm(false); setProductoDelStock(null); } load(); if (o?.offline) pushToast({ tono: "warning", msg: "Sin señal: quedó anotado en el patio", detail: "Todavía NO está en el libro. Sube solo cuando vuelva la conexión." }); }} />}
       {verBandeja && (
         <Anexo04Modal
           rows={[]}

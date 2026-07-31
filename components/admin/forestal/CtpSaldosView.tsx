@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  RefreshCw, AlertCircle, Boxes, Scale, PackageCheck, Layers, Clock, TreePine, FileDown,
+  RefreshCw, AlertCircle, Boxes, Scale, PackageCheck, Layers, Clock, TreePine, FileDown, Truck,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
@@ -18,6 +18,18 @@ import { applyCtpPeriodParams, ctpPeriodShortLabel, type CtpPeriod } from "@/lib
 import CtpKardexModal from "./CtpKardexModal";
 import CtpPatioAging from "./CtpPatioAging";
 import { Th, Td, n2 } from "./ctp-section-shared";
+
+/**
+ * La fila del stock viene etiquetada "tipo · especie" (`productLabel` de
+ * `forest-ctp.db`). El formulario de despacho pide los dos por separado, así que
+ * se parte acá — con el "—" del vacío traducido a `null`, no a un texto que
+ * después el select no encuentra.
+ */
+function partirProducto(label: string): [string, string | null] {
+  const [tipo, especie] = label.split(" · ");
+  const limpia = (v: string | undefined) => (v && v !== "—" ? v.trim() : null);
+  return [limpia(tipo) ?? "", limpia(especie)];
+}
 
 interface SpeciesBalance {
   especie: string; scientific: string | null; cites: boolean;
@@ -35,7 +47,14 @@ interface SaldosData {
 interface ConcilMP { especie: string; cites: boolean; apertura: number; ingreso: number; consumido: number; final: number; negativa: boolean }
 interface Concil { fuenteApertura: "cierre" | "calculada" | "sin_apertura"; aperturaLabel: string | null; materiaPrima: ConcilMP[]; productos: { producto: string; apertura: number; producido: number; despachado: number; final: number; negativo: boolean }[] }
 
-export function CtpSaldosView({ period }: { period: CtpPeriod }) {
+export function CtpSaldosView({
+  period,
+  onDespachar,
+}: {
+  period: CtpPeriod;
+  /** Atajo "del stock a la guía": lleva a Despacho con producto y especie ya elegidos. */
+  onDespachar?: (producto: string, especie: string | null) => void;
+}) {
   const [data, setData] = useState<SaldosData | null>(null);
   const [concil, setConcil] = useState<Concil | null>(null);
   const [loading, setLoading] = useState(true);
@@ -247,7 +266,7 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
             <div className="border-b-2 border-[var(--rule-base)] px-4 py-3"><CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Stock de productos transformados</CardTitle></div>
             <table className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] text-left">
-                <tr><Th>Producto · Especie</Th><Th className="text-right">Producido</Th><Th className="text-right">Despachado</Th><Th className="text-right">Stock</Th></tr>
+                <tr><Th>Producto · Especie</Th><Th className="text-right">Producido</Th><Th className="text-right">Despachado</Th><Th className="text-right">Stock</Th>{onDespachar && <Th className="text-right">&nbsp;</Th>}</tr>
               </thead>
               <tbody>
                 {data.productos.map((p) => (
@@ -256,6 +275,19 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
                     <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(p.producido)}</Td>
                     <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(p.despachado)}</Td>
                     <Td className="text-right"><span className={`font-mono font-bold tabular-nums ${p.stock < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-primary)]"}`}>{n2(p.stock)}</span></Td>
+                    {/* Con stock en patio, el siguiente paso natural es la guía:
+                        se abre el despacho con este producto ya elegido en vez
+                        de ir a Despacho y volver a buscarlo. */}
+                    {onDespachar && (
+                      <Td className="text-right">
+                        {p.stock > 0 && (
+                          <Btn size="sm" variant="secondary" onClick={() => onDespachar(...partirProducto(p.producto))}>
+                            <Truck className="h-4 w-4" />
+                            Despachar
+                          </Btn>
+                        )}
+                      </Td>
+                    )}
                   </tr>
                 ))}
               </tbody>

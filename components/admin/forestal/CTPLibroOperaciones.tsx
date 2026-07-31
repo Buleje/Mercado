@@ -164,6 +164,8 @@ export default function CTPLibroOperaciones() {
   // Default = trimestre, no "mes actual": una planta con un mes flojo abriría el
   // libro vacío teniendo datos, y "vacío al abrir" se lee como "roto".
   // El cierre mensual está a un click en el selector.
+  /** Producto elegido en Saldos para despachar (atajo "del stock a la guía"). */
+  const [productoADespachar, setProductoADespachar] = useState<{ producto: string; especie: string | null } | null>(null);
   const [periodKey, setPeriodKey] = useState<CtpPeriodKey>("trimestre");
   const [custom, setCustom] = useState<CtpCustomRange>({ from: "", to: "" });
   const [exporting, setExporting] = useState<null | "interno" | "oficial" | "informe" | "dossier">(null);
@@ -433,10 +435,29 @@ export default function CTPLibroOperaciones() {
           />
         )}
         {view === "produccion" && <CtpEntriesView key={`prod-${ingresosKey}`} section="produccion" period={period} />}
-        {view === "despacho" && <CtpEntriesView key={`desp-${ingresosKey}`} section="despacho" period={period} />}
+        {view === "despacho" && (
+          <CtpEntriesView
+            key={`desp-${ingresosKey}`}
+            section="despacho"
+            period={period}
+            presetProducto={productoADespachar?.producto ?? null}
+            presetEspecie={productoADespachar?.especie ?? null}
+            onPresetUsado={() => setProductoADespachar(null)}
+          />
+        )}
         {view === "radar" && <CtpTrazaRadar period={period} />}
         {view === "planta" && <CtpPlantaView period={period} />}
-        {view === "saldos" && <CtpSaldosView period={period} />}
+        {view === "saldos" && (
+          <CtpSaldosView
+            period={period}
+            onDespachar={(producto, especie) => {
+              // Del stock a la guía: se elige el producto en Saldos y el
+              // despacho se abre con él, sin volver a buscarlo en el catálogo.
+              setProductoADespachar({ producto, especie });
+              setView("despacho");
+            }}
+          />
+        )}
         {view === "trozas" && <CtpTrozasView />}
         {view === "resumenes" && <CtpResumenesSerfor period={period} />}
         {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={irA} />}
