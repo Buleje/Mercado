@@ -5907,6 +5907,70 @@ model ForestVehiculo {
   @@unique([tenantId, placa])
   @@index([tenantId, activo])
   @@index([deletedAt])
+
+  fletes ForestFlete[]
+}
+
+/// Flete forestal (ADR-318) — el viaje que trae la madera al CTP o se lleva el
+/// producto.
+///
+/// En un aserradero de selva el transporte es el segundo costo después de la
+/// madera, y hasta acá no se anotaba en ningún lado: quedaba en un cuaderno o en
+/// la cabeza del dueño. Sin él, "cuánto me costó puesta en planta" no se puede
+/// responder, y "a qué transportista le debo" tampoco.
+///
+/// **No toca el costeo del libro.** `WoodEntry.costoTotal` sigue siendo el costo
+/// de la materia prima (ADR-134) y el margen se calcula igual que antes. Imputar
+/// el flete al costo puesto en planta es un paso posterior y explícito.
+model ForestFlete {
+  id       String @id @default(cuid())
+  tenantId String
+
+  fecha DateTime
+  /// `ingreso` (trajo materia prima) | `despacho` (se llevó producto).
+  tipo  String   @default("ingreso")
+
+  /// La guía que amparó el viaje: es el vínculo con el libro. Texto y no FK
+  /// porque la GTF de ingreso vive como número en `WoodEntry.gtfNumber`.
+  gtfNumber String?
+
+  vehiculoId String?
+  vehiculo   ForestVehiculo? @relation(fields: [vehiculoId], references: [id], onDelete: SetNull)
+  /// Snapshot de la placa: el vehículo puede darse de baja, pero la placa que
+  /// viajó ese día no cambia nunca.
+  placa      String?
+
+  /// Quién transportó y quién manejó — del directorio (ADR-317).
+  transportistaId     String?
+  transportistaNombre String?
+  conductorId         String?
+
+  /// De quién era la carga. Sirve para saber qué fletes se le descuentan.
+  proveedorId     String?
+  proveedorNombre String?
+
+  /// m³ que se movieron en el viaje.
+  volumenM3 Decimal? @db.Decimal(12, 4)
+  /// S/ del flete. NULL = todavía no se sabe — nunca 0, que fingiría gratis.
+  monto     Decimal? @db.Decimal(12, 2)
+  moneda    String?  @default("PEN")
+
+  /// Quién lo paga: `ctp` | `proveedor` (se descuenta de su liquidación) | `destinatario`.
+  pagaQuien  String    @default("ctp")
+  /// `pendiente` | `pagado`.
+  estadoPago String    @default("pendiente")
+  fechaPago  DateTime?
+
+  notas     String?
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([tenantId, fecha(sort: Desc)])
+  @@index([tenantId, estadoPago])
+  @@index([tenantId, gtfNumber])
+  @@index([deletedAt])
 }
 
 // ─── Especialización AGRÍCOLA · Cacao (ADR-128) ────────────────────────────────

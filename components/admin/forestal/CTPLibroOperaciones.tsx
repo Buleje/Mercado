@@ -57,6 +57,7 @@ import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
 import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
 import CtpDirectorioView from "./CtpDirectorioView";
+import CtpFletesView from "./CtpFletesView";
 import CtpCierrePanel from "./CtpCierrePanel";
 import { useCtpCierres } from "@/hooks/use-ctp-cierres";
 import CtpPatioBandeja from "./CtpPatioBandeja";
@@ -84,7 +85,7 @@ import {
   type CtpIngresosFiltroRapido,
 } from "./ctp-shared";
 
-type CtpView = "ingresos" | "produccion" | "despacho" | "trozas" | "radar" | "planta" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "directorio" | "ficha";
+type CtpView = "ingresos" | "produccion" | "despacho" | "trozas" | "radar" | "planta" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "fletes" | "directorio" | "ficha";
 
 /**
  * Las doce vistas, agrupadas por la fase del libro a la que sirven. El orden
@@ -128,6 +129,7 @@ const CTP_GROUPS: LibroGroup[] = [
     views: [
       { key: "rentabilidad", label: "Rentabilidad", icon: Coins, hint: "Margen: venta − COGS", tecla: "b" },
       { key: "analisis", label: "Análisis", icon: TrendingUp, hint: "Reorden + tendencias", tecla: "a" },
+      { key: "fletes", label: "Fletes", icon: Truck, hint: "Lo que cuesta traer la madera y a quién se le debe", tecla: "j" },
       { key: "directorio", label: "Directorio", icon: Users, hint: "Proveedores, compradores, transportistas y placas", tecla: "g" },
       { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR", tecla: "f" },
     ],
@@ -449,6 +451,7 @@ export default function CTPLibroOperaciones() {
         {view === "eudr" && <CtpEudrPanel period={period} onNavigate={irA} />}
         {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
         {view === "analisis" && <CtpAnalisis />}
+        {view === "fletes" && <CtpFletesView period={period} />}
         {view === "directorio" && <CtpDirectorioView />}
         {view === "ficha" && <CtpFichaEditor />}
       </LibroChrome>

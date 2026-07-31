@@ -50,6 +50,8 @@ export type CtpAuditEntity =
   | "ForestParty"
   /** Vehículo del directorio forestal (ADR-317). */
   | "ForestVehiculo"
+  /** Viaje que trajo materia prima o se llevó producto (ADR-318). */
+  | "ForestFlete"
   // KV: ANEXO N° 04 emitido (lista de productos transformados de la GTF). No es
   // modelo Prisma: es el PAPEL que se entregó, guardado para poder re-imprimir
   // el mismo documento ante una fiscalización.
@@ -120,6 +122,12 @@ export type CtpAuditAction =
   | "ctp_parte_delete"
   | "ctp_vehiculo_upsert"
   | "ctp_vehiculo_delete"
+  // Fletes (ADR-318): es plata que sale de la caja y deuda con un tercero —
+  // quién la anotó y quién la dio por pagada deja rastro.
+  | "ctp_flete_create"
+  | "ctp_flete_update"
+  | "ctp_flete_pago"
+  | "ctp_flete_delete"
   | "ctp_cubicacion_update"
   | "ctp_cubicacion_delete"
   // ANEXO N° 04 emitido con la GTF (lista de productos transformados)
