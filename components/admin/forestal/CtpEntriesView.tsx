@@ -552,7 +552,11 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
 
       <ActionToasts toasts={toasts} onDismiss={dismissToast} />
 
-      {chainEntry && section === "despacho" && <CtpDespachoDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
+      {/* Al cerrar se recarga: en la ficha se emite la GTF y se edita la atribución,
+          y sin esto la fila seguía mostrando el número y el origen viejos. */}
+      {chainEntry && section === "despacho" && (
+        <CtpDespachoDetalleModal entry={chainEntry} onClose={() => { setChainEntry(null); void load(); }} />
+      )}
       {chainEntry && section === "produccion" && <CtpProduccionDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
 
       {annulId && (

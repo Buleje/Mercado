@@ -113,6 +113,35 @@ export function ctpFichaFaltantes(f: CtpFicha): (keyof CtpFicha)[] {
   return CTP_FICHA_REQUIRED.filter((k) => !s(f[k]));
 }
 
+/**
+ * ¿Dos nombres de especie se refieren a la misma? El permiso CITES suele decir
+ * "Caoba" y la línea "caoba (Swietenia macrophylla)", así que se compara sin
+ * mayúsculas y por contención en cualquiera de los dos sentidos.
+ *
+ * Single source: lo usan el aviso "CITES sin permiso" del Excel y el autollenado
+ * del N° de permiso en la guía de salida. Si el criterio cambia, cambia acá.
+ */
+export function especieCoincide(a: string | null | undefined, b: string | null | undefined): boolean {
+  const x = (a ?? "").trim().toLowerCase();
+  const y = (b ?? "").trim().toLowerCase();
+  if (!x || !y) return false;
+  return x.includes(y) || y.includes(x);
+}
+
+/**
+ * El permiso CITES archivado en la Ficha que corresponde a alguna de las especies
+ * dadas (nombre común o científico), o `null`. Tener el permiso es lo que hace
+ * legal a una especie protegida: se copia al documento en vez de tipearlo.
+ */
+export function permisoCitesDeEspecie(
+  /** Ficha a medio llenar incluida: un CTP nuevo todavía no cargó sus permisos. */
+  ficha: { citesPermisos?: CtpCitesPermiso[] } | null | undefined,
+  ...especies: (string | null | undefined)[]
+): CtpCitesPermiso | null {
+  const permisos = ficha?.citesPermisos ?? [];
+  return permisos.find((p) => especies.some((e) => especieCoincide(p.especie, e))) ?? null;
+}
+
 export type EstadoVencimiento = "vencido" | "por_vencer" | "vigente";
 
 /**

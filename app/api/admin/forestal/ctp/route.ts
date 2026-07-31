@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestCtpDB, CTP_SECTIONS } from "@/lib/db/forest-ctp.db";
 import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
+import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { ctpErrorResponse, ctpValidationResponse } from "@/lib/forestal/ctp-api-errors";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
@@ -70,6 +71,9 @@ const patchSchema = z.discriminatedUnion("action", [
   z.object({ id: z.string().trim().min(1), action: z.literal("emitir_gtf") }),
   // Registrar el valor de venta del despacho para el P&L (ADR-141).
   z.object({ id: z.string().trim().min(1), action: z.literal("set_venta"), valorVenta: z.number().min(0).max(9_999_999_999.99).nullable() }),
+  // Cuerpo de la guía de transporte: propietario, destinatario, transportista,
+  // vehículo, traslado y títulos. La forma la valida `gtfDatosSchema`.
+  z.object({ id: z.string().trim().min(1), action: z.literal("gtf_datos"), datos: gtfDatosSchema }),
 ]);
 
 /** `?from`/`?to` = instantes ISO del período (lib/forestal/ctp-period.ts). Inválido → sin límite. */
@@ -217,6 +221,30 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return ctpValidationResponse(parsed.error);
   try {
+    if (parsed.data.action === "gtf_datos") {
+      const r = await ForestCtpDespachoDB.guardarGtfDatos(
+        auth.tenantId,
+        parsed.data.id,
+        parsed.data.datos,
+        auth.username ?? "unknown",
+      );
+      if (!r.ok) {
+        return NextResponse.json(
+          {
+            error: r.reason,
+            message:
+              r.reason === "anulado"
+                ? "El despacho está anulado: su guía no se puede editar."
+                : "No se encontró ese despacho.",
+          },
+          { status: r.reason === "anulado" ? 422 : 404 },
+        );
+      }
+      // Se devuelve lo NORMALIZADO por Zod: la UI se queda con lo que quedó
+      // guardado y no con lo que creía estar mandando.
+      return NextResponse.json({ ok: true, datos: parsed.data.datos });
+    }
+
     if (parsed.data.action === "emitir_gtf") {
       const result = await ForestCtpDespachoDB.emitirGtf(auth.tenantId, parsed.data.id, auth.username ?? "unknown");
       if (!result.ok) {

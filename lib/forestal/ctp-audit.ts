@@ -24,6 +24,8 @@ import { logger } from "@/lib/logger";
  * `PlatformSetting` (key `ctp-ficha:{tenantId}`), pero se audita igual porque es
  * la identidad legal que encabeza cada certificado, GTF y export ante SERFOR. */
 export type CtpAuditEntity =
+  /** Una troza de la lista de la GTF, o un pedazo suyo tras retrozar (ADR-313). */
+  | "WoodEntryTroza"
   | "WoodEntry"
   | "ForestCtpEntry"
   | "ForestCtpConsumo"
@@ -44,6 +46,10 @@ export type CtpAuditEntity =
   | "ForestCubicacion"
   /** Trámite/oficio presentado a la autoridad (ADR-308). */
   | "ForestTramite"
+  /** Parte del directorio forestal: proveedor/destinatario/transportista/conductor (ADR-317). */
+  | "ForestParty"
+  /** Vehículo del directorio forestal (ADR-317). */
+  | "ForestVehiculo"
   // KV: ANEXO N° 04 emitido (lista de productos transformados de la GTF). No es
   // modelo Prisma: es el PAPEL que se entregó, guardado para poder re-imprimir
   // el mismo documento ante una fiscalización.
@@ -71,6 +77,9 @@ export type CtpAuditAction =
   // Atribución de origen y costeo — lo más sensible del módulo
   | "ctp_consumos_set"
   | "ctp_origenes_set"
+  /** Qué corridas alimentan un reproceso (ADR-316). Espeja `ctp_origenes_set`:
+   *  también descuenta stock, así que también deja rastro. */
+  | "ctp_reproceso_set"
   | "ctp_costo_congelar"
   // Lotes de producción / comercialización (ADR-136)
   | "ctp_lote_create"
@@ -81,6 +90,8 @@ export type CtpAuditAction =
   | "ctp_ficha_update"
   // GTF de salida formal (serie autorizada ARFFS + correlativo auto)
   | "ctp_gtf_emitir"
+  /** Se completaron los datos de la guía (propietario/destinatario/transportista). */
+  | "ctp_gtf_datos"
   // Importación del libro desde el Excel LO-CTP (ADR-138) — evento por lote
   | "ctp_import"
   // Cierre de período fiscal del libro (ADR-139) — congela + bloquea el mes
@@ -102,6 +113,13 @@ export type CtpAuditAction =
   | "ctp_tramite_create"
   | "ctp_tramite_update"
   | "ctp_tramite_delete"
+  // Directorio forestal (ADR-317): quién le compra, quién le vende y quién
+  // transporta es parte del expediente — un fiscalizador cruza esas identidades
+  // contra las guías, así que cambiarlas deja rastro.
+  | "ctp_parte_upsert"
+  | "ctp_parte_delete"
+  | "ctp_vehiculo_upsert"
+  | "ctp_vehiculo_delete"
   | "ctp_cubicacion_update"
   | "ctp_cubicacion_delete"
   // ANEXO N° 04 emitido con la GTF (lista de productos transformados)

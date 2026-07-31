@@ -27,6 +27,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { decidirCogs } from "@/lib/forestal/ctp-cogs";
 import { ForestCtpFichaDB } from "./forest-ctp-ficha.db";
 import { CtpInvariantError, ForestCtpConsumoDB, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
@@ -362,56 +363,25 @@ export class ForestCtpDespachoDB {
     ]);
     if (!despacho) throw new Error("Línea de despacho no encontrada");
 
-    const declarado = despacho.quantity ? Number(despacho.quantity) : 0;
-    const atribuido = r4(origenes.reduce((a, o) => a + Number(o.quantity), 0));
-    const sinAtribuir = r4(Math.max(0, declarado - atribuido));
-    const base = { sinAtribuir, moneda: despacho.moneda ?? "PEN" };
-
-    if (origenes.length === 0) {
-      return { ...base, cogs: null, costoUnitario: null, motivo: "sin_atribucion", detalle: [] };
-    }
-
     // El costo de cada corrida ya viene ponderado por sus guías (ADR-134 D6).
     const costos = await Promise.all(
       origenes.map((o) => ForestCtpConsumoDB.costoDeLinea(tenantId, o.produccionEntryId)),
     );
 
-    const detalle = origenes.map((o, i) => {
-      const c = costos[i];
-      const unit = c.costoUnitario;
-      return {
+    // La REGLA vive en `lib/forestal/ctp-cogs.ts` (pura, con tests). Acá sólo se
+    // leen los datos: el P&L del período aplica la misma función sobre datos
+    // traídos en lote, y así los dos caminos no pueden dar números distintos.
+    return decidirCogs({
+      declarado: despacho.quantity ? Number(despacho.quantity) : 0,
+      moneda: despacho.moneda,
+      origenes: origenes.map((o, i) => ({
         lineNo: o.produccion.lineNo,
         quantity: Number(o.quantity),
-        costoUnitario: unit,
-        costo: unit != null ? r2(unit * Number(o.quantity)) : null,
-        congelado: c.congelado,
-      };
+        costoUnitario: costos[i].costoUnitario,
+        moneda: costos[i].moneda,
+        congelado: costos[i].congelado,
+      })),
     });
-
-    const monedas = new Set(costos.map((c) => c.moneda ?? "PEN"));
-    if (monedas.size > 1) {
-      return { ...base, cogs: null, costoUnitario: null, motivo: "monedas_mezcladas", detalle };
-    }
-    // Una sola corrida sin costo envenena el total: sumar las demás daría un
-    // COGS que parece completo y no lo es.
-    if (detalle.some((d) => d.costo == null)) {
-      return { ...base, cogs: null, costoUnitario: null, motivo: "falta_costo", detalle };
-    }
-    // Y si hay volumen sin atribuir, tampoco se puede afirmar el costo del
-    // despacho entero — sólo el de la parte que sí tiene origen.
-    if (sinAtribuir > 0) {
-      return { ...base, cogs: null, costoUnitario: null, motivo: "sin_atribucion", detalle };
-    }
-
-    const cogs = r2(detalle.reduce((a, d) => a + (d.costo ?? 0), 0));
-    return {
-      ...base,
-      moneda: [...monedas][0],
-      cogs,
-      costoUnitario: declarado > 0 ? r2(cogs / declarado) : null,
-      motivo: declarado > 0 ? "ok" : "sin_cantidad",
-      detalle,
-    };
   }
 
   /**
@@ -482,8 +452,64 @@ export class ForestCtpDespachoDB {
       if (opts.fromDate) where.entryDate.gte = opts.fromDate;
       if (opts.toDate) where.entryDate.lte = opts.toDate;
     }
-    const despachos = await prisma.forestCtpEntry.findMany({ where, orderBy: { lineNo: "asc" }, select: { id: true, lineNo: true, productType: true, speciesCommon: true, gtfNumber: true } });
-    const margenes = await Promise.all(despachos.map((d) => ForestCtpDespachoDB.margenDeDespacho(tenantId, d.id)));
+    // Antes esto era 1 + D×(3+O) queries: por cada despacho se volvía a pedir la
+    // línea, sus orígenes y el costo de cada corrida citada. Con 100 despachos
+    // eran ~600 viajes a la base. Ahora son 2 queries + una por corrida ÚNICA
+    // (varios despachos suelen salir de las mismas corridas).
+    const despachos = await prisma.forestCtpEntry.findMany({
+      where,
+      orderBy: { lineNo: "asc" },
+      select: {
+        id: true, lineNo: true, productType: true, speciesCommon: true, gtfNumber: true,
+        // Se traen acá para no volver a pedir la línea despacho por despacho.
+        quantity: true, moneda: true, valorVenta: true,
+      },
+    });
+
+    const origenesTodos = despachos.length
+      ? await prisma.forestCtpDespachoOrigen.findMany({
+          where: { tenantId, despachoEntryId: { in: despachos.map((d) => d.id) } },
+          orderBy: { createdAt: "asc" },
+          include: { produccion: { select: { id: true, lineNo: true } } },
+        })
+      : [];
+
+    const porDespachoId = new Map<string, typeof origenesTodos>();
+    for (const o of origenesTodos) {
+      const arr = porDespachoId.get(o.despachoEntryId) ?? [];
+      arr.push(o);
+      porDespachoId.set(o.despachoEntryId, arr);
+    }
+
+    // Una corrida citada por diez despachos se costea UNA vez.
+    const corridas = [...new Set(origenesTodos.map((o) => o.produccionEntryId))];
+    const costosPorCorrida = new Map(
+      await Promise.all(
+        corridas.map(async (id) => [id, await ForestCtpConsumoDB.costoDeLinea(tenantId, id)] as const),
+      ),
+    );
+
+    const margenes: MargenDespacho[] = despachos.map((d) => {
+      const origenes = porDespachoId.get(d.id) ?? [];
+      // MISMA función que `cogsDeDespacho`: el P&L no puede dar otro número que la ficha.
+      const cogsR = decidirCogs({
+        declarado: d.quantity ? Number(d.quantity) : 0,
+        moneda: d.moneda,
+        origenes: origenes.map((o) => {
+          const c = costosPorCorrida.get(o.produccionEntryId);
+          return {
+            lineNo: o.produccion.lineNo,
+            quantity: Number(o.quantity),
+            costoUnitario: c?.costoUnitario ?? null,
+            moneda: c?.moneda ?? null,
+            congelado: c?.congelado ?? false,
+          };
+        }),
+      });
+      const venta = d.valorVenta != null ? Number(d.valorVenta) : null;
+      const { margen, margenPct, motivo } = decidirMargen(venta, cogsR.cogs, cogsR.motivo);
+      return { valorVenta: venta, cogs: cogsR.cogs, margen, margenPct, moneda: cogsR.moneda ?? "PEN", motivo };
+    });
 
     let completos = 0, sinVenta = 0, sinCosto = 0, ventasTotal = 0, cogsTotal = 0, margenTotal = 0;
     const monedas = new Set<string>();
@@ -729,6 +755,79 @@ export class ForestCtpDespachoDB {
       /** Período cerrado = la línea ya no se puede editar ni anular. */
       periodoCerrado: cerrado ? { label: cerrado.label, closedAt: cerrado.closedAt } : null,
     };
+  }
+
+  /**
+   * Guarda el cuerpo de la Guía de Transporte Forestal del despacho (propietario,
+   * destinatario, transportista, vehículo, traslado, títulos).
+   *
+   * Guardar admite huecos —el transportista suele definirse a última hora— y es
+   * IMPRIMIR el original lo que exige la guía completa: mismo criterio que el
+   * resto del libro (el acta admite huecos, el documento que se presenta no).
+   *
+   * Sí respeta el cierre de período: una guía de un mes cerrado no se retoca.
+   */
+  static async guardarGtfDatos(
+    tenantId: string,
+    despachoEntryId: string,
+    datos: unknown,
+    user = "unknown",
+  ): Promise<{ ok: true } | { ok: false; reason: "no_despacho" | "anulado" }> {
+    if (!tenantId) throw new Error("tenantId is required");
+
+    const desp = await prisma.forestCtpEntry.findFirst({
+      where: { id: despachoEntryId, tenantId, deletedAt: null },
+      select: { id: true, section: true, status: true, lineNo: true, entryDate: true, gtfNumber: true },
+    });
+    if (!desp || desp.section !== "despacho") return { ok: false, reason: "no_despacho" };
+    if (desp.status !== "registrado") return { ok: false, reason: "anulado" };
+
+    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, desp.entryDate);
+    if (cerrado) {
+      throw new CtpInvariantError(
+        `El período ${cerrado.label} está cerrado: no se puede editar la guía de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+
+    await prisma.forestCtpEntry.update({
+      where: { id: desp.id },
+      data: { gtfDatos: datos as Prisma.InputJsonValue },
+    });
+
+    auditCtp({
+      tenantId,
+      action: "ctp_gtf_datos",
+      entity: "ForestCtpEntry",
+      entityId: desp.id,
+      detail: `Completó los datos de la guía del despacho #${desp.lineNo}${desp.gtfNumber ? ` (GTF ${desp.gtfNumber})` : ""}`,
+      user,
+    });
+    return { ok: true };
+  }
+
+  /**
+   * La guía de un despacho: su número y su cuerpo, leídos de la base.
+   *
+   * El número viene de acá y no de la fila que el cliente ya tenía en la lista
+   * porque emitir la GTF lo cambia: si la vista se queda con la copia vieja, una
+   * guía emitida se muestra "sin emitir" y el operador la vuelve a emitir.
+   *
+   * `gtfDatos` se devuelve como JSON crudo: la forma la valida `leerGtfDatos()`
+   * del lado del que lo consume, que tolera versiones viejas del formulario (un
+   * formulario que no abre es peor que uno con un campo vacío).
+   */
+  static async guiaDeDespacho(
+    tenantId: string,
+    despachoEntryId: string,
+  ): Promise<{ gtfNumber: string | null; gtfDatos: unknown }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const row = await prisma.forestCtpEntry.findFirst({
+      where: { id: despachoEntryId, tenantId, deletedAt: null, section: "despacho" },
+      select: { gtfNumber: true, gtfDatos: true },
+    });
+    return { gtfNumber: row?.gtfNumber ?? null, gtfDatos: row?.gtfDatos ?? null };
   }
 
   /**

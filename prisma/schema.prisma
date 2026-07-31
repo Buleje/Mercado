@@ -117,17 +117,17 @@ model Product {
   // ── Tipo de catálogo: producto físico vs servicio (ADR pendiente) ──
   // "product" (default) = ítem con stock/barcode/vencimiento.
   // "service" = sin stock; usa durationLabel/pricingUnit/notes.
-  type          String   @default("product")
+  type          String  @default("product")
   // ── Distribución preparada vs empaquetada (ADR-131, Brandon 2026-06-12) ──
   // false (default) = EMPAQUETADA → se muestra en el Inicio (catálogo cruza-
   //   tiendas, producto-first) Y en la ficha de la tienda.
   // true = PREPARADA (hecha al momento: comida) → SOLO en la ficha de la tienda
   //   (modelo tienda-first, 1 pedido por cocina). NO aparece en el Inicio.
-  isPrepared    Boolean  @default(false)
+  isPrepared    Boolean @default(false)
   // ── Producto completo ──
   brand         String? // marca / fabricante
   sku           String? // código interno del negocio (distinto del barcode)
-  taxType       String?  @default("gravado") // gravado | exonerado | inafecto (IGV)
+  taxType       String? @default("gravado") // gravado | exonerado | inafecto (IGV)
   weightKg      Float? // peso para delivery/logística
   dimensions    String? // medidas libres, ej "30x20x10 cm" o "2m³"
   // ── Servicio ──
@@ -515,7 +515,7 @@ model Order {
   dropoffLng          Float?
 
   // Fase A4: pedido hecho dentro de una Junta del Barrio (link lógico a Junta.id).
-  juntaId             String?
+  juntaId String?
 
   items               OrderItem[]
   customer            Customer?            @relation(fields: [customerPhone], references: [phone], onDelete: SetNull)
@@ -656,14 +656,14 @@ model Settings {
   featureFlagsJson   String? // JSON object: { [FeatureFlag]: boolean }
 
   // ── Datos del negocio (Mejora M1-M10) ──
-  razonSocial     String?
-  ruc             String?
-  businessEmail   String?
-  currency        String? @default("PEN")
-  timezone        String? @default("America/Lima")
-  businessType    String? // bodega | minimarket | tienda | restaurante
+  razonSocial       String?
+  ruc               String?
+  businessEmail     String?
+  currency          String? @default("PEN")
+  timezone          String? @default("America/Lima")
+  businessType      String? // bodega | minimarket | tienda | restaurante
   regimenTributario String? // nrus | rer | rmt | general (SUNAT) — obligaciones tributarias
-  socialLinksJson String? // JSON: { facebook?, instagram?, tiktok? }
+  socialLinksJson   String? // JSON: { facebook?, instagram?, tiktok? }
 
   // ── Apariencia (Mejora M79-M86) — fix: persist colors/slogan ──
   primaryColor   String? @default("#2d6a4f")
@@ -671,11 +671,11 @@ model Settings {
   slogan         String?
 
   // ── Sistema (Mejora M21-M28) ──
-  dateFormat      String? @default("DD/MM/YYYY")
-  timeFormat      String? @default("24h")
-  decimals        Int?    @default(2)
+  dateFormat      String?  @default("DD/MM/YYYY")
+  timeFormat      String?  @default("24h")
+  decimals        Int?     @default(2)
   taxRate         Decimal? @default(18) @db.Decimal(5, 2)
-  fiscalYearStart Int?    @default(1) // month 1-12
+  fiscalYearStart Int?     @default(1) // month 1-12
 
   // ── Ventas y comprobantes (Mejora M29-M38) ──
   invoiceSeriesJson    String? // JSON: { factura: "F001", boleta: "B001", ncFactura: "FC01", ncBoleta: "BC01" }
@@ -1797,7 +1797,7 @@ model Contract {
   estado String @default("BORRADOR")
 
   clienteNombre String
-  clienteDoc    String @default("")
+  clienteDoc    String  @default("")
   customerId    String?
   supplierId    String?
 
@@ -1846,11 +1846,11 @@ model ContractSigner {
   contractId String
   tenantId   String
 
-  orden     Int    @default(1) // firman en orden: 1, 2, 3…
-  rol       String @default("CONTRAPARTE") // EMISOR | CONTRAPARTE | TESTIGO
+  orden     Int     @default(1) // firman en orden: 1, 2, 3…
+  rol       String  @default("CONTRAPARTE") // EMISOR | CONTRAPARTE | TESTIGO
   nombre    String
-  documento String @default("")
-  telefono  String @default("")
+  documento String  @default("")
+  telefono  String  @default("")
   email     String?
 
   estado        String    @default("PENDIENTE") // PENDIENTE | FIRMADO | RECHAZADO
@@ -4791,23 +4791,23 @@ model Document {
 }
 
 model DocumentFolder {
-  id        String   @id @default(cuid())
-  tenantId  String
-  parentId  String?
-  name      String
-  color     String?
-  icon      String?
+  id           String   @id @default(cuid())
+  tenantId     String
+  parentId     String?
+  name         String
+  color        String?
+  icon         String?
   /// Emoji elegido por el dueño de la carpeta. Es CONTENIDO del usuario (como el
   /// color), no iconografía del design system: gana sobre `icon` al dibujarla.
-  emoji     String?
+  emoji        String?
   /// Etiquetas de la carpeta ("legal", "sunat"): agrupan carpetas que no están
   /// juntas en el árbol. Distintas de las etiquetas de documento.
-  tags      String[] @default([])
+  tags         String[] @default([])
   // Permisos por carpeta: vacío = todos los admins; con roles = solo esos.
   // Los documentos dentro heredan esta restricción.
   allowedRoles String[] @default([])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   /// SetNull y no Cascade: la FK en la base es `ON DELETE SET NULL` (verificado
   /// 2026-07-29 contra el catálogo de Postgres) y el schema declaraba Cascade,
@@ -4815,8 +4815,8 @@ model DocumentFolder {
   /// subcarpetas quedaban en la raíz. Se alinea la declaración con la realidad;
   /// borrar el árbol completo es una acción EXPLÍCITA de la UI, no un efecto
   /// secundario de la FK.
-  parent    DocumentFolder?  @relation("DocumentFolderTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children  DocumentFolder[] @relation("DocumentFolderTree")
+  parent    DocumentFolder?       @relation("DocumentFolderTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  DocumentFolder[]      @relation("DocumentFolderTree")
   documents Document[]
   shares    DocumentFolderShare[]
 
@@ -5103,11 +5103,27 @@ model WoodEntry {
   id       String @id @default(cuid())
   tenantId String
 
+  /// (1) "N° Registro del libro de operaciones" del formato oficial LO-CTP
+  /// (ADR-311). Folio correlativo por tenant, asignado dentro de la tx del
+  /// INSERT. Estable: no se recalcula al listar — el libro tiene que casar con
+  /// lo ya presentado a la autoridad.
+  libroNro Int?
+
   // ── Fecha + Guía de Transporte Forestal (SERFOR) ─────
-  entryDate DateTime  @default(now())
-  gtfNumber String // "Número de Guía de Transporte Forestal"
-  gtfDate   DateTime?
-  gtfSeries String? // Serie de la GTF (si aplica)
+  entryDate            DateTime  @default(now())
+  /// (3) "Tipo de documento" con el que ingresó: GTF | GRR.
+  docType              String?   @default("GTF")
+  /// N° de constancia de registro del SNIFFS (`1-19-0313629`): con ese número se
+  /// consulta la guía en la base pública de SERFOR.
+  serforNumeroRegistro String?
+  /// La ficha OFICIAL tal como la publicó SERFOR (titular, propietario,
+  /// destinatario, transportista, detalle de productos y lista de trozas).
+  /// Se guarda para poder reimprimir la GTF y probar el origen de cada dato sin
+  /// depender de que el servicio de ellos esté arriba el día de la fiscalización.
+  serforGtf            Json?
+  gtfNumber            String // (4) "N° de documento" — Número de Guía de Transporte Forestal
+  gtfDate              DateTime?
+  gtfSeries            String? // Serie de la GTF (si aplica)
 
   // ── Proveedor / Titular Habilitante ──────────────────
   /// SE QUEDA aunque exista `supplierId`: es el acta de la guía, no un mirror
@@ -5129,10 +5145,21 @@ model WoodEntry {
   moneda     String?  @default("PEN")
 
   // ── Origen del material ──────────────────────────────
-  originType     WoodOriginType @default(otro)
-  originCode     String? // Número de concesión, predio o comunidad
-  originRegion   String? // Loreto, Ucayali, Madre de Dios, etc.
-  originDistrict String? // Distrito específico
+  originType         WoodOriginType @default(otro)
+  /// (9) "Código de origen/procedencia": el código con el que el producto SALIÓ
+  /// de la fuente de origen (para trozas, el que le pusieron en el bosque).
+  originCode         String?
+  /// (5) "N° de fuente de origen o procedencia" (Apartado 1 del formato): de
+  /// dónde viene la madera. Texto libre a propósito — lo emite la ARFFS y varía
+  /// por región (ADR-311).
+  originSourceNumber String?
+  /// (10) "Código de CTP" de la Sección 1: el código que ESTE centro le asigna al
+  /// producto al ingresar (por troza, o por carga/paquete si son diámetros
+  /// menores) y marca físicamente sobre la madera para identificarla dentro de la
+  /// planta. NO es el código de otro CTP; el del centro propio vive en la Ficha.
+  ctpProductCode     String?
+  originRegion       String? // Loreto, Ucayali, Madre de Dios, etc.
+  originDistrict     String? // Distrito específico
 
   // ── Especie ──────────────────────────────────────────
   speciesCommonName     String // "Tornillo", "Capirona", "Shihuahuaco"
@@ -5141,7 +5168,15 @@ model WoodEntry {
 
   // ── Producto ─────────────────────────────────────────
   productType   WoodProductType @default(rolliza)
-  volumeM3      Decimal         @db.Decimal(12, 4) // 4 decimales — precisión forestal
+  /// "Forma de presentación" del formato LO-CTP (ADR-314): cómo viene
+  /// físicamente el producto — TROZAS, PIEZAS, PAQUETES… La guía de SERFOR la
+  /// declara y hasta ahora se perdía al registrar el ingreso.
+  presentacion  String?
+  /// (11) "Unidad de medida" declarada en el documento (m3 | unidad | kg | tonelada).
+  /// INFORMATIVA: todo el libro —saldos, invariantes I1-I5, costeo— se calcula en
+  /// m³ y `volumeM3` sigue siendo la cantidad. Cambiar la unidad base es otro ADR.
+  unit          String?         @default("m3")
+  volumeM3      Decimal         @db.Decimal(12, 4) // (12) "Cantidad" — 4 decimales, precisión forestal
   pieces        Int             @default(0)
   avgLengthM    Decimal?        @db.Decimal(8, 2) // Largo promedio metros
   avgDiameterCm Decimal?        @db.Decimal(8, 2) // Diámetro promedio cm (rolliza)
@@ -5167,12 +5202,86 @@ model WoodEntry {
   /// el patrón de blanqueo que fiscaliza SERFOR. Se aplica en la capa DB (D7).
   consumos ForestCtpConsumo[]
 
+  /// Lista de trozas de la GTF (ADR-312). Cada pieza con su codificación, que es
+  /// lo que OSINFOR cruza contra el POA del título habilitante.
+  trozas WoodEntryTroza[]
+
   @@index([tenantId, entryDate(sort: Desc)])
   @@index([tenantId, status])
   @@index([tenantId, gtfNumber])
   @@index([tenantId, speciesCommonName])
   @@index([tenantId, supplierId])
+  @@index([tenantId, libroNro])
   @@index([deletedAt])
+}
+
+/// Una troza de la lista que ampara la GTF (ADR-312).
+///
+/// Se guarda como fila propia —no sólo dentro del JSON de la ficha— porque la
+/// codificación de la troza es lo que un fiscalizador de OSINFOR cruza pieza por
+/// pieza contra el POA del título habilitante. Dentro del JSON el dato existe
+/// pero no se puede buscar, y una trazabilidad que no se puede consultar no
+/// sirve el día de la fiscalización.
+model WoodEntryTroza {
+  id       String @id @default(cuid())
+  tenantId String
+
+  woodEntryId String
+  entry       WoodEntry @relation(fields: [woodEntryId], references: [id], onDelete: Cascade)
+
+  /// Orden en que la GTF lista la troza. Se conserva para poder reimprimir la
+  /// lista igual que el documento.
+  orden Int @default(0)
+
+  /// El código con el que la troza salió del bosque, tal como lo publica SERFOR.
+  /// Es el dato que se busca.
+  codificacion String?
+
+  /// La especie viaja EN LA TROZA, no sólo en el ingreso: si una troza no matchea
+  /// con ninguna especie declarada, se engancha al primer ingreso del grupo pero
+  /// conserva la suya — el dato del documento no se pierde por una heurística.
+  especieComun      String?
+  especieCientifica String?
+
+  /// Dimensiones tal como las publica SERFOR ("5.00 X 0.85 X 0.80"). Texto porque
+  /// el formato varía y romperlo en números perdería lo que dice el documento.
+  dimensiones String?
+  largoM      Decimal? @db.Decimal(8, 3)
+  /// Los DOS extremos del tronco, tal como los publica SERFOR.
+  ///
+  /// Se guardan por separado además del promedio porque el tronco es cónico y
+  /// las reglas del retrozado (ADR-313) necesitan el diámetro MAYOR: con sólo el
+  /// promedio, una troza de 73→58 parecía de 65.5 cm y rechazaba cortes válidos.
+  d1Cm        Decimal? @db.Decimal(8, 2)
+  d2Cm        Decimal? @db.Decimal(8, 2)
+  /// Promedio de los dos. Es el que se muestra y con el que se calcula Huber.
+  diametroCm  Decimal? @db.Decimal(8, 2)
+
+  cantidad  Int?
+  volumenM3 Decimal? @db.Decimal(12, 4)
+
+  // ── Retrozado (ADR-313 · Apartado 2 del formato LO-CTP) ──────────────
+  /// De qué troza se cortó ésta. NULL = troza tal como llegó en la guía.
+  ///
+  /// Un retrozo ES una troza, con madre: por eso se modela como auto-relación y
+  /// no como tabla aparte. Así el buscador por codificación, la lista del
+  /// ingreso y los saldos lo encuentran sin duplicar nada.
+  trozaOrigenId String?
+  trozaOrigen   WoodEntryTroza?  @relation("Retrozado", fields: [trozaOrigenId], references: [id], onDelete: Cascade)
+  retrozos      WoodEntryTroza[] @relation("Retrozado")
+
+  /// Cuándo se cortó. Es una operación del patio, no del documento.
+  fechaRetrozo  DateTime?
+  /// El pedazo que no sirve. Ocupa volumen de la madre —por eso se registra—
+  /// pero no debe contarse como producto disponible.
+  descarte      Boolean   @default(false)
+  observaciones String?
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, woodEntryId])
+  @@index([tenantId, codificacion])
+  @@index([tenantId, trozaOrigenId])
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -5442,9 +5551,25 @@ model ForestCtpEntry {
   cites             Boolean @default(false)
 
   // Producción
-  productType    String? // producto terminado
-  volumeInputM3  Decimal? @db.Decimal(12, 4) // materia prima consumida
-  rendimientoPct Decimal? @db.Decimal(5, 2) // output/input %
+  productType       String? // producto terminado
+  /// "Forma de presentación" (ADR-314): PAQUETES, PIEZAS, TABLILLAS… Es lo que
+  /// declara la GTF de salida; sin esto el despacho no reproduce su documento.
+  /// Los reprocesos que CONSUMEN esta corrida (ADR-316) y los que la PRODUCEN.
+  /// Descuentan stock igual que un despacho: el producto original deja de existir.
+  reprocesosSalida  ForestCtpReproceso[] @relation("ReprocesoOrigen")
+  reprocesosEntrada ForestCtpReproceso[] @relation("ReprocesoDestino")
+  /// El código del paquete RAÍZ: sobrevive a los reprocesos encadenados, así que
+  /// un tablón hecho tablillas sigue apuntando a la corrida de la que nació.
+  codigoRaiz        String?
+
+  presentacion    String?
+  volumeInputM3   Decimal? @db.Decimal(12, 4) // materia prima consumida
+  rendimientoPct  Decimal? @db.Decimal(5, 2) // output/input %
+  /// Casillero 7 del Cuadro Resumen 3 del LO-CTP: LP = línea principal ·
+  /// LRE = línea de recuperación (la que aprovecha los residuos). El balance
+  /// oficial se presenta por lote Y por línea, así que sin esto la producción de
+  /// la línea de recuperación no se puede declarar aparte (ADR-311).
+  lineaProduccion String?  @default("LP")
 
   // Cantidad producida / despachada
   quantity Decimal? @db.Decimal(14, 4)
@@ -5452,8 +5577,28 @@ model ForestCtpEntry {
   pieces   Int?
 
   // Despacho
-  gtfNumber String? // GTF de salida del producto
-  destino   String?
+  /// (3) "Tipo de documento" con el que sale el producto: GTF | GRR (ADR-311).
+  docType              String?
+  gtfNumber            String? // (4) "N° de documento" — GTF de salida del producto
+  /// N° de constancia del SNIFFS de la GTF de salida, cuando se verificó contra
+  /// la base de SERFOR (ADR-312). Que la salida esté amparada por una guía que
+  /// existe y está vigente es lo primero que revisa una fiscalización; sin este
+  /// dato la verificación se hacía y se perdía.
+  serforNumeroRegistro String?
+  /// Cuándo se verificó. Una guía activa hoy puede estar anulada mañana: sin la
+  /// fecha, el sello no dice nada.
+  serforVerificadoEn   DateTime?
+  /// (9) "Código del producto" de la Sección 4: opcional en general, OBLIGATORIO
+  /// para trozas y para lo que no se produjo en este centro.
+  codigoProducto       String?
+  destino              String?
+  /// Cuerpo de la Guía de Transporte Forestal de salida: propietario del producto,
+  /// destinatario, transportista/vehículo/conductor, títulos habilitantes y datos
+  /// del traslado (RDE 122-2015-SERFOR-DE · RDE D000014-2024-MIDAGRI-SERFOR-DE).
+  /// JSONB y no 15 columnas: es el cuerpo de un documento que se llena una vez y
+  /// se imprime, no algo que se consulte por campo. La forma la valida Zod en
+  /// `lib/forestal/ctp-gtf-datos.ts`.
+  gtfDatos             Json?
 
   observations   String?
   status         String    @default("registrado") // registrado | anulado
@@ -5499,6 +5644,39 @@ model ForestCtpEntry {
 /// "¿de qué árbol salió esta tabla que despaché?" — lo que exige EUDR.
 /// Un despacho real saca producto de varias corridas, y una corrida alimenta
 /// varios despachos.
+/// Reproceso: un producto ya terminado que vuelve a la sierra (ADR-316).
+///
+/// Una tabla que se re-asierra en tablillas, un cuartón que se parte. El
+/// producto original **deja de existir como tal**, así que el puente descuenta
+/// stock igual que un despacho — a diferencia del lote, que sólo agrupa.
+///
+/// Espeja a `ForestCtpDespachoOrigen`: mismo patrón, misma precisión, mismo
+/// LOCK sobre la corrida de origen dentro de la transacción.
+model ForestCtpReproceso {
+  id       String @id @default(cuid())
+  tenantId String // denormalizado — regla 3 + detección de fuga (ADR-134 D3)
+
+  /// La corrida cuyo producto entra a la sierra otra vez.
+  origenEntryId  String
+  origen         ForestCtpEntry @relation("ReprocesoOrigen", fields: [origenEntryId], references: [id], onDelete: Restrict)
+  /// La corrida nueva que sale del reproceso.
+  destinoEntryId String
+  destino        ForestCtpEntry @relation("ReprocesoDestino", fields: [destinoEntryId], references: [id], onDelete: Cascade)
+
+  /// Hecho físico: cuánto de ESA corrida entró a ESE reproceso. NOT NULL, > 0.
+  /// Decimal(14,4) — la precisión la copia de la columna que la ACOTA
+  /// (ForestCtpEntry.quantity), igual que ForestCtpDespachoOrigen.
+  quantity Decimal @db.Decimal(14, 4)
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([destinoEntryId, origenEntryId]) // una corrida 1 vez por reproceso: se suma, no se duplica
+  @@index([destinoEntryId])
+  @@index([tenantId, origenEntryId])
+}
+
 model ForestCtpDespachoOrigen {
   id       String @id @default(cuid())
   tenantId String // denormalizado — regla 3 + detección de fuga (ADR-134 D3)
@@ -5637,6 +5815,100 @@ model ForestProdLoteMiembro {
   @@index([tenantId, produccionEntryId])
 }
 
+/// Directorio forestal (ADR-317) — las personas y empresas que intervienen en el
+/// movimiento de la madera: proveedores (traen la materia prima), destinatarios
+/// (reciben el despacho), transportistas y conductores.
+///
+/// Hasta acá cada guía re-tipeaba los mismos 20 campos y el proveedor vivía como
+/// `WoodEntry.providerName` (texto libre): el mismo aserradero entraba escrito de
+/// cinco formas y no había manera de cruzarlo. Un fiscalizador que pide "todo lo
+/// que le compraste a X" necesita que X sea UNA fila, no cinco strings.
+model ForestParty {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Qué papeles cumple: proveedor · destinatario · transportista · conductor.
+  /// Array y no una columna: la misma empresa suele ser proveedor Y destinatario,
+  /// y el dueño-chofer es transportista Y conductor. Forzar una fila por rol
+  /// duplicaría el mismo RUC.
+  roles String[]
+
+  nombre    String
+  docTipo   String? // RUC | DNI | CE | PASAPORTE
+  docNumero String?
+  direccion String?
+  region    String?
+  provincia String?
+  distrito  String?
+  ubigeo    String?
+  telefono  String?
+  email     String?
+
+  /// Registro del MTC — sólo aplica al transportista que es empresa.
+  registroMtc       String?
+  /// Licencia de conducir — sólo aplica al conductor. Es lo que pide el control.
+  licencia          String?
+  /// Título habilitante con el que el proveedor extrae (permiso, concesión…).
+  tituloHabilitante String?
+  notas             String?
+
+  activo Boolean @default(true)
+
+  /// Ranking de uso: la libreta se ordena por lo que se usa, no alfabéticamente.
+  /// Es un contador de conveniencia, no un dato de compliance.
+  usos      Int       @default(0)
+  ultimoUso DateTime?
+
+  vehiculos ForestVehiculo[]
+
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  /// El documento identifica a la parte: dos filas con el mismo RUC son la misma
+  /// empresa escrita dos veces. Postgres trata los NULL como distintos, así que
+  /// las partes sin documento (existen: un comprador informal) no chocan entre sí.
+  @@unique([tenantId, docTipo, docNumero])
+  @@index([tenantId, activo])
+  @@index([tenantId, nombre])
+  @@index([deletedAt])
+}
+
+/// Vehículo del directorio forestal (ADR-317). La PLACA es lo primero que compara
+/// un puesto de control contra la guía, así que es la clave natural del tenant.
+model ForestVehiculo {
+  id       String @id @default(cuid())
+  tenantId String
+
+  placa         String
+  marca         String?
+  tipo          String? // camión, tráiler, camioneta…
+  /// Configuración vehicular del MTC (T3S3, C2…). Va en la guía cuando se declara.
+  configuracion String?
+  capacidadM3   Decimal? @db.Decimal(10, 3)
+
+  /// De quién es el vehículo. SetNull: si se borra el transportista, la placa
+  /// sigue existiendo — el vehículo viajó y las guías emitidas lo nombran.
+  transportistaId String?
+  transportista   ForestParty? @relation(fields: [transportistaId], references: [id], onDelete: SetNull)
+
+  notas  String?
+  activo Boolean @default(true)
+
+  usos      Int       @default(0)
+  ultimoUso DateTime?
+
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([tenantId, placa])
+  @@index([tenantId, activo])
+  @@index([deletedAt])
+}
+
 // ─── Especialización AGRÍCOLA · Cacao (ADR-128) ────────────────────────────────
 // Acopio & beneficio de cacao en grano. Alineado a NTP 208.040 (cosecha/beneficio),
 // NTP-ISO 2451 (clasificación por defectos), NTP-ISO 1114 (prueba de corte),
@@ -5704,27 +5976,27 @@ model CacaoParcela {
 /// cosecha) planificada o realizada en una sección. Estado + fechas para ver en
 /// la grilla qué está al día, pendiente o vencido.
 model CacaoParcelaLabor {
-  id          String    @id @default(cuid())
-  tenantId    String
-  parcelaId   String // ref. app-level a CacaoParcela
-  tipo        String // poda | fertilizacion | deshierbe | fitosanitario | riego | cosecha
-  estado      String    @default("pendiente") // pendiente | hecho
-  fechaPlan   DateTime? // planificada / programada
-  fechaHecho  DateTime? // realizada
-  responsable String?
-  detalle     String?
-  cantidad    Decimal?  @db.Decimal(12, 2) // ej. kg cosechados, litros aplicados, jornales
-  unidad      String? // kg | L | jornal | sacos
-  insumo      String? // producto aplicado (fertilizante, fungicida, etc.)
-  dosis       String? // ej. "2 kg/ha", "1 L/200L agua"
-  costo       Decimal?  @db.Decimal(12, 2) // costo de la labor (mano de obra + insumo) → Finanzas
+  id             String    @id @default(cuid())
+  tenantId       String
+  parcelaId      String // ref. app-level a CacaoParcela
+  tipo           String // poda | fertilizacion | deshierbe | fitosanitario | riego | cosecha
+  estado         String    @default("pendiente") // pendiente | hecho
+  fechaPlan      DateTime? // planificada / programada
+  fechaHecho     DateTime? // realizada
+  responsable    String?
+  detalle        String?
+  cantidad       Decimal?  @db.Decimal(12, 2) // ej. kg cosechados, litros aplicados, jornales
+  unidad         String? // kg | L | jornal | sacos
+  insumo         String? // producto aplicado (fertilizante, fungicida, etc.)
+  dosis          String? // ej. "2 kg/ha", "1 L/200L agua"
+  costo          Decimal?  @db.Decimal(12, 2) // costo de la labor (mano de obra + insumo) → Finanzas
   recurrenteDias Int? // si se setea, al marcarla hecha se agenda la próxima a +N días
-  loteId      String? // si es cosecha enviada a Acopio, el CacaoLote generado (evita doble envío)
-  gastoId     String? // si tiene costo y está hecha, el Expense posteado en Finanzas (sync)
-  createdBy   String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  loteId         String? // si es cosecha enviada a Acopio, el CacaoLote generado (evita doble envío)
+  gastoId        String? // si tiene costo y está hecha, el Expense posteado en Finanzas (sync)
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
   @@index([tenantId, tipo])
   @@index([parcelaId, estado])
@@ -5995,58 +6267,58 @@ model Reclamo {
 // SUM(incomes) - SUM(expenses), calculada en la DB class. Sin FK a Tenant
 // (solo tenantId + índice) — mismo patrón que ProviderComplaint.
 model Asset {
-  id            String         @id @default(cuid())
-  tenantId      String
-  name          String // "Cargador frontal CAT 938"
-  type          String // cargador|oruga|camion|excavadora|tractor|otro
-  plate         String? // placa o número de serie
-  imageUrl      String?
-  purchaseValue Decimal?       @db.Decimal(14, 2)
-  status        String         @default("operativo") // operativo|mantenimiento|parado
-  hourlyRate    Decimal?       @db.Decimal(12, 2) // tarifa de alquiler
-  rateUnit      String         @default("hora") // hora|dia|m3|viaje
+  id                String             @id @default(cuid())
+  tenantId          String
+  name              String // "Cargador frontal CAT 938"
+  type              String // cargador|oruga|camion|excavadora|tractor|otro
+  plate             String? // placa o número de serie
+  imageUrl          String?
+  purchaseValue     Decimal?           @db.Decimal(14, 2)
+  status            String             @default("operativo") // operativo|mantenimiento|parado
+  hourlyRate        Decimal?           @db.Decimal(12, 2) // tarifa de alquiler
+  rateUnit          String             @default("hora") // hora|dia|m3|viaje
   // Capacidad operativa por día (horas/unidades disponibles) — denominador de
   // la UTILIZACIÓN. Default 8 (jornada típica). Brandon 2026-06-06.
-  capacityPerDay Int?          @default(8)
+  capacityPerDay    Int?               @default(8)
   // Horómetro actual del equipo (lectura más reciente) — utilización exacta.
-  currentHours  Decimal?       @db.Decimal(12, 1)
+  currentHours      Decimal?           @db.Decimal(12, 1)
   // Meta de consumo de combustible (galones por unidad) — base de la alerta.
-  fuelTargetPerUnit Decimal?   @db.Decimal(12, 3)
-  notes         String?
-  active        Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  incomes       AssetIncome[]
-  expenses      AssetExpense[]
-  maintenances  AssetMaintenance[]
-  inspections   AssetInspection[]
+  fuelTargetPerUnit Decimal?           @db.Decimal(12, 3)
+  notes             String?
+  active            Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  incomes           AssetIncome[]
+  expenses          AssetExpense[]
+  maintenances      AssetMaintenance[]
+  inspections       AssetInspection[]
 
   @@index([tenantId, active])
   @@index([tenantId, status])
 }
 
 model AssetIncome {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   tenantId  String
   assetId   String
-  date      DateTime @default(now())
+  date      DateTime  @default(now())
   client    String? // cliente que alquiló
-  quantity  Decimal? @db.Decimal(10, 2) // horas/días/m³/viajes
-  unit      String   @default("hora")
-  rate      Decimal  @db.Decimal(12, 2) // tarifa aplicada
-  amount    Decimal  @db.Decimal(14, 2) // total
-  hourStart Decimal? @db.Decimal(12, 1) // horómetro inicial
-  hourEnd   Decimal? @db.Decimal(12, 1) // horómetro final
+  quantity  Decimal?  @db.Decimal(10, 2) // horas/días/m³/viajes
+  unit      String    @default("hora")
+  rate      Decimal   @db.Decimal(12, 2) // tarifa aplicada
+  amount    Decimal   @db.Decimal(14, 2) // total
+  hourStart Decimal?  @db.Decimal(12, 1) // horómetro inicial
+  hourEnd   Decimal?  @db.Decimal(12, 1) // horómetro final
   // Cobranza (cuentas por cobrar) — pagado/pendiente + vencimiento.
-  paid      Boolean  @default(true)
+  paid      Boolean   @default(true)
   paidAt    DateTime?
   dueDate   DateTime?
   // Rango del alquiler (calendario de disponibilidad). Si null, usa `date`.
   startDate DateTime?
   endDate   DateTime?
   notes     String?
-  createdAt DateTime @default(now())
-  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  asset     Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, date])
   @@index([tenantId, paid])

@@ -55,12 +55,16 @@ export const GET = withApiHandler("forestal-ctp-origenes-get", async (req: NextR
   if (!despachoEntryId) return NextResponse.json({ error: "despachoEntryId_required" }, { status: 400 });
 
   try {
-    const [origenes, trazabilidad, cogs] = await Promise.all([
+    const [origenes, trazabilidad, cogs, guia] = await Promise.all([
       ForestCtpDespachoDB.listByDespacho(auth.tenantId, despachoEntryId),
       ForestCtpDespachoDB.trazabilidadCompleta(auth.tenantId, despachoEntryId),
       ForestCtpDespachoDB.cogsDeDespacho(auth.tenantId, despachoEntryId),
+      // La guía: su número y su cuerpo (propietario/destinatario/transportista).
+      // El número se lee de la base y no de la fila que trajo el cliente porque
+      // emitirlo lo cambia; el cuerpo lo valida `leerGtfDatos()` en el cliente.
+      ForestCtpDespachoDB.guiaDeDespacho(auth.tenantId, despachoEntryId),
     ]);
-    return NextResponse.json({ origenes, trazabilidad, cogs });
+    return NextResponse.json({ origenes, trazabilidad, cogs, guia });
   } catch (err) {
     return ctpErrorResponse(err, "ctp-origenes.GET", auth.tenantId);
   }

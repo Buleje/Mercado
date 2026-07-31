@@ -26,6 +26,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Boxes,
   Building2,
+  ClipboardList,
   Coins,
   FileSpreadsheet,
   FileText,
@@ -42,6 +43,7 @@ import {
   TrendingUp,
   Truck,
   Upload,
+  Users,
 } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import type { ShortcutSection } from "@/contexts/admin-shortcuts-context";
@@ -54,6 +56,7 @@ import CtpIngresosView from "./CtpIngresosView";
 import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
 import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
+import CtpDirectorioView from "./CtpDirectorioView";
 import CtpCierrePanel from "./CtpCierrePanel";
 import { useCtpCierres } from "@/hooks/use-ctp-cierres";
 import CtpPatioBandeja from "./CtpPatioBandeja";
@@ -72,6 +75,8 @@ import CtpBuscarGtf from "./CtpBuscarGtf";
 import CtpEntryDetailModal from "./CtpEntryDetailModal";
 import type { WoodEntry } from "./ctp-shared";
 import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
+import CtpResumenesSerfor from "./CtpResumenesSerfor";
+import CtpTrozasView from "./CtpTrozasView";
 import {
   CTP_INGRESAR_GTF_KEY,
   CTP_MODULE_TAB_ID,
@@ -79,7 +84,7 @@ import {
   type CtpIngresosFiltroRapido,
 } from "./ctp-shared";
 
-type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "planta" | "saldos" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "ficha";
+type CtpView = "ingresos" | "produccion" | "despacho" | "trozas" | "radar" | "planta" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "directorio" | "ficha";
 
 /**
  * Las doce vistas, agrupadas por la fase del libro a la que sirven. El orden
@@ -101,6 +106,7 @@ const CTP_GROUPS: LibroGroup[] = [
     id: "trazabilidad",
     label: "Trazabilidad",
     views: [
+      { key: "trozas", label: "Trozas", icon: PackageOpen, hint: "Buscar una pieza por su codificación", tecla: "t" },
       { key: "radar", label: "Radar", icon: Share2, hint: "Cadena de custodia visual", tecla: "r" },
       { key: "planta", label: "Planta", icon: MapPin, hint: "Mapa del aserradero", tecla: "m" },
       { key: "eudr", label: "EUDR", icon: Globe, hint: "Geolocalización + dossier UE", tecla: "u" },
@@ -111,6 +117,7 @@ const CTP_GROUPS: LibroGroup[] = [
     label: "Control",
     views: [
       { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta", tecla: "s" },
+      { key: "resumenes", label: "Cuadros SERFOR", icon: ClipboardList, hint: "Los 3 cuadros resumen del formato oficial", tecla: "q" },
       { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Alertas del período", tecla: "c" },
       { key: "cierre", label: "Cierre", icon: Lock, hint: "Cerrar mes · bloquear el acta", tecla: "x" },
     ],
@@ -121,6 +128,7 @@ const CTP_GROUPS: LibroGroup[] = [
     views: [
       { key: "rentabilidad", label: "Rentabilidad", icon: Coins, hint: "Margen: venta − COGS", tecla: "b" },
       { key: "analisis", label: "Análisis", icon: TrendingUp, hint: "Reorden + tendencias", tecla: "a" },
+      { key: "directorio", label: "Directorio", icon: Users, hint: "Proveedores, compradores, transportistas y placas", tecla: "g" },
       { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR", tecla: "f" },
     ],
   },
@@ -132,7 +140,7 @@ const CTP_MODULE_ID = "ctp-libro";
 const SIN_TIRA: CtpView[] = ["cumplimiento", "cierre"];
 /** Vistas que no leen el período: Análisis (6 meses fijos), Cierre (por mes) y
  *  Ficha (identidad). Con el selector visible parecería que no hace nada. */
-const SIN_PERIODO: CtpView[] = ["analisis", "cierre", "ficha"];
+const SIN_PERIODO: CtpView[] = ["analisis", "cierre", "ficha", "trozas", "directorio"];
 
 export default function CTPLibroOperaciones() {
   /** Un solo estado de cierres para el asistente y el historial. */
@@ -315,7 +323,7 @@ export default function CTPLibroOperaciones() {
       {
         id: "oficial",
         label: "Formato oficial SERFOR",
-        hint: "LO-CTP (RDE D000025-2023): portada + los 3 registros + existencias",
+        hint: "LO-CTP (RDE D000025-2023): portada + las 4 secciones con su numeración + existencias",
         icon: ShieldCheck,
         tone: "dark",
         busy: exporting === "oficial",
@@ -427,6 +435,8 @@ export default function CTPLibroOperaciones() {
         {view === "radar" && <CtpTrazaRadar period={period} />}
         {view === "planta" && <CtpPlantaView period={period} />}
         {view === "saldos" && <CtpSaldosView period={period} />}
+        {view === "trozas" && <CtpTrozasView />}
+        {view === "resumenes" && <CtpResumenesSerfor period={period} />}
         {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={irA} />}
         {view === "cierre" && (
           <div className="space-y-6">
@@ -439,6 +449,7 @@ export default function CTPLibroOperaciones() {
         {view === "eudr" && <CtpEudrPanel period={period} onNavigate={irA} />}
         {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
         {view === "analisis" && <CtpAnalisis />}
+        {view === "directorio" && <CtpDirectorioView />}
         {view === "ficha" && <CtpFichaEditor />}
       </LibroChrome>
 

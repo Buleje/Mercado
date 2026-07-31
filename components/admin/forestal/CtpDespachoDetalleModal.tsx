@@ -21,7 +21,6 @@ import {
   AlertCircle,
   Banknote,
   FileCheck,
-  FileText,
   Link2,
   Loader2,
   Pencil,
@@ -31,10 +30,10 @@ import {
   Truck,
 } from "@buleje/design-system/icons";
 import { printCertificadoTrazabilidad } from "@/lib/forestal/ctp-certificado";
-import { printGtfSalida } from "@/lib/forestal/ctp-gtf-print";
-import { csrfHeaders } from "@/lib/csrf-client";
-import type { CtpFicha } from "@/lib/forestal/ctp-ficha-types";
+import { permisoCitesDeEspecie } from "@/lib/forestal/ctp-ficha-types";
+import { useFichaCtp } from "@/hooks/use-ficha-ctp";
 import CtpAtribucionEditor from "./CtpAtribucionEditor";
+import CtpGtfSeccion from "./CtpGtfSeccion";
 import CtpHistorial from "./CtpHistorial";
 import { Btn } from "./ctp-shared";
 
@@ -100,11 +99,12 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
   const [printing, setPrinting] = useState(false);
   const [printError, setPrintError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
-  // GTF de salida formal: el N° puede cambiar (texto libre → serie-correlativo)
-  // al emitir, así que vive en estado local sembrado con el del despacho.
-  const [gtf, setGtf] = useState<string | null>(entry.gtfNumber);
-  const [gtfBusy, setGtfBusy] = useState<null | "emitir" | "imprimir">(null);
-  const [gtfError, setGtfError] = useState<string | null>(null);
+  // La guía tal como está en la BASE (número + cuerpo). Viene con la misma llamada
+  // que la cadena: la fila del listado puede tener el número viejo si se emitió
+  // desde este modal y la lista no se recargó.
+  const [guia, setGuia] = useState<{ gtfNumber: string | null; gtfDatos: unknown } | null>(null);
+  // Identidad legal del CTP: la usan el certificado (emisor) y la guía (autollenado).
+  const ficha = useFichaCtp();
 
   const unitLabel = entry.unit ? (UNIT_LABELS[entry.unit] ?? entry.unit) : "";
 
@@ -117,6 +117,7 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
       const json = await r.json();
       setTraza(json.trazabilidad ?? null);
       setCogs(json.cogs ?? null);
+      setGuia(json.guia ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -130,18 +131,15 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
     setPrinting(true);
     setPrintError(null);
     try {
-      // Emisor = Ficha legal del CTP (Código CTP, ARFFS, dirección). Se pide recién
-      // acá (no en cada apertura del modal). Fallback a /api/settings para el nombre
-      // si la ficha todavía no se cargó.
-      const [ficha, settings] = await Promise.all([
-        fetch("/api/admin/forestal/ctp-ficha", { credentials: "include" })
-          .then((r) => (r.ok ? r.json() : null))
-          .catch((err) => { console.warn("[ctp] ficha fetch failed", err); return null; }) as Promise<{ ficha?: CtpFicha } | null>,
-        fetch("/api/settings", { credentials: "include" })
-          .then((r) => (r.ok ? r.json() : null))
-          .catch((err) => { console.warn("[ctp] settings fetch failed", err); return null; }) as Promise<{ businessName?: string; ruc?: string } | null>,
-      ]);
-      const f = ficha?.ficha;
+      // Emisor = Ficha legal del CTP (Código CTP, ARFFS, dirección), ya leída por
+      // `useFichaCtp`. Fallback a /api/settings para el nombre y el RUC si la ficha
+      // todavía está a medio llenar.
+      const settings = (await fetch("/api/settings", { credentials: "include" })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch((err) => { console.warn("[ctp] settings fetch failed", err); return null; })) as
+        | { businessName?: string; ruc?: string }
+        | null;
+      const f = ficha;
       const direccion = f ? [f.direccion, f.distrito, f.provincia, f.region].filter(Boolean).join(", ") : "";
       await printCertificadoTrazabilidad(
         { ...entry, unitLabel },
@@ -158,47 +156,6 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
       setPrintError(e instanceof Error ? e.message : String(e));
     } finally {
       setPrinting(false);
-    }
-  }
-
-  async function emitirGtf() {
-    setGtfBusy("emitir");
-    setGtfError(null);
-    try {
-      const r = await fetch("/api/admin/forestal/ctp", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...csrfHeaders() },
-        credentials: "include",
-        body: JSON.stringify({ id: entry.id, action: "emitir_gtf" }),
-      });
-      const body = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(body.message ?? `HTTP ${r.status}`);
-      setGtf(body.gtf);
-    } catch (e) {
-      setGtfError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setGtfBusy(null);
-    }
-  }
-
-  async function imprimirGtf() {
-    if (!gtf) return;
-    setGtfBusy("imprimir");
-    setGtfError(null);
-    try {
-      const ficha = (await fetch("/api/admin/forestal/ctp-ficha", { credentials: "include" })
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null)) as { ficha?: CtpFicha } | null;
-      if (!ficha?.ficha) throw new Error("No se pudo leer la Ficha del CTP.");
-      await printGtfSalida(
-        { ...entry, gtfNumber: gtf, unitLabel },
-        ficha.ficha,
-        traza ? { corridas: traza.corridas } : null,
-      );
-    } catch (e) {
-      setGtfError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setGtfBusy(null);
     }
   }
 
@@ -363,35 +320,21 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
               )}
             </section>
 
-            {/* 4. GTF de salida formal — serie autorizada ARFFS + correlativo auto */}
-            <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-[var(--text-tertiary)]" />
-                <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">GTF de salida</CardTitle>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">N° de guía</p>
-                  <p className="mt-0.5 font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">{gtf || "— sin emitir —"}</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Btn
-                    variant="secondary"
-                    onClick={() => void emitirGtf()}
-                    disabled={gtfBusy !== null}
-                    title="Asigna serie + correlativo desde la serie autorizada en la Ficha del CTP"
-                  >
-                    {gtfBusy === "emitir" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-                    {gtf ? "Re-emitir" : "Emitir GTF"}
-                  </Btn>
-                  <Btn variant="dark" onClick={() => void imprimirGtf()} disabled={!gtf || gtfBusy !== null}>
-                    {gtfBusy === "imprimir" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-                    Imprimir GTF
-                  </Btn>
-                </div>
-              </div>
-              {gtfError && <p className="mt-2 text-xs font-bold text-[var(--data-error-700)]">{gtfError}</p>}
-            </section>
+            {/* 4. GTF de salida: número formal + el cuerpo que pide un control */}
+            <CtpGtfSeccion
+              // El número de la BASE gana: la fila del listado puede estar vieja.
+              despacho={{ ...entry, unitLabel, gtfNumber: guia?.gtfNumber ?? entry.gtfNumber }}
+              ficha={ficha}
+              cadena={traza ? { corridas: traza.corridas } : null}
+              // CITES es legal CON permiso: si la Ficha lo tiene archivado para esta
+              // especie, se copia a la guía en vez de pedirlo tipeado otra vez.
+              citesPermiso={
+                entry.cites
+                  ? permisoCitesDeEspecie(ficha, entry.speciesCommon, entry.speciesScientific)?.numero ?? null
+                  : null
+              }
+              gtfDatosGuardado={guia?.gtfDatos ?? null}
+            />
 
             {/* 5. Certificado — gate ADR-135 D3 */}
             <div className="space-y-2 border-t-2 border-[var(--rule-soft)] pt-4">

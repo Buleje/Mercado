@@ -15,6 +15,7 @@ import {
   type CtpPeriod,
 } from "./ctp-period";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "./ctp-compliance";
+import { especieCoincide } from "./ctp-ficha-types";
 import { evaluarRendimiento } from "./ctp-rendimiento";
 
 interface Ingreso {
@@ -83,11 +84,11 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
   const ficha = fic.ficha ?? null;
 
   // Señales informativas (mismas que el panel Cumplimiento — consistencia panel↔Excel).
-  const normEsp = (x: string | null | undefined) => (x ?? "").trim().toLowerCase();
-  const permisosCites = (ficha?.citesPermisos ?? []).map((p) => normEsp(p.especie)).filter(Boolean);
+  // El criterio de "esta especie tiene su permiso" es el de `especieCoincide`, el
+  // mismo que autollena el N° de permiso en la guía de salida.
   const citesSinPermiso = (saldos?.porEspecie ?? [])
     .filter((e) => e.cites)
-    .filter((e) => { const s = normEsp(e.especie); return !permisosCites.some((p) => s.includes(p) || p.includes(s)); })
+    .filter((e) => !(ficha?.citesPermisos ?? []).some((p) => especieCoincide(p.especie, e.especie)))
     .map((e) => e.especie);
   const rendimientoAltoLineas = produccion
     .filter((e) => e.status === "registrado")
