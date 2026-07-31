@@ -58,6 +58,7 @@ import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
 import CtpDirectorioView from "./CtpDirectorioView";
 import CtpFletesView from "./CtpFletesView";
+import CtpGuiasEmitidasView from "./CtpGuiasEmitidasView";
 import CtpCierrePanel from "./CtpCierrePanel";
 import { useCtpCierres } from "@/hooks/use-ctp-cierres";
 import CtpPatioBandeja from "./CtpPatioBandeja";
@@ -85,7 +86,7 @@ import {
   type CtpIngresosFiltroRapido,
 } from "./ctp-shared";
 
-type CtpView = "ingresos" | "produccion" | "despacho" | "trozas" | "radar" | "planta" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "fletes" | "directorio" | "ficha";
+type CtpView = "ingresos" | "produccion" | "despacho" | "trozas" | "radar" | "planta" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "fletes" | "guias" | "directorio" | "ficha";
 
 /**
  * Las doce vistas, agrupadas por la fase del libro a la que sirven. El orden
@@ -111,6 +112,7 @@ const CTP_GROUPS: LibroGroup[] = [
       { key: "radar", label: "Radar", icon: Share2, hint: "Cadena de custodia visual", tecla: "r" },
       { key: "planta", label: "Planta", icon: MapPin, hint: "Mapa del aserradero", tecla: "m" },
       { key: "eudr", label: "EUDR", icon: Globe, hint: "Geolocalización + dossier UE", tecla: "u" },
+      { key: "guias", label: "Guías emitidas", icon: FileText, hint: "Las GTF de salida del CTP y cuáles quedaron a medio llenar", tecla: "e" },
     ],
   },
   {
@@ -472,6 +474,7 @@ export default function CTPLibroOperaciones() {
         {view === "eudr" && <CtpEudrPanel period={period} onNavigate={irA} />}
         {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
         {view === "analisis" && <CtpAnalisis />}
+        {view === "guias" && <CtpGuiasEmitidasView period={period} onAbrirDespacho={() => setView("despacho")} />}
         {view === "fletes" && <CtpFletesView period={period} />}
         {view === "directorio" && <CtpDirectorioView />}
         {view === "ficha" && <CtpFichaEditor />}
