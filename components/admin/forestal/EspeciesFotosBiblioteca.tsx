@@ -38,10 +38,23 @@ export default function EspeciesFotosBiblioteca() {
   useEffect(() => {
     void (async () => {
       try {
-        const r = await fetch("/api/admin/forestal/wood-entries?limit=5000", { credentials: "include" });
-        if (!r.ok) return;
-        const d = (await r.json()) as { entries?: IngresoEspecie[] };
-        setDelLibro((d.entries ?? []).filter((e) => e.status !== "anulado" && e.status !== "rechazado"));
+        // Ingresos Y corridas: una especie puede entrar como troza y salir como
+        // producto, y la foto sirve en las dos puntas. Mirar sólo los ingresos
+        // dejaba fuera lo que se asierra de stock viejo.
+        const [ri, rp] = await Promise.all([
+          fetch("/api/admin/forestal/wood-entries?limit=5000", { credentials: "include" }),
+          fetch("/api/admin/forestal/ctp?section=produccion", { credentials: "include" }),
+        ]);
+        const ingresos = ri.ok ? (((await ri.json()) as { entries?: IngresoEspecie[] }).entries ?? []) : [];
+        const corridas = rp.ok
+          ? (((await rp.json()) as { entries?: { speciesCommon?: string | null; speciesScientific?: string | null; status?: string }[] }).entries ?? [])
+          : [];
+        setDelLibro([
+          ...ingresos.filter((e) => e.status !== "anulado" && e.status !== "rechazado"),
+          ...corridas
+            .filter((e) => e.status !== "anulado")
+            .map((e) => ({ speciesCommonName: e.speciesCommon, speciesScientificName: e.speciesScientific })),
+        ]);
       } catch {
         // Sin el libro la biblioteca sigue sirviendo: sólo no propone qué falta.
       }

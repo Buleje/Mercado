@@ -4,6 +4,7 @@ import {
   type GrafoConsumos,
   type IngresoConsumo,
 } from "@/lib/forestal/loctp-consumos";
+import { consumosACsv } from "@/lib/forestal/ctp-secciones-csv";
 
 /**
  * Sección 2 del formato LO-CTP. El consumo no es una fila de la base: es el
@@ -82,5 +83,39 @@ describe("Sección 2 · Consumos", () => {
     );
     expect(fila.especieComun).toBe("Copaiba");
     expect(fila.especieCientifica).toBe("—");
+  });
+});
+
+/**
+ * El CSV de la Sección 2. Mismas reglas que las otras dos secciones —separador
+ * `;`, coma decimal, fecha UTC— porque el operador abre los tres archivos en el
+ * mismo Excel y no puede tener tres formatos distintos.
+ */
+describe("consumosACsv", () => {
+  const filas = filasConsumo(grafo, ingresos);
+
+  it("lleva la numeración oficial en la cabecera", () => {
+    const csv = consumosACsv(filas);
+    const cabecera = csv.split("\r\n")[0];
+    expect(cabecera).toContain("(9) Cantidad consumida");
+    expect(cabecera).toContain("(10) N° de lote consumido");
+    expect(cabecera.split(";")).toHaveLength(12);
+  });
+
+  it("usa coma decimal: es lo que entiende el Excel es-PE", () => {
+    expect(consumosACsv(filas)).toContain("3,0000");
+    // Y el casillero (10) sale vacío, igual que en pantalla.
+    expect(consumosACsv(filas)).toContain("m³;3,0000;;");
+  });
+
+  it("cierra con el total de lo exportado", () => {
+    const lineas = consumosACsv(filas).split("\r\n");
+    expect(lineas[lineas.length - 1]).toContain("TOTAL (2 consumos)");
+  });
+
+  it("sin filas devuelve cabecera y total en cero, no un archivo vacío", () => {
+    const csv = consumosACsv([]);
+    expect(csv.split("\r\n")).toHaveLength(2);
+    expect(csv).toContain("TOTAL (0 consumos)");
   });
 });

@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Flame, Loader2 } from "@buleje/design-system/icons";
+import { AlertTriangle, Download, Flame, Loader2, Search } from "@buleje/design-system/icons";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { unidadOficial } from "@/lib/forestal/loctp-campos";
 import {
@@ -22,7 +22,12 @@ import {
   type GrafoConsumos,
   type IngresoConsumo,
 } from "@/lib/forestal/loctp-consumos";
+import { consumosACsv, nombreArchivoSeccion } from "@/lib/forestal/ctp-secciones-csv";
 import { Celda, Cuadro, SinDatos, Texto, Th } from "./ctp-cuadro-shared";
+
+/** Sin tildes ni mayúsculas: se busca como se tipea, no como se escribió. */
+const norm = (v: string | null | undefined) =>
+  (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 const fmtFecha = (iso: string | null) => {
   if (!iso) return null;
@@ -36,6 +41,9 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filas, setFilas] = useState<FilaConsumo[]>([]);
+  const [texto, setTexto] = useState("");
+  const [especie, setEspecie] = useState("");
+  const [gtf, setGtf] = useState("");
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -71,9 +79,45 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
     void cargar();
   }, [cargar]);
 
-  const total = useMemo(() => filas.reduce((a, f) => a + f.cantidad, 0), [filas]);
-  const especies = useMemo(() => new Set(filas.map((f) => f.especieComun)).size, [filas]);
-  const guias = useMemo(() => new Set(filas.map((f) => f.gtf)).size, [filas]);
+  /** Las opciones salen de TODO el período, no de lo filtrado: si se achicaran
+   *  con el filtro, quitar uno no se podría deshacer desde el propio selector. */
+  const opcionesEspecie = useMemo(
+    () => [...new Set(filas.map((f) => f.especieComun).filter((x) => x && x !== "—"))].sort(),
+    [filas],
+  );
+  const opcionesGtf = useMemo(
+    () => [...new Set(filas.map((f) => f.gtf).filter((x) => x && x !== "—"))].sort(),
+    [filas],
+  );
+
+  const visibles = useMemo(() => {
+    const t = norm(texto);
+    return filas.filter((f) => {
+      if (especie && norm(f.especieComun) !== norm(especie)) return false;
+      if (gtf && norm(f.gtf) !== norm(gtf)) return false;
+      if (t) {
+        const campos = [f.gtf, f.especieComun, f.especieCientifica, f.codigoOrigen, f.fuenteOrigen, f.observaciones];
+        if (!campos.some((c) => norm(c).includes(t))) return false;
+      }
+      return true;
+    });
+  }, [filas, texto, especie, gtf]);
+
+  const total = useMemo(() => visibles.reduce((a, f) => a + f.cantidad, 0), [visibles]);
+  const especies = useMemo(() => new Set(visibles.map((f) => f.especieComun)).size, [visibles]);
+  const guias = useMemo(() => new Set(visibles.map((f) => f.gtf)).size, [visibles]);
+
+  /** Se baja lo que se está VIENDO — el filtro es parte de lo que se exporta. */
+  function descargarCsv() {
+    const csv = consumosACsv(visibles);
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nombreArchivoSeccion("consumos", period.label);
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
 
   if (cargando) {
     return (
@@ -99,15 +143,67 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Flame className="h-5 w-5" aria-hidden />
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-[var(--text-primary)]">
-            {filas.length} consumo{filas.length === 1 ? "" : "s"} · {period.label}
+            {visibles.length === filas.length
+              ? `${filas.length} consumo${filas.length === 1 ? "" : "s"}`
+              : `${visibles.length} de ${filas.length} consumos`}{" "}
+            · {period.label}
           </p>
           <p className="text-xs text-[var(--text-secondary)]">
             {total.toFixed(4)} m³ de {especies} especie{especies === 1 ? "" : "s"} · {guias} guía
             {guias === 1 ? "" : "s"} de origen
           </p>
         </div>
+        <button
+          type="button"
+          onClick={descargarCsv}
+          disabled={visibles.length === 0}
+          title={`Descargar en Excel/CSV los ${visibles.length} consumos de este filtro`}
+          className="flex h-11 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] disabled:opacity-40"
+        >
+          <Download className="h-4 w-4" aria-hidden /> Descargar
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <label className="relative min-w-48 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+          <input
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder="Guía, especie, código de origen…"
+            aria-label="Buscar en los consumos"
+            className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-transparent pl-9 pr-3 text-sm text-[var(--text-primary)]"
+          />
+        </label>
+        <select
+          value={especie}
+          onChange={(e) => setEspecie(e.target.value)}
+          aria-label="Filtrar por especie"
+          className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-transparent px-3 text-sm text-[var(--text-primary)]"
+        >
+          <option value="">Todas las especies</option>
+          {opcionesEspecie.map((e) => <option key={e} value={e}>{e}</option>)}
+        </select>
+        <select
+          value={gtf}
+          onChange={(e) => setGtf(e.target.value)}
+          aria-label="Filtrar por guía de ingreso"
+          className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-transparent px-3 text-sm text-[var(--text-primary)]"
+        >
+          <option value="">Todas las guías</option>
+          {opcionesGtf.map((g) => <option key={g} value={g}>{g}</option>)}
+        </select>
+        {(texto || especie || gtf) && (
+          <button
+            type="button"
+            onClick={() => { setTexto(""); setEspecie(""); setGtf(""); }}
+            className="h-12 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)]"
+          >
+            Limpiar
+          </button>
+        )}
       </div>
 
       <Cuadro
@@ -129,13 +225,14 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--rule-base)]">
-          {filas.length === 0 ? (
+          {visibles.length === 0 ? (
             <SinDatos cols={10}>
-              Sin consumos atribuidos en el período. Se registran al declarar de qué ingreso salió cada corrida
-              de producción.
+              {filas.length === 0
+                ? "Sin consumos atribuidos en el período. Se registran al declarar de qué ingreso salió cada corrida de producción."
+                : "Ningún consumo coincide con el filtro."}
             </SinDatos>
           ) : (
-            filas.map((f) => (
+            visibles.map((f) => (
               <tr key={`${f.woodEntryId}-${f.corridaId}-${f.nro}`} className="hover:bg-[var(--surface-sunken)]">
                 <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">{f.nro}</td>
                 <Texto v={fmtFecha(f.fecha)} className="whitespace-nowrap" />
