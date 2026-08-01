@@ -19,7 +19,7 @@ import CtpOrigenesPicker, { sumOrigenes, type OrigenRow } from "./CtpOrigenesPic
 import { Btn, Field, I, Seccion } from "./ctp-shared";
 import { TIPOS_DOCUMENTO_LOCTP } from "@/lib/forestal/loctp-campos";
 import {
-  LINEAS_PRODUCCION,
+  LINEAS_PRODUCCION, sugerirCodigoPaquete,
   PRESENTACIONES_LOCTP,
   TIPOS_PRODUCTO_SALIDA,
   juzgarRendimiento,
@@ -407,6 +407,7 @@ export default function CtpEntryForm({ section, presetProducto, presetEspecie, o
         payload.costoProceso = costoProceso ? Number(costoProceso) : null;
         payload.lineaProduccion = lineaProduccion || "LP";
         payload.presentacion = presentacion || null;
+        payload.codigoProducto = codigoProducto.trim() || null;
         if (consumos.length) payload.consumos = consumos.map((c) => ({ woodEntryId: c.woodEntryId, volumeM3: Number(c.volumeM3) }));
       } else {
         payload.pieces = pieces ? Number(pieces) : null;
@@ -483,7 +484,7 @@ export default function CtpEntryForm({ section, presetProducto, presetEspecie, o
       }
       if (keepOpen) {
         setMateriaPrimaRef(""); setVolumeInputM3(""); setVolumeTouched(false); setQuantity(""); setPieces(""); setGtfNumber(""); setDestino(""); setObservations("");
-        setConsumos([]); setCostoProceso(""); setReprocesos([]); setSeleccionTrozas(new Set()); void loadTrozas();
+        setConsumos([]); setCostoProceso(""); setReprocesos([]); setSeleccionTrozas(new Set()); void loadTrozas(); setCodigoProducto("");
         setGtfSerfor(null); setNroRegistroSerfor(""); setSerforMsg(null);
         setOrigenes([]); setQuantityTouched(false);
         setSubmitting(false); onSaved({ keepOpen: true }); loadSources();
@@ -653,6 +654,30 @@ export default function CtpEntryForm({ section, presetProducto, presetEspecie, o
                 {section === "despacho" && (
                   <Field span={4} label="N° piezas">
                     <input type="number" min="0" value={pieces} onChange={(e) => setPieces(e.target.value)} placeholder="25" className={`${I} tabular-nums`} />
+                  </Field>
+                )}
+                {section === "produccion" && (
+                  <Field
+                    span={12}
+                    label="Código del paquete"
+                    hint="El que se pinta en el atado. Es por el que pregunta el comprador y el que viaja en la guía de salida"
+                  >
+                    <div className="flex gap-2">
+                      <input
+                        value={codigoProducto}
+                        onChange={(e) => setCodigoProducto(e.target.value)}
+                        placeholder="PRO-042"
+                        className={`${I} font-mono`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setCodigoProducto(sugerirCodigoPaquete(entryDate, lineaProduccion))}
+                        className="h-11 shrink-0 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)]"
+                        title="Proponer un código con la fecha y la línea"
+                      >
+                        Sugerir
+                      </button>
+                    </div>
                   </Field>
                 )}
                 {section === "produccion" && (

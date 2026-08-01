@@ -13,6 +13,27 @@ export interface CtpEntry {
   quantity: string | null; unit: string | null; pieces: number | null;
   gtfNumber: string | null; destino: string | null; observations: string | null;
   status: "registrado" | "anulado"; annulledReason: string | null;
+  /** El código pintado en el atado (ADR-314 · casillero 9 de la Sección 4). */
+  codigoProducto?: string | null;
+  /** Cuánto de ESTA corrida ya salió y cuánto se reprocesó — el "¿ya se fue?". */
+  despachadoQty?: number;
+  reprocesadoQty?: number;
+}
+
+/**
+ * En qué anda el paquete: sigue en el patio, salió a medias o ya se fue.
+ *
+ * Un paquete parcialmente despachado es lo normal (un camión no se lleva todo),
+ * y no verlo obliga a abrir el detalle para saber si queda algo.
+ */
+export function estadoSalida(e: CtpEntry): { label: string; tono: "stock" | "parcial" | "salido" } | null {
+  if (e.section !== "produccion") return null;
+  const producido = Number(e.quantity ?? 0);
+  if (!(producido > 0)) return null;
+  const fuera = Number(e.despachadoQty ?? 0) + Number(e.reprocesadoQty ?? 0);
+  if (fuera <= 0.0001) return { label: "En patio", tono: "stock" };
+  if (producido - fuera > 0.0001) return { label: `Parcial · queda ${(producido - fuera).toFixed(2)}`, tono: "parcial" };
+  return { label: "Despachado", tono: "salido" };
 }
 
 export const n2 = (v: number) => v.toFixed(2);

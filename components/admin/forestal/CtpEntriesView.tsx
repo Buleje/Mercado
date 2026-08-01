@@ -38,7 +38,7 @@ import { nombreArchivoSeccion, seccionACsv } from "@/lib/forestal/ctp-secciones-
 
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
-import { type CtpEntry, type CtpSection, Th, Td, n2 } from "./ctp-section-shared";
+import { type CtpEntry, type CtpSection, Th, Td, n2, estadoSalida } from "./ctp-section-shared";
 import { Btn, IconAction, TablaSkeleton } from "./ctp-shared";
 
 /** Una tarjeta que filtra se ve hundida: si no, nadie sabe por qué la tabla
@@ -53,6 +53,29 @@ const SECTION_META: Record<CtpSection, { label: string; icon: typeof Boxes; cta:
 // timeZone UTC: entryDate es date-only guardada a medianoche UTC — en hora Lima se corría un día.
 const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; } };
 const n4 = (v: string | null) => (v == null ? "—" : Number(v).toFixed(4));
+
+/**
+ * ¿El paquete sigue en el patio o ya se lo llevaron?
+ *
+ * Es el reporte "estado de productos" del ERP forestal de referencia, pero en la
+ * misma fila en vez de en una pantalla aparte: la pregunta aparece mirando la
+ * lista de producción, no yendo a buscarla.
+ */
+function SalidaBadge({ entry }: { entry: CtpEntry }) {
+  const est = estadoSalida(entry);
+  if (!est) return <span className="text-xs text-[var(--text-tertiary)]">—</span>;
+  const tono =
+    est.tono === "salido"
+      ? "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/10 dark:text-[var(--data-success-500)]"
+      : est.tono === "parcial"
+        ? "bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10 dark:text-[var(--data-warning-500)]"
+        : "bg-[var(--surface-canvas)] text-[var(--text-secondary)]";
+  return (
+    <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold ${tono}`}>
+      {est.label}
+    </span>
+  );
+}
 
 export function CtpEntriesView({
   section,
@@ -417,7 +440,7 @@ export function CtpEntriesView({
               <SortTh label="Fecha" by="fecha" sort={sort} onSort={toggleSort} />
               <Th>Especie</Th>
               <Th>Producto</Th>
-              {section === "produccion" ? (<><Th className="text-right">Consumido (m³)</Th><SortTh label="Producido" by="cantidad" sort={sort} onSort={toggleSort} className="text-right" /><SortTh label="Rend." by="rend" sort={sort} onSort={toggleSort} className="text-right" /></>)
+              {section === "produccion" ? (<><Th className="text-right">Consumido (m³)</Th><SortTh label="Producido" by="cantidad" sort={sort} onSort={toggleSort} className="text-right" /><SortTh label="Rend." by="rend" sort={sort} onSort={toggleSort} className="text-right" /><Th>Salida</Th></>)
                 : (<><SortTh label="Cantidad" by="cantidad" sort={sort} onSort={toggleSort} className="text-right" /><Th className="text-right">Piezas</Th><Th>GTF salida</Th><Th>Destino</Th></>)}
               <Th>Estado</Th>
               <Th className="text-right">Acciones</Th>
@@ -435,12 +458,18 @@ export function CtpEntriesView({
                   </div>
                   {e.speciesScientific && <div className="text-xs italic text-[var(--text-tertiary)]">{e.speciesScientific}</div>}
                 </Td>
-                <Td><span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">{e.productType ?? "—"}</span></Td>
+                <Td>
+                  <span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">{e.productType ?? "—"}</span>
+                  {e.codigoProducto && (
+                    <div className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{e.codigoProducto}</div>
+                  )}
+                </Td>
                 {section === "produccion" ? (
                   <>
                     <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{n4(e.volumeInputM3)}</Td>
                     <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{n4(e.quantity)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span></Td>
                     <Td className="text-right"><RendimientoCell productType={e.productType} rendimientoPct={e.rendimientoPct} /></Td>
+                    <Td><SalidaBadge entry={e} /></Td>
                   </>
                 ) : (
                   <>
@@ -509,7 +538,7 @@ export function CtpEntriesView({
                   <>
                     <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.consumido.toFixed(4)}</td>
                     <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.cantidad.toFixed(4)}</td>
-                    <td colSpan={3} />
+                    <td colSpan={4} />
                   </>
                 ) : (
                   <>

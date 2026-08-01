@@ -101,7 +101,17 @@ export interface CtpEntryInput {
   unit?: string | null;
   pieces?: number | null;
   gtfNumber?: string | null;
+  /** (3) Tipo de documento con el que sale el producto: GTF | GRR (ADR-311). */
+  docType?: string | null;
+  /** Línea de producción de la corrida: LP | LRE (Cuadro Resumen 3). */
+  lineaProduccion?: string | null;
+  /** (9) "Código del producto" de la Sección 4 del formato oficial. */
+  codigoProducto?: string | null;
+  presentacion?: string | null;
   destino?: string | null;
+  /** Sello de la verificación de la GTF de salida contra SERFOR (ADR-312). */
+  serforNumeroRegistro?: string | null;
+  serforVerificadoEn?: Date | null;
   observations?: string | null;
   /** Aserrío / secado / mano de obra (ADR-134). Sin esto no hay margen. */
   costoProceso?: number | string | null;
@@ -179,26 +189,52 @@ export class ForestCtpDB {
 
     const lineas = await tx.forestCtpEntry.findMany({
       where: { tenantId, deletedAt: null, status: "registrado" },
-      select: { section: true, productType: true, speciesCommon: true, quantity: true, unit: true },
+      select: { id: true, section: true, productType: true, speciesCommon: true, quantity: true, unit: true },
     });
 
     let producido = 0;
     let despachado = 0;
+    const idsDelProducto: string[] = [];
     for (const l of lineas) {
       if (productKey(l.productType, l.speciesCommon) !== key) continue;
-      if (l.section === "produccion") producido += Number(l.quantity ?? 0);
+      if (l.section === "produccion") {
+        producido += Number(l.quantity ?? 0);
+        idsDelProducto.push(l.id);
+      }
       if (l.section === "despacho") despachado += Number(l.quantity ?? 0);
     }
-    const stock = r4(producido - despachado);
+
+    // Lo que se fue a REPROCESO también salió del stock (ADR-316): esa tabla se
+    // convirtió en tablillas y ya no está para despachar. I5 descuenta el
+    // reproceso corrida por corrida; acá hace falta el agregado del producto,
+    // porque I3 mira el total y no las atribuciones.
+    let reprocesado = 0;
+    if (idsDelProducto.length > 0) {
+      const rep = await tx.forestCtpReproceso.aggregate({
+        // Las DOS condiciones: anular una línea pone `status = "anulado"` y no
+        // hace soft-delete. Un reproceso anulado devolvió su madera al stock.
+        where: {
+          tenantId,
+          origenEntryId: { in: idsDelProducto },
+          destino: { deletedAt: null, status: "registrado" },
+        },
+        _sum: { quantity: true },
+      });
+      reprocesado = Number(rep._sum.quantity ?? 0);
+    }
+
+    const stock = r4(producido - despachado - reprocesado);
 
     if (r4(pedido) > stock) {
       const label = productLabel(input.productType, input.speciesCommon);
+      const salidas =
+        `ya se despacharon ${r4(despachado)}` + (reprocesado > 0 ? ` y ${r4(reprocesado)} se reprocesaron` : "");
       throw new CtpInvariantError(
         stock <= 0
-          ? `No hay stock de ${label} para despachar: se produjeron ${r4(producido)} y ya se despacharon ${r4(despachado)}.`
+          ? `No hay stock de ${label} para despachar: se produjeron ${r4(producido)} y ${salidas}.`
           : `Sólo quedan ${stock} de ${label} sin despachar; estás pidiendo ${r4(pedido)}.`,
         "I3_SOBRE_DESPACHO",
-        { producto: label, stock, pedido: r4(pedido), producido: r4(producido), despachado: r4(despachado) },
+        { producto: label, stock, pedido: r4(pedido), producido: r4(producido), despachado: r4(despachado), reprocesado: r4(reprocesado) },
       );
     }
   }
@@ -258,7 +294,13 @@ export class ForestCtpDB {
           unit: input.unit?.trim() || null,
           pieces: input.pieces ?? null,
           gtfNumber: input.gtfNumber?.trim() || null,
+          docType: input.docType?.trim() || null,
+          lineaProduccion: input.section === "produccion" ? (input.lineaProduccion?.trim() || "LP") : null,
+          codigoProducto: input.codigoProducto?.trim() || null,
+          presentacion: input.presentacion?.trim().toUpperCase() || null,
           destino: input.destino?.trim() || null,
+          serforNumeroRegistro: input.serforNumeroRegistro?.trim() || null,
+          serforVerificadoEn: input.serforVerificadoEn ?? null,
           observations: input.observations?.trim() || null,
           costoProceso: dec(input.costoProceso),
           moneda: input.moneda?.trim() || "PEN",
@@ -309,13 +351,49 @@ export class ForestCtpDB {
         { productType: { contains: filters.search, mode: "insensitive" } },
         { gtfNumber: { contains: filters.search, mode: "insensitive" } },
         { gtfIngreso: { contains: filters.search, mode: "insensitive" } },
+        // El código del paquete es por lo que pregunta el comprador y lo que
+        // está pintado en el atado: buscarlo tiene que funcionar.
+        { codigoProducto: { contains: filters.search, mode: "insensitive" } },
       ];
     }
     const [entries, total] = await Promise.all([
       prisma.forestCtpEntry.findMany({ where, orderBy: [{ section: "asc" }, { lineNo: "asc" }], take: 500 }),
       prisma.forestCtpEntry.count({ where }),
     ]);
-    return { entries, total };
+
+    // ¿Este paquete ya salió? Es la pregunta del reporte "estado de productos":
+    // se produjo, ¿sigue en el patio o ya se lo llevaron? Va agregado acá y no
+    // en el cliente porque la respuesta son dos tablas puente, no un campo.
+    const corridas = entries.filter((e) => e.section === "produccion").map((e) => e.id);
+    if (corridas.length === 0) return { entries, total };
+
+    const [salidas, reprocesos] = await Promise.all([
+      prisma.forestCtpDespachoOrigen.groupBy({
+        by: ["produccionEntryId"],
+        where: { tenantId, produccionEntryId: { in: corridas }, despacho: { deletedAt: null, status: "registrado" } },
+        _sum: { quantity: true },
+      }),
+      prisma.forestCtpReproceso.groupBy({
+        by: ["origenEntryId"],
+        where: { tenantId, origenEntryId: { in: corridas } },
+        _sum: { quantity: true },
+      }),
+    ]);
+    const desp = new Map(salidas.map((r) => [r.produccionEntryId, Number(r._sum.quantity ?? 0)]));
+    const repro = new Map(reprocesos.map((r) => [r.origenEntryId, Number(r._sum.quantity ?? 0)]));
+
+    return {
+      entries: entries.map((e) =>
+        e.section === "produccion"
+          ? {
+              ...e,
+              despachadoQty: desp.get(e.id) ?? 0,
+              reprocesadoQty: repro.get(e.id) ?? 0,
+            }
+          : e,
+      ),
+      total,
+    };
   }
 
   static async getById(tenantId: string, id: string) {
