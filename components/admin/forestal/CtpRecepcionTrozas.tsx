@@ -22,11 +22,15 @@ import {
   type CambioRecepcion,
   type TrozaRecepcion,
 } from "@/lib/forestal/recepcion-trozas";
+import CtpRecepcionTrozaCard from "./CtpRecepcionTrozaCard";
 
 export interface TrozaEditable extends TrozaRecepcion {
   especieComun?: string | null;
   dimensiones?: string | null;
 }
+
+const CAMPO_TABLA =
+  "h-11 rounded-xl border-2 border-[var(--rule-base)] bg-transparent px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] disabled:opacity-40";
 
 export default function CtpRecepcionTrozas({
   entryId,
@@ -91,7 +95,7 @@ export default function CtpRecepcionTrozas({
   };
 
   return (
-    <section className="overflow-hidden rounded-2xl border-2 border-primary/40 bg-[var(--surface-canvas)]">
+    <section className="@container overflow-hidden rounded-2xl border-2 border-primary/40 bg-[var(--surface-canvas)]">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--rule-soft)] px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
@@ -110,15 +114,29 @@ export default function CtpRecepcionTrozas({
       {avisos.length > 0 && (
         <ul className="space-y-1 border-b border-[var(--rule-soft)] bg-[var(--data-warning-50)] px-4 py-3 dark:bg-[var(--data-warning-500)]/10">
           {avisos.map((a) => (
-            <li key={a} className="flex items-start gap-1.5 text-xs leading-snug text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+            <li key={a} className="flex items-start gap-1.5 text-sm leading-snug text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               {a}
             </li>
           ))}
         </ul>
       )}
 
-      <div className="overflow-x-auto">
+      {/* Cards por debajo de 48rem del CONTENEDOR: esto vive dentro del modal de
+          detalle del ingreso, así que el viewport no dice nada sobre el ancho
+          real. Y la recepción se hace parado frente a la pila — siete columnas,
+          tres con input, no entran en un celular. */}
+      <ul className="space-y-2 p-3 @3xl:hidden">
+        {conCambios.map((t) => (
+          <CtpRecepcionTrozaCard
+            key={t.id}
+            troza={t}
+            onCambio={(parche) => tocar(t.id, parche)}
+          />
+        ))}
+      </ul>
+
+      <div className="hidden overflow-x-auto @3xl:block">
         <table className="w-full text-sm hoja-grilla">
           <thead>
             <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
@@ -149,7 +167,7 @@ export default function CtpRecepcionTrozas({
                       onChange={(e) => tocar(t.id, { codigoPlanta: e.target.value })}
                       disabled={falta}
                       placeholder="Ej: 118"
-                      className="h-10 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-transparent px-2 font-mono text-sm text-[var(--text-primary)] disabled:opacity-40"
+                      className={CAMPO_TABLA + " w-28 font-mono"}
                     />
                   </td>
                   <td className="px-3 py-2">
@@ -158,7 +176,7 @@ export default function CtpRecepcionTrozas({
                       onChange={(e) => tocar(t.id, { parcela: e.target.value })}
                       disabled={falta}
                       placeholder="PC-03"
-                      className="h-10 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-transparent px-2 font-mono text-sm text-[var(--text-primary)] disabled:opacity-40"
+                      className={CAMPO_TABLA + " w-28 font-mono"}
                     />
                   </td>
                   <td className="px-3 py-2 text-center">
@@ -166,7 +184,7 @@ export default function CtpRecepcionTrozas({
                       type="button"
                       onClick={() => tocar(t.id, { noRecepcionada: !falta })}
                       title={falta ? "Marcar como recibida" : "Marcar como NO llegada"}
-                      className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border-2 ${
+                      className={`inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 transition-colors ${
                         falta
                           ? "border-[var(--data-error-500)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
                           : "border-[var(--rule-base)] text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
@@ -180,7 +198,7 @@ export default function CtpRecepcionTrozas({
                       value={valor(t, "recepcionObs") ?? ""}
                       onChange={(e) => tocar(t.id, { recepcionObs: e.target.value })}
                       placeholder={falta ? "¿Por qué no llegó?" : "Rajadura, pudrición…"}
-                      className="h-10 w-full min-w-40 rounded-xl border-2 border-[var(--rule-base)] bg-transparent px-2 text-sm text-[var(--text-primary)]"
+                      className={CAMPO_TABLA + " w-full min-w-40"}
                     />
                   </td>
                 </tr>
@@ -197,7 +215,7 @@ export default function CtpRecepcionTrozas({
       )}
 
       <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[var(--rule-soft)] px-4 py-3">
-        <span className="mr-auto text-xs text-[var(--text-tertiary)]">
+        <span className="mr-auto text-sm text-[var(--text-tertiary)]">
           {cambios.length === 0 ? "Sin cambios todavía." : `${cambios.length} troza(s) con cambios sin guardar.`}
         </span>
         <button

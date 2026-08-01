@@ -68,10 +68,20 @@ export function Cuadro({
     <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)]">
       <header className="border-b border-[var(--rule-base)] px-4 py-3">
         <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">{titulo}</CardTitle>
-        <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{subtitulo}</p>
+        <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitulo}</p>
       </header>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm hoja-grilla">{children}</table>
+      {/* Estos cuadros NO se convierten en cards: son el formato oficial y los
+          casilleros numerados tienen que leerse como en la hoja de SERFOR. Lo
+          que sí hace falta en el celular es avisar que la tabla sigue a la
+          derecha — sin el degradé el borde se lee como el fin del cuadro. */}
+      <div className="relative">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm hoja-grilla">{children}</table>
+        </div>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-2xl bg-linear-to-l from-[var(--surface-canvas)] to-transparent sm:hidden dark:from-[var(--surface-raised)]"
+        />
       </div>
     </section>
   );

@@ -17,7 +17,6 @@ import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, Loader2, Search, TreePine } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import {
-  LABEL_BLOQUEO,
   agruparPorGuia,
   avisosSeleccion,
   filtrarTrozas,
@@ -25,6 +24,11 @@ import {
   totalesSeleccion,
   type TrozaConsumible,
 } from "@/lib/forestal/consumo-trozas";
+import CtpTrozaCardMobile from "./CtpTrozaCardMobile";
+
+/** Mismo campo que los filtros de Ingresos: el módulo se lee como uno solo. */
+const CAMPO =
+  "h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
 export default function CtpTrozasPicker({
   trozas,
@@ -105,20 +109,20 @@ export default function CtpTrozasPicker({
 
       <div className="flex flex-wrap gap-2">
         <label className="relative flex-1 min-w-44">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
           <input
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Código, planta o parcela…"
             aria-label="Buscar troza"
-            className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-transparent pl-8 pr-2 text-sm text-[var(--text-primary)]"
+            className={cn(CAMPO, "w-full pl-9 pr-3")}
           />
         </label>
         <select
           value={especie}
           onChange={(e) => setEspecie(e.target.value)}
           aria-label="Filtrar por especie"
-          className="h-10 rounded-xl border-2 border-[var(--rule-base)] bg-transparent px-2 text-sm text-[var(--text-primary)]"
+          className={cn(CAMPO, "px-3")}
         >
           <option value="">Todas las especies</option>
           {especies.map((e) => <option key={e} value={e}>{e}</option>)}
@@ -127,100 +131,58 @@ export default function CtpTrozasPicker({
           value={gtf}
           onChange={(e) => setGtf(e.target.value)}
           aria-label="Filtrar por guía"
-          className="h-10 rounded-xl border-2 border-[var(--rule-base)] bg-transparent px-2 text-sm text-[var(--text-primary)]"
+          className={cn(CAMPO, "px-3")}
         >
           <option value="">Todas las guías</option>
           {guias.map((g) => <option key={g} value={g}>{g}</option>)}
         </select>
-        <label className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs text-[var(--text-secondary)]">
-          <input type="checkbox" checked={soloDisponibles} onChange={(e) => setSoloDisponibles(e.target.checked)} className="h-4 w-4 accent-[var(--brand-ink)]" />
+        <label className="flex h-12 cursor-pointer items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-secondary)]">
+          <input type="checkbox" checked={soloDisponibles} onChange={(e) => setSoloDisponibles(e.target.checked)} className="h-5 w-5 accent-[var(--accent)]" />
           Sólo disponibles
         </label>
         <button
           type="button"
           onClick={tomarVisibles}
           disabled={visibles.length === 0}
-          className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] disabled:opacity-40"
+          className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
         >
           Tomar las {visibles.length} visibles
         </button>
       </div>
 
       {avisos.map((a) => (
-        <p key={a} className="flex items-start gap-1.5 rounded-lg bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10 dark:text-[var(--data-warning-500)]">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+        <p key={a} className="flex items-start gap-1.5 rounded-lg bg-[var(--data-warning-50)] px-3 py-2 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10 dark:text-[var(--data-warning-500)]">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           {a}
         </p>
       ))}
 
       {cargando ? (
-        <p className="flex items-center gap-2 px-1 py-4 text-xs text-[var(--text-tertiary)]">
+        <p className="flex items-center gap-2 px-1 py-4 text-sm text-[var(--text-tertiary)]">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Buscando las trozas del patio…
         </p>
       ) : visibles.length === 0 ? (
-        <p className="rounded-lg bg-[var(--surface-sunken)] px-3 py-4 text-center text-xs text-[var(--text-tertiary)]">
+        <p className="rounded-lg bg-[var(--surface-sunken)] px-3 py-6 text-center text-sm text-[var(--text-tertiary)]">
           {normalizadas.length === 0
             ? "No hay trozas cargadas. Se crean al registrar una guía con su lista de piezas."
             : "Ninguna troza coincide con el filtro."}
         </p>
       ) : (
-        <div className="max-h-72 overflow-y-auto rounded-lg border border-[var(--rule-soft)]">
-          <table className="w-full text-sm hoja-grilla">
-            <thead className="sticky top-0 bg-[var(--surface-raised)]">
-              <tr className="text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                <th className="w-10 px-2 py-2" />
-                <th className="px-2 py-2 font-bold">Código</th>
-                <th className="px-2 py-2 font-bold">Planta</th>
-                <th className="px-2 py-2 font-bold">Especie</th>
-                <th className="px-2 py-2 font-bold">GTF</th>
-                <th className="px-2 py-2 text-right font-bold">m³</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--rule-soft)]">
-              {visibles.map((t) => {
-                const bloqueo = motivoBloqueo(t);
-                const elegida = seleccion.has(t.id);
-                return (
-                  <tr
-                    key={t.id}
-                    onClick={() => !bloqueo && alternar(t.id)}
-                    className={cn(
-                      bloqueo ? "opacity-50" : "cursor-pointer hover:bg-[var(--surface-sunken)]",
-                      elegida && "bg-primary/5",
-                    )}
-                    title={bloqueo ? LABEL_BLOQUEO[bloqueo] : undefined}
-                  >
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="checkbox"
-                        checked={elegida}
-                        disabled={Boolean(bloqueo)}
-                        onChange={() => alternar(t.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        aria-label={`Consumir troza ${t.codificacion ?? t.id}`}
-                        className="h-4 w-4 accent-[var(--brand-ink)]"
-                      />
-                    </td>
-                    <td className="px-2 py-1.5 font-mono text-xs font-bold text-[var(--text-primary)]">
-                      {t.codificacion ?? "—"}
-                      {bloqueo && (
-                        <span className="ml-1 font-sans text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]">
-                          · {LABEL_BLOQUEO[bloqueo]}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-2 py-1.5 font-mono text-xs text-[var(--text-secondary)]">{t.codigoPlanta ?? "—"}</td>
-                    <td className="px-2 py-1.5 text-xs text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
-                    <td className="px-2 py-1.5 font-mono text-xs text-[var(--text-tertiary)]">{t.gtfNumber ?? "—"}</td>
-                    <td className="px-2 py-1.5 text-right font-mono text-xs tabular-nums text-[var(--text-primary)]">
-                      {t.volumenM3 != null ? Number(t.volumenM3).toFixed(4) : "—"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        /* Una card por pieza, a cualquier ancho. Antes esto era una <table> de 6
+           columnas: se midió el contenedor real —el picker vive en la columna
+           izquierda del modal de corrida— y da 471px a 1440 y 562px a 2560, así
+           que la tabla nunca tenía dónde respirar. La card además hace que el
+           target sea la fila entera: un checkbox de 16px no se toca con guantes. */
+        <ul className="max-h-96 space-y-2 overflow-y-auto">
+          {visibles.map((t) => (
+            <CtpTrozaCardMobile
+              key={t.id}
+              troza={t}
+              elegida={seleccion.has(t.id)}
+              onToggle={() => alternar(t.id)}
+            />
+          ))}
+        </ul>
       )}
 
       {porGuia.length > 0 && (
@@ -230,7 +192,7 @@ export default function CtpTrozasPicker({
           </p>
           <ul className="space-y-0.5">
             {porGuia.map((g) => (
-              <li key={g.woodEntryId} className="flex items-baseline justify-between gap-2 text-xs">
+              <li key={g.woodEntryId} className="flex items-baseline justify-between gap-2 text-sm">
                 <span className="truncate text-[var(--text-secondary)]">
                   {/* La especie va SIEMPRE: una misma guía puede tener un ingreso
                       por especie (ADR-312), y sin ella dos filas se leen iguales. */}

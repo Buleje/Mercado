@@ -13,7 +13,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Download, Flame, Loader2, Search } from "@buleje/design-system/icons";
+import { AlertTriangle, Download, FileText, Flame, Leaf, Loader2, Search, TreePine } from "@buleje/design-system/icons";
+import { StatCard } from "@buleje/design-system";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { unidadOficial } from "@/lib/forestal/loctp-campos";
 import {
@@ -29,6 +30,8 @@ import { Celda, Cuadro, SinDatos, Texto, Th } from "./ctp-cuadro-shared";
 const norm = (v: string | null | undefined) =>
   (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
+const nf = (n: number) => n.toLocaleString("es-PE");
+
 const fmtFecha = (iso: string | null) => {
   if (!iso) return null;
   const d = new Date(iso);
@@ -36,6 +39,9 @@ const fmtFecha = (iso: string | null) => {
     ? null
     : d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
 };
+
+const CAMPO =
+  "h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
 export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
   const [cargando, setCargando] = useState(true);
@@ -139,31 +145,38 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white px-4 py-3 dark:bg-[var(--surface-raised)]">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Flame className="h-5 w-5" aria-hidden />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[var(--text-primary)]">
-            {visibles.length === filas.length
-              ? `${filas.length} consumo${filas.length === 1 ? "" : "s"}`
-              : `${visibles.length} de ${filas.length} consumos`}{" "}
-            · {period.label}
-          </p>
-          <p className="text-xs text-[var(--text-secondary)]">
-            {total.toFixed(4)} m³ de {especies} especie{especies === 1 ? "" : "s"} · {guias} guía
-            {guias === 1 ? "" : "s"} de origen
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={descargarCsv}
-          disabled={visibles.length === 0}
-          title={`Descargar en Excel/CSV los ${visibles.length} consumos de este filtro`}
-          className="flex h-11 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] disabled:opacity-40"
-        >
-          <Download className="h-4 w-4" aria-hidden /> Descargar
-        </button>
+      {/* Las cifras del período con el mismo peso que en Ingresos: es el mismo
+          libro, no puede tener dos jerarquías según la pestaña. Reflejan lo
+          FILTRADO —igual que el CSV— así el número y lo que se baja coinciden. */}
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <StatCard
+          label="Consumos"
+          value={nf(visibles.length)}
+          subValue={visibles.length === filas.length ? period.label : `de ${nf(filas.length)} · filtrado`}
+          icon={Flame}
+          emphasis="neutral"
+        />
+        <StatCard
+          label="Volumen consumido"
+          value={`${total.toFixed(4)} m³`}
+          subValue="Entró a la sierra"
+          icon={TreePine}
+          emphasis="success"
+        />
+        <StatCard
+          label="Especies"
+          value={nf(especies)}
+          subValue={especies === 1 ? "Una sola especie" : "Distintas en el período"}
+          icon={Leaf}
+          emphasis="neutral"
+        />
+        <StatCard
+          label="Guías de origen"
+          value={nf(guias)}
+          subValue="De dónde salió la madera"
+          icon={FileText}
+          emphasis="neutral"
+        />
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -174,14 +187,14 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Guía, especie, código de origen…"
             aria-label="Buscar en los consumos"
-            className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-transparent pl-9 pr-3 text-sm text-[var(--text-primary)]"
+            className={`${CAMPO} w-full pl-9 pr-3`}
           />
         </label>
         <select
           value={especie}
           onChange={(e) => setEspecie(e.target.value)}
           aria-label="Filtrar por especie"
-          className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-transparent px-3 text-sm text-[var(--text-primary)]"
+          className={`${CAMPO} px-3`}
         >
           <option value="">Todas las especies</option>
           {opcionesEspecie.map((e) => <option key={e} value={e}>{e}</option>)}
@@ -190,16 +203,25 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
           value={gtf}
           onChange={(e) => setGtf(e.target.value)}
           aria-label="Filtrar por guía de ingreso"
-          className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-transparent px-3 text-sm text-[var(--text-primary)]"
+          className={`${CAMPO} px-3`}
         >
           <option value="">Todas las guías</option>
           {opcionesGtf.map((g) => <option key={g} value={g}>{g}</option>)}
         </select>
+        <button
+          type="button"
+          onClick={descargarCsv}
+          disabled={visibles.length === 0}
+          title={`Descargar en Excel/CSV los ${visibles.length} consumos de este filtro`}
+          className="flex h-12 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
+        >
+          <Download className="h-4 w-4" aria-hidden /> Descargar
+        </button>
         {(texto || especie || gtf) && (
           <button
             type="button"
             onClick={() => { setTexto(""); setEspecie(""); setGtf(""); }}
-            className="h-12 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)]"
+            className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
           >
             Limpiar
           </button>
@@ -243,7 +265,7 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
                 <Texto v={f.fuenteOrigen} className="font-mono" />
                 <Texto v={unidadOficial(f.unidad)} />
                 <Celda v={f.cantidad} />
-                <td className="px-3 py-2 text-xs text-[var(--text-secondary)]">
+                <td className="px-3 py-2 text-sm text-[var(--text-secondary)]">
                   <span className="font-mono font-bold text-[var(--text-primary)]">{f.gtf}</span> → {f.observaciones}
                 </td>
               </tr>

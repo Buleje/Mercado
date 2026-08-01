@@ -176,7 +176,7 @@ export default function CtpApartadosSerfor({ period }: { period: CtpPeriod }) {
                 <Entero v={r.diametroMenorCm} />
                 <Celda v={r.longitudM} />
                 <Celda v={r.volumenFinal} />
-                <td className="px-3 py-2 text-xs text-[var(--text-secondary)]">
+                <td className="px-3 py-2 text-sm text-[var(--text-secondary)]">
                   {r.descarte && (
                     <span className="mr-1 rounded-md bg-[var(--data-warning-100)] px-1.5 py-0.5 font-bold text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]">
                       DESCARTE
@@ -190,12 +190,12 @@ export default function CtpApartadosSerfor({ period }: { period: CtpPeriod }) {
         </tbody>
       </Cuadro>
 
-      <p className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-[var(--text-tertiary)]">
+      <p className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-sm text-[var(--text-tertiary)]">
         <span className="inline-flex items-center gap-1.5">
-          <Trees className="h-3.5 w-3.5" aria-hidden /> {fuentes.length} fuente(s) de origen
+          <Trees className="h-4 w-4" aria-hidden /> {fuentes.length} fuente(s) de origen
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <Scissors className="h-3.5 w-3.5" aria-hidden /> {retrozos.length} pedazo(s) retrozados
+          <Scissors className="h-4 w-4" aria-hidden /> {retrozos.length} pedazo(s) retrozados
           {descartado > 0 && ` · ${descartado} marcado(s) como descarte`}
         </span>
         <span>El descarte ocupa volumen de la troza madre pero no cuenta como producto disponible.</span>

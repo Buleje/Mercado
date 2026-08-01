@@ -151,7 +151,7 @@ export default function EspeciesFotosBiblioteca() {
           <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
             Fotos de referencia por especie
           </CardTitle>
-          <p className="text-xs text-[var(--text-secondary)]">
+          <p className="text-sm text-[var(--text-secondary)]">
             La foto aparece al lado del nombre en Ingresos y Trozas. Sirve para que quien recibe la madera no
             confunda dos especies parecidas — no reemplaza la identificación del documento.
           </p>
@@ -183,7 +183,7 @@ export default function EspeciesFotosBiblioteca() {
 
       {faltan.length > 0 && (
         <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <p className="mb-2 text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
             Especies del libro sin foto ({faltan.length})
           </p>
           <div className="flex flex-wrap gap-2">
@@ -227,7 +227,7 @@ export default function EspeciesFotosBiblioteca() {
               <div className="p-3">
                 <p className="truncate text-sm font-bold text-[var(--text-primary)]">{f.nombre}</p>
                 {f.cientifico && (
-                  <p className="truncate text-xs italic text-[var(--text-secondary)]">{f.cientifico}</p>
+                  <p className="truncate text-sm italic text-[var(--text-secondary)]">{f.cientifico}</p>
                 )}
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <span className="truncate text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">

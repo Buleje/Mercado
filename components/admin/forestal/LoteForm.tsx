@@ -150,7 +150,7 @@ export default function LoteForm({ onClose, onSaved }: { onClose: () => void; on
                 <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} className={I} />
               </Field>
               {avisosFechas.map((a) => (
-                <p key={a} className="sm:col-span-12 rounded-lg bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10 dark:text-[var(--data-warning-500)]">
+                <p key={a} className="sm:col-span-12 rounded-lg bg-[var(--data-warning-50)] px-3 py-2 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10 dark:text-[var(--data-warning-500)]">
                   {a}
                 </p>
               ))}
