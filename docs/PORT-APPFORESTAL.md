@@ -23,7 +23,7 @@
 | `productos-disponibles` (2607) | ⚠️ parcial | atajo stock→guía (`d0a8ee86`). **Falta: importar Excel de productos, alta manual** |
 | `ingresos` · `ingresos-ctp` · `gtf` · `consumo` · `lop` · `lotes` · `produccion` | ✅ cubierto o superado | ver "brechas finas" |
 | `export-import` (2194) | ✅ **superado** | Buleje ya tenía dictado por voz con comandos, modo continuo, medidas fijas y anti-eco (`lib/forestal/cubicacion.ts` + `useVozContinua`). No portar. |
-| `gtf-emitidas` (2033) | ❌ | bandeja de guías emitidas: reimprimir, PDF, desbloquear con clave |
+| `gtf-emitidas` (2033) | ✅ | ADR-321: vista Trazabilidad → Guías emitidas (deriva de los despachos). **NO se portó el "desbloquear con clave"**: en Buleje una guía se corrige anulando el despacho y recargándolo (ADR-312), que deja rastro; una clave compartida no. |
 | `trozas-disponibles` (2070) | ✅ parcial | ADR-320: pegar la lista de trozas en el ingreso. **NO se portó el alta/edición suelta de trozas**: en Buleje son inmutables y se crean con su guía (decisión deliberada de `CtpTrozasView`). |
 | `asistencias` (466) | ❌ | personal del CTP + asistencia diaria |
 | `panel` (443) | ❌ | tablero ejecutivo con alertas (ojo: Buleje ya tiene `CtpHealthChip`/`CtpPendientes`/`CtpAnalisis` — **evaluar si duplica antes de construir**) |
@@ -42,8 +42,7 @@
 
 ## Orden sugerido para la próxima oleada
 
-1. **Bandeja de guías emitidas** (`gtf-emitidas`) — reimprimir, PDF, desbloquear con clave.
-2. **Cuenta corriente de terceros** sobre fletes (`ingresos-camiones` parte 2): aserrío recibido/prestado, saldo al día.
+1. **Cuenta corriente de terceros** sobre fletes (`ingresos-camiones` parte 2): aserrío recibido/prestado, saldo al día.
 3. **Importar Excel de productos terminados** (`productos-disponibles`) — espeja lo que ADR-320 hizo con las trozas.
 4. **Personal y asistencia** (`asistencias`).
 5. **Fotos de especie** (`baseimg` simplificado) y **estado de productos** (reporte filtrable).
