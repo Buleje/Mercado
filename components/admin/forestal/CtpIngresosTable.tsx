@@ -304,6 +304,7 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
             <CtpIngresoCardMobile
               key={e.id}
               entry={e}
+              fotosEspecie={fotosEspecie}
               selected={selectedIds.includes(e.id)}
               onToggleSelect={toggleSelect}
               {...actionProps}

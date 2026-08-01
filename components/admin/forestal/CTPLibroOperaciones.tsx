@@ -322,7 +322,7 @@ export default function CTPLibroOperaciones() {
       {
         id: "dossier",
         label: "Carpeta de fiscalización",
-        hint: "Todo el período en un documento: portada, índice, los 3 registros, existencias, guías y anexos",
+        hint: "Todo el período en un documento: portada, índice, ingresos, retrozado, consumos, producción, despachos, existencias, guías y anexos",
         icon: FolderOpen,
         tone: "dark",
         busy: exporting === "dossier",

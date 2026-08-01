@@ -13,6 +13,8 @@
 
 import { Calendar, MapPin, TreePine } from "@buleje/design-system/icons";
 import CtpEntryActions, { type CtpEntryActionsProps } from "./CtpEntryActions";
+import EspecieFoto from "./EspecieFoto";
+import type { FotoEspecie } from "@/lib/forestal/especies-fotos";
 import {
   PLAZO_REGISTRO_DIAS,
   StatusBadge,
@@ -28,10 +30,13 @@ interface CtpIngresoCardMobileProps extends Omit<CtpEntryActionsProps, "block"> 
   entry: WoodEntry;
   selected: boolean;
   onToggleSelect: (id: string, checked: boolean) => void;
+  /** Índice de fotos de referencia. Lo pasa la tabla: una sola carga para todas
+   *  las cards, en vez de un fetch por tarjeta. */
+  fotosEspecie: Map<string, FotoEspecie>;
 }
 
 export default function CtpIngresoCardMobile(props: CtpIngresoCardMobileProps) {
-  const { entry: e, selected, onToggleSelect, onDetail } = props;
+  const { entry: e, selected, onToggleSelect, onDetail, fotosEspecie } = props;
   const tarde = estaFueraDePlazo(e);
 
   return (
@@ -49,6 +54,9 @@ export default function CtpIngresoCardMobile(props: CtpIngresoCardMobileProps) {
                 className="h-4 w-4 shrink-0 accent-[var(--brand-ink)]"
               />
             )}
+            {/* En el celular la foto vale MÁS que en el escritorio: es el
+                aparato que tiene en la mano quien recibe la troza. */}
+            <EspecieFoto especie={e.speciesCommonName} indice={fotosEspecie} size={32} />
             <h3 className="truncate text-base font-bold text-[var(--text-primary)]">
               {e.speciesCommonName}
             </h3>
