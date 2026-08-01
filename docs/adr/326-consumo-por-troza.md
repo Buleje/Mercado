@@ -75,6 +75,40 @@ Mismo patrón que el reproceso (ADR-316): hace falta el id. Si ese paso falla, l
 corrida queda guardada y se corrige desde el detalle — perder la producción de un
 turno porque una pieza estaba mal sería peor.
 
+### 6. Las mismas reglas que el consumo en m³ (auditoría 2026-08-01)
+
+El consumo vive ahora en dos lugares —los m³ por guía y las piezas— y son dos
+caras del mismo hecho. Todo lo que congela una tiene que congelar la otra. La
+auditoría adversarial del día de la implementación encontró que no era así:
+
+| Situación | m³ | piezas (antes) | piezas (ahora) |
+|---|---|---|---|
+| normal | editable | editable | editable |
+| corrida despachada | editable | editable | editable |
+| **costo congelado** | bloqueado | **editable** ❌ | bloqueado |
+| **mes cerrado** | bloqueado | **editable** ❌ | bloqueado |
+| **corrida anulada** | libera | **dejaba la pieza atrapada** ❌ | libera |
+| **dos operadores a la vez** | lock | **las dos pasaban** ❌ | lock |
+
+Cuatro huecos, los cuatro medidos contra la base antes de arreglarlos:
+
+- **Anular dejaba la pieza atrapada.** La FK es `SET NULL` al DELETE real, que
+  nunca ocurre porque es soft-delete: hay que soltarlas a mano. Y el guard del
+  servidor tiene que mirar el **estado** de la corrida, no el id pelado —
+  arreglar sólo la lectura fue peor: la pantalla mostraba la troza libre y la
+  base la rechazaba al guardar.
+- **El mes cerrado se podía alterar.** La fecha que manda es la de la CORRIDA:
+  el consumo *es* la corrida.
+- **El costo congelado no llegaba a las piezas**, así que se podía reescribir de
+  qué trozas salió un producto ya costeado y certificado.
+- **Sin lock, dos tablets tildando la misma troza pasaban las dos.** Es el mismo
+  TOCTOU que I2 evita en m³: `FOR UPDATE` sobre el recurso disputado —la troza,
+  no la corrida— con `ORDER BY id` para no abrazarse en un deadlock.
+
+**Lo que NO se endureció:** con la corrida sólo despachada los dos caminos siguen
+editables. Es el criterio deliberado del ADR-134 (el consumo es detalle editable
+hasta congelar) y cambiarlo sería otra decisión, aplicable a los dos por igual.
+
 ## Consecuencias
 
 - Migración `326-troza-consumida.sql`, idempotente, aplicada por el pooler.

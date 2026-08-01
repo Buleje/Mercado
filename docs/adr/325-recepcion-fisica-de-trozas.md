@@ -67,6 +67,21 @@ escritura cross-tenant.
 por la del bosque dejaba media planta sin poder consultarse: en el patio nadie se
 acuerda de `13/A (0000008)`, se acuerda del 118 pintado en la testa.
 
+### 6. Coherencia con el consumo y el cierre (auditoría 2026-08-01)
+
+- **Una troza no puede estar aserrada y no haber llegado nunca.** Marcar
+  `noRecepcionada` en una pieza ya consumida dejaba el libro declarando las dos
+  cosas: consumir madera que no existe, el patrón que I2 previene del lado del
+  volumen. Se rechaza indicando el camino ("sacala primero del consumo"), y sólo
+  cuando la corrida está **viva**: si se anuló, la pieza está libre.
+- **El mes cerrado congela la recepción.** La fecha que manda es la de la GUÍA:
+  es su libro.
+- **Una sola query para las N trozas.** Un `UPDATE … FROM (VALUES …)` en vez de
+  un round-trip por fila: con el tope de 500 y la latencia real, la transacción
+  se acercaba al timeout con los locks abiertos y el operador perdía la
+  recepción entera. El flag `set_*` por columna distingue "no lo mandó" de "lo
+  mandó vacío" — sin eso, corregir la parcela borraría el código de planta.
+
 ## Consecuencias
 
 - Migración `325-troza-recepcion.sql`, idempotente. Se aplicó por el **pooler**:
