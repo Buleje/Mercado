@@ -17,6 +17,20 @@ import {
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "./ctp-compliance";
 import { especieCoincide } from "./ctp-ficha-types";
 import { evaluarRendimiento } from "./ctp-rendimiento";
+import {
+  faltantesIngreso,
+  faltantesProduccion,
+  faltantesSalida,
+  resumenFaltantes,
+  unidadOficial,
+} from "./loctp-campos";
+import { claveProducto, cuadrosResumen, type StockInicial } from "./loctp-resumenes";
+import {
+  derivarFuentes,
+  filasRetrozado,
+  retrozadoPorEspecie,
+  type RetrozoParaApartado,
+} from "./loctp-apartados";
 
 interface Ingreso {
   entryDate: string; gtfNumber: string; gtfDate: string | null; providerName: string;
@@ -30,11 +44,15 @@ interface WoodEntryStats {
   byStatus: Record<string, number>;
 }
 interface CtpRow {
+  id?: string;
   lineNo: number; entryDate: string; gtfIngreso: string | null; speciesCommon: string | null;
   speciesScientific: string | null; cites: boolean; productType: string | null;
   volumeInputM3: string | null; rendimientoPct: string | null; quantity: string | null;
   unit: string | null; pieces: number | null; gtfNumber: string | null; destino: string | null;
   status: string;
+  /** Casilleros del formato oficial (ADR-311) + el lote, que se deriva. */
+  docType?: string | null; codigoProducto?: string | null; observations?: string | null;
+  lote?: string | null; lineaProduccion?: string | null;
 }
 interface SpeciesBalance {
   especie: string; scientific: string | null; cites: boolean;
@@ -94,6 +112,7 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
     .filter((e) => e.status === "registrado")
     .filter((e) => evaluarRendimiento(e.productType, e.rendimientoPct != null ? Number(e.rendimientoPct) : null).estado === "alto")
     .map((e) => e.lineNo);
+
 
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
@@ -297,15 +316,26 @@ interface CtpFichaLite {
 /** Grafo de cadena de custodia (para armar la sección Consumos del export). */
 interface GrafoLite {
   ingresos: { id: string; gtf: string; species: string | null }[];
-  corridas: { id: string; lineNo: number; label: string; unit: string | null }[];
+  corridas: { id: string; lineNo: number; label: string; unit: string | null; fecha?: string }[];
   consumos: { from: string; to: string; volumeM3: number }[];
+  /** corrida → despacho (ADR-135): de acá sale el lote que respalda cada salida. */
+  origenes?: { from: string; to: string; quantity: number }[];
 }
 
 /** Ingreso con los campos de origen que el formato oficial necesita (superset del interno). */
 interface IngresoOficial extends Ingreso {
+  id: string;
   gtfSeries: string | null; originType: string; originCode: string | null; originRegion: string | null;
   providerDocument: string | null; notes: string | null;
+  /** Casilleros del formato oficial (ADR-311). */
+  libroNro: number | null; docType: string | null; originSourceNumber: string | null;
+  ctpProductCode: string | null; unit: string | null;
+  /** Ficha oficial de SERFOR — de acá sale el titular real del Apartado 1. */
+  serforGtf?: unknown; originDistrict?: string | null;
 }
+
+/** Un lote con las corridas que lo arman — para el casillero (8) de secciones 3 y 4. */
+interface LoteLite { loteCode: string; corridaIds: string[] }
 
 const ORIGIN_OFICIAL: Record<string, string> = {
   concesion: "Concesión forestal", predio_privado: "Predio privado", comunidad_nativa: "Comunidad nativa",
@@ -318,7 +348,7 @@ const TITULO_OFICIAL: Record<string, string> = {
 const originOf = (t: string) => ORIGIN_OFICIAL[t] ?? t ?? "—";
 
 export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> {
-  const [ing, prod, desp, sal, fic, gra] = await Promise.all([
+  const [ing, prod, desp, sal, fic, gra, lot, ret] = await Promise.all([
     getJson<{ entries?: IngresoOficial[] }>(
       withPeriod("/api/admin/forestal/wood-entries", { limit: "5000" }, period), {},
     ),
@@ -327,6 +357,11 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
     getJson<{ saldos?: Saldos }>(withPeriod("/api/admin/forestal/ctp", { saldos: "1" }, period), {}),
     getJson<{ ficha?: CtpFichaLite }>("/api/admin/forestal/ctp-ficha", {}),
     getJson<{ grafo?: GrafoLite }>(withPeriod("/api/admin/forestal/ctp", { grafo: "1" }, period), {}),
+    getJson<{ lotes?: LoteLite[] }>("/api/admin/forestal/lotes", {}),
+    // Apartado 2: los cortes de patio del período (ADR-313).
+    getJson<{ retrozos?: RetrozoParaApartado[] }>(
+      withPeriod("/api/admin/forestal/trozas", { retrozos: "1" }, period), {},
+    ),
   ]);
   // Rechazados y anulados NO forman parte del libro oficial (QA 2026-07-17).
   const ingresos = (ing.entries ?? []).filter((e) => e.status !== "anulado" && e.status !== "rechazado");
@@ -336,23 +371,98 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
   const ficha = fic.ficha ?? null;
   const codigoCtp = ficha?.codigoCtp || "—";
   const grafo = gra.grafo ?? null;
+  const retrozos = ret.retrozos ?? [];
+
+  // Apartado 1: el registro numerado de fuentes de origen. Se deriva de los
+  // ingresos del período —de la ficha oficial de cada guía— porque es ahí donde
+  // consta el titular real de la concesión; la Ficha del CTP sólo tiene los
+  // títulos del propio centro.
+  const registroFuentes = derivarFuentes(ingresos);
 
   // (F) Consumos como sección propia (RDE D000025-2023: ingresos, CONSUMOS,
   // producción, salidas). Se arman del grafo: cada consumo = GTF de ingreso →
   // corrida, con el volumen atribuido.
   const ingXId = new Map((grafo?.ingresos ?? []).map((i) => [i.id, i]));
   const corXId = new Map((grafo?.corridas ?? []).map((c) => [c.id, c]));
+  // El ingreso COMPLETO (con sus códigos y el científico) sale del listado, no
+  // del grafo: el grafo es un mapa de conexiones, no la fila del libro.
+  const ingCompletoXId = new Map(ingresos.filter((e) => e.id).map((e) => [e.id, e]));
+  // Corrida → N° de lote (casillero 8 de las secciones 3 y 4).
+  const loteDeCorrida = new Map<string, string>();
+  for (const l of lot.lotes ?? []) {
+    for (const cid of l.corridaIds ?? []) loteDeCorrida.set(cid, l.loteCode);
+  }
   const consumos = (grafo?.consumos ?? []).map((c) => {
     const i = ingXId.get(c.from);
+    const completo = ingCompletoXId.get(c.from);
     const cor = corXId.get(c.to);
     return {
       gtf: i?.gtf ?? "—",
-      especie: i?.species ?? "—",
+      // (2) la fecha del consumo es la de la corrida que lo consumió: el puente
+      // no tiene fecha propia porque el consumo ES la corrida.
+      fecha: cor?.fecha ?? null,
+      productType: completo?.productType ?? null,
+      especie: completo?.speciesCommonName ?? i?.species ?? "—",
+      scientific: completo?.speciesScientificName ?? null,
+      codigoOrigen: completo?.originCode || completo?.ctpProductCode || null,
+      // (7) es el N° de FUENTE de origen. Si el ingreso no lo tiene, va vacío: la
+      // GTF ya está en su propio casillero y ponerla acá sería declarar un dato
+      // que no es el que el casillero pide.
+      fuenteOrigen: completo?.originSourceNumber ?? null,
       corrida: cor ? `Corrida #${cor.lineNo}${cor.label ? ` · ${cor.label}` : ""}` : "—",
-      unidad: cor?.unit ?? "m³",
+      // (10) pide el lote del producto CONSUMIDO. Lo que se consume acá son
+      // trozas de un ingreso, y las trozas no tienen lote (los lotes se arman en
+      // producción): va vacío. Poner el lote de la corrida destino sería declarar
+      // como origen algo que se creó después del consumo.
+      lote: null,
+      unidad: completo?.unit ?? "m3",
       volumen: c.volumeM3,
     };
   });
+  // m³ ya consumidos de cada ingreso — el casillero (11) del Cuadro Resumen 1.
+  const consumidoPorIngreso = new Map<string, number>();
+  for (const c of grafo?.consumos ?? []) {
+    consumidoPorIngreso.set(c.from, (consumidoPorIngreso.get(c.from) ?? 0) + c.volumeM3);
+  }
+
+  // El lote de cada despacho sale de las corridas que lo respaldan (ADR-135).
+  const lotesDeDespacho = new Map<string, string[]>();
+  for (const o of grafo?.origenes ?? []) {
+    const lote = loteDeCorrida.get(o.from);
+    if (!lote) continue;
+    const previos = lotesDeDespacho.get(o.to) ?? [];
+    if (!previos.includes(lote)) lotesDeDespacho.set(o.to, [...previos, lote]);
+  }
+
+  /**
+   * "Stock inicial" de los cuadros resumen = el saldo al cierre del período
+   * ANTERIOR. Se pide como un período que va desde el inicio del histórico hasta
+   * el instante previo al `from` actual; sin `from` (histórico completo) no hay
+   * período anterior y el inicial es cero por definición.
+   */
+  const inicial: StockInicial | undefined = await (async () => {
+    if (!period.from) return undefined;
+    const anterior: CtpPeriod = {
+      key: "custom",
+      from: null,
+      to: new Date(new Date(period.from).getTime() - 1).toISOString(),
+      label: "hasta el período anterior",
+    };
+    const previo = await getJson<{ saldos?: Saldos }>(
+      withPeriod("/api/admin/forestal/ctp", { saldos: "1" }, anterior), {},
+    );
+    if (!previo.saldos) return undefined;
+    const trozasM3: Record<string, number> = {};
+    for (const e of previo.saldos.porEspecie) trozasM3[e.especie] = e.saldoM3;
+    const productos: Record<string, number> = {};
+    for (const pr of previo.saldos.productos) {
+      // `producto` viene como "tipo · especie" del backend; el cuadro necesita la
+      // clave especie|tipo|unidad, así que se parte por el separador que usa.
+      const [tipo, especie] = pr.producto.split("·").map((x) => x.trim());
+      productos[claveProducto(especie ?? null, tipo ?? null, "m3")] = pr.stock;
+    }
+    return { trozasM3, productos };
+  })();
 
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
@@ -382,9 +492,19 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
   kv("Serie GTF autorizada", ficha?.gtfSerie ?? "");
   kv("Período del libro", period.label);
   kv("Generado", new Date().toLocaleString("es-PE"));
-  // Apartado Retrozado (RDE): el módulo no registra retrozado por ahora — se
-  // declara explícitamente para no dar a entender que no hubo si sí lo hubo.
-  kv("Retrozado", "No registrado en este módulo (declarar aparte si aplica)");
+  // Apartado 2 (RDE): se declara acá el resumen y el detalle va en su hoja.
+  kv(
+    "Retrozado (Apartado 2)",
+    retrozos.length === 0
+      ? "Sin cortes registrados en el período"
+      : `${retrozos.length} pedazo(s) registrados — ver hoja "Apartado 2 · Retrozado"`,
+  );
+  kv(
+    "Fuentes de origen (Apartado 1)",
+    registroFuentes.fuentes.length === 0
+      ? "Sin fuentes identificables en los ingresos del período"
+      : `${registroFuentes.fuentes.length} fuente(s) — ver hoja "Apartado 1 · Fuentes"`,
+  );
   wc.addRow([]);
   const th = wc.addRow(["TÍTULOS HABILITANTES (origen de la materia prima)", ""]);
   th.getCell(1).font = { bold: true };
@@ -407,87 +527,170 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
   }
 
   // ── Registro 1: Ingreso ──
-  const w1 = wb.addWorksheet("1. Ingreso");
+  // Las columnas van en el ORDEN y con la NUMERACIÓN del formato oficial (los 13
+  // casilleros de la Sección 1, transcriptos en `loctp-campos.ts`). Las columnas
+  // propias —CITES, proveedor— van DESPUÉS de la 13 para no correr la numeración
+  // que el fiscalizador está buscando (ADR-311).
+  const w1 = wb.addWorksheet("1. Ingresos");
   w1.columns = [
-    { header: "N° Registro", key: "n", width: 11 }, { header: "Fecha", key: "f", width: 13 },
-    { header: "Tipo de Documento", key: "td", width: 16 }, { header: "N° de Documento", key: "nd", width: 16 },
-    { header: "N° Fuente de Origen/Procedencia", key: "fo", width: 22 },
-    { header: "Código de Origen/Procedencia", key: "co", width: 22 },
-    { header: "Código de CTP", key: "cc", width: 14 }, { header: "Tipo de Producto", key: "tp", width: 14 },
-    { header: "Especie", key: "e", width: 16 }, { header: "Nombre científico", key: "sc", width: 20 },
-    { header: "CITES", key: "ci", width: 7 }, { header: "N° Permiso CITES", key: "cp", width: 18 },
-    { header: "Unidad de Medida", key: "u", width: 14 },
-    { header: "Cantidad", key: "q", width: 12 }, { header: "Observaciones", key: "o", width: 30 },
+    { header: "(1) N° Registro", key: "n", width: 11 },
+    { header: "(2) Fecha", key: "f", width: 13 },
+    { header: "(3) Tipo de Documento", key: "td", width: 18 },
+    { header: "(4) N° de Documento", key: "nd", width: 18 },
+    { header: "(5) N° Fuente de Origen/Procedencia", key: "fo", width: 24 },
+    { header: "(6) Tipo de Producto", key: "tp", width: 18 },
+    { header: "(7) Especie (nombre común)", key: "e", width: 20 },
+    { header: "(8) Nombre científico", key: "sc", width: 22 },
+    { header: "(9) Código de Origen/Procedencia", key: "co", width: 22 },
+    { header: "(10) Código asignado por el CTP", key: "cc", width: 20 },
+    { header: "(11) Unidad de Medida", key: "u", width: 16 },
+    { header: "(12) Cantidad", key: "q", width: 12 },
+    { header: "(13) Observaciones", key: "o", width: 30 },
+    { header: "CITES", key: "ci", width: 7 },
+    { header: "N° Permiso CITES", key: "cp", width: 18 },
+    // Puente al Apartado 1. Va DESPUÉS de la 13 para no correr la numeración
+    // oficial: el casillero (5) sigue siendo el N° que declara la guía.
+    { header: "Apartado 1 · N° de fuente", key: "a1", width: 22 },
   ];
   styleHead(w1);
-  ingresos.forEach((e, i) => {
+  for (const e of ingresos) {
     const permisoCites = e.speciesCites ? (parseCitesPermiso(e.notes) ?? "—") : "";
     const row = w1.addRow({
-      n: i + 1, f: day(e.entryDate), td: "GTF", nd: [e.gtfSeries, e.gtfNumber].filter(Boolean).join("-") || e.gtfNumber,
-      fo: e.originCode ?? "", co: [originOf(e.originType), e.originRegion].filter(Boolean).join(" · "),
-      cc: codigoCtp, tp: e.productType, e: e.speciesCommonName, sc: e.speciesScientificName ?? "",
-      ci: e.speciesCites ? "SÍ" : "", cp: permisoCites, u: "m³", q: Number(e.volumeM3 ?? 0),
-      o: [e.providerName, e.notes].filter(Boolean).join(" · "),
+      // (1) el FOLIO del libro, no la posición en esta hoja: el período filtra
+      // filas y numerar de nuevo cambiaría el N° de un registro ya presentado.
+      n: e.libroNro ?? "",
+      f: day(e.entryDate),
+      td: e.docType || "GTF",
+      nd: [e.gtfSeries, e.gtfNumber].filter(Boolean).join("-") || e.gtfNumber,
+      fo: e.originSourceNumber ?? "",
+      tp: e.productType,
+      e: e.speciesCommonName,
+      sc: e.speciesScientificName ?? "",
+      co: e.originCode ?? "",
+      cc: e.ctpProductCode ?? "",
+      u: unidadOficial(e.unit),
+      q: Number(e.volumeM3 ?? 0),
+      // El proveedor y el tipo de origen no son casilleros del formato, pero el
+      // fiscalizador los busca: van en observaciones, que es donde la guía dice
+      // que se consigna "información adicional".
+      o: [e.notes, e.providerName, originOf(e.originType), e.originRegion].filter(Boolean).join(" · "),
+      ci: e.speciesCites ? "SÍ" : "",
+      cp: permisoCites,
+      a1: (e.id && registroFuentes.numeroPorIngreso.get(e.id)) ?? "",
     });
     row.getCell("f").numFmt = "dd/mm/yyyy"; row.getCell("q").numFmt = "0.0000";
     if (e.speciesCites) row.getCell("ci").font = { color: { argb: "FFB91C1C" }, bold: true };
     if (e.speciesCites && permisoCites === "—") row.getCell("cp").font = { color: { argb: "FFB91C1C" }, bold: true };
-  });
+    // Lo que le falta para presentarse se marca en la fila, no en un informe
+    // aparte: así el que arma el libro ve dónde tiene el hueco.
+    const faltan = faltantesIngreso(e as unknown as Record<string, unknown>);
+    if (faltan.length > 0) {
+      row.getCell("o").note = resumenFaltantes(faltan);
+      row.getCell("n").font = { color: { argb: "FFB45309" }, bold: true };
+    }
+  }
 
   // ── Registro 2: Consumos (sección propia, RDE D000025-2023) ──
+  // Sección 2 del formato (11 casilleros). Un consumo no es una fila propia en el
+  // código sino el puente ingreso → corrida, así que sus casilleros se derivan
+  // del ingreso consumido y de la corrida destino.
   const wco = wb.addWorksheet("2. Consumos");
   wco.columns = [
-    { header: "N°", key: "n", width: 6 },
-    { header: "N° Fuente (GTF ingreso)", key: "g", width: 24 },
-    { header: "Especie", key: "e", width: 18 },
-    { header: "Producción destino", key: "c", width: 30 },
-    { header: "Unidad de Medida", key: "u", width: 14 },
-    { header: "Cantidad consumida", key: "q", width: 16 },
+    { header: "(1) N° Registro", key: "n", width: 11 },
+    { header: "(2) Fecha de consumo", key: "f", width: 16 },
+    { header: "(3) Tipo de Producto", key: "tp", width: 18 },
+    { header: "(4) Especie (nombre común)", key: "e", width: 20 },
+    { header: "(5) Nombre científico", key: "sc", width: 22 },
+    { header: "(6) Código de Origen/Procedencia/CTP", key: "co", width: 24 },
+    { header: "(7) N° Fuente de Origen/Procedencia", key: "fo", width: 24 },
+    { header: "(8) Unidad de Medida", key: "u", width: 16 },
+    { header: "(9) Cantidad consumida", key: "q", width: 18 },
+    { header: "(10) N° de Lote consumido", key: "l", width: 18 },
+    { header: "(11) Observaciones", key: "o", width: 28 },
   ];
   styleHead(wco);
   consumos.forEach((c, i) => {
-    const row = wco.addRow({ n: i + 1, g: c.gtf, e: c.especie, c: c.corrida, u: c.unidad, q: c.volumen });
+    const row = wco.addRow({
+      n: i + 1, f: c.fecha ? day(c.fecha) : "", tp: c.productType ?? "", e: c.especie,
+      sc: c.scientific ?? "", co: c.codigoOrigen ?? "", fo: c.fuenteOrigen ?? "",
+      u: unidadOficial(c.unidad), q: c.volumen, l: c.lote ?? "",
+      o: [c.gtf && c.gtf !== "—" ? `Doc. de ingreso: ${c.gtf}` : "", c.corrida !== "—" ? `Consumido en ${c.corrida}` : ""].filter(Boolean).join(" · "),
+    });
+    if (c.fecha) row.getCell("f").numFmt = "dd/mm/yyyy";
     row.getCell("q").numFmt = "0.0000";
   });
-  if (consumos.length === 0) wco.addRow({ g: "Sin consumos atribuidos en el período" });
+  if (consumos.length === 0) wco.addRow({ o: "Sin consumos atribuidos en el período" });
 
   // ── Registro 3: Producción (transformación) ──
+  // Sección 3 del formato (9 casilleros). NO lleva columnas de origen: la
+  // trazabilidad hacia atrás la dan la Sección 2 y el lote. El rendimiento no es
+  // un casillero de esta sección (va en el Cuadro Resumen 3), pero se agrega al
+  // final porque es el número que el CTP mira todos los días.
   const w2 = wb.addWorksheet("3. Producción");
   w2.columns = [
-    { header: "N°", key: "n", width: 6 }, { header: "Fecha", key: "f", width: 13 },
-    { header: "Código de CTP", key: "cc", width: 14 }, { header: "Tipo de Producto", key: "tp", width: 16 },
-    { header: "Especie", key: "e", width: 16 }, { header: "N° Fuente (GTF ingreso)", key: "fo", width: 24 },
-    { header: "Unidad de Medida", key: "u", width: 14 }, { header: "Cantidad", key: "q", width: 12 },
-    { header: "Rendimiento %", key: "r", width: 13 }, { header: "Observaciones", key: "o", width: 30 },
+    { header: "(1) N° Registro", key: "n", width: 11 },
+    { header: "(2) Fecha", key: "f", width: 13 },
+    { header: "(3) Tipo de Producto", key: "tp", width: 18 },
+    { header: "(4) Especie (nombre común)", key: "e", width: 20 },
+    { header: "(5) Nombre científico", key: "sc", width: 22 },
+    { header: "(6) Unidad de Medida", key: "u", width: 16 },
+    { header: "(7) Cantidad producida", key: "q", width: 18 },
+    { header: "(8) N° de Lote", key: "l", width: 16 },
+    { header: "(9) Observaciones", key: "o", width: 28 },
+    { header: "Rendimiento % (Resumen 3)", key: "r", width: 22 },
   ];
   styleHead(w2);
   for (const e of produccion) {
     const row = w2.addRow({
-      n: e.lineNo, f: day(e.entryDate), cc: codigoCtp, tp: e.productType ?? "", e: e.speciesCommon ?? "",
-      fo: e.gtfIngreso ?? "", u: e.unit ?? "", q: e.quantity != null ? Number(e.quantity) : null,
-      r: e.rendimientoPct != null ? Number(e.rendimientoPct) : null, o: "",
+      n: e.lineNo, f: day(e.entryDate), tp: e.productType ?? "", e: e.speciesCommon ?? "",
+      sc: e.speciesScientific ?? "", u: unidadOficial(e.unit), q: e.quantity != null ? Number(e.quantity) : null,
+      l: (e.id ? loteDeCorrida.get(e.id) : null) ?? e.lote ?? "",
+      o: [e.gtfIngreso ? `Materia prima: ${e.gtfIngreso}` : "", e.observations ?? ""].filter(Boolean).join(" · "),
+      r: e.rendimientoPct != null ? Number(e.rendimientoPct) : null,
     });
     row.getCell("f").numFmt = "dd/mm/yyyy"; row.getCell("q").numFmt = "0.0000"; row.getCell("r").numFmt = "0.0";
+    const faltan = faltantesProduccion({ ...e, lote: row.getCell("l").value ?? null } as unknown as Record<string, unknown>);
+    if (faltan.length > 0) {
+      row.getCell("o").note = resumenFaltantes(faltan);
+      row.getCell("n").font = { color: { argb: "FFB45309" }, bold: true };
+    }
   }
 
   // ── Registro 4: Salida ──
-  const w3 = wb.addWorksheet("4. Salida");
+  // Sección 4 del formato (12 casilleros). El destino no es un casillero: la guía
+  // pide el MOTIVO de la salida en observaciones ("VENTA", "TRASLADO", "USO
+  // INTERNO", "BAJA DE INVENTARIO"), así que el destino viaja ahí.
+  const w3 = wb.addWorksheet("4. Salidas");
   w3.columns = [
-    { header: "N°", key: "n", width: 6 }, { header: "Fecha", key: "f", width: 13 },
-    { header: "Tipo de Documento", key: "td", width: 16 }, { header: "N° de Documento (GTF)", key: "nd", width: 18 },
-    { header: "Código de CTP", key: "cc", width: 14 }, { header: "Tipo de Producto", key: "tp", width: 16 },
-    { header: "Especie", key: "e", width: 16 }, { header: "Unidad de Medida", key: "u", width: 14 },
-    { header: "Cantidad", key: "q", width: 12 }, { header: "Destino", key: "de", width: 24 },
-    { header: "Observaciones", key: "o", width: 24 },
+    { header: "(1) N° Registro", key: "n", width: 11 },
+    { header: "(2) Fecha de salida", key: "f", width: 16 },
+    { header: "(3) Tipo de Documento", key: "td", width: 18 },
+    { header: "(4) N° de Documento", key: "nd", width: 18 },
+    { header: "(5) Tipo de Producto", key: "tp", width: 18 },
+    { header: "(6) Especie (nombre común)", key: "e", width: 20 },
+    { header: "(7) Nombre científico", key: "sc", width: 22 },
+    { header: "(8) N° de Lote", key: "l", width: 16 },
+    { header: "(9) Código del Producto", key: "cp", width: 20 },
+    { header: "(10) Unidad de Medida", key: "u", width: 16 },
+    { header: "(11) Cantidad", key: "q", width: 12 },
+    { header: "(12) Observaciones", key: "o", width: 30 },
   ];
   styleHead(w3);
   for (const e of despacho) {
     const row = w3.addRow({
-      n: e.lineNo, f: day(e.entryDate), td: "GTF", nd: e.gtfNumber ?? "", cc: codigoCtp,
-      tp: e.productType ?? "", e: e.speciesCommon ?? "", u: e.unit ?? "",
-      q: e.quantity != null ? Number(e.quantity) : null, de: e.destino ?? "", o: "",
+      n: e.lineNo, f: day(e.entryDate), td: e.docType || "GTF", nd: e.gtfNumber ?? "",
+      tp: e.productType ?? "", e: e.speciesCommon ?? "", sc: e.speciesScientific ?? "",
+      l: (e.id ? lotesDeDespacho.get(e.id)?.join(", ") : null) ?? e.lote ?? "",
+      cp: e.codigoProducto ?? "", u: unidadOficial(e.unit),
+      q: e.quantity != null ? Number(e.quantity) : null,
+      o: [e.destino ? `VENTA/TRASLADO a ${e.destino}` : "", e.observations ?? ""].filter(Boolean).join(" · "),
     });
     row.getCell("f").numFmt = "dd/mm/yyyy"; row.getCell("q").numFmt = "0.0000";
+    const faltan = faltantesSalida({ ...e, lote: row.getCell("l").value ?? null } as unknown as Record<string, unknown>);
+    if (faltan.length > 0) {
+      row.getCell("o").note = resumenFaltantes(faltan);
+      row.getCell("n").font = { color: { argb: "FFB45309" }, bold: true };
+    }
   }
 
   // ── Registro 5: Existencias (saldo del libro por especie + stock de productos) ──
@@ -517,6 +720,220 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
       ["i", "c", "s"].forEach((k) => (row.getCell(k).numFmt = "0.0000"));
       if (p.stock < 0) row.getCell("s").font = { color: { argb: "FFB91C1C" }, bold: true };
     }
+  }
+
+  // ── Apartado 1: Fuente de origen o procedencia de la madera (7 casilleros) ──
+  // Sale de los INGRESOS del período: el titular, el título y la resolución de
+  // cada guía son los que amparan la madera que entró. Los títulos de la Ficha
+  // del CTP son los del propio centro y van al final, como respaldo.
+  const wa1 = wb.addWorksheet("Apartado 1 · Fuentes");
+  wa1.columns = [
+    { header: "(1) N° de registro", key: "n", width: 14 },
+    { header: "(2) Fuente de origen/procedencia", key: "fu", width: 30 },
+    { header: "(3) Titular de la fuente", key: "ti", width: 30 },
+    { header: "(4) Código del título habilitante", key: "co", width: 26 },
+    { header: "(5) N° de resolución (PO/PMFI/DEMA)", key: "re", width: 28 },
+    { header: "(6) RUC del titular", key: "ru", width: 16 },
+    { header: "(7) Procedencia (línea de recuperación)", key: "pr", width: 28 },
+    { header: "N° declarado en la guía", key: "nd", width: 22 },
+    { header: "Ingresos", key: "ni", width: 10 },
+    { header: "Volumen m³", key: "v", width: 14 },
+  ];
+  styleHead(wa1);
+  if (registroFuentes.fuentes.length === 0) {
+    const vacia = wa1.addRow({
+      fu: "Ningún ingreso del período identifica su fuente (falta titular, título o resolución).",
+    });
+    vacia.font = { bold: true, color: { argb: "FFB45309" } };
+  } else {
+    for (const f of registroFuentes.fuentes) {
+      const row = wa1.addRow({
+        n: f.nro, fu: f.fuente || "", ti: f.titular || "", co: f.codigoTitulo || "",
+        re: f.resolucion || "", ru: f.ruc || "", pr: f.procedencia || "",
+        nd: f.numeroDeclarado || "", ni: f.ingresos, v: f.volumenM3,
+      });
+      row.getCell("v").numFmt = "0.0000";
+    }
+  }
+  // Los títulos del propio CTP: no son fuentes de origen de la madera ajena,
+  // pero el fiscalizador los pide en el mismo apartado.
+  const titulos = ficha?.titulos ?? [];
+  if (titulos.length > 0) {
+    wa1.addRow({});
+    const cab = wa1.addRow({ fu: "TÍTULOS HABILITANTES DEL PROPIO CTP (Ficha)" });
+    cab.font = { bold: true };
+    for (const t of titulos) {
+      wa1.addRow({ fu: TITULO_OFICIAL[t.tipo] ?? t.tipo, co: t.codigo || "", pr: t.vencimiento ? `vence ${t.vencimiento}` : "" });
+    }
+  }
+
+  // ── Apartado 2: Retrozado (11 casilleros) ──
+  // El seccionado de trozas dentro del CTP (ADR-313). Los diámetros van en cm,
+  // que es como los publica SERFOR en la guía; el volumen se calcula por Huber
+  // sobre el diámetro medio —la fórmula que reproduce lo que declara el
+  // documento—, salvo que el operador haya medido y escrito el suyo.
+  const wa2 = wb.addWorksheet("Apartado 2 · Retrozado");
+  wa2.columns = [
+    { header: "(1) N°", key: "n", width: 6 },
+    { header: "(2) Fecha", key: "f", width: 13 },
+    { header: "(3) Código de Origen/Procedencia/CTP", key: "co", width: 28 },
+    { header: "(4) Volumen inicial m³", key: "vi", width: 18 },
+    { header: "(5) Código de retrozado", key: "cr", width: 20 },
+    { header: "(6) Nombre común", key: "e", width: 18 },
+    { header: "(7) Nombre científico", key: "sc", width: 22 },
+    { header: "(8) Diámetro mayor (cm)", key: "d1", width: 18 },
+    { header: "(9) Diámetro menor (cm)", key: "d2", width: 18 },
+    { header: "(10) Longitud (m)", key: "l", width: 14 },
+    { header: "(11) Volumen final m³", key: "vf", width: 18 },
+    { header: "Observaciones", key: "o", width: 30 },
+    { header: "GTF de la troza", key: "g", width: 18 },
+  ];
+  styleHead(wa2);
+  const apartado2 = filasRetrozado(retrozos);
+  if (apartado2.length === 0) {
+    wa2.addRow({ co: "Sin retrozado registrado en el período." });
+  } else {
+    for (const r of apartado2) {
+      const row = wa2.addRow({
+        n: r.nro, f: r.fecha ?? "", co: r.codigoOrigen, vi: r.volumenInicial ?? "",
+        cr: r.codigoRetrozado, e: r.nombreComun, sc: r.nombreCientifico,
+        d1: r.diametroMayorCm ?? "", d2: r.diametroMenorCm ?? "", l: r.longitudM ?? "",
+        vf: r.volumenFinal ?? "",
+        // El descarte se declara en observaciones: un pedazo que no es producto
+        // pero ocupó volumen de la madre es justo lo que un fiscalizador cruza.
+        o: [r.descarte ? "DESCARTE" : "", r.observaciones].filter(Boolean).join(" · "),
+        g: r.gtf,
+      });
+      row.getCell("f").numFmt = "dd/mm/yyyy";
+      ["vi", "vf"].forEach((k) => (row.getCell(k).numFmt = "0.0000"));
+      if (r.descarte) row.getCell("o").font = { color: { argb: "FFB45309" }, bold: true };
+    }
+  }
+
+  // ── Cuadros resumen 1, 2 y 3 (formato oficial) ──
+  const { resumen1, resumen2, resumen3 } = cuadrosResumen({
+    ingresos: ingresos.map((e) => ({
+      especie: e.speciesCommonName,
+      cientifico: e.speciesScientificName ?? null,
+      cites: e.speciesCites,
+      volumenM3: Number(e.volumeM3 ?? 0),
+      piezas: e.pieces ?? 0,
+      tipoProducto: e.productType,
+      consumidoM3: consumidoPorIngreso.get(e.id ?? "") ?? 0,
+    })),
+    produccion: produccion.map((e) => ({
+      especie: e.speciesCommon,
+      cientifico: e.speciesScientific,
+      tipoProducto: e.productType,
+      unidad: e.unit,
+      cantidad: e.quantity != null ? Number(e.quantity) : 0,
+      consumidoM3: e.volumeInputM3 != null ? Number(e.volumeInputM3) : 0,
+      lineaProduccion: e.lineaProduccion ?? "LP",
+      lote: (e.id ? loteDeCorrida.get(e.id) : null) ?? null,
+    })),
+    salidas: despacho.map((e) => ({
+      especie: e.speciesCommon,
+      cientifico: e.speciesScientific,
+      tipoProducto: e.productType,
+      unidad: e.unit,
+      cantidad: e.quantity != null ? Number(e.quantity) : 0,
+      lote: (e.id ? lotesDeDespacho.get(e.id)?.join(", ") : null) ?? null,
+    })),
+    inicial,
+    retrozados: retrozadoPorEspecie(retrozos),
+  });
+
+  const num = (row: import("exceljs").Row, keys: string[], fmt = "0.0000") => {
+    for (const k of keys) row.getCell(k).numFmt = fmt;
+  };
+
+  const wr1 = wb.addWorksheet("Resumen 1 · Trozas");
+  wr1.columns = [
+    { header: "(1) Especie", key: "e", width: 20 },
+    { header: "(2) Nombre científico", key: "sc", width: 24 },
+    { header: "(3) Stock inicial m³", key: "i1", width: 16 },
+    { header: "(4) Stock inicial N° trozas", key: "i2", width: 20 },
+    { header: "(5) Ingresó m³", key: "g1", width: 14 },
+    { header: "(6) Ingresó N° trozas", key: "g2", width: 18 },
+    { header: "(7) Retrozado m³", key: "r1", width: 16 },
+    { header: "(8) Retrozado N° trozas", key: "r2", width: 20 },
+    { header: "(9) De retrozado m³", key: "d1", width: 18 },
+    { header: "(10) De retrozado N° trozas", key: "d2", width: 22 },
+    { header: "(11) Consumido m³", key: "c1", width: 16 },
+    { header: "(12) Consumido N° trozas", key: "c2", width: 20 },
+    { header: "(13) Salió m³", key: "s1", width: 14 },
+    { header: "(14) Salió N° trozas", key: "s2", width: 18 },
+    { header: "(15) Saldo final m³", key: "f1", width: 16 },
+    { header: "(16) Saldo final N° trozas", key: "f2", width: 20 },
+    { header: "CITES", key: "ci", width: 7 },
+  ];
+  styleHead(wr1);
+  for (const f of resumen1) {
+    const row = wr1.addRow({
+      e: f.especie, sc: f.cientifico ?? "",
+      i1: f.inicial.volumen, i2: f.inicial.piezas ?? "",
+      g1: f.ingresado.volumen, g2: f.ingresado.piezas ?? "",
+      r1: f.retrozado.volumen || "", r2: f.retrozado.piezas ?? "",
+      d1: f.deRetrozado.volumen || "", d2: f.deRetrozado.piezas ?? "",
+      c1: f.consumido.volumen, c2: f.consumido.piezas ?? "",
+      s1: f.salido.volumen, s2: f.salido.piezas ?? "",
+      f1: f.saldo.volumen, f2: f.saldo.piezas ?? "",
+      ci: f.cites ? "SÍ" : "",
+    });
+    num(row, ["i1", "g1", "r1", "d1", "c1", "s1", "f1"]);
+    if (f.saldo.volumen < 0) row.getCell("f1").font = { color: { argb: "FFB91C1C" }, bold: true };
+  }
+
+  const wr2 = wb.addWorksheet("Resumen 2 · Transformados");
+  wr2.columns = [
+    { header: "(1) Especie", key: "e", width: 20 },
+    { header: "(2) Nombre científico", key: "sc", width: 24 },
+    { header: "(3) Tipo de producto", key: "tp", width: 22 },
+    { header: "(4) Unidad de medida", key: "u", width: 16 },
+    { header: "(5) Stock inicial", key: "i", width: 14 },
+    { header: "(6) Ingresó", key: "g", width: 12 },
+    { header: "(7) Consumido", key: "c", width: 14 },
+    { header: "(8) Producido", key: "p", width: 14 },
+    { header: "(9) Salió", key: "s", width: 12 },
+    { header: "(10) Saldo final", key: "f", width: 14 },
+  ];
+  styleHead(wr2);
+  for (const f of resumen2) {
+    const row = wr2.addRow({
+      e: f.especie, sc: f.cientifico ?? "", tp: f.tipoProducto, u: unidadOficial(f.unidad),
+      i: f.inicial, g: f.ingresado, c: f.consumido, p: f.producido, s: f.salido, f: f.saldo,
+    });
+    num(row, ["i", "g", "c", "p", "s", "f"]);
+    if (f.saldo < 0) row.getCell("f").font = { color: { argb: "FFB91C1C" }, bold: true };
+  }
+
+  const wr3 = wb.addWorksheet("Resumen 3 · Balance");
+  wr3.columns = [
+    { header: "(1) N° de lote consumido", key: "l", width: 20 },
+    { header: "(2) Tipo de producto del lote", key: "tp", width: 24 },
+    { header: "(3) Especie", key: "e", width: 20 },
+    { header: "(4) Nombre científico", key: "sc", width: 24 },
+    { header: "(5) Unidad de medida", key: "uc", width: 16 },
+    { header: "(6) Cantidad consumida", key: "qc", width: 18 },
+    { header: "(7) Línea de producción", key: "lp", width: 18 },
+    { header: "(8) Unidad del producto", key: "up", width: 18 },
+    { header: "(9) Cantidad producida", key: "qp", width: 18 },
+    { header: "(10) Consumido por reproceso", key: "rp", width: 22 },
+    { header: "(11) Salió", key: "s", width: 12 },
+    { header: "(12) Stock final", key: "st", width: 14 },
+    { header: "(13) Rendimiento % / factor", key: "r", width: 22 },
+  ];
+  styleHead(wr3);
+  for (const f of resumen3) {
+    const row = wr3.addRow({
+      l: f.lote, tp: f.tipoProducto, e: f.especie, sc: f.cientifico ?? "",
+      uc: unidadOficial(f.unidadConsumo), qc: f.cantidadConsumida, lp: f.lineaProduccion,
+      up: unidadOficial(f.unidadProducto), qp: f.cantidadProducida,
+      rp: f.consumidoReproceso ?? "", s: f.salido, st: f.stock,
+      r: f.rendimientoPct != null ? `${f.rendimientoPct}%` : (f.factorConversion ?? ""),
+    });
+    num(row, ["qc", "qp", "s", "st"]);
+    if (f.stock < 0) row.getCell("st").font = { color: { argb: "FFB91C1C" }, bold: true };
   }
 
   const buf = await wb.xlsx.writeBuffer();

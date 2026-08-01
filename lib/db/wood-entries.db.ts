@@ -845,6 +845,52 @@ export class WoodEntriesDB {
     });
   }
 
+  /**
+   * Los retrozos del período — el **Apartado 2 del formato LO-CTP** (ADR-313).
+   *
+   * Sólo los pedazos (`trozaOrigenId != null`) con su madre: la fila del apartado
+   * necesita el volumen inicial y el código de origen, que viven en la madre.
+   *
+   * El filtro es por `fechaRetrozo` porque el retrozado es una operación del
+   * patio con fecha propia: un pedazo cortado en agosto de una troza que entró en
+   * julio pertenece al libro de agosto. Los pedazos viejos sin fecha (no debería
+   * haberlos) caen al `createdAt` para no desaparecer del libro.
+   */
+  static async retrozosDelPeriodo(
+    tenantId: string,
+    opts: { fromDate?: Date; toDate?: Date; limite?: number } = {},
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rango = opts.fromDate || opts.toDate
+      ? {
+          ...(opts.fromDate ? { gte: opts.fromDate } : {}),
+          ...(opts.toDate ? { lte: opts.toDate } : {}),
+        }
+      : undefined;
+
+    return prisma.woodEntryTroza.findMany({
+      where: {
+        tenantId,
+        trozaOrigenId: { not: null },
+        // Un retrozo de un ingreso anulado no es parte del libro (mismo criterio
+        // que `buscarTrozas`): hacen falta las DOS condiciones.
+        entry: { deletedAt: null, status: { notIn: ["anulado", "rechazado"] } },
+        ...(rango ? { OR: [{ fechaRetrozo: rango }, { fechaRetrozo: null, createdAt: rango }] } : {}),
+      },
+      orderBy: [{ fechaRetrozo: "asc" }, { orden: "asc" }],
+      take: Math.min(Math.max(opts.limite ?? 2000, 1), 5000),
+      include: {
+        trozaOrigen: {
+          select: {
+            id: true, codificacion: true, volumenM3: true,
+            especieComun: true, especieCientifica: true,
+          },
+        },
+        entry: { select: { gtfNumber: true, originCode: true, ctpProductCode: true } },
+      },
+    });
+  }
+
   /** Las trozas de un ingreso, en el orden en que las lista la guía. */
   static async trozasDe(tenantId: string, woodEntryId: string) {
     if (!tenantId) throw new Error("tenantId is required");
