@@ -5260,6 +5260,22 @@ model WoodEntryTroza {
   cantidad  Int?
   volumenM3 Decimal? @db.Decimal(12, 4)
 
+  // ── Recepción física en planta (ADR-325) ─────────────────────────────
+  /// Parcela de corta del POA de donde salió el árbol. Es lo que OSINFOR cruza
+  /// pieza por pieza contra el plan del título habilitante — sin esto, la troza
+  /// es trazable hasta la guía pero no hasta el punto del bosque.
+  parcela        String?
+  /// El código que ESTE centro marca físicamente sobre la troza al recibirla.
+  /// Distinto de `WoodEntry.ctpProductCode`, que identifica la carga entera:
+  /// acá se identifica la pieza, que es lo que después se busca en el patio.
+  codigoPlanta   String?
+  /// La guía la declara pero no llegó al patio. NO se borra la fila: el
+  /// documento dice que existe, y esconderla sería alterar el acta. El volumen
+  /// que sí llegó se deriva sumando las recepcionadas.
+  noRecepcionada Boolean @default(false)
+  /// Qué se observó al recibirla (o por qué no llegó).
+  recepcionObs   String?
+
   // ── Retrozado (ADR-313 · Apartado 2 del formato LO-CTP) ──────────────
   /// De qué troza se cortó ésta. NULL = troza tal como llegó en la guía.
   ///
@@ -5281,6 +5297,7 @@ model WoodEntryTroza {
 
   @@index([tenantId, woodEntryId])
   @@index([tenantId, codificacion])
+  @@index([tenantId, codigoPlanta])
   @@index([tenantId, trozaOrigenId])
 }
 

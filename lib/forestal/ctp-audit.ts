@@ -78,6 +78,8 @@ export type CtpAuditAction =
   | "ctp_ingreso_reject"
   | "ctp_ingreso_annul"
   | "ctp_ingreso_delete"
+  /** Recepción física de las trozas de una guía (ADR-325): qué llegó y qué no. */
+  | "ctp_troza_recepcion"
   // Líneas de producción / despacho
   | "ctp_linea_create"
   | "ctp_linea_annul"

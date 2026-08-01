@@ -38,6 +38,7 @@ const ACTION_LABELS: Record<string, string> = {
   ctp_gtf_emitir: "GTF de salida emitida",
   ctp_ficha_update: "Ficha actualizada",
   ctp_especie_foto: "Foto de especie",
+  ctp_troza_recepcion: "Recepción de trozas",
 };
 
 /** Acciones que se pintan en rojo (sacan o corrigen el registro). */

@@ -10,10 +10,12 @@
  * fiscalización.
  */
 
+import { Children, isValidElement, type ReactElement } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
 import CtpHistorial from "./CtpHistorial";
 import TrazaForwardSection from "./CtpTrazaForward";
+import CtpTrozasDeIngreso from "./CtpTrozasDeIngreso";
 import {
   AlertCircle,
   FileText,
@@ -35,6 +37,20 @@ import {
   productLabel,
   type WoodEntry,
 } from "./ctp-shared";
+import { UNIDADES_LOCTP } from "@/lib/forestal/loctp-campos";
+
+/**
+ * La unidad declarada. Dos formas a propósito: el símbolo para el número grande
+ * del encabezado —donde "m³ — metros cúbicos" al lado del 4.87 no se lee— y la
+ * etiqueta completa para la ficha, que es la del catálogo oficial.
+ */
+function unidadLabel(unit: string | null): string {
+  return UNIDADES_LOCTP.find((u) => u.valor === (unit || "m3"))?.label ?? (unit || "m³");
+}
+function unidadSimbolo(unit: string | null): string {
+  const v = unit || "m3";
+  return v === "m3" ? "m³" : v === "unidad" ? "un." : v;
+}
 
 interface CtpEntryDetailModalProps {
   entry: WoodEntry;
@@ -53,11 +69,12 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
       open
       onClose={onClose}
       variant="info"
-      title={`Ingreso · ${entry.gtfNumber}`}
+      title={entry.libroNro != null ? `Ingreso N° ${entry.libroNro} · ${entry.gtfNumber}` : `Ingreso · ${entry.gtfNumber}`}
       description={`${entry.speciesCommonName} · ${Number(entry.volumeM3).toFixed(4)} m³`}
       icon={TreePine}
+      className="sm:w-[min(95vw,84rem)] sm:max-w-none sm:max-h-[95vh]"
     >
-      <div className="space-y-5 p-5">
+      <div className="space-y-5 p-5 sm:p-6">
         {/* Hero: la especie y el volumen — lo que se pregunta primero — con el
             estado y las alertas de cumplimiento, sobre una banda editorial. */}
         <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--accent-soft)] to-[var(--surface-canvas)] p-4">
@@ -71,10 +88,15 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
             <StatusChip status={entry.status} />
           </div>
 
-          <div className="mt-4 flex flex-wrap items-end gap-x-6 gap-y-3">
-            <HeroStat value={Number(entry.volumeM3).toFixed(2)} unit="m³" label="Volumen" big />
+          {/* Los cuatro datos que se preguntan primero. El folio del libro va acá
+              arriba y no enterrado en una sección: es la columna (1) del formato
+              oficial y lo primero que pide un fiscalizador para ubicar la línea. */}
+          <div className="mt-4 flex flex-wrap items-end gap-x-8 gap-y-3">
+            <HeroStat value={Number(entry.volumeM3).toFixed(2)} unit={unidadSimbolo(entry.unit)} label="Volumen" big />
             <HeroStat value={String(entry.pieces)} label="Piezas" />
             <HeroStat value={productLabel(entry.productType)} label="Producto" />
+            {entry.libroNro != null && <HeroStat value={`N° ${entry.libroNro}`} label="Folio del libro" />}
+            <HeroStat value={`${entry.docType || "GTF"} ${entry.gtfNumber}`} label="Documento" />
           </div>
 
           {(entry.speciesCites || fueraDePlazo) && (
@@ -111,74 +133,86 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
           </div>
         )}
 
-        {/* Datos en 2 columnas balanceadas (masonry limpio): el modal grande
-            deja ver casi todo sin scroll. En mobile cae a 1 columna. */}
-        <div className="grid gap-4 md:grid-cols-2 md:items-start">
-          <div className="space-y-4">
-            <Section title="Guía de transporte forestal" icon={FileText}>
-              <Field label="N° GTF" value={entry.gtfNumber} mono />
-              <Field label="Serie" value={entry.gtfSeries} mono />
-              <Field label="Fecha de la GTF" value={formatDate(entry.gtfDate)} />
-              <Field label="Fecha de ingreso" value={formatDate(entry.entryDate)} />
-            </Section>
+        {/* Tres columnas en pantalla grande: con el modal ancho, las secciones
+            de la ficha entran casi sin scroll. Cae a dos en tablet y a una en
+            teléfono, que es donde se consulta en el patio.
 
-            <Section title="Origen del material" icon={MapPin}>
-              <Field label="Tipo de origen" value={originLabel(entry.originType)} />
-              <Field label="Código (concesión / predio)" value={entry.originCode} mono />
-              <Field label="Región" value={entry.originRegion} />
-              <Field label="Distrito" value={entry.originDistrict} />
-            </Section>
+            `columns` y no `grid`: las secciones tienen alturas muy distintas
+            (Origen ocupa el doble que Titular) y con grid la fila entera se
+            estiraba a la más alta, dejando huecos de media pantalla. Con
+            columnas CSS se empaquetan una debajo de otra. */}
+        <div className="columns-1 gap-4 md:columns-2 xl:columns-3 [&>section]:mb-4 [&>section]:break-inside-avoid">
+          <Section title="Guía de transporte forestal" icon={FileText}>
+            <Field label="Tipo de documento" value={entry.docType} />
+            <Field label="N° del documento" value={entry.gtfNumber} mono />
+            <Field label="Serie" value={entry.gtfSeries} mono />
+            <Field label="Fecha de la guía" value={formatDate(entry.gtfDate)} />
+            <Field label="Fecha de ingreso al CTP" value={formatDate(entry.entryDate)} />
+            {/* El N° de registro del SNIFFS es lo que permite volver a la guía en
+                la base de SERFOR: sin él, la ficha guardada no se puede contrastar. */}
+            <Field label="N° de registro SERFOR" value={entry.serforNumeroRegistro} mono />
+          </Section>
 
-            <Section title="Medidas" icon={Scale}>
-              <Field label="Volumen" value={`${Number(entry.volumeM3).toFixed(4)} m³`} mono />
-              <Field label="Piezas" value={String(entry.pieces)} mono />
-              <Field label="Largo promedio" value={entry.avgLengthM ? `${Number(entry.avgLengthM).toFixed(2)} m` : null} mono />
-              <Field label="Diámetro promedio" value={entry.avgDiameterCm ? `${Number(entry.avgDiameterCm).toFixed(2)} cm` : null} mono />
-              <Field label="Humedad" value={entry.humidityPct ? `${Number(entry.humidityPct).toFixed(2)} %` : null} mono />
-              <Field label="Defectos observados" value={entry.defectsNotes} span2 />
-            </Section>
-          </div>
+          <Section title="Titular / proveedor" icon={User}>
+            <Field label="Nombre o razón social" value={entry.providerName} span2 />
+            <Field label="Documento" value={entry.providerDocument} mono />
+            <Field label="Tipo" value={entry.providerDocumentType} />
+          </Section>
 
-          <div className="space-y-4">
-            <Section title="Titular / proveedor" icon={User}>
-              <Field label="Nombre o razón social" value={entry.providerName} span2 />
-              <Field label="Documento" value={entry.providerDocument} mono />
-              <Field label="Tipo" value={entry.providerDocumentType} />
-            </Section>
+          <Section title="Origen del material" icon={MapPin}>
+            <Field label="Tipo de origen" value={originLabel(entry.originType)} />
+            <Field label="Código de origen" value={entry.originCode} mono />
+            <Field label="N° de fuente de origen" value={entry.originSourceNumber} mono span2 />
+            <Field label="Región" value={entry.originRegion} />
+            <Field label="Distrito" value={entry.originDistrict} />
+            <Field label="Código que asigna el CTP" value={entry.ctpProductCode} mono />
+          </Section>
 
-            <Section title="Especie y producto" icon={TreePine}>
-              <Field label="Nombre común" value={entry.speciesCommonName} />
-              <Field label="Nombre científico" value={entry.speciesScientificName} italic />
-              <Field label="Producto" value={productLabel(entry.productType)} />
-              <Field label="CITES" value={entry.speciesCites ? "Sí — especie protegida" : "No"} />
-            </Section>
+          <Section title="Especie y producto" icon={TreePine}>
+            <Field label="Nombre común" value={entry.speciesCommonName} />
+            <Field label="Nombre científico" value={entry.speciesScientificName} italic />
+            <Field label="Producto" value={productLabel(entry.productType)} />
+            <Field label="Unidad de medida" value={unidadLabel(entry.unit)} />
+            <Field label="CITES" value={entry.speciesCites ? "Sí — especie protegida" : "No"} />
+          </Section>
 
-            {(entry.notes || photos.length > 0) && (
-              <Section title="Observaciones" icon={FileText}>
-                <Field label="Notas" value={entry.notes} span2 />
-                {photos.length > 0 && (
-                  <div className="col-span-2">
-                    <FieldLabel>Fotos ({photos.length})</FieldLabel>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {photos.map((url) => (
-                        <a
-                          key={url}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block h-20 w-20 overflow-hidden rounded-xl border-2 border-[var(--rule-base)] hover:border-[var(--brand-ink)]"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={url} alt="Foto del ingreso" className="h-full w-full object-cover" />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </Section>
+          <Section title="Medidas" icon={Scale}>
+            <Field label="Volumen" value={`${Number(entry.volumeM3).toFixed(4)} m³`} mono />
+            <Field label="Piezas" value={String(entry.pieces)} mono />
+            <Field label="Largo promedio" value={entry.avgLengthM ? `${Number(entry.avgLengthM).toFixed(2)} m` : null} mono />
+            <Field label="Diámetro promedio" value={entry.avgDiameterCm ? `${Number(entry.avgDiameterCm).toFixed(2)} cm` : null} mono />
+            <Field label="Humedad" value={entry.humidityPct ? `${Number(entry.humidityPct).toFixed(2)} %` : null} mono />
+            <Field label="Defectos observados" value={entry.defectsNotes} span2 />
+          </Section>
+
+          <Section title="Observaciones" icon={FileText} opcional>
+            <Field label="Notas" value={entry.notes} span2 />
+            {photos.length > 0 && (
+              <div className="col-span-2">
+                <FieldLabel>Fotos ({photos.length})</FieldLabel>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {photos.map((url) => (
+                    <a
+                      key={url}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block h-20 w-20 overflow-hidden rounded-xl border-2 border-[var(--rule-base)] hover:border-[var(--brand-ink)]"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt="Foto del ingreso" className="h-full w-full object-cover" />
+                    </a>
+                  ))}
+                </div>
+              </div>
             )}
-          </div>
+          </Section>
         </div>
+
+        {/* La lista de trozas va a ANCHO COMPLETO: es una tabla que un
+            fiscalizador compara pieza por pieza contra el POA, y en una columna
+            se corta. Sólo aparece si la guía la trajo (ADR-312). */}
+        <CtpTrozasDeIngreso entryId={entry.id} volumenDelIngreso={Number(entry.volumeM3 ?? 0) || null} />
 
         {/* Trazabilidad hacia adelante + auditoría, en 2 columnas para ahorrar scroll. */}
         <div className="grid gap-4 md:grid-cols-2 md:items-start">
@@ -239,15 +273,43 @@ function HeroStat({ value, unit, label, big }: { value: string; unit?: string; l
   );
 }
 
+/**
+ * Bloque de datos de la ficha.
+ *
+ * Rediseño 2026-07-30: los campos SIN dato ya no ocupan una fila con un guión.
+ * En un ingreso recién cargado la mitad de los campos están vacíos, y el modal
+ * medía el doble mostrando nada — había que scrollear entre guiones para
+ * encontrar los tres datos que sí estaban. Ahora los vacíos se nombran en una
+ * línea al pie ("Sin registrar: Serie · Distrito"): el modal es corto Y sigue
+ * diciendo qué falta, que es justo lo que un fiscalizador pregunta.
+ */
 function Section({
   title,
   icon: Icon,
+  opcional,
   children,
 }: {
   title: string;
   icon: typeof TreePine;
+  /** Si no tiene ni un dato, no se dibuja: una tarjeta que sólo dice "sin
+   *  registrar: Notas" ocupa una columna entera para no informar nada. En las
+   *  secciones obligatorias del formato sí conviene ver el hueco. */
+  opcional?: boolean;
   children: React.ReactNode;
 }) {
+  const hijos = Children.toArray(children).filter(isValidElement) as ReactElement<{
+    label?: string;
+    value?: string | null;
+  }>[];
+  // El "—" cuenta como vacío: varios llamadores ya mandan el guión hecho, y si
+  // no se trata igual queda una fila con un guión al lado de la lista que dice
+  // que ese campo no está registrado.
+  const vacio = (h: ReactElement<{ value?: string | null }>) =>
+    h.props?.value == null || h.props?.value === "" || h.props?.value === "—";
+  const conDato = hijos.filter((h) => !vacio(h));
+  const sinDato = hijos.filter((h) => vacio(h)).map((h) => h.props?.label).filter(Boolean);
+  if (opcional && conDato.length === 0) return null;
+
   return (
     <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4">
       <div className="mb-3 flex items-center gap-2 border-b border-[var(--rule-soft)] pb-2">
@@ -258,7 +320,13 @@ function Section({
           {title}
         </CardTitle>
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3">{children}</div>
+      {conDato.length > 0 && <div className="grid grid-cols-2 gap-x-4 gap-y-3">{conDato}</div>}
+      {sinDato.length > 0 && (
+        <p className={`text-xs leading-relaxed text-[var(--text-tertiary)] ${conDato.length > 0 ? "mt-3 border-t border-[var(--rule-soft)] pt-2.5" : ""}`}>
+          <span className="font-bold uppercase tracking-wide">Sin registrar:</span>{" "}
+          {sinDato.join(" · ")}
+        </p>
+      )}
     </section>
   );
 }

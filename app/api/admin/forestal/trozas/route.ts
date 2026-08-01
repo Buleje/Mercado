@@ -5,6 +5,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
+import { assertCsrf } from "@/lib/auth/csrf";
+import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 
 /**
  * GET /api/admin/forestal/trozas?codificacion=106/C
@@ -13,8 +15,12 @@ import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
  * La consulta que hace un fiscalizador de OSINFOR al revés: dado el código de
  * una troza, de qué GTF entró y a qué ingreso del libro pertenece (ADR-312).
  *
- * Sólo lectura: las trozas se crean con su guía y no se editan a mano. Una lista
- * de trozas que se pudiera retocar dejaría de ser prueba de nada.
+ * PATCH /api/admin/forestal/trozas — cierra la RECEPCIÓN física (ADR-325).
+ *
+ * Lo que dice el documento no se edita a mano: una lista de trozas retocable
+ * dejaría de ser prueba de nada. Lo que sí se registra es lo que hizo el CENTRO
+ * al recibir —código de planta, parcela de corta y si llegó o no—, que son datos
+ * propios y no del documento.
  */
 
 const Query = z.object({
@@ -32,6 +38,59 @@ function fecha(raw: string | undefined): Date | undefined {
   if (!raw) return undefined;
   const parsed = z.coerce.date().safeParse(raw);
   return parsed.success ? parsed.data : undefined;
+}
+
+const patchSchema = z.object({
+  woodEntryId: z.string().trim().min(1).max(60),
+  cambios: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).max(60),
+        codigoPlanta: z.string().trim().max(80).nullish(),
+        parcela: z.string().trim().max(80).nullish(),
+        noRecepcionada: z.boolean().optional(),
+        recepcionObs: z.string().trim().max(300).nullish(),
+      }),
+    )
+    .min(1)
+    .max(500),
+});
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const rl = await applyRateLimit(req, "GENEROUS", "ctp:trozas");
+    if (rl) return rl;
+    const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
+    if (auth instanceof NextResponse) return auth;
+    const csrf = assertCsrf(req);
+    if (csrf) return csrf;
+    const habilitado = await isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro");
+    if (!habilitado) return NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
+
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+    }
+    const parsed = patchSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "validation_error", issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })) },
+        { status: 400 },
+      );
+    }
+
+    const r = await WoodEntriesDB.actualizarRecepcion(
+      auth.tenantId,
+      parsed.data.woodEntryId,
+      parsed.data.cambios,
+      auth.username ?? "unknown",
+    );
+    return NextResponse.json(r);
+  } catch (e) {
+    return ctpErrorResponse(e, "forestal.trozas.PATCH", "");
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -136,6 +195,9 @@ function serializar(t: {
   dimensiones: string | null; largoM: unknown; diametroCm: unknown;
   d1Cm?: unknown; d2Cm?: unknown;
   cantidad: number | null; volumenM3: unknown;
+  parcela?: string | null; codigoPlanta?: string | null;
+  noRecepcionada?: boolean; recepcionObs?: string | null;
+  trozaOrigenId?: string | null;
 }) {
   const num = (v: unknown) => (v == null ? null : Number(v));
   return {
@@ -151,5 +213,11 @@ function serializar(t: {
     d2Cm: num(t.d2Cm),
     cantidad: t.cantidad,
     volumenM3: num(t.volumenM3),
+    // Recepción física (ADR-325): son datos del CENTRO, no del documento.
+    parcela: t.parcela ?? null,
+    codigoPlanta: t.codigoPlanta ?? null,
+    noRecepcionada: Boolean(t.noRecepcionada),
+    recepcionObs: t.recepcionObs ?? null,
+    trozaOrigenId: t.trozaOrigenId ?? null,
   };
 }

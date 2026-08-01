@@ -19,6 +19,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { PLAZO_REGISTRO_DIAS, estaFueraDePlazo } from "@/lib/forestal/ctp-compliance";
 import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
 import { calcularRetrozado, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
+import type { CambioRecepcion } from "@/lib/forestal/recepcion-trozas";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
 
@@ -709,7 +710,13 @@ export class WoodEntriesDB {
     return prisma.woodEntryTroza.findMany({
       where: {
         tenantId,
-        codificacion: { contains: q, mode: "insensitive" },
+        // Por el código del bosque O por el que marcó el patio: en planta se
+        // pregunta "traeme la 118", que es el `codigoPlanta`, no la codificación
+        // de SERFOR. Buscar sólo por una de las dos deja media planta sin buscar.
+        OR: [
+          { codificacion: { contains: q, mode: "insensitive" } },
+          { codigoPlanta: { contains: q, mode: "insensitive" } },
+        ],
         // Una troza de un ingreso anulado no cuenta como trazabilidad: se filtra
         // acá y no en el cliente, para que ninguna vista la muestre por olvido.
         // Hacen falta las DOS condiciones — anular pone `status`, no borra.
@@ -726,6 +733,91 @@ export class WoodEntriesDB {
           },
         },
       },
+    });
+  }
+
+  /**
+   * Cierra la recepción física de las trozas de una guía (ADR-325).
+   *
+   * Guarda por pieza el código que el CTP le marca, la parcela de corta del POA
+   * y si llegó o no. **No borra las que no llegaron ni toca `volumeM3` del
+   * ingreso**: el volumen manda en los saldos (I2) y cambiarlo solo movería
+   * consumos ya atribuidos. La diferencia se informa y la corrige el operador.
+   *
+   * Se valida que TODAS las trozas sean del mismo ingreso y del tenant antes de
+   * escribir: un id colado de otra guía escribiría cross-tenant.
+   */
+  static async actualizarRecepcion(
+    tenantId: string,
+    woodEntryId: string,
+    cambios: CambioRecepcion[],
+    usuario = "unknown",
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!woodEntryId) throw new Error("woodEntryId is required");
+    if (cambios.length === 0) return { actualizadas: 0 };
+
+    return prisma.$transaction(async (tx) => {
+      const entry = await tx.woodEntry.findFirst({
+        where: { id: woodEntryId, tenantId, deletedAt: null },
+        select: { id: true, gtfNumber: true, status: true },
+      });
+      if (!entry) {
+        throw new CtpInvariantError("Ese ingreso no existe en este tenant.", "TENANT_MISMATCH", { woodEntryId });
+      }
+      if (entry.status === "anulado" || entry.status === "rechazado") {
+        throw new CtpInvariantError(
+          "El ingreso está anulado o rechazado: no se puede tocar su recepción.",
+          "ESTADO_NO_EDITABLE",
+          { woodEntryId },
+        );
+      }
+
+      const ids = [...new Set(cambios.map((c) => c.id))];
+      const propias = await tx.woodEntryTroza.findMany({
+        where: { id: { in: ids }, tenantId, woodEntryId },
+        select: { id: true, codificacion: true, noRecepcionada: true },
+      });
+      if (propias.length !== ids.length) {
+        throw new CtpInvariantError(
+          "Alguna de esas trozas no pertenece a este ingreso.",
+          "TENANT_MISMATCH",
+          { woodEntryId, pedidas: ids.length, encontradas: propias.length },
+        );
+      }
+      const previaPorId = new Map(propias.map((t) => [t.id, t]));
+
+      const limpiar = (v: string | null | undefined) => (v ?? "").trim() || null;
+      for (const c of cambios) {
+        await tx.woodEntryTroza.update({
+          where: { id: c.id },
+          data: {
+            ...(c.codigoPlanta !== undefined ? { codigoPlanta: limpiar(c.codigoPlanta) } : {}),
+            ...(c.parcela !== undefined ? { parcela: limpiar(c.parcela) } : {}),
+            ...(c.noRecepcionada !== undefined ? { noRecepcionada: Boolean(c.noRecepcionada) } : {}),
+            ...(c.recepcionObs !== undefined ? { recepcionObs: limpiar(c.recepcionObs) } : {}),
+          },
+        });
+      }
+
+      // El detalle narra el hecho: cuáles se marcaron como no llegadas es lo que
+      // un fiscalizador va a querer cruzar contra el conteo de la pila.
+      const faltantes = cambios
+        .filter((c) => c.noRecepcionada && !previaPorId.get(c.id)?.noRecepcionada)
+        .map((c) => previaPorId.get(c.id)?.codificacion ?? c.id);
+      auditCtp({
+        tenantId,
+        action: "ctp_troza_recepcion",
+        entity: "WoodEntryTroza",
+        entityId: woodEntryId,
+        detail:
+          `Actualizó la recepción de ${cambios.length} troza(s) de la GTF ${entry.gtfNumber}` +
+          (faltantes.length > 0 ? ` · marcó como NO recibidas: ${faltantes.join(", ")}` : ""),
+        user: usuario,
+      });
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+
+      return { actualizadas: cambios.length };
     });
   }
 
