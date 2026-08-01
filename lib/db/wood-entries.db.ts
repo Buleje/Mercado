@@ -918,6 +918,23 @@ export class WoodEntriesDB {
 
       const ids = [...new Set(trozaIds)];
       if (ids.length > 0) {
+        // LOCK sobre las piezas disputadas, antes de leerlas para validar.
+        //
+        // Sin esto, dos operadores que tildan la MISMA troza a la vez leen los
+        // dos "está libre" y la segunda pisa a la primera: las dos corridas
+        // creen que la tienen. Es el mismo TOCTOU que I2 evita en m³ —el lock va
+        // sobre el recurso disputado (la troza), no sobre la corrida— y el
+        // escenario real de un aserradero con dos tablets en el patio.
+        //
+        // `ORDER BY id` para que dos transacciones que piden el mismo conjunto
+        // lo tomen en el mismo orden: al revés se abrazan en un deadlock.
+        await tx.$queryRaw`
+          SELECT "id" FROM "WoodEntryTroza"
+          WHERE "id" = ANY(${ids}::text[]) AND "tenantId" = ${tenantId}
+          ORDER BY "id"
+          FOR UPDATE
+        `;
+
         const candidatas = await tx.woodEntryTroza.findMany({
           where: { id: { in: ids }, tenantId },
           select: {

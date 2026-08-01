@@ -963,3 +963,66 @@ describe.skipIf(!HAS_DB)("Consumo por pieza: mismas reglas que el consumo en m³
     ).resolves.toMatchObject({ consumidas: 0 });
   }, 40_000);
 });
+
+/**
+ * Concurrencia del consumo por pieza (auditoría adversarial 2026-08-01).
+ *
+ * Espejo del TOCTOU de I2, del otro lado del mismo hecho: sin lock sobre la
+ * troza disputada, dos operadores que tildan la MISMA pieza a la vez leen los
+ * dos "está libre" y la segunda pisa a la primera. La misma troza física
+ * alimentando dos corridas es justo lo que I2 evita en m³.
+ *
+ * Es el escenario real de un aserradero con dos tablets en el patio.
+ */
+describe.skipIf(!HAS_DB)("Consumo por pieza: dos operadores, una troza", () => {
+  it("exactamente una corrida se queda con la pieza", async () => {
+    const w = await crearIngreso(10);
+    const troza = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-RACE`, volumenM3: 5 },
+    });
+    const a = await crearLinea(null, 3);
+    const b = await crearLinea(null, 3);
+
+    const res = await Promise.allSettled([
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, a.id, [troza.id], { usuario: P }),
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, b.id, [troza.id], { usuario: P }),
+    ]);
+
+    // Una gana, la otra se rechaza. Nunca las dos: la pieza es una sola.
+    expect(res.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+
+    // Y la base queda coherente: la troza pertenece a UNA corrida.
+    const final = await prisma.woodEntryTroza.findUnique({
+      where: { id: troza.id },
+      select: { consumidaEnId: true },
+    });
+    expect([a.id, b.id]).toContain(final?.consumidaEnId);
+  }, 40_000);
+
+  /**
+   * El `ORDER BY id` del lock no es decorativo: dos transacciones que piden el
+   * MISMO conjunto en orden distinto se abrazarían en un deadlock. Si alguien lo
+   * saca, este test se vuelve flaky con "deadlock detected".
+   */
+  it("dos corridas pidiendo el mismo par de trozas en orden inverso no se abrazan", async () => {
+    const w = await crearIngreso(20);
+    const t1 = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-DL-A`, volumenM3: 5 },
+    });
+    const t2 = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 2, codificacion: `${P}-DL-B`, volumenM3: 5 },
+    });
+    const a = await crearLinea(null, 3);
+    const b = await crearLinea(null, 3);
+
+    const res = await Promise.allSettled([
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, a.id, [t1.id, t2.id], { usuario: P }),
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, b.id, [t2.id, t1.id], { usuario: P }),
+    ]);
+
+    expect(res.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    // Y el rechazo es por la REGLA, no por un deadlock de Postgres.
+    const rechazo = res.find((r) => r.status === "rejected") as PromiseRejectedResult;
+    expect(rechazo.reason).toMatchObject({ code: "T1_TROZA_NO_CONSUMIBLE" });
+  }, 40_000);
+});
