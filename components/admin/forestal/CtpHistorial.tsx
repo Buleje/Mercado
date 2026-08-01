@@ -39,6 +39,7 @@ const ACTION_LABELS: Record<string, string> = {
   ctp_ficha_update: "Ficha actualizada",
   ctp_especie_foto: "Foto de especie",
   ctp_troza_recepcion: "Recepción de trozas",
+  ctp_trozas_consumidas: "Trozas a la sierra",
 };
 
 /** Acciones que se pintan en rojo (sacan o corrigen el registro). */

@@ -12,6 +12,8 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import CtpConsumosPicker, { sumConsumos, type ConsumoRow } from "./CtpConsumosPicker";
+import CtpTrozasPicker from "./CtpTrozasPicker";
+import { agruparPorGuia, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import CtpReprocesoPicker, { type ReprocesoRow } from "./CtpReprocesoPicker";
 import CtpOrigenesPicker, { sumOrigenes, type OrigenRow } from "./CtpOrigenesPicker";
 import { Btn, Field, I, Seccion } from "./ctp-shared";
@@ -119,6 +121,11 @@ export default function CtpEntryForm({ section, presetProducto, presetEspecie, o
   // Producción: una corrida real mezcla varias guías (ADR-134). Cada fila es
   // un consumo (ingreso + m³ atribuidos); ver CtpConsumosPicker.
   const [consumos, setConsumos] = useState<ConsumoRow[]>([]);
+  // Qué PIEZAS entran a la sierra (ADR-326). Elegir trozas DERIVA los consumos
+  // por guía: el operador no tipea un volumen que después no cuadra con la pila.
+  const [trozasPatio, setTrozasPatio] = useState<TrozaConsumible[]>([]);
+  const [trozasCargando, setTrozasCargando] = useState(false);
+  const [seleccionTrozas, setSeleccionTrozas] = useState<Set<string>>(new Set());
   /** De qué producto YA terminado sale esta corrida, si es un reproceso (ADR-316). */
   const [reprocesos, setReprocesos] = useState<ReprocesoRow[]>([]);
   const [costoProceso, setCostoProceso] = useState("");
@@ -143,6 +150,53 @@ export default function CtpEntryForm({ section, presetProducto, presetEspecie, o
     finally { setLoadingSrc(false); }
   }, [section]);
   useEffect(() => { loadSources(); }, [loadSources]);
+
+  /** Las piezas del patio. Sólo para producción: un despacho no consume trozas. */
+  const loadTrozas = useCallback(async () => {
+    if (section !== "produccion") return;
+    setTrozasCargando(true);
+    try {
+      const r = await fetch("/api/admin/forestal/trozas/patio", { credentials: "include" });
+      setTrozasPatio(r.ok ? ((await r.json()).trozas ?? []) : []);
+    } catch {
+      // Sin la lista se sigue pudiendo cargar la corrida a mano: el picker de
+      // guías de siempre no depende de esto.
+      setTrozasPatio([]);
+    } finally {
+      setTrozasCargando(false);
+    }
+  }, [section]);
+  useEffect(() => { void loadTrozas(); }, [loadTrozas]);
+
+  /**
+   * Elegir trozas DERIVA los consumos por guía.
+   *
+   * Es el puente entre las dos formas de mirar el consumo: el operador tilda
+   * piezas, el libro guarda m³ por guía (donde viven I1-I6). Si no hay trozas
+   * elegidas no toca nada — el alta manual de siempre sigue funcionando igual.
+   */
+  useEffect(() => {
+    if (section !== "produccion" || seleccionTrozas.size === 0) return;
+    const elegidas = trozasPatio.filter((t) => seleccionTrozas.has(t.id));
+    const porGuia = agruparPorGuia(elegidas);
+    setConsumos((prev) =>
+      porGuia.map((g) => {
+        const previa = prev.find((c) => c.woodEntryId === g.woodEntryId);
+        const fuente = sources.find((x) => x.id === g.woodEntryId);
+        return {
+          woodEntryId: g.woodEntryId,
+          code: g.gtfNumber ?? previa?.code ?? fuente?.code ?? null,
+          species: g.especie ?? previa?.species ?? null,
+          // Lo que la guía tiene sin consumir. Si el listado de fuentes no la
+          // trae (ya sin saldo por otras líneas), el backend lo rechaza igual.
+          disponible: fuente?.disponible ?? previa?.disponible ?? g.volumenM3,
+          costoUnitario: fuente?.costoUnitario ?? previa?.costoUnitario ?? null,
+          moneda: fuente?.moneda ?? previa?.moneda ?? "PEN",
+          volumeM3: String(g.volumenM3),
+        };
+      }),
+    );
+  }, [section, seleccionTrozas, trozasPatio, sources]);
 
   function pick(it: SourceItem) {
     if (it.species) setSpeciesCommon(it.species);
@@ -388,6 +442,26 @@ export default function CtpEntryForm({ section, presetProducto, presetEspecie, o
       // El reproceso se atribuye DESPUÉS: necesita el id de la corrida recién
       // creada. Si falla, la corrida queda igual y el operador puede reintentar
       // desde el detalle — perder la producción por un origen mal puesto sería peor.
+      // Las trozas se marcan DESPUÉS por lo mismo que el reproceso: hace falta el
+      // id de la corrida. Si falla, la corrida queda igual y se corrige desde el
+      // detalle — perder la producción por esto sería peor.
+      if (section === "produccion" && seleccionTrozas.size > 0) {
+        const creada = await r.clone().json().catch(() => ({}));
+        const nuevaId = creada?.entry?.id ?? creada?.id;
+        if (nuevaId) {
+          const rt = await fetch("/api/admin/forestal/trozas/patio", {
+            method: "POST",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            credentials: "include",
+            body: JSON.stringify({ ctpEntryId: nuevaId, trozaIds: [...seleccionTrozas], fecha: new Date(entryDate).toISOString() }),
+          });
+          if (!rt.ok) {
+            const j = await rt.json().catch(() => ({}));
+            throw new Error(`La corrida se guardó, pero las trozas no quedaron marcadas: ${j?.message ?? `HTTP ${rt.status}`}`);
+          }
+        }
+      }
+
       const lineasRepro = reprocesos
         .map((x) => ({ origenEntryId: x.origenEntryId, quantity: Number(x.quantity) }))
         .filter((x) => x.origenEntryId && x.quantity > 0);
@@ -409,7 +483,7 @@ export default function CtpEntryForm({ section, presetProducto, presetEspecie, o
       }
       if (keepOpen) {
         setMateriaPrimaRef(""); setVolumeInputM3(""); setVolumeTouched(false); setQuantity(""); setPieces(""); setGtfNumber(""); setDestino(""); setObservations("");
-        setConsumos([]); setCostoProceso(""); setReprocesos([]);
+        setConsumos([]); setCostoProceso(""); setReprocesos([]); setSeleccionTrozas(new Set()); void loadTrozas();
         setGtfSerfor(null); setNroRegistroSerfor(""); setSerforMsg(null);
         setOrigenes([]); setQuantityTouched(false);
         setSubmitting(false); onSaved({ keepOpen: true }); loadSources();
@@ -495,6 +569,16 @@ export default function CtpEntryForm({ section, presetProducto, presetEspecie, o
                 {section === "produccion" && (
                   <>
                     <div className="sm:col-span-12">
+                      {/* Elegir PIEZAS (ADR-326). Si el patio no tiene trozas
+                          cargadas no estorba: el picker de guías sigue solo. */}
+                      {trozasPatio.length > 0 && (
+                        <CtpTrozasPicker
+                          trozas={trozasPatio}
+                          cargando={trozasCargando}
+                          seleccion={seleccionTrozas}
+                          onSeleccion={setSeleccionTrozas}
+                        />
+                      )}
                       <CtpConsumosPicker
                         consumos={consumos}
                         onChangeVolume={(id, value) => setConsumos((prev) => prev.map((c) => (c.woodEntryId === id ? { ...c, volumeM3: value } : c)))}

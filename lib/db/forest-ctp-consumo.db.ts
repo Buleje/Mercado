@@ -91,7 +91,23 @@ export class CtpInvariantError extends Error {
       | "ESTADO_NO_EDITABLE"
       // ── Cierre de período fiscal (ADR-139) ──
       /** La línea cae en un mes cerrado: el acta es inmutable hasta reabrir. */
-      | "PERIODO_CERRADO",
+      | "PERIODO_CERRADO"
+      // ── Alta desde SERFOR (ADR-312) ──
+      /** La guía ya está en el libro: se corrige anulando y recargando, no
+       *  registrándola dos veces (dejaría el saldo duplicado). */
+      | "GTF_DUPLICADA"
+      // ── Retrozado (ADR-313) ──
+      /** De una troza no salen pedazos más grandes que ella, ni más volumen del
+       *  que tiene. Es física, no una preferencia de negocio. */
+      | "R1_SOBRE_RETROZADO"
+      // ── Reproceso (ADR-316) ──
+      /** No se reprocesa más de lo que la corrida tiene disponible, contando
+       *  lo ya despachado Y lo ya reprocesado. */
+      | "I6_SOBRE_REPROCESO"
+      // ── Consumo por troza (ADR-326) ──
+      /** La pieza no puede entrar a la sierra: ya la comió otra corrida, no
+       *  llegó al patio, es descarte, o se partió en pedazos (van los pedazos). */
+      | "T1_TROZA_NO_CONSUMIBLE",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);

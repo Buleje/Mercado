@@ -86,6 +86,8 @@ export type CtpAuditAction =
   | "ctp_linea_delete"
   // Atribución de origen y costeo — lo más sensible del módulo
   | "ctp_consumos_set"
+  /** Qué PIEZAS entraron a la sierra en una corrida (ADR-326). */
+  | "ctp_trozas_consumidas"
   | "ctp_origenes_set"
   /** Qué corridas alimentan un reproceso (ADR-316). Espeja `ctp_origenes_set`:
    *  también descuenta stock, así que también deja rastro. */

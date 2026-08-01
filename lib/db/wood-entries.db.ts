@@ -822,6 +822,122 @@ export class WoodEntriesDB {
   }
 
   /**
+   * Las trozas que están en el patio, listas para entrar a la sierra (ADR-326).
+   *
+   * Trae TODAS —también las bloqueadas— porque el operador tiene que ver por qué
+   * una pieza que él sabe que está ahí no se puede elegir. El motivo lo decide
+   * `motivoBloqueo()` en el cliente, con la misma regla que valida el servidor.
+   */
+  static async trozasDelPatio(tenantId: string, opts: { limite?: number } = {}) {
+    if (!tenantId) throw new Error("tenantId is required");
+    return prisma.woodEntryTroza.findMany({
+      where: {
+        tenantId,
+        entry: { deletedAt: null, status: { notIn: ["anulado", "rechazado"] } },
+      },
+      orderBy: [{ createdAt: "desc" }, { orden: "asc" }],
+      take: Math.min(Math.max(opts.limite ?? 1000, 1), 5000),
+      include: {
+        entry: { select: { id: true, gtfNumber: true, providerName: true, entryDate: true } },
+        _count: { select: { retrozos: true } },
+      },
+    });
+  }
+
+  /**
+   * Marca qué piezas se comió una corrida (ADR-326).
+   *
+   * El volumen del consumo NO se toca acá: sigue viviendo en `ForestCtpConsumo`
+   * con sus invariantes. Esto registra las piezas, y se valida lo mismo que el
+   * cliente muestra —ya consumida, no recepcionada, descarte, madre partida—
+   * para que mandar el POST a mano no saltee la regla.
+   *
+   * `trozaIds` vacío = se sueltan todas las de esa corrida (corregir una
+   * atribución equivocada es corregir, no borrar historia: la corrida sigue).
+   */
+  static async marcarTrozasConsumidas(
+    tenantId: string,
+    ctpEntryId: string,
+    trozaIds: string[],
+    opts: { fecha?: Date; usuario: string },
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!ctpEntryId) throw new Error("ctpEntryId is required");
+
+    return prisma.$transaction(async (tx) => {
+      const corrida = await tx.forestCtpEntry.findFirst({
+        where: { id: ctpEntryId, tenantId, deletedAt: null },
+        select: { id: true, lineNo: true, section: true, status: true },
+      });
+      if (!corrida) {
+        throw new CtpInvariantError("Esa corrida no existe en este tenant.", "TENANT_MISMATCH", { ctpEntryId });
+      }
+      if (corrida.section !== "produccion") {
+        throw new CtpInvariantError("Sólo una corrida de producción consume trozas.", "ESTADO_NO_EDITABLE", { ctpEntryId });
+      }
+
+      const ids = [...new Set(trozaIds)];
+      if (ids.length > 0) {
+        const candidatas = await tx.woodEntryTroza.findMany({
+          where: { id: { in: ids }, tenantId },
+          select: {
+            id: true, codificacion: true, volumenM3: true, consumidaEnId: true,
+            noRecepcionada: true, descarte: true,
+            _count: { select: { retrozos: true } },
+          },
+        });
+        if (candidatas.length !== ids.length) {
+          throw new CtpInvariantError("Alguna de esas trozas no existe en este tenant.", "TENANT_MISMATCH", {
+            pedidas: ids.length, encontradas: candidatas.length,
+          });
+        }
+        // Las MISMAS reglas que `motivoBloqueo()` del cliente. Si divergieran, lo
+        // que la pantalla deja elegir la base lo rechazaría (o peor: al revés).
+        const malas = candidatas.filter(
+          (t) =>
+            (t.consumidaEnId && t.consumidaEnId !== ctpEntryId) ||
+            t.noRecepcionada ||
+            t.descarte ||
+            t._count.retrozos > 0 ||
+            !(Number(t.volumenM3 ?? 0) > 0),
+        );
+        if (malas.length > 0) {
+          throw new CtpInvariantError(
+            `No se pueden consumir estas trozas: ${malas.map((t) => t.codificacion ?? t.id).join(", ")}.`,
+            "T1_TROZA_NO_CONSUMIBLE",
+            { trozas: malas.map((t) => t.id) },
+          );
+        }
+      }
+
+      // Primero se sueltan las que ya no están en la selección, después se toman
+      // las nuevas: al revés, una pieza movida de corrida quedaría sin dueño.
+      await tx.woodEntryTroza.updateMany({
+        where: { tenantId, consumidaEnId: ctpEntryId, ...(ids.length > 0 ? { id: { notIn: ids } } : {}) },
+        data: { consumidaEnId: null, fechaConsumo: null },
+      });
+      if (ids.length > 0) {
+        await tx.woodEntryTroza.updateMany({
+          where: { tenantId, id: { in: ids } },
+          data: { consumidaEnId: ctpEntryId, fechaConsumo: opts.fecha ?? new Date() },
+        });
+      }
+
+      auditCtp({
+        tenantId,
+        action: "ctp_trozas_consumidas",
+        entity: "ForestCtpEntry",
+        entityId: ctpEntryId,
+        detail: `Corrida #${corrida.lineNo ?? "?"}: ${ids.length} troza(s) declaradas como consumidas`,
+        user: opts.usuario,
+      });
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+
+      return { consumidas: ids.length };
+    });
+  }
+
+  /**
    * Corta una troza en pedazos (ADR-313).
    *
    * El LOCK va sobre la troza madre —el recurso disputado—, no sobre la tabla:

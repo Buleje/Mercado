@@ -5276,6 +5276,21 @@ model WoodEntryTroza {
   /// Qué se observó al recibirla (o por qué no llegó).
   recepcionObs   String?
 
+  // ── Consumo por pieza (ADR-326) ──────────────────────────────────────
+  /// La corrida que se comió ESTA troza. NULL = sigue en el patio.
+  ///
+  /// El consumo del libro sigue siendo `ForestCtpConsumo` (ingreso → corrida en
+  /// m³): ahí viven las invariantes I1-I6 y el costeo. Esto dice QUÉ PIEZAS
+  /// entraron, que es lo que un fiscalizador cuenta en la pila.
+  ///
+  /// Es una referencia y no una tabla puente porque la relación es 1:N de
+  /// verdad: una troza entra a UNA corrida. Con puente habría que prohibir por
+  /// constraint que la misma pieza aparezca dos veces; así es imposible.
+  consumidaEnId String?
+  consumidaEn   ForestCtpEntry? @relation("TrozasConsumidas", fields: [consumidaEnId], references: [id], onDelete: SetNull)
+  /// Cuándo entró a la sierra.
+  fechaConsumo  DateTime?
+
   // ── Retrozado (ADR-313 · Apartado 2 del formato LO-CTP) ──────────────
   /// De qué troza se cortó ésta. NULL = troza tal como llegó en la guía.
   ///
@@ -5298,6 +5313,7 @@ model WoodEntryTroza {
   @@index([tenantId, woodEntryId])
   @@index([tenantId, codificacion])
   @@index([tenantId, codigoPlanta])
+  @@index([tenantId, consumidaEnId])
   @@index([tenantId, trozaOrigenId])
 }
 
@@ -5636,6 +5652,10 @@ model ForestCtpEntry {
 
   /// Qué ingresos (y cuántos m³ de cada uno) alimentaron esta corrida (ADR-134 D5).
   consumos ForestCtpConsumo[]
+
+  /// Qué PIEZAS entraron a la sierra en esta corrida (ADR-326). El volumen sigue
+  /// viviendo en `consumos`; esto dice cuáles fueron, que es lo que se cuenta.
+  trozasConsumidas WoodEntryTroza[] @relation("TrozasConsumidas")
 
   /// Dos back-relations porque la misma tabla es despacho en una punta de
   /// ForestCtpDespachoOrigen y corrida de producción en la otra (ADR-135).
