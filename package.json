@@ -50,6 +50,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:security": "vitest run __tests__/security/",
     "test:load": "k6 run k6/superadmin.js",
+    "seed:forestal": "node scripts/seed-forestal-ctp.mjs",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed-demo": "tsx prisma/seed-demo.ts",
     "db:migrate": "prisma migrate dev",
