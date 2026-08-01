@@ -164,8 +164,15 @@ function aM3(cantidad: number, unidad: string | null): number | null {
  * el lote se lleva— por la misma razón que `rendimientoPct` del balance: el
  * consumo se atribuye a la corrida completa, y cruzarlo contra una fracción de
  * lo producido daría un rendimiento inventado.
+ *
+ * Se exporta con los tipos MÍNIMOS que necesita —no `FilaConsumo` entera— para
+ * que el export a Excel la pueda llamar armando lo suyo desde el grafo, sin
+ * fabricar guías y proveedores que no va a usar.
  */
-function calcularMeta(consumos: FilaConsumo[], corridas: FilaCorrida[]): MetaEspecie[] {
+export function calcularMetaEspecies(
+  consumos: ReadonlyArray<{ produccionEntryId: string; especie: string; volumeM3: number }>,
+  corridas: ReadonlyArray<{ produccionEntryId: string; especie: string | null; quantity: number; unit: string | null }>,
+): MetaEspecie[] {
   const porEspecie = new Map<string, MetaEspecie>();
   const filaDe = (especie: string): MetaEspecie => {
     const previa = porEspecie.get(especie);
@@ -305,7 +312,7 @@ export function construirCadenaLote(
       enStock: r4(Math.max(0, enElLote - despachado)),
       rendimientoPct: consumidoM3 > 0 ? Number(((producido / consumidoM3) * 100).toFixed(2)) : null,
     },
-    meta: calcularMeta(consumos, conFlag),
+    meta: calcularMetaEspecies(consumos, conFlag),
     huecos,
   };
 }

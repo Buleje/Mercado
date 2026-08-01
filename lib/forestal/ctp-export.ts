@@ -16,7 +16,7 @@ import {
 } from "./ctp-period";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "./ctp-compliance";
 import { especieCoincide } from "./ctp-ficha-types";
-import { evaluarRendimiento } from "./ctp-rendimiento";
+import { RENDIMIENTO_REF_ASERRADA, evaluarRendimiento } from "./ctp-rendimiento";
 import {
   faltantesIngreso,
   faltantesProduccion,
@@ -25,6 +25,8 @@ import {
   unidadOficial,
 } from "./loctp-campos";
 import { claveProducto, cuadrosResumen, type StockInicial } from "./loctp-resumenes";
+import { calcularMetaEspecies } from "./ctp-cadena-lote";
+import { filasConsumo } from "./loctp-consumos";
 import {
   derivarFuentes,
   filasRetrozado,
@@ -79,7 +81,7 @@ const withPeriod = (path: string, base: Record<string, string>, period: CtpPerio
   `${path}?${applyCtpPeriodParams(new URLSearchParams(base), period)}`;
 
 export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
-  const [ing, prod, desp, sal, trz, fic] = await Promise.all([
+  const [ing, prod, desp, sal, trz, fic, lot, gra] = await Promise.all([
     getJson<{ entries?: Ingreso[]; stats?: WoodEntryStats }>(
       withPeriod("/api/admin/forestal/wood-entries", { limit: "1000", stats: "1" }, period),
       {},
@@ -92,6 +94,10 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
       {},
     ),
     getJson<{ ficha?: CtpFichaLite }>("/api/admin/forestal/ctp-ficha", {}),
+    // Para la hoja "Meta por lote": qué corridas arma cada lote y de qué
+    // ingreso salió cada una.
+    getJson<{ lotes?: LoteLite[] }>("/api/admin/forestal/lotes", {}),
+    getJson<{ grafo?: GrafoLite }>(withPeriod("/api/admin/forestal/ctp", { grafo: "1" }, period), {}),
   ]);
   const ingresos = ing.entries ?? [];
   const stats = ing.stats ?? null;
@@ -285,6 +291,78 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
     }
   }
 
+  // ── Meta por lote ──
+  // La cuenta que el jefe de planta hacía a mano: cuánta troza entró, cuánto
+  // debería salir al rendimiento de referencia y cuánto falta — en m³ y en pie
+  // tablar, que es como se vende la madera aserrada acá.
+  //
+  // Va en el export INTERNO y no en el oficial: el formato del SERFOR no pide
+  // esta hoja, y agregarle al libro oficial una que no pide es ruido para el
+  // fiscalizador. Acá conviven con los costos y el resto del análisis.
+  const lotes = lot.lotes ?? [];
+  if (lotes.length > 0) {
+    const wm = wb.addWorksheet("Meta por lote");
+    wm.columns = [
+      { header: "Lote", key: "l", width: 14 },
+      { header: "Especie", key: "e", width: 20 },
+      { header: "Trozas m³", key: "t", width: 14 },
+      { header: `Meta ${RENDIMIENTO_REF_ASERRADA}% m³`, key: "m", width: 16 },
+      { header: "Meta pt", key: "mp", width: 14 },
+      { header: "Producido m³", key: "p", width: 16 },
+      { header: "Producido pt", key: "pp", width: 16 },
+      { header: "Saldo meta m³", key: "s", width: 16 },
+      { header: "Saldo meta pt", key: "sp", width: 16 },
+      { header: "Rendimiento", key: "r", width: 14 },
+      { header: "Aviso", key: "a", width: 34 },
+    ];
+    styleHead(wm);
+    const especiePorIngreso = new Map((gra.grafo?.ingresos ?? []).map((i) => [i.id, i.species]));
+    const corridaPorId = new Map(produccion.filter((e) => e.id).map((e) => [e.id as string, e]));
+    for (const l of lotes) {
+      const ids = new Set(l.corridaIds ?? []);
+      if (ids.size === 0) continue;
+      const consumos = (gra.grafo?.consumos ?? [])
+        .filter((c) => ids.has(c.to))
+        .map((c) => ({
+          produccionEntryId: c.to,
+          especie: especiePorIngreso.get(c.from) ?? "—",
+          volumeM3: c.volumeM3,
+        }));
+      const corridas = [...ids]
+        .map((id) => corridaPorId.get(id))
+        .filter((c): c is CtpRow => Boolean(c))
+        .map((c) => ({
+          produccionEntryId: c.id as string,
+          especie: c.speciesCommon,
+          quantity: Number(c.quantity ?? 0),
+          unit: c.unit,
+        }));
+      for (const m of calcularMetaEspecies(consumos, corridas)) {
+        const row = wm.addRow({
+          l: l.loteCode, e: m.especie, t: m.trozasM3, m: m.metaM3, mp: m.metaPt,
+          p: m.producidoM3, pp: m.producidoPt, s: m.saldoM3, sp: m.saldoPt,
+          r: m.rendimientoPct != null ? `${m.rendimientoPct}%` : "—",
+          // Sin trozas y con producción, el saldo sale negativo y se leería como
+          // "superó la meta" cuando en realidad no hay contra qué compararlo: el
+          // consumo puede haber pasado ANTES del período que exporta esta hoja.
+          a: [
+            m.trozasM3 === 0 && m.producidoM3 > 0
+              ? "Sin consumo en el período: la materia prima entró antes o no está atribuida"
+              : "",
+            m.unidadesMezcladas ? "Hay corridas en una unidad que no convierte a m³" : "",
+          ]
+            .filter(Boolean)
+            .join(" · "),
+        });
+        ["t", "m", "p", "s"].forEach((k) => (row.getCell(k).numFmt = "0.0000"));
+        ["mp", "pp", "sp"].forEach((k) => (row.getCell(k).numFmt = "#,##0"));
+        // Falta producir contra la meta: se marca el saldo, no el rendimiento.
+        if (m.saldoM3 > 0) row.getCell("s").font = { color: { argb: "FFB45309" }, bold: true };
+        if (m.unidadesMezcladas || m.trozasM3 === 0) row.getCell("a").font = { color: { argb: "FFB45309" } };
+      }
+    }
+  }
+
   const buf = await wb.xlsx.writeBuffer();
   const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const url = URL.createObjectURL(blob);
@@ -382,43 +460,16 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
   // (F) Consumos como sección propia (RDE D000025-2023: ingresos, CONSUMOS,
   // producción, salidas). Se arman del grafo: cada consumo = GTF de ingreso →
   // corrida, con el volumen atribuido.
-  const ingXId = new Map((grafo?.ingresos ?? []).map((i) => [i.id, i]));
-  const corXId = new Map((grafo?.corridas ?? []).map((c) => [c.id, c]));
-  // El ingreso COMPLETO (con sus códigos y el científico) sale del listado, no
-  // del grafo: el grafo es un mapa de conexiones, no la fila del libro.
-  const ingCompletoXId = new Map(ingresos.filter((e) => e.id).map((e) => [e.id, e]));
   // Corrida → N° de lote (casillero 8 de las secciones 3 y 4).
   const loteDeCorrida = new Map<string, string>();
   for (const l of lot.lotes ?? []) {
     for (const cid of l.corridaIds ?? []) loteDeCorrida.set(cid, l.loteCode);
   }
-  const consumos = (grafo?.consumos ?? []).map((c) => {
-    const i = ingXId.get(c.from);
-    const completo = ingCompletoXId.get(c.from);
-    const cor = corXId.get(c.to);
-    return {
-      gtf: i?.gtf ?? "—",
-      // (2) la fecha del consumo es la de la corrida que lo consumió: el puente
-      // no tiene fecha propia porque el consumo ES la corrida.
-      fecha: cor?.fecha ?? null,
-      productType: completo?.productType ?? null,
-      especie: completo?.speciesCommonName ?? i?.species ?? "—",
-      scientific: completo?.speciesScientificName ?? null,
-      codigoOrigen: completo?.originCode || completo?.ctpProductCode || null,
-      // (7) es el N° de FUENTE de origen. Si el ingreso no lo tiene, va vacío: la
-      // GTF ya está en su propio casillero y ponerla acá sería declarar un dato
-      // que no es el que el casillero pide.
-      fuenteOrigen: completo?.originSourceNumber ?? null,
-      corrida: cor ? `Corrida #${cor.lineNo}${cor.label ? ` · ${cor.label}` : ""}` : "—",
-      // (10) pide el lote del producto CONSUMIDO. Lo que se consume acá son
-      // trozas de un ingreso, y las trozas no tienen lote (los lotes se arman en
-      // producción): va vacío. Poner el lote de la corrida destino sería declarar
-      // como origen algo que se creó después del consumo.
-      lote: null,
-      unidad: completo?.unit ?? "m3",
-      volumen: c.volumeM3,
-    };
-  });
+  // La fila de la sección la arma `filasConsumo()`, la misma que dibuja la vista
+  // de Consumos del módulo: pantalla y libro presentado no pueden declarar
+  // consumos distintos del mismo período.
+  const consumos = filasConsumo(grafo, ingresos);
+
   // m³ ya consumidos de cada ingreso — el casillero (11) del Cuadro Resumen 1.
   const consumidoPorIngreso = new Map<string, number>();
   for (const c of grafo?.consumos ?? []) {
@@ -609,16 +660,16 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
     { header: "(11) Observaciones", key: "o", width: 28 },
   ];
   styleHead(wco);
-  consumos.forEach((c, i) => {
+  for (const c of consumos) {
     const row = wco.addRow({
-      n: i + 1, f: c.fecha ? day(c.fecha) : "", tp: c.productType ?? "", e: c.especie,
-      sc: c.scientific ?? "", co: c.codigoOrigen ?? "", fo: c.fuenteOrigen ?? "",
-      u: unidadOficial(c.unidad), q: c.volumen, l: c.lote ?? "",
-      o: [c.gtf && c.gtf !== "—" ? `Doc. de ingreso: ${c.gtf}` : "", c.corrida !== "—" ? `Consumido en ${c.corrida}` : ""].filter(Boolean).join(" · "),
+      n: c.nro, f: c.fecha ? day(c.fecha) : "", tp: c.tipoProducto, e: c.especieComun,
+      sc: c.especieCientifica, co: c.codigoOrigen, fo: c.fuenteOrigen,
+      u: unidadOficial(c.unidad), q: c.cantidad, l: c.lote,
+      o: [c.gtf && c.gtf !== "—" ? `Doc. de ingreso: ${c.gtf}` : "", c.observaciones !== "—" ? `Consumido en ${c.observaciones}` : ""].filter(Boolean).join(" · "),
     });
     if (c.fecha) row.getCell("f").numFmt = "dd/mm/yyyy";
     row.getCell("q").numFmt = "0.0000";
-  });
+  }
   if (consumos.length === 0) wco.addRow({ o: "Sin consumos atribuidos en el período" });
 
   // ── Registro 3: Producción (transformación) ──

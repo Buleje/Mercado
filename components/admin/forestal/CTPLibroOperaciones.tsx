@@ -34,6 +34,7 @@ import {
   Globe,
   Lock,
   MapPin,
+  Flame,
   PackageOpen,
   Scale,
   Search,
@@ -78,6 +79,7 @@ import CtpEntryDetailModal from "./CtpEntryDetailModal";
 import type { WoodEntry } from "./ctp-shared";
 import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
 import CtpResumenesSerfor from "./CtpResumenesSerfor";
+import CtpConsumosView from "./CtpConsumosView";
 import CtpTrozasView from "./CtpTrozasView";
 import {
   CTP_INGRESAR_GTF_KEY,
@@ -86,7 +88,7 @@ import {
   type CtpIngresosFiltroRapido,
 } from "./ctp-shared";
 
-type CtpView = "ingresos" | "produccion" | "despacho" | "trozas" | "radar" | "planta" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "fletes" | "guias" | "directorio" | "ficha";
+type CtpView = "ingresos" | "consumos" | "produccion" | "despacho" | "trozas" | "radar" | "planta" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "fletes" | "guias" | "directorio" | "ficha";
 
 /**
  * Las doce vistas, agrupadas por la fase del libro a la que sirven. El orden
@@ -100,6 +102,7 @@ const CTP_GROUPS: LibroGroup[] = [
     label: "Operación",
     views: [
       { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida", tecla: "i" },
+      { key: "consumos", label: "Consumos", icon: Flame, hint: "Qué madera entró a la sierra", tecla: "n" },
       { key: "produccion", label: "Producción", icon: Boxes, hint: "Transformación", tecla: "p" },
       { key: "despacho", label: "Despacho", icon: Truck, hint: "Salida de producto", tecla: "d" },
     ],
@@ -436,6 +439,7 @@ export default function CTPLibroOperaciones() {
             filtroRapido={filtroIngresos}
           />
         )}
+        {view === "consumos" && <CtpConsumosView period={period} />}
         {view === "produccion" && <CtpEntriesView key={`prod-${ingresosKey}`} section="produccion" period={period} />}
         {view === "despacho" && (
           <CtpEntriesView
