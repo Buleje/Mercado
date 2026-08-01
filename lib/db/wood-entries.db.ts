@@ -787,7 +787,14 @@ export class WoodEntriesDB {
       const ids = [...new Set(cambios.map((c) => c.id))];
       const propias = await tx.woodEntryTroza.findMany({
         where: { id: { in: ids }, tenantId, woodEntryId },
-        select: { id: true, codificacion: true, noRecepcionada: true },
+        select: {
+          id: true, codificacion: true, noRecepcionada: true, consumidaEnId: true,
+          // El ESTADO de la corrida, no sólo el id: si se anuló, la troza está
+          // libre y marcarla "no llegó" no contradice nada. Mismo criterio que
+          // `marcarTrozasConsumidas` — bloquear por un id que apunta a una
+          // corrida muerta fue el primer bug de esta serie.
+          consumidaEn: { select: { status: true, deletedAt: true } },
+        },
       });
       if (propias.length !== ids.length) {
         throw new CtpInvariantError(
@@ -798,18 +805,61 @@ export class WoodEntriesDB {
       }
       const previaPorId = new Map(propias.map((t) => [t.id, t]));
 
-      const limpiar = (v: string | null | undefined) => (v ?? "").trim() || null;
-      for (const c of cambios) {
-        await tx.woodEntryTroza.update({
-          where: { id: c.id },
-          data: {
-            ...(c.codigoPlanta !== undefined ? { codigoPlanta: limpiar(c.codigoPlanta) } : {}),
-            ...(c.parcela !== undefined ? { parcela: limpiar(c.parcela) } : {}),
-            ...(c.noRecepcionada !== undefined ? { noRecepcionada: Boolean(c.noRecepcionada) } : {}),
-            ...(c.recepcionObs !== undefined ? { recepcionObs: limpiar(c.recepcionObs) } : {}),
-          },
-        });
+      // Una troza NO PUEDE haberse aserrado y no haber llegado nunca.
+      //
+      // El libro quedaba declarando las dos cosas a la vez —`noRecepcionada` y
+      // `consumidaEnId` poblados— y eso es consumir madera que no existe, el
+      // mismo patrón que I2 previene del lado del volumen. Se rechaza indicando
+      // el camino: primero se saca de la corrida (auditoría 2026-08-01).
+      const contradicen = cambios
+        .filter((c) => c.noRecepcionada)
+        .map((c) => previaPorId.get(c.id))
+        .filter((t): t is (typeof propias)[number] =>
+          Boolean(t?.consumidaEnId && t.consumidaEn && t.consumidaEn.status === "registrado" && !t.consumidaEn.deletedAt),
+        );
+      if (contradicen.length > 0) {
+        throw new CtpInvariantError(
+          `No se puede marcar como no recibida${contradicen.length === 1 ? "" : "s"} ` +
+            `${contradicen.map((t) => t.codificacion ?? t.id).join(", ")}: ya entró a una corrida de producción. ` +
+            "Sacala primero del consumo de esa corrida.",
+          "ESTADO_NO_EDITABLE",
+          { trozas: contradicen.map((t) => t.id) },
+        );
       }
+
+      const limpiar = (v: string | null | undefined) => (v ?? "").trim() || null;
+
+      // UNA query para las N trozas, no un UPDATE por fila.
+      //
+      // Recibir una guía de SERFOR son decenas de piezas (el tope del endpoint
+      // es 500). Con un round-trip por troza —a ~30 ms de latencia contra
+      // Supabase— la transacción se acercaba al timeout con los locks abiertos,
+      // y el operador perdía la recepción entera a la mitad.
+      //
+      // El `set_*` de cada columna distingue "no lo mandó" de "lo mandó vacío":
+      // sin eso, no tocar el código de planta lo borraría.
+      // Los `::text` / `::boolean` NO son decoración: dentro de un VALUES,
+      // Postgres no puede inferir el tipo de un parámetro y los toma todos como
+      // `text` — el CASE/WHEN entonces revienta con "must be type boolean".
+      const filas = cambios.map(
+        (c) => Prisma.sql`(
+          ${c.id}::text,
+          ${limpiar(c.codigoPlanta)}::text, ${c.codigoPlanta !== undefined}::boolean,
+          ${limpiar(c.parcela)}::text, ${c.parcela !== undefined}::boolean,
+          ${Boolean(c.noRecepcionada)}::boolean, ${c.noRecepcionada !== undefined}::boolean,
+          ${limpiar(c.recepcionObs)}::text, ${c.recepcionObs !== undefined}::boolean
+        )`,
+      );
+      await tx.$executeRaw`
+        UPDATE "WoodEntryTroza" AS t SET
+          "codigoPlanta"   = CASE WHEN v.set_cp  THEN v.cp  ELSE t."codigoPlanta"   END,
+          "parcela"        = CASE WHEN v.set_pa  THEN v.pa  ELSE t."parcela"        END,
+          "noRecepcionada" = CASE WHEN v.set_nr  THEN v.nr  ELSE t."noRecepcionada" END,
+          "recepcionObs"   = CASE WHEN v.set_obs THEN v.obs ELSE t."recepcionObs"   END
+        FROM (VALUES ${Prisma.join(filas)})
+          AS v(id, cp, set_cp, pa, set_pa, nr, set_nr, obs, set_obs)
+        WHERE t."id" = v.id AND t."tenantId" = ${tenantId}
+      `;
 
       // El detalle narra el hecho: cuáles se marcaron como no llegadas es lo que
       // un fiscalizador va a querer cruzar contra el conteo de la pila.

@@ -1026,3 +1026,120 @@ describe.skipIf(!HAS_DB)("Consumo por pieza: dos operadores, una troza", () => {
     expect(rechazo.reason).toMatchObject({ code: "T1_TROZA_NO_CONSUMIBLE" });
   }, 40_000);
 });
+
+/**
+ * Recepción × consumo: una troza no puede haberse aserrado y no haber llegado
+ * nunca (auditoría adversarial 2026-08-01).
+ *
+ * El libro quedaba declarando las dos cosas a la vez —`noRecepcionada` y
+ * `consumidaEnId` poblados— y eso es consumir madera que no existe: el mismo
+ * patrón que I2 previene del lado del volumen, pero del lado de las piezas.
+ */
+describe.skipIf(!HAS_DB)("Una troza no puede estar consumida y no recibida", () => {
+  async function trozaConsumida() {
+    const w = await crearIngreso(10);
+    const t = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-C${Date.now()}`, volumenM3: 5 },
+    });
+    const linea = await crearLinea(null, 3);
+    await WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [t.id], { usuario: P });
+    return { w, t, linea };
+  }
+
+  it("no se marca 'no llegó' una pieza que ya entró a una corrida", async () => {
+    const { w, t } = await trozaConsumida();
+    await expect(
+      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, noRecepcionada: true }], P),
+    ).rejects.toMatchObject({ code: "ESTADO_NO_EDITABLE" });
+    // El mensaje tiene que decir el camino, no sólo "no se puede".
+    await WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, noRecepcionada: true }], P).catch(
+      (e: { message: string }) => expect(e.message).toMatch(/Sacala primero del consumo/),
+    );
+  }, 40_000);
+
+  it("sacándola de la corrida primero, sí se puede", async () => {
+    const { w, t, linea } = await trozaConsumida();
+    await WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [], { usuario: P });
+    await expect(
+      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, noRecepcionada: true }], P),
+    ).resolves.toMatchObject({ actualizadas: 1 });
+  }, 40_000);
+
+  it("si la corrida se ANULÓ, la pieza está libre y no contradice nada", async () => {
+    const { w, t, linea } = await trozaConsumida();
+    // Anular ya suelta la troza; el guard no debe bloquear por un id muerto.
+    await ForestCtpDB.annul(TENANT, linea.id, "prueba de coherencia", P);
+    await expect(
+      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, noRecepcionada: true }], P),
+    ).resolves.toMatchObject({ actualizadas: 1 });
+  }, 40_000);
+
+  it("mandar un campo no borra los que no se mandaron", async () => {
+    // La recepción pasó a UNA query con `UPDATE … FROM (VALUES …)` para no hacer
+    // un round-trip por troza. El flag `set_*` de cada columna distingue "no lo
+    // mandó" de "lo mandó vacío": sin eso, corregir la parcela borraría el
+    // código de planta que ya estaba puesto.
+    const w = await crearIngreso(10);
+    const t = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-SET${Date.now()}`, volumenM3: 5 },
+    });
+    await WoodEntriesDB.actualizarRecepcion(
+      TENANT, w.id, [{ id: t.id, codigoPlanta: "118", parcela: "PC-03", recepcionObs: "rajadura" }], P,
+    );
+    // Segunda pasada: SÓLO la parcela.
+    await WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, parcela: "PC-09" }], P);
+    const final = await prisma.woodEntryTroza.findUnique({
+      where: { id: t.id },
+      select: { codigoPlanta: true, parcela: true, recepcionObs: true, noRecepcionada: true },
+    });
+    expect(final).toMatchObject({
+      codigoPlanta: "118",       // intacto
+      parcela: "PC-09",          // cambiado
+      recepcionObs: "rajadura",  // intacto
+      noRecepcionada: false,
+    });
+    // Y mandarlo VACÍO sí lo borra: es una corrección, no una omisión.
+    await WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: "" }], P);
+    const borrado = await prisma.woodEntryTroza.findUnique({
+      where: { id: t.id }, select: { codigoPlanta: true, parcela: true },
+    });
+    expect(borrado).toMatchObject({ codigoPlanta: null, parcela: "PC-09" });
+  }, 40_000);
+
+  it("varias trozas en una sola llamada, cada una con lo suyo", async () => {
+    const w = await crearIngreso(20);
+    const ts = await Promise.all(
+      [1, 2, 3].map((i) =>
+        prisma.woodEntryTroza.create({
+          data: { tenantId: TENANT, woodEntryId: w.id, orden: i, codificacion: `${P}-M${i}-${Date.now()}`, volumenM3: 5 },
+        }),
+      ),
+    );
+    await WoodEntriesDB.actualizarRecepcion(
+      TENANT, w.id,
+      [
+        { id: ts[0].id, codigoPlanta: "201" },
+        { id: ts[1].id, parcela: "PC-07" },
+        { id: ts[2].id, noRecepcionada: true, recepcionObs: "no llegó en el camión" },
+      ],
+      P,
+    );
+    const finales = await prisma.woodEntryTroza.findMany({
+      where: { id: { in: ts.map((t) => t.id) } },
+      orderBy: { orden: "asc" },
+      select: { codigoPlanta: true, parcela: true, noRecepcionada: true, recepcionObs: true },
+    });
+    expect(finales[0]).toMatchObject({ codigoPlanta: "201", parcela: null, noRecepcionada: false });
+    expect(finales[1]).toMatchObject({ codigoPlanta: null, parcela: "PC-07", noRecepcionada: false });
+    expect(finales[2]).toMatchObject({ noRecepcionada: true, recepcionObs: "no llegó en el camión" });
+  }, 40_000);
+
+  it("los demás campos de recepción se editan igual en una pieza consumida", async () => {
+    const { w, t } = await trozaConsumida();
+    // Poner el código de planta o la parcela no contradice nada: sólo el
+    // "no llegó" es incompatible con haberla aserrado.
+    await expect(
+      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: "118", parcela: "PC-03" }], P),
+    ).resolves.toMatchObject({ actualizadas: 1 });
+  }, 40_000);
+});
