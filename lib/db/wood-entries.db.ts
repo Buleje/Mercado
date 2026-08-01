@@ -760,7 +760,7 @@ export class WoodEntriesDB {
     return prisma.$transaction(async (tx) => {
       const entry = await tx.woodEntry.findFirst({
         where: { id: woodEntryId, tenantId, deletedAt: null },
-        select: { id: true, gtfNumber: true, status: true },
+        select: { id: true, gtfNumber: true, status: true, entryDate: true },
       });
       if (!entry) {
         throw new CtpInvariantError("Ese ingreso no existe en este tenant.", "TENANT_MISMATCH", { woodEntryId });
@@ -770,6 +770,17 @@ export class WoodEntriesDB {
           "El ingreso está anulado o rechazado: no se puede tocar su recepción.",
           "ESTADO_NO_EDITABLE",
           { woodEntryId },
+        );
+      }
+      // Cierre de período (ADR-139): la recepción es parte del acta. Cambiar qué
+      // trozas llegaron en un mes ya presentado altera un libro entregado a la
+      // autoridad — para eso está reabrir, que deja rastro de quién y por qué.
+      const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, entry.entryDate);
+      if (cerrado) {
+        throw new CtpInvariantError(
+          `El período ${cerrado.label} está cerrado: no se puede cambiar la recepción de una guía de un mes cerrado. Reabrí el período para corregir.`,
+          "PERIODO_CERRADO",
+          { periodKey: cerrado.periodKey },
         );
       }
 
@@ -871,13 +882,24 @@ export class WoodEntriesDB {
     return prisma.$transaction(async (tx) => {
       const corrida = await tx.forestCtpEntry.findFirst({
         where: { id: ctpEntryId, tenantId, deletedAt: null },
-        select: { id: true, lineNo: true, section: true, status: true },
+        select: { id: true, lineNo: true, section: true, status: true, entryDate: true },
       });
       if (!corrida) {
         throw new CtpInvariantError("Esa corrida no existe en este tenant.", "TENANT_MISMATCH", { ctpEntryId });
       }
       if (corrida.section !== "produccion") {
         throw new CtpInvariantError("Sólo una corrida de producción consume trozas.", "ESTADO_NO_EDITABLE", { ctpEntryId });
+      }
+      // Cierre de período (ADR-139): qué piezas se comió una corrida es parte
+      // del acta de ese mes. El consumo ES la corrida, así que la fecha que
+      // manda es la suya.
+      const cerradoCorrida = await ForestCtpCierreDB.closedPeriodOf(tenantId, corrida.entryDate);
+      if (cerradoCorrida) {
+        throw new CtpInvariantError(
+          `El período ${cerradoCorrida.label} está cerrado: no se pueden cambiar las trozas de una corrida de un mes cerrado. Reabrí el período para corregir.`,
+          "PERIODO_CERRADO",
+          { periodKey: cerradoCorrida.periodKey },
+        );
       }
 
       const ids = [...new Set(trozaIds)];
@@ -1005,6 +1027,18 @@ export class WoodEntriesDB {
           { trozaId },
         );
       }
+      // Cierre de período (ADR-139): el corte va al Apartado 2 del libro del mes
+      // en que se hizo, así que es la fecha del CORTE la que manda — no la de la
+      // guía por la que entró la troza.
+      const fechaCorte = opts.fecha ?? new Date();
+      const cerradoCorte = await ForestCtpCierreDB.closedPeriodOf(tenantId, fechaCorte);
+      if (cerradoCorte) {
+        throw new CtpInvariantError(
+          `El período ${cerradoCorte.label} está cerrado: no se puede registrar un retrozado con fecha de un mes cerrado. Reabrí el período para corregir.`,
+          "PERIODO_CERRADO",
+          { periodKey: cerradoCorte.periodKey },
+        );
+      }
 
       const calculo = calcularRetrozado(
         {
@@ -1027,7 +1061,7 @@ export class WoodEntriesDB {
         throw new CtpInvariantError(calculo.errores.join(" "), "R1_SOBRE_RETROZADO", { trozaId, errores: calculo.errores });
       }
 
-      const fecha = opts.fecha ?? new Date();
+      const fecha = fechaCorte;
       await tx.woodEntryTroza.createMany({
         data: calculo.retrozos.map((r) => ({
           tenantId,

@@ -800,3 +800,100 @@ describe.skipIf(!HAS_DB)("Congelado al cierre de período (ADR-134 D8)", () => {
     expect(c.congelado).toBe(true);
   }, 30_000);
 });
+
+/**
+ * Cierre de período × trozas (auditoría adversarial 2026-08-01).
+ *
+ * El cierre existe para que el acta de un mes presentado sea inmutable. Los tres
+ * caminos que tocan trozas —recepción (ADR-325), consumo por pieza (ADR-326) y
+ * retrozado (ADR-313)— NO consultaban el cierre: se podía cambiar qué llegó, qué
+ * entró a la sierra y qué se cortó en un libro ya entregado a la autoridad.
+ *
+ * Se prueba contra la DB real por lo mismo que el resto del archivo: lo que
+ * importa es que el guard corra DENTRO de la transacción, no que exista.
+ */
+describe.skipIf(!HAS_DB)("Cierre de período: las trozas también quedan congeladas", () => {
+  const KEY = `ctp-cierre:${TENANT}`;
+  /** Enero 2099: mes sin datos reales, así cerrar es inofensivo. */
+  const AÑO = 2099;
+  const MES = 0;
+  const FECHA = new Date(Date.UTC(AÑO, MES, 15));
+
+  async function conMesCerrado<T>(fn: () => Promise<T>): Promise<T> {
+    const { PlatformSettingsDB } = await import("@/lib/db/platform-settings.db");
+    const { ForestCtpCierreDB } = await import("@/lib/db/forest-ctp-cierre.db");
+    const previo: unknown = await PlatformSettingsDB.get(KEY);
+    try {
+      const { monthRange } = await import("@/lib/forestal/ctp-cierre-types");
+      const { from, to, periodKey, label } = monthRange(AÑO, MES);
+      await ForestCtpCierreDB.save(
+        TENANT,
+        {
+          periodKey, from: from.toISOString(), to: to.toISOString(), label,
+          closedAt: new Date().toISOString(), closedBy: P,
+          saldoCierre: { materiaPrima: [], productos: [] },
+          totales: { corridas: 0, despachos: 0, ingresosCount: 0, volumenIngresado: 0, corridasCongeladas: 0, corridasSinCostear: 0, especiesEnNegativo: 0 },
+        },
+        P,
+      );
+      return await fn();
+    } finally {
+      // Se restaura el KV entero: dejar un mes cerrado rompería otros tests.
+      await PlatformSettingsDB.set(KEY, previo ?? [], P);
+    }
+  }
+
+  it("no se cambia la recepción de una guía de un mes cerrado", async () => {
+    const w = await crearIngreso(10);
+    await prisma.woodEntry.update({ where: { id: w.id }, data: { entryDate: FECHA } });
+    const t = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-T1`, volumenM3: 5 },
+    });
+    await conMesCerrado(async () => {
+      await expect(
+        WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: "999" }], P),
+      ).rejects.toMatchObject({ code: "PERIODO_CERRADO" });
+    });
+    // Con el mes abierto, el MISMO cambio pasa: el guard no bloquea de más.
+    await expect(
+      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: "999" }], P),
+    ).resolves.toMatchObject({ actualizadas: 1 });
+  }, 40_000);
+
+  it("no se cambian las trozas de una corrida de un mes cerrado", async () => {
+    const w = await crearIngreso(10);
+    const t = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-T2`, volumenM3: 4 },
+    });
+    const linea = await crearLinea(null, 2);
+    await prisma.forestCtpEntry.update({ where: { id: linea.id }, data: { entryDate: FECHA } });
+    await conMesCerrado(async () => {
+      await expect(
+        WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [t.id], { usuario: P }),
+      ).rejects.toMatchObject({ code: "PERIODO_CERRADO" });
+    });
+    await expect(
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [t.id], { usuario: P }),
+    ).resolves.toMatchObject({ consumidas: 1 });
+  }, 40_000);
+
+  it("no se registra un retrozado con fecha de un mes cerrado", async () => {
+    const w = await crearIngreso(10);
+    const madre = await prisma.woodEntryTroza.create({
+      data: {
+        tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-M1`,
+        d1Cm: 80, d2Cm: 70, largoM: 6, volumenM3: 2.6,
+      },
+    });
+    const pedazo = { d1Cm: 80, d2Cm: 75, largoM: 3 };
+    await conMesCerrado(async () => {
+      await expect(
+        WoodEntriesDB.retrozar(TENANT, madre.id, [pedazo], { fecha: FECHA, usuario: P }),
+      ).rejects.toMatchObject({ code: "PERIODO_CERRADO" });
+    });
+    // La fecha que manda es la del CORTE, no la de la guía: con otra fecha pasa.
+    await expect(
+      WoodEntriesDB.retrozar(TENANT, madre.id, [pedazo], { fecha: new Date(), usuario: P }),
+    ).resolves.toMatchObject({ retrozos: expect.any(Array) });
+  }, 40_000);
+});
