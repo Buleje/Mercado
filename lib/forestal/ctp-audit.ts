@@ -52,6 +52,8 @@ export type CtpAuditEntity =
   | "ForestVehiculo"
   /** Viaje que trajo materia prima o se llevó producto (ADR-318). */
   | "ForestFlete"
+  /** Movimiento de cuenta corriente con una parte del directorio (ADR-322). */
+  | "ForestCuentaMov"
   // KV: ANEXO N° 04 emitido (lista de productos transformados de la GTF). No es
   // modelo Prisma: es el PAPEL que se entregó, guardado para poder re-imprimir
   // el mismo documento ante una fiscalización.
@@ -128,6 +130,11 @@ export type CtpAuditAction =
   | "ctp_flete_update"
   | "ctp_flete_pago"
   | "ctp_flete_delete"
+  // Cuenta corriente con terceros (ADR-322): es plata de otro, así que cada
+  // movimiento y cada corrección quedan con nombre y fecha.
+  | "ctp_cuenta_create"
+  | "ctp_cuenta_update"
+  | "ctp_cuenta_delete"
   | "ctp_cubicacion_update"
   | "ctp_cubicacion_delete"
   // ANEXO N° 04 emitido con la GTF (lista de productos transformados)

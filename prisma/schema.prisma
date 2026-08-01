@@ -5973,6 +5973,58 @@ model ForestFlete {
   @@index([deletedAt])
 }
 
+/// Movimiento de cuenta corriente con una parte del directorio (ADR-322).
+///
+/// El aserradero no cierra cada trato al contado: le adelanta plata a un titular
+/// contra la madera que va a traer, le presta aserrío a otro, le descuenta el
+/// flete que pagó por él. Todo eso vivía en un cuaderno, y al liquidar nadie
+/// coincidía en el número.
+///
+/// **Un movimiento, no un saldo.** El saldo se deriva sumando: guardar un
+/// `saldo` mutable crea dos verdades y la primera corrección lo desincroniza.
+/// Es la misma razón por la que los saldos del libro se derivan de ingresos y
+/// consumos en vez de tener un contador propio.
+model ForestCuentaMov {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Con quién es la cuenta. Snapshot del nombre además del id: la parte puede
+  /// darse de baja y el movimiento de marzo sigue siendo con ese nombre.
+  parteId     String
+  parteNombre String
+
+  fecha DateTime
+
+  /// `cargo` = le debe al CTP (adelanto entregado, flete pagado por él,
+  /// aserrío prestado). `abono` = el CTP le debe o él pagó (madera recibida,
+  /// pago recibido). El saldo positivo significa que la parte debe.
+  tipo String
+
+  /// Qué originó el movimiento: adelanto · flete · aserrio_prestado ·
+  /// aserrio_recibido · pago · madera · otro.
+  concepto String
+
+  monto  Decimal @db.Decimal(12, 2)
+  moneda String? @default("PEN")
+
+  /// De dónde salió: id del flete, N° de guía, N° de recibo. Lo que permite
+  /// volver al documento en vez de creerle al número.
+  referencia String?
+  /// Si nació de un flete, su id — evita cargarlo dos veces.
+  fleteId    String?
+
+  notas     String?
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([tenantId, parteId, fecha(sort: Desc)])
+  @@index([tenantId, fecha(sort: Desc)])
+  @@unique([tenantId, fleteId])
+  @@index([deletedAt])
+}
+
 // ─── Especialización AGRÍCOLA · Cacao (ADR-128) ────────────────────────────────
 // Acopio & beneficio de cacao en grano. Alineado a NTP 208.040 (cosecha/beneficio),
 // NTP-ISO 2451 (clasificación por defectos), NTP-ISO 1114 (prueba de corte),

@@ -31,9 +31,10 @@ import {
   type Flete,
 } from "@/lib/forestal/fletes";
 import CtpFleteModal from "./CtpFleteModal";
+import CtpCuentaCorriente from "./CtpCuentaCorriente";
 import { Btn, IconAction, TablaSkeleton, VistaHeader } from "./ctp-shared";
 
-type Pestaña = "viajes" | "transportistas" | "proveedores";
+type Pestaña = "viajes" | "transportistas" | "proveedores" | "cuenta";
 
 const soles = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 /** Fecha date-only en UTC: sin esto, un viaje del día 1 se muestra el 31 en Lima. */
@@ -112,6 +113,7 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
             { id: "viajes", label: "Viajes", n: fletes.length },
             { id: "transportistas", label: "Por transportista", n: cuentasTransportista.length },
             { id: "proveedores", label: "A cargo del proveedor", n: cuentasProveedor.length },
+            { id: "cuenta", label: "Cuenta corriente", n: 0 },
           ] as { id: Pestaña; label: string; n: number }[]
         ).map((p) => (
           <button
@@ -126,7 +128,9 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
             }`}
           >
             {p.label}
-            <span className="rounded bg-[var(--surface-sunken)] px-1.5 font-mono text-xs tabular-nums">{p.n}</span>
+            {p.n > 0 && (
+              <span className="rounded bg-[var(--surface-sunken)] px-1.5 font-mono text-xs tabular-nums">{p.n}</span>
+            )}
           </button>
         ))}
       </div>
@@ -139,6 +143,8 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
 
       {cargando ? (
         <TablaSkeleton />
+      ) : pestaña === "cuenta" ? (
+        <CtpCuentaCorriente fletes={fletes} />
       ) : pestaña === "viajes" ? (
         <ListaViajes
           fletes={fletes}
