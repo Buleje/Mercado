@@ -19,7 +19,7 @@
 | `seguimiento-lote` (1651) | ✅ | ADR-315 |
 | `emision-gtf` (3270) | ✅ libreta + padrón | ADR-317 · `CtpParteBarra` |
 | `proveedores` (1479) | ✅ ficha + trazabilidad | ADR-317 · ADR-319 |
-| `ingresos-camiones` (2432) | ⚠️ parcial | ADR-318 (fletes). **Falta: cuenta corriente de terceros** (aserrío recibido/prestado, saldo al día) y PDF del historial |
+| `ingresos-camiones` (2432) | ✅ | ADR-318 (fletes) + ADR-322 (cuenta corriente: adelantos, fletes a cargo, aserrío prestado, pagos). Falta sólo el PDF del historial |
 | `productos-disponibles` (2607) | ⚠️ parcial | atajo stock→guía (`d0a8ee86`). **Falta: importar Excel de productos, alta manual** |
 | `ingresos` · `ingresos-ctp` · `gtf` · `consumo` · `lop` · `lotes` · `produccion` | ✅ cubierto o superado | ver "brechas finas" |
 | `export-import` (2194) | ✅ **superado** | Buleje ya tenía dictado por voz con comandos, modo continuo, medidas fijas y anti-eco (`lib/forestal/cubicacion.ts` + `useVozContinua`). No portar. |
