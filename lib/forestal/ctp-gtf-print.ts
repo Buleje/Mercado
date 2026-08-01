@@ -31,6 +31,13 @@ const esc = (v: unknown) =>
   String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const n4 = (v: number) => v.toFixed(4);
 
+/** Cómo viaja la madera. En el papel se lee entero, no el valor del enum. */
+const MODO_LABEL: Record<string, string> = {
+  terrestre: "Terrestre",
+  fluvial: "Fluvial",
+  multimodal: "Multimodal (río + carretera)",
+};
+
 export interface GtfDespacho {
   /** id del despacho — target del QR de verificación pública. */
   id: string;
@@ -141,8 +148,9 @@ export async function printGtfSalida(
   const traslado = `<div class="box">
       <h2>Vehículo y traslado</h2>
       <div class="grid">
-        <div><span class="lbl">Placa</span><br/><b class="mono">${esc(datos.vehiculo.placa || "—")}</b>${datos.vehiculo.marca || datos.vehiculo.tipo ? ` · ${esc([datos.vehiculo.marca, datos.vehiculo.tipo].filter(Boolean).join(" "))}` : ""}</div>
-        <div><span class="lbl">Conductor</span><br/><b>${esc(datos.vehiculo.conductor || "—")}</b>${datos.vehiculo.conductorDni ? ` · DNI ${esc(datos.vehiculo.conductorDni)}` : ""}${datos.vehiculo.licencia ? ` · Lic. ${esc(datos.vehiculo.licencia)}` : ""}</div>
+        <div><span class="lbl">${datos.vehiculo.modo === "fluvial" ? "Matrícula" : "Placa"}</span><br/><b class="mono">${esc(datos.vehiculo.placa || "—")}</b>${datos.vehiculo.marca || datos.vehiculo.tipo ? ` · ${esc([datos.vehiculo.marca, datos.vehiculo.tipo].filter(Boolean).join(" "))}` : ""}</div>
+        <div><span class="lbl">Modo de transporte</span><br/><b>${esc(MODO_LABEL[datos.vehiculo.modo] ?? datos.vehiculo.modo)}</b>${datos.vehiculo.embarcacion ? ` · ${esc(datos.vehiculo.embarcacion)}` : ""}</div>
+        <div><span class="lbl">${datos.vehiculo.modo === "fluvial" ? "Patrón" : "Conductor"}</span><br/><b>${esc(datos.vehiculo.conductor || "—")}</b>${datos.vehiculo.conductorDni ? ` · DNI ${esc(datos.vehiculo.conductorDni)}` : ""}${datos.vehiculo.licencia ? ` · Lic. ${esc(datos.vehiculo.licencia)}` : ""}</div>
         <div><span class="lbl">Punto de partida</span><br/><b>${esc(datos.traslado.puntoPartida || "—")}</b></div>
         <div><span class="lbl">Punto de llegada</span><br/><b>${esc(datos.traslado.puntoLlegada || "—")}</b></div>
         <div style="grid-column:1/-1"><span class="lbl">Ruta declarada</span><br/><b>${esc(datos.traslado.ruta || "—")}</b></div>

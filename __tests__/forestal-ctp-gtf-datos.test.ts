@@ -24,7 +24,7 @@ function completa(): GtfDatos {
     propietario: { nombre: "Maderera San Martín SAC", docTipo: "RUC", docNumero: "20512345678", direccion: "Av. Industrial 123, Pucallpa", esElCtp: true },
     destinatario: { nombre: "Distribuidora Lima SAC", docTipo: "RUC", docNumero: "20487654321", direccion: "Av. Argentina 456, Lima" },
     transportista: { nombre: "Transportes Ucayali EIRL", docTipo: "RUC", docNumero: "20411111111", direccion: "Jr. Tacna 89", registroMtc: "MTC-0099" },
-    vehiculo: { placa: "ABC-123", marca: "Volvo", tipo: "Tráiler", conductor: "Juan Pérez", conductorDni: "44556677", licencia: "Q44556677" },
+    vehiculo: { modo: "terrestre", placa: "ABC-123", marca: "Volvo", tipo: "Tráiler", embarcacion: "", conductor: "Juan Pérez", conductorDni: "44556677", licencia: "Q44556677" },
     traslado: { puntoPartida: "Pucallpa", puntoLlegada: "Lima", ruta: "Pucallpa – Tingo María – Lima", fechaInicio: "2026-07-20", fechaFin: "2026-07-30" },
     titulos: ["CON-25-TAH-001"],
   };
@@ -141,5 +141,61 @@ describe("COPIAS_GTF", () => {
     expect(COPIAS_GTF.map((c) => c.clave)).toEqual(["original", "control", "emisor"]);
     // Sin destino impreso, tres papeles iguales no le dicen a nadie cuál se queda.
     expect(COPIAS_GTF.every((c) => c.destino.trim().length > 15)).toBe(true);
+  });
+});
+
+/**
+ * Modo de transporte (ADR-328 · port de AppForestal `emision-gtf`).
+ *
+ * En la selva central buena parte de la madera sale POR RÍO. Un control fluvial
+ * no busca una placa: busca la matrícula y el nombre de la embarcación. Pedir
+ * "placa" en una balsa hace que el operador invente un dato para poder imprimir,
+ * que es justo lo que un documento fiscalizable no puede provocar.
+ */
+describe("modo de transporte", () => {
+  const fluvial = (): GtfDatos => ({
+    ...completa(),
+    vehiculo: { ...completa().vehiculo, modo: "fluvial", embarcacion: "" },
+  });
+
+  it("por defecto es terrestre: es el caso más común", () => {
+    expect(gtfDatosVacio().vehiculo.modo).toBe("terrestre");
+  });
+
+  it("por río pide el NOMBRE de la embarcación", () => {
+    const f = faltantesGtf(fluvial());
+    expect(f.map((x) => x.campo)).toContain("Nombre de la embarcación");
+  });
+
+  it("por río el campo se llama matrícula, no placa", () => {
+    const sinMatricula = { ...fluvial(), vehiculo: { ...fluvial().vehiculo, placa: "", embarcacion: "Chata Doña Rosa" } };
+    expect(faltantesGtf(sinMatricula).map((x) => x.campo)).toContain("Matrícula de la embarcación");
+  });
+
+  it("por carretera sigue pidiendo placa y no la embarcación", () => {
+    const sinPlaca = { ...completa(), vehiculo: { ...completa().vehiculo, placa: "" } };
+    const campos = faltantesGtf(sinPlaca).map((x) => x.campo);
+    expect(campos).toContain("Placa del vehículo");
+    expect(campos).not.toContain("Nombre de la embarcación");
+  });
+
+  it("por río el responsable es el patrón, no el conductor", () => {
+    const sinPatron = { ...fluvial(), vehiculo: { ...fluvial().vehiculo, embarcacion: "Chata", conductor: "" } };
+    expect(faltantesGtf(sinPatron).map((x) => x.campo)).toContain("Patrón de la embarcación");
+  });
+
+  it("una guía fluvial completa se puede imprimir", () => {
+    const ok = { ...fluvial(), vehiculo: { ...fluvial().vehiculo, embarcacion: "Chata Doña Rosa" } };
+    expect(faltantesGtf(ok)).toEqual([]);
+  });
+});
+
+describe("comprobante de venta", () => {
+  it("arranca sin comprobante: la guía se emite antes que la factura", () => {
+    expect(gtfDatosVacio().comprobante).toEqual({ tipo: "ninguno", numero: "" });
+  });
+
+  it("no bloquea imprimir: la GTF ampara el traslado, no la operación", () => {
+    expect(faltantesGtf(completa())).toEqual([]);
   });
 });

@@ -69,6 +69,8 @@ export default function CtpGtfDatosForm({
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Por río se pide matrícula y embarcación; por carretera, placa y tipo. */
+  const esFluvial = datos.vehiculo.modo === "fluvial";
 
   /** La libreta (ADR-317): quién ya viajó antes, para no re-tipear los 20 campos. */
   const directorio = useDirectorioForestal();
@@ -337,7 +339,25 @@ export default function CtpGtfDatosForm({
                 onAplicar={(v) => set("vehiculo", v)}
                 onElegir={anotarVehiculo}
               />
-              <Field label="Placa" required hint="Lo primero que compara un control">
+              {/* Acá la selva manda: buena parte de la madera sale por río, y
+                  un control fluvial no busca una placa. El modo cambia lo que se
+                  pide, en vez de obligar al operador a inventar un dato. */}
+              <Field label="Modo de transporte" hint="Por río, por carretera o combinado">
+                <select
+                  className={I}
+                  value={datos.vehiculo.modo}
+                  onChange={(e) => set("vehiculo", { modo: e.target.value as "terrestre" | "fluvial" | "multimodal" })}
+                >
+                  <option value="terrestre">Terrestre</option>
+                  <option value="fluvial">Fluvial</option>
+                  <option value="multimodal">Multimodal (río + carretera)</option>
+                </select>
+              </Field>
+              <Field
+                label={esFluvial ? "Matrícula" : "Placa"}
+                required
+                hint={esFluvial ? "La de la embarcación" : "Lo primero que compara un control"}
+              >
                 <input
                   type="text"
                   className={`${I} font-mono uppercase`}
@@ -348,9 +368,15 @@ export default function CtpGtfDatosForm({
               <Field label="Marca">
                 <input type="text" className={I} value={datos.vehiculo.marca} onChange={(e) => set("vehiculo", { marca: e.target.value })} />
               </Field>
-              <Field label="Tipo de vehículo" hint="Camión, tráiler…">
-                <input type="text" className={I} value={datos.vehiculo.tipo} onChange={(e) => set("vehiculo", { tipo: e.target.value })} />
-              </Field>
+              {esFluvial ? (
+                <Field label="Nombre de la embarcación" required hint="Así se la identifica en el control">
+                  <input type="text" className={I} value={datos.vehiculo.embarcacion} onChange={(e) => set("vehiculo", { embarcacion: e.target.value })} placeholder="Chata Doña Rosa" />
+                </Field>
+              ) : (
+                <Field label="Tipo de vehículo" hint="Camión, tráiler…">
+                  <input type="text" className={I} value={datos.vehiculo.tipo} onChange={(e) => set("vehiculo", { tipo: e.target.value })} />
+                </Field>
+              )}
               {/* El chofer se elige aparte del transportista: en la selva es
                   común que la empresa ponga el camión y el chofer sea otro. Al
                   elegirlo de la libreta viene con su licencia, que es lo que
@@ -389,13 +415,16 @@ export default function CtpGtfDatosForm({
                   }}
                 />
               </div>
-              <Field label="Conductor" required>
+              {/* Por río el responsable es el PATRÓN. El faltante ya lo llama así:
+                  si el campo dijera otra cosa, el aviso mandaría a buscar algo que
+                  no existe en pantalla. */}
+              <Field label={esFluvial ? "Patrón de la embarcación" : "Conductor"} required>
                 <input type="text" className={I} value={datos.vehiculo.conductor} onChange={(e) => set("vehiculo", { conductor: e.target.value })} />
               </Field>
-              <Field label="DNI del conductor">
+              <Field label={esFluvial ? "DNI del patrón" : "DNI del conductor"}>
                 <input type="text" className={`${I} font-mono`} value={datos.vehiculo.conductorDni} onChange={(e) => set("vehiculo", { conductorDni: e.target.value })} />
               </Field>
-              <Field label="Licencia de conducir">
+              <Field label={esFluvial ? "Licencia de navegación" : "Licencia de conducir"}>
                 <input type="text" className={`${I} font-mono`} value={datos.vehiculo.licencia} onChange={(e) => set("vehiculo", { licencia: e.target.value })} />
               </Field>
             </div>
@@ -443,6 +472,34 @@ export default function CtpGtfDatosForm({
               <Field label="N° de permiso CITES" hint="Si la especie es protegida — es legal CON permiso">
                 <input type="text" className={I} value={datos.citesPermiso} onChange={(e) => setDatos((p) => ({ ...p, citesPermiso: e.target.value }))} />
               </Field>
+              {/* La GTF ampara el TRASLADO; la factura, la operación. Van juntas
+                  en el control y hasta ahora el número sólo vivía en observaciones. */}
+              <Field label="Comprobante de venta" hint="El que ampara la operación, si ya se emitió">
+                <select
+                  className={I}
+                  value={datos.comprobante.tipo}
+                  onChange={(e) =>
+                    setDatos((p) => ({ ...p, comprobante: { ...p.comprobante, tipo: e.target.value as GtfDatos["comprobante"]["tipo"] } }))
+                  }
+                >
+                  <option value="ninguno">Sin comprobante todavía</option>
+                  <option value="factura">Factura</option>
+                  <option value="boleta">Boleta</option>
+                  <option value="guia_remision">Guía de remisión</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </Field>
+              {datos.comprobante.tipo !== "ninguno" && (
+                <Field label="N° del comprobante">
+                  <input
+                    type="text"
+                    className={`${I} font-mono`}
+                    value={datos.comprobante.numero}
+                    placeholder="F001-00001234"
+                    onChange={(e) => setDatos((p) => ({ ...p, comprobante: { ...p.comprobante, numero: e.target.value } }))}
+                  />
+                </Field>
+              )}
               <Field label="Observaciones">
                 <input type="text" className={I} value={datos.observaciones} onChange={(e) => setDatos((p) => ({ ...p, observaciones: e.target.value }))} />
               </Field>

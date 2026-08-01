@@ -68,14 +68,24 @@ export const gtfDatosSchema = z.object({
   }).default({ nombre: "", docTipo: "RUC", docNumero: "", direccion: "", registroMtc: "" }),
 
   vehiculo: z.object({
+    /**
+     * Cómo viaja la madera. En la selva central NO es un detalle: buena parte
+     * sale por río, y una guía fluvial no lleva placa sino matrícula de
+     * embarcación. Un puesto de control fluvial pide otra cosa que uno de
+     * carretera, y el formulario tiene que pedir lo que corresponde.
+     */
+    modo: z.enum(["terrestre", "fluvial", "multimodal"]).default("terrestre"),
+    /** Placa del camión o MATRÍCULA de la embarcación, según el modo. */
     placa: texto(15).default(""),
     marca: texto(40).default(""),
     tipo: texto(40).default(""),
+    /** Nombre de la embarcación / chata. Sólo aplica cuando viaja por río. */
+    embarcacion: texto(80).default(""),
     /** Conductor y su brevete: es lo que pide el puesto de control. */
     conductor: texto(120).default(""),
     conductorDni: texto(15).default(""),
     licencia: texto(30).default(""),
-  }).default({ placa: "", marca: "", tipo: "", conductor: "", conductorDni: "", licencia: "" }),
+  }).default({ modo: "terrestre", placa: "", marca: "", tipo: "", embarcacion: "", conductor: "", conductorDni: "", licencia: "" }),
 
   traslado: z.object({
     /** De dónde sale (la planta, normalmente) y a dónde va. */
@@ -98,14 +108,32 @@ export const gtfDatosSchema = z.object({
   /** Permiso CITES cuando la especie lo requiere. */
   citesPermiso: texto(60).default(""),
 
+  /**
+   * El comprobante que ampara la VENTA de esta madera. La GTF ampara el
+   * traslado; la factura, la operación. Van juntas en el control y hasta ahora
+   * el número de la factura sólo vivía en observaciones.
+   */
+  comprobante: z.object({
+    tipo: z.enum(["ninguno", "factura", "boleta", "guia_remision", "otro"]).default("ninguno"),
+    numero: texto(40).default(""),
+  }).default({ tipo: "ninguno", numero: "" }),
+
   observaciones: texto(600).default(""),
 });
 
 export type GtfDatos = z.infer<typeof gtfDatosSchema>;
 
-/** Los defaults del esquema, para arrancar un formulario vacío. */
+/**
+ * Los defaults del esquema, para arrancar un formulario vacío.
+ *
+ * `safeParse` y no `parse`, aunque la entrada sea un literal: si algún día se
+ * agrega un campo requerido sin default, `.parse()` tiraría en tiempo de render
+ * y rompería el formulario entero. Así devuelve el objeto vacío y el operador
+ * ve un formulario en blanco en vez de una pantalla rota.
+ */
 export function gtfDatosVacio(): GtfDatos {
-  return gtfDatosSchema.parse({});
+  const r = gtfDatosSchema.safeParse({});
+  return r.success ? r.data : ({} as GtfDatos);
 }
 
 /**
@@ -168,17 +196,28 @@ export function faltantesGtf(d: GtfDatos): FaltanteGtf[] {
       motivo: "Responde por el producto durante el traslado",
     });
   }
+  // Cada modo pide lo suyo: un control fluvial no busca una placa, busca la
+  // matrícula y el nombre de la embarcación. Pedir "placa" en una balsa haría
+  // que el operador invente un dato para poder imprimir.
+  const fluvial = d.vehiculo.modo === "fluvial";
   if (!d.vehiculo.placa.trim()) {
     faltan.push({
       seccion: "vehiculo",
-      campo: "Placa del vehículo",
+      campo: fluvial ? "Matrícula de la embarcación" : "Placa del vehículo",
       motivo: "Es lo primero que compara un puesto de control con la carga",
+    });
+  }
+  if (fluvial && !d.vehiculo.embarcacion.trim()) {
+    faltan.push({
+      seccion: "vehiculo",
+      campo: "Nombre de la embarcación",
+      motivo: "Es como se identifica la nave en el control fluvial",
     });
   }
   if (!d.vehiculo.conductor.trim()) {
     faltan.push({
       seccion: "vehiculo",
-      campo: "Conductor",
+      campo: fluvial ? "Patrón de la embarcación" : "Conductor",
       motivo: "La guía viaja con él y la muestra en cada control",
     });
   }
