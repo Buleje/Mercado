@@ -901,6 +901,20 @@ export class WoodEntriesDB {
           { periodKey: cerradoCorrida.periodKey },
         );
       }
+      // Costo congelado (ADR-134 D6): la atribución en m³ queda inmutable al
+      // congelar, y las piezas son la EVIDENCIA FÍSICA de esa misma atribución.
+      // Dejar una congelada y la otra editable permitía reescribir de qué trozas
+      // salió un producto ya costeado y certificado (auditoría 2026-08-01).
+      const congelados = await tx.forestCtpConsumo.count({
+        where: { ctpEntryId, tenantId, congeladoAt: { not: null } },
+      });
+      if (congelados > 0) {
+        throw new CtpInvariantError(
+          "Esta corrida ya tiene el costo congelado: no se pueden cambiar sus trozas.",
+          "CONGELADO",
+          { ctpEntryId },
+        );
+      }
 
       const ids = [...new Set(trozaIds)];
       if (ids.length > 0) {

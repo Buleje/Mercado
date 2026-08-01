@@ -897,3 +897,69 @@ describe.skipIf(!HAS_DB)("Cierre de período: las trozas también quedan congela
     ).resolves.toMatchObject({ retrozos: expect.any(Array) });
   }, 40_000);
 });
+
+/**
+ * I5/I6 × consumo por pieza (auditoría adversarial 2026-08-01).
+ *
+ * El consumo del libro vive en dos lugares desde el ADR-326: los m³ por guía
+ * (`ForestCtpConsumo`) y las PIEZAS que entraron a la sierra
+ * (`WoodEntryTroza.consumidaEnId`). Son dos caras del mismo hecho, así que las
+ * reglas que congelan una tienen que congelar la otra.
+ *
+ * Lo que la auditoría encontró: el costo congelado dejaba los m³ inmutables y
+ * las piezas editables. Se podía reescribir de qué trozas salió un producto ya
+ * costeado y certificado.
+ */
+describe.skipIf(!HAS_DB)("Consumo por pieza: mismas reglas que el consumo en m³", () => {
+  async function corridaConTroza() {
+    const w = await crearIngreso(10, 1000);
+    const t = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-P${Date.now()}`, volumenM3: 5 },
+    });
+    const linea = await crearLinea(null, 6);
+    await ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: w.id, volumeM3: 4 }], P);
+    await WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [t.id], { usuario: P });
+    return { w, t, linea };
+  }
+
+  it("costo congelado ⇒ las PIEZAS también quedan inmutables", async () => {
+    const { linea } = await corridaConTroza();
+    await ForestCtpConsumoDB.congelarCosto(TENANT, linea.id, P);
+    // La atribución en m³ ya estaba protegida (ADR-134 D6)…
+    await expect(
+      ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: (await prisma.forestCtpConsumo.findFirst({ where: { ctpEntryId: linea.id } }))!.woodEntryId, volumeM3: 2 }], P),
+    ).rejects.toMatchObject({ code: "CONGELADO" });
+    // …y ahora las piezas, que son la evidencia física de esa misma atribución.
+    await expect(
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [], { usuario: P }),
+    ).rejects.toMatchObject({ code: "CONGELADO" });
+  }, 40_000);
+
+  it("sin congelar, las piezas se corrigen igual que los m³", async () => {
+    const { linea } = await corridaConTroza();
+    // Un guard que bloquea siempre sería otro bug: corregir una atribución
+    // equivocada es corregir, no borrar historia (ADR-134).
+    await expect(
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [], { usuario: P }),
+    ).resolves.toMatchObject({ consumidas: 0 });
+  }, 40_000);
+
+  it("despachar NO congela: los dos caminos siguen editables, simétricos", async () => {
+    const { linea } = await corridaConTroza();
+    const despacho = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "despacho", lineNo: 96_000 + lineIds.length,
+        speciesCommon: "Tornillo", productType: `${P}-prod`, quantity: 6, unit: "m3",
+        gtfNumber: `${P}-SAL`, status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(despacho.id);
+    await ForestCtpDespachoDB.setOrigenes(TENANT, despacho.id, [{ produccionEntryId: linea.id, quantity: 6 }], P);
+    // Es el criterio deliberado del módulo: el consumo es detalle editable hasta
+    // que se congela el costo o se cierra el mes. Lo que importa acá es que las
+    // piezas hagan LO MISMO que los m³, no que bloqueen por su cuenta.
+    await expect(
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [], { usuario: P }),
+    ).resolves.toMatchObject({ consumidas: 0 });
+  }, 40_000);
+});
