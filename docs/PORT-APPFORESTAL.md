@@ -20,7 +20,7 @@
 | `emision-gtf` (3270) | ✅ libreta + padrón | ADR-317 · `CtpParteBarra` |
 | `proveedores` (1479) | ✅ ficha + trazabilidad | ADR-317 · ADR-319 |
 | `ingresos-camiones` (2432) | ✅ | ADR-318 (fletes) + ADR-322 (cuenta corriente: adelantos, fletes a cargo, aserrío prestado, pagos). Falta sólo el PDF del historial |
-| `productos-disponibles` (2607) | ⚠️ parcial | atajo stock→guía (`d0a8ee86`). **Falta: importar Excel de productos, alta manual** |
+| `productos-disponibles` (2607) | ⚠️ parcial | atajo stock→guía (`d0a8ee86`) + parser del parte de turno (ADR-323). **Falta: el alta masiva de las corridas parseadas + su UI** (toca correlativo `lineNo` y guard de período cerrado) |
 | `ingresos` · `ingresos-ctp` · `gtf` · `consumo` · `lop` · `lotes` · `produccion` | ✅ cubierto o superado | ver "brechas finas" |
 | `export-import` (2194) | ✅ **superado** | Buleje ya tenía dictado por voz con comandos, modo continuo, medidas fijas y anti-eco (`lib/forestal/cubicacion.ts` + `useVozContinua`). No portar. |
 | `gtf-emitidas` (2033) | ✅ | ADR-321: vista Trazabilidad → Guías emitidas (deriva de los despachos). **NO se portó el "desbloquear con clave"**: en Buleje una guía se corrige anulando el despacho y recargándolo (ADR-312), que deja rastro; una clave compartida no. |
