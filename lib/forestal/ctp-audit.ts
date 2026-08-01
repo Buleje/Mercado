@@ -31,6 +31,10 @@ export type CtpAuditEntity =
   | "ForestCtpConsumo"
   | "ForestProdLote"
   | "ForestCtpFicha"
+  // KV (como ForestCtpFicha): la foto de referencia de una especie. No es una
+  // prueba documental, pero orienta a quien recibe la troza — y quien la pone
+  // tiene que quedar registrado.
+  | "ForestEspecieFoto"
   // No es modelo Prisma (como ForestCtpFicha): un evento de importación LO-CTP es
   // un lote, no una fila. Se audita porque un fiscalizador quiere saber CÓMO
   // entraron los datos al libro (qué archivo, cuántas filas, quién) — ADR-138.
@@ -92,6 +96,8 @@ export type CtpAuditAction =
   | "ctp_lote_delete"
   // Ficha legal del CTP (identidad SERFOR — Código de CTP, registro ARFFS, TH)
   | "ctp_ficha_update"
+  /** Foto de referencia de una especie: la pone alguien y tiene que saberse quién. */
+  | "ctp_especie_foto"
   // GTF de salida formal (serie autorizada ARFFS + correlativo auto)
   | "ctp_gtf_emitir"
   /** Se completaron los datos de la guía (propietario/destinatario/transportista). */

@@ -37,6 +37,7 @@ const ACTION_LABELS: Record<string, string> = {
   ctp_costo_congelar: "Costo congelado",
   ctp_gtf_emitir: "GTF de salida emitida",
   ctp_ficha_update: "Ficha actualizada",
+  ctp_especie_foto: "Foto de especie",
 };
 
 /** Acciones que se pintan en rojo (sacan o corrigen el registro). */

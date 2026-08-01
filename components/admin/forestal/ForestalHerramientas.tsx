@@ -8,7 +8,7 @@
  */
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Wrench, Calculator, Activity, Ruler, Gauge, BarChart3 } from "@buleje/design-system/icons";
+import { Wrench, Calculator, Activity, Ruler, Gauge, BarChart3, Trees } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
 
 const cargando = (
@@ -20,14 +20,16 @@ const CubicadorMadera = dynamic(() => import("./CubicadorMadera"), { ssr: false,
 const CubicadorTrozas = dynamic(() => import("./CubicadorTrozas"), { ssr: false, loading: () => cargando });
 const CalculadoraRendimiento = dynamic(() => import("./CalculadoraRendimiento"), { ssr: false, loading: () => cargando });
 const CubicacionResumenes = dynamic(() => import("./CubicacionResumenes"), { ssr: false, loading: () => cargando });
+const EspeciesFotosBiblioteca = dynamic(() => import("./EspeciesFotosBiblioteca"), { ssr: false, loading: () => cargando });
 
-type Tool = "cubicador" | "trozas" | "rendimiento" | "resumenes";
+type Tool = "cubicador" | "trozas" | "rendimiento" | "resumenes" | "especies";
 const HERRAMIENTAS_MODULE_ID = "forestal-herramientas";
 const TOOLS: { key: Tool; label: string; icon: typeof Calculator; hint: string }[] = [
   { key: "cubicador", label: "Cubicador de madera", icon: Calculator, hint: "Aserrada: pie tablar + m³ por voz" },
   { key: "trozas", label: "Cubicador de trozas", icon: Ruler, hint: "Rolliza: Smalian en patio, contra la GTF" },
   { key: "resumenes", label: "Resúmenes", icon: BarChart3, hint: "Tablas por especie y tipo del lote cubicado" },
   { key: "rendimiento", label: "Rendimiento", icon: Gauge, hint: "Coeficiente de aserrío (%) con tu histórico del Libro" },
+  { key: "especies", label: "Fotos de especies", icon: Trees, hint: "Referencia visual para no confundir dos maderas parecidas" },
 ];
 // Un solo grupo: la cabina dibuja las herramientas y omite la fila de fases
 // (misma pieza que los libros — el módulo se ve parte de la misma familia).
@@ -53,6 +55,7 @@ export default function ForestalHerramientas() {
         {tool === "trozas" && <CubicadorTrozas />}
         {tool === "resumenes" && <CubicacionResumenes />}
         {tool === "rendimiento" && <CalculadoraRendimiento />}
+        {tool === "especies" && <EspeciesFotosBiblioteca />}
       </div>
     </LibroChrome>
   );

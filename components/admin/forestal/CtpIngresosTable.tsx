@@ -22,6 +22,9 @@ import type { CtpSort, CtpSortField } from "@/hooks/use-ctp-ingresos";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import CtpEntryActions from "./CtpEntryActions";
 import CtpIngresoCardMobile from "./CtpIngresoCardMobile";
+import EspecieFoto from "./EspecieFoto";
+import { useEspeciesFotos } from "./hooks/use-especies-fotos";
+import { faltantesIngreso, resumenFaltantes } from "@/lib/forestal/loctp-campos";
 import {
   PLAZO_REGISTRO_DIAS,
   StatusBadge,
@@ -75,6 +78,9 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
     sort,
     onSort,
   } = props;
+
+  /** Fotos de referencia por especie: una sola carga para toda la tabla. */
+  const { indice: fotosEspecie } = useEspeciesFotos();
 
   // Acciones por fila/card: el mismo componente para desktop y mobile.
   const actionProps = {
@@ -140,8 +146,9 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                   className="h-4 w-4 accent-[var(--brand-ink)]"
                 />
               </Th>
+              <Th className="w-16">N° libro</Th>
               <ThSort field="entryDate" sort={sort} onSort={onSort}>Fecha</ThSort>
-              <Th>GTF</Th>
+              <Th>Documento</Th>
               <ThSort field="providerName" sort={sort} onSort={onSort}>Proveedor / Origen</ThSort>
               <ThSort field="speciesCommonName" sort={sort} onSort={onSort}>Especie</ThSort>
               <Th>Producto</Th>
@@ -174,6 +181,26 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                     )}
                   </Td>
                   <Td>
+                    {/* (1) del formato oficial. Es el número con el que la
+                        autoridad pide "traeme el registro 128": sin verlo en la
+                        tabla, el operador no lo puede citar (ADR-311). */}
+                    <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
+                      {e.libroNro ?? "—"}
+                    </span>
+                    {(() => {
+                      const faltan = faltantesIngreso(e as unknown as Record<string, unknown>);
+                      if (faltan.length === 0) return null;
+                      return (
+                        <div
+                          title={resumenFaltantes(faltan)}
+                          className="mt-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                        >
+                          faltan {faltan.length} p/ SERFOR
+                        </div>
+                      );
+                    })()}
+                  </Td>
+                  <Td>
                     <div className="font-bold text-[var(--text-primary)]">{formatDate(e.entryDate)}</div>
                     {tarde && (
                       <div
@@ -192,6 +219,9 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                     >
                       {e.gtfNumber}
                     </button>
+                    <div className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                      {e.docType || "GTF"}
+                    </div>
                     {e.gtfDate && (
                       <div className="text-xs text-[var(--text-tertiary)]">{formatDate(e.gtfDate)}</div>
                     )}
@@ -202,6 +232,8 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                   </Td>
                   <Td>
                     <div className="flex items-center gap-2">
+                      {/* La foto de referencia: si no hay cargada no dibuja nada. */}
+                      <EspecieFoto especie={e.speciesCommonName} indice={fotosEspecie} />
                       <span className="font-medium text-[var(--text-primary)]">{e.speciesCommonName}</span>
                       {e.speciesCites && (
                         <span
@@ -303,7 +335,7 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
         </div>
       )}
 
-      {loading && <TablaSkeleton filas={5} columnas={7} />}
+      {loading && <TablaSkeleton filas={5} columnas={8} />}
     </>
   );
 }
