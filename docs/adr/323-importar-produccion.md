@@ -1,7 +1,7 @@
 # ADR-323 — Importar la producción del turno
 
 - **Fecha:** 2026-07-31
-- **Estado:** parcial — parser listo, alta masiva pendiente
+- **Estado:** aceptado
 - **Contexto:** import de ingresos (ADR-138) · import de trozas (ADR-320) · port de `~/proyectos/appforestal` (`productos-disponibles`)
 
 ## El problema
@@ -36,12 +36,18 @@ cada paquete sería fabricar exactamente la trazabilidad que I1-I2 protegen.
 Una línea de producción que no se reconoce cae en `LP` **y se avisa**: el Cuadro
 Resumen 3 del LO-CTP se presenta por línea, y una mal clasificada lo descuadra.
 
-## Estado
+## El alta masiva NO tiene endpoint propio
 
-Parser puro + 14 tests, verificado. **Falta el alta masiva** (endpoint que cree
-las N corridas en una transacción) y la UI. Se dejó afuera a propósito: crear
-líneas del libro en lote toca el correlativo `lineNo` y el guard de período
-cerrado, y merece su propia vuelta con verificación contra la base.
+Cada fila se manda por el **mismo** `POST /api/admin/forestal/ctp` que usa el
+alta normal. Es más lento que un bulk, pero cada corrida pasa por los guards que
+ya existen —período cerrado, correlativo `lineNo`, validación Zod— en vez de por
+un camino paralelo que habría que mantener sincronizado. En un parte de turno
+(decenas de filas, no miles) la diferencia no se nota; un guard que se olvidó de
+replicar, sí.
+
+**Si una fila falla, las anteriores quedan.** Se informa cuál falló y por qué, y
+el operador corrige esa. Revertir lo ya cargado sería borrar producción que
+ocurrió de verdad.
 
 ## Referencias
 

@@ -12,6 +12,7 @@ import {
   Plus, RefreshCw, Search, Boxes, Truck, AlertCircle, X as XIcon,
   Scale, PackageCheck, PackagePlus, Link2, Calculator, FileText, Download,
   ArrowUp, ArrowDown, ArrowUpDown,
+  ClipboardList,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -19,6 +20,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import CtpEntryForm from "./CtpEntryForm";
+import CtpProduccionImportModal from "./CtpProduccionImportModal";
 import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
@@ -37,7 +39,7 @@ import { nombreArchivoSeccion, seccionACsv } from "@/lib/forestal/ctp-secciones-
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
 import { type CtpEntry, type CtpSection, Th, Td, n2 } from "./ctp-section-shared";
-import { IconAction, TablaSkeleton } from "./ctp-shared";
+import { Btn, IconAction, TablaSkeleton } from "./ctp-shared";
 
 /** Una tarjeta que filtra se ve hundida: si no, nadie sabe por qué la tabla
  *  de abajo tiene menos filas. */
@@ -85,6 +87,8 @@ export function CtpEntriesView({
   // Sin debounce, `load` se re-creaba en cada tecla → un fetch por caracter.
   const search = useDebounce(searchInput, 350);
   const [showForm, setShowForm] = useState(false);
+  /** Carga masiva del parte de turno (ADR-323), sólo en Producción. */
+  const [importarParte, setImportarParte] = useState(false);
   /** Con qué producto abrir el formulario (viene de Saldos; se consume una vez). */
   const [productoDelStock, setProductoDelStock] = useState<{ producto: string; especie: string | null } | null>(null);
 
@@ -344,6 +348,12 @@ export function CtpEntriesView({
               <Calculator className="h-5 w-5" /> <span className="max-sm:sr-only">Simular</span>
             </button>
           )}
+          {section === "produccion" && (
+            <Btn size="md" variant="secondary" onClick={() => setImportarParte(true)}>
+              <ClipboardList className="h-4 w-4" />
+              Parte de turno
+            </Btn>
+          )}
           <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white shadow-sm transition hover:brightness-110 sm:flex-none">
             <Plus className="h-5 w-5" /> {meta.cta}
           </button>
@@ -552,6 +562,12 @@ export function CtpEntriesView({
       )}
       {loading && <TablaSkeleton filas={4} columnas={section === "produccion" ? 8 : 9} />}
 
+      {importarParte && (
+        <CtpProduccionImportModal
+          onListo={() => { void load(); }}
+          onClose={() => setImportarParte(false)}
+        />
+      )}
       {showForm && <CtpEntryForm section={section} presetProducto={productoDelStock?.producto ?? null} presetEspecie={productoDelStock?.especie ?? null} onClose={() => { setShowForm(false); setProductoDelStock(null); }} onSaved={(o) => { if (!o?.keepOpen) { setShowForm(false); setProductoDelStock(null); } load(); if (o?.offline) pushToast({ tono: "warning", msg: "Sin señal: quedó anotado en el patio", detail: "Todavía NO está en el libro. Sube solo cuando vuelva la conexión." }); }} />}
       {verBandeja && (
         <Anexo04Modal
