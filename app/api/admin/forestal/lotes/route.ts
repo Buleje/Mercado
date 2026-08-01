@@ -33,6 +33,11 @@ const createSchema = z.object({
   unit: z.enum(["m3", "kg", "unidad", "pt"]).nullable().optional(),
   grade: z.string().trim().max(60).nullable().optional(),
   destino: z.string().trim().max(200).nullable().optional(),
+  // Ventana de trabajo (ADR-327). Fecha date-only: el libro trabaja por día.
+  fechaInicio: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
+  fechaFin: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
+  titularId: z.string().trim().max(60).nullish(),
+  titularNombre: z.string().trim().max(200).nullish(),
   notes: z.string().trim().max(1000).nullable().optional(),
   miembros: z.array(miembroSchema).max(50).optional(),
 });
@@ -111,7 +116,14 @@ export const POST = withApiHandler("forestal-lotes-post", async (req: NextReques
   try {
     const lote = await ForestLoteDB.create(
       auth.tenantId,
-      { ...parsed.data, createdBy: auth.username ?? "unknown" },
+      {
+        ...parsed.data,
+        // Date-only → medianoche UTC, como el resto del libro (si no, a las
+        // 19:00 de Lima la fecha se guardaría con el día siguiente).
+        fechaInicio: parsed.data.fechaInicio ? new Date(`${parsed.data.fechaInicio}T00:00:00.000Z`) : null,
+        fechaFin: parsed.data.fechaFin ? new Date(`${parsed.data.fechaFin}T00:00:00.000Z`) : null,
+        createdBy: auth.username ?? "unknown",
+      },
       new Date(),
     );
     return NextResponse.json({ lote });

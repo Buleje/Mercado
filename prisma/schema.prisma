@@ -5806,6 +5806,22 @@ model ForestProdLote {
   /// Comprador o destino comercial del lote.
   destino String?
 
+  // ── Ventana de trabajo y dueño de la madera (ADR-327) ────────────────
+  /// Cuándo la planta empieza y termina de trabajar este lote. Es otro eje que
+  /// el `status` comercial: un lote puede estar abierto para agregar corridas y
+  /// operativamente terminado, o programado para la semana que viene.
+  fechaInicio DateTime?
+  fechaFin    DateTime?
+
+  /// De QUIÉN es la madera. En un aserradero que presta servicio de maquila el
+  /// lote no es del centro: es del cliente que trajo la troza, y el certificado
+  /// tiene que decirlo.
+  titularId     String?
+  titular       ForestParty? @relation("LotesDelTitular", fields: [titularId], references: [id], onDelete: SetNull)
+  /// El nombre tal como se certificó. Se guarda ADEMÁS del id porque es acta: si
+  /// mañana se corrige la ficha del directorio, lo ya emitido no cambia.
+  titularNombre String?
+
   /// abierto = admite miembros · cerrado = congelado para comercializar ·
   /// despachado = ya salió · anulado = soft-cancel con motivo (no se borra).
   status         String    @default("abierto")
@@ -5821,6 +5837,7 @@ model ForestProdLote {
   miembros ForestProdLoteMiembro[]
 
   @@unique([tenantId, loteCode])
+  @@index([tenantId, titularId])
   @@index([tenantId, status])
   @@index([tenantId, deletedAt])
   @@index([tenantId, createdAt(sort: Desc)])
@@ -5897,6 +5914,10 @@ model ForestParty {
   ultimoUso DateTime?
 
   vehiculos ForestVehiculo[]
+
+  /// Los lotes cuya madera es de este titular (ADR-327) — el caso del aserradero
+  /// que asierra por encargo.
+  lotesComoTitular ForestProdLote[] @relation("LotesDelTitular")
 
   createdBy String
   createdAt DateTime  @default(now())

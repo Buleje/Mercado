@@ -10,11 +10,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Layers, Plus, RefreshCw, Search, PackageCheck, Boxes, Truck, Tag,
+  Layers, Plus, RefreshCw, Search, PackageCheck, Boxes, Truck, Tag, Users,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import LibroChrome from "@/components/admin/shared/libro-chrome";
 import { useDebounce } from "@/hooks/use-debounce";
+import { LABEL_OPERATIVO, estadoOperativo } from "@/lib/forestal/lote-ventana";
 import LoteForm from "./LoteForm";
 import LoteDetailModal from "./LoteDetailModal";
 
@@ -25,6 +26,8 @@ interface LoteRow {
   speciesCommon: string | null; cites: boolean; unit: string;
   grade: string | null; destino: string | null; status: LoteStatus;
   miembrosCount: number; totalCantidad: number; createdAt: string;
+  /** Ventana de trabajo y dueño de la madera (ADR-327). */
+  fechaInicio?: string | null; fechaFin?: string | null; titularNombre?: string | null;
 }
 interface Stats { total: number; abiertos: number; cerrados: number; despachados: number; cantidadTotal: number }
 
@@ -43,7 +46,32 @@ const STATUS_CHIP: Record<LoteStatus, string> = {
   anulado: "bg-[var(--data-error-100)] text-[var(--data-error-700)]",
 };
 const STATUS_LABEL: Record<LoteStatus, string> = { abierto: "Abierto", cerrado: "Cerrado", despachado: "Despachado", anulado: "Anulado" };
-const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); } catch { return iso; } };
+/** `timeZone: "UTC"` NO es cosmético: las fechas del libro son date-only y sin
+ *  esto, a las 19:00 de Lima, un 20-jul se dibuja como 19-jul. Mismo criterio
+ *  que CtpEntriesView y el resto del módulo. */
+const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; } };
+
+/**
+ * En qué anda el lote según su VENTANA — distinto del estado comercial.
+ *
+ * Sin fechas no dibuja nada: un chip "sin fechas" en cada card sería ruido en
+ * las plantas que no usan la ventana.
+ */
+function OperativoChip({ lote }: { lote: { fechaInicio?: string | null; fechaFin?: string | null } }) {
+  const est = estadoOperativo(lote);
+  if (est === "sin_fecha") return null;
+  const tono =
+    est === "en_proceso"
+      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+      : est === "programado"
+        ? "bg-[var(--data-info-50)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/10 dark:text-[var(--data-info-500)]"
+        : "bg-[var(--surface-canvas)] text-[var(--text-secondary)]";
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold ${tono}`}>
+      {LABEL_OPERATIVO[est]}
+    </span>
+  );
+}
 
 export default function ForestLotesModule() {
   const [lotes, setLotes] = useState<LoteRow[]>([]);
@@ -139,7 +167,13 @@ export default function ForestLotesModule() {
             <button key={l.id} type="button" onClick={() => setDetailId(l.id)} className="flex flex-col gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-left transition-colors hover:border-[var(--brand-ink)] hover:bg-[var(--surface-canvas)]">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-lg font-bold text-[var(--text-primary)]">{l.loteCode}</span>
-                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold ${STATUS_CHIP[l.status]}`}>{STATUS_LABEL[l.status]}</span>
+                <div className="flex items-center gap-1.5">
+                  {/* Dos ejes distintos: el comercial (abierto/cerrado) y el
+                      operativo (programado/en proceso/finalizado). Un lote puede
+                      estar abierto y ya terminado de aserrar. */}
+                  <OperativoChip lote={l} />
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold ${STATUS_CHIP[l.status]}`}>{STATUS_LABEL[l.status]}</span>
+                </div>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <span className="font-medium text-[var(--text-primary)]">{l.productType ?? "—"}</span>
@@ -150,9 +184,15 @@ export default function ForestLotesModule() {
                 <span className="font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">{l.totalCantidad.toFixed(4)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{UNIT_LABELS[l.unit] ?? l.unit}</span></span>
                 <span className="text-xs text-[var(--text-tertiary)]">{l.miembrosCount} {l.miembrosCount === 1 ? "corrida" : "corridas"}</span>
               </div>
+              {l.titularNombre && (
+                <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+                  <Users className="h-3 w-3 shrink-0" aria-hidden />
+                  <span className="truncate">Madera de {l.titularNombre}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)]">
                 {l.grade ? <span className="inline-flex items-center gap-1"><Tag className="h-3 w-3" />{l.grade}</span> : <span />}
-                <span>{fmtDate(l.createdAt)}</span>
+                <span>{l.fechaInicio || l.fechaFin ? `${l.fechaInicio ? fmtDate(l.fechaInicio) : "?"} → ${l.fechaFin ? fmtDate(l.fechaFin) : "?"}` : fmtDate(l.createdAt)}</span>
               </div>
             </button>
           ))}

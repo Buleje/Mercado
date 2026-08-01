@@ -19,6 +19,7 @@
  * descuenta lo puesto en OTROS lotes, NO en despachos. Es una vista comercial
  * paralela, no un segundo stock — despacho por lote sería un follow-up.
  */
+import { construirCadenaLote } from "@/lib/forestal/ctp-cadena-lote";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
@@ -52,6 +53,12 @@ export interface CreateLoteInput {
   unit?: string | null;
   grade?: string | null;
   destino?: string | null;
+  /** Ventana de trabajo (ADR-327): otro eje que el `status` comercial. */
+  fechaInicio?: Date | null;
+  fechaFin?: Date | null;
+  /** De quién es la madera — el caso del aserradero que asierra por encargo. */
+  titularId?: string | null;
+  titularNombre?: string | null;
   notes?: string | null;
   miembros?: LoteMiembroInput[];
   createdBy: string;
@@ -101,7 +108,11 @@ export class ForestLoteDB {
       where,
       orderBy: { createdAt: "desc" },
       take: 500,
-      include: { miembros: { select: { quantity: true } } },
+      // `produccionEntryId` viaja para que el export oficial pueda poner el N° de
+      // lote (casillero 8 de las secciones 3 y 4 del LO-CTP) en la fila de la
+      // corrida y del despacho: sin esto, el lote se ve en el módulo pero falta
+      // justo en el documento que se presenta.
+      include: { miembros: { select: { quantity: true, produccionEntryId: true } } },
     });
 
     return lotes.map((l) => ({
@@ -114,12 +125,18 @@ export class ForestLoteDB {
       unit: l.unit,
       grade: l.grade,
       destino: l.destino,
+      fechaInicio: l.fechaInicio,
+      fechaFin: l.fechaFin,
+      titularId: l.titularId,
+      titularNombre: l.titularNombre,
       status: l.status as LoteStatus,
       notes: l.notes,
       annulledReason: l.annulledReason,
       createdAt: l.createdAt,
       closedAt: l.closedAt,
       miembrosCount: l.miembros.length,
+      /** Corridas que arma este lote — para mapear corrida → N° de lote. */
+      corridaIds: l.miembros.map((m) => m.produccionEntryId),
       totalCantidad: r4(l.miembros.reduce((a, m) => a + Number(m.quantity), 0)),
     }));
   }
@@ -269,6 +286,12 @@ export class ForestLoteDB {
           unit: input.unit?.trim() || "m3",
           grade: input.grade?.trim() || null,
           destino: input.destino?.trim() || null,
+          fechaInicio: input.fechaInicio ?? null,
+          fechaFin: input.fechaFin ?? null,
+          titularId: input.titularId?.trim() || null,
+          // El nombre queda copiado: es acta. Si mañana se corrige la ficha del
+          // directorio, lo que se certificó con este lote no cambia.
+          titularNombre: input.titularNombre?.trim() || null,
           notes: input.notes?.trim() || null,
           status: "abierto",
           createdBy: input.createdBy,
@@ -471,6 +494,109 @@ export class ForestLoteDB {
    * miembro debe tener su materia prima atribuida (ForestCtpConsumo). Mismo gate
    * que el certificado del despacho (ADR-135 D3).
    */
+  /**
+   * La cadena de custodia completa del lote (ADR-315): guías → corridas →
+   * despachos, con el balance.
+   *
+   * `trazabilidadLote` responde "¿está completa?"; esto responde "¿cuál es?".
+   * Son dos preguntas distintas y las dos hacen falta: la primera gatea el
+   * certificado, la segunda es la que se le muestra a un fiscalizador.
+   */
+  static async cadenaDeLote(tenantId: string, id: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const lote = await prisma.forestProdLote.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      include: {
+        miembros: {
+          include: {
+            produccion: {
+              select: {
+                id: true, lineNo: true, entryDate: true, productType: true,
+                speciesCommon: true, lineaProduccion: true, quantity: true, unit: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!lote) return null;
+
+    const corridaIds = lote.miembros.map((m) => m.produccionEntryId);
+    if (corridaIds.length === 0) {
+      return { lote, cadena: construirCadenaLote([], [], []) };
+    }
+
+    // Las dos puntas de la cadena, en paralelo: de dónde vino y a dónde fue.
+    const [consumos, origenes] = await Promise.all([
+      prisma.forestCtpConsumo.findMany({
+        where: { tenantId, ctpEntryId: { in: corridaIds } },
+        select: {
+          ctpEntryId: true,
+          volumeM3: true,
+          woodEntry: {
+            select: {
+              id: true, gtfNumber: true, serforNumeroRegistro: true,
+              speciesCommonName: true, providerName: true, originCode: true, entryDate: true,
+            },
+          },
+        },
+      }),
+      prisma.forestCtpDespachoOrigen.findMany({
+        where: { tenantId, produccionEntryId: { in: corridaIds } },
+        select: {
+          despachoEntryId: true,
+          produccionEntryId: true,
+          quantity: true,
+          despacho: { select: { lineNo: true, entryDate: true, gtfNumber: true, destino: true, deletedAt: true, status: true } },
+        },
+      }),
+    ]);
+
+    const cadena = construirCadenaLote(
+      consumos.map((c) => ({
+        produccionEntryId: c.ctpEntryId,
+        woodEntryId: c.woodEntry.id,
+        volumeM3: Number(c.volumeM3),
+        gtfNumber: c.woodEntry.gtfNumber,
+        serforNumeroRegistro: c.woodEntry.serforNumeroRegistro,
+        especie: c.woodEntry.speciesCommonName,
+        proveedor: c.woodEntry.providerName,
+        originCode: c.woodEntry.originCode,
+        entryDate: c.woodEntry.entryDate.toISOString(),
+      })),
+      lote.miembros.map((m) => ({
+        produccionEntryId: m.produccionEntryId,
+        lineNo: m.produccion.lineNo,
+        fecha: m.produccion.entryDate.toISOString(),
+        productType: m.produccion.productType,
+        especie: m.produccion.speciesCommon,
+        lineaProduccion: m.produccion.lineaProduccion,
+        quantity: Number(m.produccion.quantity ?? 0),
+        enElLote: Number(m.quantity),
+        unit: m.produccion.unit,
+      })),
+      // Un despacho anulado no sacó nada del patio: contarlo mostraría el lote
+      // como despachado cuando la madera sigue acá.
+      //
+      // ⚠️ Hacen falta LAS DOS condiciones: anular una línea pone
+      // `status = "anulado"` y NO hace soft-delete. Con sólo `deletedAt` los 35
+      // despachos anulados de este tenant aparecían como salidas del lote.
+      origenes
+        .filter((o) => !o.despacho.deletedAt && o.despacho.status === "registrado")
+        .map((o) => ({
+          despachoEntryId: o.despachoEntryId,
+          produccionEntryId: o.produccionEntryId,
+          lineNo: o.despacho.lineNo,
+          fecha: o.despacho.entryDate.toISOString(),
+          gtfNumber: o.despacho.gtfNumber,
+          destino: o.despacho.destino,
+          quantity: Number(o.quantity),
+        })),
+    );
+
+    return { lote, cadena };
+  }
+
   static async trazabilidadLote(tenantId: string, id: string): Promise<TrazabilidadLote | null> {
     if (!tenantId) throw new Error("tenantId is required");
     const lote = await prisma.forestProdLote.findFirst({
