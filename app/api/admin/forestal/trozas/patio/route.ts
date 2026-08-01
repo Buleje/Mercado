@@ -49,7 +49,13 @@ export async function GET(req: NextRequest) {
         gtfNumber: t.entry.gtfNumber,
         proveedor: t.entry.providerName,
         fechaRecepcion: t.entry.entryDate,
-        consumidaEnId: t.consumidaEnId,
+        // Defensa en profundidad: además de soltarlas al anular, se LEE como
+        // libre la que apunta a una corrida muerta. Los datos que ya quedaron
+        // mal antes del arreglo se corrigen solos al mirarlos.
+        consumidaEnId:
+          t.consumidaEn && t.consumidaEn.status === "registrado" && !t.consumidaEn.deletedAt
+            ? t.consumidaEnId
+            : null,
         noRecepcionada: t.noRecepcionada,
         trozaOrigenId: t.trozaOrigenId,
         descarte: t.descarte,

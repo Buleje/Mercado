@@ -155,3 +155,60 @@ describe("Cuadro Resumen 1 · casilleros de retrozado", () => {
     expect(fila.deRetrozado.volumen).toBeLessThanOrEqual(fila.retrozado.volumen);
   });
 });
+
+/**
+ * Regresión (auditoría adversarial 2026-08-01): el N° de fuente tiene que ser
+ * ESTABLE.
+ *
+ * Numeraba por orden de aparición del array, y el listado viene por `entryDate
+ * desc`: un ingreso nuevo de una fuente nueva se llevaba el N° 1 y corría a
+ * todas las demás. El libro de julio y el de agosto se contradecían sobre quién
+ * era la fuente 1 — y la Sección 1 referencia ese número.
+ */
+describe("estabilidad del N° de fuente", () => {
+  const ing = (id: string, titular: string, entryDate: string): IngresoParaFuente => ({
+    id,
+    entryDate,
+    serforGtf: { titular, numeroResolucion: `RD-${titular}` },
+    volumeM3: 1,
+  });
+
+  it("numera por la fecha del PRIMER ingreso, no por el orden del array", () => {
+    const vieja = ing("a", "COMUNIDAD ALFA", "2026-05-10");
+    const nueva = ing("b", "CONCESION BETA", "2026-07-20");
+    // El listado real llega por fecha descendente: la nueva primero.
+    const comoLlega = derivarFuentes([nueva, vieja]);
+    const alReves = derivarFuentes([vieja, nueva]);
+    expect(comoLlega.numeroPorIngreso.get("a")).toBe(1);
+    expect(comoLlega.numeroPorIngreso.get("b")).toBe(2);
+    // Y da lo MISMO en cualquier orden: es lo que hace presentable el libro.
+    expect(alReves.numeroPorIngreso.get("a")).toBe(1);
+    expect(alReves.numeroPorIngreso.get("b")).toBe(2);
+  });
+
+  it("un ingreso nuevo de una fuente nueva NO corre a las que ya estaban", () => {
+    const julio = [ing("a", "ALFA", "2026-05-10"), ing("b", "BETA", "2026-06-01")];
+    const agosto = [...julio, ing("c", "GAMMA", "2026-08-01")];
+    expect(derivarFuentes(julio).numeroPorIngreso.get("a")).toBe(1);
+    expect(derivarFuentes(agosto).numeroPorIngreso.get("a")).toBe(1);
+    expect(derivarFuentes(agosto).numeroPorIngreso.get("c")).toBe(3);
+  });
+
+  it("de una fuente con varios ingresos manda el más viejo", () => {
+    const r = derivarFuentes([
+      ing("a1", "ALFA", "2026-07-30"),
+      ing("b1", "BETA", "2026-06-15"),
+      ing("a2", "ALFA", "2026-05-01"),
+    ]);
+    // ALFA entró el 1-may (por su segundo ingreso), antes que BETA.
+    expect(r.numeroPorIngreso.get("a1")).toBe(1);
+    expect(r.numeroPorIngreso.get("a2")).toBe(1);
+    expect(r.numeroPorIngreso.get("b1")).toBe(2);
+  });
+
+  it("sin fecha van al final, alfabéticas: tampoco dependen del orden", () => {
+    const conFecha = ing("a", "ALFA", "2026-07-01");
+    const sinFecha = { ...ing("z", "ZETA", ""), entryDate: null };
+    expect(derivarFuentes([sinFecha, conFecha]).numeroPorIngreso.get("a")).toBe(1);
+  });
+});

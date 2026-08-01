@@ -839,6 +839,10 @@ export class WoodEntriesDB {
       take: Math.min(Math.max(opts.limite ?? 1000, 1), 5000),
       include: {
         entry: { select: { id: true, gtfNumber: true, providerName: true, entryDate: true } },
+        // La corrida que se la comió: hace falta su ESTADO, no sólo el id. Una
+        // corrida anulada devuelve la madera al patio, y sin mirarlo la pieza
+        // quedaría bloqueada para siempre con "ya entró a otra corrida".
+        consumidaEn: { select: { id: true, status: true, deletedAt: true } },
         _count: { select: { retrozos: true } },
       },
     });
@@ -883,6 +887,11 @@ export class WoodEntriesDB {
           select: {
             id: true, codificacion: true, volumenM3: true, consumidaEnId: true,
             noRecepcionada: true, descarte: true,
+            // El ESTADO de la corrida que la tomó, no sólo su id: una corrida
+            // anulada devolvió la madera al patio. Mirar el id pelado rechazaba
+            // trozas que la pantalla ya mostraba libres — y esa asimetría es
+            // peor que el bug original: el operador la tilda y no puede guardar.
+            consumidaEn: { select: { status: true, deletedAt: true } },
             _count: { select: { retrozos: true } },
           },
         });
@@ -893,9 +902,19 @@ export class WoodEntriesDB {
         }
         // Las MISMAS reglas que `motivoBloqueo()` del cliente. Si divergieran, lo
         // que la pantalla deja elegir la base lo rechazaría (o peor: al revés).
+        /** Tomada por OTRA corrida que sigue viva. Si esa corrida se anuló o se
+         *  borró, la pieza está libre aunque la columna todavía la apunte. */
+        const tomadaPorOtra = (t: (typeof candidatas)[number]) =>
+          Boolean(
+            t.consumidaEnId &&
+              t.consumidaEnId !== ctpEntryId &&
+              t.consumidaEn &&
+              t.consumidaEn.status === "registrado" &&
+              !t.consumidaEn.deletedAt,
+          );
         const malas = candidatas.filter(
           (t) =>
-            (t.consumidaEnId && t.consumidaEnId !== ctpEntryId) ||
+            tomadaPorOtra(t) ||
             t.noRecepcionada ||
             t.descarte ||
             t._count.retrozos > 0 ||

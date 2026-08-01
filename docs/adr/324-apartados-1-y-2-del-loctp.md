@@ -43,9 +43,23 @@ Los datos salen de `WoodEntry.serforGtf` —la ficha oficial tal como la public�
 SERFOR— porque es ahí donde consta el titular real de la concesión. Sin ficha se
 cae al proveedor de la guía.
 
-**El N° es de aparición y no se recalcula**, igual que el folio (ADR-311): si el
-N° de una fuente cambiara porque entró un ingreso de otra, el libro dejaría de
-casar con lo ya presentado.
+**El N° se asigna por la fecha del PRIMER ingreso de cada fuente**, no por el
+orden en que llega el listado. Igual que el folio (ADR-311): si el N° de una
+fuente cambiara porque entró un ingreso de otra, el libro dejaría de casar con lo
+ya presentado.
+
+> **Corregido el 2026-08-01 (auditoría adversarial).** La primera versión numeraba
+> por orden de aparición del array. Como el listado viene por `entryDate desc`, un
+> ingreso nuevo de una fuente nueva se llevaba el N° 1 y corría a todas las demás:
+> el libro de julio y el de agosto se contradecían sobre quién era la fuente 1 — y
+> la Sección 1 referencia ese número. Ahora es cronológico, con desempate por
+> clave, y no depende de cómo llegue el array.
+>
+> **Alcance de la estabilidad:** el N° es estable **dentro de un período**. El
+> Apartado 1 numera las fuentes *del libro que se está presentando*, así que el
+> mismo titular puede ser el 2 en el libro de agosto y el 1 en el histórico. Eso
+> es propio del formato —cada libro presentado trae su propio Apartado 1— y no un
+> efecto del orden del array, que era el bug.
 
 ### 2. `rucInstancia` NO es el RUC del titular
 

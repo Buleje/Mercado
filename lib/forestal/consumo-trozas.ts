@@ -30,7 +30,14 @@ export interface TrozaConsumible {
   gtfNumber?: string | null;
   proveedor?: string | null;
   fechaRecepcion?: string | null;
-  /** Ya consumida en otra corrida: no se puede volver a elegir. */
+  /**
+   * Ya consumida en otra corrida: no se puede volver a elegir.
+   *
+   * El endpoint lo manda en `null` cuando la corrida que la tomó está anulada o
+   * borrada: esa madera volvió al patio. El servidor aplica el MISMO criterio al
+   * guardar — si divergieran, la pantalla dejaría tildar algo que la base
+   * rechaza, que es peor que no mostrarla.
+   */
   consumidaEnId?: string | null;
   /** Declarada en la guía pero nunca llegó (ADR-325): no se puede consumir. */
   noRecepcionada?: boolean | null;

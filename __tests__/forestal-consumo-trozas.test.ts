@@ -151,3 +151,32 @@ describe("avisos de la selección", () => {
     expect(avisosSeleccion([troza({ id: "a" }), troza({ id: "b" })])).toEqual([]);
   });
 });
+
+/**
+ * Regresión (auditoría adversarial 2026-08-01): anular una corrida devuelve sus
+ * piezas al patio.
+ *
+ * El bug original dejaba `consumidaEnId` apuntando a una corrida anulada, así
+ * que la troza quedaba bloqueada para siempre con "Ya entró a otra corrida"
+ * aunque la madera estuviera ahí. El arreglo a medias fue PEOR: la pantalla la
+ * mostraba libre y el servidor la rechazaba al guardar.
+ *
+ * Contrato: el endpoint manda `consumidaEnId: null` cuando la corrida murió, y
+ * el guard del servidor mira el mismo estado. La lib pura sólo tiene que
+ * respetar ese contrato.
+ */
+describe("corrida anulada ⇒ la pieza vuelve al patio", () => {
+  it("sin corrida viva que la tome, está disponible", () => {
+    // Así la sirve el endpoint tras anular la corrida que se la había comido.
+    expect(motivoBloqueo(troza({ consumidaEnId: null }))).toBeNull();
+  });
+
+  it("con una corrida viva, sigue bloqueada", () => {
+    expect(motivoBloqueo(troza({ consumidaEnId: "c-viva" }))).toBe("ya_consumida");
+  });
+
+  it("el filtro «sólo disponibles» la vuelve a mostrar", () => {
+    const lista = [troza({ id: "a", consumidaEnId: null }), troza({ id: "b", consumidaEnId: "c-viva" })];
+    expect(filtrarTrozas(lista, { soloDisponibles: true }).map((t) => t.id)).toEqual(["a"]);
+  });
+});

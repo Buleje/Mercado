@@ -34,6 +34,8 @@ export interface IngresoParaFuente {
   originRegion?: string | null;
   originDistrict?: string | null;
   volumeM3?: number | string | null;
+  /** Fecha del ingreso: define el ORDEN del registro (ver `derivarFuentes`). */
+  entryDate?: string | Date | null;
   /** La ficha oficial de SERFOR tal como se guardó (`WoodEntry.serforGtf`). */
   serforGtf?: unknown;
 }
@@ -79,6 +81,13 @@ const FUENTE_POR_ORIGEN: Record<string, string> = {
   otro: "Otro",
 };
 
+/** Fecha date-only en ISO, en UTC (bug off-by-one de Lima). */
+function fechaIso(v: string | Date | null | undefined): string | null {
+  if (!v) return null;
+  const d = v instanceof Date ? v : new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+}
+
 const txt = (v: unknown): string => (v == null ? "" : String(v).trim());
 const num = (v: unknown): number => {
   const n = Number(v);
@@ -117,12 +126,25 @@ function rucTitular(ingreso: IngresoParaFuente, ficha: Record<string, unknown> |
  * no por proveedor: el mismo aserradero puede comprarle al mismo titular madera
  * de dos concesiones distintas, y en el libro son dos fuentes.
  *
- * El orden es el de aparición: el N° de una fuente no debe cambiar porque entró
- * un ingreso nuevo de otra, igual que el folio del libro (ADR-311).
+ * ## El N° tiene que ser ESTABLE
+ *
+ * Se numera por la fecha del PRIMER ingreso de cada fuente, no por el orden en
+ * que el listado devuelve las filas. El listado viene por `entryDate desc`, así
+ * que numerar por aparición hacía que un ingreso nuevo de una fuente nueva se
+ * llevara el N° 1 y corriera a todas las demás: el libro de julio y el de agosto
+ * se contradecían sobre quién es la fuente 1.
+ *
+ * Cronológico es lo que un folio significa —la fuente que entró primero es la
+ * primera— y no depende de cómo llegue el array. Desempate por clave para que
+ * dos fuentes del mismo día tampoco dependan del orden (auditoría 2026-08-01).
  */
 export function derivarFuentes(ingresos: readonly IngresoParaFuente[]): RegistroFuentes {
   const porClave = new Map<string, FuenteOrigen>();
   const numeroPorIngreso = new Map<string, number>();
+  /** clave → fecha del ingreso más viejo de esa fuente. */
+  const primerIngreso = new Map<string, string>();
+  /** ingresoId → clave de su fuente, para numerar al final. */
+  const porIngreso = new Map<string, string>();
 
   for (const i of ingresos) {
     const ficha = fichaDe(i);
@@ -143,7 +165,8 @@ export function derivarFuentes(ingresos: readonly IngresoParaFuente[]): Registro
 
     const previa = porClave.get(id);
     const fila: FuenteOrigen = previa ?? {
-      nro: porClave.size + 1,
+      // Provisional: el definitivo se asigna al final, por fecha (ver arriba).
+      nro: 0,
       fuente,
       titular,
       codigoTitulo,
@@ -165,10 +188,32 @@ export function derivarFuentes(ingresos: readonly IngresoParaFuente[]): Registro
     }
     fila.ingresos += 1;
     fila.volumenM3 = Number((fila.volumenM3 + num(i.volumeM3)).toFixed(4));
-    if (i.id) numeroPorIngreso.set(i.id, fila.nro);
+    // La fecha más VIEJA de la fuente: es la que define su lugar en el registro.
+    const fecha = fechaIso(i.entryDate);
+    if (fecha && (!primerIngreso.get(id) || fecha < primerIngreso.get(id)!)) {
+      primerIngreso.set(id, fecha);
+    }
+    if (i.id) porIngreso.set(i.id, id);
   }
 
-  return { fuentes: [...porClave.values()], numeroPorIngreso };
+  // Recién acá se numera: hasta no ver todos los ingresos no se sabe cuál fue el
+  // primero de cada fuente. Las que no declaran fecha van al final, alfabéticas.
+  const ordenadas = [...porClave.entries()].sort(([ca, a], [cb, b]) => {
+    const fa = primerIngreso.get(ca) ?? "9999";
+    const fb = primerIngreso.get(cb) ?? "9999";
+    return fa !== fb ? fa.localeCompare(fb) : ca.localeCompare(cb);
+  });
+  const nroPorClave = new Map<string, number>();
+  ordenadas.forEach(([clave_, fuente], i) => {
+    fuente.nro = i + 1;
+    nroPorClave.set(clave_, i + 1);
+  });
+  for (const [ingresoId, clave_] of porIngreso) {
+    const n = nroPorClave.get(clave_);
+    if (n) numeroPorIngreso.set(ingresoId, n);
+  }
+
+  return { fuentes: ordenadas.map(([, f]) => f), numeroPorIngreso };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -233,12 +278,6 @@ export interface FilaRetrozado {
   gtf: string;
 }
 
-/** Fecha date-only en ISO, en UTC (bug off-by-one de Lima). */
-function fechaIso(v: string | Date | null | undefined): string | null {
-  if (!v) return null;
-  const d = v instanceof Date ? v : new Date(v);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
-}
 
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
 

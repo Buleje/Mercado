@@ -375,7 +375,10 @@ export class ForestCtpDB {
       }),
       prisma.forestCtpReproceso.groupBy({
         by: ["origenEntryId"],
-        where: { tenantId, origenEntryId: { in: corridas } },
+        // Si la corrida DESTINO se anuló, ese reproceso no consumió nada: la
+        // madera del origen volvió a estar disponible. Mismo criterio que el
+        // despacho de arriba.
+        where: { tenantId, origenEntryId: { in: corridas }, destino: { deletedAt: null, status: "registrado" } },
         _sum: { quantity: true },
       }),
     ]);
@@ -418,6 +421,13 @@ export class ForestCtpDB {
       where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
       data: { status: "anulado", annulledReason: reason.trim() },
     });
+    // Las piezas vuelven al patio (ADR-326). Anular una corrida deshace el
+    // consumo: en la realidad esa madera está ahí y se va a asserar en otra. Sin
+    // esto quedaban marcadas "ya consumida" para siempre y nadie podía usarlas.
+    await prisma.woodEntryTroza.updateMany({
+      where: { tenantId, consumidaEnId: id },
+      data: { consumidaEnId: null, fechaConsumo: null },
+    });
     // Anular saca la línea del balance: quién y por qué es dato de fiscalización.
     auditCtp({
       tenantId,
@@ -445,6 +455,12 @@ export class ForestCtpDB {
     const e = await prisma.forestCtpEntry.update({
       where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
       data: { deletedAt: new Date() },
+    });
+    // Igual que al anular: la FK es SET NULL al DELETE real, que acá nunca pasa
+    // (es soft-delete), así que las piezas hay que soltarlas a mano.
+    await prisma.woodEntryTroza.updateMany({
+      where: { tenantId, consumidaEnId: id },
+      data: { consumidaEnId: null, fechaConsumo: null },
     });
     auditCtp({
       tenantId,
