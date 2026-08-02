@@ -15,17 +15,17 @@
  * `display:none`, que no calcula layout y devolvería una hoja de alto cero— y se
  * lo esconde corriéndolo fuera de la pantalla.
  *
- * ── Y por qué de a una ───────────────────────────────────────────────────────
- * Validar veinte guías en tanda dispararía veinte rasterizaciones a la vez y
- * dejaría el panel duro. La cola avanza de a una; si una falla, sigue con la
- * siguiente y se reporta al final: el archivado NUNCA bloquea la validación,
- * que es la operación que el almacenero vino a hacer.
+ * ── Quién hace qué ───────────────────────────────────────────────────────────
+ * El recorrido de la cola vive en `ctp-cola-archivado` (probado); acá queda sólo
+ * lo que necesita un navegador: dibujar la hoja y esperar a que esté lista.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { documentoAPdf, nombreArchivo } from "@/lib/forestal/ctp-documento-pdf";
 import { archivarEnDrive, existeEnDrive } from "@/lib/forestal/ctp-archivar-documento";
-import { logger } from "@/lib/logger";
+import { procesarCola, type ResumenArchivado } from "@/lib/forestal/ctp-cola-archivado";
+
+export type { ResumenArchivado } from "@/lib/forestal/ctp-cola-archivado";
 
 export interface GuiaParaArchivar {
   /** Identifica la hoja en la cola (id del ingreso + tipo de documento). */
@@ -38,14 +38,10 @@ export interface GuiaParaArchivar {
   descripcion: string;
 }
 
-export interface ResumenArchivado {
-  guardadas: number;
-  yaEstaban: number;
-  fallidas: number;
-}
-
 /** Ancho del lienzo: el mismo del visor, para que la hoja mida lo que mide. */
 const ANCHO = 854;
+/** Respiro tras cargar la hoja: sin esto se fotografía antes de las fuentes. */
+const ASENTAR_MS = 320;
 
 export default function CtpArchivadorAuto({
   cola,
@@ -56,60 +52,55 @@ export default function CtpArchivadorAuto({
   onFin: (r: ResumenArchivado) => void;
 }) {
   const marco = useRef<HTMLIFrameElement>(null);
-  const [i, setI] = useState(0);
-  const resumen = useRef<ResumenArchivado>({ guardadas: 0, yaEstaban: 0, fallidas: 0 });
-  // El onLoad del iframe dispara también al montar vacío: sin esta guarda, la
-  // primera hoja se procesaría dos veces.
-  const procesando = useRef(false);
+  /** Se resuelve cuando la hoja pedida terminó de dibujarse en el iframe. */
+  const listo = useRef<(() => void) | null>(null);
+  const [hoja, setHoja] = useState<GuiaParaArchivar | null>(null);
 
-  const actual = cola[i];
-
-  const siguiente = useCallback(() => {
-    procesando.current = false;
-    setI((n) => n + 1);
+  /** Pone la hoja en el iframe y espera a que el navegador la dibuje. */
+  const dibujar = useCallback(async (papel: GuiaParaArchivar) => {
+    await new Promise<void>((resolver) => {
+      listo.current = resolver;
+      setHoja(papel);
+    });
+    const d = marco.current?.contentDocument;
+    if (!d?.querySelector(".doc-hoja")) throw new Error("la hoja no llegó a dibujarse");
+    return d;
   }, []);
 
-  const procesar = useCallback(async () => {
-    if (!actual || procesando.current) return;
-    procesando.current = true;
-    const archivo = nombreArchivo(actual.nombre, "pdf");
-    try {
-      // Ojo: sin `siguiente()` acá. El `finally` ya avanza la cola, y llamarlo
-      // en los dos lados hacía saltar DOS posiciones — la lista de trozas de
-      // cada guía se perdía en silencio.
-      if (await existeEnDrive(archivo)) {
-        resumen.current.yaEstaban += 1;
-        return;
-      }
-      const d = marco.current?.contentDocument;
-      if (!d?.querySelector(".doc-hoja")) throw new Error("la hoja no llegó a dibujarse");
-      await archivarEnDrive({
-        archivo: await documentoAPdf(d, { pieCorrido: actual.pieCorrido }),
-        nombreArchivo: archivo,
-        etiquetas: actual.etiquetas,
-        descripcion: actual.descripcion,
-      });
-      resumen.current.guardadas += 1;
-    } catch (err) {
-      resumen.current.fallidas += 1;
-      logger.error("[ctp-archivador] no se pudo archivar", { doc: actual.nombre, error: String(err) });
-    } finally {
-      siguiente();
-    }
-  }, [actual, siguiente]);
-
-  // Terminó la cola: se informa una sola vez y el componente se desmonta solo.
+  // Una sola pasada por cola: el efecto se dispara con la cola, no con cada
+  // render, y el componente se desmonta solo cuando el padre la vacía.
   useEffect(() => {
-    if (cola.length > 0 && i >= cola.length) onFin({ ...resumen.current });
-  }, [i, cola.length, onFin]);
+    if (cola.length === 0) return;
+    let vivo = true;
+    void procesarCola(cola, {
+      existe: (papel) => existeEnDrive(nombreArchivo(papel.nombre, "pdf")),
+      guardar: async (papel) => {
+        const d = await dibujar(papel);
+        await archivarEnDrive({
+          archivo: await documentoAPdf(d, { pieCorrido: papel.pieCorrido }),
+          nombreArchivo: nombreArchivo(papel.nombre, "pdf"),
+          etiquetas: papel.etiquetas,
+          descripcion: papel.descripcion,
+        });
+      },
+    }).then((r) => {
+      if (vivo) onFin(r);
+    });
+    return () => {
+      vivo = false;
+    };
+    // `onFin` queda fuera a propósito: llega inline desde el padre y cambia en
+    // cada render suyo — incluirlo reiniciaría la cola a mitad de camino.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cola, dibujar]);
 
-  if (!actual) return null;
+  if (!hoja) return null;
 
   return (
     <iframe
       ref={marco}
       title="Archivando la guía"
-      srcDoc={actual.html}
+      srcDoc={hoja.html}
       sandbox="allow-same-origin"
       aria-hidden
       tabIndex={-1}
@@ -117,8 +108,9 @@ export default function CtpArchivadorAuto({
       // layout y la hoja saldría de alto cero.
       style={{ position: "fixed", left: -20000, top: 0, width: ANCHO, height: 1400, border: 0, opacity: 0 }}
       onLoad={() => {
-        // Un respiro para que asienten fuentes y tablas antes de fotografiar.
-        setTimeout(() => void procesar(), 300);
+        const avisar = listo.current;
+        listo.current = null;
+        if (avisar) setTimeout(avisar, ASENTAR_MS);
       }}
     />
   );

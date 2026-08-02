@@ -263,6 +263,7 @@ export default function CtpDocumentoVisor({
               onClick={() => void descargarPdf()}
               disabled={pdf === "armando"}
               className={`${btn} disabled:opacity-60`}
+              aria-label="Descargar PDF"
               title="Baja el documento como PDF A4, idéntico a esta vista"
             >
               {pdf === "armando" ? (
@@ -270,7 +271,7 @@ export default function CtpDocumentoVisor({
               ) : (
                 <Download className="h-4 w-4" aria-hidden />
               )}
-              {pdf === "armando" ? "Armando PDF…" : "Descargar PDF"}
+              <span className="max-sm:sr-only">{pdf === "armando" ? "Armando PDF…" : "Descargar PDF"}</span>
             </button>
             {onArchivar && (
               <button
@@ -278,6 +279,7 @@ export default function CtpDocumentoVisor({
                 onClick={() => void archivar()}
                 disabled={drive?.estado === "guardando"}
                 className={`${btn} disabled:opacity-60`}
+                aria-label="Guardar en el expediente"
                 title="Sube el PDF al Drive del negocio, en la carpeta de guías forestales"
               >
                 {drive?.estado === "guardando" ? (
@@ -287,7 +289,9 @@ export default function CtpDocumentoVisor({
                 ) : (
                   <FolderPlus className="h-4 w-4" aria-hidden />
                 )}
-                {drive?.estado === "listo" ? "En el expediente" : "Guardar en el expediente"}
+                <span className="max-sm:sr-only">
+                  {drive?.estado === "listo" ? "En el expediente" : "Guardar en el expediente"}
+                </span>
               </button>
             )}
             {onArchivar && (
@@ -320,7 +324,7 @@ export default function CtpDocumentoVisor({
               onClick={imprimir}
               className="inline-flex h-11 items-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white transition hover:brightness-110"
             >
-              <Printer className="h-4 w-4" aria-hidden /> Imprimir / PDF
+              <Printer className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">Imprimir</span> PDF
             </button>
           </div>
         </div>
@@ -372,7 +376,7 @@ export default function CtpDocumentoVisor({
           ) : (
             <>
               «Descargar PDF» baja el archivo tal cual se ve, con sus {hojas} hoja{hojas === 1 ? "" : "s"}.
-              La línea tenue sobre la hoja marca dónde corta cada página A4.
+              <span className="max-sm:hidden"> La línea tenue sobre la hoja marca dónde corta cada página A4.</span>
             </>
           )}
         </p>

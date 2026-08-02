@@ -32,8 +32,20 @@ import { ALTO_UTIL_MM, ANCHO_HOJA_MM, paginar } from "./ctp-documento-print";
 const MARGEN_MM = 12;
 const ANCHO_UTIL_MM = ANCHO_HOJA_MM - MARGEN_MM * 2;
 const PX_POR_MM = 96 / 25.4;
-/** 2× para que la letra de 6.5 pt no salga con bordes de escalera al imprimir. */
-const NITIDEZ = 2;
+/**
+ * Cuánto se agranda la hoja al fotografiarla. 2× (≈192 dpi) mantiene legible la
+ * letra de 6.5 pt de los casilleros, pero cuesta ~270 KB por página: un legajo
+ * de treinta guías se iría a 25 MB y el Drive corta en 50.
+ *
+ * Por eso baja con el largo del documento: una guía suelta se ve impecable y un
+ * legajo entra en el expediente. 1.5× siguen siendo ~144 dpi, más que los 96 de
+ * pantalla y suficiente para el papel de archivo.
+ */
+function nitidezPara(hojas: number): number {
+  if (hojas > 20) return 1.5;
+  if (hojas > 6) return 1.75;
+  return 2;
+}
 
 export interface PdfDocumentoOpts {
   /** Pie de cada página. Sin él, la hoja 3 de un anexo es un papel anónimo. */
@@ -57,10 +69,11 @@ export async function documentoAPdf(doc: Document, opts: PdfDocumentoOpts = {}):
 
   try {
     const { hojas, cortes } = paginar(doc);
+    const nitidez = nitidezPara(hojas);
     const [{ toCanvas }, { jsPDF }] = await Promise.all([import("html-to-image"), import("jspdf")]);
 
     const lienzo = await toCanvas(hoja, {
-      pixelRatio: NITIDEZ,
+      pixelRatio: nitidez,
       backgroundColor: "#ffffff",
       // La hoja de pantalla trae sombra y borde para parecer papel sobre la
       // mesa; en el papel de verdad serían un marco gris impreso.
@@ -95,7 +108,7 @@ export async function documentoAPdf(doc: Document, opts: PdfDocumentoOpts = {}):
 
       if (i > 0) pdf.addPage();
       pdf.addImage(
-        trozo.toDataURL("image/jpeg", 0.94),
+        trozo.toDataURL("image/jpeg", 0.92),
         "JPEG",
         MARGEN_MM,
         MARGEN_MM,

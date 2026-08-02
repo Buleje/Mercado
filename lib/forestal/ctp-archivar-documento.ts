@@ -16,6 +16,7 @@
  */
 
 import { csrfHeaders } from "@/lib/csrf-client";
+import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
 import { logger } from "@/lib/logger";
 
 /** Dónde viven las guías del libro. Un solo nombre, para que no se dispersen. */
@@ -102,6 +103,18 @@ export interface ResultadoArchivado {
 }
 
 export async function archivarEnDrive(o: ArchivarDocumento): Promise<ResultadoArchivado> {
+  // El bucket corta en 50 MB y responde 413. Sin este chequeo, un legajo grande
+  // se subía entero para que el servidor lo rechace, y el operador veía "HTTP
+  // 413" en vez de "es muy pesado, partilo": el tiempo perdido es el mismo, la
+  // diferencia es saber qué hacer.
+  if (o.archivo.size > MAX_UPLOAD_SIZE) {
+    const mb = (o.archivo.size / 1024 / 1024).toFixed(1);
+    throw new Error(
+      `El documento pesa ${mb} MB y el expediente acepta hasta ${Math.round(MAX_UPLOAD_SIZE / 1024 / 1024)} MB. ` +
+        `Armá el legajo en tandas más chicas (filtrá por mes o marcá menos guías).`,
+    );
+  }
+
   const carpetaNombre = o.carpeta ?? CARPETA_GUIAS;
   const folderId = await carpetaDelExpediente(carpetaNombre);
 

@@ -38,6 +38,7 @@ import { CSS_LISTA_TROZAS, htmlListaTrozas } from "@/lib/forestal/ctp-lista-troz
 import { CSS_LEGAJO, portadaLegajo } from "@/lib/forestal/ctp-legajo";
 import { metaArchivado, papelesDeIngreso } from "@/lib/forestal/ctp-documentos-ingreso";
 import CtpArchivadorAuto, { type GuiaParaArchivar } from "./CtpArchivadorAuto";
+import { hayNovedades } from "@/lib/forestal/ctp-cola-archivado";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import CtpIngresoCadenaModal from "./CtpIngresoCadenaModal";
 import CtpIngresoEditModal from "./CtpIngresoEditModal";
@@ -644,6 +645,7 @@ export default function CtpIngresosView({
           cola={colaArchivo}
           onFin={(r) => {
             setColaArchivo([]);
+            if (!hayNovedades(r)) return; // nada que contar
             if (r.guardadas > 0 || r.yaEstaban > 0) {
               pushToast({
                 tono: "success",
