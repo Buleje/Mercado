@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, Loader2, Boxes } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
-import { csrfHeaders } from "@/lib/csrf-client";
+import { URL_TROZAS_CONSUMO, escribirDelPatio } from "@/lib/forestal/patio-cola";
 import { cn } from "@/lib/utils";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import CtpTrozasPicker from "./CtpTrozasPicker";
@@ -89,7 +89,7 @@ export default function PatioConsumo() {
       setError(null);
       setCargandoTrozas(true);
       try {
-        const d = await pedir<{ trozas?: TrozaConsumible[] }>("/api/admin/forestal/trozas/patio");
+        const d = await pedir<{ trozas?: TrozaConsumible[] }>(URL_TROZAS_CONSUMO);
         setTrozas(d.trozas ?? []);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -104,20 +104,35 @@ export default function PatioConsumo() {
     if (!elegida || seleccion.size === 0) return;
     setGuardando(true);
     setError(null);
+    const cuantas = seleccion.size;
+    const piezas = `${cuantas} pieza${cuantas === 1 ? "" : "s"}`;
     try {
-      const r = await fetch("/api/admin/forestal/trozas/patio", {
-        method: "POST",
-        credentials: "include",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ ctpEntryId: elegida.id, trozaIds: [...seleccion] }),
+      const r = await escribirDelPatio({
+        section: "consumo",
+        url: URL_TROZAS_CONSUMO,
+        payload: { ctpEntryId: elegida.id, trozaIds: [...seleccion] },
       });
-      const body = (await r.json()) as { error?: string; message?: string };
-      if (!r.ok) throw new Error(body.message ?? body.error ?? "El libro rechazó la carga.");
-      setListo(`${seleccion.size} pieza${seleccion.size === 1 ? "" : "s"} cargada${seleccion.size === 1 ? "" : "s"} a la corrida #${elegida.lineNo}.`);
+
+      if (r.estado === "error") {
+        // El libro opinó (mes cerrado, troza ya consumida): se muestra tal cual.
+        // Encolarlo sería prometerle al operario que se va a arreglar solo.
+        setError(r.mensaje ?? "El libro rechazó la carga.");
+        return;
+      }
+
       setSeleccion(new Set());
+      if (r.estado === "encolada") {
+        // Se dice SIN VUELTAS que todavía no está en el libro: dar por hecho lo
+        // que está en cola es cómo se pierde madera en el conteo.
+        setListo(`${piezas} anotada${cuantas === 1 ? "" : "s"} en el equipo. Se suben al libro cuando vuelva la señal.`);
+        return;
+      }
+
+      setListo(`${piezas} cargada${cuantas === 1 ? "" : "s"} a la corrida #${elegida.lineNo}.`);
       // Se recargan: las que se acaban de cargar ya no están disponibles y
-      // dejarlas a la vista invitaría a tildarlas de nuevo.
-      const d = await pedir<{ trozas?: TrozaConsumible[] }>("/api/admin/forestal/trozas/patio");
+      // dejarlas a la vista invitaría a tildarlas de nuevo. Sólo tras un OK
+      // real — sin señal la lista no se puede refrescar y quedaría vacía.
+      const d = await pedir<{ trozas?: TrozaConsumible[] }>(URL_TROZAS_CONSUMO);
       setTrozas(d.trozas ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

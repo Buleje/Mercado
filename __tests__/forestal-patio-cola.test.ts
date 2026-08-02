@@ -3,7 +3,7 @@
  * (IndexedDB no se testea acá — lo que importa es el criterio.)
  */
 import { describe, expect, it } from "vitest";
-import { clasificarRespuesta, resumirAnotacion } from "@/lib/forestal/patio-cola";
+import { clasificarRespuesta, decidirDestino, resumirAnotacion } from "@/lib/forestal/patio-cola";
 
 describe("clasificarRespuesta", () => {
   it("200 sube y se borra de la cola", () => {
@@ -49,5 +49,61 @@ describe("resumirAnotacion", () => {
   it("sin datos usables cae a la sección, nunca a un texto vacío", () => {
     expect(resumirAnotacion("produccion", {})).toBe("produccion");
     expect(resumirAnotacion("produccion", { speciesCommon: "   " })).toBe("produccion");
+  });
+});
+
+describe("decidirDestino — cuándo encolar y cuándo mostrar el error", () => {
+  it("sin señal encola: nunca llegó al servidor", () => {
+    expect(decidirDestino({ online: false, status: null, ok: false })).toBe("encolar");
+  });
+
+  it("el fetch que tira excepción encola aunque el navegador se crea online", () => {
+    // navigator.onLine miente seguido (wifi conectado sin salida). Lo que manda
+    // es si el servidor llegó a opinar.
+    expect(decidirDestino({ online: true, status: null, ok: false })).toBe("encolar");
+  });
+
+  it("el 4xx del libro se MUESTRA, no se encola", () => {
+    // Encolarlo convertiría un "corregí esto" en un "esperá para siempre".
+    expect(decidirDestino({ online: true, status: 422, ok: false })).toBe("mostrar-error");
+    expect(decidirDestino({ online: true, status: 400, ok: false })).toBe("mostrar-error");
+  });
+
+  it("el 5xx encola: es transitorio de verdad", () => {
+    expect(decidirDestino({ online: true, status: 500, ok: false })).toBe("encolar");
+    expect(decidirDestino({ online: true, status: 503, ok: false })).toBe("encolar");
+  });
+
+  it("429 y 408 encolan: el protocolo mismo pide reintentar", () => {
+    expect(decidirDestino({ online: true, status: 429, ok: false })).toBe("encolar");
+    expect(decidirDestino({ online: true, status: 408, ok: false })).toBe("encolar");
+  });
+
+  it("la sesión vencida encola: se arregla volviendo a entrar, no descartando", () => {
+    expect(decidirDestino({ online: true, status: 401, ok: false })).toBe("encolar");
+    expect(decidirDestino({ online: true, status: 403, ok: false })).toBe("encolar");
+  });
+
+  it("el éxito no es ni una cosa ni la otra", () => {
+    expect(decidirDestino({ online: true, status: 200, ok: true })).toBe("ok");
+  });
+});
+
+describe("resumirAnotacion — las anotaciones del patio", () => {
+  it("el consumo dice cuántas piezas, no la palabra 'consumo'", () => {
+    expect(resumirAnotacion("consumo", { ctpEntryId: "c1", trozaIds: ["a", "b", "c"] }))
+      .toBe("Piezas a la sierra: 3");
+  });
+
+  it("la recepción dice cuántas trozas, con el plural bien", () => {
+    expect(resumirAnotacion("recepcion", { woodEntryId: "w1", cambios: [{ id: "t1" }] }))
+      .toBe("Recepción de 1 troza");
+    expect(resumirAnotacion("recepcion", { woodEntryId: "w1", cambios: [{ id: "t1" }, { id: "t2" }] }))
+      .toBe("Recepción de 2 trozas");
+  });
+
+  it("no rompe el resumen de las secciones de siempre", () => {
+    expect(resumirAnotacion("produccion", { speciesCommon: "Tornillo", quantity: 3, unit: "m3" }))
+      .toContain("Tornillo");
   });
 });

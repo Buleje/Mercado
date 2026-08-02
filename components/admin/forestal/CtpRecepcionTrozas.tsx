@@ -16,6 +16,7 @@ import { useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, Check, Loader2, PackageCheck, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { URL_TROZAS_RECEPCION, escribirDelPatio } from "@/lib/forestal/patio-cola";
 import {
   avisosRecepcion,
   balanceRecepcion,
@@ -38,12 +39,20 @@ export default function CtpRecepcionTrozas({
   volumenDelIngreso,
   onCerrar,
   onGuardado,
+  offline = false,
 }: {
   entryId: string;
   trozas: TrozaEditable[];
   volumenDelIngreso: number | null;
   onCerrar: () => void;
-  onGuardado: () => void;
+  onGuardado: (encolada: boolean) => void;
+  /**
+   * Modo patio: si no hay señal, la recepción se anota en el equipo en vez de
+   * perderse. Va por prop y NO por defecto — desde el libro, en la oficina, un
+   * "se guardó en tu equipo" cuando el servidor está caído confunde más de lo
+   * que ayuda: ahí se quiere el error y reintentar.
+   */
+  offline?: boolean;
 }) {
   /** Sólo las madres: un pedazo retrozado no se recibe aparte de su troza. */
   const madres = useMemo(() => trozas.filter((t) => !t.trozaOrigenId), [trozas]);
@@ -78,6 +87,17 @@ export default function CtpRecepcionTrozas({
     setGuardando(true);
     setError(null);
     try {
+      if (offline) {
+        const r = await escribirDelPatio({
+          section: "recepcion",
+          url: URL_TROZAS_RECEPCION,
+          metodo: "PATCH",
+          payload: { woodEntryId: entryId, cambios },
+        });
+        if (r.estado === "error") throw new Error(r.mensaje ?? "No se pudo guardar la recepción.");
+        onGuardado(r.estado === "encolada");
+        return;
+      }
       const r = await fetch("/api/admin/forestal/trozas", {
         method: "PATCH",
         credentials: "include",
@@ -86,7 +106,7 @@ export default function CtpRecepcionTrozas({
       });
       const body = (await r.json()) as { error?: string; message?: string };
       if (!r.ok) throw new Error(body.message ?? body.error ?? "No se pudo guardar la recepción.");
-      onGuardado();
+      onGuardado(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {

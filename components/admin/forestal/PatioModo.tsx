@@ -61,6 +61,7 @@ export default function PatioModo() {
   /** El camión que acaba de llegar es de los últimos: mostrar quince empuja el
    *  bloque de carga fuera de pantalla y ahí ya nadie lo encuentra. */
   const [verTodasLasGuias, setVerTodasLasGuias] = useState(false);
+  const [avisoCola, setAvisoCola] = useState<string | null>(null);
 
 
   const pedir = useCallback(async <T,>(url: string): Promise<T> => {
@@ -127,10 +128,15 @@ export default function PatioModo() {
           entryId={recibiendo.guia.id}
           trozas={recibiendo.trozas}
           volumenDelIngreso={Number(recibiendo.guia.volumeM3) || null}
+          offline
           onCerrar={() => setRecibiendo(null)}
-          onGuardado={() => {
+          onGuardado={(encolada) => {
             setRecibiendo(null);
-            void cargarGuias();
+            // Encolada: la lista del servidor NO cambió todavía, y refrescarla
+            // mostraría la guía como si no se hubiera tocado. La bandeja de
+            // arriba es la que dice qué falta subir.
+            if (!encolada) void cargarGuias();
+            else setAvisoCola("Recepción anotada en el equipo. Se sube al libro cuando vuelva la señal.");
           }}
         />
       </main>
@@ -149,6 +155,12 @@ export default function PatioModo() {
           </span>
         )}
       </header>
+
+      {avisoCola && (
+        <p className="flex items-start gap-2 rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-base font-bold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10 dark:text-[var(--data-warning-500)]">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden /> {avisoCola}
+        </p>
+      )}
 
       <CtpPatioBandeja cola={cola} />
 
