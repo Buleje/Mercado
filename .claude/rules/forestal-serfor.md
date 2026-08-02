@@ -30,6 +30,11 @@ paths:
   apunta a una corrida muerta no bloquea nada).
 - **Una troza no puede estar aserrada y no haber llegado**: `noRecepcionada` + consumo
   vivo se rechaza indicando el camino, no con un "no se puede" pelado.
+- **Las TRES lecturas de una troza dicen lo mismo** (`buscarTrozas`, `trozasDe`,
+  `trozasDelPatio`). Al agregar una columna que cambia una decisión —se puede
+  consumir, está bloqueada, ya salió— hay que tocar las tres y el `serializar()`
+  del endpoint, que es una **whitelist**: si no, el JSON omite el campo y la
+  pantalla declara libre una pieza ya aserrada, sin error visible.
 - **El libro admite huecos; el certificado NO.** `trazabilidadCompleta()` bloquea EMITIR,
   jamás GUARDAR. No inviertas eso.
 - **Origen legal = GTF.** No crear ingreso sin `gtfNumber`. La GTF de salida la emite el CTP.

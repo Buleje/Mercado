@@ -86,6 +86,11 @@ export default function LotesTabla({
 
   return (
     <div className="@container space-y-3">
+      {/* Sin `hoja-grilla`: en mobile `.admin-mobile-cards` (globals.css) la
+          convierte sola en cards con la etiqueta de cada columna al lado, que
+          para once columnas se lee mejor que cualquier scroll lateral. Por eso
+          acá NO va el degradé de borde que sí llevan los cuadros SERFOR —esos
+          sí optan por quedarse como tabla, porque son el formato oficial. */}
       <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <table className="w-full text-sm">
           <thead>
