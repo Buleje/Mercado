@@ -837,11 +837,9 @@ export default function AnalyticsBIModule() {
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        title="Analytics BI"
-        description="Analítica avanzada de ventas, productos, clientes y predicciones"
-        icon={BarChart3}
-      />
+      {/* La descripción era «analítica avanzada de ventas, productos, clientes y
+          predicciones»: la lista de las pestañas que vienen justo abajo. */}
+      <AdminModuleHeader title="Analytics BI" icon={BarChart3} />
       {dataState === "empty" ? (
         <ChartsEmptyState
           title="Todavía no hay datos para analizar"

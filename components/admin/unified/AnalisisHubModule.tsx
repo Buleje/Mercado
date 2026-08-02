@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { BarChart3, TrendingUp, Sparkles } from "@buleje/design-system/icons";
-import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -35,12 +34,9 @@ export default function AnalisisHubModule({ initialTab }: { initialTab?: string 
 
   return (
     <div className="space-y-4">
-      <AdminBreadcrumb
-        items={[
-          { label: "Análisis", onClick: () => setSub(TABS[0].id) },
-          { label: TABS.find((t) => t.id === sub)?.label ?? "" },
-        ]}
-      />
+      {/* Sin breadcrumb: decía «Análisis › Analytics Pro» justo encima de una
+          barra de pestañas donde «Analytics Pro» ya está marcada como activa.
+          Dos líneas para la misma información, y el contenido 40 px más abajo. */}
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "analytics" && <AnalyticsProModule />}
         {sub === "forecast" && <ForecastingDashboard />}

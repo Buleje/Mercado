@@ -1194,8 +1194,11 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     </div>
   );
 
+  // `space-y-4` y no 6: entre la barra de filtros y el primer producto había
+  // cinco separaciones de 24 px —120 px de aire— y a Inventario se entra a ver
+  // productos, no el cromo.
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Toolbar único — búsqueda + filtros + acciones en UNA sola fila */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Search */}
@@ -1232,7 +1235,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           onClick={() => setNoImageOnly(!noImageOnly)}
           className={cn(
             "flex items-center gap-1 px-3 h-10 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
-            noImageOnly ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:bg-primary/15/20 dark:text-[var(--text-primary)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+            noImageOnly ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:bg-primary/15 dark:text-[var(--text-primary)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
           )}
         >
           <Camera className="h-3.5 w-3.5" /> Sin foto ({noImageCount})
@@ -1359,37 +1362,37 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         </div>
       )}
 
-      {/* KPIs — grid-cols-5 */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 ">
-          <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Productos</p>
-          <p className="text-2xl font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-1">{totalProducts}</p>
-          <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{activeProducts} activos</p>
-          <div className="h-1 rounded-full mt-2 bg-primary" />
+      {/* KPIs.
+          Eran cinco y dos decían lo mismo: «Productos 57 · 56 activos» al lado
+          de «Activos 56 · 1 inactivo». Ahora el estado del catálogo va en una
+          sola tarjeta y el resto son las tres cifras que se miran para decidir
+          algo: qué reponer, qué se vence, cuánto vale lo que hay.
+
+          Compactas a propósito: esta franja empujaba el primer producto de la
+          tabla fuera de la pantalla, y a Inventario se entra a ver productos. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-zinc-400">Productos</p>
+          <p className="mt-1 font-mono text-2xl font-bold text-[var(--text-primary)]">{totalProducts}</p>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] dark:text-zinc-500">
+            {activeProducts} activos
+            {totalProducts - activeProducts > 0 && ` · ${totalProducts - activeProducts} inactivo${totalProducts - activeProducts === 1 ? "" : "s"}`}
+          </p>
         </div>
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 ">
-          <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Activos</p>
-          <p className="text-2xl font-mono font-bold text-[var(--data-success-500)] mt-1">{activeProducts}</p>
-          <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{totalProducts - activeProducts} inactivos</p>
-          <div className="h-1 rounded-full mt-2 bg-primary/10" />
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-zinc-400">Bajo stock</p>
+          <p className={cn("mt-1 font-mono text-2xl font-bold", lowStockCount > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{lowStockCount}</p>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] dark:text-zinc-500">{lowStockCount > 0 ? "Requieren reposición" : "Stock saludable"}</p>
         </div>
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 ">
-          <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Bajo stock</p>
-          <p className={cn("text-2xl font-mono font-bold mt-1", lowStockCount > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>{lowStockCount}</p>
-          <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">{lowStockCount > 0 ? "Requieren reposicion" : "Stock saludable"}</p>
-          <div className={cn("h-1 rounded-full mt-2", lowStockCount > 0 ? "bg-[var(--data-warning-500)]" : "bg-[var(--rule-soft)] dark:bg-zinc-700")} />
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-zinc-400">Próx. a vencer</p>
+          <p className={cn("mt-1 font-mono text-2xl font-bold", expiringSoonCount > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{expiringSoonCount}</p>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] dark:text-zinc-500">Próximos 30 días</p>
         </div>
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 ">
-          <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Prox. a vencer</p>
-          <p className={cn("text-2xl font-mono font-bold mt-1", expiringSoonCount > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>{expiringSoonCount}</p>
-          <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">Proximos 30 dias</p>
-          <div className={cn("h-1 rounded-full mt-2", expiringSoonCount > 0 ? "bg-[var(--data-warning-500)]" : "bg-[var(--rule-soft)] dark:bg-zinc-700")} />
-        </div>
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 ">
-          <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Valor inventario (costo)</p>
-          <p className="text-2xl font-mono font-bold text-primary mt-1">{fmt(totalStockValue)}</p>
-          <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">Valuado a costo</p>
-          <div className="h-1 rounded-full mt-2 bg-primary/10" />
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-zinc-400">Valor inventario</p>
+          <p className="mt-1 font-mono text-2xl font-bold text-primary">{fmt(totalStockValue)}</p>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] dark:text-zinc-500">Valuado a costo</p>
         </div>
       </div>
 
@@ -1404,10 +1407,26 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         </div>
       )}
 
-      {/* Mejora P-8: Margen promedio por categoria */}
+      {/* Margen por categoría: se mira de vez en cuando y no se puede clickear
+          —no filtra nada—, así que ocupaba una fila entera para informar. Va
+          plegado: el que lo busca lo abre. */}
+      {/* Meta-información en una línea: cuántos se están viendo y el margen
+          plegado. Sin nada que decir, la fila no existe —un contenedor vacío
+          sigue costando su separación. */}
+      {(filteredProducts.length !== products.length || categoryMargins.length > 0) && (
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      {filteredProducts.length !== products.length && (
+        <p className="text-xs text-[var(--text-tertiary)]">
+          Mostrando {filteredProducts.length} de {products.length} productos
+        </p>
+      )}
       {categoryMargins.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-medium mr-1">Margen:</span>
+        <details className="group">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-secondary)]">
+            <ChevronRight className="h-3.5 w-3.5 transition-transform group-open:rotate-90" aria-hidden />
+            Margen por categoría ({categoryMargins.length})
+          </summary>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {categoryMargins.map(cm => (
             <span
               key={cm.cat}
@@ -1421,7 +1440,10 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               {cm.cat}: {Number(cm.margin).toFixed(0)}%
             </span>
           ))}
-        </div>
+          </div>
+        </details>
+      )}
+      </div>
       )}
 
       {/* OC Alerts Section (IMPROVEMENT 1) */}
@@ -1612,10 +1634,6 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         </div>
       )}
 
-      {/* Contador de resultados filtrados */}
-      {filteredProducts.length !== products.length && (
-        <p className="text-xs text-[var(--text-tertiary)]">Mostrando {filteredProducts.length} de {products.length} productos</p>
-      )}
 
       {/* Content */}
       {/* CSV import result feedback */}
