@@ -10,7 +10,7 @@
  * con su volumen), así que ningún filtro devuelve vacío por adivinar mal.
  */
 
-import { BarChart3, Download, Plus, RefreshCw, Search, X } from "@buleje/design-system/icons";
+import { BarChart3, Download, FileStack, Plus, RefreshCw, Search, X } from "@buleje/design-system/icons";
 import CtpFiltrosPanel, { BotonFiltros, BTN_FILTRO, usePanelFiltros } from "./ctp-filtros-panel";
 import { STATUS_META, productLabel, type WoodEntryStats, type WoodEntryStatus } from "./ctp-shared";
 
@@ -55,6 +55,10 @@ export interface CtpIngresosFiltrosProps {
   descargando: boolean;
   /** Cuántos registros bajaría el CSV (el total del filtro actual). */
   totalFiltrado: number;
+  /** Arma un solo documento con las guías seleccionadas (legajo). */
+  onLegajo: () => void;
+  /** Cuántos ingresos entrarían al legajo. 0 = no hay selección. */
+  legajoCount: number;
 }
 
 export default function CtpIngresosFiltros({
@@ -73,6 +77,8 @@ export default function CtpIngresosFiltros({
   onDescargar,
   descargando,
   totalFiltrado,
+  onLegajo,
+  legajoCount,
 }: CtpIngresosFiltrosProps) {
   const activos =
     (facetas.species ? 1 : 0) +
@@ -136,6 +142,19 @@ export default function CtpIngresosFiltros({
             <Download className={`h-4 w-4 ${descargando ? "animate-pulse" : ""}`} />
             <span className="max-sm:sr-only">{descargando ? "Bajando…" : "Descargar"}</span>
           </button>
+          {/* Sólo con selección: un botón que arma "el legajo de nada" enseña
+              que la función no sirve. */}
+          {legajoCount > 0 && (
+            <button
+              type="button"
+              onClick={onLegajo}
+              title={`Armar un solo documento con las ${legajoCount} guías seleccionadas y su índice`}
+              className={`${BTN_ICONO} border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]`}
+            >
+              <FileStack className="h-4 w-4" />
+              <span>Legajo ({legajoCount})</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={onReload}

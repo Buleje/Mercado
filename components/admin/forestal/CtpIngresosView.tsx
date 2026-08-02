@@ -30,10 +30,12 @@ import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import WoodEntryForm, { type WoodEntryPreset } from "./WoodEntryForm";
 import SpeciesAggregateChart from "./SpeciesAggregateChart";
 import CtpEntryDetailModal from "./CtpEntryDetailModal";
-import CtpDocumentoVisor from "./CtpDocumentoVisor";
-import { cuerpoDesdeSerfor, trozasDesdeSerfor } from "@/lib/forestal/ctp-gtf-desde-serfor";
-import { CSS_GTF_OFICIAL } from "@/lib/forestal/ctp-gtf-formato";
+import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
+import { CSS_GTF_SERFOR, documentoGtfSerfor, trozasDesdeSerfor } from "@/lib/forestal/ctp-gtf-desde-serfor";
+import { CSS_GTF_OFICIAL, fechaGtf } from "@/lib/forestal/ctp-gtf-formato";
+import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { CSS_LISTA_TROZAS, htmlListaTrozas } from "@/lib/forestal/ctp-lista-trozas";
+import { CSS_LEGAJO, portadaLegajo } from "@/lib/forestal/ctp-legajo";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import CtpIngresoCadenaModal from "./CtpIngresoCadenaModal";
 import CtpIngresoEditModal from "./CtpIngresoEditModal";
@@ -94,6 +96,9 @@ export default function CtpIngresosView({
   const [bulkReason, setBulkReason] = useState("");
   const [descargando, setDescargando] = useState(false);
 
+  /** Legajo armado: un solo documento con las guías marcadas y su índice. */
+  const [legajo, setLegajo] = useState<DocumentoImprimible[] | null>(null);
+
   const filtros = useMemo(
     () => ({ status: statusFilter, search, ...facetas }),
     [statusFilter, search, facetas],
@@ -150,6 +155,74 @@ export default function CtpIngresosView({
     setShowForm(true);
     onOpenConsumed?.();
   }, [openGtf, onOpenConsumed]);
+
+  /**
+   * El legajo: portada con el índice + cada guía (y su lista) en hoja nueva.
+   *
+   * Va en el orden en que se ven en la tabla, no en el de los clics: el índice
+   * y las hojas tienen que coincidir con lo que el operador está mirando.
+   */
+  const armarLegajo = useCallback(() => {
+    const elegidos = entries.filter((e) => selectedIds.includes(e.id));
+    if (elegidos.length === 0) return;
+
+    const hoy = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const cuerpos: string[] = [
+      portadaLegajo({
+        titular: "Libro de Operaciones del CTP",
+        subtitulo: "Centro de Transformación Primaria",
+        periodo: period.label,
+        emitidoEl: hoy,
+        renglones: elegidos.map((e) => ({
+          libroNro: e.libroNro,
+          gtfNumber: e.gtfNumber,
+          entryDate: e.entryDate,
+          providerName: e.providerName,
+          especie: e.speciesCommonName,
+          volumenM3: e.volumeM3,
+          piezas: e.pieces,
+          estado: STATUS_META[e.status]?.label ?? e.status,
+          conGuia: Boolean(e.serforGtf),
+        })),
+      }),
+    ];
+
+    for (const e of elegidos) {
+      if (!e.serforGtf) continue; // sin ficha no hay guía que reproducir
+      const g = e.serforGtf as unknown as GtfSerfor;
+      cuerpos.push(documentoGtfSerfor(g, { impresoEl: hoy }));
+      const trozas = trozasDesdeSerfor(g);
+      if (trozas.length > 0) {
+        cuerpos.push(
+          htmlListaTrozas({
+            titular: g.titular ?? e.providerName,
+            subtitulo: g.gtfNumber ? `Guía ${g.gtfNumber}` : undefined,
+            ubicacion: [g.distrito, g.provincia, g.departamento].filter(Boolean).join(" · "),
+            numero: g.listaTrozas ?? g.gtfNumber ?? "",
+            guia: g.gtfNumber ?? undefined,
+            fecha: fechaGtf(g.fechaExpedicion),
+            trozas,
+          }),
+        );
+      }
+    }
+
+    const conGuia = elegidos.filter((e) => e.serforGtf).length;
+    setLegajo([
+      {
+        nombre: `Legajo · ${elegidos.length} ingreso(s)`,
+        archivo: `Legajo CTP · ${period.label}`,
+        etiqueta: `${conGuia} con guía adjunta · índice al frente`,
+        pieCorrido: `Legajo del Libro de Operaciones del CTP · ${elegidos.length} ingreso(s) · armado el ${hoy}`,
+        html: documentoHtml({
+          titulo: `Legajo CTP · ${period.label}`,
+          css: CSS_LEGAJO + CSS_GTF_OFICIAL + CSS_GTF_SERFOR + CSS_LISTA_TROZAS,
+          cuerpo: cuerpos,
+          pieCorrido: `Legajo del Libro de Operaciones del CTP · ${elegidos.length} ingreso(s) · armado el ${hoy}`,
+        }),
+      },
+    ]);
+  }, [entries, selectedIds, period]);
 
   const pendingIds = useMemo(
     () => entries.filter((e) => e.status === "pendiente").map((e) => e.id),
@@ -309,6 +382,8 @@ export default function CtpIngresosView({
         onDescargar={() => void descargar()}
         descargando={descargando}
         totalFiltrado={total}
+        onLegajo={armarLegajo}
+        legajoCount={selectedIds.length}
       />
 
       {/* Puente monte→planta: guías emitidas en Títulos Habilitantes sin ingresar. */}
@@ -466,39 +541,84 @@ export default function CtpIngresosView({
         // el documento oficial, casillero por casillero. Sin esa ficha no se
         // abre el botón, así que acá siempre hay algo que dibujar.
         const g = guiaEntry.serforGtf as unknown as GtfSerfor;
-        const hoja = (titulo: string, css: string, cuerpo: string) =>
-          `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${titulo}</title>
-           <style>@page{size:A4;margin:12mm}body{font-family:Arial,Helvetica,sans-serif;margin:0}${css}</style>
-           </head><body>${cuerpo}</body></html>`;
         const trozas = trozasDesdeSerfor(g);
+        const numeroGtf = g.gtfNumber ?? guiaEntry.gtfNumber;
+        const impresoEl = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
+        const pieGtf = `GTF ${numeroGtf} · Reproducción del registro público del SNIFFS · Libro de Operaciones del CTP`;
+        const pieLista = `Lista de trozas N° ${g.listaTrozas ?? numeroGtf} · Anexo de la GTF ${numeroGtf}`;
         return (
           <CtpDocumentoVisor
             documentos={[
               {
-                nombre: `GTF ${g.gtfNumber ?? guiaEntry.gtfNumber}`,
-                html: hoja("Guía de Transporte Forestal", CSS_GTF_OFICIAL, cuerpoDesdeSerfor(g)),
+                nombre: `GTF ${numeroGtf}`,
+                etiqueta: "Guía de Transporte Forestal",
+                pieCorrido: pieGtf,
+                html: documentoHtml({
+                  titulo: `GTF ${numeroGtf}`,
+                  css: CSS_GTF_OFICIAL + CSS_GTF_SERFOR,
+                  cuerpo: documentoGtfSerfor(g, { impresoEl }),
+                  pieCorrido: pieGtf,
+                }),
               },
               // La lista sólo se ofrece si la guía la trae: una pestaña que abre
               // una tabla vacía hace pensar que se perdió el dato.
               ...(trozas.length > 0
                 ? [{
                     nombre: "Lista de trozas",
-                    html: hoja("Lista de trozas", CSS_LISTA_TROZAS, htmlListaTrozas({
-                      titular: g.titular ?? guiaEntry.providerName,
-                      subtitulo: g.gtfNumber ? `Guía ${g.gtfNumber}` : undefined,
-                      ubicacion: [g.distrito, g.provincia, g.departamento].filter(Boolean).join(" · "),
-                      numero: g.listaTrozas ?? g.gtfNumber ?? "",
-                      trozas,
-                    })),
+                    archivo: `Lista de trozas ${g.listaTrozas ?? numeroGtf}`,
+                    etiqueta: `${trozas.length} pieza(s) · anexo del (35)`,
+                    pieCorrido: pieLista,
+                    html: documentoHtml({
+                      titulo: `Lista de trozas ${g.listaTrozas ?? numeroGtf}`,
+                      css: CSS_LISTA_TROZAS,
+                      cuerpo: htmlListaTrozas({
+                        titular: g.titular ?? guiaEntry.providerName,
+                        subtitulo: g.gtfNumber ? `Guía ${g.gtfNumber}` : undefined,
+                        ubicacion: [g.distrito, g.provincia, g.departamento].filter(Boolean).join(" · "),
+                        numero: g.listaTrozas ?? g.gtfNumber ?? "",
+                        guia: g.gtfNumber ?? undefined,
+                        fecha: fechaGtf(g.fechaExpedicion),
+                        trozas,
+                      }),
+                      pieCorrido: pieLista,
+                    }),
                   }]
                 : []),
             ]}
             activo={guiaHoja}
             onActivo={setGuiaHoja}
+            // Se archiva con el N° de guía, el proveedor y la especie: son los
+            // tres datos con los que después se busca el papel en el Drive.
+            onArchivar={(d) => ({
+              etiquetas: [
+                "forestal",
+                d.nombre.startsWith("GTF") ? "GTF" : "lista de trozas",
+                numeroGtf,
+                guiaEntry.providerName,
+                guiaEntry.speciesCommonName,
+              ].filter((t): t is string => Boolean(t && t.trim())),
+              descripcion:
+                `${d.nombre} — ${g.titular ?? guiaEntry.providerName}. ` +
+                `Ingreso al libro N° ${guiaEntry.libroNro ?? "s/n"} del ${guiaEntry.entryDate.slice(0, 10)}, ` +
+                `${guiaEntry.volumeM3} m³ de ${guiaEntry.speciesCommonName}.`,
+            })}
             onClose={() => { setGuiaEntry(null); setGuiaHoja(0); }}
           />
         );
       })()}
+
+      {legajo && (
+        <CtpDocumentoVisor
+          documentos={legajo}
+          activo={0}
+          onActivo={() => {}}
+          onArchivar={(d) => ({
+            etiquetas: ["forestal", "legajo", "GTF"],
+            descripcion: `${d.nombre} del período ${period.label}, armado desde el Libro de Operaciones del CTP.`,
+          })}
+          onClose={() => setLegajo(null)}
+        />
+      )}
 
       {detail && (
         <CtpEntryDetailModal

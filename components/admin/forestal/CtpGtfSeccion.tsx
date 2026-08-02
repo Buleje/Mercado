@@ -16,7 +16,9 @@ import { useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { ChevronDown, FileText, Loader2, Printer } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { printGtfSalida, type GtfCadena, type GtfDespacho } from "@/lib/forestal/ctp-gtf-print";
+import { documentoGtfSalida, type GtfCadena, type GtfDespacho } from "@/lib/forestal/ctp-gtf-print";
+import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
+import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
 import { gtfCompleta, leerGtfDatos, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { FichaCtp } from "@/hooks/use-ficha-ctp";
 import CtpGtfDatosForm from "./CtpGtfDatosForm";
@@ -44,6 +46,8 @@ export default function CtpGtfSeccion({
   const [error, setError] = useState<string | null>(null);
   // Abierto de una si la guía ya tiene número: lo siguiente es completarla.
   const [abierto, setAbierto] = useState<boolean>(Boolean(despacho.gtfNumber));
+  /** La guía armada, esperando que la miren antes de imprimirla o archivarla. */
+  const [documento, setDocumento] = useState<DocumentoImprimible | null>(null);
 
   const completos = leerGtfDatos(gtfDatosGuardado);
   const yaTieneDatos = Boolean(completos.propietario.nombre || completos.destinatario.nombre);
@@ -98,7 +102,21 @@ export default function CtpGtfSeccion({
     if (!ficha) throw new Error("Todavía no se pudo leer la Ficha del CTP. Reintentá en un momento.");
     setBusy("imprimir");
     try {
-      await printGtfSalida({ ...despacho, gtfNumber: gtf }, ficha, cadena, datos);
+      const d = await documentoGtfSalida({ ...despacho, gtfNumber: gtf }, ficha, cadena, datos);
+      // No se dispara la impresión: se abre el visor. El original y sus dos
+      // copias son tres hojas — conviene mirarlas antes de gastar el papel.
+      setDocumento({
+        nombre: d.titulo,
+        archivo: d.titulo,
+        etiqueta: "Original + 2 copias (art. 5)",
+        pieCorrido: d.pieCorrido,
+        html: documentoHtml({
+          titulo: d.titulo,
+          css: d.css,
+          cuerpo: d.cuerpos,
+          pieCorrido: d.pieCorrido,
+        }),
+      });
     } finally {
       setBusy(null);
     }
@@ -175,6 +193,23 @@ export default function CtpGtfSeccion({
             imprimiendo={busy === "imprimir"}
           />
         </div>
+      )}
+
+      {documento && (
+        <CtpDocumentoVisor
+          documentos={[documento]}
+          activo={0}
+          onActivo={() => {}}
+          onArchivar={(d) => ({
+            etiquetas: ["forestal", "GTF", "salida", gtf ?? "", despacho.speciesCommon ?? ""].filter(
+              (t): t is string => Boolean(t && t.trim()),
+            ),
+            descripcion:
+              `${d.nombre} emitida por el CTP — despacho línea #${despacho.lineNo}` +
+              `${despacho.destino ? `, destino ${despacho.destino}` : ""}.`,
+          })}
+          onClose={() => setDocumento(null)}
+        />
       )}
 
       {/*
