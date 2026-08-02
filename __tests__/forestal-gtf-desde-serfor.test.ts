@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   claveOrigen,
   cuerpoDesdeSerfor,
+  documentoGtfSerfor,
+  estadoGtf,
   insumosDesdeSerfor,
   partirDimensiones,
   separarDocumento,
@@ -148,5 +150,46 @@ describe("separarDocumento — la ficha trae RUC y DNI en el mismo campo", () =>
     const html = cuerpoDesdeSerfor(guia({ guiaRemision: "001-123" }));
     expect(html).toContain("Guía de remisión");
     expect(html).not.toContain("guia_remision");
+  });
+});
+
+describe("documentoGtfSerfor — la hoja completa, no sólo los casilleros", () => {
+  it("declara que es una reproducción: el original lo emite la ARFFS", () => {
+    // Un papel que reproduce una guía sin decirlo se termina presentando como si
+    // fuera la guía. El sello es la diferencia entre respaldo y problema.
+    const html = documentoGtfSerfor(guia());
+    expect(html).toContain("Reproducción");
+    expect(html).toContain("No sustituye el original");
+  });
+
+  it("una guía ANULADA lo grita, y no la pinta como vigente", () => {
+    const html = documentoGtfSerfor(guia({ estado: "Anulada" }));
+    expect(html).toContain("ANULADA");
+    expect(html).toContain("no ampara movilización");
+    // Y sin el estado en verde ni el registro afirmado.
+    expect(html).not.toContain("ESTADO: REGISTRADA");
+  });
+
+  it("el resumen trae el volumen amparado que declara SERFOR", () => {
+    expect(documentoGtfSerfor(guia())).toContain("13.311");
+  });
+
+  it("sin volumen declarado suma el detalle (37) en vez de mentir con un 0", () => {
+    const html = documentoGtfSerfor(guia({ volumenTotal: null }));
+    expect(html).toContain("10.607");
+  });
+
+  it("el número grande es el de la guía; el de registro va como nota", () => {
+    const html = documentoGtfSerfor(guia());
+    expect(html).toContain("019-0000004");
+    expect(html).toContain("Registro 1-19-0313969");
+  });
+});
+
+describe("estadoGtf", () => {
+  it("anulada se detecta en cualquier redacción de SERFOR", () => {
+    expect(estadoGtf(guia({ estado: "ANULADO POR EL EMISOR" })).anulada).toBe(true);
+    expect(estadoGtf(guia({ estado: "Activa" })).anulada).toBe(false);
+    expect(estadoGtf(guia({ estado: null })).anulada).toBe(false);
   });
 });

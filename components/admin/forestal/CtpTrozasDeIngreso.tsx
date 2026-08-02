@@ -7,6 +7,7 @@ import CtpRetrozarModal, { type TrozaParaCortar } from "./CtpRetrozarModal";
 import CtpRecepcionTrozas from "./CtpRecepcionTrozas";
 import CtpDocumentoVisor from "./CtpDocumentoVisor";
 import { CSS_LISTA_TROZAS, htmlListaTrozas } from "@/lib/forestal/ctp-lista-trozas";
+import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { balanceRecepcion } from "@/lib/forestal/recepcion-trozas";
 
 /**
@@ -281,15 +282,22 @@ export default function CtpTrozasDeIngreso({
         />
       )}
 
-      {viendoLista && (
+      {viendoLista && (() => {
+        const pieLista = gtfNumber ? `Lista de trozas · Anexo de la GTF ${gtfNumber}` : "Lista de trozas del ingreso";
+        return (
         <CtpDocumentoVisor
           documentos={[{
             nombre: gtfNumber ? `Lista de trozas ${gtfNumber}` : "Lista de trozas",
-            html: `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Lista de trozas</title>
-              <style>@page{size:A4;margin:14mm}body{font-family:Arial,Helvetica,sans-serif;margin:0}${CSS_LISTA_TROZAS}</style>
-              </head><body>${htmlListaTrozas({
+            etiqueta: `${trozas.length} pieza(s) · anexo del (35)`,
+            pieCorrido: pieLista,
+            html: documentoHtml({
+              titulo: gtfNumber ? `Lista de trozas ${gtfNumber}` : "Lista de trozas",
+              css: CSS_LISTA_TROZAS,
+              pieCorrido: pieLista,
+              cuerpo: htmlListaTrozas({
                 titular: titular || "Centro de Transformación Primaria",
                 subtitulo: gtfNumber ? `Guía ${gtfNumber}` : undefined,
+                guia: gtfNumber || undefined,
                 // El N° de la lista es el de la guía: el casillero (35) de la
                 // GTF apunta acá, y un fragmento de id interno no le sirve a
                 // nadie en un puesto de control.
@@ -307,13 +315,23 @@ export default function CtpTrozasDeIngreso({
                   cantidad: t.cantidad ?? 1,
                   volumenM3: t.volumenM3 ?? null,
                 })),
-              })}</body></html>`,
+              }),
+            }),
           }]}
           activo={0}
           onActivo={() => {}}
+          onArchivar={() => ({
+            etiquetas: ["forestal", "lista de trozas", gtfNumber, titular].filter(
+              (t): t is string => Boolean(t && t.trim()),
+            ),
+            descripcion:
+              `Lista de trozas${gtfNumber ? ` de la GTF ${gtfNumber}` : ""} — ` +
+              `${trozas.length} pieza(s), ${total.toFixed(4)} m³${titular ? `, ${titular}` : ""}.`,
+          })}
           onClose={() => setViendoLista(false)}
         />
-      )}
+        );
+      })()}
     </section>
   );
 }

@@ -13,6 +13,21 @@ describe("fechaGtf", () => {
     expect(fechaGtf("2024-12-18")).toBe("18.12.2024");
   });
 
+  it("acepta la fecha como la publica SERFOR (DD/MM/YYYY)", () => {
+    // La ficha del SNIFFS guarda "17/12/2024". Mientras esto sólo aceptó ISO,
+    // los casilleros (3) y (4) se imprimían vacíos teniendo el dato.
+    expect(fechaGtf("17/12/2024")).toBe("17.12.2024");
+    expect(fechaGtf("5/3/2024")).toBe("05.03.2024");
+    expect(fechaGtf("24-12-2024")).toBe("24.12.2024");
+    expect(fechaGtf("24.12.2024")).toBe("24.12.2024");
+  });
+
+  it("una fecha imposible NO se imprime: mejor el casillero en blanco", () => {
+    expect(fechaGtf("32/12/2024")).toBe("");
+    expect(fechaGtf("17/13/2024")).toBe("");
+    expect(fechaGtf("17/12/24")).toBe("");
+  });
+
   it("una fecha ausente o rota queda EN BLANCO, no como texto raro", () => {
     // El casillero vacío se llena a mano; un "Invalid Date" impreso invalida
     // la guía por enmendadura cuando alguien lo tacha.

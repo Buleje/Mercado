@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { htmlListaTrozas, totalListado, type TrozaListada } from "@/lib/forestal/ctp-lista-trozas";
+import {
+  htmlListaTrozas,
+  piezasListadas,
+  subtotalesPorEspecie,
+  totalListado,
+  type TrozaListada,
+} from "@/lib/forestal/ctp-lista-trozas";
 
 const troza = (over: Partial<TrozaListada> = {}): TrozaListada => ({
   codificacion: "106/B",
@@ -66,5 +72,46 @@ describe("htmlListaTrozas", () => {
     const html = htmlListaTrozas({ ...base, trozas: [troza({ especieComun: "<script>x</script>" })] });
     expect(html).not.toContain("<script>x");
     expect(html).toContain("&lt;script&gt;");
+  });
+});
+
+describe("subtotalesPorEspecie — el cruce contra el (37) de la guía", () => {
+  it("agrupa por especie y ordena de mayor a menor volumen", () => {
+    const s = subtotalesPorEspecie([
+      troza({ especieComun: "Copaiba", volumenM3: 2 }),
+      troza({ especieComun: "Tornillo", especieCientifica: "Cedrelinga cateniformis", volumenM3: 9 }),
+      troza({ especieComun: "Copaiba", volumenM3: 3 }),
+    ]);
+    expect(s.map((x) => x.especie)).toEqual(["Tornillo", "Copaiba"]);
+    expect(s[0]).toMatchObject({ piezas: 1, volumenM3: 9, cientifico: "Cedrelinga cateniformis" });
+    expect(s[1]).toMatchObject({ piezas: 2, volumenM3: 5 });
+  });
+
+  it("una troza sin especie declarada no se pierde: se agrupa aparte", () => {
+    const s = subtotalesPorEspecie([troza({ especieComun: null, especieCientifica: null, volumenM3: 4 })]);
+    expect(s).toHaveLength(1);
+    expect(s[0].especie).toBe("Sin especie declarada");
+  });
+
+  it("las piezas salen de la CANTIDAD de la fila, no de contar filas", () => {
+    expect(piezasListadas([troza({ cantidad: 3 }), troza({ cantidad: 2 })])).toBe(5);
+    // Sin cantidad declarada, una fila es una pieza.
+    expect(piezasListadas([troza({ cantidad: null })])).toBe(1);
+  });
+});
+
+describe("el resumen por especie sólo aparece cuando informa algo", () => {
+  it("con una sola especie no se dibuja: repetiría el total de abajo", () => {
+    const html = htmlListaTrozas({ ...base, trozas: [troza(), troza()] });
+    expect(html).not.toContain("Resumen por especie");
+  });
+
+  it("con dos o más, sí — y con el porcentaje de cada una", () => {
+    const html = htmlListaTrozas({
+      ...base,
+      trozas: [troza({ volumenM3: 3 }), troza({ especieComun: "Tornillo", volumenM3: 1 })],
+    });
+    expect(html).toContain("Resumen por especie");
+    expect(html).toContain("75.0");
   });
 });

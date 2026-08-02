@@ -17,8 +17,17 @@
  * dato de SERFOR—, y por eso se pasa `registroSerfor` únicamente si vino.
  */
 
-import { cuerpoGtfOficial, type CuerpoGtfInput, type LineaProducto } from "./ctp-gtf-formato";
-import type { TrozaListada } from "./ctp-lista-trozas";
+import {
+  cabeceraDoc,
+  esc,
+  notaDoc,
+  resumenDoc,
+  selloDoc,
+  tituloDoc,
+  type FichaResumen,
+} from "./ctp-documento-print";
+import { cuerpoGtfOficial, fechaGtf, type CuerpoGtfInput, type LineaProducto } from "./ctp-gtf-formato";
+import { subtotalesPorEspecie, type TrozaListada } from "./ctp-lista-trozas";
 import type { GtfSerfor } from "./serfor-gtf";
 import type { CtpFicha } from "./ctp-ficha-types";
 import type { GtfDatos } from "./ctp-gtf-datos";
@@ -150,6 +159,89 @@ export function trozasDesdeSerfor(g: GtfSerfor): TrozaListada[] {
     volumenM3: x.volumen ?? null,
   }));
 }
+
+/** ¿La guía sigue amparando la carga? Lo dice SERFOR, no se deduce. */
+export function estadoGtf(g: GtfSerfor): { texto: string; anulada: boolean } {
+  const texto = t(g.estado);
+  return { texto, anulada: /anulad/i.test(texto) };
+}
+
+/**
+ * La HOJA completa de la guía de ingreso: cabecera con el número, las cuatro
+ * cifras que se cruzan de un vistazo, el sello que aclara qué es este papel, el
+ * cuerpo con los casilleros y la nota de procedencia.
+ *
+ * ── Por qué el sello no es decoración ────────────────────────────────────────
+ * Esto NO es la GTF original —esa la tiene el transportista y la emitió la
+ * ARFFS—: es la reproducción de lo que la consulta pública del SNIFFS publica de
+ * ella. Un papel que reproduce una guía sin decirlo termina presentándose como
+ * si fuera la guía, y ahí el documento pasa de respaldo a problema.
+ */
+export function documentoGtfSerfor(g: GtfSerfor, opts: { impresoEl?: string } = {}): string {
+  const { texto: estado, anulada } = estadoGtf(g);
+  const ubicacion = [g.distrito, g.provincia, g.departamento].filter(Boolean).join(" · ");
+  const trozas = trozasDesdeSerfor(g);
+  const especies = subtotalesPorEspecie(trozas);
+  // El volumen es el que declara SERFOR; si no vino, se suma el detalle (37),
+  // que es el mismo dato de la misma fuente. Nunca se recalcula desde medidas.
+  const volumen =
+    g.volumenTotal ?? (g.productos ?? []).reduce((a, p) => a + (Number(p.volumen) || 0), 0);
+
+  const fichas: FichaResumen[] = [
+    { k: "Estado en SERFOR", v: estado, tono: anulada ? "mal" : estado ? "ok" : undefined },
+    { k: "Volumen amparado", v: volumen ? volumen.toFixed(3) : "", u: "m³" },
+    { k: "Piezas en la lista", v: trozas.length ? String(trozas.length) : "" },
+    { k: "Especies", v: especies.length ? String(especies.length) : "" },
+    { k: "Vence", v: fechaGtf(g.fechaVencimiento) },
+  ];
+
+  return `
+  ${cabeceraDoc({
+    emisor: t(g.titular) || "Titular no declarado",
+    meta: [t(g.direccionTitular), ubicacion, t(g.numeroTitulo) ? `Título habilitante N° ${t(g.numeroTitulo)}` : ""],
+    tipo: "Guía de Transporte Forestal",
+    numero: t(g.gtfNumber) || t(g.numeroRegistro),
+    numeroNota: t(g.numeroRegistro) ? `Registro ${t(g.numeroRegistro)}` : "Sin N° de registro",
+  })}
+
+  ${tituloDoc("Guía de Transporte Forestal", "Documento de ingreso al CTP · Reproducción del registro público del SNIFFS")}
+
+  ${resumenDoc(fichas)}
+
+  <div class="gtf-proc">
+    ${selloDoc("Reproducción", "No sustituye el original", anulada ? "rojo" : "verde")}
+    <div class="txt">
+      <b>De dónde salen estos datos.</b> De la consulta pública de Guías Registradas del SNIFFS
+      (Módulo de Control de SERFOR), la misma que abre el código QR impreso en la guía.
+      ${t(g.instanciaRegistra) ? `Registrada por <b>${esc(t(g.instanciaRegistra))}</b>` : "Instancia de registro no declarada"}${
+        t(g.fechaRegistro) ? ` el ${esc(t(g.fechaRegistro))}` : ""
+      }.
+      ${anulada ? `<span class="alerta">SERFOR declara esta guía ANULADA: no ampara movilización.</span>` : ""}
+    </div>
+  </div>
+
+  ${cuerpoDesdeSerfor(g)}
+
+  ${notaDoc(
+    `<b>Qué es este papel.</b> Un respaldo del expediente del CTP: reproduce, casillero por casillero, lo que la
+     autoridad publica de esta guía. El original lo emite la ARFFS y viaja con el producto. Se archiva junto al
+     ingreso para poder responder de dónde vino cada troza sin volver a consultar el sistema.`,
+  )}
+
+  <div class="doc-pie">
+    <span>GTF ${esc(t(g.gtfNumber) || "—")}${t(g.numeroRegistro) ? ` · Registro ${esc(t(g.numeroRegistro))}` : ""}</span>
+    <span>${opts.impresoEl ? `Impreso ${esc(opts.impresoEl)} · ` : ""}Libro de Operaciones del CTP</span>
+  </div>`;
+}
+
+/** Lo que la hoja de la guía agrega al armazón compartido. */
+export const CSS_GTF_SERFOR = `
+  .gtf-proc { display:flex; align-items:center; gap:5mm; border:.6pt solid var(--linea-suave);
+              border-left:2pt solid var(--tinta); background:#fafcfb; padding:2.4mm 3mm; margin-bottom:1mm; }
+  .gtf-proc .txt { font-size:6.9pt; line-height:1.45; color:#374151; }
+  .gtf-proc .txt b { color:var(--tinta); }
+  .gtf-proc .alerta { display:block; margin-top:.8mm; color:#b91c1c; font-weight:bold; letter-spacing:.3pt; }
+`;
 
 /** El cuerpo completo de la guía de ingreso, listo para el visor. */
 export function cuerpoDesdeSerfor(g: GtfSerfor): string {
