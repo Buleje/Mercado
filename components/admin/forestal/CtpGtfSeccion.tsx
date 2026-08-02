@@ -19,6 +19,8 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { documentoGtfSalida, type GtfCadena, type GtfDespacho } from "@/lib/forestal/ctp-gtf-print";
 import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
+import CtpArchivadorAuto, { type GuiaParaArchivar } from "./CtpArchivadorAuto";
+import { hayNovedades } from "@/lib/forestal/ctp-cola-archivado";
 import { gtfCompleta, leerGtfDatos, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { FichaCtp } from "@/hooks/use-ficha-ctp";
 import CtpGtfDatosForm from "./CtpGtfDatosForm";
@@ -48,6 +50,9 @@ export default function CtpGtfSeccion({
   const [abierto, setAbierto] = useState<boolean>(Boolean(despacho.gtfNumber));
   /** La guía armada, esperando que la miren antes de imprimirla o archivarla. */
   const [documento, setDocumento] = useState<DocumentoImprimible | null>(null);
+  /** La guía de salida también va sola al expediente, igual que las de ingreso. */
+  const [colaArchivo, setColaArchivo] = useState<GuiaParaArchivar[]>([]);
+  const [archivada, setArchivada] = useState<string | null>(null);
 
   const completos = leerGtfDatos(gtfDatosGuardado);
   const yaTieneDatos = Boolean(completos.propietario.nombre || completos.destinatario.nombre);
@@ -105,18 +110,37 @@ export default function CtpGtfSeccion({
       const d = await documentoGtfSalida({ ...despacho, gtfNumber: gtf }, ficha, cadena, datos);
       // No se dispara la impresión: se abre el visor. El original y sus dos
       // copias son tres hojas — conviene mirarlas antes de gastar el papel.
+      const html = documentoHtml({
+        titulo: d.titulo,
+        css: d.css,
+        cuerpo: d.cuerpos,
+        pieCorrido: d.pieCorrido,
+      });
       setDocumento({
         nombre: d.titulo,
         archivo: d.titulo,
         etiqueta: "Original + 2 copias (art. 5)",
         pieCorrido: d.pieCorrido,
-        html: documentoHtml({
-          titulo: d.titulo,
-          css: d.css,
-          cuerpo: d.cuerpos,
-          pieCorrido: d.pieCorrido,
-        }),
+        html,
       });
+      // Al expediente sin que nadie apriete nada: la guía que se imprime es la
+      // constancia de lo que salió del CTP, y si depende de que alguien la
+      // guarde, el mes que viene falta justo la que se pide.
+      setArchivada(null);
+      setColaArchivo([
+        {
+          clave: `${despacho.id}:${d.titulo}`,
+          nombre: d.titulo,
+          html,
+          pieCorrido: d.pieCorrido,
+          etiquetas: ["forestal", "GTF", "salida", gtf ?? "", despacho.speciesCommon ?? ""].filter(
+            (t): t is string => Boolean(t && t.trim()),
+          ),
+          descripcion:
+            `${d.titulo} emitida por el CTP — despacho línea #${despacho.lineNo}` +
+            `${despacho.destino ? `, destino ${despacho.destino}` : ""}.`,
+        },
+      ]);
     } finally {
       setBusy(null);
     }
@@ -165,6 +189,12 @@ export default function CtpGtfSeccion({
         </div>
       </div>
 
+      {archivada && (
+        <p className="mt-2 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+          {archivada}
+        </p>
+      )}
+
       {!gtf && (
         <p className="mt-2 text-xs text-[var(--text-tertiary)]">
           Emití la guía para poder cargar propietario, destinatario, transportista y traslado.
@@ -193,6 +223,23 @@ export default function CtpGtfSeccion({
             imprimiendo={busy === "imprimir"}
           />
         </div>
+      )}
+
+      {colaArchivo.length > 0 && (
+        <CtpArchivadorAuto
+          cola={colaArchivo}
+          onFin={(r) => {
+            setColaArchivo([]);
+            if (!hayNovedades(r)) return;
+            setArchivada(
+              r.fallidas > 0
+                ? "No se pudo guardar en el expediente — se puede hacer a mano desde el visor."
+                : r.guardadas > 0
+                  ? "Guardada en el expediente (Documentos › Guías forestales)."
+                  : "Ya estaba en el expediente.",
+            );
+          }}
+        />
       )}
 
       {documento && (
