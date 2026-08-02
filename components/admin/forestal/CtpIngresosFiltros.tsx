@@ -57,8 +57,11 @@ export interface CtpIngresosFiltrosProps {
   totalFiltrado: number;
   /** Arma un solo documento con las guías seleccionadas (legajo). */
   onLegajo: () => void;
-  /** Cuántos ingresos entrarían al legajo. 0 = no hay selección. */
+  /** Cuántos ingresos entrarían al legajo (la selección, o todo el filtro). */
   legajoCount: number;
+  /** true = no hay filas marcadas y el legajo saldría de todo el filtro. */
+  legajoDeTodo: boolean;
+  armandoLegajo: boolean;
 }
 
 export default function CtpIngresosFiltros({
@@ -79,6 +82,8 @@ export default function CtpIngresosFiltros({
   totalFiltrado,
   onLegajo,
   legajoCount,
+  legajoDeTodo,
+  armandoLegajo,
 }: CtpIngresosFiltrosProps) {
   const activos =
     (facetas.species ? 1 : 0) +
@@ -142,17 +147,22 @@ export default function CtpIngresosFiltros({
             <Download className={`h-4 w-4 ${descargando ? "animate-pulse" : ""}`} />
             <span className="max-sm:sr-only">{descargando ? "Bajando…" : "Descargar"}</span>
           </button>
-          {/* Sólo con selección: un botón que arma "el legajo de nada" enseña
-              que la función no sirve. */}
+          {/* Sin nada que meter adentro no se dibuja: un botón que arma "el
+              legajo de nada" enseña que la función no sirve. */}
           {legajoCount > 0 && (
             <button
               type="button"
               onClick={onLegajo}
-              title={`Armar un solo documento con las ${legajoCount} guías seleccionadas y su índice`}
+              disabled={armandoLegajo}
+              title={
+                legajoDeTodo
+                  ? `Armar un solo documento con las guías de este filtro (${legajoCount}) y su índice. Marcá filas para elegir cuáles.`
+                  : `Armar un solo documento con las ${legajoCount} guías marcadas y su índice`
+              }
               className={`${BTN_ICONO} border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]`}
             >
-              <FileStack className="h-4 w-4" />
-              <span>Legajo ({legajoCount})</span>
+              <FileStack className={`h-4 w-4 ${armandoLegajo ? "animate-pulse" : ""}`} />
+              <span>{armandoLegajo ? "Armando…" : `Legajo (${legajoCount})`}</span>
             </button>
           )}
           <button

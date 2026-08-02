@@ -36,6 +36,8 @@ import { CSS_GTF_OFICIAL, fechaGtf } from "@/lib/forestal/ctp-gtf-formato";
 import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { CSS_LISTA_TROZAS, htmlListaTrozas } from "@/lib/forestal/ctp-lista-trozas";
 import { CSS_LEGAJO, portadaLegajo } from "@/lib/forestal/ctp-legajo";
+import { metaArchivado, papelesDeIngreso } from "@/lib/forestal/ctp-documentos-ingreso";
+import CtpArchivadorAuto, { type GuiaParaArchivar } from "./CtpArchivadorAuto";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import CtpIngresoCadenaModal from "./CtpIngresoCadenaModal";
 import CtpIngresoEditModal from "./CtpIngresoEditModal";
@@ -52,6 +54,16 @@ import {
   type CtpFiltroRapido,
   type WoodEntry,
 } from "./ctp-shared";
+
+/**
+ * Cuántos ingresos entran en un legajo armado desde el filtro. Con 30 ya son
+ * ~90 hojas: más que eso no es un legajo, es un libro que nadie imprime.
+ */
+const LEGAJO_MAX = 30;
+
+/** La fecha de hoy como se escribe en el papel. */
+const hoyPE = () =>
+  new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 export default function CtpIngresosView({
   period,
@@ -98,6 +110,9 @@ export default function CtpIngresosView({
 
   /** Legajo armado: un solo documento con las guías marcadas y su índice. */
   const [legajo, setLegajo] = useState<DocumentoImprimible[] | null>(null);
+  const [armandoLegajo, setArmandoLegajo] = useState(false);
+  /** Guías esperando irse al expediente (se archivan solas al validar). */
+  const [colaArchivo, setColaArchivo] = useState<GuiaParaArchivar[]>([]);
 
   const filtros = useMemo(
     () => ({ status: statusFilter, search, ...facetas }),
@@ -162,8 +177,7 @@ export default function CtpIngresosView({
    * Va en el orden en que se ven en la tabla, no en el de los clics: el índice
    * y las hojas tienen que coincidir con lo que el operador está mirando.
    */
-  const armarLegajo = useCallback(() => {
-    const elegidos = entries.filter((e) => selectedIds.includes(e.id));
+  const componerLegajo = useCallback((elegidos: WoodEntry[], acotado: number) => {
     if (elegidos.length === 0) return;
 
     const hoy = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -212,7 +226,9 @@ export default function CtpIngresosView({
       {
         nombre: `Legajo · ${elegidos.length} ingreso(s)`,
         archivo: `Legajo CTP · ${period.label}`,
-        etiqueta: `${conGuia} con guía adjunta · índice al frente`,
+        etiqueta:
+          `${conGuia} con guía adjunta · índice al frente` +
+          (acotado > 0 ? ` · ${acotado} quedaron afuera` : ""),
         pieCorrido: `Legajo del Libro de Operaciones del CTP · ${elegidos.length} ingreso(s) · armado el ${hoy}`,
         html: documentoHtml({
           titulo: `Legajo CTP · ${period.label}`,
@@ -222,7 +238,69 @@ export default function CtpIngresosView({
         }),
       },
     ]);
-  }, [entries, selectedIds, period]);
+  }, [period]);
+
+  /**
+   * Validar deja la guía en el expediente, sin que nadie apriete nada.
+   *
+   * Se dispara DESPUÉS de validar y no antes: si el libro rechaza el ingreso, no
+   * tiene que quedar su papel archivado como si hubiera entrado. Y no bloquea —
+   * el almacenero validó, que es lo que vino a hacer; el archivado avisa cuando
+   * termina y, si falla, la guía se puede guardar a mano desde el visor.
+   */
+  const encolarArchivado = useCallback((elegidos: WoodEntry[]) => {
+    const nuevas = elegidos.flatMap((e) => {
+      const papeles = papelesDeIngreso(e, { impresoEl: hoyPE() });
+      if (!papeles) return []; // sin ficha de SERFOR no hay guía que archivar
+      const hojas = [papeles.gtf, ...(papeles.lista ? [papeles.lista] : [])];
+      return hojas.map((h) => ({
+        clave: `${e.id}:${h.archivo}`,
+        nombre: h.archivo,
+        html: h.html,
+        pieCorrido: h.pieCorrido,
+        ...metaArchivado(e, h.nombre),
+      }));
+    });
+    if (nuevas.length === 0) return;
+    setColaArchivo((prev) => {
+      const vistas = new Set(prev.map((c) => c.clave));
+      return [...prev, ...nuevas.filter((n) => !vistas.has(n.clave))];
+    });
+  }, []);
+
+  /**
+   * De dónde salen las guías del legajo:
+   * · con filas marcadas → esas, en el orden de la tabla;
+   * · sin marcar → TODO el filtro, que es lo que se pide para una fiscalización
+   *   ("las del mes"), y que puede no estar en pantalla porque la lista pagina.
+   *
+   * El tope es real y se DICE: un legajo de 30 ingresos ya son ~90 hojas y un
+   * PDF de decenas de MB. Recortar en silencio sería peor que no armarlo — el
+   * que lo imprime creería que están todas.
+   */
+  const armarLegajo = useCallback(async () => {
+    if (selectedIds.length > 0) {
+      componerLegajo(entries.filter((e) => selectedIds.includes(e.id)), 0);
+      return;
+    }
+    setArmandoLegajo(true);
+    try {
+      const { entries: todas } = await fetchAllFiltered();
+      const acotado = Math.max(0, todas.length - LEGAJO_MAX);
+      if (acotado > 0) {
+        pushToast({
+          tono: "warning",
+          msg: `El legajo toma los primeros ${LEGAJO_MAX} ingresos`,
+          detail: `El filtro tiene ${todas.length}: quedaron afuera ${acotado}. Filtrá por mes o marcá las que necesitás.`,
+        });
+      }
+      componerLegajo(todas.slice(0, LEGAJO_MAX), acotado);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setArmandoLegajo(false);
+    }
+  }, [selectedIds, entries, componerLegajo, fetchAllFiltered, pushToast, setError]);
 
   const pendingIds = useMemo(
     () => entries.filter((e) => e.status === "pendiente").map((e) => e.id),
@@ -291,8 +369,10 @@ export default function CtpIngresosView({
 
   async function validate(id: string) {
     setBusy(`${id}:validate`);
+    const e = entries.find((x) => x.id === id);
     await runAction(id, "validate");
     setBusy(null);
+    if (e) encolarArchivado([e]);
   }
 
   /** Duplicar: abre el form con lo que se repite; GTF y volumen quedan vacíos. */
@@ -382,8 +462,10 @@ export default function CtpIngresosView({
         onDescargar={() => void descargar()}
         descargando={descargando}
         totalFiltrado={total}
-        onLegajo={armarLegajo}
-        legajoCount={selectedIds.length}
+        onLegajo={() => void armarLegajo()}
+        legajoCount={selectedIds.length || total}
+        legajoDeTodo={selectedIds.length === 0}
+        armandoLegajo={armandoLegajo}
       />
 
       {/* Puente monte→planta: guías emitidas en Títulos Habilitantes sin ingresar. */}
@@ -417,9 +499,11 @@ export default function CtpIngresosView({
             icon: ThumbsUp,
             onClick: async (ids) => {
               setBusy("bulk");
+              const marcados = entries.filter((e) => ids.includes(e.id));
               await validateMany(ids);
               setSelectedIds([]);
               setBusy(null);
+              encolarArchivado(marcados);
             },
           },
           {
@@ -537,75 +621,52 @@ export default function CtpIngresosView({
       )}
 
       {guiaEntry && (() => {
-        // La guía sale de la ficha que devolvió SERFOR al cargar el ingreso: es
-        // el documento oficial, casillero por casillero. Sin esa ficha no se
-        // abre el botón, así que acá siempre hay algo que dibujar.
-        const g = guiaEntry.serforGtf as unknown as GtfSerfor;
-        const trozas = trozasDesdeSerfor(g);
-        const numeroGtf = g.gtfNumber ?? guiaEntry.gtfNumber;
-        const impresoEl = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
-        const pieGtf = `GTF ${numeroGtf} · Reproducción del registro público del SNIFFS · Libro de Operaciones del CTP`;
-        const pieLista = `Lista de trozas N° ${g.listaTrozas ?? numeroGtf} · Anexo de la GTF ${numeroGtf}`;
+        // Los papeles del ingreso los arma `papelesDeIngreso` y NO esta vista:
+        // el que se mira acá y el que se archiva al validar tienen que ser el
+        // mismo documento, no dos que se parecen.
+        const papeles = papelesDeIngreso(guiaEntry, { impresoEl: hoyPE() });
+        if (!papeles) return null;
         return (
           <CtpDocumentoVisor
-            documentos={[
-              {
-                nombre: `GTF ${numeroGtf}`,
-                etiqueta: "Guía de Transporte Forestal",
-                pieCorrido: pieGtf,
-                html: documentoHtml({
-                  titulo: `GTF ${numeroGtf}`,
-                  css: CSS_GTF_OFICIAL + CSS_GTF_SERFOR,
-                  cuerpo: documentoGtfSerfor(g, { impresoEl }),
-                  pieCorrido: pieGtf,
-                }),
-              },
-              // La lista sólo se ofrece si la guía la trae: una pestaña que abre
-              // una tabla vacía hace pensar que se perdió el dato.
-              ...(trozas.length > 0
-                ? [{
-                    nombre: "Lista de trozas",
-                    archivo: `Lista de trozas ${g.listaTrozas ?? numeroGtf}`,
-                    etiqueta: `${trozas.length} pieza(s) · anexo del (35)`,
-                    pieCorrido: pieLista,
-                    html: documentoHtml({
-                      titulo: `Lista de trozas ${g.listaTrozas ?? numeroGtf}`,
-                      css: CSS_LISTA_TROZAS,
-                      cuerpo: htmlListaTrozas({
-                        titular: g.titular ?? guiaEntry.providerName,
-                        subtitulo: g.gtfNumber ? `Guía ${g.gtfNumber}` : undefined,
-                        ubicacion: [g.distrito, g.provincia, g.departamento].filter(Boolean).join(" · "),
-                        numero: g.listaTrozas ?? g.gtfNumber ?? "",
-                        guia: g.gtfNumber ?? undefined,
-                        fecha: fechaGtf(g.fechaExpedicion),
-                        trozas,
-                      }),
-                      pieCorrido: pieLista,
-                    }),
-                  }]
-                : []),
-            ]}
+            documentos={[papeles.gtf, ...(papeles.lista ? [papeles.lista] : [])]}
             activo={guiaHoja}
             onActivo={setGuiaHoja}
             // Se archiva con el N° de guía, el proveedor y la especie: son los
             // tres datos con los que después se busca el papel en el Drive.
-            onArchivar={(d) => ({
-              etiquetas: [
-                "forestal",
-                d.nombre.startsWith("GTF") ? "GTF" : "lista de trozas",
-                numeroGtf,
-                guiaEntry.providerName,
-                guiaEntry.speciesCommonName,
-              ].filter((t): t is string => Boolean(t && t.trim())),
-              descripcion:
-                `${d.nombre} — ${g.titular ?? guiaEntry.providerName}. ` +
-                `Ingreso al libro N° ${guiaEntry.libroNro ?? "s/n"} del ${guiaEntry.entryDate.slice(0, 10)}, ` +
-                `${guiaEntry.volumeM3} m³ de ${guiaEntry.speciesCommonName}.`,
-            })}
+            onArchivar={(d) => metaArchivado(guiaEntry, d.nombre)}
             onClose={() => { setGuiaEntry(null); setGuiaHoja(0); }}
           />
         );
       })()}
+
+      {colaArchivo.length > 0 && (
+        <CtpArchivadorAuto
+          cola={colaArchivo}
+          onFin={(r) => {
+            setColaArchivo([]);
+            if (r.guardadas > 0 || r.yaEstaban > 0) {
+              pushToast({
+                tono: "success",
+                msg: r.guardadas > 0
+                  ? `${r.guardadas} documento(s) al expediente`
+                  : "La guía ya estaba en el expediente",
+                detail: `En Documentos › Guías forestales (GTF).${
+                  r.guardadas > 0 && r.yaEstaban > 0 ? ` ${r.yaEstaban} ya estaba(n).` : ""
+                }`,
+              });
+            }
+            // Un archivado que falla en silencio es peor que no tenerlo: la
+            // carpeta parecería completa cuando no lo está.
+            if (r.fallidas > 0) {
+              pushToast({
+                tono: "warning",
+                msg: `${r.fallidas} guía(s) no se pudieron archivar`,
+                detail: "Se pueden guardar a mano desde «Ver la GTF» → «Guardar en el expediente».",
+              });
+            }
+          }}
+        />
+      )}
 
       {legajo && (
         <CtpDocumentoVisor

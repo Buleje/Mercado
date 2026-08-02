@@ -36,15 +36,17 @@ import {
   FolderPlus,
   Loader2,
   Maximize2,
+  MessageCircle,
   Minus,
   Plus,
   Printer,
   X,
 } from "@buleje/design-system/icons";
 import { AIRE_HOJA_MM, ANCHO_HOJA_MM, marcarCortes, paginar } from "@/lib/forestal/ctp-documento-print";
-import { documentoAPdf, nombreArchivo } from "@/lib/forestal/ctp-documento-pdf";
-import { archivarEnDrive } from "@/lib/forestal/ctp-archivar-documento";
-import { logger } from "@/lib/logger";
+import { SendWhatsAppModal } from "@/components/admin/documentos/SendWhatsAppModal";
+import { useDocumentoAcciones, type MetaArchivado } from "@/hooks/use-documento-acciones";
+
+export type { MetaArchivado } from "@/hooks/use-documento-acciones";
 
 export interface DocumentoImprimible {
   /** Nombre del archivo al descargar y rótulo de la pestaña. */
@@ -68,13 +70,6 @@ const ANCHO_DOC = Math.round(((ANCHO_HOJA_MM + AIRE_HOJA_MM * 2) / 25.4) * 96);
 
 const ZOOMS = [0.5, 0.65, 0.8, 1, 1.25, 1.5, 2] as const;
 const cerca = (z: number) => ZOOMS.reduce((a, b) => (Math.abs(b - z) < Math.abs(a - z) ? b : a), ZOOMS[0]);
-
-/** Con qué datos se archiva la hoja en el Drive del tenant. */
-export interface MetaArchivado {
-  etiquetas?: string[];
-  descripcion?: string;
-  carpeta?: string;
-}
 
 export default function CtpDocumentoVisor({
   documentos,
@@ -105,12 +100,19 @@ export default function CtpDocumentoVisor({
   const [alto, setAlto] = useState(0);
   const [hojas, setHojas] = useState(1);
   const [anchoMesa, setAnchoMesa] = useState(0);
-  const [pdf, setPdf] = useState<"armando" | "error" | null>(null);
-  const [drive, setDrive] = useState<{
-    estado: "guardando" | "listo" | "error";
-    detalle?: string;
-    aviso?: boolean;
-  } | null>(null);
+
+  const {
+    pdf,
+    drive,
+    wasap,
+    preparandoWasap,
+    setWasap,
+    descargarHtml,
+    descargarPdf,
+    archivar,
+    enviarPorWhatsapp,
+    limpiar,
+  } = useDocumentoAcciones({ marco, doc, onArchivar });
 
   useEffect(() => {
     const el = mesa.current;
@@ -142,9 +144,8 @@ export default function CtpDocumentoVisor({
     setAlto(0);
     setHojas(1);
     // El aviso es de la hoja anterior: dejarlo diría que ESTA ya se archivó.
-    setDrive(null);
-    setPdf(null);
-  }, [srcDoc]);
+    limpiar();
+  }, [srcDoc, limpiar]);
 
   const escala = zoom ?? Math.min(1, Math.max(0.35, (anchoMesa - 8) / ANCHO_DOC));
   const desfase = Math.max(0, (anchoMesa - ANCHO_DOC * escala) / 2);
@@ -158,59 +159,6 @@ export default function CtpDocumentoVisor({
     w.print();
   }, []);
 
-  /** Baja lo que se le pase con el nombre del documento. */
-  const bajar = useCallback((blob: Blob, ext: string) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = nombreArchivo(doc?.archivo ?? doc?.nombre ?? "documento", ext);
-    a.click();
-    // Se libera tarde a propósito: revocarlo en el mismo tick cancela la
-    // descarga en algunos navegadores antes de que arranque.
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-  }, [doc]);
-
-  const descargarHtml = useCallback(() => {
-    if (doc) bajar(new Blob([doc.html], { type: "text/html;charset=utf-8" }), "html");
-  }, [doc, bajar]);
-
-  /** El PDF de la hoja que se está viendo. Lo comparten bajar y archivar. */
-  const armarPdf = useCallback(async () => {
-    const d = marco.current?.contentDocument;
-    if (!d || !doc) throw new Error("El documento todavía no terminó de dibujarse.");
-    return documentoAPdf(d, { pieCorrido: doc.pieCorrido });
-  }, [doc]);
-
-  const descargarPdf = useCallback(async () => {
-    setPdf("armando");
-    try {
-      bajar(await armarPdf(), "pdf");
-      setPdf(null);
-    } catch (err) {
-      // Sin PDF queda el HTML, que imprime igual: se dice, no se rompe la vista.
-      logger.error("[ctp-visor] pdf failed", { error: String(err) });
-      setPdf("error");
-    }
-  }, [armarPdf, bajar]);
-
-  const archivar = useCallback(async () => {
-    if (!doc || !onArchivar) return;
-    setDrive({ estado: "guardando" });
-    try {
-      const meta = onArchivar(doc);
-      const r = await archivarEnDrive({
-        archivo: await armarPdf(),
-        nombreArchivo: nombreArchivo(doc.archivo ?? doc.nombre, "pdf"),
-        etiquetas: meta.etiquetas,
-        descripcion: meta.descripcion,
-        carpeta: meta.carpeta,
-      });
-      setDrive({ estado: "listo", detalle: r.carpeta, aviso: r.sinEtiquetas });
-    } catch (err) {
-      logger.error("[ctp-visor] archivar failed", { error: String(err) });
-      setDrive({ estado: "error", detalle: err instanceof Error ? err.message : "No se pudo guardar." });
-    }
-  }, [doc, onArchivar, armarPdf]);
 
   // Escape cierra; Ctrl/Cmd+P imprime ESTE documento y no la página del panel.
   useEffect(() => {
@@ -312,7 +260,7 @@ export default function CtpDocumentoVisor({
             </div>
             <button
               type="button"
-              onClick={descargarPdf}
+              onClick={() => void descargarPdf()}
               disabled={pdf === "armando"}
               className={`${btn} disabled:opacity-60`}
               title="Baja el documento como PDF A4, idéntico a esta vista"
@@ -327,7 +275,7 @@ export default function CtpDocumentoVisor({
             {onArchivar && (
               <button
                 type="button"
-                onClick={archivar}
+                onClick={() => void archivar()}
                 disabled={drive?.estado === "guardando"}
                 className={`${btn} disabled:opacity-60`}
                 title="Sube el PDF al Drive del negocio, en la carpeta de guías forestales"
@@ -340,6 +288,22 @@ export default function CtpDocumentoVisor({
                   <FolderPlus className="h-4 w-4" aria-hidden />
                 )}
                 {drive?.estado === "listo" ? "En el expediente" : "Guardar en el expediente"}
+              </button>
+            )}
+            {onArchivar && (
+              <button
+                type="button"
+                onClick={() => void enviarPorWhatsapp()}
+                disabled={preparandoWasap}
+                aria-label="Enviar por WhatsApp"
+                title="Manda el PDF por WhatsApp (lo guarda en el expediente si hace falta)"
+                className={`${icono} disabled:opacity-60`}
+              >
+                {preparandoWasap ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <MessageCircle className="h-4 w-4" aria-hidden />
+                )}
               </button>
             )}
             <button
@@ -413,6 +377,14 @@ export default function CtpDocumentoVisor({
           )}
         </p>
       </div>
+
+      {/* El modal del Drive vive en z-[60] y el visor en z-[70]: sin este
+          contenedor propio quedaría DEBAJO del papel y no se vería. */}
+      {wasap && (
+        <div className="relative z-[80]">
+          <SendWhatsAppModal docs={[wasap]} onClose={() => setWasap(null)} />
+        </div>
+      )}
     </div>
   );
 }

@@ -61,6 +61,29 @@ export async function carpetaDelExpediente(nombre = CARPETA_GUIAS): Promise<stri
   }
 }
 
+/**
+ * ¿Ese papel ya está en el expediente? Se pregunta por NOMBRE exacto, que es lo
+ * que identifica a la guía. Sin esto, validar dos veces el mismo ingreso —o
+ * re-validar tras una corrección— dejaría dos PDF idénticos en la carpeta, y
+ * una carpeta con duplicados obliga a abrir los dos para saber cuál mirar.
+ */
+export async function existeEnDrive(nombreArchivo: string): Promise<boolean> {
+  try {
+    const r = await fetch(`/api/admin/documents?q=${encodeURIComponent(nombreArchivo.replace(/\.[a-z0-9]+$/i, ""))}`, {
+      credentials: "include",
+      headers: csrfHeaders(),
+    });
+    if (!r.ok) return false;
+    const { documents = [] } = (await r.json()) as { documents?: Array<{ name?: string }> };
+    return documents.some((d) => (d.name ?? "").trim().toLowerCase() === nombreArchivo.trim().toLowerCase());
+  } catch (err) {
+    // Ante la duda NO se bloquea el archivado: un duplicado se borra, un
+    // documento que nunca se guardó no se recupera.
+    logger.warn("[ctp-archivar] no se pudo comprobar duplicados", { error: String(err) });
+    return false;
+  }
+}
+
 export interface ArchivarDocumento {
   archivo: Blob;
   /** Nombre completo con extensión: "GTF 019-0000003.pdf". */
