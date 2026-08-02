@@ -28,6 +28,7 @@ import {
 import { PageTitle, SectionTitle } from "@buleje/design-system";
 import { usePatioCola } from "@/hooks/use-patio-cola";
 import { pendienteDeRecepcion } from "@/lib/forestal/patio-vista";
+import { antiguedad, guardar, leer } from "@/lib/forestal/patio-cache";
 import CtpPatioBandeja from "./CtpPatioBandeja";
 import CtpRecepcionTrozas, { type TrozaEditable } from "./CtpRecepcionTrozas";
 import PatioBuscador from "./PatioBuscador";
@@ -62,6 +63,7 @@ export default function PatioModo() {
    *  bloque de carga fuera de pantalla y ahí ya nadie lo encuentra. */
   const [verTodasLasGuias, setVerTodasLasGuias] = useState(false);
   const [avisoCola, setAvisoCola] = useState<string | null>(null);
+  const [guiasDeCache, setGuiasDeCache] = useState<string | null>(null);
 
 
   const pedir = useCallback(async <T,>(url: string): Promise<T> => {
@@ -74,10 +76,14 @@ export default function PatioModo() {
     try {
       const d = await pedir<{ entries?: GuiaPatio[] }>("/api/admin/forestal/wood-entries?limit=15");
       setGuias(d.entries ?? []);
+      setGuiasDeCache(null);
+      void guardar("guias", d.entries ?? []);
     } catch {
-      // Sin señal la lista queda como estaba: el patio sigue pudiendo buscar
-      // por código lo que ya tenga en pantalla. No se rompe la vista por esto.
-      setGuias((g) => g ?? []);
+      // Sin señal se muestra lo último guardado, DICIENDO de cuándo es: una
+      // lista de guías sin fecha invita a abrir una recepción ya cerrada.
+      const cache = await leer<GuiaPatio>("guias");
+      setGuias(cache?.datos ?? []);
+      setGuiasDeCache(cache?.guardadoEn ?? null);
     }
   }, [pedir]);
 
@@ -169,7 +175,14 @@ export default function PatioModo() {
 
       {/* Pregunta 2: llegó el camión, ¿qué le falta a esta guía? */}
       <section className="space-y-2">
-        <SectionTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">Guías para recibir</SectionTitle>
+        <SectionTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">
+          Guías para recibir
+          {guiasDeCache && (
+            <span className="ml-2 font-normal text-[var(--text-tertiary)]">
+              · guardadas {antiguedad(guiasDeCache, new Date())}
+            </span>
+          )}
+        </SectionTitle>
         {/* El bloque de error vivía con el buscador; al mudarse, abrir una guía
             sin señal fallaba en silencio. Va acá, junto a lo que lo produce. */}
         {error && (

@@ -13,9 +13,10 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, Loader2, Search, X } from "@buleje/design-system/icons";
+import { AlertTriangle, Loader2, Search, WifiOff, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { fichaDeTroza, type TonoPatio } from "@/lib/forestal/patio-vista";
+import { antiguedad, buscarLocal, esViejo, guardar, leer } from "@/lib/forestal/patio-cache";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 
 /** El tono decide el color de TODA la ficha: se lee de lejos, no en detalle. */
@@ -40,6 +41,8 @@ export default function PatioBuscador() {
   const [buscando, setBuscando] = useState(false);
   const [hallazgos, setHallazgos] = useState<TrozaConsumible[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Cuándo se guardó lo que se está mostrando. `null` = vino del servidor. */
+  const [desdeCache, setDesdeCache] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Se abre enfocado: la primera acción del patio es tipear un número.
@@ -52,6 +55,7 @@ export default function PatioBuscador() {
     if (!texto) return;
     setBuscando(true);
     setError(null);
+    setDesdeCache(null);
     try {
       const r = await fetch(
         `/api/admin/forestal/trozas?codificacion=${encodeURIComponent(texto)}&limite=20`,
@@ -65,10 +69,31 @@ export default function PatioBuscador() {
       // la manda plana. Se normaliza acá y no se toca el contrato: hay otras
       // vistas leyendo `ingreso`, y sin esto la ficha mostraba "Guía —" teniendo
       // el dato — que en el patio es justo lo que hace falta para ir a buscarla.
-      setHallazgos((d.trozas ?? []).map((t) => ({ ...t, gtfNumber: t.gtfNumber ?? t.ingreso?.gtfNumber ?? null })));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setHallazgos(null);
+      const normalizadas = (d.trozas ?? []).map((t) => ({
+        ...t,
+        gtfNumber: t.gtfNumber ?? t.ingreso?.gtfNumber ?? null,
+      }));
+      setHallazgos(normalizadas);
+      // Se acumula lo consultado para poder responder lo mismo sin señal. Se
+      // fusiona por id: cada búsqueda trae un pedacito del patio y pisar el
+      // caché con la última dejaría al operario con una sola pieza consultable.
+      void (async () => {
+        const previo = (await leer<TrozaConsumible>("trozas"))?.datos ?? [];
+        const porId = new Map(previo.map((t) => [t.id, t]));
+        for (const t of normalizadas) porId.set(t.id, t);
+        await guardar("trozas", [...porId.values()]);
+      })();
+    } catch {
+      // El servidor no contestó: se busca en lo último que se alcanzó a ver.
+      // No es un error que tape la pantalla — es el caso normal en el patio.
+      const cache = await leer<TrozaConsumible>("trozas");
+      if (!cache || cache.datos.length === 0) {
+        setError("Sin señal y sin nada guardado todavía. Conectate una vez para poder consultar después.");
+        setHallazgos(null);
+      } else {
+        setHallazgos(buscarLocal(cache.datos, texto));
+        setDesdeCache(cache.guardadoEn);
+      }
     } finally {
       setBuscando(false);
     }
@@ -123,6 +148,26 @@ export default function PatioBuscador() {
         {hallazgos?.length === 0 && (
           <p className="rounded-2xl bg-[var(--surface-sunken)] px-4 py-6 text-center text-base text-[var(--text-secondary)]">
             Ninguna troza con ese número. Probá con la codificación de la guía.
+          </p>
+        )}
+
+        {/* Sin esto el patio mostraría una pieza como libre sin aclarar que el
+            dato puede ser de ayer — y esa troza pudo consumirse hace dos horas
+            en otra tablet. El aviso sube de tono pasadas las dos horas. */}
+        {desdeCache && (
+          <p
+            className={cn(
+              "flex items-start gap-2 rounded-2xl border-2 px-4 py-3 text-base font-bold",
+              esViejo(desdeCache, new Date())
+                ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/10 dark:text-[var(--data-error-500)]"
+                : "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10 dark:text-[var(--data-warning-500)]",
+            )}
+          >
+            <WifiOff className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
+            <span>
+              Sin señal — esto es lo último guardado, {antiguedad(desdeCache, new Date())}.
+              {esViejo(desdeCache, new Date()) && " Puede haber cambiado: confirmá antes de aserrar."}
+            </span>
           </p>
         )}
 

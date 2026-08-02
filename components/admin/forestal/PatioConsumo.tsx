@@ -17,6 +17,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, Loader2, Boxes } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { URL_TROZAS_CONSUMO, escribirDelPatio } from "@/lib/forestal/patio-cola";
+import { antiguedad, guardar as guardarCache, leer } from "@/lib/forestal/patio-cache";
 import { cn } from "@/lib/utils";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import CtpTrozasPicker from "./CtpTrozasPicker";
@@ -49,6 +50,7 @@ export default function PatioConsumo() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [listo, setListo] = useState<string | null>(null);
+  const [deCache, setDeCache] = useState<string | null>(null);
 
   const pedir = useCallback(async <T,>(url: string): Promise<T> => {
     const r = await fetch(url, { credentials: "include" });
@@ -66,15 +68,18 @@ export default function PatioConsumo() {
         // de arriba era la #1 de hace meses, casi siempre de un período cerrado,
         // y el operario perdía el viaje eligiéndola. La que se está aserrando es
         // la más reciente, así que se ordena por fecha descendente acá.
-        setCorridas(
-          (d.entries ?? [])
-            .filter((e) => e.status === "registrado")
-            .sort((a, b) => new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime()),
-        );
+        const vivas = (d.entries ?? [])
+          .filter((e) => e.status === "registrado")
+          .sort((a, b) => new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime());
+        setCorridas(vivas);
+        setDeCache(null);
+        void guardarCache("corridas", vivas);
       } catch {
-        // Sin señal no hay corridas que ofrecer, pero el resto del patio sigue
-        // sirviendo: se muestra la lista vacía, no un error que tape la pantalla.
-        setCorridas([]);
+        // Sin señal se ofrecen las últimas conocidas: cargarle piezas a una
+        // corrida vieja lo rechaza el servidor al sincronizar, con su motivo.
+        const cache = await leer<CorridaPatio>("corridas");
+        setCorridas(cache?.datos ?? []);
+        setDeCache(cache?.guardadoEn ?? null);
       }
     })();
   }, [pedir]);
@@ -91,8 +96,14 @@ export default function PatioConsumo() {
       try {
         const d = await pedir<{ trozas?: TrozaConsumible[] }>(URL_TROZAS_CONSUMO);
         setTrozas(d.trozas ?? []);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        void guardarCache("trozas", d.trozas ?? []);
+      } catch {
+        // El picker sin piezas es una pantalla muerta: se ofrecen las últimas
+        // conocidas. El servidor revalida al subir (T1), así que una que ya se
+        // consumió vuelve como rechazo con su motivo, no como un dato falso.
+        const cache = await leer<TrozaConsumible>("trozas");
+        setTrozas(cache?.datos ?? []);
+        setDeCache(cache?.guardadoEn ?? null);
       } finally {
         setCargandoTrozas(false);
       }
@@ -196,7 +207,14 @@ export default function PatioConsumo() {
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[var(--surface-sunken)] px-4 py-3">
-            <span className="text-base font-bold text-[var(--text-primary)]">Corrida {etiqueta}</span>
+            <span className="text-base font-bold text-[var(--text-primary)]">
+              Corrida {etiqueta}
+              {deCache && (
+                <span className="ml-2 block font-normal text-[var(--text-tertiary)]">
+                  Sin señal · piezas guardadas {antiguedad(deCache, new Date())}
+                </span>
+              )}
+            </span>
             <button
               type="button"
               onClick={() => { setElegida(null); setSeleccion(new Set()); setListo(null); }}
