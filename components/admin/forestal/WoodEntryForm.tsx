@@ -1048,6 +1048,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     value={data.gtfNumber}
                     onChange={(e) => { update("gtfNumber", e.target.value); setGtfMsg(null); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); cargarGuia(); } }}
+                    aria-label="N° de la guía de transporte forestal"
                     placeholder="0001234"
                     autoFocus
                     required
@@ -1523,6 +1524,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     min="0.0001"
                     value={data.volumeM3}
                     onChange={(e) => update("volumeM3", e.target.value)}
+                    aria-label="Volumen total en metros cúbicos"
                     placeholder="0.0000"
                     required
                     className={`${I} pr-32 font-mono tabular-nums`}

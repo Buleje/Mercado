@@ -5,6 +5,8 @@
  * re-tipean por vista (si no, la tabla y el detalle terminan diciendo distinto).
  */
 
+import { Children, cloneElement, isValidElement, useId, type ReactElement } from "react";
+import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, Check, CheckCircle2, Clock, X as XIcon } from "@buleje/design-system/icons";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "@/lib/forestal/ctp-compliance";
 
@@ -260,28 +262,85 @@ export function Field({
   span?: CampoSpan;
   children: React.ReactNode;
 }) {
+  const base = useId();
+  const idCampo = `${base}-campo`;
+  const idAyuda = hint ? `${base}-ayuda` : undefined;
+
+  /**
+   * El control se ASOCIA por `htmlFor`, no se envuelve.
+   *
+   * Envolviéndolo, el nombre accesible del campo se comía todo lo que hubiera
+   * adentro: el de «N° GTF» incluía los botones «Cargar guía» y «Ver guías», y
+   * el de «Código de origen» arrastraba el número de casillero y la ayuda
+   * entera. Un lector de pantalla anunciaba un párrafo donde tenía que decir dos
+   * palabras. Además, un `<button>` dentro de un `<label>` activa el campo al
+   * pulsarlo, que no es lo que espera nadie.
+   *
+   * Sólo se le pone el `id` a un elemento del DOM (input/select/textarea): a un
+   * componente propio se le pasaría una prop que no espera, así que ese caso se
+   * resuelve marcando el grupo con `aria-labelledby`.
+   */
+  // Tolerante a propósito: hay campos con DOS controles (un input y su botón,
+  // un select con su chip) y `Children.only` los hacía explotar. Sólo se
+  // asocia por `htmlFor` cuando hay exactamente un elemento nativo; el resto
+  // se resuelve como grupo etiquetado, que también anuncia bien.
+  const hijos = Children.toArray(children);
+  const unico = hijos.length === 1 && isValidElement(hijos[0]) ? (hijos[0] as ReactElement) : null;
+  // Sólo un CONTROL de verdad puede recibir el `htmlFor`. Cuando el campo
+  // envuelve su input en un `<div>` —el de «N° GTF» lo hace, para meter los
+  // botones de cargar y escanear al lado— el id caía en el div y el input se
+  // quedaba sin nombre: ahí se etiqueta el grupo entero.
+  const esControl =
+    Boolean(unico) && ["input", "select", "textarea"].includes(String(unico?.type));
+
+  const control =
+    esControl && unico
+      ? cloneElement(unico as ReactElement<Record<string, unknown>>, {
+          id: (unico.props as { id?: string }).id ?? idCampo,
+          "aria-describedby":
+            [(unico.props as { "aria-describedby"?: string })["aria-describedby"], idAyuda]
+              .filter(Boolean)
+              .join(" ") || undefined,
+          ...(required ? { "aria-required": true } : {}),
+        })
+      : children;
+
   return (
     // Sin `span` NO se pone clase: los formularios que envuelven en un grid de 2
     // columnas (no de 12) heredan su propio ancho. Un `col-span-12` por defecto
     // le hacía crear 12 columnas implícitas al grid padre y sus bloques hermanos
     // caían a 1/12 de ancho — el modal de Producción quedó con el texto partido
     // letra por letra hasta que se detectó en el screenshot.
-    <label className={`block min-w-0 ${span ? SPAN_CLASS[span] : ""}`}>
-      <span className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-[var(--text-primary)]">
+    <div
+      className={`block min-w-0 ${span ? SPAN_CLASS[span] : ""}`}
+      {...(esControl ? {} : { role: "group", "aria-labelledby": `${base}-rotulo` })}
+    >
+      <label
+        id={`${base}-rotulo`}
+        {...(esControl ? { htmlFor: idCampo } : {})}
+        className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-[var(--text-primary)]"
+      >
         <span className="truncate">{label}</span>
         {required && <span className="text-[var(--data-error-600)]" aria-hidden="true">*</span>}
         {casillero != null && (
           <span
             title={`Casillero (${casillero}) del formato oficial LO-CTP`}
+            // Fuera del nombre accesible: el número es una ayuda visual para
+            // cruzar con el papel, no parte de cómo se llama el campo.
+            aria-hidden="true"
             className="shrink-0 rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold tabular-nums text-[var(--text-tertiary)]"
           >
             {casillero}
           </span>
         )}
-      </span>
-      {children}
-      {hint && <span className="mt-1 block text-xs leading-snug text-[var(--text-tertiary)]">{hint}</span>}
-    </label>
+      </label>
+      {control}
+      {hint && (
+        <span id={idAyuda} className="mt-1 block text-xs leading-snug text-[var(--text-tertiary)]">
+          {hint}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -329,9 +388,9 @@ export function Seccion({
             {String(numero).padStart(2, "0")}
           </span>
         )}
-        <h3 className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        <CardTitle as="h3" className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           {title}
-        </h3>
+        </CardTitle>
         {/* El estado por sección evita recorrer el formulario entero buscando
             qué falta: se ve de un vistazo cuál quedó a medias. */}
         {estado === "ok" && (
@@ -367,9 +426,9 @@ export function PanelResumen({
 }) {
   return (
     <aside className="sticky top-0 flex h-fit flex-col gap-3 rounded-2xl bg-[var(--surface-sunken)] p-4">
-      <h3 className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+      <CardTitle as="h3" className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         {title}
-      </h3>
+      </CardTitle>
       {children}
       {footer}
     </aside>

@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Loader2, RefreshCw, Scale } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
+import { pedirJsonCtp, pedirOpcionalCtp } from "@/lib/forestal/ctp-fetch";
 import { unidadOficial } from "@/lib/forestal/loctp-campos";
 import { retrozadoPorEspecie, type RetrozoParaApartado } from "@/lib/forestal/loctp-apartados";
 import CtpApartadosSerfor from "./CtpApartadosSerfor";
@@ -53,6 +54,8 @@ const num = (v: string | number | null | undefined) => (v == null ? 0 : Number(v
 export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /** Partes que no se pudieron leer: los cuadros salen, pero incompletos. */
+  const [incompleto, setIncompleto] = useState<string[]>([]);
   const [datos, setDatos] = useState<{
     resumen1: FilaResumen1[];
     resumen2: FilaResumen2[];
@@ -69,21 +72,26 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
         applyCtpPeriodParams(u.searchParams, period);
         return u.toString();
       };
-      const pedir = async <T,>(u: string): Promise<T> => {
-        const r = await fetch(u, { credentials: "include" });
-        if (!r.ok) throw new Error(`El servidor respondió ${r.status}`);
-        return (await r.json()) as T;
-      };
-
-      const [ing, prod, desp, gra, lot, ret] = await Promise.all([
-        pedir<{ entries?: IngresoLite[] }>(url("/api/admin/forestal/wood-entries", { limit: "5000" })),
-        pedir<{ entries?: CtpRowLite[] }>(url("/api/admin/forestal/ctp", { section: "produccion" })),
-        pedir<{ entries?: CtpRowLite[] }>(url("/api/admin/forestal/ctp", { section: "despacho" })),
-        pedir<{ grafo?: GrafoLite }>(url("/api/admin/forestal/ctp", { grafo: "1" })),
-        pedir<{ lotes?: LoteLite[] }>("/api/admin/forestal/lotes"),
-        // Casilleros (7)-(10) del Cuadro 1: lo cortado en planta (Apartado 2).
-        pedir<{ retrozos?: RetrozoParaApartado[] }>(url("/api/admin/forestal/trozas", { retrozos: "1" })),
+      // Lo IMPRESCINDIBLE va en `Promise.all`: sin ingresos, producción,
+      // despacho o grafo no hay cuadros que armar, y ahí sí corresponde cortar.
+      const [ing, prod, desp, gra] = await Promise.all([
+        pedirJsonCtp<{ entries?: IngresoLite[] }>(url("/api/admin/forestal/wood-entries", { limit: "5000" }), "los ingresos"),
+        pedirJsonCtp<{ entries?: CtpRowLite[] }>(url("/api/admin/forestal/ctp", { section: "produccion" }), "las corridas de producción"),
+        pedirJsonCtp<{ entries?: CtpRowLite[] }>(url("/api/admin/forestal/ctp", { section: "despacho" }), "los despachos"),
+        pedirJsonCtp<{ grafo?: GrafoLite }>(url("/api/admin/forestal/ctp", { grafo: "1" }), "la cadena de custodia"),
       ]);
+
+      // Lo que ENRIQUECE los cuadros va aparte: si falla, se arman igual y se
+      // dice qué quedó afuera. Una pantalla en blanco por los lotes sería
+      // perder los tres cuadros por un casillero.
+      const [lotRes, retRes] = await Promise.all([
+        pedirOpcionalCtp<{ lotes?: LoteLite[] }>("/api/admin/forestal/lotes", "los lotes de producción"),
+        // Casilleros (7)-(10) del Cuadro 1: lo cortado en planta (Apartado 2).
+        pedirOpcionalCtp<{ retrozos?: RetrozoParaApartado[] }>(url("/api/admin/forestal/trozas", { retrozos: "1" }), "el retrozado"),
+      ]);
+      const lot = lotRes.datos ?? {};
+      const ret = retRes.datos ?? {};
+      setIncompleto([lotRes.falta, retRes.falta].filter((x): x is string => Boolean(x)));
 
       // Stock inicial = saldo al cierre del período anterior. Sin `from` (todo el
       // histórico) no hay período anterior: el inicial es cero por definición.
@@ -92,7 +100,7 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
         const u = new URL("/api/admin/forestal/ctp", window.location.origin);
         u.searchParams.set("saldos", "1");
         u.searchParams.set("to", new Date(new Date(period.from).getTime() - 1).toISOString());
-        const previo = await pedir<{ saldos?: SaldosLite }>(u.toString());
+        const previo = await pedirJsonCtp<{ saldos?: SaldosLite }>(u.toString(), "el saldo del período anterior");
         if (previo.saldos) {
           const trozasM3: Record<string, number> = {};
           for (const e of previo.saldos.porEspecie) trozasM3[e.especie] = e.saldoM3;
@@ -204,7 +212,20 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
 
       {error && (
         <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 px-3 py-2.5 text-sm font-medium text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> No pude armar los cuadros: {error}
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> No pude armar los cuadros. {error}
+        </p>
+      )}
+
+      {/* Los cuadros SÍ se armaron, pero con un casillero sin fuente. Un
+          documento regulatorio incompleto tiene que decirlo: callarlo es peor
+          que no mostrarlo. */}
+      {incompleto.length > 0 && (
+        <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-transparent px-3 py-2.5 text-sm font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            Los cuadros están armados pero les falta una parte: {incompleto.join(" · ")} Revisá esos
+            casilleros antes de presentar el libro.
+          </span>
         </p>
       )}
 

@@ -51,6 +51,18 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
   }, [period.from, period.to]);
   useEffect(() => { void load(); }, [load]);
 
+  /** Cuántos valores están tipeados y todavía no viajaron al servidor. */
+  const pendientes = Object.keys(draft).length;
+
+  /**
+   * Guarda todo lo tipeado de una. Un panel de dinero NO auto-guarda —un
+   * número a medio escribir se convertiría en el margen del mes—, pero perder
+   * lo tipeado por cambiar de pestaña tampoco: por eso el aviso y este botón.
+   */
+  async function saveTodo() {
+    for (const id of Object.keys(draft)) await saveVenta(id);
+  }
+
   async function saveVenta(id: string) {
     const raw = draft[id];
     if (raw === undefined) return;
@@ -69,6 +81,15 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
       setSavingId(null);
     }
   }
+
+  // Recargar o cerrar la pestaña con valores sin guardar pide confirmación: el
+  // navegador no deja personalizar el texto, pero sí evita perderlos de golpe.
+  useEffect(() => {
+    if (pendientes === 0) return;
+    const avisar = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", avisar);
+    return () => window.removeEventListener("beforeunload", avisar);
+  }, [pendientes]);
 
   if (error && !pnl) return <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><div><strong>Error:</strong> {error}</div></div>;
   if (!pnl) return <PanelSkeleton kpis={4} />;
@@ -91,6 +112,26 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
 
   return (
     <div className="space-y-5">
+      {/* Lo tipeado y no guardado, dicho: antes se perdía al cambiar de pestaña
+          sin que nada avisara. */}
+      {pendientes > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm font-medium text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]">
+          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
+          <span>
+            {pendientes} valor(es) de venta sin guardar. Se pierden si salís de la pestaña.
+          </span>
+          <button
+            type="button"
+            onClick={() => void saveTodo()}
+            disabled={savingId !== null}
+            className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-lg border-2 border-[var(--data-warning-500)] px-3 text-sm font-bold text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)] disabled:opacity-50 dark:text-[var(--data-warning-500)] dark:hover:bg-transparent"
+          >
+            {savingId ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <CheckCircle2 className="h-4 w-4" aria-hidden />}
+            Guardar todo
+          </button>
+        </div>
+      )}
+
       {error && <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><div>{error}</div></div>}
 
       {/* Resumen — StatCard del DS (mismo patrón que Ingresos/Producción/Saldos) */}
@@ -182,7 +223,16 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm text-[var(--text-tertiary)]">S/</span>
-                    <input inputMode="decimal" value={val} onChange={(e) => setDraft((dr) => ({ ...dr, [d.id]: e.target.value }))} placeholder="venta" className="h-11 w-28 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
+                    <input
+                      inputMode="decimal"
+                      value={val}
+                      onChange={(e) => setDraft((dr) => ({ ...dr, [d.id]: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") { e.preventDefault(); void saveVenta(d.id); }
+                        if (e.key === "Escape") setDraft((dr) => { const n = { ...dr }; delete n[d.id]; return n; });
+                      }}
+                      aria-label={`Valor de venta del despacho ${d.id}`}
+                      placeholder="venta" className="h-11 w-28 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
                   </div>
                   <div className="min-w-[6rem] text-right">
                     <p className="text-xs text-[var(--text-tertiary)]">margen</p>

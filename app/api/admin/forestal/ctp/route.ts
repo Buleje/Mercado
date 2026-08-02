@@ -9,6 +9,9 @@ import { ctpErrorResponse, ctpValidationResponse } from "@/lib/forestal/ctp-api-
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
+import { TIPOS_DOCUMENTO_LOCTP } from "@/lib/forestal/loctp-campos";
+import { LINEAS_PRODUCCION } from "@/lib/forestal/loctp-resumenes";
+import { sincronizarPartesDeGuia } from "@/lib/forestal/ctp-sincronizar-partes";
 
 /**
  * /api/admin/forestal/ctp — Libro CTP: producción + despacho + saldos (ADR-127)
@@ -38,7 +41,18 @@ const createSchema = z.object({
   unit: z.enum(["m3", "kg", "unidad", "pt"]).nullable().optional(),
   pieces: z.coerce.number().int().nonnegative().max(999999).nullable().optional(),
   gtfNumber: z.string().trim().max(60).nullable().optional(),
+  // Campos oficiales del LO-CTP en la salida (ADR-311).
+  docType: z.enum(TIPOS_DOCUMENTO_LOCTP.map((t) => t.valor) as [string, ...string[]]).nullable().optional(),
+  codigoProducto: z.string().trim().max(60).nullable().optional(),
+  /** "Forma de presentación" del formato (ADR-314). Texto: el catálogo sugiere
+   *  pero no encierra — rechazar una presentación que la autoridad admite sería
+   *  peor que aceptar una de más. */
+  presentacion: z.string().trim().max(40).nullable().optional(),
+  lineaProduccion: z.enum(LINEAS_PRODUCCION.map((l) => l.valor) as [string, ...string[]]).nullable().optional(),
   destino: z.string().trim().max(200).nullable().optional(),
+  /** Sello de la verificación de la GTF de salida contra SERFOR (ADR-312). */
+  serforNumeroRegistro: z.string().trim().max(30).nullable().optional(),
+  serforVerificadoEn: z.coerce.date().nullable().optional(),
   observations: z.string().trim().max(1000).nullable().optional(),
   // ADR-134: una corrida real mezcla varias guías. La atribución viaja con el
   // alta; `ForestCtpConsumoDB` valida I1/I2 y tenant antes de escribir.
@@ -228,6 +242,14 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         parsed.data.datos,
         auth.username ?? "unknown",
       );
+      // Lo tipeado en la guía entra a la libreta: el destinatario de siempre no
+      // se vuelve a tipear la próxima. Fire-and-forget — la guía ya se guardó y
+      // el directorio es una comodidad, no puede hacer fallar el guardado.
+      if (r.ok) {
+        void sincronizarPartesDeGuia(auth.tenantId, parsed.data.datos, auth.username ?? "unknown").catch(
+          (err) => logger.warn("[ctp.gtf_datos] sincronización de partes falló", { error: String(err) }),
+        );
+      }
       if (!r.ok) {
         return NextResponse.json(
           {
