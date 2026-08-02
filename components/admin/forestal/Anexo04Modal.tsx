@@ -30,6 +30,7 @@ import { useAnexosEmitidos } from "@/hooks/use-anexos-emitidos";
 import { useAnexo04Salidas } from "@/hooks/use-anexo04-salidas";
 import { useAnexo04Contraste } from "@/hooks/use-anexo04-contraste";
 import { useFichaCtp } from "@/hooks/use-ficha-ctp";
+import Anexo04GtfSalida, { type DespachoParaGtf } from "./Anexo04GtfSalida";
 
 const A4_PX = 794; // ancho de una hoja A4 a 96 dpi
 
@@ -49,7 +50,7 @@ function imprimirHtml(html: string) {
 }
 
 export default function Anexo04Modal({
-  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, gtfInicial, observacionesIniciales, ctpEntryId, declarado, abrirHistorial = false,
+  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, gtfInicial, observacionesIniciales, ctpEntryId, declarado, abrirHistorial = false, despacho,
 }: {
   /** Lote abierto en el cubicador; puede venir vacío (p. ej. desde el Libro CTP). */
   rows: PiezaCubicada[];
@@ -58,6 +59,11 @@ export default function Anexo04Modal({
   gtfInicial?: string;
   /** Despacho del Libro que origina la emisión (queda en el historial). */
   ctpEntryId?: string;
+  /**
+   * La línea del despacho, para poder mirar su GUÍA al lado del anexo: los dos
+   * papeles viajan juntos en el camión y se revisan juntos antes de imprimir.
+   */
+  despacho?: DespachoParaGtf;
   /** Lo que esa línea del Libro declara amparar: el anexo no puede pasarse. */
   declarado?: DeclaradoEnLibro | null;
   /** Abre con la bandeja de emitidos desplegada (consulta, no emisión). */
@@ -79,6 +85,9 @@ export default function Anexo04Modal({
   /** Contra qué se coteja: la guía si vino del Libro, si no la corrida de origen. */
   const { contraste, usarCorrida } = useAnexo04Contraste(declarado);
   const [verHistorial, setVerHistorial] = useState(abrirHistorial);
+  /** Qué papel se está mirando: el anexo o la guía con la que sale el camión. */
+  const [docActivo, setDocActivo] = useState<"anexo" | "gtf">("anexo");
+  const [gtfHtml, setGtfHtml] = useState<string | null>(null);
   const [historialToken, setHistorialToken] = useState(0);
   /** Los emitidos alimentan la bandeja Y el checklist (N° repetido, volumen ya
    *  amparado por otra emisión de la misma guía): por eso se cargan siempre. */
@@ -176,7 +185,18 @@ export default function Anexo04Modal({
     setVerHistorial(false);
   };
 
+  /**
+   * Imprime lo que se está viendo. Con la guía activa se imprime SU iframe —el
+   * documento ya trae su `@page` y sus cortes—; con el anexo, sus hojas.
+   */
+  const imprimirGtf = () => {
+    const marco = areaRef.current?.querySelector<HTMLIFrameElement>('iframe[data-gtf-salida="1"]');
+    marco?.contentWindow?.focus();
+    marco?.contentWindow?.print();
+  };
+
   const imprimir = () => {
+    if (docActivo === "gtf") { imprimirGtf(); return; }
     const hojas = [...(hojasRef.current?.querySelectorAll(".anx-hoja") ?? [])].map((n) => n.outerHTML).join("");
     imprimirHtml(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Anexo N° 04</title><style>${ANEXO04_CSS}
       @page { size: A4 portrait; margin: 0 }
@@ -248,6 +268,38 @@ export default function Anexo04Modal({
 
           {/* Preview del papel */}
           <div ref={areaRef} className="min-w-0 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+            {/* Los dos papeles del camión. La guía sólo se ofrece si el despacho
+                ya tiene número: sin GTF emitida no hay guía que mirar, y una
+                pestaña que abre un papel vacío hace pensar que se perdió algo. */}
+            {despacho?.gtfNumber && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {([
+                  { id: "anexo" as const, label: "ANEXO N° 04", nota: `${anexo.hojas.length} hoja(s)` },
+                  { id: "gtf" as const, label: `GTF ${despacho.gtfNumber}`, nota: "Original + 2 copias" },
+                ]).map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setDocActivo(p.id)}
+                    aria-pressed={docActivo === p.id}
+                    className={`inline-flex min-h-11 flex-col items-start justify-center rounded-2xl border-2 px-4 py-1 text-left transition-colors ${
+                      docActivo === p.id
+                        ? "border-[var(--accent)] bg-primary/10"
+                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--rule-strong)]"
+                    }`}
+                  >
+                    <span className={`text-sm font-bold ${docActivo === p.id ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)]"}`}>
+                      {p.label}
+                    </span>
+                    <span className="text-xs text-[var(--text-tertiary)]">{p.nota}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {docActivo === "gtf" && despacho ? (
+              <Anexo04GtfSalida despacho={despacho} ficha={ficha} onHtml={setGtfHtml} />
+            ) : (
             <Anexo04Preview
               ref={hojasRef}
               anexo={anexo}
@@ -271,6 +323,7 @@ export default function Anexo04Modal({
               }
               checklist={<Anexo04Checklist avisos={avisos} presentable={presentable} onSugerencia={(campo, valor) => set({ [campo]: valor })} />}
             />
+            )}
           </div>
         </div>
 

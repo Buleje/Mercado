@@ -614,6 +614,9 @@ export function CtpEntriesView({
           gtfInicial={anexoEntry.gtfNumber ?? ""}
           ctpEntryId={anexoEntry.id}
           declarado={{ cantidad: Number(anexoEntry.quantity ?? 0), unidad: anexoEntry.unit, piezas: anexoEntry.pieces }}
+          // El anexo y la guía son los dos papeles del mismo camión: se miran
+          // en el mismo modal en vez de en dos pantallas.
+          despacho={anexoEntry.section === "despacho" ? anexoEntry : undefined}
           onAviso={(msg, tono) => pushToast({ tono, msg })}
           observacionesIniciales={[anexoEntry.productType, anexoEntry.destino ? `Destino: ${anexoEntry.destino}` : ""].filter(Boolean).join(" · ")}
           onCerrar={() => { setAnexoEntry(null); cargarAnexos(); }}

@@ -12,6 +12,12 @@ export interface CtpEntry {
   productType: string | null; volumeInputM3: string | null; rendimientoPct: string | null;
   quantity: string | null; unit: string | null; pieces: number | null;
   gtfNumber: string | null; destino: string | null; observations: string | null;
+  /**
+   * Datos de la GTF de salida tal como los devuelve el endpoint (JSON crudo; lo
+   * valida `leerGtfDatos`). Estaba en la respuesta y no en el tipo, así que
+   * quien lo necesitaba tenía que castear a ciegas.
+   */
+  gtfDatos?: unknown;
   status: "registrado" | "anulado"; annulledReason: string | null;
   /** El código pintado en el atado (ADR-314 · casillero 9 de la Sección 4). */
   codigoProducto?: string | null;
