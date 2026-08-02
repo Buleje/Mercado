@@ -184,3 +184,33 @@ describe("paginar", () => {
     expect(paginar(items, 1.7, 10.4).visibles).toHaveLength(10);
   });
 });
+
+describe("metaDeLote · el 56% es un TECHO de SERFOR, no una meta", () => {
+  // RDE D000259-2024: el coeficiente referencial es la señal de blanqueo cuando
+  // se lo supera —se declara más madera de la que la troza puede dar—, no un
+  // objetivo a alcanzar. Este bloque existe porque la primera versión pintaba
+  // "superó la meta" en VERDE, felicitando justo lo que hay que revisar.
+  const conRinde = (trozasM3: number, producidoM3: number) =>
+    metaDeLote([especie({ trozasM3, producidoM3, metaM3: trozasM3 * 0.56 })]);
+
+  it("quedarse corto NO se marca: es productividad, no una infracción", () => {
+    const m = conRinde(100, 45); // 45 %
+    expect(m?.rendimientoPct).toBe(45);
+    expect(m?.sobreReferencial).toBe(false);
+  });
+
+  it("rendir justo el referencial tampoco se marca", () => {
+    expect(conRinde(100, 56)?.sobreReferencial).toBe(false);
+  });
+
+  it("dentro de la tolerancia de 3 pp todavía no se marca", () => {
+    // El ruido normal de un aserrío no puede disparar una alerta de blanqueo.
+    expect(conRinde(100, 59)?.sobreReferencial).toBe(false);
+  });
+
+  it("pasada la tolerancia SÍ se marca: es la señal de blanqueo", () => {
+    const m = conRinde(100, 62);
+    expect(m?.rendimientoPct).toBe(62);
+    expect(m?.sobreReferencial).toBe(true);
+  });
+});

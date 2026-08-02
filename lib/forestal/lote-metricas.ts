@@ -12,6 +12,7 @@
 
 import { PT_POR_M3 } from "./cubicacion";
 import type { MetaEspecie } from "./ctp-cadena-lote";
+import { RENDIMIENTO_REF_ASERRADA, RENDIMIENTO_TOLERANCIA_PP } from "./ctp-rendimiento";
 
 export interface LoteMedible {
   unit: string;
@@ -109,7 +110,7 @@ export function paginar<T>(
 }
 
 /**
- * La meta de rendimiento del lote: una sola fila a partir de las de cada especie.
+ * El rendimiento del lote contra el coeficiente REFERENCIAL de SERFOR.
  *
  * OJO con qué mide: es el rendimiento de las corridas ENTERAS que arman el lote,
  * no de la fracción que el lote se lleva. El consumo se atribuye a la corrida
@@ -130,6 +131,16 @@ export interface MetaLote {
   saldoM3: number;
   saldoPt: number;
   rendimientoPct: number | null;
+  /**
+   * El rendimiento quedó POR ENCIMA del referencial de SERFOR más la
+   * tolerancia. NO es un logro: declarar más madera de la que la troza puede
+   * dar es la señal clásica de blanqueo (RDE D000259-2024), y el resto del
+   * módulo ya la trata como advertencia (`evaluarRendimiento`).
+   *
+   * Quedarse CORTO, en cambio, no es una infracción: es productividad, y se
+   * muestra sin alarma.
+   */
+  sobreReferencial: boolean;
   /** Alguna especie produjo en una unidad que no convierte: el saldo es parcial. */
   unidadesMezcladas: boolean;
   /** Cuántas especies entraron en la cuenta (para poder decir "2 especies"). */
@@ -145,6 +156,7 @@ export function metaDeLote(metas: ReadonlyArray<MetaEspecie>): MetaLote | null {
 
   const metaM3 = suma((m) => m.metaM3);
   const producidoM3 = suma((m) => m.producidoM3);
+  const rinde = Number(((producidoM3 / trozasM3) * 100).toFixed(1));
   return {
     trozasM3,
     metaM3,
@@ -153,7 +165,8 @@ export function metaDeLote(metas: ReadonlyArray<MetaEspecie>): MetaLote | null {
     producidoPt: enPieTablar(producidoM3),
     saldoM3: r4(metaM3 - producidoM3),
     saldoPt: enPieTablar(r4(metaM3 - producidoM3)),
-    rendimientoPct: Number(((producidoM3 / trozasM3) * 100).toFixed(1)),
+    rendimientoPct: rinde,
+    sobreReferencial: rinde > RENDIMIENTO_REF_ASERRADA + RENDIMIENTO_TOLERANCIA_PP,
     unidadesMezcladas: metas.some((m) => m.unidadesMezcladas),
     especies: metas.length,
   };

@@ -37,19 +37,34 @@ export interface LoteFila {
 const n4 = (v: number | string | null | undefined) => (Number(v) || 0).toFixed(4);
 const UNIDAD: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "u" };
 
-/** El saldo dice si FALTA o si se PASÓ; un número pelado no distingue. */
+/**
+ * Cuánto se apartó del coeficiente referencial de SERFOR.
+ *
+ * El color NO es "cerca de la meta = bien". Pasarse del referencial es la señal
+ * de blanqueo que describe la RDE D000259-2024 —se declara más madera de la que
+ * la troza puede dar— y el resto del módulo ya la pinta como advertencia.
+ * Quedarse corto no es infracción: es productividad, y va neutro.
+ */
 function SaldoMeta({ meta }: { meta: MetaLote | null | undefined }) {
   if (!meta) return <span className="text-[var(--text-tertiary)]">—</span>;
-  const falta = meta.saldoM3 > 0;
+  const porEncima = meta.saldoM3 < 0;
   return (
     <span
       className={cn(
         "font-mono tabular-nums",
-        falta ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+        meta.sobreReferencial
+          ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+          : "text-[var(--text-secondary)]",
       )}
-      title={falta ? "Todavía no llegó a la meta" : "Superó la meta de referencia"}
+      title={
+        meta.sobreReferencial
+          ? `Rinde ${meta.rendimientoPct}%, sobre el referencial SERFOR de ${RENDIMIENTO_REF_ASERRADA}% — revisá antes de presentar el libro`
+          : porEncima
+            ? "Por encima del referencial, dentro de la tolerancia"
+            : "Por debajo del referencial (no es una infracción)"
+      }
     >
-      {falta ? "" : "+"}
+      {porEncima ? "+" : "−"}
       {n4(Math.abs(meta.saldoM3))}
     </span>
   );
@@ -102,8 +117,8 @@ export default function LotesTabla({
               <th className="px-3 py-2.5 text-right font-bold">Despachado</th>
               <th className="px-3 py-2.5 text-right font-bold">Disponible</th>
               <th className="px-3 py-2.5 text-right font-bold">Trozas m³</th>
-              <th className="px-3 py-2.5 text-right font-bold">Meta {RENDIMIENTO_REF_ASERRADA}%</th>
-              <th className="px-3 py-2.5 text-right font-bold">Saldo meta</th>
+              <th className="px-3 py-2.5 text-right font-bold">Ref. SERFOR {RENDIMIENTO_REF_ASERRADA}%</th>
+              <th className="px-3 py-2.5 text-right font-bold">Vs. referencial</th>
               <th className="px-3 py-2.5 text-right font-bold">Rend.</th>
               <th className="px-3 py-2.5 font-bold">Destino</th>
             </tr>

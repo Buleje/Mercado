@@ -105,42 +105,51 @@ function LoteAvance({ lote }: { lote: LoteRow }) {
 }
 
 /**
- * La cuenta del jefe de planta: *"metí 40 m³, al 56% tendrían que salir 22.4,
- * llevo 18 — me faltan 4.4"*.
+ * El rendimiento del lote contra el coeficiente REFERENCIAL de SERFOR.
+ *
+ * Ojo con la semántica, que es lo contrario de lo que sugiere la palabra "meta":
+ * el 56 % sale de la RDE D000259-2024 y es un TECHO de referencia, no un
+ * objetivo. Declarar mucho más de lo que la troza puede dar es la señal clásica
+ * de blanqueo, así que pasarse va en ámbar; quedarse corto es productividad y va
+ * neutro. El resto del módulo (`evaluarRendimiento`) ya lo trataba así.
  *
  * Mide las corridas ENTERAS que arman el lote, no la fracción que el lote se
  * lleva: el consumo se atribuye a la corrida completa (I2). Por eso el rótulo
- * dice "sus corridas" y no "este lote" — la diferencia importa cuando una
- * corrida está repartida entre dos lotes.
+ * dice "sus corridas".
  *
- * Sin consumo atribuido no se dibuja: un 0% afirmaría que la corrida no rindió.
+ * Sin consumo atribuido no se dibuja: un 0 % afirmaría que la corrida no rindió.
  */
 function MetaChip({ meta }: { meta?: MetaLote | null }) {
   if (!meta) return null;
-  const falta = meta.saldoM3 > 0;
+  const porEncima = meta.saldoM3 < 0;
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-[var(--surface-sunken)] px-2.5 py-1.5 text-sm">
       <span className="inline-flex items-center gap-1 font-bold text-[var(--text-tertiary)]">
-        <Target className="h-3.5 w-3.5" aria-hidden /> Meta {RENDIMIENTO_REF_ASERRADA}%
+        <Target className="h-3.5 w-3.5" aria-hidden /> Ref. SERFOR {RENDIMIENTO_REF_ASERRADA}%
       </span>
       <span className="font-mono tabular-nums text-[var(--text-secondary)]">
-        {n4(meta.trozasM3)} → {n4(meta.metaM3)} m³
+        {n4(meta.trozasM3)} → {n4(meta.producidoM3)} m³
       </span>
       <span
         className={cn(
           "ml-auto font-mono font-bold tabular-nums",
-          falta
+          meta.sobreReferencial
             ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-            : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+            : "text-[var(--text-secondary)]",
         )}
         title={
-          falta
-            ? `Faltan ${n4(meta.saldoM3)} m³ (${meta.saldoPt.toLocaleString("es-PE")} pt) para la meta de sus corridas`
-            : `Superó la meta en ${n4(-meta.saldoM3)} m³`
+          meta.sobreReferencial
+            ? `Rinde ${meta.rendimientoPct}%, sobre el referencial SERFOR — revisá antes de presentar el libro`
+            : `Rinde ${meta.rendimientoPct}%`
         }
       >
-        {falta ? `faltan ${n4(meta.saldoM3)}` : `+${n4(-meta.saldoM3)}`}
+        {meta.rendimientoPct}%{porEncima ? " ↑" : ""}
       </span>
+      {meta.sobreReferencial && (
+        <span className="w-full text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          Sobre el referencial de SERFOR: revisá el consumo antes de presentar.
+        </span>
+      )}
       {meta.unidadesMezcladas && (
         <span className="w-full text-[var(--text-tertiary)]">
           Hay corridas en otra unidad: el saldo es parcial.
@@ -149,7 +158,6 @@ function MetaChip({ meta }: { meta?: MetaLote | null }) {
     </div>
   );
 }
-
 
 export default function LoteCard({ lote: l, onAbrir }: { lote: LoteRow; onAbrir: (id: string) => void }) {
   return (
