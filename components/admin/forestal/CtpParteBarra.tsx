@@ -46,6 +46,10 @@ export interface ValorParte {
   docTipo: DocTipo;
   docNumero: string;
   direccion: string;
+  /** Casilleros (17)(18)(19) / (26)(27)(28) del formato. */
+  departamento?: string;
+  provincia?: string;
+  distrito?: string;
   /** Sólo transportista. */
   registroMtc?: string;
 }
@@ -95,6 +99,12 @@ export default function CtpParteBarra({ rol, valor, opciones, onAplicar, onElegi
       docTipo: p.docTipo ?? valor.docTipo,
       docNumero: p.docNumero ?? "",
       direccion: direccionCompleta(p),
+      // La libreta ya las tiene separadas: aplanarlas dentro de `direccion` y
+      // descartar las columnas dejaba los casilleros (17)-(19) y (26)-(28)
+      // vacíos teniendo el dato a mano.
+      departamento: p.region ?? "",
+      provincia: p.provincia ?? "",
+      distrito: p.distrito ?? "",
       ...(rol === "transportista" ? { registroMtc: p.registroMtc ?? "" } : {}),
     });
     onElegir?.(p);

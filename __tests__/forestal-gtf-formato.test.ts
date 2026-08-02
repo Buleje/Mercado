@@ -127,3 +127,32 @@ describe("detalles del formato que se ven en el papel", () => {
     expect(cuerpoGtfOficial(base)).not.toContain(">terrestre<");
   });
 });
+
+describe("casilleros de ubicación de las partes (17)(18)(19) / (26)(27)(28)", () => {
+  // Existían en el formato y salían vacíos aunque el directorio tuviera el dato:
+  // al elegir una parte de la libreta se aplanaba todo dentro de `direccion`.
+  const conUbicacion = () => {
+    const d = gtfDatosVacio();
+    d.propietario = { ...d.propietario, departamento: "PASCO", provincia: "OXAPAMPA", distrito: "PUERTO BERMUDEZ" };
+    d.destinatario = { ...d.destinatario, departamento: "PASCO", provincia: "OXAPAMPA", distrito: "CONSTITUCION" };
+    return d;
+  };
+  const base = {
+    ficha: emptyCtpFicha(), lineas: [], numeroGtf: "019-1",
+    fechaExpedicion: "2024-12-18", listasTrozas: "", gtfOrigen: "",
+  };
+
+  it("imprime la ubicación del propietario y la del destinatario", () => {
+    const html = cuerpoGtfOficial({ ...base, datos: conUbicacion() });
+    expect(html).toContain("PUERTO BERMUDEZ");
+    expect(html).toContain("CONSTITUCION");
+    expect(html).toContain("OXAPAMPA");
+  });
+
+  it("sin cargar, los casilleros quedan en blanco — no se inventa la ubicación", () => {
+    const html = cuerpoGtfOficial({ ...base, datos: gtfDatosVacio() });
+    expect(html).toContain("(19)");
+    expect(html).toContain("(28)");
+    expect(html).not.toContain("<b>—</b>");
+  });
+});

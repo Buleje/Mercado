@@ -46,7 +46,27 @@ const parteSchema = z.object({
   docTipo: docTipo.default("RUC"),
   docNumero: texto(20).default(""),
   direccion: texto(250).default(""),
+  /**
+   * Ubicación de la parte — casilleros (17)(18)(19) del propietario y
+   * (26)(27)(28) del destinatario.
+   *
+   * Va desarmada y no dentro de `direccion` porque el formato tiene un casillero
+   * por cada una: un puesto de control pide "el (27)", y una dirección que dice
+   * "Jr. X, Puerto Bermúdez, Oxapampa, Pasco" obliga a leerla entera para
+   * contestar. El directorio ya las guarda separadas — hasta ahora la guía las
+   * aplanaba al elegir una parte y el dato se perdía.
+   */
+  departamento: texto(80).default(""),
+  provincia: texto(80).default(""),
+  distrito: texto(80).default(""),
 });
+
+/** Parte en blanco. Centralizado: repetir el literal en cada `.default()` hizo
+ *  que agregar la ubicación rompiera el tipo en tres lugares a la vez. */
+const PARTE_VACIA = {
+  nombre: "", docTipo: "RUC" as const, docNumero: "", direccion: "",
+  departamento: "", provincia: "", distrito: "",
+};
 
 export const gtfDatosSchema = z.object({
   /**
@@ -56,16 +76,16 @@ export const gtfDatosSchema = z.object({
   propietario: parteSchema.extend({
     /** El CTP es el dueño (caso más común): se copia su identidad y se marca. */
     esElCtp: z.boolean().default(true),
-  }).default({ nombre: "", docTipo: "RUC", docNumero: "", direccion: "", esElCtp: true }),
+  }).default({ ...PARTE_VACIA, esElCtp: true }),
 
   /** A quién se le entrega el producto en destino. */
-  destinatario: parteSchema.default({ nombre: "", docTipo: "RUC", docNumero: "", direccion: "" }),
+  destinatario: parteSchema.default({ ...PARTE_VACIA }),
 
   /** Empresa o persona que transporta. */
   transportista: parteSchema.extend({
     /** Registro del MTC, cuando es empresa de transporte. */
     registroMtc: texto(40).default(""),
-  }).default({ nombre: "", docTipo: "RUC", docNumero: "", direccion: "", registroMtc: "" }),
+  }).default({ ...PARTE_VACIA, registroMtc: "" }),
 
   vehiculo: z.object({
     /**

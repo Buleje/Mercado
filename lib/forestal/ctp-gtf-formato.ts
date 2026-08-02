@@ -155,16 +155,16 @@ export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
   <table class="cas">
     <tr>${box("13", "PROPIETARIO DEL PRODUCTO", d.propietario?.nombre)}${box("14", "D.N.I. N°", d.propietario?.docTipo === "DNI" ? d.propietario?.docNumero : "")}</tr>
     <tr>${box("15", "R.U.C. N°", d.propietario?.docTipo === "RUC" ? d.propietario?.docNumero : "")}${box("16", "Dirección", d.propietario?.direccion)}</tr>
-    <tr>${box("17", "Departamento", "")}${box("18", "Provincia", "")}</tr>
-    <tr>${box("19", "Distrito", "")}${box("20", "Tipo de Comprobante de Compra o venta", comprobante)}</tr>
+    <tr>${box("17", "Departamento", d.propietario?.departamento)}${box("18", "Provincia", d.propietario?.provincia)}</tr>
+    <tr>${box("19", "Distrito", d.propietario?.distrito)}${box("20", "Tipo de Comprobante de Compra o venta", comprobante)}</tr>
     <tr>${box("21", "N° Comprobante", d.comprobante?.numero, 'colspan="2"')}</tr>
   </table>
 
   <table class="cas">
     <tr>${box("22", "DESTINATARIO", d.destinatario?.nombre)}${box("23", "D.N.I. N°", d.destinatario?.docTipo === "DNI" ? d.destinatario?.docNumero : "")}</tr>
     <tr>${box("24", "R.U.C. N°", d.destinatario?.docTipo === "RUC" ? d.destinatario?.docNumero : "")}${box("25", "Dirección", d.destinatario?.direccion)}</tr>
-    <tr>${box("26", "Departamento", "")}${box("27", "Provincia", "")}</tr>
-    <tr>${box("28", "Distrito", "", 'colspan="2"')}</tr>
+    <tr>${box("26", "Departamento", d.destinatario?.departamento)}${box("27", "Provincia", d.destinatario?.provincia)}</tr>
+    <tr>${box("28", "Distrito", d.destinatario?.distrito, 'colspan="2"')}</tr>
   </table>
 
   <p class="sec">TRANSPORTISTA:</p>

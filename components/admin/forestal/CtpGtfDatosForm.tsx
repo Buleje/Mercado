@@ -320,6 +320,7 @@ export default function CtpGtfDatosForm({
             />
             <ParteCampos
               etiquetaNombre="Transportista"
+              sinUbicacion
               parte={datos.transportista}
               onChange={(v) => set("transportista", v)}
               extra={
@@ -544,11 +545,20 @@ function ParteCampos({
   parte,
   onChange,
   direccionRequerida,
+  sinUbicacion,
   extra,
 }: {
   etiquetaNombre: string;
-  parte: { nombre: string; docTipo: DocTipo; docNumero: string; direccion: string };
-  onChange: (v: { nombre?: string; docTipo?: DocTipo; docNumero?: string; direccion?: string }) => void;
+  parte: {
+    nombre: string; docTipo: DocTipo; docNumero: string; direccion: string;
+    departamento?: string; provincia?: string; distrito?: string;
+  };
+  onChange: (v: {
+    nombre?: string; docTipo?: DocTipo; docNumero?: string; direccion?: string;
+    departamento?: string; provincia?: string; distrito?: string;
+  }) => void;
+  /** El transportista no tiene casilleros de ubicación en el formato. */
+  sinUbicacion?: boolean;
   direccionRequerida?: boolean;
   extra?: React.ReactNode;
 }) {
@@ -576,6 +586,22 @@ function ParteCampos({
       <Field label="N° de documento">
         <input type="text" className={`${I} font-mono`} value={parte.docNumero} onChange={(e) => onChange({ docNumero: e.target.value })} />
       </Field>
+      {/* Casilleros (17)(18)(19) y (26)(27)(28) del formato. Van sueltos y no
+          dentro de la dirección porque el control pide "el (27)": se completan
+          solos al elegir de la libreta, que ya los tiene separados. */}
+      {!sinUbicacion && (
+        <>
+          <Field label="Departamento" hint="Casillero del formato oficial">
+            <input type="text" className={I} value={parte.departamento ?? ""} onChange={(e) => onChange({ departamento: e.target.value })} />
+          </Field>
+          <Field label="Provincia">
+            <input type="text" className={I} value={parte.provincia ?? ""} onChange={(e) => onChange({ provincia: e.target.value })} />
+          </Field>
+          <Field label="Distrito">
+            <input type="text" className={I} value={parte.distrito ?? ""} onChange={(e) => onChange({ distrito: e.target.value })} />
+          </Field>
+        </>
+      )}
       {extra}
     </div>
   );
