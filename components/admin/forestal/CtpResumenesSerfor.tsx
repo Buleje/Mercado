@@ -20,6 +20,7 @@ import { pedirJsonCtp, pedirOpcionalCtp } from "@/lib/forestal/ctp-fetch";
 import { unidadOficial } from "@/lib/forestal/loctp-campos";
 import { retrozadoPorEspecie, type RetrozoParaApartado } from "@/lib/forestal/loctp-apartados";
 import CtpApartadosSerfor from "./CtpApartadosSerfor";
+import CtpRendimientoLotes from "./CtpRendimientoLotes";
 import { Celda, Cuadro, Entero, Th } from "./ctp-cuadro-shared";
 import {
   claveProducto,
@@ -382,6 +383,11 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
               )}
             </tbody>
           </Cuadro>
+
+          {/* El (13) del cuadro de arriba, puesto contra su referencia: el
+              número sin la franja al lado obliga a saberse los rangos de
+              memoria y a comparar fila por fila. */}
+          <CtpRendimientoLotes filas={datos.resumen3} />
         </>
       ) : null}
 

@@ -120,6 +120,22 @@ export function esLineaProduccion(v: unknown): v is LineaProduccion {
 export const RENDIMIENTO_META = 0.56;
 
 /**
+ * Franja en la que un rendimiento de aserrío es CREÍBLE, en porcentaje.
+ *
+ * Distinto de la meta: la meta pregunta «¿llegué a lo que esperaba?» y esto
+ * pregunta «¿este número puede ser cierto?». Por debajo de 40 se está yendo
+ * demasiada madera en aserrín o descarte —o falta declarar producción—; por
+ * encima de 75 lo declarado no cierra con lo que da una troza.
+ *
+ * Vive acá, junto a la meta, porque son dos lecturas del MISMO número: tenerlas
+ * en archivos distintos las hizo divergir una vez (la hoja de Consumos juzgaba
+ * con 40/75 mientras el formulario de producción juzgaba con 56) y el operador
+ * veía dos veredictos para una sola corrida.
+ */
+export const RENDIMIENTO_PLAUSIBLE_MIN = 40;
+export const RENDIMIENTO_PLAUSIBLE_MAX = 75;
+
+/**
  * Cómo se lee un rendimiento contra la meta. `null` = todavía no se puede juzgar.
  *
  * **Recibe un PORCENTAJE** (56.25), no una fracción. La primera versión aceptaba

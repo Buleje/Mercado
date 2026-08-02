@@ -13,6 +13,7 @@
  * PURO y client-safe: sin React, sin fetch, sin Prisma.
  */
 
+import { RENDIMIENTO_PLAUSIBLE_MAX, RENDIMIENTO_PLAUSIBLE_MIN } from "./loctp-catalogos";
 import type { FilaConsumo, GrafoConsumos } from "./loctp-consumos";
 
 /** Redondeo del libro: cuatro decimales, como el resto del módulo. */
@@ -159,16 +160,19 @@ export function resumenConsumos(
 }
 
 /**
- * Cómo se lee un rendimiento de aserrío. Los rangos son los de la práctica
- * (ADR-314): abajo de 40 % algo se está yendo en aserrín o en descarte, arriba
- * de 75 % lo declarado no cierra con lo que da una troza.
+ * Cómo se lee un rendimiento de aserrío.
+ *
+ * Los límites salen de `loctp-catalogos` —donde vive también la meta operativa—
+ * y no se repiten acá: cuando estaban duplicados, esta hoja juzgaba con 40/75
+ * mientras el formulario de producción juzgaba con la meta de 56, y la misma
+ * corrida recibía dos veredictos distintos según dónde se la mirara.
  */
 export function juzgarRendimientoConsumo(pct: number | null): {
   tono: "ok" | "aviso" | "malo" | "neutro";
   texto: string;
 } {
   if (pct == null) return { tono: "neutro", texto: "Sin dato comparable" };
-  if (pct < 40) return { tono: "aviso", texto: "Bajo para aserrío" };
-  if (pct > 75) return { tono: "malo", texto: "Revisar: muy alto" };
+  if (pct < RENDIMIENTO_PLAUSIBLE_MIN) return { tono: "aviso", texto: "Bajo para aserrío" };
+  if (pct > RENDIMIENTO_PLAUSIBLE_MAX) return { tono: "malo", texto: "Revisar: muy alto" };
   return { tono: "ok", texto: "En rango de aserrío" };
 }
