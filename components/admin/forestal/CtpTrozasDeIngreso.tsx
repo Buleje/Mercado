@@ -1,10 +1,12 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { Loader2, PackageCheck, PackageOpen, Scissors, ArrowDownRight } from "@buleje/design-system/icons";
+import { ArrowDownRight, FileText, Loader2, PackageCheck, PackageOpen, Scissors } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import CtpRetrozarModal, { type TrozaParaCortar } from "./CtpRetrozarModal";
 import CtpRecepcionTrozas from "./CtpRecepcionTrozas";
+import CtpDocumentoVisor from "./CtpDocumentoVisor";
+import { CSS_LISTA_TROZAS, htmlListaTrozas } from "@/lib/forestal/ctp-lista-trozas";
 import { balanceRecepcion } from "@/lib/forestal/recepcion-trozas";
 
 /**
@@ -23,6 +25,9 @@ type Troza = {
   orden: number;
   codificacion: string | null;
   especieComun: string | null;
+  /** El endpoint la devuelve; el tipo local no la declaraba y la lista de
+   *  trozas —que la imprime en su columna— no podía leerla. */
+  especieCientifica?: string | null;
   dimensiones: string | null;
   largoM: number | null;
   diametroCm: number | null;
@@ -45,15 +50,26 @@ type Troza = {
 export default function CtpTrozasDeIngreso({
   entryId,
   volumenDelIngreso = null,
+  gtfNumber = null,
+  productType = null,
+  titular = null,
 }: {
   entryId: string;
   /** m³ con que está registrado el ingreso, para contrastarlo con lo recibido. */
   volumenDelIngreso?: number | null;
+  /** Datos del ingreso para encabezar la LISTA DE TROZAS: el N° de la lista es
+   *  el de la guía —así el casillero (35) de la GTF le apunta— y el producto y
+   *  el titular son del ingreso, no de cada pieza. */
+  gtfNumber?: string | null;
+  productType?: string | null;
+  titular?: string | null;
 }) {
   const [trozas, setTrozas] = useState<Troza[] | null>(null);
   const [cargando, setCargando] = useState(true);
   const [cortando, setCortando] = useState<TrozaParaCortar | null>(null);
   const [recibiendo, setRecibiendo] = useState(false);
+  /** La lista de trozas como documento: se mira antes de imprimir o archivar. */
+  const [viendoLista, setViendoLista] = useState(false);
 
   const cargar = useCallback(async () => {
     try {
@@ -118,6 +134,14 @@ export default function CtpTrozasDeIngreso({
             title="Anotar código de planta, parcela de corta y qué trozas no llegaron"
           >
             <PackageCheck className="h-3.5 w-3.5" aria-hidden /> Recepción
+          </button>
+          <button
+            type="button"
+            onClick={() => setViendoLista(true)}
+            className="flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:border-primary"
+            title="Ver la LISTA DE TROZAS A MOVILIZAR para imprimirla o guardarla"
+          >
+            <FileText className="h-3.5 w-3.5" aria-hidden /> Lista de trozas
           </button>
         </div>
       </div>
@@ -254,6 +278,40 @@ export default function CtpTrozasDeIngreso({
           troza={cortando}
           onClose={() => setCortando(null)}
           onSaved={() => { setCortando(null); void cargar(); }}
+        />
+      )}
+
+      {viendoLista && (
+        <CtpDocumentoVisor
+          documentos={[{
+            nombre: gtfNumber ? `Lista de trozas ${gtfNumber}` : "Lista de trozas",
+            html: `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Lista de trozas</title>
+              <style>@page{size:A4;margin:14mm}body{font-family:Arial,Helvetica,sans-serif;margin:0}${CSS_LISTA_TROZAS}</style>
+              </head><body>${htmlListaTrozas({
+                titular: titular || "Centro de Transformación Primaria",
+                subtitulo: gtfNumber ? `Guía ${gtfNumber}` : undefined,
+                // El N° de la lista es el de la guía: el casillero (35) de la
+                // GTF apunta acá, y un fragmento de id interno no le sirve a
+                // nadie en un puesto de control.
+                numero: gtfNumber || entryId.slice(-7),
+                // Sólo las madres: un retrozo viaja dentro de su troza y
+                // listarlo aparte contaría la misma madera dos veces (ADR-313).
+                trozas: trozas.map((t) => ({
+                  codificacion: t.codificacion ?? null,
+                  especieComun: t.especieComun ?? null,
+                  especieCientifica: t.especieCientifica ?? null,
+                  producto: productType,
+                  d1Cm: t.d1Cm ?? null,
+                  d2Cm: t.d2Cm ?? null,
+                  largoM: t.largoM ?? null,
+                  cantidad: t.cantidad ?? 1,
+                  volumenM3: t.volumenM3 ?? null,
+                })),
+              })}</body></html>`,
+          }]}
+          activo={0}
+          onActivo={() => {}}
+          onClose={() => setViendoLista(false)}
         />
       )}
     </section>

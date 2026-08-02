@@ -223,7 +223,13 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar }: Ctp
         {/* La lista de trozas va a ANCHO COMPLETO: es una tabla que un
             fiscalizador compara pieza por pieza contra el POA, y en una columna
             se corta. Sólo aparece si la guía la trajo (ADR-312). */}
-        <CtpTrozasDeIngreso entryId={entry.id} volumenDelIngreso={Number(entry.volumeM3 ?? 0) || null} />
+        <CtpTrozasDeIngreso
+          entryId={entry.id}
+          volumenDelIngreso={Number(entry.volumeM3 ?? 0) || null}
+          gtfNumber={entry.gtfNumber}
+          productType={entry.productType}
+          titular={entry.providerName}
+        />
 
         {/* Trazabilidad hacia adelante + auditoría, en 2 columnas para ahorrar scroll. */}
         <div className="grid gap-4 md:grid-cols-2 md:items-start">
