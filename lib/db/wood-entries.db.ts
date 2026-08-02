@@ -732,6 +732,12 @@ export class WoodEntriesDB {
             status: true, originCode: true, originRegion: true, originDistrict: true,
           },
         },
+        // Lo mismo que trae `trozasDelPatio`, y por la misma razón: quien busca
+        // una pieza necesita saber si se puede usar. Hace falta el ESTADO de la
+        // corrida, no el id pelado — una corrida anulada devolvió la madera al
+        // patio y un id que apunta a algo muerto no bloquea nada (ADR-326 §6).
+        consumidaEn: { select: { id: true, status: true, deletedAt: true } },
+        _count: { select: { retrozos: true } },
       },
     });
   }
@@ -1242,7 +1248,13 @@ export class WoodEntriesDB {
     return prisma.woodEntryTroza.findMany({
       where: { tenantId, woodEntryId, trozaOrigenId: null },
       orderBy: { orden: "asc" },
-      include: { retrozos: { orderBy: { orden: "asc" } } },
+      include: {
+        retrozos: { orderBy: { orden: "asc" } },
+        // Igual que `trozasDelPatio` y `buscarTrozas`: quien lee una troza tiene
+        // que poder saber si ya se aserró, y con el ESTADO de la corrida, no con
+        // el id pelado. Las tres lecturas de la misma pieza dicen lo mismo.
+        consumidaEn: { select: { id: true, status: true, deletedAt: true } },
+      },
     });
   }
 

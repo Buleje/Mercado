@@ -198,6 +198,12 @@ function serializar(t: {
   parcela?: string | null; codigoPlanta?: string | null;
   noRecepcionada?: boolean; recepcionObs?: string | null;
   trozaOrigenId?: string | null;
+  descarte?: boolean;
+  consumidaEnId?: string | null;
+  consumidaEn?: { id: string; status: string; deletedAt: Date | null } | null;
+  fechaConsumo?: Date | string | null;
+  _count?: { retrozos: number };
+  retrozos?: unknown[];
 }) {
   const num = (v: unknown) => (v == null ? null : Number(v));
   return {
@@ -219,5 +225,17 @@ function serializar(t: {
     noRecepcionada: Boolean(t.noRecepcionada),
     recepcionObs: t.recepcionObs ?? null,
     trozaOrigenId: t.trozaOrigenId ?? null,
+    // Consumo por pieza (ADR-326). Faltaba: esta whitelist quedó de antes y el
+    // buscador declaraba libre CUALQUIER troza, incluida una ya aserrada.
+    // El criterio es el MISMO que el endpoint del patio —si la corrida que se
+    // la comió está anulada o borrada, la madera volvió al patio— o las dos
+    // lecturas del mismo hecho se contradicen.
+    consumidaEnId:
+      t.consumidaEn && t.consumidaEn.status === "registrado" && !t.consumidaEn.deletedAt
+        ? (t.consumidaEnId ?? null)
+        : null,
+    fechaConsumo: t.fechaConsumo ?? null,
+    descarte: Boolean(t.descarte),
+    retrozos: t._count?.retrozos ?? t.retrozos?.length ?? 0,
   };
 }

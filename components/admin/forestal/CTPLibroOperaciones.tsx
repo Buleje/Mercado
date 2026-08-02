@@ -413,6 +413,17 @@ export default function CTPLibroOperaciones() {
               <Search className="h-4 w-4" />
               <span className="max-lg:sr-only">Buscar guía</span>
             </button>
+            {/* La puerta al modo patio. Va acá y no en el sidebar porque se abre
+                UNA vez, en la tablet que se lleva a la pila, y de ahí no se
+                vuelve al panel: es otra sesión de trabajo, no otra pestaña. */}
+            <a
+              href="/admin/patio"
+              title="Abrir el modo patio: consultar una troza por su número y recibir guías desde la pila"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--surface-canvas)]"
+            >
+              <TreePine className="h-4 w-4" />
+              <span className="max-lg:sr-only">Modo patio</span>
+            </a>
             <CtpAsistente />
           </>
         }
