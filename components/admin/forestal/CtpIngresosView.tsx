@@ -452,7 +452,15 @@ export default function CtpIngresosView({
         />
       )}
 
-      {detail && <CtpEntryDetailModal entry={detail} onClose={() => setDetail(null)} />}
+      {detail && (
+        <CtpEntryDetailModal
+          entry={detail}
+          onClose={() => setDetail(null)}
+          // Completar cierra el detalle y abre el editor: dejar los dos modales
+          // apilados obliga a cerrar dos veces para volver a la lista.
+          onCompletar={(e) => { setDetail(null); setEditEntry(e); }}
+        />
+      )}
       {chainEntry && <CtpIngresoCadenaModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
       {editEntry && (
         <CtpIngresoEditModal

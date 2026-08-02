@@ -38,6 +38,7 @@ import {
   type WoodEntry,
 } from "./ctp-shared";
 import { UNIDADES_LOCTP } from "@/lib/forestal/loctp-campos";
+import CtpIngresoCompletitud from "./CtpIngresoCompletitud";
 
 /**
  * La unidad declarada. Dos formas a propósito: el símbolo para el número grande
@@ -55,9 +56,11 @@ function unidadSimbolo(unit: string | null): string {
 interface CtpEntryDetailModalProps {
   entry: WoodEntry;
   onClose: () => void;
+  /** Abre el editor con este ingreso. Sin esto el panel informa pero no resuelve. */
+  onCompletar?: (entry: WoodEntry) => void;
 }
 
-export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailModalProps) {
+export default function CtpEntryDetailModal({ entry, onClose, onCompletar }: CtpEntryDetailModalProps) {
   const dias = diasDeRegistro(entry); // para mostrar
   const fueraDePlazo = estaFueraDePlazo(entry); // para decidir — matchea el SQL
   const photos = Array.isArray(entry.photos) ? entry.photos : [];
@@ -75,6 +78,14 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
       className="sm:w-[min(95vw,84rem)] sm:max-w-none sm:max-h-[95vh]"
     >
       <div className="space-y-5 p-5 sm:p-6">
+        {/* Antes de la ficha: qué falta para el formato. Los bloques de abajo
+            siguen nombrando sus vacíos, pero sólo acá se distingue lo que
+            IMPIDE presentar de lo que es complemento — y sale de la misma
+            fuente que el chip de la tabla, así que los números coinciden. */}
+        <CtpIngresoCompletitud
+          entry={entry as unknown as Record<string, unknown>}
+          onCompletar={onCompletar ? () => onCompletar(entry) : undefined}
+        />
         {/* Hero: la especie y el volumen — lo que se pregunta primero — con el
             estado y las alertas de cumplimiento, sobre una banda editorial. */}
         <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--accent-soft)] to-[var(--surface-canvas)] p-4">

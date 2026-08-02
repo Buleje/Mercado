@@ -126,8 +126,14 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
       {/* El alto tope + scroll propio sólo se activa con muchas filas: es lo que
           hace REAL a la cabecera pegajosa (un `sticky` dentro de un contenedor
           sin scroll no se pega a nada). Con 5 filas no se toca el layout. */}
+      {/* Once columnas no entran en el ancho del panel ni en un monitor de
+          1600px: medido, la tabla pide ~1580 y el contenedor da ~1290. Se
+          scrollea —está bien, son datos de referencia— pero sin aviso el borde
+          se lee como el fin de la tabla y "Acciones" no existe para el que no
+          arrastra. El degradé sólo aparece cuando de verdad sobra ancho. */}
+      <div className="relative hidden sm:block">
       <div
-        className={`hidden overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block ${
+        className={`overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] ${
           entries.length > 12 ? "max-h-[75vh] overflow-y-auto" : ""
         }`}
       >
@@ -191,17 +197,20 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                       const faltan = faltantesIngreso(e as unknown as Record<string, unknown>);
                       if (faltan.length === 0) return null;
                       return (
-                        <div
+                        // Chip en vez de tres renglones sueltos: la celda del
+                        // N° de libro medía el triple por un dato secundario, y
+                        // el número que la autoridad pide quedaba aplastado.
+                        <span
                           title={resumenFaltantes(faltan)}
-                          className="mt-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                          className="mt-1 inline-block whitespace-nowrap rounded-full bg-[var(--data-warning-500)]/15 px-2 py-0.5 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                         >
-                          faltan {faltan.length} p/ SERFOR
-                        </div>
+                          −{faltan.length} SERFOR
+                        </span>
                       );
                     })()}
                   </Td>
                   <Td>
-                    <div className="font-bold text-[var(--text-primary)]">{formatDate(e.entryDate)}</div>
+                    <div className="whitespace-nowrap font-bold text-[var(--text-primary)]">{formatDate(e.entryDate)}</div>
                     {tarde && (
                       <div
                         title={`Registrado ${diasDeRegistro(e)} días después de la operación (plazo ${PLAZO_REGISTRO_DIAS} días hábiles)`}
@@ -215,20 +224,23 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                     <button
                       type="button"
                       onClick={() => onDetail(e)}
-                      className="font-mono text-sm font-bold text-[var(--brand-ink)] dark:text-[var(--text-primary)] underline-offset-2 hover:underline"
+                      title={e.gtfNumber}
+                      className="block max-w-36 truncate text-left font-mono text-sm font-bold text-[var(--brand-ink)] dark:text-[var(--text-primary)] underline-offset-2 hover:underline"
                     >
                       {e.gtfNumber}
                     </button>
-                    <div className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                    <div className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
                       {e.docType || "GTF"}
                     </div>
                     {e.gtfDate && (
-                      <div className="text-xs text-[var(--text-tertiary)]">{formatDate(e.gtfDate)}</div>
+                      <div className="text-sm text-[var(--text-tertiary)]">{formatDate(e.gtfDate)}</div>
                     )}
                   </Td>
                   <Td>
-                    <div className="font-medium text-[var(--text-primary)]">{e.providerName}</div>
-                    <div className="text-xs text-[var(--text-tertiary)]">{originLabel(e.originType)}</div>
+                    <div title={e.providerName} className="max-w-40 truncate font-medium text-[var(--text-primary)]">
+                      {e.providerName}
+                    </div>
+                    <div className="text-sm text-[var(--text-tertiary)]">{originLabel(e.originType)}</div>
                   </Td>
                   <Td>
                     <div className="flex items-center gap-2">
@@ -295,6 +307,11 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
             </tfoot>
           )}
         </table>
+      </div>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 w-12 rounded-r-2xl bg-linear-to-l from-[var(--surface-raised)] to-transparent"
+        />
       </div>
 
       {/* ── Mobile: cards a medida (<640px) ── */}
