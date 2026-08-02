@@ -15,6 +15,7 @@ import {
   DollarSign, Wallet,
   BarChart3, Percent, Truck, CreditCard, RefreshCw, AlertTriangle, Maximize2, X as XIcon,
   Landmark, HandCoins, Banknote, Coins, Construction, Gauge,
+  type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
@@ -48,14 +49,12 @@ const WeeklyReportCard = dynamic(() => import("@/components/admin/WeeklyReportCa
 const BudgetAlertWidget = dynamic(() => import("@/components/admin/BudgetAlertWidget"), { loading: S });
 const MonthProjectionCard = dynamic(() => import("@/components/admin/MonthProjectionCard"), { loading: S });
 const ProfitLossAutoCard = dynamic(() => import("@/components/admin/ProfitLossAutoCard"), { loading: S });
-const CashFlowProjection = dynamic(() => import("@/components/admin/CashFlowProjection"), { loading: S });
 const CashflowRollingTable = dynamic(() => import("@/components/admin/finance/CashflowRollingTable"), { loading: S });
 const BreakEvenDashboard = dynamic(() => import("@/components/admin/BreakEvenDashboard"), { loading: S });
 // LoanCalculator → movido a PrestamosModule (evitar duplicación)
 // CommissionCalculator → movido a POSCajaModule (es operativo de ventas)
 // PaymentCalendar → movido a TesoreriaModule (es operativo de tesorería)
 const MoneyLeakDetector = dynamic(() => import("@/components/admin/MoneyLeakDetector"), { loading: S });
-const WeeklyCashFlowTable = dynamic(() => import("@/components/admin/WeeklyCashFlowTable"), { loading: S });
 const HistorialCierresTab = dynamic(() => import("@/components/admin/HistorialCierresTab"), { loading: S });
 const PresupuestoMensualTab = dynamic(() => import("@/components/admin/finanzas/PresupuestoMensualTab"), { loading: S });
 const ReporteMensualTab     = dynamic(() => import("@/components/admin/ReporteMensualTab"),              { loading: S });
@@ -80,24 +79,92 @@ const ScoringCrediticioTab = dynamic(() => import("@/components/admin/ScoringCre
 
 const MODULE_ID = "plata";
 
+/**
+ * Las seis secciones de Mi Plata.
+ *
+ * Eran quince y ocupaban TRES filas de pestañas antes de que empezara el
+ * contenido — con cuatro de ellas casi vacías y una («Por cobrar») cuyo único
+ * contenido eran tres enlaces a las tres pestañas de al lado. Lo que se agrupó
+ * se agrupó por la pregunta que contesta, no por el componente que lo dibuja:
+ * "¿cuánto gané?" es una sola pregunta aunque se mire de tres maneras.
+ */
 const TABS = [
-  { id: "dashboard" as const,        label: "Dashboard",               icon: BarChart3   },
-  { id: "pl" as const,               label: "Pérdidas y Ganancias",     icon: TrendingUp  },
-  { id: "gastos" as const,           label: "Gastos y Costos",          icon: TrendingDown },
-  { id: "rentabilidad" as const,     label: "Rentabilidad",             icon: PieChartIcon },
-  { id: "presupuesto" as const,      label: "Presupuesto",              icon: Target       },
-  { id: "flujo-caja" as const,       label: "Flujo de Caja",            icon: Waves        },
-  { id: "reportes" as const,         label: "Reportes",                 icon: FileBarChart },
-  { id: "comparador" as const,       label: "Comparador",               icon: GitCompareArrows },
-  { id: "tesoreria" as const,        label: "Tesorería",                icon: Landmark     },
-  // ── Crédito y capital (consolidados desde módulos top-level) ──
-  { id: "por-cobrar" as const,       label: "Por cobrar",               icon: CreditCard   },
-  { id: "fiados" as const,           label: "Fiados",                   icon: HandCoins    },
-  { id: "prestamos" as const,        label: "Préstamos",                icon: Banknote     },
-  { id: "adelantos" as const,        label: "Adelantos",                icon: Coins        },
-  { id: "activos" as const,          label: "Activos",                  icon: Construction },
-  { id: "scoring" as const,          label: "Scoring crediticio",       icon: Gauge        },
+  { id: "resumen" as const,          label: "Resumen",                 icon: BarChart3    },
+  { id: "resultado" as const,        label: "Resultado",               icon: TrendingUp   },
+  { id: "gastos" as const,           label: "Gastos",                  icon: TrendingDown },
+  { id: "caja" as const,             label: "Caja",                    icon: Waves        },
+  { id: "por-cobrar" as const,       label: "Por cobrar",              icon: CreditCard   },
+  { id: "reportes" as const,         label: "Reportes",                icon: FileBarChart },
 ];
+
+type TabId = typeof TABS[number]["id"];
+
+/** Lo que vive dentro de cada pestaña. Sin entrada = la pestaña no se divide. */
+const SUBS: Partial<Record<TabId, { id: string; label: string; icon: LucideIcon }[]>> = {
+  resultado: [
+    { id: "pl",           label: "Ganancias y pérdidas", icon: TrendingUp },
+    { id: "rentabilidad", label: "Rentabilidad",         icon: PieChartIcon },
+    { id: "comparador",   label: "Comparar períodos",    icon: GitCompareArrows },
+  ],
+  gastos: [
+    { id: "gastos",      label: "Gastos y costos", icon: TrendingDown },
+    { id: "presupuesto", label: "Presupuesto",     icon: Target },
+  ],
+  caja: [
+    { id: "flujo-caja", label: "Proyección", icon: Waves },
+    { id: "tesoreria",  label: "Tesorería",  icon: Landmark },
+  ],
+  "por-cobrar": [
+    { id: "por-cobrar", label: "Todo lo que me deben", icon: CreditCard },
+    { id: "fiados",     label: "Fiados",              icon: HandCoins },
+    { id: "prestamos",  label: "Préstamos",           icon: Banknote },
+    { id: "adelantos",  label: "Adelantos",           icon: Coins },
+    { id: "scoring",    label: "Scoring",             icon: Gauge },
+  ],
+  reportes: [
+    { id: "reportes", label: "Reportes", icon: FileBarChart },
+    { id: "activos",  label: "Activos",  icon: Construction },
+  ],
+};
+
+/**
+ * Dónde vive ahora cada nombre viejo.
+ *
+ * El menú del panel entra a Mi Plata por seis atajos distintos
+ * (`?tab=fiados`, `?tab=activos`, `?tab=scoring`…) y hay un `localStorage` con
+ * la última pestaña abierta. Sin esta tabla, todos esos caminos aterrizarían en
+ * "Resumen" y el atajo dejaría de ser un atajo.
+ */
+const DONDE_VIVE: Record<string, { tab: TabId; sub?: string }> = {
+  dashboard:     { tab: "resumen" },
+  resumen:       { tab: "resumen" },
+  pl:            { tab: "resultado",  sub: "pl" },
+  rentabilidad:  { tab: "resultado",  sub: "rentabilidad" },
+  comparador:    { tab: "resultado",  sub: "comparador" },
+  resultado:     { tab: "resultado",  sub: "pl" },
+  gastos:        { tab: "gastos",     sub: "gastos" },
+  presupuesto:   { tab: "gastos",     sub: "presupuesto" },
+  "flujo-caja":  { tab: "caja",       sub: "flujo-caja" },
+  tesoreria:     { tab: "caja",       sub: "tesoreria" },
+  caja:          { tab: "caja",       sub: "flujo-caja" },
+  "por-cobrar":  { tab: "por-cobrar", sub: "por-cobrar" },
+  fiados:        { tab: "por-cobrar", sub: "fiados" },
+  prestamos:     { tab: "por-cobrar", sub: "prestamos" },
+  adelantos:     { tab: "por-cobrar", sub: "adelantos" },
+  scoring:       { tab: "por-cobrar", sub: "scoring" },
+  reportes:      { tab: "reportes",   sub: "reportes" },
+  activos:       { tab: "reportes",   sub: "activos" },
+};
+
+/** El primer hijo de una pestaña, o la pestaña misma si no se divide. */
+const primeraSub = (tab: TabId): string => SUBS[tab]?.[0]?.id ?? tab;
+
+/** Traduce cualquier nombre —viejo o nuevo— a en qué pestaña y sección cae. */
+function ubicar(id: string | undefined): { tab: TabId; sub: string } {
+  const d = id ? DONDE_VIVE[id] : undefined;
+  if (!d) return { tab: "resumen", sub: primeraSub("resumen") };
+  return { tab: d.tab, sub: d.sub ?? primeraSub(d.tab) };
+}
 
  
 function generarReporteBancario() {
@@ -1158,19 +1225,28 @@ function FinanzasDashboard() {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function FinanzasModule({ initialTab }: { initialTab?: string } = {}) {
-  const [sub, setSub] = useState(() => {
-    if (initialTab) return initialTab as typeof TABS[number]["id"];
-    if (typeof window === "undefined") return TABS[0].id;
-    return (localStorage.getItem(`admin-last-tab-${MODULE_ID}`) as typeof TABS[number]["id"]) || TABS[0].id;
+  // Se guarda la SECCIÓN, no la pestaña: volver a "Mi Plata" tiene que devolver
+  // a "Fiados" si ahí estabas, no al padre que lo contiene.
+  const [ubic, setUbic] = useState(() => {
+    if (initialTab) return ubicar(initialTab);
+    if (typeof window === "undefined") return ubicar(undefined);
+    return ubicar(localStorage.getItem(`admin-last-tab-${MODULE_ID}`) ?? undefined);
   });
+  const tab = ubic.tab;
+  const sub = ubic.sub;
+  const irA = useCallback((id: string) => setUbic(ubicar(id)), []);
   useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
+  // Un atajo del menú puede llegar con el módulo ya montado (`?tab=fiados`).
+  useEffect(() => { if (initialTab) setUbic(ubicar(initialTab)); }, [initialTab]);
+
+  const secciones = SUBS[tab];
 
   // Auto-refresh every 5 minutes
   const [refreshKey, setRefreshKey] = useState(0);
   const autoRefresh = useAutoRefresh({
     intervalSeconds: 300,
     onRefresh: useCallback(() => setRefreshKey(k => k + 1), []),
-    enabled: sub === "dashboard",
+    enabled: sub === "resumen",
   });
 
   return (
@@ -1186,7 +1262,7 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
         description="Pérdidas y ganancias, gastos, flujo de caja y reportes financieros."
         icon={Wallet}
       >
-        {sub === "dashboard" && (
+        {sub === "resumen" && (
           <AutoRefreshControl
             secondsLeft={autoRefresh.secondsLeft}
             paused={autoRefresh.paused}
@@ -1206,11 +1282,37 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
       <AdminTabBar
         tabs={TABS}
         wrap
-        activeTab={sub}
-        onTabChange={(id) => setSub(id as typeof TABS[number]["id"])}
+        activeTab={tab}
+        onTabChange={irA}
         moduleId="finanzas"
       >
-      {sub === "dashboard" && (
+      {/* Segundo nivel: sólo aparece en las pestañas que agrupan más de una
+          cosa. Con una sola sección, una barra de un botón sería ruido. */}
+      {secciones && secciones.length > 1 && (
+        <div className="mb-4 flex flex-wrap gap-1.5" role="tablist" aria-label="Secciones">
+          {secciones.map((sc) => (
+            <button
+              key={sc.id}
+              type="button"
+              role="tab"
+              aria-selected={sub === sc.id}
+              onClick={() => irA(sc.id)}
+              className={cn(
+                "rounded-xl px-3.5 py-2 text-sm font-bold transition-colors min-h-[40px]",
+                sub === sc.id
+                  ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
+              )}
+            >
+              <span className="inline-flex items-center gap-2">
+                <sc.icon className="h-4 w-4" aria-hidden />
+                {sc.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+      {sub === "resumen" && (
         <div className="space-y-6" key={refreshKey}>
           <FinanzasDashboard />
           {/* Resumen automático integrado en dashboard */}
@@ -1242,21 +1344,10 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
           <PresupuestoMensualTab />
         </div>
       )}
-      {sub === "flujo-caja" && (
-        <div className="space-y-6">
-          {/* Nuevo — diferenciador #1 vs Loyverse/Alegra/Vendemás */}
-          <CashflowRollingTable />
-          <div className="pt-4 border-t border-[var(--rule-base)] dark:border-white/10">
-            <p className="text-xs font-bold text-[var(--text-tertiary)] mb-3">
-              Proyección legacy (30 días)
-            </p>
-            <div className="space-y-4 opacity-90">
-              <CashFlowProjection />
-              <WeeklyCashFlowTable />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* La proyección a 13 semanas reemplazó a la de 30 días: eran la misma
+          pregunta con menos horizonte, y el propio código las rotulaba
+          "legacy" mientras las seguía mostrando debajo. */}
+      {sub === "flujo-caja" && <CashflowRollingTable />}
       {sub === "reportes" && (
         <div className="space-y-6">
           <ReporteMensualTab />
@@ -1279,7 +1370,7 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
       {sub === "prestamos" && <PrestamosModule />}
       {sub === "adelantos" && <AdelantosModule />}
       {sub === "activos" && <ActivosModule />}
-      {sub === "por-cobrar" && <PorCobrarDashboard />}
+      {sub === "por-cobrar" && <PorCobrarDashboard onIr={irA} />}
       {sub === "scoring" && <ScoringCrediticioTab />}
       </AdminTabBar>
     </div>
