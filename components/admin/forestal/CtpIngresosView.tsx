@@ -30,6 +30,11 @@ import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import WoodEntryForm, { type WoodEntryPreset } from "./WoodEntryForm";
 import SpeciesAggregateChart from "./SpeciesAggregateChart";
 import CtpEntryDetailModal from "./CtpEntryDetailModal";
+import CtpDocumentoVisor from "./CtpDocumentoVisor";
+import { cuerpoDesdeSerfor, trozasDesdeSerfor } from "@/lib/forestal/ctp-gtf-desde-serfor";
+import { CSS_GTF_OFICIAL } from "@/lib/forestal/ctp-gtf-formato";
+import { CSS_LISTA_TROZAS, htmlListaTrozas } from "@/lib/forestal/ctp-lista-trozas";
+import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import CtpIngresoCadenaModal from "./CtpIngresoCadenaModal";
 import CtpIngresoEditModal from "./CtpIngresoEditModal";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
@@ -70,6 +75,9 @@ export default function CtpIngresosView({
   const [detail, setDetail] = useState<WoodEntry | null>(null);
   const [chainEntry, setChainEntry] = useState<WoodEntry | null>(null);
   const [editEntry, setEditEntry] = useState<WoodEntry | null>(null);
+  /** Ingreso cuya GUÍA se está mirando como documento. */
+  const [guiaEntry, setGuiaEntry] = useState<WoodEntry | null>(null);
+  const [guiaHoja, setGuiaHoja] = useState(0);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -417,6 +425,7 @@ export default function CtpIngresosView({
         onChain={setChainEntry}
         onDuplicate={duplicar}
         onEdit={setEditEntry}
+        onVerGuia={setGuiaEntry}
         sort={sort}
         onSort={ordenar}
       />
@@ -451,6 +460,45 @@ export default function CtpIngresosView({
           }}
         />
       )}
+
+      {guiaEntry && (() => {
+        // La guía sale de la ficha que devolvió SERFOR al cargar el ingreso: es
+        // el documento oficial, casillero por casillero. Sin esa ficha no se
+        // abre el botón, así que acá siempre hay algo que dibujar.
+        const g = guiaEntry.serforGtf as unknown as GtfSerfor;
+        const hoja = (titulo: string, css: string, cuerpo: string) =>
+          `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${titulo}</title>
+           <style>@page{size:A4;margin:12mm}body{font-family:Arial,Helvetica,sans-serif;margin:0}${css}</style>
+           </head><body>${cuerpo}</body></html>`;
+        const trozas = trozasDesdeSerfor(g);
+        return (
+          <CtpDocumentoVisor
+            documentos={[
+              {
+                nombre: `GTF ${g.gtfNumber ?? guiaEntry.gtfNumber}`,
+                html: hoja("Guía de Transporte Forestal", CSS_GTF_OFICIAL, cuerpoDesdeSerfor(g)),
+              },
+              // La lista sólo se ofrece si la guía la trae: una pestaña que abre
+              // una tabla vacía hace pensar que se perdió el dato.
+              ...(trozas.length > 0
+                ? [{
+                    nombre: "Lista de trozas",
+                    html: hoja("Lista de trozas", CSS_LISTA_TROZAS, htmlListaTrozas({
+                      titular: g.titular ?? guiaEntry.providerName,
+                      subtitulo: g.gtfNumber ? `Guía ${g.gtfNumber}` : undefined,
+                      ubicacion: [g.distrito, g.provincia, g.departamento].filter(Boolean).join(" · "),
+                      numero: g.listaTrozas ?? g.gtfNumber ?? "",
+                      trozas,
+                    })),
+                  }]
+                : []),
+            ]}
+            activo={guiaHoja}
+            onActivo={setGuiaHoja}
+            onClose={() => { setGuiaEntry(null); setGuiaHoja(0); }}
+          />
+        );
+      })()}
 
       {detail && (
         <CtpEntryDetailModal

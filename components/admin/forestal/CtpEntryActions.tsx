@@ -7,7 +7,7 @@
  * (single source): si cambia una regla de estado, cambia en un solo lugar.
  */
 
-import { Copy, Eye, Pencil, Share2, ThumbsDown, ThumbsUp, XCircle } from "@buleje/design-system/icons";
+import { Copy, Eye, FileText, Pencil, Share2, ThumbsDown, ThumbsUp, XCircle } from "@buleje/design-system/icons";
 import { IconAction, type WoodEntry } from "./ctp-shared";
 
 export interface CtpEntryActionsProps {
@@ -30,6 +30,12 @@ export interface CtpEntryActionsProps {
   /** Corregir un ingreso PENDIENTE (typo de GTF, volumen mal tipeado). Ya
    *  validado no se edita: se anula con motivo y se registra de nuevo. */
   onEdit?: (entry: WoodEntry) => void;
+  /**
+   * Ver la GUÍA de este ingreso como documento, para imprimirla o archivarla.
+   * Sólo aparece si el ingreso trae la ficha de SERFOR: sin ella no hay guía que
+   * reproducir, y un botón que abre un papel vacío es peor que no tenerlo.
+   */
+  onVerGuia?: (entry: WoodEntry) => void;
   /** mobile-card estira los botones al ancho completo; la tabla los deja inline. */
   block?: boolean;
 }
@@ -48,6 +54,7 @@ export default function CtpEntryActions({
   onChain,
   onDuplicate,
   onEdit,
+  onVerGuia,
   block = false,
 }: CtpEntryActionsProps) {
   if (rejectingId === e.id) {
@@ -94,6 +101,14 @@ export default function CtpEntryActions({
     return (
       <div className="inline-flex items-center gap-1">
         <IconAction icon={Eye} label="Ver ficha completa" onClick={() => onDetail(e)} />
+        {onVerGuia && (
+          <IconAction
+            icon={FileText}
+            tone="info"
+            label="Ver la GTF y su lista de trozas — imprimir o descargar"
+            onClick={() => onVerGuia(e)}
+          />
+        )}
         {onDuplicate && (
           <IconAction
             icon={Copy}

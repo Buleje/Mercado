@@ -60,6 +60,8 @@ export interface CtpIngresosTableProps {
   onChain: (entry: WoodEntry) => void;
   onDuplicate: (entry: WoodEntry) => void;
   onEdit: (entry: WoodEntry) => void;
+  /** Abre la guía del ingreso como documento imprimible. */
+  onVerGuia: (entry: WoodEntry) => void;
   sort: CtpSort;
   onSort: (field: CtpSortField) => void;
 }
@@ -96,6 +98,7 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
     onChain: props.onChain,
     onDuplicate: props.onDuplicate,
     onEdit: props.onEdit,
+
   };
   const toggleSelect = (id: string, checked: boolean) =>
     setSelectedIds((prev) => (checked ? [...prev, id] : prev.filter((x) => x !== id)));
@@ -282,7 +285,16 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                     )}
                   </Td>
                   <Td className="text-right">
-                    <CtpEntryActions entry={e} {...actionProps} />
+                    <CtpEntryActions
+                      entry={e}
+                      {...actionProps}
+                      // Por FILA y no en `actionProps`: el botón sólo tiene
+                      // sentido si ESE ingreso trae la ficha de SERFOR. Sin
+                      // ella el documento saldría con todos los casilleros
+                      // vacíos, y un botón que abre un papel en blanco es peor
+                      // que no tenerlo.
+                      onVerGuia={e.serforGtf ? props.onVerGuia : undefined}
+                    />
                   </Td>
                 </tr>
               );

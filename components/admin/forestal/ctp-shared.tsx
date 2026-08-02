@@ -5,12 +5,7 @@
  * re-tipean por vista (si no, la tabla y el detalle terminan diciendo distinto).
  */
 
-import {
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  X as XIcon,
-} from "@buleje/design-system/icons";
+import { AlertCircle, Check, CheckCircle2, Clock, X as XIcon } from "@buleje/design-system/icons";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "@/lib/forestal/ctp-compliance";
 
 // Re-exportados: single source vive en lib/forestal/ctp-compliance.ts (lo
@@ -51,8 +46,20 @@ export type WoodEntryStatus =
 
 /** Espejo del `WoodEntry` de Prisma tal como lo serializa la API. */
 export interface WoodEntry {
+  /**
+   * La ficha oficial que devolvió SERFOR al consultar la guía, casillero por
+   * casillero. `unknown` porque llega como JSON: el que la usa la valida (ver
+   * `ctp-gtf-desde-serfor.ts`). Sin ella no hay guía que reimprimir.
+   */
+  serforGtf?: unknown;
   id: string;
+  /** (1) N° de registro del libro de operaciones — el folio (ADR-311). */
+  libroNro: number | null;
   entryDate: string;
+  /** (3) Tipo de documento: GTF | GRR. */
+  docType: string | null;
+  /** N° de constancia del SNIFFS: con él se vuelve a la guía en la base de SERFOR. */
+  serforNumeroRegistro: string | null;
   gtfNumber: string;
   gtfDate: string | null;
   gtfSeries: string | null;
@@ -61,12 +68,18 @@ export interface WoodEntry {
   providerDocumentType: string | null;
   originType: string;
   originCode: string | null;
+  /** (5) N° Fuente de origen/procedencia. */
+  originSourceNumber: string | null;
+  /** (9) Código de CTP de procedencia (si vino de otro centro). */
+  ctpProductCode: string | null;
   originRegion: string | null;
   originDistrict: string | null;
   speciesCommonName: string;
   speciesScientificName: string | null;
   speciesCites: boolean;
   productType: string;
+  /** (10) Unidad de medida declarada en el documento. */
+  unit: string | null;
   volumeM3: string;
   pieces: number;
   avgLengthM: string | null;
@@ -199,18 +212,167 @@ export function formatDateTime(iso: string | null): string {
   }
 }
 
-// ── Form primitives (CtpEntryForm + CtpConsumosPicker) ──────────────────────
-// Single source: viven acá (no en CtpEntryForm.tsx) para que el picker pueda
-// importarlas sin crear un import circular entre los dos componentes.
-export const I = "w-full h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--data-success-600)] focus:ring-1 focus:ring-[var(--data-success-600)]/20 placeholder:text-[var(--text-tertiary)]";
+// ── Primitivos de formulario de los modales del Libro ───────────────────────
+// Single source de TODOS los modales del módulo (alta de ingreso, corrida,
+// despacho, lote, liquidación…). Viven acá —y no en cada modal— porque cuando
+// cada uno tenía sus clases sueltas terminaban con alturas y focus distintos:
+// el mismo formulario se veía de tres maneras según por dónde se abriera.
+//
+// Rediseño 2026-07-30: los campos pasaron a h-11 (toque cómodo, misma altura que
+// `Btn` md, así un input y el botón de al lado quedan alineados), radio `xl` y
+// foco en el TURQUESA de la marca — antes era un verde `data-success` que no es
+// color de marca y competía con el estado "guardado con éxito".
+export const I =
+  "w-full h-11 rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 text-sm text-[var(--text-primary)] outline-none transition-[border-color,box-shadow] duration-150 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] disabled:cursor-not-allowed disabled:bg-[var(--surface-sunken)] disabled:text-[var(--text-tertiary)] placeholder:text-[var(--text-tertiary)]";
 
-export function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
+/** Cuántas de las 12 columnas ocupa un campo en `CampoGrid`. */
+export type CampoSpan = 2 | 3 | 4 | 6 | 8 | 12;
+
+const SPAN_CLASS: Record<CampoSpan, string> = {
+  2: "sm:col-span-2",
+  3: "sm:col-span-3",
+  4: "sm:col-span-4",
+  6: "sm:col-span-6",
+  8: "sm:col-span-8",
+  12: "sm:col-span-12",
+};
+
+/**
+ * Un campo del formulario.
+ *
+ * `casillero` es el número del campo en el formato oficial del LO-CTP: va como
+ * un chip discreto al lado de la etiqueta en vez de un párrafo gris debajo
+ * ("Casillero (3) del Libro de Operaciones"). Con seis campos así, esos párrafos
+ * eran más texto que el formulario y empujaban todo hacia abajo.
+ */
+export function Field({
+  label,
+  required,
+  hint,
+  casillero,
+  span,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  hint?: string;
+  casillero?: number;
+  span?: CampoSpan;
+  children: React.ReactNode;
+}) {
   return (
-    <label className="block">
-      <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">{label}{required && <span className="text-[var(--data-error-600)]">*</span>}</span>
+    // Sin `span` NO se pone clase: los formularios que envuelven en un grid de 2
+    // columnas (no de 12) heredan su propio ancho. Un `col-span-12` por defecto
+    // le hacía crear 12 columnas implícitas al grid padre y sus bloques hermanos
+    // caían a 1/12 de ancho — el modal de Producción quedó con el texto partido
+    // letra por letra hasta que se detectó en el screenshot.
+    <label className={`block min-w-0 ${span ? SPAN_CLASS[span] : ""}`}>
+      <span className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-[var(--text-primary)]">
+        <span className="truncate">{label}</span>
+        {required && <span className="text-[var(--data-error-600)]" aria-hidden="true">*</span>}
+        {casillero != null && (
+          <span
+            title={`Casillero (${casillero}) del formato oficial LO-CTP`}
+            className="shrink-0 rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold tabular-nums text-[var(--text-tertiary)]"
+          >
+            {casillero}
+          </span>
+        )}
+      </span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-[var(--text-tertiary)]">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs leading-snug text-[var(--text-tertiary)]">{hint}</span>}
     </label>
+  );
+}
+
+/**
+ * Grilla de 12 columnas para los campos de una sección.
+ *
+ * Antes cada bloque armaba su propio `grid-cols-2` o `grid-cols-3`, así que dos
+ * campos hermanos podían medir 210px y 300px sin motivo y el formulario se veía
+ * dentado. Con 12 columnas, "mitad" es siempre `span={6}` y "tercio" `span={4}`.
+ * En celular todo cae a una columna.
+ */
+export function CampoGrid({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <div className={`grid grid-cols-1 gap-x-4 gap-y-3.5 sm:grid-cols-12 ${className}`}>{children}</div>;
+}
+
+/**
+ * Sección de un modal: número + título, SIN caja.
+ *
+ * Cada sección era una tarjeta con borde: seis tarjetas dentro del marco del
+ * modal, más el panel lateral, daban ocho bordes compitiendo en la misma
+ * pantalla. Un encabezado con una línea fina separa igual de bien y deja que el
+ * ojo siga los campos, que es lo que se viene a llenar.
+ */
+export function Seccion({
+  numero,
+  title,
+  hint,
+  estado,
+  children,
+  className = "",
+}: {
+  numero?: number;
+  title: string;
+  hint?: string;
+  /** Marca si la sección ya tiene lo que necesita. `undefined` = no se evalúa. */
+  estado?: "ok" | "pendiente";
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`break-inside-avoid border-t border-[var(--rule-base)] pt-5 mt-5 first:mt-0 first:border-t-0 first:pt-0 ${className}`}>
+      <div className="mb-3 flex items-baseline gap-2">
+        {numero != null && (
+          <span className="text-[length:var(--ts-2xs,11px)] font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">
+            {String(numero).padStart(2, "0")}
+          </span>
+        )}
+        <h3 className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          {title}
+        </h3>
+        {/* El estado por sección evita recorrer el formulario entero buscando
+            qué falta: se ve de un vistazo cuál quedó a medias. */}
+        {estado === "ok" && (
+          <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" title="Completa">
+            <Check className="h-2.5 w-2.5" strokeWidth={3} />
+          </span>
+        )}
+        {estado === "pendiente" && (
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--data-warning-500)]" title="Falta completar" />
+        )}
+        {hint && <span className="ml-auto truncate text-xs text-[var(--text-tertiary)]">{hint}</span>}
+      </div>
+      {/* La sección ES la grilla: así dos campos hermanos miden lo mismo sin que
+          cada bloque arme su propio grid. Lo que no es un campo (avisos, listas)
+          se marca con `sm:col-span-12` para ocupar la fila entera. */}
+      <CampoGrid>{children}</CampoGrid>
+    </section>
+  );
+}
+
+/**
+ * Columna lateral de resumen (la vista previa de lo que se va a registrar).
+ * `sticky` para que no se pierda al scrollear el formulario largo.
+ */
+export function PanelResumen({
+  title,
+  children,
+  footer,
+}: {
+  title: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+}) {
+  return (
+    <aside className="sticky top-0 flex h-fit flex-col gap-3 rounded-2xl bg-[var(--surface-sunken)] p-4">
+      <h3 className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        {title}
+      </h3>
+      {children}
+      {footer}
+    </aside>
   );
 }
 

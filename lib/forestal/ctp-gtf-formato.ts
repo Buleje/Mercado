@@ -34,6 +34,16 @@ export function fechaGtf(iso: string | null | undefined): string {
   return `${d}.${m}.${a}`;
 }
 
+/**
+ * El DNI de una parte. Cuando el documento principal es el RUC, la ficha de
+ * SERFOR suele traer también el DNI del representante: viaja en `dniExtra` y
+ * llena el casillero que le corresponde en vez de perderse.
+ */
+function dniDe(p: { docTipo?: string; docNumero?: string; dniExtra?: string } | undefined): string {
+  if (!p) return "";
+  return p.docTipo === "DNI" ? (p.docNumero ?? "") : (p.dniExtra ?? "");
+}
+
 /** Un casillero: número, rótulo y valor. El valor vacío queda en blanco. */
 function box(n: string, label: string, valor: unknown, ancho = ""): string {
   // Sin número no se dibuja el paréntesis: el formato tiene campos que van
@@ -142,7 +152,16 @@ export interface CuerpoGtfInput {
 export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
   const { ficha: f, datos: d } = i;
   const titulo = f.titulos?.[0];
-  const comprobante = d.comprobante?.tipo && d.comprobante.tipo !== "ninguno" ? d.comprobante.tipo : "";
+  // El (20) se lee en el papel: "guia_remision" es el valor del enum, no algo
+  // que un puesto de control deba descifrar.
+  const COMPROBANTE_LABEL: Record<string, string> = {
+    factura: "Factura", boleta: "Boleta de venta",
+    guia_remision: "Guía de remisión", otro: "Otro",
+  };
+  const comprobante =
+    d.comprobante?.tipo && d.comprobante.tipo !== "ninguno"
+      ? (COMPROBANTE_LABEL[d.comprobante.tipo] ?? d.comprobante.tipo)
+      : "";
 
   return `
   <table class="cas">
@@ -157,7 +176,7 @@ export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
   </table>
 
   <table class="cas">
-    <tr>${box("13", "PROPIETARIO DEL PRODUCTO", d.propietario?.nombre)}${box("14", "D.N.I. N°", d.propietario?.docTipo === "DNI" ? d.propietario?.docNumero : "")}</tr>
+    <tr>${box("13", "PROPIETARIO DEL PRODUCTO", d.propietario?.nombre)}${box("14", "D.N.I. N°", dniDe(d.propietario))}</tr>
     <tr>${box("15", "R.U.C. N°", d.propietario?.docTipo === "RUC" ? d.propietario?.docNumero : "")}${box("16", "Dirección", d.propietario?.direccion)}</tr>
     <tr>${box("17", "Departamento", d.propietario?.departamento)}${box("18", "Provincia", d.propietario?.provincia)}</tr>
     <tr>${box("19", "Distrito", d.propietario?.distrito)}${box("20", "Tipo de Comprobante de Compra o venta", comprobante)}</tr>
@@ -165,7 +184,7 @@ export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
   </table>
 
   <table class="cas">
-    <tr>${box("22", "DESTINATARIO", d.destinatario?.nombre)}${box("23", "D.N.I. N°", d.destinatario?.docTipo === "DNI" ? d.destinatario?.docNumero : "")}</tr>
+    <tr>${box("22", "DESTINATARIO", d.destinatario?.nombre)}${box("23", "D.N.I. N°", dniDe(d.destinatario))}</tr>
     <tr>${box("24", "R.U.C. N°", d.destinatario?.docTipo === "RUC" ? d.destinatario?.docNumero : "")}${box("25", "Dirección", d.destinatario?.direccion)}</tr>
     <tr>${box("26", "Departamento", d.destinatario?.departamento)}${box("27", "Provincia", d.destinatario?.provincia)}</tr>
     <tr>${box("28", "Distrito", d.destinatario?.distrito, 'colspan="2"')}</tr>
