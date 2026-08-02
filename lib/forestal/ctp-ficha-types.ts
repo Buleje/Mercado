@@ -77,6 +77,11 @@ export interface CtpFicha {
   email: string;
   // ── GTF de salida: serie del talonario autorizado por la ARFFS ──
   gtfSerie: string;
+  /**
+   * Logo del CTP como data URL — el membrete de la guía de salida y del resto
+   * de los papeles que emite el centro. Vacío = va el monograma del libro.
+   */
+  logo?: string;
 }
 
 /** Ficha vacía — un CTP recién habilitado todavía no cargó sus datos. */
@@ -122,6 +127,7 @@ export function normalizeCtpFicha(raw: unknown): CtpFicha {
     representante: s(r.representante), representanteDni: s(r.representanteDni),
     direccion: s(r.direccion), region: s(r.region), provincia: s(r.provincia), distrito: s(r.distrito), ubigeo: s(r.ubigeo),
     telefono: s(r.telefono), email: s(r.email), gtfSerie: s(r.gtfSerie),
+    logo: s(r.logo),
   };
 }
 

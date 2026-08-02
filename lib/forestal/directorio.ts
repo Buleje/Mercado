@@ -128,6 +128,51 @@ export function claveBusqueda(v: string): string {
 
 // ── Esquemas ────────────────────────────────────────────────────────────────
 
+
+// ── Logo del titular ────────────────────────────────────────────────────────
+
+/**
+ * El logo viaja como **data URL**, no como URL del storage.
+ *
+ * El PDF de la guía se arma fotografiando la hoja en el navegador: una imagen
+ * remota sin CORS ensucia el canvas y sale en blanco justo en el papel que se
+ * presenta. Embebida, el logo funciona igual en pantalla, en el PDF y sin señal
+ * — al precio de guardar unos kilobytes en la fila, que es un precio barato.
+ */
+export const LOGO_MAX_LADO = 320;
+/** Tope duro: 160 KB de data URL ≈ un PNG de 320 px bien optimizado. */
+export const LOGO_MAX_BYTES = 160_000;
+const LOGO_MIMES = ["image/png", "image/jpeg", "image/webp"] as const;
+
+/** Motivo por el que un logo no se puede guardar, o `null` si está bien. */
+export function motivoLogoInvalido(dataUrl: string): string | null {
+  const v = (dataUrl ?? "").trim();
+  if (!v) return null; // vacío = sin logo, es válido
+  const m = /^data:([a-z/+.-]+);base64,/i.exec(v);
+  if (!m) return "El logo tiene que ser una imagen (PNG, JPG o WEBP).";
+  if (!(LOGO_MIMES as readonly string[]).includes(m[1].toLowerCase())) {
+    return "Formato no admitido: usá PNG, JPG o WEBP.";
+  }
+  if (v.length > LOGO_MAX_BYTES) {
+    return `La imagen pesa ${Math.round(v.length / 1024)} KB y el tope son ${Math.round(LOGO_MAX_BYTES / 1024)} KB.`;
+  }
+  return null;
+}
+
+/** Un adjunto del titular: el archivo vive en el Drive, acá queda el puntero. */
+export interface AdjuntoParte {
+  documentId: string;
+  rotulo: string;
+  /** ISO de cuándo se vinculó, para ordenar la lista. */
+  vinculadoEl: string;
+}
+
+export const adjuntoSchema = z.object({
+  documentId: z.string().trim().min(1).max(60),
+  rotulo: z.string().trim().min(1).max(120),
+  vinculadoEl: z.string().trim().max(40),
+});
+
 const texto = (max: number) => z.string().trim().max(max);
 
 export const parteInputSchema = z.object({
@@ -145,8 +190,23 @@ export const parteInputSchema = z.object({
   registroMtc: texto(40).optional(),
   licencia: texto(30).optional(),
   tituloHabilitante: texto(80).optional(),
+  resolucion: texto(120).optional(),
+  planManejo: texto(120).optional(),
+  arffs: texto(120).optional(),
+  representante: texto(160).optional(),
   notas: texto(500).optional(),
   activo: z.boolean().optional(),
+  /** Data URL; se valida el formato y el peso, no el contenido de la imagen. */
+  logo: z
+    .string()
+    .max(LOGO_MAX_BYTES, "La imagen es muy pesada")
+    .superRefine((v, ctx) => {
+      const motivo = motivoLogoInvalido(v);
+      if (motivo) ctx.addIssue({ code: "custom", message: motivo });
+    })
+    .optional()
+    .nullable(),
+  adjuntos: z.array(adjuntoSchema).max(30).optional(),
 });
 export type ParteInput = z.infer<typeof parteInputSchema>;
 
@@ -180,10 +240,17 @@ export interface Parte {
   registroMtc: string | null;
   licencia: string | null;
   tituloHabilitante: string | null;
+  resolucion: string | null;
+  planManejo: string | null;
+  arffs: string | null;
+  representante: string | null;
   notas: string | null;
   activo: boolean;
   usos: number;
   ultimoUso: string | null;
+  /** Data URL del logo, o null. Se usa en la cabecera de los documentos. */
+  logo: string | null;
+  adjuntos: AdjuntoParte[];
 }
 
 export interface Vehiculo {

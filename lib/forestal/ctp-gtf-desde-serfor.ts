@@ -177,7 +177,10 @@ export function estadoGtf(g: GtfSerfor): { texto: string; anulada: boolean } {
  * ella. Un papel que reproduce una guía sin decirlo termina presentándose como
  * si fuera la guía, y ahí el documento pasa de respaldo a problema.
  */
-export function documentoGtfSerfor(g: GtfSerfor, opts: { impresoEl?: string } = {}): string {
+export function documentoGtfSerfor(
+  g: GtfSerfor,
+  opts: { impresoEl?: string; logo?: string | null } = {},
+): string {
   const { texto: estado, anulada } = estadoGtf(g);
   const ubicacion = [g.distrito, g.provincia, g.departamento].filter(Boolean).join(" · ");
   const trozas = trozasDesdeSerfor(g);
@@ -198,6 +201,7 @@ export function documentoGtfSerfor(g: GtfSerfor, opts: { impresoEl?: string } = 
   return `
   ${cabeceraDoc({
     emisor: t(g.titular) || "Titular no declarado",
+    logo: opts.logo,
     meta: [t(g.direccionTitular), ubicacion, t(g.numeroTitulo) ? `Título habilitante N° ${t(g.numeroTitulo)}` : ""],
     tipo: "Guía de Transporte Forestal",
     numero: t(g.gtfNumber) || t(g.numeroRegistro),

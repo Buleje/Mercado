@@ -38,6 +38,17 @@ export const GET = withApiHandler("forestal-directorio-get", async (req: NextReq
   if (guard) return guard;
 
   const sp = req.nextUrl.searchParams;
+  // Pedido acotado: sólo los logos, para encabezar un documento. Va primero
+  // porque no necesita ni partes ni vehículos.
+  if (sp.get("logos") === "1") {
+    try {
+      return NextResponse.json({ logos: await ForestDirectorioDB.logosDePartes(auth.tenantId) });
+    } catch (err) {
+      logger.error("[directorio.GET.logos] failed", { error: String(err), tenantId: auth.tenantId });
+      return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    }
+  }
+
   const rolRaw = (sp.get("rol") ?? "").trim();
   const rol: RolParte | undefined = esRolValido(rolRaw) ? rolRaw : undefined;
   const incluirInactivos = sp.get("inactivos") === "1";

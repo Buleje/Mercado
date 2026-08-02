@@ -5904,7 +5904,28 @@ model ForestParty {
   licencia          String?
   /// Título habilitante con el que el proveedor extrae (permiso, concesión…).
   tituloHabilitante String?
+  /// Resolución que aprueba el plan de manejo — casillero (8) de la GTF.
+  resolucion        String?
+  /// Tipo de plan de manejo declarado — casillero (9).
+  planManejo        String?
+  /// ARFFS competente del titular — casillero (2).
+  arffs             String?
+  /// Representante legal, el que firma. Cuelga del (7) en el formato.
+  representante     String?
   notas             String?
+
+  /// Logo del titular como data URL (PNG/JPG chico, ver `LOGO_MAX_BYTES`).
+  ///
+  /// Data URL y no una URL del storage a propósito: el PDF de la guía se arma
+  /// fotografiando la hoja en el navegador, y una imagen remota sin CORS
+  /// ensucia el canvas y sale en blanco. Embebida, el logo viaja con el
+  /// documento y funciona igual en pantalla, en el PDF y sin señal.
+  logo              String?
+
+  /// Papeles del titular guardados en el Drive: [{ documentId, rotulo }].
+  /// Es una lista de PUNTEROS — el archivo vive en el Drive con su versionado,
+  /// acá sólo queda de qué titular es.
+  adjuntos          Json?
 
   activo Boolean @default(true)
 

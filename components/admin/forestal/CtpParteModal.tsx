@@ -26,6 +26,8 @@ import {
 } from "@/lib/forestal/directorio";
 import { consultarDocumento } from "@/hooks/use-directorio-forestal";
 import { Btn, CampoGrid, Field, I, Seccion } from "./ctp-shared";
+import CtpParteLogo from "./CtpParteLogo";
+import CtpParteAdjuntos from "./CtpParteAdjuntos";
 
 type Borrador = ParteInput & { id?: string };
 
@@ -47,8 +49,14 @@ function aBorrador(p: Parte | null, rolInicial: RolParte): Borrador {
     registroMtc: p.registroMtc ?? "",
     licencia: p.licencia ?? "",
     tituloHabilitante: p.tituloHabilitante ?? "",
+    resolucion: p.resolucion ?? "",
+    planManejo: p.planManejo ?? "",
+    arffs: p.arffs ?? "",
+    representante: p.representante ?? "",
     notas: p.notas ?? "",
     activo: p.activo,
+    logo: p.logo ?? "",
+    adjuntos: p.adjuntos ?? [],
   };
 }
 
@@ -226,14 +234,46 @@ export default function CtpParteModal({
               </Field>
             )}
             {esProveedor && (
-              <Field label="Título habilitante" span={4} hint="Permiso, concesión o plantación con la que extrae">
-                <input type="text" className={I} value={b.tituloHabilitante ?? ""} onChange={(e) => set({ tituloHabilitante: e.target.value })} />
-              </Field>
+              <>
+                <Field label="Título habilitante" span={4} hint="Permiso, concesión o plantación con la que extrae">
+                  <input type="text" className={I} value={b.tituloHabilitante ?? ""} onChange={(e) => set({ tituloHabilitante: e.target.value })} />
+                </Field>
+                {/* Los tres casilleros que la guía pide del titular y que, sin
+                    esto, había que tipear en cada guía: (8) resolución, (9)
+                    plan de manejo y (2) autoridad. */}
+                <Field label="N° de resolución" span={4} hint="Casillero (8) de la GTF">
+                  <input type="text" className={I} value={b.resolucion ?? ""} onChange={(e) => set({ resolucion: e.target.value })} />
+                </Field>
+                <Field label="Plan de manejo" span={4} hint="Casillero (9) — ej. DEMA, PMFI">
+                  <input type="text" className={I} value={b.planManejo ?? ""} onChange={(e) => set({ planManejo: e.target.value })} />
+                </Field>
+                <Field label="ARFFS competente" span={6} hint="Casillero (2) — la autoridad regional del titular">
+                  <input type="text" className={I} value={b.arffs ?? ""} onChange={(e) => set({ arffs: e.target.value })} />
+                </Field>
+                <Field label="Representante legal" span={6} hint="El que firma; cuelga del (7)">
+                  <input type="text" className={I} value={b.representante ?? ""} onChange={(e) => set({ representante: e.target.value })} />
+                </Field>
+              </>
             )}
           </Seccion>
         )}
 
-        <Seccion numero={5} title="Notas">
+        <Seccion numero={5} title="Logo y papeles del titular">
+          <CampoGrid className="sm:col-span-12">
+            <Field label="Membrete de sus documentos" span={12} hint="Sale en la cabecera de la guía y sus anexos">
+              <CtpParteLogo logo={b.logo ?? ""} onCambio={(logo) => set({ logo })} />
+            </Field>
+            <Field label="Documentos del titular" span={12} hint="Permiso, resolución, copia del RUC — se guardan en el Drive">
+              <CtpParteAdjuntos
+                adjuntos={b.adjuntos ?? []}
+                nombreParte={b.nombre}
+                onCambio={(adjuntos) => set({ adjuntos })}
+              />
+            </Field>
+          </CampoGrid>
+        </Seccion>
+
+        <Seccion numero={6} title="Notas">
           <CampoGrid className="sm:col-span-12">
             <Field label="Observaciones internas" span={12}>
               <input type="text" className={I} value={b.notas ?? ""} onChange={(e) => set({ notas: e.target.value })} />

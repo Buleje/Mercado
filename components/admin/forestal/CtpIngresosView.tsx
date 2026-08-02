@@ -37,6 +37,7 @@ import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { CSS_LISTA_TROZAS, htmlListaTrozas } from "@/lib/forestal/ctp-lista-trozas";
 import { CSS_LEGAJO, portadaLegajo } from "@/lib/forestal/ctp-legajo";
 import { metaArchivado, papelesDeIngreso } from "@/lib/forestal/ctp-documentos-ingreso";
+import { useLogosTitulares } from "@/hooks/use-logos-titulares";
 import CtpArchivadorAuto, { type GuiaParaArchivar } from "./CtpArchivadorAuto";
 import { hayNovedades } from "@/lib/forestal/ctp-cola-archivado";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
@@ -108,6 +109,10 @@ export default function CtpIngresosView({
   const [bulkRejecting, setBulkRejecting] = useState(false);
   const [bulkReason, setBulkReason] = useState("");
   const [descargando, setDescargando] = useState(false);
+
+  // El membrete de la guía es el del TITULAR, no el del aserradero: si el
+  // directorio tiene su logo, el papel sale con él.
+  const { logoDe } = useLogosTitulares();
 
   /** Legajo armado: un solo documento con las guías marcadas y su índice. */
   const [legajo, setLegajo] = useState<DocumentoImprimible[] | null>(null);
@@ -205,7 +210,7 @@ export default function CtpIngresosView({
     for (const e of elegidos) {
       if (!e.serforGtf) continue; // sin ficha no hay guía que reproducir
       const g = e.serforGtf as unknown as GtfSerfor;
-      cuerpos.push(documentoGtfSerfor(g, { impresoEl: hoy }));
+      cuerpos.push(documentoGtfSerfor(g, { impresoEl: hoy, logo: logoDe(e.providerName, e.providerDocument) }));
       const trozas = trozasDesdeSerfor(g);
       if (trozas.length > 0) {
         cuerpos.push(
@@ -251,7 +256,10 @@ export default function CtpIngresosView({
    */
   const encolarArchivado = useCallback((elegidos: WoodEntry[]) => {
     const nuevas = elegidos.flatMap((e) => {
-      const papeles = papelesDeIngreso(e, { impresoEl: hoyPE() });
+      const papeles = papelesDeIngreso(e, {
+        impresoEl: hoyPE(),
+        logo: logoDe(e.providerName, e.providerDocument),
+      });
       if (!papeles) return []; // sin ficha de SERFOR no hay guía que archivar
       const hojas = [papeles.gtf, ...(papeles.lista ? [papeles.lista] : [])];
       return hojas.map((h) => ({
@@ -267,7 +275,7 @@ export default function CtpIngresosView({
       const vistas = new Set(prev.map((c) => c.clave));
       return [...prev, ...nuevas.filter((n) => !vistas.has(n.clave))];
     });
-  }, []);
+  }, [logoDe]);
 
   /**
    * De dónde salen las guías del legajo:
@@ -625,7 +633,10 @@ export default function CtpIngresosView({
         // Los papeles del ingreso los arma `papelesDeIngreso` y NO esta vista:
         // el que se mira acá y el que se archiva al validar tienen que ser el
         // mismo documento, no dos que se parecen.
-        const papeles = papelesDeIngreso(guiaEntry, { impresoEl: hoyPE() });
+        const papeles = papelesDeIngreso(guiaEntry, {
+          impresoEl: hoyPE(),
+          logo: logoDe(guiaEntry.providerName, guiaEntry.providerDocument),
+        });
         if (!papeles) return null;
         return (
           <CtpDocumentoVisor

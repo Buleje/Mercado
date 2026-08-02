@@ -77,7 +77,7 @@ export interface PapelesDeIngreso {
 
 export function papelesDeIngreso(
   e: IngresoConGuia,
-  opts: { impresoEl?: string } = {},
+  opts: { impresoEl?: string; logo?: string | null } = {},
 ): PapelesDeIngreso | null {
   if (!e.serforGtf) return null;
   const g = e.serforGtf as GtfSerfor;

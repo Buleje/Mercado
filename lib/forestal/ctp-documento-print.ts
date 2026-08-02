@@ -51,6 +51,14 @@ const MONOGRAMA = `<svg class="doc-mono" viewBox="0 0 40 40" aria-hidden="true">
 export interface CabeceraDoc {
   /** Quién emite o de quién es el documento — la línea más grande de la hoja. */
   emisor: string;
+  /**
+   * Logo del emisor como data URL. Sin él va el monograma del libro.
+   *
+   * Data URL y no una URL remota: el PDF se arma fotografiando la hoja, y una
+   * imagen de otro origen sin CORS ensucia el canvas — el logo saldría en
+   * blanco justo en el papel que se presenta.
+   */
+  logo?: string | null;
   /** Hasta tres líneas chicas: razón social, RUC, dirección, código de CTP… */
   meta?: Array<string | null | undefined>;
   /** Rótulo del recuadro de identidad: "GUÍA DE TRANSPORTE FORESTAL". */
@@ -72,9 +80,12 @@ export function cabeceraDoc(i: CabeceraDoc): string {
     .filter(Boolean)
     .map((m) => `<div class="doc-meta">${esc(m)}</div>`)
     .join("");
+  const marca = (i.logo ?? "").startsWith("data:")
+    ? `<img class="doc-logo" src="${esc(i.logo)}" alt="" />`
+    : MONOGRAMA;
   return `<header class="doc-cab">
     <div class="doc-marca">
-      ${MONOGRAMA}
+      ${marca}
       <div>
         <div class="doc-emisor">${esc(i.emisor)}</div>
         ${metas}
@@ -360,6 +371,10 @@ export const CSS_DOCUMENTO = `
   .doc-cab { display:flex; justify-content:space-between; align-items:flex-start; gap:6mm; padding-bottom:1.8mm; border-bottom:2pt solid var(--tinta); }
   .doc-marca { display:flex; align-items:flex-start; gap:3mm; min-width:0; }
   .doc-mono { width:9mm; height:9mm; color:var(--tinta); flex:none; }
+  /* El logo manda sobre el monograma, pero no sobre el papel: se le da alto y
+     se deja crecer a lo ancho hasta un tope, para que un logo apaisado no
+     empuje el número de la guía fuera de la hoja. */
+  .doc-logo { height:12mm; max-width:34mm; object-fit:contain; flex:none; }
   .doc-emisor { font-size:9.2pt; font-weight:bold; letter-spacing:.2pt; text-transform:uppercase; line-height:1.12; }
   .doc-meta { font-size:6.2pt; color:var(--gris); margin-top:.2mm; line-height:1.25; }
   .doc-id { flex:none; min-width:44mm; border:1pt solid var(--tinta); }

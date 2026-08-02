@@ -16,6 +16,7 @@ import {
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Field, I } from "./ctp-shared";
+import CtpParteLogo from "./CtpParteLogo";
 import {
   emptyCtpFicha, ctpFichaFaltantes, estadoVencimiento,
   type CtpFicha, type CtpTituloHabilitante, type CtpCitesPermiso,
@@ -117,6 +118,11 @@ export default function CtpFichaEditor() {
             <Field label="Código de CTP" required hint="Asignado por la ARFFS"><input className={I} value={draft.codigoCtp} onChange={(e) => set("codigoCtp", e.target.value)} placeholder="CTP-25-000123" /></Field>
             <Field label="RUC" required hint="11 dígitos"><input className={I} value={draft.ruc} onChange={(e) => set("ruc", e.target.value.replace(/\D/g, "").slice(0, 11))} inputMode="numeric" placeholder="20512345678" /></Field>
             <Field label="Razón social" required><input className={I} value={draft.razonSocial} onChange={(e) => set("razonSocial", e.target.value)} placeholder="Maderera San Martín S.A.C." /></Field>
+            {/* El logo es del CENTRO: encabeza la guía de salida, el certificado
+                y todo lo que emite el CTP con su nombre. */}
+            <Field label="Logo del CTP" hint="Va en el membrete de la guía de salida y sus anexos">
+              <CtpParteLogo logo={draft.logo ?? ""} onCambio={(logo) => set("logo", logo)} />
+            </Field>
           </Section>
 
           <Section title="Registro ante la autoridad forestal (ARFFS)" icon={CheckCircle2}>

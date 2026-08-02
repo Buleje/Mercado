@@ -21,6 +21,7 @@ import {
   type RolParte,
   type Vehiculo,
   type VehiculoInput,
+  type AdjuntoParte,
 } from "@/lib/forestal/directorio";
 
 /**
@@ -73,6 +74,14 @@ function soloConValor<T extends Record<string, unknown>>(campos: T): Partial<T> 
   return out;
 }
 
+/** Lo mínimo para poner el logo de una parte en la cabecera de un documento. */
+export interface LogoDeParte {
+  id: string;
+  nombre: string;
+  docNumero: string | null;
+  logo: string;
+}
+
 function aParte(r: ParteRow): Parte {
   return {
     id: r.id,
@@ -90,10 +99,18 @@ function aParte(r: ParteRow): Parte {
     registroMtc: r.registroMtc,
     licencia: r.licencia,
     tituloHabilitante: r.tituloHabilitante,
+    resolucion: r.resolucion,
+    planManejo: r.planManejo,
+    arffs: r.arffs,
+    representante: r.representante,
     notas: r.notas,
     activo: r.activo,
     usos: r.usos,
     ultimoUso: r.ultimoUso ? r.ultimoUso.toISOString() : null,
+    logo: r.logo,
+    // `Json?` llega como `unknown`: si alguna vez se guardó otra cosa, la lista
+    // sale vacía en vez de romper la pantalla del directorio.
+    adjuntos: Array.isArray(r.adjuntos) ? (r.adjuntos as unknown as AdjuntoParte[]) : [],
   };
 }
 
@@ -197,8 +214,16 @@ export const ForestDirectorioDB = {
       registroMtc: vacioANull(input.registroMtc),
       licencia: vacioANull(input.licencia),
       tituloHabilitante: vacioANull(input.tituloHabilitante),
+      resolucion: vacioANull(input.resolucion),
+      planManejo: vacioANull(input.planManejo),
+      arffs: vacioANull(input.arffs),
+      representante: vacioANull(input.representante),
       notas: vacioANull(input.notas),
       ...(input.activo === undefined ? {} : { activo: input.activo }),
+      // `null` explícito borra el logo; `undefined` lo deja como estaba (una
+      // edición de datos no tiene por qué tocar la imagen).
+      ...(input.logo === undefined ? {} : { logo: input.logo || null }),
+      ...(input.adjuntos === undefined ? {} : { adjuntos: input.adjuntos }),
     };
 
     const existente = input.id
@@ -265,6 +290,22 @@ export const ForestDirectorioDB = {
   },
 
   // ── Vehículos ────────────────────────────────────────────────────────────
+
+  /**
+   * Partes con logo cargado. Ver `LogoDeParte`: el listado normal NO los manda
+   * porque son data URLs de hasta 160 KB y una libreta de cincuenta partes
+   * serían ocho megas por pantallazo.
+   */
+  async logosDePartes(tenantId: string): Promise<LogoDeParte[]> {
+    const filas = await prisma.forestParty.findMany({
+      where: { tenantId, deletedAt: null, NOT: { logo: null } },
+      select: { id: true, nombre: true, docNumero: true, logo: true },
+      take: 200,
+    });
+    return filas
+      .filter((f): f is typeof f & { logo: string } => Boolean(f.logo))
+      .map((f) => ({ id: f.id, nombre: f.nombre, docNumero: f.docNumero, logo: f.logo }));
+  },
 
   async listarVehiculos(
     tenantId: string,

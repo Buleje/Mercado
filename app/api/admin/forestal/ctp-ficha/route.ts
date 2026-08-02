@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
+import { LOGO_MAX_BYTES, motivoLogoInvalido } from "@/lib/forestal/directorio";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -52,6 +53,15 @@ const fichaSchema = z.object({
   telefono: z.string().trim().max(40).optional(),
   email: z.string().trim().max(160).optional(),
   gtfSerie: z.string().trim().max(20).optional(),
+  /** Logo del CTP como data URL — el membrete de sus documentos. */
+  logo: z
+    .string()
+    .max(LOGO_MAX_BYTES, "La imagen es muy pesada")
+    .superRefine((v, ctx) => {
+      const motivo = motivoLogoInvalido(v);
+      if (motivo) ctx.addIssue({ code: "custom", message: motivo });
+    })
+    .optional(),
 });
 
 async function ensureSpec(tenantId: string) {

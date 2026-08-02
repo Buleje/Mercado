@@ -187,6 +187,7 @@ export async function documentoGtfSalida(
 
     ${cabeceraDoc({
       emisor: ficha.nombreCtp || ficha.razonSocial || "Centro de Transformación Primaria",
+      logo: ficha.logo,
       meta: [
         [ficha.razonSocial, ficha.ruc ? `RUC ${ficha.ruc}` : ""].filter(Boolean).join(" · "),
         [ficha.codigoCtp ? `Código de CTP: ${ficha.codigoCtp}` : "", ficha.arffs].filter(Boolean).join(" · "),
