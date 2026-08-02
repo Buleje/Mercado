@@ -2355,10 +2355,19 @@ button,
   --data-2: #b8c0cc;
   --data-3: #8590a3;
   --data-4: #4c5566;
-  --data-5: #14C2C2;
-  --data-6: #38bdf8;
-  --data-7: #ff8676;
-  --data-8: #c4b5fd;
+  /* Steps DARK elegidos, no volteados del modo claro (2026-08-02). Los
+     anteriores (#14C2C2 #38bdf8 #ff8676 #c4b5fd) quedaban en L 0.74-0.81 contra
+     un techo utilizable de 0.67 sobre `--surface-raised` (#1c2230): brillaban
+     más que el texto y las áreas grandes flotaban sobre la tarjeta. Estos
+     mantienen el MISMO slot semántico —para que una serie no cambie de color al
+     cambiar de modo— dentro de la banda, con contraste ≥3:1.
+     Pendiente conocido: azul(6) junto a teal(5) o violeta(8) es confundible con
+     daltonismo, en light igual que en dark; arreglarlo exige reordenar los slots
+     en AMBOS modos, que es cambiar la identidad visual del panel. */
+  --data-5: #0d9488;
+  --data-6: #4f7fe8;
+  --data-7: #e05a45;
+  --data-8: #8b5cf6;
 
   /* ── Data state scale — dark overrides (Sprint C1) ───────────────────────
      Light -500 no sirve en dark — usamos -400/300 para contraste AA sobre
