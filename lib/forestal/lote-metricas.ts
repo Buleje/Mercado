@@ -11,6 +11,7 @@
  */
 
 import { PT_POR_M3 } from "./cubicacion";
+import type { MetaEspecie } from "./ctp-cadena-lote";
 
 export interface LoteMedible {
   unit: string;
@@ -73,6 +74,88 @@ export function resumenLotes(lotes: ReadonlyArray<LoteMedible>): ResumenLotes {
     despachadoPt: enPieTablar(despachadoM3),
     disponiblePt: enPieTablar(disponibleM3),
     avancePct: armadoM3 > 0 ? Number(((despachadoM3 / armadoM3) * 100).toFixed(1)) : null,
+  };
+}
+
+/**
+ * Recorte de una página, con la página CLAMPEADA al rango que existe.
+ *
+ * Vive acá y no dentro de la tabla porque es donde se cometen los off-by-one, y
+ * probarlo en el navegador exige tener más lotes que el tamaño de página — con
+ * diez lotes y diez por página no hay segunda página que cruzar.
+ *
+ * Clampear en vez de devolver vacío: si el filtro achica la lista mientras se
+ * está en la página 4, mostrar una tabla vacía se lee como "no hay resultados"
+ * cuando en realidad hay, sólo que más arriba.
+ */
+export function paginar<T>(
+  items: ReadonlyArray<T>,
+  pagina: number,
+  porPagina: number,
+): { visibles: T[]; pagina: number; paginas: number; desde: number; hasta: number } {
+  const tam = Math.max(1, Math.floor(porPagina) || 1);
+  const paginas = Math.max(1, Math.ceil(items.length / tam));
+  const actual = Math.min(Math.max(1, Math.floor(pagina) || 1), paginas);
+  const desde = (actual - 1) * tam;
+  const visibles = items.slice(desde, desde + tam);
+  return {
+    visibles,
+    pagina: actual,
+    paginas,
+    // 1-indexado y humano: "1–10 de 47". Con la lista vacía, 0–0.
+    desde: items.length === 0 ? 0 : desde + 1,
+    hasta: Math.min(desde + tam, items.length),
+  };
+}
+
+/**
+ * La meta de rendimiento del lote: una sola fila a partir de las de cada especie.
+ *
+ * OJO con qué mide: es el rendimiento de las corridas ENTERAS que arman el lote,
+ * no de la fracción que el lote se lleva. El consumo se atribuye a la corrida
+ * completa (I2), así que cruzarlo contra una parte de lo producido daría un
+ * rendimiento inventado — el mismo criterio que `calcularMetaEspecies`. La UI
+ * tiene que decirlo o el número se lee como "rendimiento de este lote".
+ *
+ * `null` cuando no hay consumo atribuido: sin trozas no hay meta que exigir, y
+ * un 0% afirmaría que la corrida no rindió nada.
+ */
+export interface MetaLote {
+  trozasM3: number;
+  metaM3: number;
+  metaPt: number;
+  producidoM3: number;
+  producidoPt: number;
+  /** meta − producido. Positivo = falta producir. */
+  saldoM3: number;
+  saldoPt: number;
+  rendimientoPct: number | null;
+  /** Alguna especie produjo en una unidad que no convierte: el saldo es parcial. */
+  unidadesMezcladas: boolean;
+  /** Cuántas especies entraron en la cuenta (para poder decir "2 especies"). */
+  especies: number;
+}
+
+export function metaDeLote(metas: ReadonlyArray<MetaEspecie>): MetaLote | null {
+  if (metas.length === 0) return null;
+  const suma = (f: (m: MetaEspecie) => number) => r4(metas.reduce((a, m) => a + f(m), 0));
+
+  const trozasM3 = suma((m) => m.trozasM3);
+  if (trozasM3 <= 0) return null;
+
+  const metaM3 = suma((m) => m.metaM3);
+  const producidoM3 = suma((m) => m.producidoM3);
+  return {
+    trozasM3,
+    metaM3,
+    metaPt: enPieTablar(metaM3),
+    producidoM3,
+    producidoPt: enPieTablar(producidoM3),
+    saldoM3: r4(metaM3 - producidoM3),
+    saldoPt: enPieTablar(r4(metaM3 - producidoM3)),
+    rendimientoPct: Number(((producidoM3 / trozasM3) * 100).toFixed(1)),
+    unidadesMezcladas: metas.some((m) => m.unidadesMezcladas),
+    especies: metas.length,
   };
 }
 

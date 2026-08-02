@@ -19,12 +19,13 @@
  * descuenta lo puesto en OTROS lotes, NO en despachos. Es una vista comercial
  * paralela, no un segundo stock — despacho por lote sería un follow-up.
  */
-import { construirCadenaLote } from "@/lib/forestal/ctp-cadena-lote";
+import { calcularMetaEspecies, construirCadenaLote } from "@/lib/forestal/ctp-cadena-lote";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { CtpInvariantError, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
+import { metaDeLote } from "@/lib/forestal/lote-metricas";
 
 const CACHE_PREFIX = "forest-lote";
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
@@ -123,26 +124,78 @@ export class ForestLoteDB {
     // lote. Mismo criterio que `ForestCtpDB.list()`; si divergieran, el mismo
     // despacho restaría en una pantalla y no en la otra.
     const corridasDeLotes = [...new Set(lotes.flatMap((l) => l.miembros.map((m) => m.produccionEntryId)))];
-    const salidas = corridasDeLotes.length
-      ? await prisma.forestCtpDespachoOrigen.groupBy({
-          by: ["produccionEntryId"],
-          where: {
-            tenantId,
-            produccionEntryId: { in: corridasDeLotes },
-            despacho: { deletedAt: null, status: "registrado" },
-          },
-          _sum: { quantity: true },
-        })
-      : [];
+    const [salidas, consumos, corridas] = corridasDeLotes.length
+      ? await Promise.all([
+          prisma.forestCtpDespachoOrigen.groupBy({
+            by: ["produccionEntryId"],
+            where: {
+              tenantId,
+              produccionEntryId: { in: corridasDeLotes },
+              despacho: { deletedAt: null, status: "registrado" },
+            },
+            _sum: { quantity: true },
+          }),
+          // Los m³ de trozas que entraron a cada corrida: es el DENOMINADOR de
+          // la meta de rendimiento (ADR-134 D5, invariante I2).
+          prisma.forestCtpConsumo.groupBy({
+            by: ["ctpEntryId"],
+            where: { tenantId, ctpEntryId: { in: corridasDeLotes } },
+            _sum: { volumeM3: true },
+          }),
+          // La corrida anulada no produjo nada: incluirla bajaría el rendimiento
+          // con madera que no salió. Mismo criterio que el despacho de arriba.
+          prisma.forestCtpEntry.findMany({
+            where: {
+              tenantId,
+              id: { in: corridasDeLotes },
+              deletedAt: null,
+              status: "registrado",
+            },
+            select: { id: true, speciesCommon: true, quantity: true, unit: true },
+          }),
+        ])
+      : [[], [], []];
+
     const despachadoPorCorrida = new Map(
       salidas.map((r) => [r.produccionEntryId, Number(r._sum.quantity ?? 0)]),
     );
+    const consumoPorCorrida = new Map(
+      consumos.map((r) => [r.ctpEntryId, Number(r._sum.volumeM3 ?? 0)]),
+    );
+    const corridaPorId = new Map(corridas.map((c) => [c.id, c]));
 
     return lotes.map((l) => {
       const totalCantidad = r4(l.miembros.reduce((a, m) => a + Number(m.quantity), 0));
       const despachado = r4(
         l.miembros.reduce((a, m) => a + (despachadoPorCorrida.get(m.produccionEntryId) ?? 0), 0),
       );
+
+      // La meta se arma con las corridas ENTERAS del lote, no con la fracción
+      // que el lote se lleva: el consumo se atribuye a la corrida completa (I2)
+      // y cruzarlo contra una parte de lo producido daría un rendimiento
+      // inventado. La pantalla lo rotula como "de sus corridas".
+      const idsVivos = l.miembros
+        .map((m) => m.produccionEntryId)
+        .filter((id) => corridaPorId.has(id));
+      const meta = metaDeLote(
+        calcularMetaEspecies(
+          idsVivos.map((id) => ({
+            produccionEntryId: id,
+            especie: corridaPorId.get(id)?.speciesCommon ?? "—",
+            volumeM3: consumoPorCorrida.get(id) ?? 0,
+          })),
+          idsVivos.map((id) => {
+            const c = corridaPorId.get(id)!;
+            return {
+              produccionEntryId: id,
+              especie: c.speciesCommon,
+              quantity: Number(c.quantity ?? 0),
+              unit: c.unit,
+            };
+          }),
+        ),
+      );
+
       return {
         id: l.id,
         loteCode: l.loteCode,
@@ -173,6 +226,8 @@ export class ForestLoteDB {
          * sistema descuenta de más en vez de que hay algo que revisar arriba.
          */
         disponible: r4(Math.max(0, totalCantidad - despachado)),
+        /** Rendimiento vs. la meta de referencia. `null` sin consumo atribuido. */
+        meta,
       };
     });
   }
