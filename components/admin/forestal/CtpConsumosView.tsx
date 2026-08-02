@@ -12,8 +12,18 @@
  * Excel: pantalla y libro presentado no pueden declarar consumos distintos.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Download, FileText, Flame, Leaf, Loader2, Search, TreePine } from "@buleje/design-system/icons";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  ChevronRight,
+  Download,
+  Flame,
+  Gauge,
+  Leaf,
+  Loader2,
+  Search,
+  TreePine,
+} from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { unidadOficial } from "@/lib/forestal/loctp-campos";
@@ -24,6 +34,12 @@ import {
   type IngresoConsumo,
 } from "@/lib/forestal/loctp-consumos";
 import { consumosACsv, nombreArchivoSeccion } from "@/lib/forestal/ctp-secciones-csv";
+import {
+  agruparConsumos,
+  juzgarRendimientoConsumo,
+  resumenConsumos,
+  type AgrupacionConsumo,
+} from "@/lib/forestal/loctp-consumos-analisis";
 import { Celda, Cuadro, SinDatos, Texto, Th } from "./ctp-cuadro-shared";
 
 /** Sin tildes ni mayúsculas: se busca como se tipea, no como se escribió. */
@@ -43,6 +59,26 @@ const fmtFecha = (iso: string | null) => {
 const CAMPO =
   "h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
+/** Una fila del cuadro. Fuera del render para no re-montarla en cada estado. */
+function filaConsumo(f: FilaConsumo) {
+  return (
+    <tr key={`${f.woodEntryId}-${f.corridaId}-${f.nro}`} className="hover:bg-[var(--surface-sunken)]">
+      <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">{f.nro}</td>
+      <Texto v={fmtFecha(f.fecha)} className="whitespace-nowrap" />
+      <Texto v={f.tipoProducto} />
+      <td className="px-3 py-2 font-bold text-[var(--text-primary)]">{f.especieComun}</td>
+      <Texto v={f.especieCientifica} className="italic" />
+      <Texto v={f.codigoOrigen} className="font-mono" />
+      <Texto v={f.fuenteOrigen} className="font-mono" />
+      <Texto v={unidadOficial(f.unidad)} />
+      <Celda v={f.cantidad} />
+      <td className="px-3 py-2 text-sm text-[var(--text-secondary)]">
+        <span className="font-mono font-bold text-[var(--text-primary)]">{f.gtf}</span> → {f.observaciones}
+      </td>
+    </tr>
+  );
+}
+
 export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +86,10 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
   const [texto, setTexto] = useState("");
   const [especie, setEspecie] = useState("");
   const [gtf, setGtf] = useState("");
+  /** El grafo se guarda entero: el rendimiento y los huecos salen de él. */
+  const [grafo, setGrafo] = useState<GrafoConsumos | null>(null);
+  const [agrupar, setAgrupar] = useState<AgrupacionConsumo>("ninguna");
+  const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -73,6 +113,7 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
         ),
       ]);
       const ingresos = (ing.entries ?? []).filter((e) => e.status !== "anulado" && e.status !== "rechazado");
+      setGrafo(gra.grafo ?? null);
       setFilas(filasConsumo(gra.grafo ?? null, ingresos));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -111,7 +152,11 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
 
   const total = useMemo(() => visibles.reduce((a, f) => a + f.cantidad, 0), [visibles]);
   const especies = useMemo(() => new Set(visibles.map((f) => f.especieComun)).size, [visibles]);
-  const guias = useMemo(() => new Set(visibles.map((f) => f.gtf)).size, [visibles]);
+
+  /** Rendimiento y huecos de la cadena — lo que la tabla sola no dice. */
+  const resumen = useMemo(() => resumenConsumos(visibles, grafo), [visibles, grafo]);
+  const veredicto = useMemo(() => juzgarRendimientoConsumo(resumen.rendimientoPct), [resumen.rendimientoPct]);
+  const grupos = useMemo(() => agruparConsumos(visibles, agrupar), [visibles, agrupar]);
 
   /** Se baja lo que se está VIENDO — el filtro es parte de lo que se exporta. */
   function descargarCsv() {
@@ -170,14 +215,42 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
           icon={Leaf}
           emphasis="neutral"
         />
+        {/* Reemplaza a «guías de origen» —que ya se ve en el filtro— por la
+            pregunta del negocio: de lo que entró a la sierra, ¿cuánto salió? */}
         <StatCard
-          label="Guías de origen"
-          value={nf(guias)}
-          subValue="De dónde salió la madera"
-          icon={FileText}
-          emphasis="neutral"
+          label="Rendimiento"
+          value={resumen.rendimientoPct != null ? `${resumen.rendimientoPct}%` : "—"}
+          subValue={
+            resumen.rendimientoPct != null
+              ? `${Number(resumen.producido).toFixed(4)} m³ producidos · ${veredicto.texto}`
+              : resumen.corridasOtraUnidad > 0
+                ? `${resumen.corridasOtraUnidad} corrida(s) en otra unidad`
+                : "Sin producción declarada todavía"
+          }
+          icon={Gauge}
+          emphasis={veredicto.tono === "ok" ? "success" : veredicto.tono === "neutro" ? "neutral" : "warning"}
         />
       </div>
+
+      {/* El hueco de la cadena, arriba de todo: el libro admite una corrida sin
+          origen declarado, el certificado de trazabilidad no. Se mide contra el
+          período entero, no contra el filtro. */}
+      {resumen.corridasSinOrigen.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]">
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+          <span className="font-bold">
+            {resumen.corridasSinOrigen.length} corrida(s) produjeron sin declarar de qué guía salió la madera
+            {resumen.producidoSinOrigen > 0 ? ` · ${resumen.producidoSinOrigen.toFixed(4)} m³ sin respaldo` : ""}
+          </span>
+          <span className="text-[var(--text-secondary)]">
+            {/* El label y no el N°: en el libro real varias corridas comparten
+                lineNo y "#95000 · #95000" no señala ninguna. */}
+            {resumen.corridasSinOrigen.slice(0, 3).map((c) => c.label).join(" · ")}
+            {resumen.corridasSinOrigen.length > 3 ? ` y ${resumen.corridasSinOrigen.length - 3} más` : ""}
+            {" — se atribuyen desde Producción."}
+          </span>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2">
         <label className="relative min-w-48 flex-1">
@@ -207,6 +280,18 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
         >
           <option value="">Todas las guías</option>
           {opcionesGtf.map((g) => <option key={g} value={g}>{g}</option>)}
+        </select>
+        <select
+          value={agrupar}
+          onChange={(e) => { setAgrupar(e.target.value as AgrupacionConsumo); setAbiertos(new Set()); }}
+          aria-label="Agrupar los consumos"
+          title="Con doscientas filas la pregunta nunca es «mostrame todo»"
+          className={`${CAMPO} px-3`}
+        >
+          <option value="ninguna">Sin agrupar</option>
+          <option value="especie">Agrupar por especie</option>
+          <option value="guia">Agrupar por guía</option>
+          <option value="corrida">Agrupar por corrida</option>
         </select>
         <button
           type="button"
@@ -253,23 +338,47 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
                 ? "Sin consumos atribuidos en el período. Se registran al declarar de qué ingreso salió cada corrida de producción."
                 : "Ningún consumo coincide con el filtro."}
             </SinDatos>
+          ) : agrupar === "ninguna" ? (
+            visibles.map(filaConsumo)
           ) : (
-            visibles.map((f) => (
-              <tr key={`${f.woodEntryId}-${f.corridaId}-${f.nro}`} className="hover:bg-[var(--surface-sunken)]">
-                <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">{f.nro}</td>
-                <Texto v={fmtFecha(f.fecha)} className="whitespace-nowrap" />
-                <Texto v={f.tipoProducto} />
-                <td className="px-3 py-2 font-bold text-[var(--text-primary)]">{f.especieComun}</td>
-                <Texto v={f.especieCientifica} className="italic" />
-                <Texto v={f.codigoOrigen} className="font-mono" />
-                <Texto v={f.fuenteOrigen} className="font-mono" />
-                <Texto v={unidadOficial(f.unidad)} />
-                <Celda v={f.cantidad} />
-                <td className="px-3 py-2 text-sm text-[var(--text-secondary)]">
-                  <span className="font-mono font-bold text-[var(--text-primary)]">{f.gtf}</span> → {f.observaciones}
-                </td>
-              </tr>
-            ))
+            // Agrupado: el subtotal arriba y el detalle plegado. Lo que se
+            // busca casi siempre es el total del grupo, no sus veinte líneas.
+            grupos.map((g) => {
+              const abierto = abiertos.has(g.clave);
+              return (
+                <Fragment key={g.clave}>
+                  <tr className="bg-[var(--surface-sunken)]">
+                    <td colSpan={8} className="px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => setAbiertos((prev) => {
+                          const s2 = new Set(prev);
+                          if (s2.has(g.clave)) s2.delete(g.clave); else s2.add(g.clave);
+                          return s2;
+                        })}
+                        aria-expanded={abierto}
+                        className="flex items-center gap-2 text-left text-sm font-bold text-[var(--text-primary)]"
+                      >
+                        <ChevronRight
+                          className={`h-4 w-4 shrink-0 transition-transform ${abierto ? "rotate-90" : ""}`}
+                          aria-hidden
+                        />
+                        {g.clave}
+                        <span className="font-normal text-[var(--text-tertiary)]">
+                          {g.filas.length} consumo(s)
+                          {agrupar !== "guia" && g.guias > 1 ? ` · ${g.guias} guías` : ""}
+                        </span>
+                      </button>
+                    </td>
+                    <Celda v={g.cantidad} />
+                    <td className="px-3 py-2 text-sm text-[var(--text-tertiary)]">
+                      {total > 0 ? `${Math.round((g.cantidad / total) * 100)}% del filtro` : ""}
+                    </td>
+                  </tr>
+                  {abierto && g.filas.map(filaConsumo)}
+                </Fragment>
+              );
+            })
           )}
         </tbody>
       </Cuadro>
