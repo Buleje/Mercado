@@ -9,10 +9,30 @@
 
 /** Título habilitante que ampara el origen de la materia prima del CTP. */
 export interface CtpTituloHabilitante {
-  /** concesion | permiso | autorizacion | plantacion | dema | predio | otro */
+  /**
+   * concesion | permiso | autorizacion | plantacion | dema | predio | otro
+   *
+   * Es también el **casillero (5)** de la GTF ("Origen del Recurso"): las
+   * casillas del formato son exactamente estas categorías.
+   */
   tipo: string;
-  /** Número/código del título tal como lo emitió la ARFFS/SERFOR. */
+  /** Número/código del título tal como lo emitió la ARFFS/SERFOR. Casillero (6). */
   codigo: string;
+  /**
+   * N° de la resolución que aprobó el título — casillero **(8)** de la GTF.
+   * Ej: "R.A N° D000485-2024-MIDAGRI-SERFOR-ATFFS SELVA CENTRAL".
+   *
+   * Es distinto de `tipo`: uno dice QUÉ es el título (permiso, concesión) y el
+   * otro con qué acto administrativo se aprobó. Imprimir `tipo` en el (8)
+   * llenaba ese casillero con la palabra "permiso".
+   */
+  resolucion: string;
+  /**
+   * Tipo de plan de manejo aprobado — casillero **(9)**. DEMA, PMFI, PGMF, POA…
+   * Va como texto: la nomenclatura cambia por región y por tipo de título, y un
+   * enum cerrado rechazaría un plan válido.
+   */
+  planManejo: string;
   /** YYYY-MM-DD de vencimiento (opcional). Un título vencido invalida el origen. */
   vencimiento: string;
 }
@@ -82,7 +102,7 @@ export function normalizeCtpFicha(raw: unknown): CtpFicha {
     ? (r.titulos as unknown[])
         .map((t) => {
           const o = (t ?? {}) as Record<string, unknown>;
-          return { tipo: s(o.tipo), codigo: s(o.codigo), vencimiento: s(o.vencimiento) };
+          return { tipo: s(o.tipo), codigo: s(o.codigo), resolucion: s(o.resolucion), planManejo: s(o.planManejo), vencimiento: s(o.vencimiento) };
         })
         .filter((t) => t.tipo || t.codigo)
     : [];

@@ -60,7 +60,7 @@ export default function CtpFichaEditor() {
   const set = <K extends keyof CtpFicha>(k: K, v: CtpFicha[K]) => setDraft((d) => ({ ...d, [k]: v }));
   const setTitulo = (i: number, patch: Partial<CtpTituloHabilitante>) =>
     setDraft((d) => ({ ...d, titulos: d.titulos.map((t, j) => (j === i ? { ...t, ...patch } : t)) }));
-  const addTitulo = () => setDraft((d) => ({ ...d, titulos: [...d.titulos, { tipo: "concesion", codigo: "", vencimiento: "" }] }));
+  const addTitulo = () => setDraft((d) => ({ ...d, titulos: [...d.titulos, { tipo: "concesion", codigo: "", resolucion: "", planManejo: "", vencimiento: "" }] }));
   const removeTitulo = (i: number) => setDraft((d) => ({ ...d, titulos: d.titulos.filter((_, j) => j !== i) }));
   const setCites = (i: number, patch: Partial<CtpCitesPermiso>) =>
     setDraft((d) => ({ ...d, citesPermisos: d.citesPermisos.map((p, j) => (j === i ? { ...p, ...patch } : p)) }));
@@ -134,15 +134,44 @@ export default function CtpFichaEditor() {
             <div className="space-y-2">
               {draft.titulos.length === 0 && <p className="text-xs text-[var(--text-tertiary)]">Sin títulos cargados. Agregá las concesiones/permisos que abastecen el CTP.</p>}
               {draft.titulos.map((t, i) => (
-                <div key={i} className="flex flex-wrap items-center gap-2">
-                  <select className={`${I} max-w-[13rem]`} value={t.tipo} onChange={(e) => setTitulo(i, { tipo: e.target.value })}>
-                    {TITULO_TIPOS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                  <input className={`${I} min-w-[10rem] flex-1`} value={t.codigo} onChange={(e) => setTitulo(i, { codigo: e.target.value })} placeholder="N° del título habilitante" />
-                  <input type="date" className={`${I} max-w-[10rem]`} value={t.vencimiento} onChange={(e) => setTitulo(i, { vencimiento: e.target.value })} title="Vencimiento" />
-                  <button type="button" onClick={() => removeTitulo(i)} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--data-error-600)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
+                <div key={i} className="rounded-xl border-2 border-[var(--rule-base)] p-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select className={`${I} max-w-[13rem]`} value={t.tipo} onChange={(e) => setTitulo(i, { tipo: e.target.value })} title="Tipo de título — es también el casillero (5) de la GTF">
+                      {TITULO_TIPOS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                    <input className={`${I} min-w-[10rem] flex-1`} value={t.codigo} onChange={(e) => setTitulo(i, { codigo: e.target.value })} placeholder="N° del título habilitante — casillero (6)" />
+                    <input type="date" className={`${I} max-w-[10rem]`} value={t.vencimiento} onChange={(e) => setTitulo(i, { vencimiento: e.target.value })} title="Vencimiento" />
+                    <button type="button" onClick={() => removeTitulo(i)} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--data-error-600)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                  {/* (8) y (9): los pide la GTF y no vivían en ningún lado, así
+                      que esos dos casilleros salían vacíos en cada guía. */}
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <input
+                      className={`${I} min-w-[14rem] flex-1`}
+                      value={t.resolucion}
+                      onChange={(e) => setTitulo(i, { resolucion: e.target.value })}
+                      placeholder="N° de resolución que lo aprobó — casillero (8)"
+                    />
+                    <input
+                      className={`${I} min-w-[10rem] max-w-[16rem] flex-1`}
+                      value={t.planManejo}
+                      onChange={(e) => setTitulo(i, { planManejo: e.target.value })}
+                      placeholder="Plan de manejo: DEMA, PMFI, POA… — casillero (9)"
+                      list="planes-manejo"
+                    />
+                  </div>
                 </div>
               ))}
+              {/* Sugerencias, no un enum: la nomenclatura cambia por región y
+                  por tipo de título, y una lista cerrada rechazaría un plan
+                  válido. */}
+              <datalist id="planes-manejo">
+                <option value="Declaración de Manejo (DEMA)" />
+                <option value="Plan de Manejo Forestal Intermedio (PMFI)" />
+                <option value="Plan General de Manejo Forestal (PGMF)" />
+                <option value="Plan Operativo Anual (POA)" />
+                <option value="Plan de Manejo Consolidado" />
+              </datalist>
             </div>
           </div>
 

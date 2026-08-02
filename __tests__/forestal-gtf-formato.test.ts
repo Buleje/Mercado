@@ -156,3 +156,49 @@ describe("casilleros de ubicación de las partes (17)(18)(19) / (26)(27)(28)", (
     expect(html).not.toContain("<b>—</b>");
   });
 });
+
+describe("(8) resolución y (9) plan de manejo salen del título habilitante", () => {
+  // Antes el (8) imprimía `titulo.tipo`, que es el ENUM del título
+  // (concesion|permiso|…): con datos reales ese casillero decía "permiso" en
+  // vez de la resolución. Y el (9) no tenía fuente y salía siempre vacío.
+  const conTitulo = (extra: Record<string, string> = {}) => ({
+    ...emptyCtpFicha(),
+    titulos: [{
+      tipo: "permiso", codigo: "19-SEC/PER-FMC-2024-008",
+      resolucion: "R.A N° D000485-2024-MIDAGRI-SERFOR", planManejo: "Declaración de Manejo (DEMA)",
+      vencimiento: "", ...extra,
+    }],
+  });
+  const base = {
+    datos: gtfDatosVacio(), lineas: [], numeroGtf: "019-1",
+    fechaExpedicion: "2024-12-18", listasTrozas: "", gtfOrigen: "",
+  };
+
+  it("el (8) trae la RESOLUCIÓN, no el tipo de título", () => {
+    const html = cuerpoGtfOficial({ ...base, ficha: conTitulo() });
+    expect(html).toContain("R.A N° D000485-2024-MIDAGRI-SERFOR");
+  });
+
+  it("el (9) trae el plan de manejo", () => {
+    expect(cuerpoGtfOficial({ ...base, ficha: conTitulo() })).toContain("Declaración de Manejo (DEMA)");
+  });
+
+  it("el (5) se cruza solo con el tipo del título: son las mismas categorías", () => {
+    const html = cuerpoGtfOficial({ ...base, ficha: conTitulo() });
+    // Una sola X, y en Permiso.
+    expect(html.match(/>X</g) ?? []).toHaveLength(1);
+    expect(html).toMatch(/Permiso<\/span><span class="bx">X/);
+  });
+
+  it("un origen explícito sigue mandando sobre el del título", () => {
+    const html = cuerpoGtfOficial({ ...base, ficha: conTitulo(), origenRecurso: "concesion" });
+    expect(html).toMatch(/Concesión<\/span><span class="bx">X/);
+  });
+
+  it("un título sin esos datos deja los casilleros vacíos, no inventa", () => {
+    const html = cuerpoGtfOficial({ ...base, ficha: conTitulo({ resolucion: "", planManejo: "" }) });
+    expect(html).toContain("(8)");
+    expect(html).toContain("(9)");
+    expect(html).not.toContain("<b>—</b>");
+  });
+});

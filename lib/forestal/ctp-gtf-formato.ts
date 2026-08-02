@@ -130,7 +130,11 @@ export interface CuerpoGtfInput {
    * "REGISTRADA" sin serlo es fabricar la constancia de un trámite.
    */
   registroSerfor?: string;
-  /** Tipo de origen del recurso, para cruzar la casilla del (5). */
+  /**
+   * Tipo de origen del recurso para cruzar la casilla del (5). Si no se pasa,
+   * sale del `tipo` del título habilitante: las casillas del formato son
+   * exactamente ese enum (concesión, permiso, autorización, plantación…).
+   */
   origenRecurso?: string;
 }
 
@@ -144,10 +148,10 @@ export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
   <table class="cas">
     <tr>${box("2", "Autoridad Regional Forestal y de Fauna Silvestre", f.arffs, 'colspan="2"')}</tr>
     <tr>${box("3", "Fecha de Expedición", fechaGtf(i.fechaExpedicion))}${box("4", "Fecha de Vencimiento", fechaGtf(d.traslado?.fechaFin))}</tr>
-    <tr><td class="c" colspan="2"><span class="n">(5)</span> <span class="l">Origen del Recurso:</span>${casillasOrigen(i.origenRecurso)}</td></tr>
+    <tr><td class="c" colspan="2"><span class="n">(5)</span> <span class="l">Origen del Recurso:</span>${casillasOrigen(i.origenRecurso ?? titulo?.tipo)}</td></tr>
     <tr>${box("6", "Número", titulo?.codigo, 'colspan="2"')}</tr>
     <tr>${box("7", "Nombre del Titular", f.razonSocial)}${box("", "Representante Legal", f.representante)}</tr>
-    <tr>${box("8", "N° de Resolución", titulo?.tipo)}${box("9", "Plan de Manejo (Tipo)", "")}</tr>
+    <tr>${box("8", "N° de Resolución", titulo?.resolucion)}${box("9", "Plan de Manejo (Tipo)", titulo?.planManejo)}</tr>
     <tr>${box("10", "Departamento", f.region)}${box("11", "Provincia", f.provincia)}</tr>
     <tr>${box("12", "Distrito", f.distrito, 'colspan="2"')}</tr>
   </table>

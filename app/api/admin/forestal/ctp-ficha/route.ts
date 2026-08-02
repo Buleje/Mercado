@@ -17,6 +17,10 @@ import { withApiHandler } from "@/lib/api-handler";
 const tituloSchema = z.object({
   tipo: z.string().trim().max(40),
   codigo: z.string().trim().max(80),
+  // Casilleros (8) y (9) de la GTF. `default("")` y no `.optional()` a secas:
+  // los títulos ya guardados no los traen y tienen que seguir validando.
+  resolucion: z.string().trim().max(160).optional().default(""),
+  planManejo: z.string().trim().max(80).optional().default(""),
   vencimiento: z.string().trim().max(10).optional().default(""),
 });
 
