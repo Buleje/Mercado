@@ -40,7 +40,12 @@ import { cn } from "@/lib/utils";
  * />
  */
 
-type ColorKey = "primary" | "secondary" | "tertiary" | "quaternary" | "accent" | "info" | "amber" | "purple";
+// Los tres últimos son los colores de ESTADO del sistema (bien / atención /
+// problema). No son slots categóricos: se usan sólo cuando el segmento ES un
+// estado, y siempre con su etiqueta al lado — nunca como "la cuarta serie".
+type ColorKey =
+  | "primary" | "secondary" | "tertiary" | "quaternary" | "accent" | "info" | "amber" | "purple"
+  | "success" | "warning" | "error";
 
 interface StackConfig {
   key: string;
@@ -138,6 +143,10 @@ export const BulejeStackedBar = memo(function BulejeStackedBar({
               name={s.label}
               stackId="stack"
               fill={resolveColor(s.color)}
+              // Hilo del color de la tarjeta entre segmentos: sin esa ranura,
+              // dos tramos contiguos de tono parecido se leen como uno solo.
+              stroke="var(--surface-raised)"
+              strokeWidth={2}
               // Solo el último tiene radius top
               radius={idx === stacks.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
               maxBarSize={maxBarSize}

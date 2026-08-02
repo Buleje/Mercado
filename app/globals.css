@@ -3326,3 +3326,59 @@ body.tenant-storefront > nav[aria-label="Breadcrumb"] {
 .draggable-section:nth-child(2n+1 of .draggable-section:not([data-fullspan="true"]):not(:has([data-chart-hidden]))):nth-last-child(1 of .draggable-section:not([data-fullspan="true"]):not(:has([data-chart-hidden]))) {
   grid-column: 1 / -1;
 }
+
+/* ────────────────────────────────────────────────────────────────────────
+   CHARTS DEL LIBRO FORESTAL — steps categóricos validados por modo
+   Brandon (2026-08-02): los gráficos del Libro CTP (Control/Existencias)
+   comparan 2-3 series a la vez (ingreso vs. consumo, stock vs. despachado,
+   tramos de antigüedad). Los tokens generales `--data-5/6/7` sirven en light,
+   pero sobre la superficie dark REAL (`--surface-raised` = #1c2230) quedan
+   fuera de la banda de luminosidad utilizable (L≈0.74-0.75 contra un techo de
+   0.67): brillan más que el texto y "flotan" sobre la tarjeta.
+
+   Estos tres steps se eligieron por modo —no volteando el color del otro— y
+   ambos tríos pasan las seis comprobaciones (banda de luminosidad, croma,
+   separación para daltonismo protan/deutan/tritan, piso de visión normal y
+   contraste ≥3:1) medidas contra la superficie de cada modo.
+
+   El mecanismo es el que ya provee el design system: CHART_PALETTE lee
+   `var(--section-*, …)` antes que el token global, así que basta envolver la
+   sección. No se tocan los tokens globales.
+   ──────────────────────────────────────────────────────────────────────── */
+.charts-forestal {
+  /* Neutro de los totales (apertura / existencia de la cascada). El token
+     general `--data-1` es tinta pura: 19.8:1 en light y 14.3:1 en dark, o sea
+     una placa negra —o blanca— del alto del gráfico que pesa más que la serie
+     que importa. Estos dos anclan igual (5.9:1 y 4.6:1) sin deslumbrar. */
+  --section-primary: #5b6577;
+  --section-accent: #00918f;    /* teal marca — serie principal */
+  --section-amber: #e0503f;     /* coral — serie de contraste */
+  --section-info: #0284c7;      /* azul — tercera serie */
+
+  /* Rampa de UN solo hue para la composición del patio: ahí las rebanadas no
+     son identidades distintas, son tajadas de la misma magnitud ordenadas de
+     mayor a menor — un arcoíris fingiría categorías que no existen. Paso 1 = la
+     rebanada más grande. Monótona, con salto visible entre pasos y el extremo
+     claro despegado del fondo. */
+  --forestal-slice-1: #00423f;
+  --forestal-slice-2: #005b58;
+  --forestal-slice-3: #007471;
+  --forestal-slice-4: #008d8a;
+  --forestal-slice-5: #00a6a2;
+  --forestal-slice-6: #2bbdb8;
+}
+
+.dark .charts-forestal {
+  --section-primary: #7e8b9e;
+  --section-accent: #0d9488;
+  --section-amber: #dc5a1e;
+  --section-info: #4f7fe8;
+
+  /* En dark la rampa corre al revés: sobre fondo oscuro, "más" es más CLARO. */
+  --forestal-slice-1: #9bd8d5;
+  --forestal-slice-2: #6dc6c2;
+  --forestal-slice-3: #3fb3ae;
+  --forestal-slice-4: #14a09c;
+  --forestal-slice-5: #0d7f7c;
+  --forestal-slice-6: #0a5f5d;
+}

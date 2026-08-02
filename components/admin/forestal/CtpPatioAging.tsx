@@ -14,7 +14,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { AlertCircle, Clock, PackageOpen, RefreshCw } from "@buleje/design-system/icons";
+import { AlertCircle, Clock, RefreshCw } from "@buleje/design-system/icons";
+import { bucketsAntiguedad } from "@/lib/forestal/ctp-saldos-analisis";
 
 interface Guia {
   id: string; code: string | null; entryDate: string; species: string | null;
@@ -25,6 +26,17 @@ interface Guia {
 // rápido: pasados ~2 meses el riesgo de mancha/insectos es alto.
 const DIAS_ATENCION = 30;
 const DIAS_RIESGO = 60;
+
+/**
+ * Colores de ESTADO, no de serie: cada tramo es una condición de la madera
+ * (fresca / hay que mirarla / se está degradando). Van siempre con su etiqueta
+ * de días al lado, así el tramo se identifica sin depender del color.
+ */
+const TONO_TRAMO = {
+  fresca: { texto: "text-[var(--data-success-700)]", barra: "bg-[var(--data-success-500)]" },
+  atencion: { texto: "text-[var(--data-warning-700)]", barra: "bg-[var(--data-warning-500)]" },
+  riesgo: { texto: "text-[var(--data-error-700)]", barra: "bg-[var(--data-error-500)]" },
+} as const;
 
 const n2 = (v: number) => v.toFixed(2);
 const money = (v: number, m = "PEN") => `${m === "USD" ? "US$" : "S/"} ${v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -50,7 +62,7 @@ export default function CtpPatioAging() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const { filas, totM3, totValor, valorParcial, enRiesgo } = useMemo(() => {
+  const { filas, totM3, totValor, valorParcial, enRiesgo, tramos } = useMemo(() => {
     const filas = guias
       .map((g) => ({ ...g, dias: diasDesde(g.entryDate), valor: g.costoUnitario != null ? g.disponible * g.costoUnitario : null }))
       .sort((a, b) => b.dias - a.dias);
@@ -58,7 +70,8 @@ export default function CtpPatioAging() {
     const totValor = filas.reduce((a, f) => a + (f.valor ?? 0), 0);
     const valorParcial = filas.some((f) => f.valor == null);
     const enRiesgo = filas.filter((f) => f.dias > DIAS_RIESGO).length;
-    return { filas, totM3, totValor, valorParcial, enRiesgo };
+    const tramos = bucketsAntiguedad(filas, DIAS_ATENCION, DIAS_RIESGO);
+    return { filas, totM3, totValor, valorParcial, enRiesgo, tramos };
   }, [guias]);
 
   const badge = (dias: number) => {
@@ -88,9 +101,48 @@ export default function CtpPatioAging() {
       </div>
 
       {enRiesgo > 0 && (
-        <div className="flex items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--data-error-50)] px-4 py-2 text-xs font-medium text-[var(--data-error-700)]">
+        <div className="flex items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--data-error-50)] px-4 py-2 text-xs font-medium text-[var(--data-error-700)] dark:bg-[var(--surface-sunken)] dark:text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" /> {enRiesgo} {enRiesgo === 1 ? "guía lleva" : "guías llevan"} más de {DIAS_RIESGO} días sin procesar — riesgo de degradación.
         </div>
+      )}
+
+      {/* Los tres tramos, a escala. La tabla de abajo lista guía por guía; esto
+          contesta antes la pregunta que se hace al entrar al patio: cuánto de lo
+          que está parado ya es viejo. Tres categorías no justifican un gráfico
+          con ejes — barras proporcionales con el número al lado alcanzan y se
+          leen igual sin color. */}
+      {totM3 > 0 && (
+        <ul className="space-y-2.5 border-b border-[var(--rule-soft)] px-4 py-3">
+          {tramos.map((t) => {
+            const pct = totM3 > 0 ? (t.m3 / totM3) * 100 : 0;
+            const tono = TONO_TRAMO[t.clave];
+            return (
+              <li key={t.clave}>
+                <div className="flex items-baseline gap-2 text-xs">
+                  <span className={`font-bold ${tono.texto}`}>{t.label}</span>
+                  <span className="text-[var(--text-tertiary)]">
+                    {t.guias} {t.guias === 1 ? "guía" : "guías"}
+                  </span>
+                  <span className="ml-auto font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                    {n2(t.m3)} m³
+                  </span>
+                  <span className="w-10 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                    {pct.toFixed(0)} %
+                  </span>
+                  <span className="w-28 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    {t.valor != null ? `${money(t.valor)}${t.valorParcial ? "*" : ""}` : "sin costo"}
+                  </span>
+                </div>
+                <div className="mt-1 h-2 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                  <div
+                    className={`h-full rounded-full ${tono.barra}`}
+                    style={{ width: `${Math.max(pct > 0 ? 2 : 0, pct)}%` }}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       <table className="w-full text-sm">

@@ -11,8 +11,8 @@ import {
   RefreshCw, AlertCircle, Boxes, Scale, PackageCheck, Layers, Clock, TreePine, FileDown, Truck,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
-import { BulejeComposedChart } from "@/components/ui-system/charts";
 import { Btn, PanelSkeleton, VistaHeader } from "./ctp-shared";
+import CtpSaldosGraficos from "./CtpSaldosGraficos";
 import { printExistencias } from "@/lib/forestal/ctp-existencias-print";
 import { applyCtpPeriodParams, ctpPeriodShortLabel, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import CtpKardexModal from "./CtpKardexModal";
@@ -108,16 +108,12 @@ export function CtpSaldosView({
 
   const mp = data?.materiaPrima;
 
-  // Balance por especie, dibujado: lo que entró (validado) vs. lo que se consumió
-  // en producción. Barras a la par = especie agotada; ingreso > consumo = stock en
-  // patio. Es el balance que se fiscaliza, de un vistazo (el detalle en la tabla).
-  const balanceChart = useMemo(
-    () => (data?.porEspecie ?? []).map((s) => ({
-      especie: s.especie.length > 14 ? s.especie.slice(0, 13) + "…" : s.especie,
-      Ingreso: s.ingresoM3,
-      Consumido: s.consumidoM3,
-    })),
-    [data],
+  // Existencia heredada del cierre anterior. Es la que hace que la cascada
+  // arranque donde terminó el mes pasado en vez de en cero; sin conciliación
+  // no se conoce, y `null` es distinto de 0 (ver `pasosDeBalance`).
+  const apertura = useMemo(
+    () => (concil ? concil.materiaPrima.reduce((a, s) => a + s.apertura, 0) : null),
+    [concil],
   );
 
   return (
@@ -135,15 +131,15 @@ export function CtpSaldosView({
         </Btn>
       </VistaHeader>
 
-      {reportError && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>No se pudo abrir el reporte:</strong> {reportError}</div></div>}
+      {reportError && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>No se pudo abrir el reporte:</strong> {reportError}</div></div>}
 
-      {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
+      {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
 
       {data && mp && (
         <>
           {/* La alerta que importa: el balance global puede tapar una especie en rojo. */}
           {mp.especiesEnNegativo > 0 && (
-            <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
+            <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]">
               <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
               <div>
                 <strong>{mp.especiesEnNegativo} {mp.especiesEnNegativo === 1 ? "especie tiene" : "especies tienen"} saldo negativo.</strong>{" "}
@@ -156,28 +152,20 @@ export function CtpSaldosView({
             <StatCard label="Ingresado (validado)" value={`${n2(mp.ingresoM3)} m³`} subValue={`${mp.ingresosCount} ingresos`} icon={Layers} emphasis="neutral" />
             <StatCard label="Consumido en producción" value={`${n2(mp.consumidoM3)} m³`} icon={Boxes} emphasis="neutral" />
             <StatCard label="Saldo de materia prima" value={`${n2(mp.saldoM3)} m³`} subValue={mp.saldoM3 < 0 ? "sobreconsumo" : "disponible"} icon={Scale} emphasis={mp.saldoM3 < 0 ? "error" : "success"} />
-            <StatCard label="Pendiente de validar" value={`${n2(mp.pendienteM3)} m³`} subValue="no computa como saldo" icon={Clock} emphasis={mp.pendienteM3 > 0 ? "warning" : "neutral"} />
+            <StatCard label="Pendiente de validar" value={`${n2(mp.pendienteM3)} m³`} subValue={mp.pendienteM3 > 0 ? "no computa como saldo" : "todo el ingreso está validado"} icon={Clock} emphasis={mp.pendienteM3 > 0 ? "warning" : "neutral"} />
           </div>
 
-          {/* Balance por especie, dibujado: entra (validado) vs. sale (consumido). */}
-          {balanceChart.length > 0 && (
-            <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-              <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Materia prima por especie · entra vs. consumido (m³)</CardTitle>
-              <p className="mb-2 text-xs text-[var(--text-tertiary)]">Barras a la par = especie agotada en producción; ingreso por encima del consumo = stock en patio.</p>
-              <BulejeComposedChart
-                data={balanceChart}
-                xKey="especie"
-                bars={[
-                  { key: "Ingreso", label: "Ingreso", color: "accent", yAxis: "left" },
-                  { key: "Consumido", label: "Consumido", color: "amber", yAxis: "left" },
-                ]}
-                height={240}
-                minDataPoints={1}
-                leftAxisFormat={(v) => `${v}`}
-                tooltipFormat={(v) => `${Number(v).toFixed(2)} m³`}
-              />
-            </div>
-          )}
+          {/* Los derivados y los tres gráficos: rotación, cobertura, de qué
+              especie depende el patio y en qué estado está cada volumen. */}
+          <CtpSaldosGraficos
+            materiaPrima={mp}
+            porEspecie={data.porEspecie}
+            productos={data.productos}
+            apertura={apertura}
+            aperturaPendiente={loading}
+            period={period}
+          />
+
 
           {/* Conciliación: apertura (del cierre anterior) + movimientos = final (ADR-139 rollforward). */}
           {concil && concil.materiaPrima.length > 0 && (
@@ -228,7 +216,7 @@ export function CtpSaldosView({
                     title={`Ver kardex de ${s.especie}`}
                     onClick={() => setKardexEspecie(s.especie)}
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setKardexEspecie(s.especie); } }}
-                    className={`cursor-pointer border-t border-[var(--rule-soft)] outline-none transition-colors hover:bg-[var(--surface-canvas)] focus-visible:bg-[var(--surface-canvas)] ${s.saldoM3 < 0 ? "bg-[var(--data-error-50)]" : ""}`}
+                    className={`cursor-pointer border-t border-[var(--rule-soft)] outline-none transition-colors hover:bg-[var(--surface-canvas)] focus-visible:bg-[var(--surface-canvas)] ${s.saldoM3 < 0 ? "bg-[var(--data-error-50)] dark:bg-[var(--surface-sunken)]" : ""}`}
                   >
                     <Td>
                       <div className="flex items-center gap-2">
