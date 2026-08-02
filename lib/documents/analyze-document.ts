@@ -273,7 +273,13 @@ export async function analyzeDocumentContent(
 
   // La descripción escrita a mano sobrevive al re-análisis: es la que corrige a
   // la IA cuando se equivoca, sería absurdo borrarla al volver a describir.
-  const meta = (doc.ocrMetadata ?? {}) as Record<string, unknown>;
+  //
+  // Se relee la fila en vez de usar la que se cargó al empezar: el análisis
+  // tarda, y quien sube un archivo suele describirlo (o etiquetarlo) en el acto.
+  // Con el snapshot viejo, ese texto escrito EN EL MEDIO se pisaba al guardar —
+  // el que lo escribió veía cómo desaparecía solo un rato después.
+  const fresco = await DocumentsDB.getById(tenantId, docId);
+  const meta = ((fresco ?? doc).ocrMetadata ?? {}) as Record<string, unknown>;
   const descripcionPropia = typeof meta.descripcionUsuario === "string" ? meta.descripcionUsuario : "";
 
   const searchable = construirTextoBuscable({
