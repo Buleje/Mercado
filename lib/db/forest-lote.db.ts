@@ -115,30 +115,66 @@ export class ForestLoteDB {
       include: { miembros: { select: { quantity: true, produccionEntryId: true } } },
     });
 
-    return lotes.map((l) => ({
-      id: l.id,
-      loteCode: l.loteCode,
-      productType: l.productType,
-      speciesCommon: l.speciesCommon,
-      speciesScientific: l.speciesScientific,
-      cites: l.cites,
-      unit: l.unit,
-      grade: l.grade,
-      destino: l.destino,
-      fechaInicio: l.fechaInicio,
-      fechaFin: l.fechaFin,
-      titularId: l.titularId,
-      titularNombre: l.titularNombre,
-      status: l.status as LoteStatus,
-      notes: l.notes,
-      annulledReason: l.annulledReason,
-      createdAt: l.createdAt,
-      closedAt: l.closedAt,
-      miembrosCount: l.miembros.length,
-      /** Corridas que arma este lote — para mapear corrida → N° de lote. */
-      corridaIds: l.miembros.map((m) => m.produccionEntryId),
-      totalCantidad: r4(l.miembros.reduce((a, m) => a + Number(m.quantity), 0)),
-    }));
+    // Cuánto de cada lote YA SALIÓ. Sin esto el módulo mostraba el lote armado
+    // pero no lo único que se pregunta en la planta —*"¿cuánto me queda de este
+    // lote?"*— y había que abrir corrida por corrida para saberlo.
+    //
+    // Sólo cuentan los despachos VIVOS: uno anulado devolvió el producto al
+    // lote. Mismo criterio que `ForestCtpDB.list()`; si divergieran, el mismo
+    // despacho restaría en una pantalla y no en la otra.
+    const corridasDeLotes = [...new Set(lotes.flatMap((l) => l.miembros.map((m) => m.produccionEntryId)))];
+    const salidas = corridasDeLotes.length
+      ? await prisma.forestCtpDespachoOrigen.groupBy({
+          by: ["produccionEntryId"],
+          where: {
+            tenantId,
+            produccionEntryId: { in: corridasDeLotes },
+            despacho: { deletedAt: null, status: "registrado" },
+          },
+          _sum: { quantity: true },
+        })
+      : [];
+    const despachadoPorCorrida = new Map(
+      salidas.map((r) => [r.produccionEntryId, Number(r._sum.quantity ?? 0)]),
+    );
+
+    return lotes.map((l) => {
+      const totalCantidad = r4(l.miembros.reduce((a, m) => a + Number(m.quantity), 0));
+      const despachado = r4(
+        l.miembros.reduce((a, m) => a + (despachadoPorCorrida.get(m.produccionEntryId) ?? 0), 0),
+      );
+      return {
+        id: l.id,
+        loteCode: l.loteCode,
+        productType: l.productType,
+        speciesCommon: l.speciesCommon,
+        speciesScientific: l.speciesScientific,
+        cites: l.cites,
+        unit: l.unit,
+        grade: l.grade,
+        destino: l.destino,
+        fechaInicio: l.fechaInicio,
+        fechaFin: l.fechaFin,
+        titularId: l.titularId,
+        titularNombre: l.titularNombre,
+        status: l.status as LoteStatus,
+        notes: l.notes,
+        annulledReason: l.annulledReason,
+        createdAt: l.createdAt,
+        closedAt: l.closedAt,
+        miembrosCount: l.miembros.length,
+        /** Corridas que arma este lote — para mapear corrida → N° de lote. */
+        corridaIds: l.miembros.map((m) => m.produccionEntryId),
+        totalCantidad,
+        despachado,
+        /**
+         * Lo que queda del lote. Con `Math.max(0, …)`: un despacho mayor que lo
+         * armado es un dato roto, y mostrarlo en negativo haría pensar que el
+         * sistema descuenta de más en vez de que hay algo que revisar arriba.
+         */
+        disponible: r4(Math.max(0, totalCantidad - despachado)),
+      };
+    });
   }
 
   /** Resumen del período para la cabecera del módulo. */

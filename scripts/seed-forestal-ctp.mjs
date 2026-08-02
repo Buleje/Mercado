@@ -243,12 +243,13 @@ async function main() {
 
   // ── 4. Un despacho que sale de la primera corrida ───────────────────────
   const yaDespachos = await api("GET", "/api/admin/forestal/ctp?section=despacho&limit=200");
-  if ((yaDespachos.entries ?? []).some((e) => e.gtfNumber === "001-0000988")) {
-    console.log("  ↻ El despacho 001-0000988 ya estaba\n");
-    console.log("✅ Listo (nada nuevo que sembrar).\n");
-    return;
-  }
+  const despachoHecho = (yaDespachos.entries ?? []).some((e) => e.gtfNumber === "001-0000988");
   const salida = r4(corridas[0].producido * 0.6);
+  // `if` y no `return`: cortar acá salteaba el paso 5 (los lotes), así que un
+  // seed reanudado nunca llegaba a crearlos.
+  if (despachoHecho) {
+    console.log("  ↻ El despacho 001-0000988 ya estaba");
+  } else {
   await api("POST", "/api/admin/forestal/ctp", {
     section: "despacho", entryDate: d(27),
     speciesCommon: "Tornillo", speciesScientific: "Cedrelinga cateniformis",
@@ -260,6 +261,36 @@ async function main() {
     origenes: [{ produccionEntryId: corridas[0].id, quantity: salida }],
   });
   console.log(`  ✓ Despacho GTF 001-0000988 · ${salida} m³ desde ${corridas[0].etiqueta}`);
+  }
+
+  // ── 5. Dos lotes comerciales sobre las corridas (ADR-136) ───────────────
+  // Uno con despacho encima y otro intacto: sin los dos, la barra de avance del
+  // módulo de Lotes se ve siempre igual y no se puede verificar que distinga
+  // "sin armar" de "armado y sin salir".
+  const yaLotes = await api("GET", "/api/admin/forestal/lotes");
+  const codigosPrevios = new Set((yaLotes.lotes ?? []).map((l) => l.destino));
+  for (const plan of [
+    { corrida: corridas[0], destino: "Distribuidora Maderas del Centro SAC", grado: "Primera", fin: 20 },
+    { corrida: corridas[1], destino: "Exportadora Amazonía Viva SAC", grado: "Selecta", fin: 30 },
+  ]) {
+    if (codigosPrevios.has(plan.destino)) {
+      console.log(`  ↻ Lote para ${plan.destino} ya estaba`);
+      continue;
+    }
+    const r = await api("POST", "/api/admin/forestal/lotes", {
+      productType: "Madera aserrada",
+      speciesCommon: plan.corrida.etiqueta,
+      unit: "m3",
+      grade: plan.grado,
+      destino: plan.destino,
+      fechaInicio: "2026-07-14",
+      fechaFin: `2026-07-${plan.fin}`,
+      titularNombre: "Maderera El Aguajal SAC",
+      miembros: [{ produccionEntryId: plan.corrida.id, quantity: plan.corrida.producido }],
+    });
+    const code = r.lote?.loteCode ?? r.loteCode ?? "(sin código)";
+    console.log(`  ✓ Lote ${code} · ${plan.corrida.etiqueta} · ${plan.corrida.producido} m³ → ${plan.destino}`);
+  }
 
   // Capirona queda ENTERA sin consumir a propósito: así el picker de trozas
   // tiene piezas libres que elegir y Saldos tiene stock que mostrar.

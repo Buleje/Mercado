@@ -94,7 +94,7 @@ export default function CtpTrozasDeIngreso({
   const balance = balanceRecepcion(trozas);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
+    <section className="@container overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--rule-soft)] px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
@@ -122,7 +122,11 @@ export default function CtpTrozasDeIngreso({
         </div>
       </div>
 
-      <div className="hidden overflow-x-auto sm:block">
+      {/* 9 columnas necesitan ~56rem. El umbral se mide contra el CONTENEDOR y no
+          contra el viewport porque esto vive dentro del modal de detalle del
+          ingreso: en una tablet a 768px el modal deja ~700px y `sm:` (640px)
+          mostraba igual la tabla, apretada. */}
+      <div className="hidden overflow-x-auto @4xl:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
@@ -231,7 +235,7 @@ export default function CtpTrozasDeIngreso({
         </table>
       </div>
 
-      <ul className="divide-y divide-[var(--rule-soft)] sm:hidden">
+      <ul className="divide-y divide-[var(--rule-soft)] @4xl:hidden">
         {trozas.map((t) => (
           <li key={t.id} className="px-4 py-3">
             <div className="flex items-baseline justify-between gap-2">

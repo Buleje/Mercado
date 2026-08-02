@@ -12,10 +12,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Layers, Plus, RefreshCw, Search, PackageCheck, Boxes, Truck, Tag, Users,
 } from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
 import { StatCard } from "@buleje/design-system";
 import LibroChrome from "@/components/admin/shared/libro-chrome";
 import { useDebounce } from "@/hooks/use-debounce";
 import { LABEL_OPERATIVO, estadoOperativo } from "@/lib/forestal/lote-ventana";
+import { avanceDeLote, enPieTablar, resumenLotes } from "@/lib/forestal/lote-metricas";
 import LoteForm from "./LoteForm";
 import LoteDetailModal from "./LoteDetailModal";
 
@@ -26,6 +28,8 @@ interface LoteRow {
   speciesCommon: string | null; cites: boolean; unit: string;
   grade: string | null; destino: string | null; status: LoteStatus;
   miembrosCount: number; totalCantidad: number; createdAt: string;
+  /** Lo que ya salió y lo que queda del lote (despachos vivos). */
+  despachado: number; disponible: number;
   /** Ventana de trabajo y dueño de la madera (ADR-327). */
   fechaInicio?: string | null; fechaFin?: string | null; titularNombre?: string | null;
 }
@@ -49,6 +53,11 @@ const STATUS_LABEL: Record<LoteStatus, string> = { abierto: "Abierto", cerrado: 
 /** `timeZone: "UTC"` NO es cosmético: las fechas del libro son date-only y sin
  *  esto, a las 19:00 de Lima, un 20-jul se dibuja como 19-jul. Mismo criterio
  *  que CtpEntriesView y el resto del módulo. */
+/** Las cantidades viajan por JSON: un Decimal de Prisma puede llegar como
+ *  string y `.toFixed()` sobre un string revienta en pantalla (la regresión que
+ *  motivó la regla de lint). Se coacciona SIEMPRE antes de formatear. */
+const n4 = (v: number | string | null | undefined) => (Number(v) || 0).toFixed(4);
+
 const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; } };
 
 /**
@@ -70,6 +79,39 @@ function OperativoChip({ lote }: { lote: { fechaInicio?: string | null; fechaFin
     <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold ${tono}`}>
       {LABEL_OPERATIVO[est]}
     </span>
+  );
+}
+
+/**
+ * Cuánto del lote ya salió, como barra.
+ *
+ * Un lote SIN corridas no dibuja barra: una barra vacía se lee como "no
+ * despaché nada de lo que tengo", que es lo contrario de "todavía no armé nada".
+ */
+function LoteAvance({ lote }: { lote: LoteRow }) {
+  const { pct, completo, sinArmar } = avanceDeLote(lote);
+  if (sinArmar) {
+    return (
+      <p className="mt-1.5 text-sm text-[var(--text-tertiary)]">Sin corridas todavía.</p>
+    );
+  }
+  return (
+    <div
+      className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]"
+      role="progressbar"
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`Despachado ${pct}% del lote ${lote.loteCode}`}
+    >
+      <div
+        className={cn(
+          "h-full rounded-full transition-[width] duration-[var(--motion-slow)]",
+          completo ? "bg-[var(--data-success-500)]" : "bg-[var(--accent)]",
+        )}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
   );
 }
 
@@ -107,6 +149,7 @@ export default function ForestLotesModule() {
   useEffect(() => { void load(); }, [load]);
 
   const kpis = useMemo(() => stats ?? { total: 0, abiertos: 0, cerrados: 0, despachados: 0, cantidadTotal: 0 }, [stats]);
+  const resumen = useMemo(() => resumenLotes(lotes), [lotes]);
 
   return (
     <LibroChrome
@@ -126,11 +169,45 @@ export default function ForestLotesModule() {
       }
     >
 
+      {/* La pregunta de la planta no es cuántos lotes hay: es CUÁNTO QUEDA. Las
+          cifras salen de los lotes a la vista —el filtro es parte de lo que se
+          está midiendo— y sólo de los que miden en m³, porque sumar kg con m³
+          da un total sin unidad que parece exacto. */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Lotes totales" value={String(kpis.total)} icon={Layers} emphasis="neutral" />
-        <StatCard label="Abiertos" value={String(kpis.abiertos)} subValue="admiten corridas" icon={Boxes} emphasis="neutral" />
-        <StatCard label="Cerrados / despachados" value={`${kpis.cerrados} / ${kpis.despachados}`} icon={Truck} emphasis="success" />
-        <StatCard label="Cantidad empaquetada" value={kpis.cantidadTotal.toFixed(2)} subValue="suma de miembros" icon={PackageCheck} emphasis="neutral" />
+        <StatCard
+          label="Lotes"
+          value={String(kpis.total)}
+          subValue={`${kpis.abiertos} ${kpis.abiertos === 1 ? "abierto" : "abiertos"} · ${
+            kpis.cerrados + kpis.despachados
+          } ${kpis.cerrados + kpis.despachados === 1 ? "cerrado" : "cerrados"}`}
+          icon={Layers}
+          emphasis="neutral"
+        />
+        <StatCard
+          label="Armado"
+          value={`${n4(resumen.armadoM3)} m³`}
+          subValue={`${resumen.armadoPt.toLocaleString("es-PE")} pt`}
+          icon={Boxes}
+          emphasis="neutral"
+        />
+        <StatCard
+          label="Despachado"
+          value={`${n4(resumen.despachadoM3)} m³`}
+          subValue={resumen.avancePct == null ? "Sin lotes armados" : `${resumen.avancePct}% de lo armado`}
+          icon={Truck}
+          emphasis="neutral"
+        />
+        <StatCard
+          label="Disponible"
+          value={`${n4(resumen.disponibleM3)} m³`}
+          subValue={
+            resumen.lotesOtraUnidad > 0
+              ? `${resumen.disponiblePt.toLocaleString("es-PE")} pt · +${resumen.lotesOtraUnidad} en otra unidad`
+              : `${resumen.disponiblePt.toLocaleString("es-PE")} pt · listo para salir`
+          }
+          icon={PackageCheck}
+          emphasis="success"
+        />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -180,9 +257,30 @@ export default function ForestLotesModule() {
                 {l.speciesCommon && <span className="text-[var(--text-secondary)]">· {l.speciesCommon}</span>}
                 {l.cites && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
               </div>
-              <div className="flex items-center justify-between border-t border-[var(--rule-soft)] pt-2">
-                <span className="font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">{l.totalCantidad.toFixed(4)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{UNIT_LABELS[l.unit] ?? l.unit}</span></span>
-                <span className="text-xs text-[var(--text-tertiary)]">{l.miembrosCount} {l.miembrosCount === 1 ? "corrida" : "corridas"}</span>
+              <div className="border-t border-[var(--rule-soft)] pt-2">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">
+                    {n4(l.totalCantidad)}{" "}
+                    <span className="text-sm font-normal text-[var(--text-tertiary)]">{UNIT_LABELS[l.unit] ?? l.unit}</span>
+                  </span>
+                  {/* Acá la madera se habla en pie tablar: el m³ es el del libro,
+                      el pt es el que usa el comprador. Van los dos o hay que
+                      convertir de cabeza en el teléfono. */}
+                  {l.unit === "m3" && (
+                    <span className="font-mono text-sm tabular-nums text-[var(--text-tertiary)]">
+                      {enPieTablar(l.totalCantidad).toLocaleString("es-PE")} pt
+                    </span>
+                  )}
+                </div>
+                <LoteAvance lote={l} />
+                <div className="mt-1.5 flex items-center justify-between text-sm text-[var(--text-tertiary)]">
+                  <span>{l.miembrosCount} {l.miembrosCount === 1 ? "corrida" : "corridas"}</span>
+                  <span>
+                    Quedan{" "}
+                    <b className="font-mono tabular-nums text-[var(--text-primary)]">{n4(l.disponible)}</b>{" "}
+                    {UNIT_LABELS[l.unit] ?? l.unit}
+                  </span>
+                </div>
               </div>
               {l.titularNombre && (
                 <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
