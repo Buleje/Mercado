@@ -26,17 +26,13 @@
 
 import type { CtpFicha } from "@/lib/forestal/ctp-ficha-types";
 import { COPIAS_GTF, faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { CSS_GTF_OFICIAL, cuerpoGtfOficial, type LineaProducto } from "@/lib/forestal/ctp-gtf-formato";
 
 const esc = (v: unknown) =>
   String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const n4 = (v: number) => v.toFixed(4);
 
 /** Cómo viaja la madera. En el papel se lee entero, no el valor del enum. */
-const MODO_LABEL: Record<string, string> = {
-  terrestre: "Terrestre",
-  fluvial: "Fluvial",
-  multimodal: "Multimodal (río + carretera)",
-};
 
 export interface GtfDespacho {
   /** id del despacho — target del QR de verificación pública. */
@@ -86,16 +82,9 @@ export async function printGtfSalida(
   const fecha = emitido.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
   const hora = emitido.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
   // timeZone UTC: entryDate es date-only a medianoche UTC (off-by-one Lima).
-  const fechaDespacho = new Date(despacho.entryDate).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
 
   // Los títulos de la GUÍA, no los de la Ficha de hoy: una guía emitida tiene que
   // seguir diciendo con qué título salió aunque la ficha cambie después.
-  const guardados = datos.titulos.filter((t) => t.trim());
-  const titulosGuia = guardados.length
-    ? guardados.map((t) => esc(t)).join(" · ")
-    : ficha.titulos?.length
-      ? ficha.titulos.map((t) => esc(t.codigo || "—")).join(" · ")
-      : "—";
   const direccion = [ficha.direccion, ficha.distrito, ficha.provincia, ficha.region].filter(Boolean).map(esc).join(", ") || "—";
 
   const filas = (cadena?.corridas ?? [])
@@ -119,45 +108,8 @@ export async function printGtfSalida(
     : "";
 
   /** "RUC 20512345678 · Av. Centenario 123" — el documento de identidad y dónde está. */
-  const linea = (p: { docTipo: string; docNumero: string; direccion: string }) =>
-    [p.docNumero ? `${p.docTipo} ${p.docNumero}` : "", p.direccion].filter(Boolean).map(esc).join(" · ") || "—";
 
-  const partes = `<div class="box">
-      <h2>Partes intervinientes</h2>
-      <div class="p3">
-        <div>
-          <span class="lbl">Propietario del producto</span><br/>
-          <b>${esc(datos.propietario.nombre || "—")}</b>
-          <div class="meta">${linea(datos.propietario)}</div>
-          ${datos.propietario.esElCtp ? '<div class="meta">Es el titular del CTP</div>' : ""}
-        </div>
-        <div>
-          <span class="lbl">Destinatario</span><br/>
-          <b>${esc(datos.destinatario.nombre || "—")}</b>
-          <div class="meta">${linea(datos.destinatario)}</div>
-        </div>
-        <div>
-          <span class="lbl">Transportista</span><br/>
-          <b>${esc(datos.transportista.nombre || "—")}</b>
-          <div class="meta">${linea(datos.transportista)}</div>
-          ${datos.transportista.registroMtc ? `<div class="meta">Registro MTC ${esc(datos.transportista.registroMtc)}</div>` : ""}
-        </div>
-      </div>
-    </div>`;
 
-  const traslado = `<div class="box">
-      <h2>Vehículo y traslado</h2>
-      <div class="grid">
-        <div><span class="lbl">${datos.vehiculo.modo === "fluvial" ? "Matrícula" : "Placa"}</span><br/><b class="mono">${esc(datos.vehiculo.placa || "—")}</b>${datos.vehiculo.marca || datos.vehiculo.tipo ? ` · ${esc([datos.vehiculo.marca, datos.vehiculo.tipo].filter(Boolean).join(" "))}` : ""}</div>
-        <div><span class="lbl">Modo de transporte</span><br/><b>${esc(MODO_LABEL[datos.vehiculo.modo] ?? datos.vehiculo.modo)}</b>${datos.vehiculo.embarcacion ? ` · ${esc(datos.vehiculo.embarcacion)}` : ""}</div>
-        <div><span class="lbl">${datos.vehiculo.modo === "fluvial" ? "Patrón" : "Conductor"}</span><br/><b>${esc(datos.vehiculo.conductor || "—")}</b>${datos.vehiculo.conductorDni ? ` · DNI ${esc(datos.vehiculo.conductorDni)}` : ""}${datos.vehiculo.licencia ? ` · Lic. ${esc(datos.vehiculo.licencia)}` : ""}</div>
-        <div><span class="lbl">Punto de partida</span><br/><b>${esc(datos.traslado.puntoPartida || "—")}</b></div>
-        <div><span class="lbl">Punto de llegada</span><br/><b>${esc(datos.traslado.puntoLlegada || "—")}</b></div>
-        <div style="grid-column:1/-1"><span class="lbl">Ruta declarada</span><br/><b>${esc(datos.traslado.ruta || "—")}</b></div>
-        <div><span class="lbl">Inicio del traslado</span><br/><b class="mono">${esc(datos.traslado.fechaInicio || "—")}</b></div>
-        <div><span class="lbl">Vigencia hasta</span><br/><b class="mono">${esc(datos.traslado.fechaFin || "—")}</b></div>
-      </div>
-    </div>`;
 
   // Declaración jurada: la guía LO ES por el art. 124 de la Ley 29763. Sin el
   // texto y la firma, el papel no dice bajo qué responsabilidad se emitió.
@@ -175,6 +127,37 @@ export async function printGtfSalida(
       <div><span class="lbl">Visado / marca de la ARFFS</span><div class="caja"></div></div>
       <div><span class="lbl">Sello del puesto de control</span><div class="caja"></div></div>
     </div>`;
+
+  // El cuerpo va con los casilleros numerados del formato de SERFOR: en un
+  // puesto de control se pide "el (22)" y "el (31)", no "el destinatario".
+  const lineasProducto: LineaProducto[] = [{
+    cientifico: despacho.speciesScientific ?? "",
+    comun: despacho.speciesCommon ?? "",
+    tipoProducto: despacho.productType ?? "",
+    // El formato pide la forma de presentación; el despacho no la lleva como
+    // campo propio, así que va la unidad, que es lo que declara el detalle.
+    presentacion: despacho.unitLabel ?? "",
+    cantidad: despacho.pieces ?? 0,
+    unidad: despacho.unitLabel ?? "",
+    total: Number(despacho.quantity ?? 0) || 0,
+  }];
+  const cuerpoOficial = cuerpoGtfOficial({
+    // La ficha llega parcial (se imprime aunque esté a medio llenar): los
+    // casilleros sin dato quedan en blanco, que es el comportamiento correcto.
+    ficha: ficha as CtpFicha,
+    datos,
+    lineas: lineasProducto,
+    numeroGtf: despacho.gtfNumber ?? "",
+    fechaExpedicion: despacho.entryDate ?? "",
+    listasTrozas: despacho.gtfNumber ?? "",
+    // (36) las GTF con las que ENTRÓ la materia prima: salen de la cadena, sin
+    // repetir la misma guía dos veces si dos corridas comparten origen.
+    gtfOrigen: [...new Set((cadena?.corridas ?? []).flatMap((c) => c.guias))].join(", "),
+    // Sólo si SERFOR lo devolvió: Buleje no registra ante la autoridad.
+    // Buleje no registra ante la ARFFS: mientras el operador no cargue el N°
+    // que devuelve el SNIFFS, el recuadro va en blanco para llenarlo a mano.
+    registroSerfor: "",
+  });
 
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>GTF ${esc(despacho.gtfNumber)}</title>
   <style>
@@ -220,7 +203,7 @@ export async function printGtfSalida(
     .visado .caja { height: 46px; border-bottom: 1px solid #9ca3af; }
     .dj { margin-top: 12px; border: 1px solid #14532d; border-radius: 8px; padding: 8px 12px; font-size: 10px; color: #374151; background: #f8faf9; }
     .p3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px 18px; }
-  </style></head><body>
+    ${CSS_GTF_OFICIAL}\n  </style></head><body>
     ${COPIAS_GTF.map((copia) => `
     <section class="copia">
       <div class="tira">
@@ -241,36 +224,10 @@ export async function printGtfSalida(
       <h1>GUÍA DE TRANSPORTE FORESTAL</h1>
       <p class="sub">Producto con transformación primaria · Salida del CTP · Declaración jurada</p>
 
-      <div class="box">
-        <h2>Emisor y habilitación</h2>
-        <div class="grid">
-          <div><span class="lbl">Representante legal</span><br/><b>${esc(ficha.representante || "—")}</b></div>
-          <div><span class="lbl">Registro ARFFS</span><br/><b>${esc([ficha.registroArffs, ficha.registroArffsFecha].filter(Boolean).join(" · ") || "—")}</b></div>
-          <div style="grid-column:1/-1"><span class="lbl">Títulos habilitantes que amparan el origen</span><br/><b class="mono">${titulosGuia}</b></div>
-        </div>
-      </div>
+      ${cuerpoOficial}
 
-      ${partes}
-
-      <div class="box">
-        <h2>Producto transportado</h2>
-        <div class="grid">
-          <div><span class="lbl">Fecha de despacho</span><br/><b>${esc(fechaDespacho)}</b></div>
-          <div><span class="lbl">Tipo de producto</span><br/><b>${esc(despacho.productType ?? "—")}</b></div>
-          <div><span class="lbl">Especie</span><br/><b>${esc(despacho.speciesCommon ?? "—")}</b>${despacho.speciesScientific ? ` <i>(${esc(despacho.speciesScientific)})</i>` : ""}${despacho.cites ? ' <span class="cites">· CITES</span>' : ""}</div>
-          <div><span class="lbl">Cantidad</span><br/><b class="mono">${despacho.quantity ? n4(Number(despacho.quantity)) : "—"} ${esc(despacho.unitLabel)}</b>${despacho.pieces ? ` · ${despacho.pieces} piezas` : ""}</div>
-        </div>
-      </div>
-
-      ${traslado}
       ${origenBox}
       ${declaracion}
-
-      <div class="firma">
-        <div>Emisor · titular o regente del CTP</div>
-        <div>Transportista / conductor</div>
-        <div>Recibí conforme · destinatario</div>
-      </div>
 
       ${visado}
 

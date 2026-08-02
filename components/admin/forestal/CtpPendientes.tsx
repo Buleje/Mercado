@@ -14,7 +14,8 @@
  * datos llegan por prop desde el shell, que ya los usa para los avisos de la
  * cabina — un solo fetch, una sola verdad.
  */
-import { AlertTriangle, ArrowRight, CheckCircle2 } from "@buleje/design-system/icons";
+import { useState } from "react";
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown } from "@buleje/design-system/icons";
 import { resumenPendientes, type Pendiente } from "@/lib/forestal/ctp-pendientes";
 import type { CtpPendientesState } from "@/hooks/use-ctp-pendientes";
 
@@ -36,6 +37,10 @@ export default function CtpPendientes({
   onIr: (vista: string, filtro?: Pendiente["filtro"]) => void;
 }) {
   const { lista, cargando, falló, recargar } = estado;
+  /** En el celular la tira hace wrap a cuatro filas y empuja los datos dos
+   *  scrolls abajo. Se resume en un chip y se abre a pedido; en ≥640px la tira
+   *  entra de una y no hay nada que colapsar. */
+  const [abierto, setAbierto] = useState(false);
 
   // Mientras se revisa no se afirma nada: tres siluetas y el ancho reservado.
   if (cargando) {
@@ -69,15 +74,39 @@ export default function CtpPendientes({
     );
   }
 
+  const total = lista.reduce((a, p) => a + p.cantidad, 0);
+  const traba = lista.some((p) => p.urgencia === "bloquea");
+
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div>
+      {/* Mobile: un solo chip con el total, que abre la lista. */}
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        aria-expanded={abierto}
+        className={`inline-flex h-11 w-full items-center gap-2 rounded-2xl border-2 px-4 text-base sm:hidden ${
+          traba ? TONO.bloquea : TONO.atrasado
+        }`}
+      >
+        <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <b className="font-mono tabular-nums">{total}</b>
+        <span className="font-bold">
+          {lista.length === 1 ? lista[0].titulo : `pendientes en ${lista.length} frentes`}
+        </span>
+        <ChevronDown
+          className={`ml-auto h-4 w-4 shrink-0 transition-transform ${abierto ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        />
+      </button>
+
+      <div className={`${abierto ? "mt-2 flex" : "hidden"} flex-wrap items-center gap-2 sm:flex`}>
       {lista.map((p) => (
         <button
           key={p.clave}
           type="button"
           onClick={() => onIr(p.vista, p.filtro)}
           title={p.detalle}
-          className={`inline-flex h-9 items-center gap-2 rounded-full border-2 px-3.5 text-sm transition-colors ${TONO[p.urgencia]}`}
+          className={`inline-flex h-11 w-full items-center gap-2 rounded-2xl border-2 px-4 text-base transition-colors sm:h-9 sm:w-auto sm:rounded-full sm:px-3.5 sm:text-sm ${TONO[p.urgencia]}`}
         >
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <b className="font-mono tabular-nums">{p.cantidad}</b>
@@ -85,7 +114,8 @@ export default function CtpPendientes({
           <ArrowRight className="h-3.5 w-3.5 shrink-0 opacity-50" aria-hidden="true" />
         </button>
       ))}
-      <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{resumenPendientes(lista)}</span>
+      <span className="font-mono text-sm tabular-nums text-[var(--text-tertiary)]">{resumenPendientes(lista)}</span>
+      </div>
     </div>
   );
 }

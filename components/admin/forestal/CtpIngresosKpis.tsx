@@ -55,9 +55,12 @@ export default function CtpIngresosKpis({
       variants={staggerContainer}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5"
+      // Mobile: carrusel de una fila en vez de una grilla de 3 filas. Cinco
+      // tarjetas apiladas empujaban el primer ingreso dos scrolls abajo, y en el
+      // celular el KPI es de referencia — el dato que se viene a ver es la lista.
+      className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-3 xl:grid-cols-5"
     >
-      <motion.div variants={staggerChild}>
+      <motion.div variants={staggerChild} className="w-[15rem] shrink-0 snap-start sm:w-auto sm:shrink">
         <StatCard
           label="Ingresos del período"
           value={stats ? nf(stats.totalCount) : "—"}
@@ -66,7 +69,7 @@ export default function CtpIngresosKpis({
           emphasis="neutral"
         />
       </motion.div>
-      <motion.div variants={staggerChild}>
+      <motion.div variants={staggerChild} className="w-[15rem] shrink-0 snap-start sm:w-auto sm:shrink">
         <StatCard
           label="Volumen del período"
           value={stats ? `${Number(stats.totalVolumeM3).toFixed(2)} m³` : "—"}
@@ -77,7 +80,7 @@ export default function CtpIngresosKpis({
           className={dashboardOn ? activa : undefined}
         />
       </motion.div>
-      <motion.div variants={staggerChild}>
+      <motion.div variants={staggerChild} className="w-[15rem] shrink-0 snap-start sm:w-auto sm:shrink">
         <StatCard
           label="Pendientes validar"
           value={stats ? nf(stats.byStatus.pendiente) : "—"}
@@ -94,7 +97,7 @@ export default function CtpIngresosKpis({
           className={statusFilter === "pendiente" ? activa : undefined}
         />
       </motion.div>
-      <motion.div variants={staggerChild}>
+      <motion.div variants={staggerChild} className="w-[15rem] shrink-0 snap-start sm:w-auto sm:shrink">
         <StatCard
           label="Fuera de plazo"
           value={stats ? nf(stats.lateCount) : "—"}
@@ -111,7 +114,7 @@ export default function CtpIngresosKpis({
           className={lateOn ? activa : undefined}
         />
       </motion.div>
-      <motion.div variants={staggerChild}>
+      <motion.div variants={staggerChild} className="w-[15rem] shrink-0 snap-start sm:w-auto sm:shrink">
         <StatCard
           label="Especies CITES"
           value={stats ? nf(stats.citesCount) : "—"}
