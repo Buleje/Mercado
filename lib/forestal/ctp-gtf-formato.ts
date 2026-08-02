@@ -62,7 +62,15 @@ function dniDe(p: { docTipo?: string; docNumero?: string; dniExtra?: string } | 
   return p.docTipo === "DNI" ? (p.docNumero ?? "") : (p.dniExtra ?? "");
 }
 
-/** Un casillero: número, rótulo y valor. El valor vacío queda en blanco. */
+/**
+ * Un casillero: número, rótulo y valor. El valor vacío queda en blanco.
+ *
+ * Rótulo y valor van en la MISMA línea. Apilados se leían cómodos pero cada
+ * casillero medía 15 mm y la guía se iba a tres hojas: en un puesto de control
+ * el papel se revisa de un vistazo, y tres hojas para una sola guía es peor que
+ * una letra un punto más chica. `ancho` acepta el `colspan` para los campos que
+ * no entran en un cuarto de fila (una razón social, una dirección).
+ */
 function box(n: string, label: string, valor: unknown, ancho = ""): string {
   // Sin número no se dibuja el paréntesis: el formato tiene campos que van
   // pegados al casillero anterior (el representante legal cuelga del (7)) y un
@@ -70,6 +78,11 @@ function box(n: string, label: string, valor: unknown, ancho = ""): string {
   const num = n ? `<span class="n">(${esc(n)})</span> ` : "";
   return `<td class="c" ${ancho}>${num}<span class="l">${esc(label)}:</span> <b>${esc(valor)}</b></td>`;
 }
+
+/** Casillero que ocupa media fila (dos de las cuatro columnas). */
+const box2 = (n: string, label: string, valor: unknown) => box(n, label, valor, 'colspan="2"');
+/** Casillero de fila entera. */
+const box4 = (n: string, label: string, valor: unknown) => box(n, label, valor, 'colspan="4"');
 
 /** Cómo viaja la madera. En el papel se lee entero, no el valor del enum. */
 const MODO_LABEL: Record<string, string> = {
@@ -129,11 +142,11 @@ export function tablaProductos(lineas: ReadonlyArray<LineaProducto>): string {
   const total = lineas.reduce((a, l) => a + (Number(l.total) || 0), 0);
   return `<table class="det">
     <thead><tr>
-      <th rowspan="2">(37a) Nombre Científico</th><th rowspan="2">(37b) Nombre Común o Comercial</th>
-      <th rowspan="2">(37c) Tipo de Producto</th><th colspan="2">Forma de embalaje y/o presentación del producto</th>
+      <th rowspan="2">(37a) N. Científico</th><th rowspan="2">(37b) N. Común</th>
+      <th rowspan="2">(37c) Producto</th><th colspan="2">Embalaje / presentación</th>
       <th colspan="2">Cantidad</th>
     </tr><tr>
-      <th>(37d) Descripción</th><th>(37e) Cantidad</th><th>(37f) Unidad de medida</th><th>(37g) Total</th>
+      <th>(37d) Descripción</th><th>(37e) Cant.</th><th>(37f) Unidad</th><th>(37g) Total</th>
     </tr></thead>
     <tbody>${filas || `<tr><td colspan="7" class="vacio">Sin líneas declaradas</td></tr>`}</tbody>
     <tfoot><tr><td colspan="6" class="tot">Volumen Total:</td><td class="num tot">${total.toFixed(3)}</td></tr></tfoot>
@@ -184,50 +197,43 @@ export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
   return `
   ${seccionDoc("Título habilitante y titular del recurso", "casilleros (2) a (12)")}
   <table class="cas">
-    <tr>${box("2", "Autoridad Regional Forestal y de Fauna Silvestre", f.arffs, 'colspan="2"')}</tr>
-    <tr>${box("3", "Fecha de Expedición", fechaGtf(i.fechaExpedicion))}${box("4", "Fecha de Vencimiento", fechaGtf(d.traslado?.fechaFin))}</tr>
-    <tr><td class="c" colspan="2"><span class="n">(5)</span> <span class="l">Origen del Recurso:</span>${casillasOrigen(i.origenRecurso ?? titulo?.tipo)}</td></tr>
-    <tr>${box("6", "Número", titulo?.codigo, 'colspan="2"')}</tr>
-    <tr>${box("7", "Nombre del Titular", f.razonSocial)}${box("", "Representante Legal", f.representante)}</tr>
-    <tr>${box("8", "N° de Resolución", titulo?.resolucion)}${box("9", "Plan de Manejo (Tipo)", titulo?.planManejo)}</tr>
-    <tr>${box("10", "Departamento", f.region)}${box("11", "Provincia", f.provincia)}</tr>
-    <tr>${box("12", "Distrito", f.distrito, 'colspan="2"')}</tr>
+    <tr>${box2("2", "Autoridad Regional Forestal (ARFFS)", f.arffs)}${box("3", "F. Expedición", fechaGtf(i.fechaExpedicion))}${box("4", "F. Vencimiento", fechaGtf(d.traslado?.fechaFin))}</tr>
+    <tr><td class="c" colspan="4"><span class="n">(5)</span> <span class="l">Origen del Recurso:</span>${casillasOrigen(i.origenRecurso ?? titulo?.tipo)}</td></tr>
+    <tr>${box2("6", "N° del título habilitante", titulo?.codigo)}${box2("7", "Nombre del Titular", f.razonSocial)}</tr>
+    <tr>${box2("", "Representante Legal", f.representante)}${box2("8", "N° de Resolución", titulo?.resolucion)}</tr>
+    <tr>${box2("9", "Plan de Manejo (Tipo)", titulo?.planManejo)}${box("10", "Depto.", f.region)}${box("11", "Prov.", f.provincia)}</tr>
+    <tr>${box4("12", "Distrito", f.distrito)}</tr>
   </table>
 
   ${seccionDoc("Propietario del producto", "casilleros (13) a (21)")}
   <table class="cas">
-    <tr>${box("13", "Nombre o razón social", d.propietario?.nombre)}${box("14", "D.N.I. N°", dniDe(d.propietario))}</tr>
-    <tr>${box("15", "R.U.C. N°", d.propietario?.docTipo === "RUC" ? d.propietario?.docNumero : "")}${box("16", "Dirección", d.propietario?.direccion)}</tr>
-    <tr>${box("17", "Departamento", d.propietario?.departamento)}${box("18", "Provincia", d.propietario?.provincia)}</tr>
-    <tr>${box("19", "Distrito", d.propietario?.distrito)}${box("20", "Tipo de Comprobante de Compra o venta", comprobante)}</tr>
-    <tr>${box("21", "N° Comprobante", d.comprobante?.numero, 'colspan="2"')}</tr>
+    <tr>${box2("13", "Nombre o razón social", d.propietario?.nombre)}${box("14", "D.N.I.", dniDe(d.propietario))}${box("15", "R.U.C.", d.propietario?.docTipo === "RUC" ? d.propietario?.docNumero : "")}</tr>
+    <tr>${box2("16", "Dirección", d.propietario?.direccion)}${box("17", "Depto.", d.propietario?.departamento)}${box("18", "Prov.", d.propietario?.provincia)}</tr>
+    <tr>${box("19", "Distrito", d.propietario?.distrito)}${box("20", "Comprobante", comprobante)}${box2("21", "N° Comprobante", d.comprobante?.numero)}</tr>
   </table>
 
   ${seccionDoc("Destinatario", "casilleros (22) a (28)")}
   <table class="cas">
-    <tr>${box("22", "Nombre o razón social", d.destinatario?.nombre)}${box("23", "D.N.I. N°", dniDe(d.destinatario))}</tr>
-    <tr>${box("24", "R.U.C. N°", d.destinatario?.docTipo === "RUC" ? d.destinatario?.docNumero : "")}${box("25", "Dirección", d.destinatario?.direccion)}</tr>
-    <tr>${box("26", "Departamento", d.destinatario?.departamento)}${box("27", "Provincia", d.destinatario?.provincia)}</tr>
-    <tr>${box("28", "Distrito", d.destinatario?.distrito, 'colspan="2"')}</tr>
+    <tr>${box2("22", "Nombre o razón social", d.destinatario?.nombre)}${box("23", "D.N.I.", dniDe(d.destinatario))}${box("24", "R.U.C.", d.destinatario?.docTipo === "RUC" ? d.destinatario?.docNumero : "")}</tr>
+    <tr>${box2("25", "Dirección", d.destinatario?.direccion)}${box("26", "Depto.", d.destinatario?.departamento)}${box("27", "Prov.", d.destinatario?.provincia)}</tr>
+    <tr>${box4("28", "Distrito", d.destinatario?.distrito)}</tr>
   </table>
 
   ${seccionDoc("Transportista, vehículo y conductor", "casilleros (29) a (34)")}
   <table class="cas">
-    <tr>${box("29", "N° Guía de Remisión", d.comprobante?.tipo === "guia_remision" ? d.comprobante?.numero : "")}${box("30", "Tipo de Transporte", MODO_LABEL[d.vehiculo?.modo ?? ""] ?? d.vehiculo?.modo)}</tr>
-    <tr>${box("31", "Tipo de Vehículo", d.vehiculo?.tipo)}${box("31", d.vehiculo?.modo === "fluvial" ? "Matrícula N°" : "Placa(s) N°", d.vehiculo?.placa)}</tr>
-    <tr>${box("32", d.vehiculo?.modo === "fluvial" ? "Patrón" : "Conductor", d.vehiculo?.conductor)}${box("33", "D.N.I. N°", d.vehiculo?.conductorDni)}</tr>
-    <tr>${box("34", "N° Licencia de conducir", d.vehiculo?.licencia, 'colspan="2"')}</tr>
+    <tr>${box("29", "N° G. Remisión", d.comprobante?.tipo === "guia_remision" ? d.comprobante?.numero : "")}${box("30", "Transporte", MODO_LABEL[d.vehiculo?.modo ?? ""] ?? d.vehiculo?.modo)}${box("31", "Vehículo", d.vehiculo?.tipo)}${box("31", d.vehiculo?.modo === "fluvial" ? "Matrícula N°" : "Placa(s) N°", d.vehiculo?.placa)}</tr>
+    <tr>${box2("32", d.vehiculo?.modo === "fluvial" ? "Patrón" : "Conductor", d.vehiculo?.conductor)}${box("33", "D.N.I.", d.vehiculo?.conductorDni)}${box("34", "Licencia", d.vehiculo?.licencia)}</tr>
   </table>
 
   ${seccionDoc("Detalle del producto que se moviliza", "casilleros (35) a (38)")}
   <table class="cas">
-    <tr>${box("35", "Lista(s) de Troza(s)", i.listasTrozas)}${box("36", "N° GTF de Origen", i.gtfOrigen)}</tr>
+    <tr>${box2("35", "Lista(s) de Troza(s)", i.listasTrozas)}${box2("36", "N° GTF de Origen", i.gtfOrigen)}</tr>
   </table>
 
   ${tablaProductos(i.lineas)}
 
   <table class="cas">
-    <tr>${box("38", "Observaciones", d.observaciones, 'colspan="2"')}</tr>
+    <tr>${box4("38", "Observaciones", d.observaciones)}</tr>
   </table>
 
   <table class="pie">
@@ -265,37 +271,39 @@ export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
  * se inyectan siempre DESPUÉS del armazón compartido.
  */
 export const CSS_GTF_OFICIAL = `
-  .cas { width:100%; border-collapse:collapse; margin:0 0 1mm; table-layout:fixed; }
-  .cas td.c { border:.6pt solid #9aa5a0; padding:1.2mm 1.6mm; vertical-align:top; }
-  .cas .n { display:inline-block; min-width:5mm; margin-bottom:.4mm; padding:0 .6mm;
+  .cas { width:100%; border-collapse:collapse; margin:0 0 .8mm; table-layout:fixed; }
+  .cas td.c { border:.6pt solid #9aa5a0; padding:.9mm 1.2mm; vertical-align:top; line-height:1.25; }
+  .cas .n { display:inline-block; min-width:4.2mm; margin-right:.6mm; padding:0 .4mm;
             border:.5pt solid var(--tinta); color:var(--tinta);
-            font-size:6pt; font-weight:bold; text-align:center; }
-  .cas .l { display:block; font-size:6.4pt; letter-spacing:.4pt; text-transform:uppercase; color:var(--gris-suave); }
-  .cas b { display:block; min-height:4.6mm; font-size:8.6pt; line-height:1.25; word-wrap:break-word; }
-  .cas b:empty { border-bottom:.5pt dotted #b6c0ba; }
+            font-size:5.6pt; font-weight:bold; text-align:center; vertical-align:.4mm; }
+  .cas .l { font-size:6pt; letter-spacing:.2pt; text-transform:uppercase; color:var(--gris-suave); }
+  .cas b { font-size:8pt; word-wrap:break-word; }
+  /* Un casillero sin dato queda con renglón para llenar a mano, no como un hueco
+     mudo que se confunde con un error de impresión. */
+  .cas b:empty { display:inline-block; min-width:18mm; border-bottom:.5pt dotted #b6c0ba; }
   .sec { font-size:8pt; font-weight:bold; margin:4px 0 2px; }
-  .ck { display:inline-block; margin:.6mm 3mm .6mm 0; white-space:nowrap; }
-  .ck .lb { font-size:6.6pt; }
-  .ck .bx { display:inline-block; min-width:4mm; border:.6pt solid var(--linea); text-align:center;
-            font-size:7.4pt; font-weight:bold; margin-left:1mm; background:#fff; }
+  .ck { display:inline-block; margin:0 1.6mm 0 0; white-space:nowrap; }
+  .ck .lb { font-size:5.6pt; }
+  .ck .bx { display:inline-block; min-width:3.4mm; border:.6pt solid var(--linea); text-align:center;
+            font-size:6.6pt; font-weight:bold; margin-left:.7mm; background:#fff; }
   .det { width:100%; border-collapse:collapse; margin:0; }
-  .det th, .det td { border:.6pt solid #9aa5a0; padding:1.1mm 1.4mm; font-size:7.2pt; }
+  .det th, .det td { border:.6pt solid #9aa5a0; padding:.6mm 1mm; font-size:6.4pt; line-height:1.18; }
   .det thead th { background:var(--tinta); color:#fff; border-color:#0d3b20; font-weight:bold;
-                  font-size:6.6pt; letter-spacing:.3pt; text-transform:uppercase; text-align:center; }
+                  font-size:6pt; letter-spacing:.2pt; text-transform:uppercase; text-align:center; }
   .det tbody tr:nth-child(even) td { background:#f4f8f6; }
   .det td.num { text-align:right; font-variant-numeric:tabular-nums; font-weight:bold; }
-  .det .vacio { text-align:center; color:var(--gris-suave); font-style:italic; padding:6mm; background:#fafbfa; }
+  .det .vacio { text-align:center; color:var(--gris-suave); font-style:italic; padding:4mm; background:#fafbfa; }
   .det tfoot td { background:#e7efea; border-color:#7f8f87; }
-  .det .tot { font-weight:bold; letter-spacing:.4pt; }
-  .pie { width:100%; border-collapse:collapse; margin-top:3mm; }
-  .pie td { padding:0 0 0 6mm; font-size:7.6pt; vertical-align:top; }
-  .pie .est { width:38%; padding:2.2mm; text-align:center; }
+  .det .tot { font-weight:bold; letter-spacing:.3pt; }
+  .pie { width:100%; border-collapse:collapse; margin-top:1.2mm; }
+  .pie td { padding:0 0 0 5mm; font-size:7pt; vertical-align:top; }
+  .pie .est { width:34%; padding:1.2mm; text-align:center; }
   .pie .est.ok { background:var(--tinta); color:#fff; }
-  .pie .est.ok .reg { display:block; margin-top:.8mm; font-size:7pt; font-family:"Courier New",Courier,monospace; }
+  .pie .est.ok .reg { display:block; margin-top:.6mm; font-size:6.6pt; font-family:"Courier New",Courier,monospace; }
   .pie .est.sin { border:.8pt dashed #9ca3af; background:#f6f7f6; }
-  .pie .est .sinreg { font-size:7pt; color:var(--gris); }
-  .pie .firma { font-size:6.8pt; letter-spacing:.4pt; text-transform:uppercase; color:var(--gris); }
+  .pie .est .sinreg { font-size:6.6pt; color:var(--gris); }
+  .pie .firma { font-size:6.2pt; letter-spacing:.3pt; text-transform:uppercase; color:var(--gris); }
   .pie .firma .n { font-weight:bold; color:var(--tinta); }
-  .pie .linea { border-bottom:.7pt solid var(--linea); height:9mm; }
-  .legal { font-size:6.2pt; margin-top:3mm; line-height:1.4; color:var(--gris); }
+  .pie .linea { border-bottom:.7pt solid var(--linea); height:4.5mm; }
+  .legal { font-size:5.4pt; margin-top:1.2mm; line-height:1.25; color:var(--gris); }
 `;

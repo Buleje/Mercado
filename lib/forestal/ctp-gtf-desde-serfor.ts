@@ -224,8 +224,7 @@ export function documentoGtfSerfor(g: GtfSerfor, opts: { impresoEl?: string } = 
 
   ${notaDoc(
     `<b>Qué es este papel.</b> Un respaldo del expediente del CTP: reproduce, casillero por casillero, lo que la
-     autoridad publica de esta guía. El original lo emite la ARFFS y viaja con el producto. Se archiva junto al
-     ingreso para poder responder de dónde vino cada troza sin volver a consultar el sistema.`,
+     autoridad publica de esta guía. El original lo emite la ARFFS y viaja con el producto.`,
   )}
 
   <div class="doc-pie">
@@ -236,9 +235,9 @@ export function documentoGtfSerfor(g: GtfSerfor, opts: { impresoEl?: string } = 
 
 /** Lo que la hoja de la guía agrega al armazón compartido. */
 export const CSS_GTF_SERFOR = `
-  .gtf-proc { display:flex; align-items:center; gap:5mm; border:.6pt solid var(--linea-suave);
-              border-left:2pt solid var(--tinta); background:#fafcfb; padding:2.4mm 3mm; margin-bottom:1mm; }
-  .gtf-proc .txt { font-size:6.9pt; line-height:1.45; color:#374151; }
+  .gtf-proc { display:flex; align-items:center; gap:2.5mm; border:.6pt solid var(--linea-suave);
+              border-left:2pt solid var(--tinta); background:#fafcfb; padding:.8mm 1.6mm; margin-bottom:.6mm; }
+  .gtf-proc .txt { font-size:5.8pt; line-height:1.25; color:#374151; }
   .gtf-proc .txt b { color:var(--tinta); }
   .gtf-proc .alerta { display:block; margin-top:.8mm; color:#b91c1c; font-weight:bold; letter-spacing:.3pt; }
 `;

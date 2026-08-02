@@ -27,8 +27,14 @@
 export const esc = (v: unknown): string =>
   String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-/** Alto útil de una A4 con el margen de `@page` — donde cae el corte de hoja. */
-export const ALTO_UTIL_MM = 273;
+/**
+ * Margen de `@page`. 10 mm y no 15: los formatos oficiales aprovechan la hoja, y
+ * cada milímetro de margen son dos milímetros menos de papel útil — lo que
+ * decide si una guía entra en una hoja o se va a dos.
+ */
+export const MARGEN_MM = 10;
+/** Alto útil de una A4 con ese margen — donde cae el corte de hoja. */
+export const ALTO_UTIL_MM = 297 - MARGEN_MM * 2;
 /** Ancho de la hoja en pantalla, con su aire alrededor. Lo usa el visor. */
 export const ANCHO_HOJA_MM = 210;
 export const AIRE_HOJA_MM = 8;
@@ -84,8 +90,11 @@ export function cabeceraDoc(i: CabeceraDoc): string {
 
 /** El título del documento, centrado y espaciado como en el talonario. */
 export function tituloDoc(titulo: string, subtitulo?: string): string {
-  return `<h1 class="doc-titulo">${esc(titulo)}</h1>
-  ${subtitulo ? `<p class="doc-sub">${esc(subtitulo)}</p>` : ""}`;
+  // El subtítulo va pegado abajo y chico: como línea aparte costaba 4 mm de
+  // papel para decir algo que se lee de corrido con el título.
+  return `<h1 class="doc-titulo">${esc(titulo)}${
+    subtitulo ? `<span class="doc-sub">${esc(subtitulo)}</span>` : ""
+  }</h1>`;
 }
 
 export interface FichaResumen {
@@ -157,13 +166,13 @@ export interface HojaDocumento {
    * anexo largo es un papel anónimo: no dice de qué guía salió.
    */
   pieCorrido?: string;
-  /** Margen de `@page` en mm. 12 por defecto (el que asume `ALTO_UTIL_MM`). */
+  /** Margen de `@page` en mm. Por defecto `MARGEN_MM` (el que asume `ALTO_UTIL_MM`). */
   margenMm?: number;
 }
 
 /** El documento completo y autocontenido, listo para el visor o para imprimir. */
 export function documentoHtml(h: HojaDocumento): string {
-  const margen = h.margenMm ?? 12;
+  const margen = h.margenMm ?? MARGEN_MM;
   const cuerpo = Array.isArray(h.cuerpo)
     ? h.cuerpo.map((c) => `<section class="doc-parte">${c}</section>`).join("")
     : h.cuerpo;
@@ -247,7 +256,7 @@ export function paginar(d: Document): Paginado {
   // Alto aprovechable por página: la caja de `@page` menos lo que se reserva
   // abajo para el pie corrido (`body { padding-bottom }` de la vista impresa).
   const util = px(ALTO_UTIL_MM - 7);
-  const cero = hoja.getBoundingClientRect().top + px(12);
+  const cero = hoja.getBoundingClientRect().top + px(MARGEN_MM);
 
   const cortes: number[] = [];
   let finDePagina = util; // en coordenadas del flujo impreso
@@ -303,7 +312,7 @@ export function marcarCortes(d: Document, cortes: ReadonlyArray<number>): void {
   const hoja = d.querySelector<HTMLElement>(".doc-hoja");
   if (!hoja) return;
   hoja.querySelectorAll(".doc-corte").forEach((n) => n.remove());
-  const arriba = px(12);
+  const arriba = px(MARGEN_MM);
   cortes.forEach((y, i) => {
     const linea = d.createElement("div");
     linea.className = "doc-corte";
@@ -331,13 +340,13 @@ export const CSS_DOCUMENTO = `
   body {
     margin:0; padding:0; background:transparent;
     font-family:Arial,Helvetica,sans-serif; color:#111827;
-    font-size:8.5pt; line-height:1.38;
+    font-size:8pt; line-height:1.28;
     -webkit-print-color-adjust:exact; print-color-adjust:exact;
     -webkit-font-smoothing:antialiased;
   }
   .doc-hoja {
     position:relative; width:${ANCHO_HOJA_MM}mm; min-height:297mm;
-    margin:${AIRE_HOJA_MM}mm auto; padding:12mm;
+    margin:${AIRE_HOJA_MM}mm auto; padding:${MARGEN_MM}mm;
     background:#fff; border:.3mm solid rgba(17,24,39,.18); box-shadow:0 1mm 4mm rgba(0,0,0,.28);
   }
   /* Dónde corta la impresora — lo calcula el visor y lo inyecta acá.
@@ -348,55 +357,55 @@ export const CSS_DOCUMENTO = `
                     font-size:6.2pt; letter-spacing:.6pt; text-transform:uppercase; color:var(--gris-suave); }
 
   /* ── Cabecera ── */
-  .doc-cab { display:flex; justify-content:space-between; align-items:flex-start; gap:8mm; padding-bottom:3mm; border-bottom:2.2pt solid var(--tinta); }
+  .doc-cab { display:flex; justify-content:space-between; align-items:flex-start; gap:6mm; padding-bottom:1.8mm; border-bottom:2pt solid var(--tinta); }
   .doc-marca { display:flex; align-items:flex-start; gap:3mm; min-width:0; }
-  .doc-mono { width:11mm; height:11mm; color:var(--tinta); flex:none; }
-  .doc-emisor { font-size:11.5pt; font-weight:bold; letter-spacing:.2pt; text-transform:uppercase; line-height:1.15; }
-  .doc-meta { font-size:7.2pt; color:var(--gris); margin-top:.6mm; }
-  .doc-id { flex:none; min-width:48mm; border:1pt solid var(--tinta); }
-  .doc-id .tipo { background:var(--tinta); color:#fff; font-size:6.4pt; font-weight:bold; letter-spacing:1.1pt; text-transform:uppercase; text-align:center; padding:1.2mm 2mm; }
-  .doc-id .nro { font-family:"Courier New",Courier,monospace; font-size:14pt; font-weight:bold; letter-spacing:.6pt; color:var(--tinta); text-align:center; padding:2mm 2mm 1.4mm; }
-  .doc-id .pie { border-top:.6pt solid var(--linea-suave); font-size:6.4pt; letter-spacing:.4pt; text-transform:uppercase; color:var(--gris-suave); text-align:center; padding:1mm; }
+  .doc-mono { width:9mm; height:9mm; color:var(--tinta); flex:none; }
+  .doc-emisor { font-size:9.2pt; font-weight:bold; letter-spacing:.2pt; text-transform:uppercase; line-height:1.12; }
+  .doc-meta { font-size:6.2pt; color:var(--gris); margin-top:.2mm; line-height:1.25; }
+  .doc-id { flex:none; min-width:44mm; border:1pt solid var(--tinta); }
+  .doc-id .tipo { background:var(--tinta); color:#fff; font-size:5.8pt; font-weight:bold; letter-spacing:.9pt; text-transform:uppercase; text-align:center; padding:.8mm 2mm; }
+  .doc-id .nro { font-family:"Courier New",Courier,monospace; font-size:12.5pt; font-weight:bold; letter-spacing:.5pt; color:var(--tinta); text-align:center; padding:1.2mm 2mm .9mm; }
+  .doc-id .pie { border-top:.6pt solid var(--linea-suave); font-size:5.8pt; letter-spacing:.3pt; text-transform:uppercase; color:var(--gris-suave); text-align:center; padding:.6mm; }
 
   /* ── Título ── */
-  .doc-titulo { text-align:center; font-size:13pt; font-weight:bold; letter-spacing:2.2pt; text-transform:uppercase; color:var(--tinta); margin:6mm 0 1mm; }
-  .doc-sub { text-align:center; font-size:7pt; letter-spacing:1.4pt; text-transform:uppercase; color:var(--gris-suave); margin:0 0 4mm; }
+  .doc-titulo { text-align:center; font-size:11.5pt; font-weight:bold; letter-spacing:1.8pt; text-transform:uppercase; color:var(--tinta); margin:2.2mm 0 1.6mm; line-height:1.15; }
+  .doc-sub { display:block; font-size:6pt; font-weight:normal; letter-spacing:1pt; text-transform:uppercase; color:var(--gris-suave); margin-top:.4mm; }
 
   /* ── Fichas de resumen ── */
-  .doc-res { display:flex; gap:1.6mm; margin:0 0 4mm; }
-  .doc-res .t { flex:1 1 0; min-width:0; border:.7pt solid var(--linea-suave); border-top:1.8pt solid var(--tinta); background:var(--tenue); padding:1.6mm 2mm; }
-  .doc-res .k { font-size:6.2pt; letter-spacing:.7pt; text-transform:uppercase; color:var(--gris-suave); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .doc-res .v { font-size:10.5pt; font-weight:bold; color:#111827; font-variant-numeric:tabular-nums; line-height:1.25; }
-  .doc-res .v .u { font-size:7pt; font-weight:normal; color:var(--gris); }
+  .doc-res { display:flex; gap:1.2mm; margin:0 0 2mm; }
+  .doc-res .t { flex:1 1 0; min-width:0; border:.7pt solid var(--linea-suave); border-top:1.2pt solid var(--tinta); background:var(--tenue); padding:.6mm 1.2mm; }
+  .doc-res .k { font-size:5.6pt; letter-spacing:.5pt; text-transform:uppercase; color:var(--gris-suave); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .doc-res .v { font-size:9pt; font-weight:bold; color:#111827; font-variant-numeric:tabular-nums; line-height:1.2; }
+  .doc-res .v .u { font-size:6pt; font-weight:normal; color:var(--gris); }
   .doc-res .ok { border-top-color:#15803d; } .doc-res .ok .v { color:#15803d; }
   .doc-res .mal { border-top-color:#b91c1c; background:#fdf1f1; } .doc-res .mal .v { color:#b91c1c; }
   .doc-res .aviso { border-top-color:#b45309; background:#fdf6ec; } .doc-res .aviso .v { color:#b45309; }
 
   /* ── Secciones ── */
   .doc-sec { display:flex; justify-content:space-between; align-items:baseline; gap:4mm;
-             background:var(--tinta); color:#fff; padding:1.1mm 2.4mm; margin:4mm 0 1.2mm;
-             font-size:7.2pt; font-weight:bold; letter-spacing:1.1pt; text-transform:uppercase; }
-  .doc-sec span { font-weight:normal; font-size:6.4pt; letter-spacing:.5pt; opacity:.82; white-space:nowrap; }
+             background:var(--tinta); color:#fff; padding:.5mm 2mm; margin:1.6mm 0 .7mm;
+             font-size:6.4pt; font-weight:bold; letter-spacing:.9pt; text-transform:uppercase; }
+  .doc-sec span { font-weight:normal; font-size:5.8pt; letter-spacing:.4pt; opacity:.82; white-space:nowrap; }
 
   /* ── Sellos y chips ── */
-  .doc-sello { display:inline-block; border:1.2pt double #b91c1c; color:#b91c1c; padding:1.4mm 3mm;
-               transform:rotate(-3.5deg); text-align:center; font-size:7.6pt; font-weight:bold;
-               letter-spacing:1.1pt; text-transform:uppercase; line-height:1.25; }
+  .doc-sello { display:inline-block; border:1pt double #b91c1c; color:#b91c1c; padding:.8mm 2mm;
+               transform:rotate(-3.5deg); text-align:center; font-size:6.4pt; font-weight:bold;
+               letter-spacing:.8pt; text-transform:uppercase; line-height:1.2; white-space:nowrap; }
   .doc-sello.verde { border-color:var(--tinta); color:var(--tinta); }
-  .doc-sello i { display:block; font-style:normal; font-weight:normal; font-size:6.2pt; letter-spacing:.3pt; text-transform:none; }
+  .doc-sello i { display:block; font-style:normal; font-weight:normal; font-size:5.4pt; letter-spacing:.2pt; text-transform:none; }
   .doc-chip { display:inline-block; border:.8pt solid; padding:.5mm 1.8mm; font-size:6.8pt; font-weight:bold; letter-spacing:.6pt; text-transform:uppercase; }
   .doc-chip.ok { color:#15803d; border-color:#15803d; background:#eef7f0; }
   .doc-chip.mal { color:#b91c1c; border-color:#b91c1c; background:#fdf1f1; }
   .doc-chip.neutro { color:var(--gris); border-color:#9ca3af; background:#f3f4f6; }
 
   /* ── Firmas, notas y pies ── */
-  .doc-firmas { display:flex; gap:8mm; margin-top:9mm; }
+  .doc-firmas { display:flex; gap:8mm; margin-top:6mm; }
   .doc-firmas > div { flex:1 1 0; }
-  .doc-firmas .linea { border-bottom:.8pt solid var(--linea); height:12mm; }
+  .doc-firmas .linea { border-bottom:.8pt solid var(--linea); height:7mm; }
   .doc-firmas .rot { padding-top:1.2mm; font-size:6.8pt; letter-spacing:.5pt; text-transform:uppercase; color:var(--gris); text-align:center; }
-  .doc-nota { border-left:2pt solid var(--tinta); background:var(--tenue); padding:1.8mm 2.6mm; margin-top:4mm; font-size:6.8pt; line-height:1.45; color:#374151; }
+  .doc-nota { border-left:2pt solid var(--tinta); background:var(--tenue); padding:1mm 1.6mm; margin-top:1.6mm; font-size:5.8pt; line-height:1.3; color:#374151; }
   .doc-nota b { color:var(--tinta); }
-  .doc-pie { display:flex; justify-content:space-between; gap:4mm; margin-top:4mm; padding-top:1.4mm;
+  .doc-pie { display:flex; justify-content:space-between; gap:4mm; margin-top:2mm; padding-top:1mm;
              border-top:.6pt dashed #9ca3af; font-size:6.2pt; letter-spacing:.3pt; color:var(--gris-suave); }
   .doc-corrido { display:none; }
 

@@ -26,10 +26,8 @@
  * fidelidad; para buscar dentro está el libro, que es la fuente, no el papel.
  */
 
-import { ALTO_UTIL_MM, ANCHO_HOJA_MM, paginar } from "./ctp-documento-print";
+import { ALTO_UTIL_MM, ANCHO_HOJA_MM, MARGEN_MM, paginar } from "./ctp-documento-print";
 
-/** Margen de `@page` del documento — el mismo que usa `documentoHtml`. */
-const MARGEN_MM = 12;
 const ANCHO_UTIL_MM = ANCHO_HOJA_MM - MARGEN_MM * 2;
 const PX_POR_MM = 96 / 25.4;
 /**

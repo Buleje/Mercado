@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   cabeceraDoc,
   documentoHtml,
+  MARGEN_MM,
   resumenDoc,
   seccionDoc,
   selloDoc,
@@ -15,7 +16,10 @@ describe("documentoHtml — el armazón de papel", () => {
   it("sale autocontenido y en A4: el visor y la impresora leen lo mismo", () => {
     const h = hoja();
     expect(h.startsWith("<!doctype html>")).toBe(true);
-    expect(h).toContain("@page{size:A4;margin:12mm}");
+    // El margen sale de una sola fuente: si cambia, cambia con él el alto útil
+    // que usan `paginar()` y el PDF.
+    expect(h).toContain(`@page{size:A4;margin:${MARGEN_MM}mm}`);
+    expect(MARGEN_MM).toBeLessThanOrEqual(15);
     expect(h).toContain(".doc-hoja");
     expect(h).toContain(".x{color:red}");
   });
