@@ -774,7 +774,7 @@ export function PlantillaPanelTab() {
                   "group relative text-left rounded-2xl border-2 p-5 transition-colors " +
                   (isActive
                     ? "border-[var(--accent)] bg-primary/10"
-                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-primary/10/40")
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-primary/10")
                 }
               >
                 {isActive && (

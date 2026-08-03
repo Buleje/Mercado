@@ -21,12 +21,9 @@ import {
   AlertTriangle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
 // ── Toggle moderno ─────────────────────────────────────────────────
 

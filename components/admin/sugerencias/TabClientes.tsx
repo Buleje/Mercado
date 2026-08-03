@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useRef } from "react";
 import { Search, Users, MessageCircle, ArrowRight } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 import ProductImage from "./ProductImage";
 
 interface Customer {

@@ -20,11 +20,7 @@ import { m, AnimatePresence } from "framer-motion";
 import {
   Trash2,
   Store,
-  ShoppingCart,
   ArrowLeft,
-  Truck,
-  Wallet,
-  Clock,
   Bookmark,
   ChevronRight,
 } from "@buleje/design-system/icons";
@@ -159,22 +155,6 @@ function ItemRow({
         </div>
       </div>
     </m.div>
-  );
-}
-
-/**
- * TrustPill — pequeño chip de confianza para reducir ansiedad de checkout.
- * Brandon mayo 15 v4: aparece en la barra superior del carrito; comunica
- * delivery rápido, pago seguro, pago al recibir, sin compromiso.
- */
-function TrustPill({ icon: Icon, label }: { icon: typeof Truck; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-1.5 pr-3 h-8 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] shadow-sm shrink-0">
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
-        <Icon className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-      </span>
-      <span className="whitespace-nowrap">{label}</span>
-    </span>
   );
 }
 

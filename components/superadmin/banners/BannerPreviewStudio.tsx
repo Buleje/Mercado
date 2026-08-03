@@ -113,9 +113,6 @@ interface Props {
 const ANIM_DURATION_MS = 400;
 const ZOOM_MIN = 50;
 const ZOOM_MAX = 250;
-const NUDGE_PCT = 5;
-const NUDGE_FAST = 20;
-const HISTORY_CAP = 30;
 
 const DEFAULT_ADJ: ImageAdjust = { position: { x: 50, y: 50 }, scale: 100, fit: "cover" };
 

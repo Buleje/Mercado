@@ -9,7 +9,7 @@ import {
   Trash2, Plus, ChevronDown, ChevronUp, Package,
   X, FileText, ScanBarcode, History,
   TrendingUp, BarChart3, Download, PackageCheck, Copy, ShoppingBag,
-  Search, Calendar, Building2, Loader2, Repeat, Hash, StickyNote, Check, Truck } from "@buleje/design-system/icons";
+  Calendar, Building2, Loader2, Repeat, Hash, StickyNote, Check, Truck } from "@buleje/design-system/icons";
 import type { DbPurchaseOrder, DbSupplier, DbProduct, PurchaseStatus } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";

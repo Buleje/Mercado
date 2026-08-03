@@ -16,7 +16,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Construction, Plus, X, Loader2, TrendingUp, Fuel,
-  Wrench, Truck, Pencil, Receipt, AlertTriangle, Download, FileText,
+  Wrench, Truck, Pencil, Receipt, Download, FileText,
   ClipboardCheck, CheckCircle, Calendar, CreditCard, Clock,
   Upload, BarChart3, Trophy, Store,
 } from "@buleje/design-system/icons";
@@ -801,7 +801,7 @@ function RankingView({ assets }: { assets: AssetStats[] }) {
 
 // ── Importar flota (CSV/Excel) ──────────────────────────────────────────────
 const UNIT_ALIASES: Record<string, string> = { hora: "hora", horas: "hora", dia: "dia", día: "dia", dias: "dia", días: "dia", m3: "m3", "m³": "m3", viaje: "viaje", viajes: "viaje" };
-function ImportModal({ knownTypes, onClose, onDone }: { knownTypes: string[]; onClose: () => void; onDone: () => void }) {
+function ImportModal({ onClose, onDone }: { knownTypes: string[]; onClose: () => void; onDone: () => void }) {
   const [text, setText] = useState("");
   const [rows, setRows] = useState<{ name: string; type: string; plate: string | null; hourlyRate: number | null; rateUnit: string; capacityPerDay: number | null }[] | null>(null);
   const [importing, setImporting] = useState(false);

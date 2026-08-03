@@ -9,7 +9,6 @@ import { SettingsProvider } from "@/contexts/settings-context";
 import AdminMotionProvider from "@/components/admin/providers/AdminMotionProvider";
 import { UndoToastProvider } from "@/components/admin/shared/UndoToast";
 import { ConfirmDialogProvider } from "@/components/admin/shared/ConfirmDialog";
-import { KeyboardShortcutsHelp } from "@/components/admin/shared/KeyboardShortcutsHelp";
 import { AdminShortcutsProvider } from "@/contexts/admin-shortcuts-context";
 import ShortcutsHelpConSecciones from "@/components/admin/shared/ShortcutsHelpConSecciones";
 import { ImportCarpetaProvider } from "@/contexts/import-carpeta-context";

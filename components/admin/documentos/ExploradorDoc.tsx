@@ -318,7 +318,10 @@ export default function ExploradorDoc({
       </div>
 
       {lote && elegidos.size > 0 && (
-        <div className="border-t border-[var(--rule-base)] bg-primary p-2 text-white dark:border-white/10">
+        <div
+          aria-label="Acciones para los archivos elegidos"
+          className="border-t border-[var(--rule-base)] bg-primary p-2 text-white dark:border-white/10"
+        >
           <div className="mb-1.5 flex items-center justify-between gap-2">
             <span className="text-xs font-bold tabular-nums">
               {elegidos.size} elegido{elegidos.size === 1 ? "" : "s"}

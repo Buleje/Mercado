@@ -7,7 +7,7 @@
  */
 
 import { useState } from "react";
-import { Radio, Save, AlertCircle, Check } from "@buleje/design-system/icons";
+import { Save, AlertCircle, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";

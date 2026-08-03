@@ -25,26 +25,16 @@ import {
   ArrowLeft,
   Search,
   X,
-  Menu,
   LayoutGrid,
   Info,
   MapPin,
   Clock,
   Wallet,
   Phone,
-  UserCircle,
-  Home as HomeIcon,
-  Store as StoreIcon,
-  Package,
-  Tag,
-  ArrowRight,
-  ShoppingCart,
   Star,
   MessageCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { useCustomer } from "@/contexts/customer-context";
-import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 // Brandon 2026-05-21 perf v7: SharedMobileNavDrawer (400 LOC / 20KB) es un
 // drawer mobile-only que solo se monta cuando el usuario abre el menú.
 // dynamic({ ssr: false }) → chunk separado, descarga on-demand. El chunk
@@ -921,7 +911,7 @@ function MobileSearchOverlay({
                 <button
                   type="button"
                   onClick={() => onSelectSuggestion(s)}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-xl hover:bg-primary/10/40 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-xl hover:bg-primary/10 transition-colors"
                 >
                   <span
                     className={cn(

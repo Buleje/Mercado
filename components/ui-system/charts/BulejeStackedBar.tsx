@@ -18,7 +18,6 @@ import {
   CHART_PALETTE,
 } from "./palette";
 import { ChartTooltip } from "./ChartTooltip";
-import { cn } from "@/lib/utils";
 
 /**
  * BulejeStackedBar — barras apiladas (stacked).

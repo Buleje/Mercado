@@ -471,11 +471,6 @@ function KycSection({ title, rows }: { title: string; rows: [string, string][] }
 // ─────────────────────────────────────────────
 // Componente principal
 // ─────────────────────────────────────────────
-interface DeliveryKPIs {
-  activePartners: number;
-  deliveriesToday: number;
-  pendingDeliveries: number;
-}
 
 
 // ── Tipos/helpers movidos de DeliveryPartnersModule (refactor 2026-06-15) ──

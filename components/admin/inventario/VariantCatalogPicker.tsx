@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
-  BookOpen, Loader2, Check, Image as ImageIcon, ChevronDown, ChevronRight,
+  Loader2, Check, Image as ImageIcon, ChevronDown, ChevronRight,
   CheckSquare, Square, Plus,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";

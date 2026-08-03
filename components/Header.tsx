@@ -5,7 +5,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Menu, X, ShoppingCart, Store,
-  ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
+  ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle,
   Search, Trophy, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList,
   Home, Zap, RotateCw, Star, Phone, ShoppingBag, Tag, MapPin, Compass, Wallet,
   Bell, AlertCircle, CheckCheck, ArrowRight, Info,

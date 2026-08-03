@@ -711,7 +711,6 @@ export default function GoalsTab() {
           {visible.map(({ goal: g, status }) => {
             const meta = CATEGORY_META[g.category];
             const Icon = meta.icon;
-            const pct  = Math.min(100, g.target > 0 ? Math.round((g.current / g.target) * 100) : 0);
             const dueInfo = g.dueDate ? formatDaysRemaining(g.dueDate) : null;
             const forecast = computeForecast(g);
             const autoValue = pickAutoCurrent(g.category, g.period, autoStats);

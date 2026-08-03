@@ -1,9 +1,9 @@
 import "server-only";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import nodemailer from "nodemailer";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { rateLimit } from "@/lib/rate-limit";
 import { withApiHandler } from "@/lib/api-handler";
 import { logger } from "@/lib/logger";
 
@@ -40,7 +40,7 @@ function isQuietHours(): boolean {
   return hour >= 22 || hour < 8;
 }
 
-export const POST = withApiHandler("abandoned-cart", async (req, ctx) => {
+export const POST = withApiHandler("abandoned-cart", async (req, _ctx) => {
   try {
     const body = await req.json();
     const parsed = BodySchema.safeParse(body);

@@ -3,7 +3,7 @@
 import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
-  TrendingUp, Loader2, ArrowUpRight, ArrowDownRight,
+  TrendingUp, ArrowUpRight, ArrowDownRight,
   Download, Search, X, User, Calendar,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";

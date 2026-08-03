@@ -12,7 +12,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Loader2, ExternalLink, MessageCircle, Mail,
+  ExternalLink, MessageCircle, Mail,
   AlertTriangle, Clock, CheckCircle, XCircle, Users,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";

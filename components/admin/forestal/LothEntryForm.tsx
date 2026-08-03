@@ -19,9 +19,7 @@ import {
   Search,
   Check,
   ShieldAlert,
-  MapPin,
   Camera,
-  ExternalLink,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";

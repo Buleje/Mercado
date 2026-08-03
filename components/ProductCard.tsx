@@ -1,6 +1,5 @@
 import { memo, useCallback, useRef, useState, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Plus, Minus, Heart, Eye, Flame, Clock, ShoppingCart, Star, BellRing } from "lucide-react";
 import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
@@ -15,31 +14,6 @@ import type { Product } from "@/data/products";
 import { trackView } from "@/components/RecentlyViewedSingleTenant";
 import ProductImagePlaceholder from "@/components/store/ProductImagePlaceholder";
 import { SocioPriceBadge } from "@/components/marketplace/SocioPriceBadge";
-import { BodegaAbriendo } from "@/components/ui-system/illustrations/contextual";
-import { CanastaVacia } from "@/components/ui-system/illustrations/empty-states";
-import {
-  VerduraFresca,
-  CarniceriaFresca,
-  LacteosRefresh,
-  BebidasVarias,
-  LimpiezaDomicilio,
-} from "@/components/ui-system/illustrations/categories";
-
-/**
- * Mapeo de categoria de producto -> ilustracion del DS.
- * Usa if/else explicit para cumplir react-hooks/static-components.
- */
-function ProductCategoryIllustration({ category, className }: { category?: string; className?: string }) {
-  const cat = (category ?? "").toLowerCase();
-  const common = { size: 120, strokeWidth: 1.5, className } as const;
-  if (cat.includes("abarrote")) return <BodegaAbriendo {...common} />;
-  if (cat.includes("fruta") || cat.includes("verdura")) return <VerduraFresca {...common} />;
-  if (cat.includes("carne")) return <CarniceriaFresca {...common} />;
-  if (cat.includes("lacte") || cat.includes("láct")) return <LacteosRefresh {...common} />;
-  if (cat.includes("bebida")) return <BebidasVarias {...common} />;
-  if (cat.includes("limpie")) return <LimpiezaDomicilio {...common} />;
-  return <CanastaVacia {...common} />;
-}
 
 type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number; isTopSeller?: boolean; comparePrice?: number; promoEndDate?: string; socioPrice?: number };
 

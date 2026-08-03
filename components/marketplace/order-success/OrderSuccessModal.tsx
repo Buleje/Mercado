@@ -38,7 +38,7 @@ const OrderLocationMap = dynamic(() => import("./OrderLocationMap"), {
 });
 
 export default function OrderSuccessModal() {
-  const { order, modalOpen, closeModal, clear } = useLastOrder();
+  const { order, modalOpen, closeModal } = useLastOrder();
   const [mapExpanded, setMapExpanded] = useState(false);
 
   // ESC: cierra primero el mapa ampliado; si no, cierra el modal.

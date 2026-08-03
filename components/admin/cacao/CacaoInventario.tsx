@@ -318,7 +318,7 @@ export default function CacaoInventario() {
 
       {/* Integración explicada */}
       {valorMercado != null && (
-        <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10/30 p-4 text-sm">
+        <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10 p-4 text-sm">
           <Banknote className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
           <p className="text-[var(--text-secondary)]">
             Tienes <b className="text-[var(--text-primary)]">{n2(inv.kgSecoDisponible)} kg</b> de

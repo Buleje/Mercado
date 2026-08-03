@@ -44,7 +44,6 @@ import { cn } from "@/lib/utils";
 import { setCurrentPlan } from "@/lib/billing/plan-tiers";
 import {
   PLANS,
-  PLAN_ORDER,
   type PlanTier,
 } from "@/lib/billing/plan-tiers";
 

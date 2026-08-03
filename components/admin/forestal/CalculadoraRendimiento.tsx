@@ -107,7 +107,7 @@ export default function CalculadoraRendimiento() {
 
       {/* Cerrar el loop: traer lo cubicado en las otras herramientas de un toque */}
       {hayCubicado && (
-        <button type="button" onClick={traerDelCubicador} className="mb-4 flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10/30 px-4 py-2.5 text-left transition hover:brightness-95">
+        <button type="button" onClick={traerDelCubicador} className="mb-4 flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10 px-4 py-2.5 text-left transition hover:brightness-95">
           <span className="inline-flex items-center gap-2 text-sm font-bold text-[var(--accent)]">
             <Download className="h-4 w-4" /> Traer del cubicador
           </span>

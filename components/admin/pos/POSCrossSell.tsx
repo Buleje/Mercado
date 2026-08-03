@@ -82,7 +82,7 @@ export default function POSCrossSell({
   if (!suggestion || dismissed) return null;
 
   return (
-    <div className="mx-3 mb-1 flex items-center gap-2 p-2 bg-primary/10/50 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg">
+    <div className="mx-3 mb-1 flex items-center gap-2 p-2 bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg">
       <Lightbulb className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted">

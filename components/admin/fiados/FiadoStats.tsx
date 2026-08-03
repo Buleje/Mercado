@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   DollarSign, Calendar, AlertTriangle,
   CheckCircle2, TrendingUp, Shield, MessageCircle,
-  ChevronLeft, ChevronRight, Search, Plus, Clock, XCircle, Ban,
+  ChevronLeft, ChevronRight,
   UtensilsCrossed, Home, Package, User,
   type LucideIcon,
 } from "@buleje/design-system/icons";
@@ -103,21 +103,9 @@ type FiadoStatsProps = {
   view?: FiadoStatsView;
 };
 
-/**
- * STATUS_META — mapeo estado -> variante semantica StatusBadge.
- * ADR-074 Phase 2: eliminamos los bg-amber-100/emerald-100/red-100/gray-100
- * hardcoded. La variante es lo único que importa; el color cae via tokens.
- */
-const STATUS_META: Record<FiadoStatus, { label: string; variant: "warning" | "success" | "error" | "neutral"; icon: typeof CheckCircle2 }> = {
-  ACTIVO: { label: "Activo", variant: "warning", icon: Clock },
-  PAGADO: { label: "Pagado", variant: "success", icon: CheckCircle2 },
-  VENCIDO: { label: "Vencido", variant: "error", icon: XCircle },
-  CANCELADO: { label: "Cancelado", variant: "neutral", icon: Ban },
-};
-
 function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
 
-export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMorosidad, proyeccionCobro, fiadoMasAntiguo, pagosEstaSemana, mejorPagadorMes, openDetail, search, setSearch, setSelected, setShowQuickClient, statusFilter, setStatusFilter, FiadoTendenciaCobro, view = "all" }: FiadoStatsProps) {
+export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMorosidad, proyeccionCobro, fiadoMasAntiguo, pagosEstaSemana, mejorPagadorMes, openDetail, setSearch, setSelected, FiadoTendenciaCobro, view = "all" }: FiadoStatsProps) {
   const [calMes, setCalMes] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [calDiaSeleccionado, setCalDiaSeleccionado] = useState<string | null>(null);
 

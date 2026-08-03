@@ -16,6 +16,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { comprimirImagen } from "@/lib/documents/compress-image";
 import { motivoRechazo } from "@/lib/documents/upload-limits";
 import { enLotes, CARPETAS_POR_LLAMADA } from "@/lib/documentos/importar-arbol";
+import { IDS_POR_LOTE } from "@/lib/documents/bulk-limits";
 import { reportarVelocidad } from "@/lib/documentos/reportar-velocidad";
 
 const BASE = "/api/admin/documents";
@@ -27,6 +28,25 @@ function motivoSubida(msg: string): string {
   if (msg.includes("415") || msg.includes("mime_not_allowed")) return "el drive no acepta ese tipo";
   if (msg.includes("429")) return "el servidor pidió esperar";
   return "no se pudo subir";
+}
+
+/** Qué se estaba haciendo, para el aviso cuando una acción en lote falla. */
+const VERBO_LOTE: Record<string, string> = {
+  delete: "eliminar",
+  move: "mover",
+  tag: "etiquetar",
+  favorite: "marcar",
+  status: "cambiar el estado de",
+};
+
+/** El error crudo de una acción en lote, dicho en castellano y sin JSON. */
+function motivoLote(msg: string): string {
+  if (/failed to fetch|network|load failed/i.test(msg)) return "se cortó la conexión";
+  if (msg.includes("429")) return "el servidor pidió esperar: fueron muchas acciones seguidas";
+  if (msg.includes("401")) return "hay que volver a entrar al panel";
+  if (msg.includes("403") || /csrf/i.test(msg)) return "la sesión venció, recargá la página";
+  if (msg.includes("400")) return "el servidor rechazó el pedido";
+  return "el servidor no pudo completarlo";
 }
 
 async function http<T>(url: string, init?: RequestInit): Promise<T> {
@@ -79,6 +99,10 @@ export interface UseDocumentsResult {
   remove: (id: string) => Promise<void>;
   restore: (id: string) => Promise<void>;
   purge: (id: string) => Promise<void>;
+  /** Saca varios de la papelera de una; devuelve cuántos volvieron. */
+  restoreMany: (ids: string[]) => Promise<number>;
+  /** Borra definitivamente: con `ids` los elegidos, sin `ids` la papelera entera. */
+  purgeMany: (ids?: string[]) => Promise<number>;
   bulk: (action: "delete" | "move" | "tag" | "favorite" | "status", ids: string[], extra?: Record<string, unknown>) => Promise<number>;
   createFolder: (input: { name: string; parentId?: string | null; color?: string; icon?: string }) => Promise<DbDocumentFolder>;
   /** Árbol completo en una llamada (importador de carpetas): ruta → id. */
@@ -377,6 +401,75 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     await optimista(() => {}, revertir, () => http(`${BASE}/${id}?purge=1`, { method: "DELETE" }));
   }, [optimista, cambiarLocal]);
 
+  /**
+   * Recuperar una tanda entera de la papelera. Un borrado masivo hecho por
+   * error se deshacía de a un clic por archivo; con 300 documentos eso no es
+   * una recuperación, es una tarde perdida.
+   */
+  const restoreMany = useCallback(async (ids: string[]): Promise<number> => {
+    if (ids.length === 0) return 0;
+    const enLote = new Set(ids);
+    const revertir = cambiarLocal((docs) => docs.filter((d) => !enLote.has(d.id)));
+    return await optimista(() => {}, revertir, async () => {
+      let restaurados = 0;
+      for (const lote of enLotes(ids, IDS_POR_LOTE)) {
+        const r = await http<{ restored: number }>(`${BASE}/trash`, {
+          method: "POST",
+          body: JSON.stringify({ action: "restore", ids: lote }),
+        });
+        restaurados += r.restored;
+      }
+      // Si el servidor restauró menos de lo que se le pidió (alguno ya no estaba
+      // en la papelera), la pantalla optimista quedó mintiendo: que la corrija
+      // el listado real en vez de mostrar una recuperación que no pasó.
+      if (restaurados !== ids.length) {
+        void fetchAll({ silencioso: true, soloDocumentos: true });
+      }
+      return restaurados;
+    });
+  }, [optimista, cambiarLocal, fetchAll]);
+
+  /**
+   * Vaciar la papelera de verdad: borra los archivos del storage y las filas.
+   *
+   * Con `ids` va sólo lo elegido; sin `ids` se lleva la papelera COMPLETA del
+   * tenant — el servidor la muele de a tandas y avisa cuántos quedan, así que
+   * acá se repite hasta que no queda nada (con techo, para no colgarse si el
+   * conteo no baja).
+   */
+  const purgeMany = useCallback(async (ids?: string[]): Promise<number> => {
+    let borrados = 0;
+    try {
+      if (ids && ids.length > 0) {
+        for (const lote of enLotes(ids, IDS_POR_LOTE)) {
+          const r = await http<{ purged: number }>(`${BASE}/trash`, {
+            method: "POST",
+            body: JSON.stringify({ action: "purge", ids: lote }),
+          });
+          borrados += r.purged;
+        }
+      } else {
+        for (let vuelta = 0; vuelta < 20; vuelta++) {
+          const r = await http<{ purged: number; restantes: number }>(`${BASE}/trash`, {
+            method: "POST",
+            body: JSON.stringify({ action: "purge", todos: true }),
+          });
+          borrados += r.purged;
+          if (r.restantes === 0 || r.purged === 0) break;
+        }
+      }
+    } catch (e) {
+      const crudo = e instanceof Error ? e.message : String(e);
+      setError(`No se pudo vaciar la papelera: ${motivoLote(crudo)}`);
+      throw e;
+    } finally {
+      // Borrar de verdad no se puede "adivinar" en pantalla: el listado se pide
+      // otra vez para que la papelera muestre exactamente lo que quedó.
+      void fetchAll({ silencioso: true, soloDocumentos: true });
+    }
+    return borrados;
+  }, [fetchAll]);
+
   const bulk = useCallback(
     async (
       action: "delete" | "move" | "tag" | "favorite" | "status",
@@ -399,15 +492,36 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
           return d;
         });
       });
-      const r = await optimista(() => {}, revertir, () =>
-        http<{ affected: number }>(`${BASE}/bulk`, {
-          method: "POST",
-          body: JSON.stringify({ action, ids, ...extra }),
-        }),
-      );
-      return r.affected;
+      // El endpoint acepta hasta IDS_POR_LOTE ids por llamada. Mandar la
+      // selección entera devolvía un 400 crudo ("Too big: expected array to
+      // have <=200 items") y no borraba nada, justo cuando más falta hace:
+      // limpiar una carpeta con cientos de archivos.
+      return await optimista(() => {}, revertir, async () => {
+        let afectados = 0;
+        for (const lote of enLotes(ids, IDS_POR_LOTE)) {
+          try {
+            const r = await http<{ affected: number }>(`${BASE}/bulk`, {
+              method: "POST",
+              body: JSON.stringify({ action, ids: lote, ...extra }),
+            });
+            afectados += r.affected;
+          } catch (e) {
+            // Si algún lote ya pasó, deshacer todo en pantalla mentiría: se
+            // verían de vuelta archivos que el servidor sí borró. Que la
+            // verdad la traiga el servidor.
+            if (afectados > 0) {
+              void fetchAll({ silencioso: true, soloDocumentos: true });
+            }
+            const crudo = e instanceof Error ? e.message : String(e);
+            throw new Error(
+              `No se pudo ${VERBO_LOTE[action] ?? "cambiar"} ${ids.length} documento(s): ${motivoLote(crudo)}`,
+            );
+          }
+        }
+        return afectados;
+      });
     },
-    [optimista, cambiarLocal]
+    [optimista, cambiarLocal, fetchAll]
   );
 
   const createFolder = useCallback(async (input: { name: string; parentId?: string | null }) => {
@@ -513,11 +627,15 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
 
     let count = 0;
     await optimista(() => {}, revertir, async () => {
-      const res = await http(`${BASE}/folders/bulk`, {
-        method: "POST",
-        body: JSON.stringify({ ...accion, ids }),
-      });
-      count = typeof (res as { count?: number })?.count === "number" ? (res as { count: number }).count : ids.length;
+      // Igual que con los documentos: el endpoint toma hasta IDS_POR_LOTE por
+      // llamada, así que la selección va en tandas y no en un 400.
+      for (const lote of enLotes(ids, IDS_POR_LOTE)) {
+        const res = await http(`${BASE}/folders/bulk`, {
+          method: "POST",
+          body: JSON.stringify({ ...accion, ids: lote }),
+        });
+        count += typeof (res as { count?: number })?.count === "number" ? (res as { count: number }).count : lote.length;
+      }
     });
     // El conteo de documentos por carpeta lo recalcula el servidor.
     void fetchAll();
@@ -547,7 +665,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     );
   }, [optimista, cambiarCarpetas, cambiarLocal]);
 
-  return { documents, semanticTerms, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, bulk, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, bulkFolders, deleteFolder };
+  return { documents, semanticTerms, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, restoreMany, purgeMany, bulk, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, bulkFolders, deleteFolder };
 }
 
 // ── Standalone helpers ──────────────────────────────────────────────────────

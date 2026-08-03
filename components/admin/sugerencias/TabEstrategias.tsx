@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import { Calendar, TrendingUp, Gift, Sun, Snowflake, Heart } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 
 type Season = {
   id: string;

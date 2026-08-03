@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { SectionTitle, CardTitle } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
 import {
   RefreshCw, TrendingUp, TrendingDown, Minus, AlertCircle, Activity,
 } from "@buleje/design-system/icons";

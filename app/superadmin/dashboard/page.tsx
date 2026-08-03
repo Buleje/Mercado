@@ -15,7 +15,6 @@ import {
   Minus,
 } from "@buleje/design-system/icons";
 import {
-  StatCard,
   ErrorAlert,
   LoadingState,
 } from "@buleje/design-system";
@@ -191,21 +190,6 @@ export default function DashboardPage() {
     }
     return "Últimos 30 días";
   }, [range, customRange]);
-
-  // ── Series con datos REALES del endpoint widgets ────────────────────────
-  // Recharts espera [{ date, value }] — adaptamos las shapes locales.
-  const revenueSeries = useMemo(
-    () =>
-      widgets?.revenueSeries.map((p) => ({ date: p.date, revenue: p.revenue })) ??
-      [],
-    [widgets],
-  );
-  const ordersSeries = useMemo(
-    () =>
-      widgets?.ordersSeries.map((p) => ({ date: p.date, count: p.count })) ??
-      [],
-    [widgets],
-  );
 
   // ── Formato fecha legible — "2026-04-23" → "23 abr" ────────────────────
   // Brief Brandon 2026-05-19: "04-23" no se entiende; queremos "2 may" con

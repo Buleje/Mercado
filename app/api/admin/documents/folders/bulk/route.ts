@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { logger } from "@/lib/logger";
+import { IDS_POR_LOTE } from "@/lib/documents/bulk-limits";
 
 /**
  * POST /api/admin/documents/folders/bulk — acciones sobre VARIAS carpetas.
@@ -19,32 +20,36 @@ import { logger } from "@/lib/logger";
  * carpetas marcadas, reemplazar borraría las etiquetas propias de cada una.
  */
 
+// Mismo tope que los documentos, y el cliente parte la selección en lotes de
+// ese tamaño: marcar "todas" en un árbol grande no puede terminar en un 400.
+const Ids = z.array(z.string().min(1)).min(1).max(IDS_POR_LOTE);
+
 const Body = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("emoji"),
-    ids: z.array(z.string().min(1)).min(1).max(200),
+    ids: Ids,
     // Un emoji puede ser varios code points (👨‍👩‍👧 = 8): el tope es generoso a
     // propósito, y el `trim()` vacío se traduce a null (limpiar).
     emoji: z.string().max(24).nullable(),
   }),
   z.object({
     action: z.literal("color"),
-    ids: z.array(z.string().min(1)).min(1).max(200),
+    ids: Ids,
     color: z.string().max(20).nullable(),
   }),
   z.object({
     action: z.literal("addTags"),
-    ids: z.array(z.string().min(1)).min(1).max(200),
+    ids: Ids,
     tags: z.array(z.string().trim().min(1).max(40)).min(1).max(10),
   }),
   z.object({
     action: z.literal("removeTags"),
-    ids: z.array(z.string().min(1)).min(1).max(200),
+    ids: Ids,
     tags: z.array(z.string().trim().min(1).max(40)).min(1).max(10),
   }),
   z.object({
     action: z.literal("delete"),
-    ids: z.array(z.string().min(1)).min(1).max(200),
+    ids: Ids,
   }),
 ]);
 

@@ -20,7 +20,7 @@ import {
   HardDrive, ClipboardList, Monitor, SlidersHorizontal,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { CardTitle, IconBadge } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
 const StorefrontEditor = dynamic(() => import("@/components/admin/StorefrontEditor"), { ssr: false });
@@ -232,22 +232,6 @@ function StatusDot({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
-function ProgressBar({ value, max, label, unit }: { value: number; max: number; label: string; unit?: string }) {
-  const pct = Math.min(100, (value / max) * 100);
-  const isHigh = pct > 80;
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">{label}</span>
-        <span className={cn("font-bold", isHigh ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)] dark:text-muted")}>{value}/{max} {unit}</span>
-      </div>
-      <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-        <div className={cn("h-full rounded-full transition-all", isHigh ? "bg-[var(--data-warning-500)]" : "bg-primary")} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
-
 function OverviewCard({ section, completionPct, onClick }: {
   section: typeof SECTION_META[number]; completionPct: number; onClick: () => void;
 }) {
@@ -452,16 +436,16 @@ export default function SettingsModule({
   const [restoreFile, setRestoreFile] = useState<File | null>(null);
   const [restorePreview, setRestorePreview] = useState<{ date: string; size: string; products: number; orders: number; customers: number } | null>(null);
   const [restoring, setRestoring] = useState(false);
-  const [restoreSuccess, setRestoreSuccess] = useState(false);
+  const [restoreSuccess] = useState(false);
   const [restoreError, setRestoreError] = useState<string | null>(null);
 
   // Subscription
   const [planName, setPlanName] = useState("free");
-  const [planExpiresAt, setPlanExpiresAt] = useState("");
-  const [maxProducts, setMaxProducts] = useState(500);
-  const [maxUsers, setMaxUsers] = useState(3);
-  const [maxBranches, setMaxBranches] = useState(1);
-  const [enabledModules, setEnabledModules] = useState<string[]>(["inventario", "ventas", "caja"]);
+  const [, setPlanExpiresAt] = useState("");
+  const [, setMaxProducts] = useState(500);
+  const [, setMaxUsers] = useState(3);
+  const [, setMaxBranches] = useState(1);
+  const [, setEnabledModules] = useState<string[]>(["inventario", "ventas", "caja"]);
 
   // Feature flags
   const [featureFlags, setFeatureFlags] = useState<Record<string, boolean>>({});

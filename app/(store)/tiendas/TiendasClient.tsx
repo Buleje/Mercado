@@ -24,11 +24,8 @@ import {
   Store,
   MapPin,
   ArrowUpRight,
-  Bike,
   Wallet,
-  Search as SearchIcon,
   ShoppingBag,
-  ChevronRight,
   X,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -67,10 +64,6 @@ const ExplorarTracker = dynamic(() => import("@/components/marketplace/explorar/
 import type { MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";
 import {
   Boxes,
-  Package,
-  Sparkles,
-  Leaf,
-  MoreHorizontal,
   Star,
   SlidersHorizontal,
   Clock,
@@ -93,8 +86,6 @@ const VERTICAL_ICONS: Record<string, LucideIcon> = {
   electro: Smartphone,
   farmacia: Pill,
 };
-// CupSoda no esta en el DS — import directo desde lucide (excepcion documentada).
-import { CupSoda } from "lucide-react";
 // Brandon 2026-05-21 v3: removido import default de QuickFilterChips (chips
 // legacy "Abierto ahora / 4.5 o más / Sin mínimo" eliminados del render).
 // El type sigue siendo necesario para el state `activeChips` que alimenta
@@ -111,7 +102,6 @@ import StoresSortSelector, {
 // montaban en el árbol React aunque CSS los escondiera → JS bundle + hooks
 // (fetch, geo, customer-orders) corrían en mobile sin propósito. Ahora dynamic
 // con ssr:false + gate por useMediaQuery → mobile no descarga ni ejecuta nada.
-import TiendasSectionHeader from "@/components/marketplace/TiendasSectionHeader";
 import TiendasLocationBar from "@/components/marketplace/TiendasLocationBar";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 // `dynamic` ya está importado al top — usado por ExplorarTracker, MarketplaceFilters,
@@ -140,19 +130,6 @@ const MarketplaceFilters = dynamic(() => import("@/components/marketplace/Market
     <div
       aria-hidden
       className="inline-flex h-9 w-24 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] animate-pulse"
-    />
-  ),
-});
-
-// Brandon 2026-05-18 perf P1 #6: SearchAutocomplete oculto en mobile (hero
-// sm+ only); el navbar mobile tiene su propio search pill. ssr:false +
-// placeholder con la misma altura/borde para evitar layout shift.
-const SearchAutocomplete = dynamic(() => import("@/components/marketplace/SearchAutocomplete"), {
-  ssr: false,
-  loading: () => (
-    <div
-      aria-hidden
-      className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]"
     />
   ),
 });
@@ -197,16 +174,6 @@ const MisPedidosFavoritosStrip = dynamic(
 // Ver `import MarketplaceStoresView ...` arriba.
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
-
-// Mapa icono por categoría de producto — coherencia visual con la row de Zona
-const PRODUCT_CATEGORY_ICONS: Record<string, typeof Boxes> = {
-  todos: Boxes,
-  abarrotes: Package,
-  bebidas: CupSoda,
-  limpieza: Sparkles,
-  frescos: Leaf,
-  otros: MoreHorizontal,
-};
 
 const MAX_PRICE_LIMIT = 500;
 
@@ -261,12 +228,7 @@ export default function TiendasClient({
 
   // Profile del customer — sólo lo usamos para mostrar su ubicación
   // real cuando ya lo gateamos por isLoggedIn. NO decide auth.
-  const { customer } = useCustomer();
-  const customerCity = isLoggedIn
-    ? (customer?.districtName ?? customer?.provinceName ?? null)
-    : null;
-  const customerRegion = isLoggedIn ? (customer?.departmentName ?? null) : null;
-  const hasLocation = isLoggedIn && Boolean(customerCity || customerRegion);
+  useCustomer();
 
   const [stores, setStores] = useState<MarketplaceStore[]>(initialStores);
   const [loading, setLoading] = useState(initialStores.length === 0);
@@ -321,7 +283,6 @@ export default function TiendasClient({
   // Brandon 2026-05-18 perf P2 #13: el listener solo se monta cuando hay
   // subcategorías visibles. Sin chips → no hay sticky bar → no scroll listener.
   // Declarado DESPUÉS del state `subcategories` (orden léxico de hooks).
-  const hasSubcategoryChips = subcategories.length > 0;
   // Brandon 2026-05-27: el navbar ahora es FIJO siempre (no se esconde al
   // bajar). La sticky subnav de subcategorías debe aparecer apenas el usuario
   // pasa la sección original — independiente de la dirección de scroll. Antes
@@ -802,14 +763,6 @@ export default function TiendasClient({
     }));
   }, [stores]);
 
-  const hasFilters =
-    category !== "todos" ||
-    zone ||
-    geoActive ||
-    activeChips.size > 0 ||
-    search.trim().length > 0 ||
-    sortKey !== "relevance" ||
-    subCategoryId !== null;
 
   // Chips de filtro activo (audit filtros #4) — feedback claro de qué está
   // filtrado + remoción por chip. Cada uno se pinta arriba del grid con una ×.
@@ -883,8 +836,7 @@ export default function TiendasClient({
     [stores],
   );
 
-  const navMode = useMarketplaceNavMode();
-  const isTiendasOnly = navMode === "tiendas-only";
+  useMarketplaceNavMode();
 
   // Brandon 2026-05-20 v2 — fix flash desktop↔mobile:
   // El gate JS `useMediaQuery` (anterior) arrancaba en `false` durante SSR/primer
@@ -976,7 +928,7 @@ export default function TiendasClient({
            promocionales. Especialmente útil en modo tiendas-only. */}
       {search.trim().length > 0 && stores.length > 0 && (
         <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10/40 p-5 sm:p-6">
+          <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10 p-5 sm:p-6">
             <div className="flex items-end justify-between gap-4 mb-4">
               <div>
                 <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
@@ -1047,7 +999,7 @@ export default function TiendasClient({
                 productos en TODAS las tiendas (que sí matchea por producto). */}
             <Link
               href={`/marketplace/buscar?q=${encodeURIComponent(search.trim())}`}
-              className="mt-4 flex items-center gap-3 rounded-xl border-2 border-dashed border-[var(--accent)]/40 bg-[var(--surface-canvas)] p-3.5 transition-all hover:border-[var(--accent)] hover:bg-primary/10/40"
+              className="mt-4 flex items-center gap-3 rounded-xl border-2 border-dashed border-[var(--accent)]/40 bg-[var(--surface-canvas)] p-3.5 transition-all hover:border-[var(--accent)] hover:bg-primary/10"
             >
               <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <ShoppingBag className="h-5 w-5" strokeWidth={2} aria-hidden />
@@ -1748,7 +1700,7 @@ export default function TiendasClient({
                                 "w-full flex items-center gap-3 rounded-2xl border-2 p-3 sm:p-4 text-left transition-all",
                                 active
                                   ? "border-[var(--text-primary)] bg-[var(--surface-sunken)]"
-                                  : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/50 hover:bg-primary/10/30",
+                                  : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/50 hover:bg-primary/10",
                               )}
                             >
                               <span

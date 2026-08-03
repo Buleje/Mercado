@@ -2,7 +2,6 @@
 import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { m } from "@/components/admin/providers";
 import {
   ShoppingCart, Wallet, CreditCard, Scale, HandCoins,
   Banknote, History, ArrowRight, Clock, Users,

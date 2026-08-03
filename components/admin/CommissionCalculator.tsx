@@ -2,7 +2,7 @@
  
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Field } from "@/components/admin/shared/Field";
-import { DollarSign, Download, Loader2, AlertTriangle, Settings, RefreshCw, Users } from "@buleje/design-system/icons";
+import { Download, Loader2, AlertTriangle, Settings, RefreshCw, Users } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 /* ── Helpers ── */

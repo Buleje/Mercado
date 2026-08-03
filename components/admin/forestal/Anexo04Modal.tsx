@@ -87,7 +87,7 @@ export default function Anexo04Modal({
   const [verHistorial, setVerHistorial] = useState(abrirHistorial);
   /** Qué papel se está mirando: el anexo o la guía con la que sale el camión. */
   const [docActivo, setDocActivo] = useState<"anexo" | "gtf">("anexo");
-  const [gtfHtml, setGtfHtml] = useState<string | null>(null);
+  const [, setGtfHtml] = useState<string | null>(null);
   const [historialToken, setHistorialToken] = useState(0);
   /** Los emitidos alimentan la bandeja Y el checklist (N° repetido, volumen ya
    *  amparado por otra emisión de la misma guía): por eso se cargan siempre. */

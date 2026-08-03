@@ -86,10 +86,9 @@ export default function LoteMiembrosEditor({
   }
 
   return (
+    /* El título lo pone la sección que lo contiene (`Seccion numero={2}`): acá
+       repetirlo dejaba "CORRIDAS DEL LOTE" dos veces, una debajo de la otra. */
     <div className="space-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-        Corridas del lote
-      </span>
 
       {error && (
         <p className="flex items-center gap-1.5 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-error-700)]">

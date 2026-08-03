@@ -13,9 +13,7 @@ import {
   TrendingUp,
   AlertCircle,
   Clock,
-  Users,
-  Wallet,
-} from "@buleje/design-system/icons";
+  } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface TabFeature {

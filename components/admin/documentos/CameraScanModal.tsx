@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { X, Camera, Image as ImageIcon, FileText, Loader2, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { scanToPdf } from "@/hooks/use-documents";
 
 /**

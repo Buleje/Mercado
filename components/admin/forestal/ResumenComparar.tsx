@@ -101,7 +101,7 @@ export default function ResumenComparar({ rows, precioDe, conValor, dim, guardad
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10/40 font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
+                <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
                   <td className="px-3 py-2">Total</td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums">{n2(comp.total.ptA)}</td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums">{n2(comp.total.ptB)}</td>

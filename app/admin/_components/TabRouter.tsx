@@ -169,8 +169,8 @@ export function TabRouter({
   onSaveCategoryOrder,
   onboarding,
   onNavigateTab,
-  adminMode,
-  onToggleAdminMode,
+  adminMode: _adminMode,
+  onToggleAdminMode: _onToggleAdminMode,
 }: TabRouterProps) {
 
   // Prefetch modulos relacionados tras 2s de inactividad

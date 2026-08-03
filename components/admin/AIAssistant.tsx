@@ -763,7 +763,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       <div className="flex flex-wrap gap-1.5 px-3 py-1.5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
         {chips.map((chip, idx) => (
           <button key={`${chip}-${idx}`} onClick={() => sendMessage(chip)}
-            className="px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-primary/15/50 transition-colors">
+            className="px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-primary/15 transition-colors">
             {chip}
           </button>
         ))}

@@ -738,7 +738,7 @@ export function RepartidoresTab() {
                     key={p.id}
                     className={cn(
                       "transition-colors",
-                      isSelected ? "bg-primary/10/40" : "hover:bg-[var(--surface-sunken)]",
+                      isSelected ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]",
                     )}
                   >
                     <td className="px-3 py-4">

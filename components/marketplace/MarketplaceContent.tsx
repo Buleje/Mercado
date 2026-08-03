@@ -149,8 +149,7 @@ export default function MarketplaceContent({
 
   const search = searchParams.get("buscar") ?? "";
   // Visibilidad de secciones del home — controlada desde superadmin/stores → Navegación
-  const sectionVisibility = useNavVisibility("marketplace-sections");
-  const isVisible = (id: string) => sectionVisibility[id] !== false;
+  useNavVisibility("marketplace-sections");
 
   // ── Import shared cart from ?cart= param ──
   useEffect(() => {

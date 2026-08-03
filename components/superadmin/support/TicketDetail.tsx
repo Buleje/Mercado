@@ -15,7 +15,7 @@ import {
   AlertTriangle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { STATUS_CONFIG, PRIORITY_CONFIG, timeAgo } from "./shared";
+import { PRIORITY_CONFIG, timeAgo } from "./shared";
 import type { SupportTicket, TicketStatus, TicketPriority, ReplyTemplate } from "./shared";
 
 interface Props {
@@ -85,7 +85,6 @@ export default function TicketDetail({
     }
   };
 
-  const statusCfg = STATUS_CONFIG[ticket.status];
   const priorityCfg = PRIORITY_CONFIG[ticket.priority];
 
   return (

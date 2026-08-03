@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   X,
   ShoppingBasket,
-  Layers,
   ChevronDown,
   ChevronUp,
   Star,
@@ -84,7 +83,6 @@ export function AdminMobileDrawer({
   tab,
   navigateTab,
   filteredTabs,
-  allowedTabs,
   visibleCategories,
   sidebarSearch,
   onSidebarSearchChange,
@@ -110,7 +108,7 @@ export function AdminMobileDrawer({
   onOpenCierreDiario,
 }: AdminMobileDrawerProps) {
   // Plantilla del superadmin — overlay reactivo (mismo que sidebar desktop).
-  const { isHiddenByTemplate } = useAdminTemplateOverlay();
+  useAdminTemplateOverlay();
   return (
     <>
       {/* Mobile nav overlay */}

@@ -142,8 +142,8 @@ export default function MiCuentaLayout({
                   "relative flex items-center gap-3 rounded-2xl border-2 px-3.5 h-16 transition-all active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:flex-col sm:h-auto sm:gap-1.5 sm:py-3 sm:text-center",
                   isLast && "col-span-2 sm:col-span-1",
                   isActive
-                    ? "border-[var(--accent)] bg-primary/10/60 shadow-sm"
-                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-primary/10/20",
+                    ? "border-[var(--accent)] bg-primary/10 shadow-sm"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-primary/10",
                 )}
               >
                 <span

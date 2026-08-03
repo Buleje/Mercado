@@ -23,6 +23,7 @@
  * cuadra mientras una corrida sostiene 2.6× su producción. I5 no es un segundo
  * stock — es el techo de UNA fila; el stock sigue siendo uno solo (el acta).
  */
+import { explicarSaldo, saldosDeCorridas } from "./forest-ctp-saldo-corrida";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
@@ -251,27 +252,32 @@ export class ForestCtpDespachoDB {
 
       // 6. I5 — ninguna corrida despachada por encima de lo que produjo,
       //    contando lo que YA sacan OTROS despachos. Esto es lo que I3 no ve.
-      const otros = await tx.forestCtpDespachoOrigen.groupBy({
-        by: ["produccionEntryId"],
-        where: {
-          tenantId,
-          produccionEntryId: { in: ids },
-          despachoEntryId: { not: despachoEntryId },
-          ...ORIGEN_VIGENTE, // un despacho anulado no sigue reservando la corrida
-        },
-        _sum: { quantity: true },
-      });
-      const yaSalido = new Map(otros.map((o) => [o.produccionEntryId, Number(o._sum.quantity ?? 0)]));
+      //
+      //    Desde ADR-316 el saldo lo calcula `saldosDeCorridas`, porque el
+      //    despacho dejó de ser el único consumidor: el REPROCESO también saca
+      //    producto. Con dos cálculos separados, producir 10, reprocesar 8 y
+      //    despachar 10 pasaba las dos validaciones por su cuenta.
+      const saldos = await saldosDeCorridas(tx, tenantId, ids, { despachoEntryId });
 
       for (const o of origenes) {
         const corrida = corridas.find((c) => c.id === o.produccionEntryId)!;
-        const producido = corrida.quantity ? Number(corrida.quantity) : 0;
-        const disponible = producido - (yaSalido.get(o.produccionEntryId) ?? 0);
+        const saldo = saldos.get(o.produccionEntryId);
+        const producido = saldo?.producido ?? 0;
+        const disponible = saldo?.disponible ?? 0;
         if (r4(Number(o.quantity)) > r4(disponible)) {
           throw new CtpInvariantError(
-            `La corrida #${corrida.lineNo} produjo ${r4(producido)} y sólo le quedan ${r4(disponible)} sin despachar; estás pidiendo ${r4(Number(o.quantity))}.`,
+            `La corrida #${corrida.lineNo} produjo ${r4(producido)} y sólo le quedan ${r4(disponible)} disponibles` +
+              (saldo ? explicarSaldo(saldo) : "") +
+              `; estás pidiendo ${r4(Number(o.quantity))}.`,
             "I5_SOBRE_SALIDA_PRODUCCION",
-            { lineNo: corrida.lineNo, producido: r4(producido), disponible: r4(disponible), pedido: r4(Number(o.quantity)) },
+            {
+              lineNo: corrida.lineNo,
+              producido: r4(producido),
+              disponible: r4(disponible),
+              despachado: saldo?.despachado ?? 0,
+              reprocesado: saldo?.reprocesado ?? 0,
+              pedido: r4(Number(o.quantity)),
+            },
           );
         }
       }

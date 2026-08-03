@@ -479,7 +479,7 @@ export default function RegistroClient() {
               </div>
 
               {/* Testimonio social proof */}
-              <div className="rounded-2xl border-2 border-[var(--accent)]/20 bg-primary/10/30 p-5 shadow-sm">
+              <div className="rounded-2xl border-2 border-[var(--accent)]/20 bg-primary/10 p-5 shadow-sm">
                 <div className="mb-3 flex items-center gap-2">
                   <BadgeCheck className="h-5 w-5 text-[var(--accent)]" strokeWidth={2.25} />
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">

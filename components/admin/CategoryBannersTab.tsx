@@ -12,7 +12,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Tag, ImageIcon, ToggleLeft, ToggleRight, ExternalLink, Sparkles, ArrowRight } from "@buleje/design-system/icons";
+import { Tag, ToggleLeft, ToggleRight, ExternalLink, Sparkles, ArrowRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import ImageUpload from "./ImageUpload";

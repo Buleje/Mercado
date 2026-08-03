@@ -14,7 +14,6 @@
  */
 
 import { useMemo, useState, useEffect, memo } from "react";
-import { SectionTitle } from "@buleje/design-system";
 import {
   Check, X as XIcon, MapPin, Bike, Clock, AlertTriangle, ShoppingBasket, ArrowRight, Store, Boxes, ChefHat, GripHorizontal,
 } from "@buleje/design-system/icons";

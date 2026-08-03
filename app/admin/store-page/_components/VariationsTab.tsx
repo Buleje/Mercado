@@ -539,7 +539,7 @@ function ProductModifierEditor({
                         options: p.options,
                       })
                     }
-                    className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 text-left hover:border-[var(--accent)]/40 hover:bg-primary/10/30 transition-colors"
+                    className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 text-left hover:border-[var(--accent)]/40 hover:bg-primary/10 transition-colors"
                   >
                     <p className="text-sm font-bold text-[var(--text-primary)] inline-flex items-center gap-1">
                       <Plus className="h-3.5 w-3.5 text-[var(--accent)]" aria-hidden />
@@ -563,7 +563,7 @@ function ProductModifierEditor({
                       options: [],
                     });
                   }}
-                  className="rounded-lg border border-dashed border-[var(--accent)]/40 bg-primary/10/20 p-3 text-left hover:bg-primary/10 transition-colors"
+                  className="rounded-lg border border-dashed border-[var(--accent)]/40 bg-primary/10 p-3 text-left hover:bg-primary/10 transition-colors"
                 >
                   <p className="text-sm font-bold text-[var(--accent)] inline-flex items-center gap-1">
                     <Plus className="h-3.5 w-3.5" aria-hidden />

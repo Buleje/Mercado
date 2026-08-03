@@ -366,7 +366,6 @@ const ITEMS_PER_PAGE = 24;
 export default function CategoryCatalog({
   categoryId,
   categoryLabel,
-  categoryEmoji,
 }: {
   categoryId: string;
   categoryLabel: string;

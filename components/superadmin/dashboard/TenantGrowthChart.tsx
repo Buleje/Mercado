@@ -22,7 +22,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   LabelList,
 } from "recharts";
 import { TrendingUp, ShoppingBag, Banknote, Loader2 } from "@buleje/design-system/icons";

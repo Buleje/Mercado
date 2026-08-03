@@ -71,7 +71,7 @@ function ChipButton({ active, label, count, imageUrl, compact, onClick }: ChipBu
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
           active
             ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)] shadow-sm"
-            : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-[var(--accent)]/50 hover:bg-primary/10/30",
+            : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-[var(--accent)]/50 hover:bg-primary/10",
         )}
       >
         {imageUrl && (

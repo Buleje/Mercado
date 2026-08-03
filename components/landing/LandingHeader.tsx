@@ -22,7 +22,6 @@ import {
   X,
   MessageCircle,
   ArrowRight,
-  Search,
   Store,
   Tag,
   HelpCircle,
@@ -285,7 +284,7 @@ export default function LandingHeader({
                 "inline-flex h-10 items-center gap-1.5 rounded-full",
                 "border-2 border-[var(--accent)]/30 bg-primary/10 px-2.5 sm:px-3",
                 "text-[13px] sm:text-sm font-extrabold text-[var(--accent)] transition-all",
-                "hover:border-[var(--accent)] hover:bg-primary/10/80",
+                "hover:border-[var(--accent)] hover:bg-primary/10",
                 "active:scale-[0.97]",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
               )}

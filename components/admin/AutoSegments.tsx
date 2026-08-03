@@ -9,7 +9,6 @@ import {
   Moon,
   UserPlus,
   User,
-  Loader2,
   AlertCircle,
   ChevronDown,
   ChevronRight,

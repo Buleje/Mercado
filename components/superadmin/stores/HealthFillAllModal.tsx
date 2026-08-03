@@ -625,7 +625,7 @@ export default function HealthFillAllModal({
 
         {/* Progress bar mientras saving — feedback live */}
         {saving && (
-          <div className="px-5 py-2 border-t border-[var(--rule-base)] bg-primary/10/30">
+          <div className="px-5 py-2 border-t border-[var(--rule-base)] bg-primary/10">
             <div className="flex items-center justify-between text-[length:var(--ts-xs)] font-bold text-[var(--accent)] mb-1">
               <span>Guardando...</span>
               <span className="tabular-nums">{saveProgress}/13</span>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { m as motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -13,7 +13,6 @@ import {
   Store,
   Share2,
   Package,
-  Star,
   ChevronRight,
   Truck,
   Scale,
@@ -76,7 +75,6 @@ const fmt = (n: number) =>
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string; productId: string }>();
-  const router = useRouter();
   const { addItem } = useMarketplaceCart();
   const { add: addToCompare, remove: removeCompare, isIn: isInCompare, max: compareMax, items: compareItems } = useCompare();
 

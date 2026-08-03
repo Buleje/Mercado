@@ -1012,7 +1012,6 @@ export default function VendorApplicationsModule() {
             {/* ── Mobile: cards ───────────────────────────────── */}
             <ul className="md:hidden space-y-2.5">
               {filtered.map((a) => {
-                const sla = slaInfo(a.submittedAt);
                 const isSel = selectedIds.has(a.id);
                 return (
                   <li

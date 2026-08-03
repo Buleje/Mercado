@@ -38,12 +38,12 @@ interface BusinessOverviewHeroProps {
 
 function getToneClasses(tone: HeroTone): string {
   if (tone === "positive") {
-    return "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10/70 dark:bg-primary/15";
+    return "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15";
   }
   if (tone === "warning") {
     return "border-amber-200 dark:border-amber-800/40 bg-amber-50/70 dark:bg-amber-950/10";
   }
-  return "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10/70 dark:bg-primary/15";
+  return "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15";
 }
 
 function getEmphasisClasses(emphasis: HeroEmphasis): string {

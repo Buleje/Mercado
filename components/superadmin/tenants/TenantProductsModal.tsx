@@ -4,7 +4,7 @@ import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
-  X, Package, Loader2, Search, AlertTriangle,
+  X, Package, Search, AlertTriangle,
   CheckCircle2, XCircle, ImageIcon,
 } from "@buleje/design-system/icons";
 import { m as motion, AnimatePresence } from "framer-motion";

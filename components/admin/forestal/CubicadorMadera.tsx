@@ -31,6 +31,7 @@ import Anexo04Modal from "./Anexo04Modal";
 import { clasificarTipo, ORDEN_TIPO, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoBadge, tipoBadgeCls } from "./tipo-badge";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
+import { CeldaNum, useTecladoGrilla, enfocarCelda } from "./celdas-excel";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -48,6 +49,12 @@ const UNIDADES: { v: Unidad; label: string }[] = [
   { v: "pulg", label: "pulg" }, { v: "cm", label: "cm" }, { v: "pies", label: "pies" }, { v: "m", label: "m" },
 ];
 // Rangos para los dropdowns de carga manual (rápida, sin tipear).
+/** Grillas con navegación de teclado (ver `celdas-excel.tsx`). */
+const GRILLA_CARGA = "cub-carga";
+const GRILLA_TABLA = "cub-tabla";
+/** Orden de tabulación de la fila de carga: Cant → Espesor → Ancho → Largo. */
+const COL_CANT = 0, COL_ESPESOR = 1, COL_ANCHO = 2, COL_LARGO = 3;
+
 const RANGO_ESPESOR = Array.from({ length: 10 }, (_, i) => i + 1);   // 1 a 10
 const RANGO_ANCHO = Array.from({ length: 30 }, (_, i) => i + 1);     // 1 a 30
 const RANGO_LARGO = Array.from({ length: 39 }, (_, i) => i + 2);     // 2 a 40
@@ -151,8 +158,11 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
 
   // Toasts flotantes de acción (agregar / eliminar / guardar / importar…).
   const { toasts, push: pushToast, dismiss: dismissToast } = useActionToasts();
-  const medidaTxt = (r: { espesor: number; ancho: number; largo: number; especie?: string }) =>
-    `${r.espesor}×${r.ancho}×${r.largo}${r.especie ? ` · ${r.especie}` : ""}`;
+  const medidaTxt = useCallback(
+    (r: { espesor: number; ancho: number; largo: number; especie?: string }) =>
+      `${r.espesor}×${r.ancho}×${r.largo}${r.especie ? ` · ${r.especie}` : ""}`,
+    []
+  );
 
   // Filtros de la tabla del lote (no tocan los datos, solo la vista).
   const [filtroEspecie, setFiltroEspecie] = useState("");   // "" = todas
@@ -557,14 +567,45 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     step();
   }, [stopLeer]);
 
-  const addManual = () => {
+  const addManual = useCallback(() => {
     const c = Math.max(1, Math.round(Number(manual.cantidad) || 1));
-    const e = Number(manual.espesor), a = Number(manual.ancho), l = Number(manual.largo);
-    if (!(e > 0 && a > 0 && l > 0)) return;
+    // Las medidas fijadas con el candado mandan sobre lo tipeado.
+    const e = Number(fijas.espesor ?? manual.espesor);
+    const a = Number(fijas.ancho ?? manual.ancho);
+    const l = Number(fijas.largo ?? manual.largo);
+    if (!(e > 0 && a > 0 && l > 0)) {
+      pushToast({ tono: "warning", msg: "Faltan medidas", detail: "Espesor, ancho y largo tienen que ser mayores a 0." });
+      return false;
+    }
     addPieza({ cantidad: c, espesor: e, ancho: a, largo: l, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especie || undefined });
-    setManual({ cantidad: "1", espesor: "", ancho: "", largo: "" });
+    // Lo fijado se conserva; sólo se limpia lo que se vuelve a tipear en cada pieza.
+    setManual({
+      cantidad: "1",
+      espesor: fijas.espesor != null ? String(fijas.espesor) : "",
+      ancho: fijas.ancho != null ? String(fijas.ancho) : "",
+      largo: fijas.largo != null ? String(fijas.largo) : "",
+    });
     pushToast({ tono: "success", msg: "Pieza agregada", detail: medidaTxt({ espesor: e, ancho: a, largo: l, especie: especie || undefined }) });
-  };
+    return true;
+  }, [manual, fijas, especie, addPieza, pushToast, medidaTxt]);
+
+  /**
+   * Enter cierra la pieza y devuelve el foco al espesor para encadenar la siguiente:
+   * el operario carga cientos por día sin soltar el teclado.
+   */
+  const confirmarCarga = useCallback(() => {
+    if (addManual()) {
+      // El foco vuelve al primer campo que NO esté fijado con el candado.
+      const primeraLibre = fijas.espesor == null ? COL_ESPESOR : fijas.ancho == null ? COL_ANCHO : fijas.largo == null ? COL_LARGO : COL_CANT;
+      requestAnimationFrame(() => enfocarCelda(GRILLA_CARGA, 0, primeraLibre));
+    }
+  }, [addManual, fijas]);
+
+  const teclasCarga = useTecladoGrilla({
+    grilla: GRILLA_CARGA,
+    onConfirmar: confirmarCarga,
+    enterSiempreConfirma: true,
+  });
 
   /** Edición a mano de una fila (cantidad/medidas/especie) — sin pasar por voz. */
   const editarCampo = (id: string, campo: "cantidad" | "espesor" | "ancho" | "largo", valor: number) => {
@@ -655,6 +696,22 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       });
   }, [rows, filtroEspecie, filtroTipo, busqueda]);
   const limpiarFiltros = useCallback(() => { setFiltroEspecie(""); setFiltroTipo(""); setBusqueda(""); }, []);
+
+  /**
+   * Teclado de la tabla. `data-fila` es la posición VISIBLE (no el índice del lote):
+   * con un filtro puesto, las flechas tienen que moverse por lo que se ve.
+   */
+  const teclasTabla = useTecladoGrilla({
+    grilla: GRILLA_TABLA,
+    onEliminarFila: (posicion) => {
+      const fila = filasVisibles[posicion];
+      if (fila) borrar(fila.r.id);
+    },
+    onDuplicarFila: (posicion) => {
+      const fila = filasVisibles[posicion];
+      if (fila) duplicar(fila.r.id);
+    },
+  });
   // Totales de la vista (iguales al lote si no hay filtro activo).
   const totalesVisibles = useMemo(() => filasVisibles.reduce(
     (a, { r }) => ({ piezas: a.piezas + r.cantidad, pt: a.pt + r.pieTablar, m3: a.m3 + r.m3 }),
@@ -1121,13 +1178,48 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           </p>
         )}
 
-        {/* Carga manual rápida — dropdowns (sin tipear). Usa la especie de arriba. */}
-        <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-[var(--rule-soft)] pt-3">
-          <ManualField label="Cant." value={manual.cantidad} onChange={(v) => setManual({ ...manual, cantidad: v })} w="w-16" />
-          <ManualSelect label="Espesor (pulg)" value={fijas.espesor ? String(fijas.espesor) : manual.espesor} onChange={(v) => setManual({ ...manual, espesor: v })} opts={RANGO_ESPESOR} fijo={fijas.espesor != null} onFijar={() => aplicarFijas(fijas.espesor != null ? (() => { const n = { ...fijas }; delete n.espesor; return n; })() : { ...fijas, espesor: Number(manual.espesor) || 0 })} />
-          <ManualSelect label="Ancho (pulg)" value={fijas.ancho ? String(fijas.ancho) : manual.ancho} onChange={(v) => setManual({ ...manual, ancho: v })} opts={RANGO_ANCHO} fijo={fijas.ancho != null} onFijar={() => aplicarFijas(fijas.ancho != null ? (() => { const n = { ...fijas }; delete n.ancho; return n; })() : { ...fijas, ancho: Number(manual.ancho) || 0 })} />
-          <ManualSelect label="Largo (pies)" value={fijas.largo ? String(fijas.largo) : manual.largo} onChange={(v) => setManual({ ...manual, largo: v })} opts={RANGO_LARGO} fijo={fijas.largo != null} onFijar={() => aplicarFijas(fijas.largo != null ? (() => { const n = { ...fijas }; delete n.largo; return n; })() : { ...fijas, largo: Number(manual.largo) || 0 })} />
-          <button type="button" onClick={addManual} className="inline-flex h-10 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Plus className="h-4 w-4" /> Agregar a mano</button>
+        {/* Carga manual tipo planilla: se tipea, se pasa con → y se cierra con Enter. */}
+        <div data-grilla={GRILLA_CARGA} className="mt-4 border-t border-[var(--rule-soft)] pt-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <CeldaCarga
+              label="Cant." col={COL_CANT} valor={manual.cantidad}
+              onValor={(v) => setManual({ ...manual, cantidad: v })}
+              onKeyDown={teclasCarga} ancho="w-16" etiqueta="Cantidad de piezas"
+            />
+            <CeldaCarga
+              label="Espesor (pulg)" col={COL_ESPESOR}
+              valor={fijas.espesor != null ? String(fijas.espesor) : manual.espesor}
+              onValor={(v) => setManual({ ...manual, espesor: v })}
+              onKeyDown={teclasCarga} etiqueta="Espesor en pulgadas"
+              sugerencias={RANGO_ESPESOR} listaId="sug-espesor"
+              fijo={fijas.espesor != null}
+              onFijar={() => aplicarFijas(fijas.espesor != null ? (() => { const n = { ...fijas }; delete n.espesor; return n; })() : { ...fijas, espesor: Number(manual.espesor) || 0 })}
+            />
+            <CeldaCarga
+              label="Ancho (pulg)" col={COL_ANCHO}
+              valor={fijas.ancho != null ? String(fijas.ancho) : manual.ancho}
+              onValor={(v) => setManual({ ...manual, ancho: v })}
+              onKeyDown={teclasCarga} etiqueta="Ancho en pulgadas"
+              sugerencias={RANGO_ANCHO} listaId="sug-ancho"
+              fijo={fijas.ancho != null}
+              onFijar={() => aplicarFijas(fijas.ancho != null ? (() => { const n = { ...fijas }; delete n.ancho; return n; })() : { ...fijas, ancho: Number(manual.ancho) || 0 })}
+            />
+            <CeldaCarga
+              label="Largo (pies)" col={COL_LARGO}
+              valor={fijas.largo != null ? String(fijas.largo) : manual.largo}
+              onValor={(v) => setManual({ ...manual, largo: v })}
+              onKeyDown={teclasCarga} etiqueta="Largo en pies"
+              sugerencias={RANGO_LARGO} listaId="sug-largo"
+              fijo={fijas.largo != null}
+              onFijar={() => aplicarFijas(fijas.largo != null ? (() => { const n = { ...fijas }; delete n.largo; return n; })() : { ...fijas, largo: Number(manual.largo) || 0 })}
+            />
+            <button type="button" onClick={confirmarCarga} className="inline-flex h-10 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Plus className="h-4 w-4" /> Agregar a mano</button>
+          </div>
+          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            <span><Tecla>→</Tecla> <Tecla>←</Tecla> cambian de campo</span>
+            <span><Tecla>Enter</Tecla> registra la pieza y vuelve al espesor</span>
+            <span>el candado deja la medida fija</span>
+          </p>
         </div>
       </div>
 
@@ -1287,7 +1379,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
 
         {/* Resúmenes del lote — la misma madera leída por especie, largo, sección… */}
         {showResumen && rows.length > 0 && (
-          <div className="mb-3 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10/40 p-3">
+          <div className="mb-3 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10 p-3">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap gap-1.5">
                 {DIMENSIONES_RESUMEN.map((d) => (
@@ -1404,7 +1496,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 </>
               )}
             </div>
-            <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
+            <div data-grilla={GRILLA_TABLA} className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
             <table className="w-full min-w-[960px] text-sm">
               <thead>
                 <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
@@ -1424,7 +1516,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     </td>
                   </tr>
                 )}
-                {filasVisibles.map(({ r, indice }) => {
+                {filasVisibles.map(({ r, indice }, pos) => {
                   const leyendo = readingId === r.id;
                   const editando = editingId === r.id;
                   const rowCls = leyendo
@@ -1438,10 +1530,10 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   return (
                   <tr key={r.id} id={`cub-row-${r.id}`} className={`border-t border-[var(--rule-soft)] transition-colors ${rowCls || (rara ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : "")}`}>
                     <td className="px-2 py-2 text-center font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{indice + 1}</td>
-                    <td className="px-3 py-2"><Num v={r.cantidad} onV={(n) => editarCampo(r.id, "cantidad", n)} etiqueta={`Cantidad de la fila ${r.espesor}×${r.ancho}×${r.largo}`} /></td>
-                    <td className="px-3 py-2"><Dim v={r.espesor} u={r.uEspesor} onU={(u) => cambiarUnidad(r.id, "uEspesor", u)} onV={(n) => editarCampo(r.id, "espesor", n)} etiqueta="Espesor" /></td>
-                    <td className="px-3 py-2"><Dim v={r.ancho} u={r.uAncho} onU={(u) => cambiarUnidad(r.id, "uAncho", u)} onV={(n) => editarCampo(r.id, "ancho", n)} etiqueta="Ancho" /></td>
-                    <td className="px-3 py-2"><Dim v={r.largo} u={r.uLargo} onU={(u) => cambiarUnidad(r.id, "uLargo", u)} onV={(n) => editarCampo(r.id, "largo", n)} etiqueta="Largo" /></td>
+                    <td className="px-3 py-2"><Num v={r.cantidad} onV={(n) => editarCampo(r.id, "cantidad", n)} etiqueta={`Cantidad de la fila ${r.espesor}×${r.ancho}×${r.largo}`} fila={pos} col={COL_CANT} onKeyDown={teclasTabla} /></td>
+                    <td className="px-3 py-2"><Dim v={r.espesor} u={r.uEspesor} onU={(u) => cambiarUnidad(r.id, "uEspesor", u)} onV={(n) => editarCampo(r.id, "espesor", n)} etiqueta="Espesor" fila={pos} col={COL_ESPESOR} onKeyDown={teclasTabla} /></td>
+                    <td className="px-3 py-2"><Dim v={r.ancho} u={r.uAncho} onU={(u) => cambiarUnidad(r.id, "uAncho", u)} onV={(n) => editarCampo(r.id, "ancho", n)} etiqueta="Ancho" fila={pos} col={COL_ANCHO} onKeyDown={teclasTabla} /></td>
+                    <td className="px-3 py-2"><Dim v={r.largo} u={r.uLargo} onU={(u) => cambiarUnidad(r.id, "uLargo", u)} onV={(n) => editarCampo(r.id, "largo", n)} etiqueta="Largo" fila={pos} col={COL_LARGO} onKeyDown={teclasTabla} /></td>
                     <td className="px-3 py-2 whitespace-nowrap font-mono text-sm font-bold tabular-nums text-[var(--text-secondary)]">
                       {r.espesor}×{r.ancho}×{r.largo}
                     </td>
@@ -1494,6 +1586,18 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           </>
         )}
 
+        {/* Atajos de la tabla: se corrige sin sacar las manos del teclado. */}
+        {rows.length > 0 && (
+          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            <span className="font-bold uppercase tracking-wide">En la tabla:</span>
+            <span><Tecla>↑</Tecla><Tecla>↓</Tecla><Tecla>←</Tecla><Tecla>→</Tecla> moverse</span>
+            <span><Tecla>Enter</Tecla> baja una fila</span>
+            <span><Tecla>Ctrl</Tecla>+<Tecla>D</Tecla> duplicar</span>
+            <span><Tecla>Ctrl</Tecla>+<Tecla>Supr</Tecla> eliminar</span>
+            <span><Tecla>Esc</Tecla> salir del campo</span>
+          </p>
+        )}
+
         {/* Leyenda del Tipo — cómo se clasifica cada pieza por su medida (SERFOR: esp·anc·largo) */}
         {rows.length > 0 && (
           <div className="mt-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2">
@@ -1532,7 +1636,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
 
         {/* Precio por especie — Tornillo, Cedro, Caoba valen distinto. Vacío = usa el global. */}
         {showPreciosEsp && especiesLote.length > 0 && (
-          <div className="mt-2 rounded-xl border-2 border-[var(--accent)]/30 bg-primary/10/30 p-3">
+          <div className="mt-2 rounded-xl border-2 border-[var(--accent)]/30 bg-primary/10 p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="text-xs font-bold text-[var(--text-secondary)]">Precio por especie (S/ por pie tablar)</span>
               {hayPreciosEspecie && (
@@ -1620,8 +1724,16 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   );
 }
 
-/** Número editable en la tabla: se corrige a mano sin volver a dictar. */
-function Num({ v, onV, etiqueta, ancho = "w-14" }: { v: number; onV: (n: number) => void; etiqueta: string; ancho?: string }) {
+/**
+ * Número editable en la tabla: se corrige a mano sin volver a dictar.
+ *
+ * `fila`/`col` lo enganchan a la navegación de teclado de la grilla (flechas para
+ * moverse, Ctrl+D duplicar, Ctrl+Supr eliminar).
+ */
+function Num({ v, onV, etiqueta, ancho = "w-14", fila, col, onKeyDown }: {
+  v: number; onV: (n: number) => void; etiqueta: string; ancho?: string;
+  fila?: number; col?: number; onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+}) {
   return (
     <input
       type="number"
@@ -1630,17 +1742,24 @@ function Num({ v, onV, etiqueta, ancho = "w-14" }: { v: number; onV: (n: number)
       step="any"
       value={v}
       aria-label={etiqueta}
+      data-fila={fila}
+      data-col={col}
+      onKeyDown={onKeyDown}
+      onFocus={(e) => e.currentTarget.select()}
       onChange={(e) => { const n = Number(e.target.value); if (n > 0) onV(n); }}
-      className={`${ancho} rounded-md border border-transparent bg-transparent px-1 py-0.5 font-mono font-bold tabular-nums text-[var(--text-primary)] outline-none hover:border-[var(--rule-base)] focus:border-[var(--accent)]`}
+      className={`${ancho} rounded-md border border-transparent bg-transparent px-1 py-0.5 font-mono font-bold tabular-nums text-[var(--text-primary)] outline-none hover:border-[var(--rule-base)] focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] focus:ring-2 focus:ring-[var(--accent)]/25`}
     />
   );
 }
 
-function Dim({ v, u, onU, onV, etiqueta }: { v: number; u: Unidad; onU: (u: Unidad) => void; onV?: (n: number) => void; etiqueta?: string }) {
+function Dim({ v, u, onU, onV, etiqueta, fila, col, onKeyDown }: {
+  v: number; u: Unidad; onU: (u: Unidad) => void; onV?: (n: number) => void; etiqueta?: string;
+  fila?: number; col?: number; onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+}) {
   return (
     <span className="inline-flex items-center gap-1">
       {onV
-        ? <Num v={v} onV={onV} etiqueta={`${etiqueta ?? "Medida"} (${u})`} />
+        ? <Num v={v} onV={onV} etiqueta={`${etiqueta ?? "Medida"} (${u})`} fila={fila} col={col} onKeyDown={onKeyDown} />
         : <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{v}</span>}
       <select value={u} onChange={(e) => onU(e.target.value as Unidad)} aria-label={`Unidad de ${etiqueta ?? "la medida"}`} className="rounded-md border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none">
         {UNIDADES.map((x) => <option key={x.v} value={x.v}>{x.label}</option>)}
@@ -1649,40 +1768,50 @@ function Dim({ v, u, onU, onV, etiqueta }: { v: number; u: Unidad; onU: (u: Unid
   );
 }
 
-function ManualField({ label, value, onChange, w = "w-20" }: { label: string; value: string; onChange: (v: string) => void; w?: string }) {
+/** Tecla dibujada para las ayudas de teclado. */
+function Tecla({ children }: { children: React.ReactNode }) {
   return (
-    <label className="flex flex-col gap-0.5">
-      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
-      <input type="number" inputMode="decimal" value={value} onChange={(e) => onChange(e.target.value)} className={`${w} h-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]`} />
-    </label>
+    <kbd className="rounded border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
+      {children}
+    </kbd>
   );
 }
 
 /**
- * Select de la carga manual. El candado fija esa medida: queda puesta acá y
- * deja de pedirse en el dictado (es el mismo estado que el comando de voz).
+ * Celda de la fila de carga manual. Se tipea el número directo (antes era un
+ * `<select>`, que obligaba a soltar el teclado en cada pieza); los valores de
+ * siempre quedan como sugerencia del `<datalist>`.
+ *
+ * El candado fija esa medida: queda puesta acá y deja de pedirse en el dictado
+ * (es el mismo estado que usa el comando de voz).
  */
-function ManualSelect({ label, value, onChange, opts, fijo, onFijar }: {
-  label: string; value: string; onChange: (v: string) => void; opts: number[];
+function CeldaCarga({ label, col, valor, onValor, onKeyDown, etiqueta, sugerencias, listaId, ancho, fijo, onFijar }: {
+  label: string; col: number; valor: string; onValor: (v: string) => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  etiqueta: string; sugerencias?: number[]; listaId?: string; ancho?: string;
   fijo?: boolean; onFijar?: () => void;
 }) {
   return (
     <label className="flex flex-col gap-0.5">
       <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
       <span className="flex items-center gap-1">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={`h-10 w-20 rounded-xl border-2 bg-[var(--surface-canvas)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] ${fijo ? "border-[var(--accent)]" : "border-[var(--rule-base)]"}`}
-        >
-          <option value="">—</option>
-          {opts.map((n) => <option key={n} value={n}>{n}</option>)}
-        </select>
+        <CeldaNum
+          valor={valor}
+          onValor={onValor}
+          fila={0}
+          col={col}
+          onKeyDown={onKeyDown}
+          etiqueta={etiqueta}
+          sugerencias={sugerencias}
+          listaId={listaId}
+          ancho={ancho ?? "w-20"}
+          className={fijo ? "border-[var(--accent)]" : ""}
+        />
         {onFijar && (
           <button
             type="button"
             onClick={onFijar}
-            disabled={!fijo && !value}
+            disabled={!fijo && !valor}
             aria-pressed={!!fijo}
             aria-label={fijo ? `Soltar ${label}` : `Fijar ${label}`}
             title={fijo ? "Soltar esta medida" : "Fijar esta medida (no se dicta más)"}

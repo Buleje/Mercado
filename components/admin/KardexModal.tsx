@@ -4,7 +4,7 @@ import { CardTitle, LoadingState } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useCallback } from "react";
 import {
-  X, BookOpen, Download, Loader2, ArrowUpCircle, ArrowDownCircle, Calendar,
+  X, BookOpen, Download, ArrowUpCircle, ArrowDownCircle, Calendar,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";

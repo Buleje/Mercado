@@ -86,10 +86,10 @@ export default function BCGMatrixTab() {
         <div className="relative w-full aspect-square max-w-[500px] mx-auto" style={{ minHeight: 400 }}>
           {/* Axes */}
           <div className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
-            <div className="border-b-2 border-r-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-primary/10/50 dark:bg-primary/15 flex items-center justify-center p-2">
+            <div className="border-b-2 border-r-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-primary/10 dark:bg-primary/15 flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]/40">Estrellas</span>
             </div>
-            <div className="border-b-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-primary/10/50 dark:bg-primary/15 flex items-center justify-center p-2">
+            <div className="border-b-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-primary/10 dark:bg-primary/15 flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]/40">Interrogantes</span>
             </div>
             <div className="border-r-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10 flex items-center justify-center p-2">

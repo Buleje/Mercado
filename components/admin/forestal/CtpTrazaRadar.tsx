@@ -24,28 +24,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   AlertTriangle,
-  ArrowDownUp,
   Boxes,
-  CheckCircle2,
-  Clock,
-  Locate,
   Eye,
   FileDown,
-  Gauge,
-  Layers,
-  Maximize2,
-  Share2,
   PackageOpen,
   FileSpreadsheet,
   RefreshCw,
   Route,
-  Search,
   ShieldAlert,
   TreePine,
   Truck,
   X as XIcon,
-  ZoomIn,
-  ZoomOut,
 } from "@buleje/design-system/icons";
 import { applyCtpPeriodParams, ctpPeriodShortLabel, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { VistaHeader } from "@/components/admin/shared/module-primitives";
@@ -60,7 +49,7 @@ import {
   type RadarOrden,
 } from "@/lib/forestal/ctp-radar";
 import { analizarTiempo } from "@/lib/forestal/ctp-radar-tiempo";
-import { analizarRendimiento, alertasRendimiento } from "@/lib/forestal/ctp-radar-rendimiento";
+import { analizarRendimiento } from "@/lib/forestal/ctp-radar-rendimiento";
 import { cadenaDeIngreso } from "@/lib/forestal/ctp-radar-cadena";
 import {
   agregarAristas,
@@ -76,7 +65,7 @@ import CtpRadarCronologia from "./CtpRadarCronologia";
 import CtpRadarRendimiento from "./CtpRadarRendimiento";
 import CtpRadarResumen from "./CtpRadarResumen";
 import CtpRadarControles from "./CtpRadarControles";
-import { ORDENES, ZOOM_MAX, ZOOM_MIN, type Foco, type Vista } from "./ctp-radar-tipos";
+import { ZOOM_MAX, ZOOM_MIN, type Foco, type Vista } from "./ctp-radar-tipos";
 import {
   BalanceLinea,
   COL_GAP,
@@ -90,8 +79,6 @@ import {
   PAD,
   type NodeKind,
   type Placed,
-  SummaryChip,
-  trunc,
 } from "./ctp-radar-svg";
 
 
@@ -384,8 +371,6 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
       : g?.corridas.find((c) => c.id === id)?.unit
       ?? g?.despachos.find((d) => d.id === id)?.unit
       ?? "";
-
-  const toggleFoco = (f: Foco) => setFoco((prev) => (prev === f ? "todos" : f));
 
   /** Abre o cierra un grupo colapsado (tocar el nodo-pila). */
   const alternarGrupo = (id: string) =>

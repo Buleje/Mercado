@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { ShoppingBag, X, Bell, AlertTriangle } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 import { useAdminNotifications } from "@/hooks/use-admin-notifications";
 
 interface NotificationToastProps {
@@ -14,7 +13,7 @@ interface NotificationToastProps {
  * Auto-dismisses after 8 seconds. Shows up to 3 recent notifications.
  */
 export default function NotificationToast({ onNavigate }: NotificationToastProps) {
-  const { newOrders, lowStockCount, unseenCount, clearUnseen, connected } = useAdminNotifications();
+  const { newOrders, lowStockCount, unseenCount, clearUnseen } = useAdminNotifications();
   const [visible, setVisible] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 

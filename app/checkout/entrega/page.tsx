@@ -919,7 +919,6 @@ export default function CheckoutEntregaPage() {
     (!address.departmentCode || !address.provinceCode || !address.districtCode);
   const cashAmount = Number(payment.cashAmount || 0);
   const cashChange = cashAmount - grandTotal;
-  const cashShort = cashAmount > 0 && cashAmount < grandTotal;
 
   // "Pago listo" = método elegido explícitamente Y comprobantes ok. `allProofsReady`
   // solo es vacuo-verdadero (invitado paga al recibir); sin exigir método elegido
@@ -1387,7 +1386,7 @@ export default function CheckoutEntregaPage() {
               // movio al CashChangeModal que se abre al seleccionar efectivo.
               // Aca solo dejamos un resumen del monto/vuelto elegido + boton
               // para reabrir el modal y modificar.
-              <div className="rounded-2xl border-2 border-[var(--accent)]/25 bg-primary/10/50 p-4 flex items-center justify-between gap-3">
+              <div className="rounded-2xl border-2 border-[var(--accent)]/25 bg-primary/10 p-4 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-0.5">
                     Pago en efectivo
@@ -1419,7 +1418,6 @@ export default function CheckoutEntregaPage() {
                 </p>
                 {storesNeedingProof.map((s) => {
                   const proof = paymentProofs[s.storeSlug];
-                  const cfg = paymentConfigs[s.storeSlug];
                   const methodLabel =
                     payment.method === "yape"
                       ? "Yape"

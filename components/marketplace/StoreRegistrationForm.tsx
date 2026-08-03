@@ -434,12 +434,10 @@ export default function StoreRegistrationForm() {
 
   // ── Form (steps 1 & 2) ────────────────────────────────────────────────
   const stepIndex = step === "info" ? 1 : 2;
-  const stepProgress = step === "info" ? 50 : 100;
 
   // Validez por campo — para el check sutil de "campo listo".
   const nameOk = ownerName.trim().length >= 2;
   const phoneOk = ownerPhone.replace(/\D/g, "").length >= 6;
-  const passwordOk = ownerPassword.length >= 8;
   const storeOk = storeNameInput.trim().length >= 2;
 
   return (
@@ -1113,7 +1111,7 @@ export default function StoreRegistrationForm() {
               </div>
 
               {/* Testimonio */}
-              <figure className="rounded-2xl border border-[var(--accent)]/15 bg-primary/10/40 p-5">
+              <figure className="rounded-2xl border border-[var(--accent)]/15 bg-primary/10 p-5">
                 <blockquote className="text-sm font-medium leading-relaxed text-[var(--text-primary)]">
                   &ldquo;En el primer mes recibí <strong className="font-bold">32 pedidos</strong> nuevos
                   sin hacer publicidad. Lo más simple que probé.&rdquo;

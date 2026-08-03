@@ -258,7 +258,7 @@ function RegisterMovementModal({ products, onClose, onSaved }: { products: Produ
   const [type, setType] = useState<string>("compra");
   const [qty, setQty] = useState("");
   const [reference, setReference] = useState("");
-  const [notes, setNotes] = useState("");
+  const [notes] = useState("");
   const [psearch, setPsearch] = useState("");
   const [saving, setSaving] = useState(false);
 

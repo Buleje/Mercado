@@ -7,7 +7,7 @@ import {
   Search, Loader2, ClipboardList, Plus, Pencil, Trash2,
   ScanBarcode, X, Camera, Download, Filter, ChevronDown,
   TrendingUp, PackagePlus, Eye, EyeOff, Layers, ChevronRight, Upload, CheckCircle, BookOpen,
-  Warehouse, Maximize2, Copy, Sliders, LayoutGrid, LayoutList, Sparkles,
+  Maximize2, Sliders, LayoutGrid, LayoutList, Sparkles,
 } from "@buleje/design-system/icons";
 import ProductModifiersEditor from "@/components/admin/inventario/ProductModifiersEditor";
 import ProductVariantsInline from "@/components/admin/inventario/ProductVariantsInline";
@@ -28,7 +28,6 @@ import { StockTrackToggle } from "@/components/admin/inventario/StockTrackToggle
 import { InventoryContextMenu } from "@/components/admin/inventario/InventoryContextMenu";
 import { getRotationInfo, computeStockChange, computeSalesPerWeek, processImage } from "@/components/admin/inventario/inventory-helpers";
 import { CategorySuggestionInline } from "@/components/admin/inventario/CategorySuggestionInline";
-import { detectCategoryFromName } from "@/lib/category-detector";
 import { exportToExcel } from "@/lib/export-excel";
 import KardexModal from "./KardexModal";
 import PriceSparkline from "./inventario/PriceSparkline";

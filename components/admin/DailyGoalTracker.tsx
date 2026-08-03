@@ -93,7 +93,6 @@ function findBestHour(buckets: HourlyBucket[]): HourlyBucket | null {
 function computeForecast(total: number, currentHour: number): number | null {
   if (currentHour < OPENING_HOUR) return null;
   const hoursElapsed = Math.max(1, currentHour - OPENING_HOUR + 1);
-  const totalHours = CLOSING_HOUR - OPENING_HOUR + 1;
   const remainingHours = Math.max(0, CLOSING_HOUR - currentHour);
   if (remainingHours === 0) return total;
   const ratePerHour = total / hoursElapsed;

@@ -21,33 +21,6 @@ import { BRAND_GEO } from "@/lib/geo";
 const BRAND_CENTER: [number, number] = [BRAND_GEO.lat, BRAND_GEO.lng];
 const DEFAULT_ZOOM = 12;
 
-/** Emoji por categoría — fallback al pin genérico si no matchea. */
-const CATEGORY_EMOJI: Record<string, string> = {
-  bodega: "🏪",
-  abarrotes: "🛒",
-  polleria: "🍗",
-  panaderia: "🥖",
-  restaurante: "🍽️",
-  pizzeria: "🍕",
-  pizza: "🍕",
-  farmacia: "💊",
-  juguería: "🥤",
-  jugueria: "🥤",
-  cafeteria: "☕",
-  cafetería: "☕",
-  ferreteria: "🔧",
-  ferretería: "🔧",
-  papeleria: "📚",
-  papelería: "📚",
-  moda: "👗",
-  belleza: "💄",
-  pollos: "🍗",
-  helados: "🍦",
-  pastelería: "🎂",
-  pasteleria: "🎂",
-  bebidas: "🧃",
-};
-
 interface Props {
   stores: MarketplaceStore[];
   userCoords?: { lat: number; lng: number } | null;
@@ -88,8 +61,8 @@ function escapeHtml(s: string): string {
 
 // Brandon mayo 2026: pin con icono de tienda (SVG estilo Lucide) en
 // lugar de emojis decorativos (regla del proyecto: solo iconos del DS).
-// Mantenemos CATEGORY_EMOJI para compat en otros consumers, pero el pin
-// del mapa siempre usa el mismo icono "negocio" — limpio y consistente.
+// (El CATEGORY_EMOJI que "se mantenía por compat" se borró 2026-08-03: no
+// estaba exportado, así que nunca pudo tener otros consumers.)
 const STORE_PIN_SVG = `
   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"

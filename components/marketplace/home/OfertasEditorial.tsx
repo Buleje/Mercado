@@ -13,9 +13,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Clock, ArrowRight, Flame, Package } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 import { useMarketplaceDeals } from "@/hooks/use-marketplace-deals";
 
 const fmt = (n: number) =>

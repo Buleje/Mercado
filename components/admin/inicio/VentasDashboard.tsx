@@ -119,7 +119,6 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
       ...mOrders.flatMap(o => o.items.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price }))),
       ...mSales.flatMap(s => s.items.map(i => ({ productId: i.productId, quantity: i.quantity, price: i.price }))),
     ], cost);
-    const costo = mMargin.costo;
     const utilidadBruta = mMargin.utilidadBruta;
     const margen = mMargin.margenPct ?? 0;
     const margenIncompleto = mMargin.incompleto;
@@ -377,31 +376,6 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
 
       {/* ── Charts especializados de ventas (Pareto, heatmap, waterfall, mix, comparativa) ── */}
       <VentasAdvancedCharts />
-    </div>
-  );
-}
-
-// ── Skeleton ─────────────────────────────────────────────────────────────────
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-5 animate-pulse">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-32" />
-        ))}
-      </div>
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-[380px]" />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[300px]" />
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[300px]" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />
-      </div>
     </div>
   );
 }

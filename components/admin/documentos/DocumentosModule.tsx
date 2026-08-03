@@ -20,12 +20,12 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
-  Upload, Search, Grid3x3, List, FolderArchive, FileText, Image as ImageIcon,
-  Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
+  Upload, Search, Grid3x3, List, FolderArchive,
+  FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check, CheckSquare, Monitor,
-  Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive, Loader2,
+  Camera, AlarmClock, Wand2, Tag, MoreVertical, FileArchive, Loader2,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
-  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Presentation, Link2, Copy,
+  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Link2, Copy,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -55,7 +55,7 @@ import { SendWhatsAppModal } from "./SendWhatsAppModal";
 import ImportarCarpetaModal from "./ImportarCarpetaModal";
 import { archivosDesdeDrop } from "@/lib/documentos/importar-arbol";
 import { useImportCarpeta } from "@/contexts/import-carpeta-context";
-import { familiaDe, etiquetaTipo, esImagenRenderizable, esImagenConvertible, type FamiliaArchivo } from "@/lib/documents/tipos-archivo";
+import { familiaDe, etiquetaTipo, esImagenRenderizable, esImagenConvertible } from "@/lib/documents/tipos-archivo";
 import { MoveToFolderModal } from "./MoveToFolderModal";
 import { FolderEditModal } from "./FolderEditModal";
 import { FolderShareModal } from "./FolderShareModal";
@@ -72,17 +72,12 @@ import { PageEditorModal } from "./PageEditorModal";
 import { loadSmartFolders, saveSmartFolders, matchesSmartFolder, describeRules, type SmartFolder } from "@/lib/documentos/smart-folders";
 import { AssistantView } from "./AssistantView";
 import { TagTaxonomyModal } from "./TagTaxonomyModal";
+import { PapeleraView } from "./PapeleraView";
+import { formatBytes, getFileIcon } from "./archivo-visual";
 
 // ─────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────
-
-function formatBytes(b: number): string {
-  if (b < 1024) return `${b} B`;
-  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
-  if (b < 1024 * 1024 * 1024) return `${(b / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(b / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
 
 /** Estado de cada archivo mientras se sube (panel de progreso). */
 type EstadoArchivo = "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error";
@@ -96,35 +91,6 @@ function sugDescartadasKey(): string {
 
 const fmtFechaCorta = (iso: string) =>
   new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
-
-/**
- * Los colores de acá son DECORATIVOS a propósito y no usan los tokens
- * `--data-{success,warning,error}`: sirven para distinguir un PDF de una
- * planilla de un audio de un vistazo. Un PDF no es un "error" ni una planilla
- * un "éxito" — mapearlos a tokens de estado se vería igual y significaría mal.
- *
- * Ícono y tinte por FAMILIA (no por MIME crudo): el drive guarda casi cualquier
- * formato y el navegador manda la mitad como `octet-stream`, así que el tipo se
- * resuelve por extensión. Sin esto, un .ods o una foto HEIC salían con el ícono
- * genérico de "archivo".
- */
-const ICONO_POR_FAMILIA: Record<FamiliaArchivo, { Icon: typeof FileIcon; tint: string; bg: string }> = {
-  imagen: { Icon: ImageIcon, tint: "text-[var(--accent)]", bg: "bg-pink-50 dark:bg-pink-500/15" },
-  video: { Icon: Film, tint: "text-[var(--accent)]", bg: "bg-violet-50 dark:bg-violet-500/15" },
-  audio: { Icon: Music, tint: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/15" },
-  pdf: { Icon: FileText, tint: "text-red-500", bg: "bg-red-50 dark:bg-red-500/15" },
-  planilla: { Icon: FileSpreadsheet, tint: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/15" },
-  texto: { Icon: FileText, tint: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/15" },
-  presentacion: { Icon: Presentation, tint: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/15" },
-  comprimido: { Icon: FileArchive, tint: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/15" },
-  correo: { Icon: MessageCircle, tint: "text-sky-500", bg: "bg-sky-50 dark:bg-sky-500/15" },
-  plano: { Icon: Scan, tint: "text-teal-500", bg: "bg-teal-50 dark:bg-teal-500/15" },
-  otro: { Icon: FileIcon, tint: "text-[var(--text-tertiary)]", bg: "bg-[var(--surface-sunken)]" },
-};
-
-function getFileIcon(type: string, nombre = ""): { Icon: typeof FileIcon; tint: string; bg: string } {
-  return ICONO_POR_FAMILIA[familiaDe(nombre, type)];
-}
 
 /**
  * Miniatura de la card de la grilla: imagen real para archivos de imagen y
@@ -393,7 +359,7 @@ export default function DocumentosModule() {
 
   const {
     documents, semanticTerms, folders, loading, error, refresh,
-    upload, scan, patch, bulk, restore, purge, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, bulkFolders, deleteFolder,
+    upload, scan, patch, bulk, restore, purge, restoreMany, purgeMany, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, bulkFolders, deleteFolder,
   } = useDocuments(filters);
 
   /**
@@ -809,34 +775,47 @@ export default function DocumentosModule() {
   }, []);
 
   // ── Bulk actions ──
+  /**
+   * Corre una acción en lote y limpia la selección SOLO si salió bien.
+   *
+   * Si falla, la marca queda puesta para reintentar y el motivo lo muestra el
+   * banner rojo del hook. El `catch` no es decorativo: sin él la promesa
+   * quedaba sin manejar y en dev el error saltaba como pantalla roja de Next
+   * encima del panel (así se vio el "HTTP 400: Too big...").
+   */
+  const correrLote = async (fn: () => Promise<unknown>) => {
+    try {
+      await fn();
+      clearSelection();
+    } catch (err) {
+      console.warn("[drive] acción en lote falló", err);
+    }
+  };
   const bulkDelete = async () => {
     if (selectedIds.size === 0) return;
     if (!confirm(`¿Eliminar ${selectedIds.size} documento(s)?`)) return;
-    await bulk("delete", Array.from(selectedIds));
-    clearSelection();
+    await correrLote(() => bulk("delete", Array.from(selectedIds)));
   };
   const bulkFavorite = async (fav: boolean) => {
     if (selectedIds.size === 0) return;
-    await bulk("favorite", Array.from(selectedIds), { favorite: fav });
-    clearSelection();
+    await correrLote(() => bulk("favorite", Array.from(selectedIds), { favorite: fav }));
   };
   const bulkMove = async (folderId: string | null) => {
     if (selectedIds.size === 0) return;
-    await bulk("move", Array.from(selectedIds), { folderId });
-    clearSelection();
+    await correrLote(() => bulk("move", Array.from(selectedIds), { folderId }));
   };
   /** Marcar todo lo seleccionado con el mismo estado (revisar una pila de una). */
   const bulkStatus = async (status: EstadoDoc) => {
     if (selectedIds.size === 0) return;
-    await bulk("status", Array.from(selectedIds), { status });
-    clearSelection();
+    await correrLote(() => bulk("status", Array.from(selectedIds), { status }));
   };
   const bulkTag = async (tag: string) => {
     const t = tag.trim();
     if (selectedIds.size === 0 || !t) return;
-    await bulk("tag", Array.from(selectedIds), { tag: t });
-    setBulkTagValue("");
-    clearSelection();
+    await correrLote(async () => {
+      await bulk("tag", Array.from(selectedIds), { tag: t });
+      setBulkTagValue("");
+    });
   };
   // Empaqueta una lista de documentos en un ZIP (client-side con jszip): baja cada
   // archivo del proxy /raw y evita nombres duplicados con un sufijo (n). Compartido
@@ -1169,7 +1148,7 @@ export default function DocumentosModule() {
 
       {/* Sugerencias IA de organización: carpeta + vencimiento detectados */}
       {sugerenciasIA.length > 0 && (
-        <div className="rounded-2xl border-2 border-[var(--accent)]/40 bg-primary/10/40 px-4 py-3">
+        <div className="rounded-2xl border-2 border-[var(--accent)]/40 bg-primary/10 px-4 py-3">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)]">
               <Sparkles className="h-4 w-4" /> La IA sugiere organizar
@@ -1279,7 +1258,10 @@ export default function DocumentosModule() {
         </div>
       )}
 
-      {/* Hero stats */}
+      {/* Hero stats — en la papelera se ocultan: el listado que hay en memoria es
+          el de los BORRADOS, así que "Total archivos" y "Espacio usado" contaban
+          la papelera como si fuera el drive (4 archivos, 976 KB, con 41 vivos). */}
+      {filterMode !== "trash" && (
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatBlock label="Total archivos" value={shownDocCount.toString()} icon={FileIcon} tint="text-primary" />
         <StorageRing usedBytes={totalSize} quotaBytes={STORAGE_QUOTA_BYTES} />
@@ -1300,6 +1282,7 @@ export default function DocumentosModule() {
         </button>
         <StatBlock label="Favoritos" value={favCount.toString()} icon={Star} tint="text-amber-500" />
       </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-5">
         {/* ─── Sidebar ─── */}
@@ -2014,7 +1997,13 @@ export default function DocumentosModule() {
               Cargando…
             </div>
           ) : filterMode === "trash" ? (
-            <PapeleraView docs={displayDocs} onRestore={restore} onPurge={purge} />
+            <PapeleraView
+              docs={displayDocs}
+              onRestore={restore}
+              onPurge={purge}
+              onRestoreMany={restoreMany}
+              onPurgeMany={purgeMany}
+            />
           ) : displayDocs.length === 0 ? (
             <EmptyState onUpload={() => fileInputRef.current?.click()} />
           ) : view === "grid" ? (
@@ -2833,52 +2822,3 @@ function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onWhat
   );
 }
 
-// ── Papelera: documentos eliminados con restaurar / eliminar definitivamente ──
-function PapeleraView({ docs, onRestore, onPurge }: { docs: DbDocument[]; onRestore: (id: string) => void; onPurge: (id: string) => void }) {
-  if (docs.length === 0) {
-    return (
-      <div className="bg-white border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
-        <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)] mb-4">
-          <Trash2 className="h-7 w-7" />
-        </div>
-        <p className="text-lg font-extrabold text-[var(--text-primary)]">La papelera está vacía</p>
-        <p className="text-sm text-[var(--text-secondary)] mt-1.5">Los documentos que elimines aparecerán acá y vas a poder recuperarlos.</p>
-      </div>
-    );
-  }
-  return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-white overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] text-xs text-[var(--text-tertiary)]">
-        <Trash2 className="h-3.5 w-3.5 shrink-0" /> {docs.length} documento(s) en la papelera — restaurá o eliminá definitivamente.
-      </div>
-      <ul className="divide-y divide-[var(--rule-soft)]">
-        {docs.map((d) => {
-          const { Icon, tint, bg } = getFileIcon(d.mimeType, d.name);
-          return (
-            <li key={d.id} className="flex items-center gap-3 px-4 py-3">
-              <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", bg)}>
-                <Icon className={cn("h-4 w-4", tint)} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-bold text-sm text-[var(--text-primary)] truncate">{d.name}</p>
-                <p className="text-xs text-[var(--text-tertiary)] tabular-nums">{formatBytes(d.size)}{d.category ? ` · ${d.category}` : ""}</p>
-              </div>
-              <button
-                onClick={() => onRestore(d.id)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold hover:opacity-90 transition-opacity"
-              >
-                <RotateCcw className="h-3.5 w-3.5" /> Restaurar
-              </button>
-              <button
-                onClick={() => { if (confirm(`¿Eliminar "${d.name}" definitivamente? No se puede deshacer.`)) onPurge(d.id); }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] text-xs font-bold hover:opacity-90 transition-opacity"
-              >
-                <Trash2 className="h-3.5 w-3.5" /> Eliminar def.
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}

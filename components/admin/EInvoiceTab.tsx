@@ -82,7 +82,7 @@ export default function EInvoiceTab() {
   const [filterType, setFilterType] = useState<DocType | "todos">("todos");
   const [filterStatus, setFilterStatus] = useState<DocStatus | "todos">("todos");
   const [detail, setDetail] = useState<EDocument | null>(null);
-  const [loadingDocs, setLoadingDocs] = useState(true);
+  const [, setLoadingDocs] = useState(true);
 
   // Emisión
   const [emitForm, setEmitForm] = useState<EmitForm | null>(null);

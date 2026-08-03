@@ -2,7 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import {
-  X, DollarSign, Calendar, User, FileText,
+  X, Calendar, User, FileText,
   Camera, Loader2, Plus,
 } from "@buleje/design-system/icons";
 import Image from "next/image";

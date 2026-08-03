@@ -3,7 +3,7 @@
 
 import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, ShieldAlert, ShieldCheck, AlertTriangle, TrendingUp, Clock, CreditCard, User } from "@buleje/design-system/icons";
+import { ShieldAlert, ShieldCheck, AlertTriangle, TrendingUp, Clock, CreditCard, User } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────

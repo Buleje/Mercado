@@ -236,7 +236,6 @@ function FiltersDrawer({
   onChange,
   onRequestGeo,
   onReset,
-  activeCount,
   zones,
   zone,
   onZoneChange,
@@ -659,7 +658,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
               "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all",
               filters.sortBy !== "relevance"
                 ? "bg-[var(--accent)]/10 text-[var(--accent)] border-[var(--accent)]/30"
-                : "bg-[var(--surface-canvas)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:bg-primary/10/20"
+                : "bg-[var(--surface-canvas)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:bg-primary/10"
             )}
           >
             <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
@@ -703,7 +702,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
               "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all",
               priceActive
                 ? "bg-[var(--accent)]/10 text-[var(--accent)] border-[var(--accent)]/30"
-                : "bg-[var(--surface-canvas)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:bg-primary/10/20"
+                : "bg-[var(--surface-canvas)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:bg-primary/10"
             )}
           >
             <DollarSign className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -732,7 +731,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
             "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all disabled:opacity-60",
             filters.nearbyEnabled
               ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)] shadow-sm"
-              : "bg-[var(--surface-canvas)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:text-[var(--accent)] hover:bg-primary/10/20"
+              : "bg-[var(--surface-canvas)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:text-[var(--accent)] hover:bg-primary/10"
           )}
         >
           {geoLoading

@@ -17,7 +17,6 @@ import dynamic from "next/dynamic";
 import {
   Search,
   Menu,
-  X,
   UserCircle,
   ChevronDown,
   Heart,
@@ -289,18 +288,6 @@ function useActiveLivePoll(): boolean {
   return hasActive;
 }
 
-/** Sticky: surface token + blur + shadow cuando scroll > 40px. */
-function useScrolledPastThreshold(px: number = 40): boolean {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > px);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [px]);
-  return scrolled;
-}
-
 // Brandon 2026-05-20 v7 — logo dinámico en storefront:
 // Cuando el usuario navega a /marketplace/[slug] (storefront de una tienda
 // específica), el search pill del navbar debe mostrar el logo de ESA tienda
@@ -439,15 +426,8 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
   // usaba `useNavScrollHide(80)` para esconderse al scrollear hacia abajo,
   // pero Brandon prefiere acceso constante a buscador/carrito/cuenta. El
   // hook se sigue usando en otros lugares (sticky bars de subcategorías).
-  const hasActiveLive = useActiveLivePoll();
+  useActiveLivePoll();
   const { brand } = usePlatformBrand();
-  // Logo: si superadmin subió logos.logoLight (o logoDark en dark mode), úsalo;
-  // si no, fallback al wordmark Buleje (SVG inline).
-  const brandLogo =
-    themeResolved === "dark"
-      ? brand?.logos.logoDark ?? brand?.logos.logoLight ?? null
-      : brand?.logos.logoLight ?? null;
-  const brandName = brand?.identity.name ?? "Buleje";
   const platformCity = brand?.identity.city ?? BRAND_GEO.city;
   // Visibilidad de enlaces controlada desde superadmin/stores → Navegación
   const navVisibility = useNavVisibility("marketplace");

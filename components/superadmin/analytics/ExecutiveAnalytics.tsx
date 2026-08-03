@@ -35,7 +35,6 @@ import {
   Phone,
   Loader2,
   AlertTriangle,
-  Truck,
   Users,
   Repeat,
   Zap,
@@ -204,7 +203,7 @@ export default function ExecutiveAnalytics({
           }
         >
           <ul className="space-y-2.5">
-            {data.orderFunnel.map((step, i) => {
+            {data.orderFunnel.map((step) => {
               const total = data.orderFunnel.reduce((s, x) => s + x.count, 0) || 1;
               const pct = (step.count / total) * 100;
               const isOK = step.status === "entregado";

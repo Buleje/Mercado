@@ -24,7 +24,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { Gift, Send, X, Heart, MessageCircle } from "@buleje/design-system/icons";
+import { Gift, X, Heart, MessageCircle } from "@buleje/design-system/icons";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { serializeCart } from "@/lib/marketplace/cart-sharing";
 import { cn } from "@/lib/utils";

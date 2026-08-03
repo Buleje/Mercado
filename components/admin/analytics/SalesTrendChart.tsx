@@ -1,6 +1,5 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useReportChartEmpty } from "@/components/admin/shared/ChartManager";
 import {

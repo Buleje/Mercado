@@ -549,7 +549,7 @@ export function MarketplaceOrdenesTab() {
                       className={cn(
                         "transition-colors cursor-pointer",
                         isSelected
-                          ? "bg-primary/10/40"
+                          ? "bg-primary/10"
                           : "hover:bg-[var(--surface-sunken)]/50",
                       )}
                       onClick={(e) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, type KeyboardEvent } from "react";
-import { Search, ArrowRight, Clock, X, Command, Settings, Package, Users, Zap, DollarSign, Receipt, ShoppingCart, BarChart2, Inbox, Star, FlaskConical, TrendingUp, RefreshCw, Tag, FileText, UserPlus, LogIn, AlertTriangle, LayoutDashboard, Truck } from "@buleje/design-system/icons";
+import { Search, ArrowRight, Clock, X, Command, Settings, Package, Users, Zap, DollarSign, Receipt, ShoppingCart, BarChart2, Inbox, TrendingUp, UserPlus } from "@buleje/design-system/icons";
 import { useRouter } from "next/navigation";
 
 // ── Tipos admin quick-actions ────────────────────────────────────────────────

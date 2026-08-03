@@ -365,7 +365,6 @@ function fuzzyScore(text: string, query: string): number {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ProductCatalog({ initialProducts = [] }: { initialProducts?: LiveProduct[] }) {
   const settings = useContext(SettingsContext);
-  const storeName = settings?.storeTheme?.name || settings?.businessName || "tu tienda";
   const storeSlogan = settings?.storeTheme?.slogan || settings?.storeTheme?.description || "Compra online con delivery a domicilio. Paga con Yape o efectivo.";
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const [search, setSearch] = useState("");

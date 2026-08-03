@@ -19,7 +19,6 @@ import {
   CheckCircle,
   CreditCard,
   Smartphone,
-  Upload,
   Copy,
   Check,
   ShieldCheck,
@@ -479,7 +478,7 @@ function ManualPane({
         </label>
         <label
           htmlFor="payment-proof-file"
-          className="flex h-40 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] transition-colors hover:border-[var(--accent)] hover:bg-primary/10/30"
+          className="flex h-40 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] transition-colors hover:border-[var(--accent)] hover:bg-primary/10"
         >
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element

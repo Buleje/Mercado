@@ -178,7 +178,7 @@ export default function CacaoAsesor() {
           )}
 
           {/* Narrativa IA */}
-          <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10/30 p-5">
+          <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10 p-5">
             <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--accent)]"><Sparkles className="h-4 w-4" /> Lectura de la IA</h3>
             {data?.narrative ? (
               <p className="text-sm leading-relaxed text-[var(--text-primary)]">{data.narrative}</p>

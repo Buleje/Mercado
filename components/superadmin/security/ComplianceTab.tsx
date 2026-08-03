@@ -16,7 +16,7 @@
  *  - Keyboard / Esc (mantiene v1)
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import * as Dialog from "@radix-ui/react-dialog";
 import {

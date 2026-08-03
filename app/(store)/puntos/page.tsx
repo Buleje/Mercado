@@ -14,7 +14,6 @@ import {
   Award,
   Trophy,
   Loader2,
-  ChevronRight,
   TrendingUp,
   TrendingDown,
   Clock,
@@ -26,8 +25,6 @@ import {
 } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { cn } from "@/lib/utils";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 /* ── Types ──────────────────────────────────────────────────────── */

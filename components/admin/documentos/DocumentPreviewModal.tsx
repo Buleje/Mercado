@@ -37,7 +37,7 @@ import {
   Pencil as PencilLine, Sparkles, Clock as AlarmClock, Link2, Users, Truck, ExternalLink,
   ChevronLeft, ChevronRight, GitCompareArrows as GitCompare,
   FileSpreadsheet, Plus, Link as LinkChain, Save, Folder as FolderIcon,
-  Wrench, Stamp, RotateCw, FileStack, Scissors, Search,
+  Search,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { VisorImagen, VisorPdf } from "./VisorArchivo";
@@ -103,7 +103,7 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
 }
 
-export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position, herramientas, vecinos, carpetas, lote, onAbrirOtro }: Props) {
+export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position, herramientas, carpetas, lote, onAbrirOtro }: Props) {
   const [tab, setTab] = useState<Tab>("preview");
   const [doc, setDoc] = useState<DbDocument | null>(null);
   const [versions, setVersions] = useState<DbDocumentVersion[]>([]);
@@ -398,7 +398,20 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
               onNavegar={setCarpetaMirada}
               docActivoId={docId}
               revision={revisionCarpeta}
-              lote={lote}
+              // Tras borrar o mover, la columna del medio tiene que volver a
+              // mirar: si no, sigue mostrando tarjetas de archivos que ya no
+              // están.
+              lote={lote && {
+                ...lote,
+                onEliminar: async (ids) => {
+                  await lote.onEliminar(ids);
+                  setRevisionCarpeta((n) => n + 1);
+                },
+                onFavorito: async (ids) => {
+                  await lote.onFavorito(ids);
+                  setRevisionCarpeta((n) => n + 1);
+                },
+              }}
               onAbrirDoc={(d) => { elegidoRef.current = d; onAbrirOtro?.(d); }}
             />
           </div>

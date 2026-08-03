@@ -25,7 +25,6 @@ import {
 import {
   Send,
   Sparkles,
-  User,
   Lightbulb,
   TrendingUp,
   AlertTriangle,

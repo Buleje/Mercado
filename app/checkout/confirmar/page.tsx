@@ -23,7 +23,6 @@ import {
   UserCircle,
   Tag,
   Sparkles,
-  ShieldCheck,
   ArrowRight,
   Eye,
   Pencil,
@@ -42,7 +41,6 @@ import OrderDetailsModal from "@/components/marketplace/checkout/OrderDetailsMod
 import CheckoutEditModal from "@/components/marketplace/checkout/CheckoutEditModal";
 import PaicheSuccessToast from "@/components/marketplace/checkout/PaicheSuccessToast";
 import { CheckoutTransitionOverlay } from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
-import OrderSummaryCard from "@/components/ui-system/OrderSummaryCard";
 import { PaicheMascot } from "@/components/ui-system/illustrations";
 import { setLastOrder } from "@/components/marketplace/RepetirUltimoPedido";
 import { incrementOrderCount } from "@/components/marketplace/ClienteFrecuenteBadge";
@@ -712,7 +710,7 @@ export default function CheckoutConfirmarPage() {
           {showAuthBanner && (
             <aside
               aria-label="Iniciar sesión para rastrear pedidos"
-              className="rounded-2xl border border-[var(--accent)]/25 bg-primary/10/40 p-3.5 sm:p-4 flex items-center gap-3"
+              className="rounded-2xl border border-[var(--accent)]/25 bg-primary/10 p-3.5 sm:p-4 flex items-center gap-3"
             >
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-white shrink-0">
                 <UserCircle className="h-5 w-5" strokeWidth={2.25} aria-hidden />

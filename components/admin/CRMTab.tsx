@@ -4,8 +4,8 @@ import { CardTitle, LoadingState } from "@buleje/design-system";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  Users, Search, X, Download, Loader2, AlertCircle,
-  Phone, Crown, Star, UserPlus, Moon, Heart,
+  Users, Search, X, Download, AlertCircle,
+  Phone, Crown, Star, UserPlus, Moon,
   ShoppingCart, TrendingUp, UserCheck,
   ChevronLeft, ChevronRight, BarChart3, RefreshCw,
 } from "@buleje/design-system/icons";

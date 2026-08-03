@@ -628,6 +628,118 @@ export class DocumentsDB {
     return r.count;
   }
 
+  /** Saca varios de la papelera de una (contraparte de `bulkSoftDelete`). */
+  static async bulkRestore(tenantId: string, ids: string[]): Promise<number> {
+    const r = await prisma.document.updateMany({
+      where: { id: { in: ids }, tenantId, deletedAt: { not: null } },
+      data: { deletedAt: null },
+    });
+    return r.count;
+  }
+
+  /**
+   * Rutas en el storage de varios documentos y de TODAS sus versiones, para
+   * poder vaciar la papelera sin dejar los archivos huérfanos ocupando espacio.
+   *
+   * Sólo mira documentos que ya están en la papelera: vaciarla no puede
+   * llevarse por delante un archivo activo aunque venga su id en la lista.
+   */
+  static async storagePathsOfDeleted(
+    tenantId: string,
+    ids: string[]
+  ): Promise<{ ids: string[]; paths: string[] }> {
+    const docs = await prisma.document.findMany({
+      where: { id: { in: ids }, tenantId, deletedAt: { not: null } },
+      select: { id: true, storagePath: true },
+    });
+    if (docs.length === 0) return { ids: [], paths: [] };
+    const versiones = await prisma.documentVersion.findMany({
+      where: { documentId: { in: docs.map((d) => d.id) } },
+      select: { storagePath: true },
+    });
+    return {
+      ids: docs.map((d) => d.id),
+      paths: [...docs.map((d) => d.storagePath), ...versiones.map((v) => v.storagePath)],
+    };
+  }
+
+  /** Ids de la papelera, de a tandas: "vaciar" no puede cargar 10.000 de golpe. */
+  static async idsEnPapelera(tenantId: string, limite: number): Promise<string[]> {
+    const docs = await prisma.document.findMany({
+      where: { tenantId, deletedAt: { not: null } },
+      orderBy: { deletedAt: "asc" },
+      select: { id: true },
+      take: limite,
+    });
+    return docs.map((d) => d.id);
+  }
+
+  /**
+   * Tenants que tienen algo pasado de plazo en la papelera.
+   *
+   * Método de PLATAFORMA (sin tenantId): lo usa el cron de retención para saber
+   * a quién visitar. La purga en sí se hace tenant por tenant con los métodos
+   * de siempre, así que el aislamiento no se relaja.
+   */
+  static async tenantsConPapeleraVencida(corte: Date): Promise<string[]> {
+    const filas = await prisma.document.findMany({
+      where: { deletedAt: { not: null, lt: corte } },
+      select: { tenantId: true },
+      distinct: ["tenantId"],
+    });
+    return filas.map((f) => f.tenantId);
+  }
+
+  /** Ids de un tenant que ya cumplieron su plazo en la papelera. */
+  static async idsPapeleraVencida(tenantId: string, corte: Date, limite: number): Promise<string[]> {
+    const docs = await prisma.document.findMany({
+      where: { tenantId, deletedAt: { not: null, lt: corte } },
+      orderBy: { deletedAt: "asc" },
+      select: { id: true },
+      take: limite,
+    });
+    return docs.map((d) => d.id);
+  }
+
+  /** Cuántos quedan en la papelera (para saber si hay que seguir vaciando). */
+  static async contarPapelera(tenantId: string): Promise<number> {
+    return prisma.document.count({ where: { tenantId, deletedAt: { not: null } } });
+  }
+
+  /** Borra de verdad (sin vuelta) los documentos ya en la papelera. */
+  static async bulkHardDelete(tenantId: string, ids: string[]): Promise<number> {
+    const r = await prisma.document.deleteMany({
+      where: { id: { in: ids }, tenantId, deletedAt: { not: null } },
+    });
+    return r.count;
+  }
+
+  /** Favorito para varios de una (era un `update` por id: N viajes a la base). */
+  static async bulkSetFavorite(
+    tenantId: string,
+    ids: string[],
+    favorite: boolean
+  ): Promise<number> {
+    const r = await prisma.document.updateMany({
+      where: { id: { in: ids }, tenantId, deletedAt: null },
+      data: { favorite },
+    });
+    return r.count;
+  }
+
+  /** Mismo estado para varios de una (revisar una pila de boletas en un clic). */
+  static async bulkSetStatus(
+    tenantId: string,
+    ids: string[],
+    status: string
+  ): Promise<number> {
+    const r = await prisma.document.updateMany({
+      where: { id: { in: ids }, tenantId, deletedAt: null },
+      data: { status },
+    });
+    return r.count;
+  }
+
   static async bulkAddTag(
     tenantId: string,
     ids: string[],
@@ -1382,6 +1494,50 @@ export class DocumentsDB {
           metadata: (input.metadata as unknown as object) ?? undefined,
           ipAddress: input.ipAddress ?? null,
         },
+      });
+    } catch (err) {
+      logger.warn("documents.audit.fail", { err: String(err) });
+    }
+  }
+
+  /**
+   * Una entrada de auditoría por documento, en UN solo insert.
+   *
+   * La acción en lote hacía un `create` por id: 500 documentos eran 500 viajes
+   * a la base, y cada fila se guardaba la lista COMPLETA de ids en su metadata
+   * (500 filas × 500 ids). El detalle compartido va una vez en `metadata`; el
+   * id propio ya está en su columna.
+   *
+   * Filtra a los documentos que existen en el tenant porque `documentId` es
+   * una FK: un id inventado tumbaría el `createMany` entero, mientras que los
+   * `create` sueltos solo perdían esa fila.
+   */
+  static async logMany(
+    tenantId: string,
+    documentIds: string[],
+    input: {
+      actorId: string;
+      action: DocAction;
+      metadata?: Record<string, unknown>;
+      ipAddress?: string;
+    }
+  ): Promise<void> {
+    if (documentIds.length === 0) return;
+    try {
+      const existentes = await prisma.document.findMany({
+        where: { id: { in: documentIds }, tenantId },
+        select: { id: true },
+      });
+      if (existentes.length === 0) return;
+      await prisma.documentAuditLog.createMany({
+        data: existentes.map((d) => ({
+          documentId: d.id,
+          tenantId,
+          actorId: input.actorId,
+          action: input.action,
+          metadata: (input.metadata as unknown as object) ?? undefined,
+          ipAddress: input.ipAddress ?? null,
+        })),
       });
     } catch (err) {
       logger.warn("documents.audit.fail", { err: String(err) });

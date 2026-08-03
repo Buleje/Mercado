@@ -884,7 +884,7 @@ export default function TurnosModule() {
       {turnoActivo ? (
         <div className="bg-primary/10 dark:bg-primary/15 border-2 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-2xl overflow-hidden">
           {/* Active turno header — prominente */}
-          <div className="bg-primary/10/50 dark:bg-primary/15 border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 px-5 sm:px-6 py-5">
+          <div className="bg-primary/10 dark:bg-primary/15 border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 px-5 sm:px-6 py-5">
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 rounded-xl bg-[var(--data-success-500)] flex items-center justify-center animate-pulse shrink-0">
                 <Play className="h-6 w-6 text-white" strokeWidth={2.5} />
@@ -1242,7 +1242,7 @@ export default function TurnosModule() {
                         {cajerosStats.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map(c => (
                           <tr key={c.name} className={cn(
                             "border-b border-gray-50 dark:border-white/5 transition-colors",
-                            c.name === bestCajero ? "bg-primary/10/50 dark:bg-primary/15" : ""
+                            c.name === bestCajero ? "bg-primary/10 dark:bg-primary/15" : ""
                           )}>
                             <td className="px-4 py-3 font-medium text-[var(--text-primary)] flex items-center gap-2">
                               <div className="h-6 w-6 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold" style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}>

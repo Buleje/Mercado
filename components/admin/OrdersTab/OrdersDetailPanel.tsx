@@ -473,7 +473,7 @@ export function OrdersDetailPanel({
 
               {/* Notas del cliente — inline si existen */}
               {order.notes && (
-                <div className="px-4 py-2.5 border-t border-[var(--rule-soft)] bg-primary/10/30">
+                <div className="px-4 py-2.5 border-t border-[var(--rule-soft)] bg-primary/10">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                     Nota del cliente
                   </p>

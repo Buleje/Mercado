@@ -19,17 +19,6 @@ export function MarketplaceComisionesTab() {
   const total = (summary.pendiente || 0) + (summary.liquidado || 0) + (summary.pagado || 0);
   const pct = (n: number) => (total > 0 ? Math.max(2, (n / total) * 100) : 0);
 
-  // Counts por estado para los chips (para mostrar cuántos hay en cada filtro).
-  const counts = {
-    all: filtered.length || 0,
-    pendiente: 0,
-    liquidado: 0,
-    pagado: 0,
-  };
-  // Dado que `filtered` ya respeta el filtro activo, contamos sobre ello cuando es "all"
-  // y sobre `summary` (montos totales) como heurística; el dato exacto requeriría el hook
-  // exponer `entries`. Los chips muestran montos (S/) más útiles que counts en este flow.
-
   return (
     <div className="space-y-6">
       {error && (

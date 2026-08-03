@@ -1,6 +1,5 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
 import {
   useState,
   useEffect,
@@ -22,7 +21,6 @@ import {
   ScanLine,
   Tag,
   Camera,
-  ShoppingCart,
   Users,
   Plus,
   X as XIcon,

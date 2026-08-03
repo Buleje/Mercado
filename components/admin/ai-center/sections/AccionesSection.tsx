@@ -6,7 +6,6 @@ import {
   Clock,
   Lightbulb,
   CheckSquare,
-  Square,
   Check,
   Package,
   ShoppingCart,

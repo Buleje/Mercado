@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useCallback } from "react";
-import Image from "next/image";
-import { ShoppingCart, TrendingUp, Minus, Plus, Package } from "@buleje/design-system/icons";
+import { ShoppingCart, TrendingUp, Minus, Plus } from "@buleje/design-system/icons";
 import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { useCart } from "@/contexts/cart-context";
 import { useQuickAddSafe } from "@/contexts/quick-add-context";

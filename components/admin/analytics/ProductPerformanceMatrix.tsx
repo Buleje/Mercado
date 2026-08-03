@@ -208,8 +208,8 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
 
         {/* Quadrant backgrounds */}
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
-          <div className="bg-primary/10/30 dark:bg-primary/15 border-r border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
-          <div className="bg-primary/10/30 dark:bg-primary/15 border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
+          <div className="bg-primary/10 dark:bg-primary/15 border-r border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
+          <div className="bg-primary/10 dark:bg-primary/15 border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
           <div className="bg-[var(--data-error-50)]/30 dark:bg-[var(--data-error-500)]/10 border-r border-dashed border-[var(--rule-base)] dark:border-gray-600" />
           <div className="bg-[var(--data-warning-50)]/30 dark:bg-[var(--data-warning-500)]/10" />
         </div>

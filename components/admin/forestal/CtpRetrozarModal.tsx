@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { CardTitle } from "@buleje/design-system";
 import { Scissors, Plus, Trash2, Loader2, AlertTriangle, Check } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { calcularRetrozado, volumenHuber, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";

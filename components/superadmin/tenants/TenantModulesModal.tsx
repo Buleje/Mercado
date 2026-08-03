@@ -199,7 +199,7 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const data = (await res.json().catch((e) => (void e, null))) as { error?: string } | null;
+        const data = (await res.json().catch((_e) => null)) as { error?: string } | null;
         setError(data?.error ?? `Error HTTP ${res.status}`);
         return;
       }

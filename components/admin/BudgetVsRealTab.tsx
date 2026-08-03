@@ -4,7 +4,7 @@ import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   TrendingDown, TrendingUp, AlertTriangle, CheckCircle,
-  Download, Loader2, RefreshCw, Target, Save,
+  Download, RefreshCw, Target, Save,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 

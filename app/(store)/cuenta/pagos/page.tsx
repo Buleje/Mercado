@@ -4,13 +4,10 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { CreditCard, ArrowLeft, Smartphone, Banknote, Plus } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import { BalanzaVacia } from "@/components/ui-system/illustrations";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
 type PaymentMethod = {
   id: string;

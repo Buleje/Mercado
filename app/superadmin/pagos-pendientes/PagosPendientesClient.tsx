@@ -968,7 +968,7 @@ function ProofCard({
               unoptimized
             />
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-primary/10/40 text-[var(--accent)]">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-primary/10 text-[var(--accent)]">
               <Gift className="h-8 w-8" strokeWidth={1.75} aria-hidden />
               <span className="text-xs font-bold uppercase tracking-wider">
                 Plan gratis · sin comprobante
@@ -1165,7 +1165,7 @@ function ProofModal({
                 </a>
               </>
             ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center bg-primary/10/30">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center bg-primary/10">
                 <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent)] text-white">
                   <Gift className="h-8 w-8" strokeWidth={2} aria-hidden />
                 </span>

@@ -302,7 +302,7 @@ export function TenantCard({
                       body: JSON.stringify({ days }),
                     });
                     if (!r.ok) {
-                      const data = await r.json().catch((e) => (void e, null));
+                      const data = await r.json().catch((_e) => null);
                       window.alert(`Error: ${data?.error ?? r.statusText}`);
                       return;
                     }

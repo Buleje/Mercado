@@ -46,15 +46,6 @@ const TOAST_COLORS = {
   },
 } as const;
 
-const POSITION_CLASSES: Record<ToastPosition, string> = {
-  "top-right": "top-4 right-4",
-  "top-left": "top-4 left-4",
-  "bottom-right": "bottom-4 right-4",
-  "bottom-left": "bottom-4 left-4",
-  "top-center": "top-4 left-1/2 -translate-x-1/2",
-  "bottom-center": "bottom-4 left-1/2 -translate-x-1/2",
-};
-
 /**
  * En mobile (< sm = 640 px) los toasts van siempre en la parte inferior
  * centrada, cerca del pulgar. En desktop/tablet respetan la posición

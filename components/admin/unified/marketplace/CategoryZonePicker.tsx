@@ -171,8 +171,8 @@ function CategoryCard({
       className={cn(
         "group relative w-full text-left rounded-xl overflow-hidden border-2 transition-colors flex items-center gap-3 p-2.5",
         selected
-          ? "border-[var(--accent)] bg-primary/10/50"
-          : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-primary/10/20",
+          ? "border-[var(--accent)] bg-primary/10"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-primary/10",
       )}
     >
       <div className="relative h-12 w-12 shrink-0 rounded-lg overflow-hidden bg-[var(--surface-sunken)]">
@@ -560,7 +560,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                   setEditing(null);
                   setShowEditor(true);
                 }}
-                className="h-[68px] rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--accent)] hover:bg-primary/10/30 flex items-center justify-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+                className="h-[68px] rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--accent)] hover:bg-primary/10 flex items-center justify-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
               >
                 <Plus className="h-4 w-4" strokeWidth={2.5} />
                 <span className="text-sm font-extrabold">Crear propia</span>

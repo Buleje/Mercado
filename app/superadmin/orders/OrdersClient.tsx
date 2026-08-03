@@ -43,7 +43,6 @@ import {
   BarChart3,
   CheckSquare,
   Square,
-  Users,
   TrendingUp,
 } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../_components/_shared";

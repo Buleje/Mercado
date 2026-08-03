@@ -589,7 +589,7 @@ function SocialProofSection() {
           </p>
         </div>
 
-        <div className="relative overflow-hidden rounded-[2rem] border-2 border-[var(--accent)]/30 bg-primary/10/30 p-6 sm:p-8 lg:p-10">
+        <div className="relative overflow-hidden rounded-[2rem] border-2 border-[var(--accent)]/30 bg-primary/10 p-6 sm:p-8 lg:p-10">
           <div aria-hidden className="pointer-events-none absolute -top-24 -right-20 h-72 w-72 rounded-full bg-[var(--accent)]/15 blur-3xl" />
           <div className="relative grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-8 lg:gap-12 items-start">
             {/* Izquierda — value stack con anclaje de precio */}
@@ -669,7 +669,7 @@ function SocialProofSection() {
                       className={`h-9 rounded-lg border-2 flex items-center justify-center transition-colors ${
                         tomado
                           ? "bg-[var(--accent)] border-[var(--accent)] text-white"
-                          : "border-dashed border-[var(--accent)]/40 bg-primary/10/40 text-[var(--accent)]"
+                          : "border-dashed border-[var(--accent)]/40 bg-primary/10 text-[var(--accent)]"
                       }`}
                     >
                       {tomado ? (

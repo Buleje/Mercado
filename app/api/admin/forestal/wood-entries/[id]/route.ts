@@ -7,6 +7,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 import { withApiHandler } from "@/lib/api-handler";
+import { TIPOS_DOCUMENTO_LOCTP, UNIDADES_LOCTP } from "@/lib/forestal/loctp-campos";
 
 /**
  * /api/admin/forestal/wood-entries/[id]
@@ -28,6 +29,9 @@ interface RouteCtx {
  *  manda sólo lo que cambió. */
 const updateFieldsSchema = z.object({
   entryDate: z.coerce.date().optional(),
+  // Campos oficiales del LO-CTP (ADR-311). El folio (columna 1) NO se corrige:
+  // lo asigna el libro y renumerarlo dejaría de casar con lo ya presentado.
+  docType: z.enum(TIPOS_DOCUMENTO_LOCTP.map((t) => t.valor) as [string, ...string[]]).optional(),
   gtfNumber: z.string().trim().min(1).max(50).optional(),
   gtfDate: z.coerce.date().nullable().optional(),
   gtfSeries: z.string().trim().max(20).nullable().optional(),
@@ -38,6 +42,8 @@ const updateFieldsSchema = z.object({
     .enum(["concesion", "predio_privado", "comunidad_nativa", "reforestacion", "retroaserradero", "otro"])
     .optional(),
   originCode: z.string().trim().max(100).nullable().optional(),
+  originSourceNumber: z.string().trim().max(100).nullable().optional(),
+  ctpProductCode: z.string().trim().max(60).nullable().optional(),
   originRegion: z.string().trim().max(80).nullable().optional(),
   originDistrict: z.string().trim().max(80).nullable().optional(),
   speciesCommonName: z.string().trim().min(1).max(120).optional(),
@@ -46,6 +52,7 @@ const updateFieldsSchema = z.object({
   productType: z
     .enum(["rolliza", "aserrada", "tablones", "listones", "durmientes", "pulgada", "carbon", "lena", "otro"])
     .optional(),
+  unit: z.enum(UNIDADES_LOCTP.map((u) => u.valor) as [string, ...string[]]).optional(),
   volumeM3: z.coerce.number().positive().max(99999).optional(),
   pieces: z.coerce.number().int().nonnegative().optional(),
   avgLengthM: z.coerce.number().positive().nullable().optional(),

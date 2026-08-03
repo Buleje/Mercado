@@ -2,7 +2,7 @@
 
 import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { DollarSign, Loader2, RefreshCw, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
+import { DollarSign, RefreshCw, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────

@@ -29,9 +29,7 @@ import {
   useAdminPageState, useAdminTenantPath, useFuzzyMatch, useVisibleCategories,
 } from "./_hooks";
 
-import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
 import { LastLoginToast } from "@/components/admin/LastLoginToast";
-import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
 // TrialExpiredGuard se mantiene estático: es un gate de negocio que bloquea el
 // panel cuando el trial expiró; lazy-loadear introduciría flash sin guard.
@@ -144,7 +142,7 @@ function AdminPage() {
 
   const {
     isSuperAdminImpersonating, activeTenantName, activeTenantSlug,
-    activeTenantLogo, handleExit: handleExitImpersonation,
+    activeTenantLogo,
   } = useImpersonation();
 
   const { toggle: toggleTheme, resolved: resolvedTheme, theme: themeMode, setTheme } = useTheme();
@@ -202,7 +200,7 @@ function AdminPage() {
 
   const visibleCategories = useVisibleCategories(categoryOrder);
 
-  const { allowedTabs, filteredTabs, visibleTabs, favoriteTabItems, recentTabItems } = useAdminTabsDerived({
+  const { allowedTabs, filteredTabs, favoriteTabItems, recentTabItems } = useAdminTabsDerived({
     userRole, savedRolePerms, hiddenTabs, visibleCategories,
     sidebarSearch, favoriteTabs, recentTabs, currentTab: tab, fuzzyMatch,
   });
@@ -228,11 +226,9 @@ function AdminPage() {
         .filter(Boolean)
         .map(t => ({ id: t!.id, label: t!.label, icon: t!.icon }))
     : [];
-  const [subSidebarMobileOpen, setSubSidebarMobileOpen] = React.useState(false);
 
   // Sub-tabs now render inline inside the main sidebar — no more collapsing
   const effectiveFocusMode = focusMode;
-  const mainSidebarWidth = effectiveFocusMode ? 64 : 260; // px
 
   // Keyboard: Arrow Up/Down navigate sub-tabs, Escape closes sub-sidebar
   React.useEffect(() => {

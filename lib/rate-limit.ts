@@ -414,6 +414,27 @@ export const RateLimitPresets = {
   // el proveedor de IA (tokens por día), no nosotros. 200 cada 15 min cubre un
   // drive entero de una bodega y sigue cortando un bucle desbocado.
   DRIVE_IA: { maxReqs: 200, windowSec: 15 * 60 },
+  // DRIVE_BULK — acciones en lote del drive (borrar/mover/etiquetar/estado de
+  // una selección). El cliente parte la selección en lotes de 500 ids, así que
+  // limpiar un drive de miles de archivos son varias requests seguidas; con
+  // STRICT (10 cada 15 min) la décima moría en 429 dejando la mitad borrada, y
+  // encima ordenar la misma carpeta (mover + etiquetar + marcar estado) ya gasta
+  // tres. Cada request se resuelve con un `updateMany`, o sea barato, y quien
+  // llega acá ya pasó requireAdmin + CSRF; 60 cada 15 min = hasta 30.000
+  // documentos por ventana y sigue cortando un bucle desbocado.
+  DRIVE_BULK: { maxReqs: 60, windowSec: 15 * 60 },
+  // SHELL_POLL — endpoints que el shell del panel sondea solo, sin que nadie
+  // haga clic: campana de notificaciones (cada 30s) y salud del asistente IA
+  // (cada 60s). Con MODERATE (20 cada 5 min) la cuenta no cerraba: 300s/30s =
+  // 10 requests por ventana los gasta el polling con el admin sentado sin tocar
+  // nada, y cada cambio de tab remonta el hook y suma uno más. Medido 2026-07-28
+  // (scripts/audit-admin-runtime.mjs): 130 respuestas 429 en 35 de 58 tabs — la
+  // campana dejaba de traer notificaciones y el banner de IA se caía a
+  // "desconectado" mintiendo sobre el estado real. Quien llega acá ya pasó
+  // requireAdmin + aislamiento por tenant y la respuesta es de solo lectura;
+  // 300 cada 5 min (1/s sostenido) cubre una jornada entera navegando el panel
+  // y sigue cortando un bucle desbocado.
+  SHELL_POLL: { maxReqs: 300, windowSec: 5 * 60 },
 } as const;
 
 /**

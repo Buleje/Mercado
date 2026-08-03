@@ -52,7 +52,10 @@ export const GET = withApiHandler("forestal-lotes-detalle-get", async (req: Next
       ForestLoteDB.trazabilidadLote(auth.tenantId, id),
     ]);
     if (!lote) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    return NextResponse.json({ lote, trazabilidad });
+    // La cadena completa (ADR-315) viaja con el detalle: es una lectura más,
+    // pero el modal la necesita siempre y pedirla aparte duplicaría el round-trip.
+    const cadena = (await ForestLoteDB.cadenaDeLote(auth.tenantId, id))?.cadena ?? null;
+    return NextResponse.json({ lote, trazabilidad, cadena });
   } catch (err) {
     return ctpErrorResponse(err, "lotes-detalle.GET", auth.tenantId);
   }

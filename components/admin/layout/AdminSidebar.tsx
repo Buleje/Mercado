@@ -12,8 +12,6 @@ import {
   PanelLeftClose,
   PanelLeft,
   SlidersHorizontal,
-  Search,
-  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 // resolveSessionStorefrontTarget removed — use activeTenantSlug directly
@@ -33,7 +31,6 @@ import { SIDEBAR_STYLE_PRESETS, type DefaultSidebarStyle } from "@/lib/admin-tem
 import { ScopeBadge } from "@/components/admin/layout/ScopeBadge";
 import {
   getVerticalConfig,
-  filterTabsForVertical,
   type Industry,
 } from "@/lib/verticals/registry";
 
@@ -125,7 +122,6 @@ export type AdminSidebarProps = {
 export function AdminSidebar({
   focusMode,
   presentationMode,
-  isSuperAdminImpersonating,
   activeTenantName,
   activeTenantLogo,
   activeTenantSlug,
@@ -256,11 +252,6 @@ export function AdminSidebar({
     } catch { /* ignore */ }
     return "buleje";
   });
-
-  const updateTheme = React.useCallback((theme: SidebarTheme) => {
-    setSidebarTheme(theme);
-    try { localStorage.setItem("admin-sidebar-theme", theme); } catch { /* ignore */ }
-  }, []);
 
   // ── Accent color (persisted) ──
   const [accent, setAccent] = React.useState<AccentColor>(() => {

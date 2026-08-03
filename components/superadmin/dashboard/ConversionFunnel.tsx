@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartWrapper, Caption } from "@buleje/design-system";
+import { ChartWrapper } from "@buleje/design-system";
 import { fmtNumber, type FunnelStep } from "@/lib/mocks/superadmin-dashboard.mock";
 
 interface Props {

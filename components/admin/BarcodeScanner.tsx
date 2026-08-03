@@ -2,7 +2,7 @@
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Camera, X, Loader2, SwitchCamera, Flashlight, FlashlightOff } from "@buleje/design-system/icons";
+import { Camera, X, SwitchCamera, Flashlight, FlashlightOff } from "@buleje/design-system/icons";
 
 type Props = {
   onDetected: (code: string) => void;

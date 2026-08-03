@@ -198,7 +198,7 @@ export function derivarFuentes(ingresos: readonly IngresoParaFuente[]): Registro
 
   // Recién acá se numera: hasta no ver todos los ingresos no se sabe cuál fue el
   // primero de cada fuente. Las que no declaran fecha van al final, alfabéticas.
-  const ordenadas = [...porClave.entries()].sort(([ca, a], [cb, b]) => {
+  const ordenadas = [...porClave.entries()].sort(([ca, _a], [cb, _b]) => {
     const fa = primerIngreso.get(ca) ?? "9999";
     const fb = primerIngreso.get(cb) ?? "9999";
     return fa !== fb ? fa.localeCompare(fb) : ca.localeCompare(cb);

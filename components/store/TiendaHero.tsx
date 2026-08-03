@@ -32,7 +32,7 @@ export interface TiendaHeroProps {
   productCount: number;
 }
 
-export default function TiendaHero({ slug, storeName, productCount }: TiendaHeroProps) {
+export default function TiendaHero({ slug: _slug, storeName, productCount }: TiendaHeroProps) {
   const { open: openCart, count } = useCart();
   const { storeTheme } = useSettings();
 

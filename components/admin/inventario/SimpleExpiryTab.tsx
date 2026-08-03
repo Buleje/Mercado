@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Field } from "@/components/admin/shared/Field";
 import {
   AlertTriangle, CheckCircle, Clock, Download, Loader2,
-  Package, Search, ShieldCheck, Plus, X, Trash2, TrendingDown,
+  Search, ShieldCheck, Plus, X, Trash2, TrendingDown,
 } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import { cn, exportToCSV } from "@/lib/utils";

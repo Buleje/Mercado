@@ -7,7 +7,6 @@ import {
   TimerIcon,
   PinIcon,
   CashIcon,
-  PackageIcon,
   PhoneRing,
   CheckBadge,
   HeroDeliveryIllustration,

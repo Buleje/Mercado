@@ -50,7 +50,7 @@ interface DeliveryKPIs {
 
 export default function DeliveryPartnersModule({ initialTab }: { initialTab?: string } = {}) {
   const [tab, setTab] = useState<TabId>(initialTab ?? TABS[0].id);
-  const [kpis, setKpis] = useState<DeliveryKPIs>({
+  const [, setKpis] = useState<DeliveryKPIs>({
     activePartners: 0,
     deliveriesToday: 0,
     pendingDeliveries: 0,

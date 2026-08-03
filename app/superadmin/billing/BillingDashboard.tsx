@@ -34,7 +34,6 @@ import {
   Clock,
   XCircle,
   ExternalLink,
-  Loader2,
   CheckCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -367,21 +366,8 @@ export default function BillingDashboard() {
   const [atRiskOnly, setAtRiskOnly] = useState(false);
   const [sort, setSort] = useState<{ key: "name" | "mrr" | "next"; dir: "asc" | "desc" }>({ key: "mrr", dir: "desc" });
 
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  const toastIdRef = useRef(1);
+  const [toasts] = useState<Toast[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
-
-  const pushToast = useCallback(
-    (text: string, tone: ToastTone = "info") => {
-      const id = toastIdRef.current++;
-      setToasts((prev) => [...prev, { id, text, tone }]);
-      setTimeout(
-        () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-        3000,
-      );
-    },
-    [],
-  );
 
   // ── Debounce ────────────────────────────────────────────────────────────
   useEffect(() => {

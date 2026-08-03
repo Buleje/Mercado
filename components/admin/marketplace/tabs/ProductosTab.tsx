@@ -382,7 +382,7 @@ export function MarketplaceProductosTab() {
                   return (
                     <tr key={p.id} className={cn(
                       "transition-colors",
-                      isSel ? "bg-primary/10/50" : "hover:bg-[var(--surface-sunken)]/50",
+                      isSel ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]/50",
                     )}>
                       <td className="w-10 px-3 py-2.5">
                         <input

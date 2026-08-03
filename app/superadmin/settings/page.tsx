@@ -274,7 +274,7 @@ export default function SettingsPage() {
         </div>
       )}
       {dirty && !saving && !saved && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--accent)]/30 bg-primary/10/40 px-4 py-3">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--accent)]/30 bg-primary/10 px-4 py-3">
           <div className="flex items-center gap-2 text-sm">
             <Sparkles className="h-4 w-4 text-[var(--accent)]" aria-hidden />
             <span className="font-semibold text-[var(--text-primary)]">
@@ -649,7 +649,7 @@ function PlanLimitsCard({
   ];
   const accent =
     tone === "primary"
-      ? "border-[var(--accent)]/30 bg-primary/10/30"
+      ? "border-[var(--accent)]/30 bg-primary/10"
       : "border-[var(--rule-soft)] bg-[var(--surface-canvas)]";
   const badge =
     tone === "primary"

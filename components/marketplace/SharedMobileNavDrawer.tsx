@@ -402,7 +402,7 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
                       href={`/tiendas?cat=${encodeURIComponent(cat.id)}`}
                       onClick={onClose}
                       aria-label={`Ver tiendas de ${cat.label}`}
-                      className="group flex items-center gap-2.5 rounded-xl px-2.5 h-12 bg-[var(--surface-sunken)] hover:bg-primary/10/50 active:scale-[0.97] transition-all"
+                      className="group flex items-center gap-2.5 rounded-xl px-2.5 h-12 bg-[var(--surface-sunken)] hover:bg-primary/10 active:scale-[0.97] transition-all"
                     >
                       <span
                         aria-hidden

@@ -55,7 +55,7 @@ export default function SuccessCelebration({
   secondaryAction,
   confetti = true,
 }: Props) {
-  const [mounted, setMounted] = useState(false);
+  const [, setMounted] = useState(false);
 
   useEffect(() => {
     if (open) {

@@ -4,7 +4,6 @@ import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   RefreshCw,
-  Loader2,
   AlertTriangle,
   TrendingUp,
   TrendingDown,

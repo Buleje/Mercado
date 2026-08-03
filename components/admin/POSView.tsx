@@ -8,10 +8,10 @@ import {
   Receipt, Package, Maximize2, Minimize2,
   Star, Clock, History, Percent, Info, Printer,
   Volume2, VolumeX, MessageCircle, Send, RotateCcw,
-  ChevronDown, ChevronRight, ShoppingCart, Settings,
+  ShoppingCart, Settings,
   Leaf, UtensilsCrossed, Boxes, Droplets, Sparkles,
   Smartphone, CreditCard, HandCoins,
-  Camera, Lightbulb, Timer, ClipboardList, RefreshCcw,
+  Camera, Timer, ClipboardList, RefreshCcw,
   Trash2, TrendingUp, AlertTriangle,
 } from "@buleje/design-system/icons";
 
@@ -57,7 +57,6 @@ import POSFiadoPanel from "@/components/admin/pos/POSFiadoPanel";
 import POSPaymentModal from "@/components/admin/pos/POSPaymentModal";
 import type { PaymentLine, ComprobanteTipo } from "@/components/admin/pos/POSPaymentModal";
 import POSSearchBar from "@/components/admin/pos/POSSearchBar";
-import POSFrequentProducts from "@/components/admin/pos/POSFrequentProducts";
 import POSExpressMode from "@/components/admin/pos/POSExpressMode";
 import POSPausedCarts from "@/components/admin/pos/POSPausedCarts";
 import POSCrossSell from "@/components/admin/pos/POSCrossSell";
@@ -137,112 +136,6 @@ function numeroAPalabras(n: number): string {
   return centavos > 0
     ? `${texto} soles con ${numeroAPalabras(centavos)} centimos`
     : `${texto} soles`;
-}
-
-// ── Mejora 1R2: Atajos rapidos del cajero ────────────────────────────────────
-function POSCajeroFavorites({ products, onAddToCart }: { products: Product[]; onAddToCart: (p: Product) => void }) {
-  const [favIds, setFavIds] = useState<number[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const raw = localStorage.getItem("pos-cajero-favorites");
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
-  });
-  const [configMode, setConfigMode] = useState(false);
-
-  const saveFavs = (ids: number[]) => {
-    setFavIds(ids);
-    localStorage.setItem("pos-cajero-favorites", JSON.stringify(ids));
-  };
-
-  const toggleFav = (id: number) => {
-    if (favIds.includes(id)) {
-      saveFavs(favIds.filter(f => f !== id));
-    } else if (favIds.length < 12) {
-      saveFavs([...favIds, id]);
-    }
-  };
-
-  if (favIds.length === 0 && !configMode) {
-    return (
-      <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface/30">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mis Rapidos</span>
-          <button onClick={() => setConfigMode(true)} className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline">Configurar</button>
-        </div>
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted italic">Configura tus 12 productos rapidos para atender mas rápido</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface/30">
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mis Rapidos ({favIds.length}/12)</span>
-        <button
-          onClick={() => setConfigMode(!configMode)}
-          className={cn("text-[length:var(--ts-2xs)] font-bold transition-colors", configMode ? "text-[var(--data-success-500)]" : "text-primary hover:underline")}
-        >
-          {configMode ? "Listo" : "Configurar"}
-        </button>
-      </div>
-      {configMode && (
-        <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] mb-1.5">Haz click en productos del catalogo para agregarlos aqui (max 12)</p>
-      )}
-      <div className="grid grid-cols-4 gap-1.5">
-        {favIds.map(id => {
-          const p = products.find(pr => pr.id === id);
-          if (!p) return null;
-          return (
-            <button
-              key={id}
-              onClick={() => configMode ? toggleFav(id) : onAddToCart(p)}
-              className={cn(
-                "bg-[var(--surface-raised)] border text-left px-1.5 rounded-lg transition-all flex items-center gap-1",
-                configMode ? "border-[var(--data-error-500)] hover:bg-[var(--data-error-50)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface"
-              )}
-              style={{ height: 48 }}
-              title={configMode ? `Quitar ${p.name}` : p.name}
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate leading-tight">{p.name.slice(0, 15)}</p>
-                <p className="text-[length:var(--ts-2xs)] font-bold text-primary">{fmt(p.price)}</p>
-              </div>
-              {configMode && <X className="h-3 w-3 text-[var(--data-error-500)] shrink-0" />}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function ModuleTooltip() {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative inline-block">
-      <button type="button" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}
-        onFocus={() => setOpen(true)} onBlur={() => setOpen(false)}
-        className="text-[var(--text-tertiary)] hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)]" aria-label="Ayuda sobre POS">
-        <Info className="h-4 w-4" />
-      </button>
-      {open && (
-        <div className="absolute left-6 top-0 z-50 w-80 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
-          <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm mb-2 inline-flex items-center gap-1.5"><ShoppingCart className="h-4 w-4 text-primary" aria-hidden /> Punto de Venta (POS)</p>
-          <p className="text-[var(--text-secondary)] dark:text-muted mb-3">Registra ventas en mostrador: busca productos, agrégalos al carrito, elige cómo cobrar y confirma la venta.</p>
-          <div className="space-y-1.5">
-            <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Catálogo:</span> <span className="text-[var(--text-secondary)] dark:text-muted">busca por nombre, filtra por categoría o escanea código de barras.</span></p>
-            <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Carrito:</span> <span className="text-[var(--text-secondary)] dark:text-muted">ajusta cantidades y aplica descuentos por ítem.</span></p>
-            <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cobro:</span> <span className="text-[var(--text-secondary)] dark:text-muted">efectivo, Yape, Plin, tarjeta o fiado. Pago dividido también.</span></p>
-          </div>
-          <div className="mt-3 bg-primary/10 dark:bg-primary/15 rounded-xl p-2">
-            <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold inline-flex items-center gap-1.5"><Lightbulb className="h-3.5 w-3.5" aria-hidden /> Ejemplo</p>
-            <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Carlos busca “Leche”, agrega 2 unidades al carrito, el cliente paga S/10 en efectivo y el sistema le dice el vuelto.</p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 // ── Promo Badge (Mejora 3: precio por cantidad) ──────────────────────────────
@@ -962,7 +855,7 @@ export default function POSView() {
   const [cashRegisterOpen, setCashRegisterOpen] = useState<boolean | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [favorites, setFavorites] = useState<number[]>(() => readStoredIds("pos-favorites"));
-  const [recentProducts, setRecentProducts] = useState<number[]>(() => readStoredIds("pos-recents"));
+  const [, setRecentProducts] = useState<number[]>(() => readStoredIds("pos-recents"));
   const [showHistory, setShowHistory] = useState(false);
   const [salesHistory, setSalesHistory] = useState<SaleRecord[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -1101,7 +994,7 @@ export default function POSView() {
 
   // Mejora 9: Frequent products refresh key (aún usado por handleAddFromSearch
   // para invalidar la caché cuando se elimina el accordion de "Más vendidos").
-  const [frequentRefreshKey, setFrequentRefreshKey] = useState(0);
+  const [, setFrequentRefreshKey] = useState(0);
 
   // Mejora: Idle screen
   const [isIdle, setIsIdle] = useState(false);

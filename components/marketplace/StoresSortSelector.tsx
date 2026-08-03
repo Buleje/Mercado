@@ -61,7 +61,7 @@ export default function StoresSortSelector({
   return (
     <label
       className={cn(
-        "inline-flex items-center rounded-full border bg-[var(--surface-canvas)] font-bold border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-[var(--accent)]/50 hover:bg-primary/10/20 transition-all cursor-pointer",
+        "inline-flex items-center rounded-full border bg-[var(--surface-canvas)] font-bold border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-[var(--accent)]/50 hover:bg-primary/10 transition-all cursor-pointer",
         compact
           ? "gap-1.5 h-9 px-2.5 text-xs"
           : "gap-2 px-4 py-2 text-sm",

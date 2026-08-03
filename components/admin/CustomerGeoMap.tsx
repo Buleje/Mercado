@@ -4,7 +4,6 @@ import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   MapPin,
-  Loader2,
   AlertCircle,
   Flame,
   Users,

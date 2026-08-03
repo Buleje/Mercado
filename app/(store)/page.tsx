@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import Image from "next/image";
 import { cacheLife, cacheTag } from "next/cache";
 import { resolveStoreContext } from "@/lib/store-metadata";
 import TenantStoreHome from "@/components/store/TenantStoreHome";
@@ -67,21 +66,8 @@ import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import HomeRecentlyViewed from "@/components/marketplace/home/HomeRecentlyViewed";
 import { ShowWhenAllVerticals } from "@/components/marketplace/home/MarketplaceVerticalChips";
 import {
-  Store,
-  ArrowUpRight,
-  Bike,
-  Star,
   UtensilsCrossed,
   ShoppingCart,
-  Apple,
-  Pill,
-  Wrench,
-  Drumstick,
-  Croissant,
-  Wine,
-  Beef,
-  Smartphone,
-  MapPin,
   ChevronDown,
   MessageCircle,
   Leaf,
@@ -159,19 +145,13 @@ export const metadata: Metadata = {
 // Ferreterías, del JSON del superadmin) a CATEGORÍAS DE PRODUCTO (Bebidas/
 // Carnes/Postres…, vía MarketplacePublicDB) — la MISMA fuente que el header y
 // el mega-menú → una sola taxonomía consistente. Esta forma la reusa CategoriesGrid.
-interface SuperadminCategory {
-  id: string;
-  label: string;
-  description: string;
-  imageUrl: string | null;
-}
 
 // ── Cached marketplace stats + top stores via lib/db (regla #1 CLAUDE.md)
 // Brandon 2026-05-20 audit-sprint: las queries antes hacían `prisma.*` directo
 // con eslint-disable como excusa cross-tenant. Ahora vive en
 // `lib/db/marketplace-public.db.ts` (MarketplaceStatsDB) — único punto que
 // accede a prisma, con `use cache` + cacheLife + cacheTag homogéneos.
-import { MarketplaceStatsDB, MarketplacePublicDB, type FeaturedStorePreview } from "@/lib/db/marketplace-public.db";
+import { MarketplaceStatsDB, MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
 import { BRAND_GEO } from "@/lib/geo";
 import { storeListItem } from "@/lib/seo-store-schema";
 
@@ -525,22 +505,6 @@ async function StoreLogosMarqueeRSC() {
 // los destacados (los primeros en orden), el resto va al grid chico.
 // Emojis de fallback por slug si la imagen no está subida aún.
 
-// Mapa de iconos Lucide por slug de categoría (reemplaza emojis).
-// Regla: CERO emojis literales en UI — todo Lucide desde @buleje/design-system/icons.
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  restaurante: UtensilsCrossed,
-  bodega:      ShoppingCart,
-  fruteria:    Apple,
-  farmacia:    Pill,
-  ferreteria:  Wrench,
-  polleria:    Drumstick,
-  panaderia:   Croissant,
-  licoreria:   Wine,
-  carniceria:  Beef,
-  minimarket:  Store,
-  tecnologia:  Smartphone,
-};
-
 // Brandon 2026-07-05 (audit #2): "pollo-brasa" → "Pollo brasa".
 function prettyCatLabel(id: string): string {
   const spaced = id.replace(/[-_]+/g, " ").trim();
@@ -706,362 +670,6 @@ async function CategoriesGrid() {
 // (estrellas), categoría y zona cuando la fuente los trae. Sin fetch nuevo:
 // getTopStores() ya devuelve category/zone/rating/reviewCount desde MarketplaceStatsDB.
 
-/** Renderiza las estrellas de rating (0–5). Solo muestra si rating > 0. */
-function StoreRatingStars({ rating, reviewCount }: { rating: number; reviewCount: number }) {
-  if (rating <= 0) return null;
-  const full = Math.floor(rating);
-  const partial = rating % 1 >= 0.5 ? 1 : 0;
-  return (
-    <span className="inline-flex items-center gap-1" aria-label={`${rating.toFixed(1)} de 5 estrellas`}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <Star
-          key={i}
-          className={`h-3 w-3 shrink-0 ${i < full ? "fill-[var(--accent)] text-[var(--accent)]" : i === full && partial ? "fill-[var(--accent)]/50 text-[var(--accent)]/50" : "fill-none text-[var(--rule-base)]"}`}
-          strokeWidth={1.5}
-          aria-hidden
-        />
-      ))}
-      {reviewCount > 0 && (
-        <span className="text-[10px] font-bold text-[var(--text-tertiary)] tabular-nums ml-0.5">
-          ({reviewCount})
-        </span>
-      )}
-    </span>
-  );
-}
-
-/**
- * StoreCard — card estilo marketplace app (Rappi/Uber Eats): cover con
- * textura de marca + logo solapado tipo avatar + contenido alineado a la
- * izquierda (nombre, rating, chips categoría/zona, pie delivery).
- * v4 2026-05-27: rediseño de card centrada → listado pro con cover.
- * Reusada por Tiendas destacadas (grid) y Recomendadas para vos (rail).
- */
-// Acepta TopStore o FeaturedStorePreview (superset): el rail "Recomendadas"
-// reusa StoreCard con los datos del showcase. Evita la trampa de mantenimiento
-// del duck-typing implícito (audit code-review #3).
-function StoreCard({ s, priority = false }: { s: TopStore | FeaturedStorePreview; priority?: boolean }) {
-  const initial = s.name.trim().charAt(0).toUpperCase();
-  // Ícono de la categoría para el watermark del cover — rellena el espacio
-  // antes vacío con una señal visual del rubro. (pulido home 2026-05-31)
-  const CoverIcon = CATEGORY_ICONS[s.category] ?? Store;
-  return (
-    <Link
-      href={`/marketplace/${s.slug}`}
-      aria-label={`${s.name}${s.featuredHome ? ", destacada" : ""}${s.rating > 0 ? `, ${s.rating.toFixed(1)} estrellas` : ""}${s.category ? `, ${s.category}` : ""}${s.zone ? `, ${s.zone}` : ""}`}
-      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-[var(--surface-raised)] transition-colors duration-[var(--dur-base)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${s.featuredHome ? "border-[var(--accent)]" : "border-[var(--rule-base)] hover:border-[var(--accent)]"}`}
-    >
-      {/* Cover plano (de-neon Brandon 2026-06-08) — sin gradiente teal ni textura. */}
-      <div className="relative h-14 sm:h-16 bg-[var(--surface-sunken)]">
-        {/* Watermark del rubro — rellena el cover (antes vacío) con señal visual
-            de la categoría, abajo-derecha para no chocar con el avatar (izq). */}
-        <CoverIcon
-          aria-hidden
-          className="pointer-events-none absolute right-2.5 bottom-1 h-11 w-11 sm:h-12 sm:w-12 text-[var(--accent)]/25 -rotate-12 group-hover:scale-110 group-hover:text-[var(--accent)]/35 transition-all"
-          strokeWidth={1.5}
-        />
-        {/* Badge Destacada (beneficio superadmin "Destacar en Home") */}
-        {s.featuredHome && (
-          <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white shadow">
-            <Star className="h-2.5 w-2.5 fill-current" aria-hidden />
-            Destacada
-          </span>
-        )}
-      </div>
-
-      {/* Logo avatar solapando el cover */}
-      <div className="px-3 sm:px-4 -mt-7 sm:-mt-8">
-        <div className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-xl bg-[var(--surface-canvas)] ring-4 ring-[var(--surface-raised)] overflow-hidden shadow-md group-hover:scale-[1.05] transition-transform shrink-0">
-          {s.logo ? (
-            <Image
-              src={s.logo}
-              alt=""
-              fill
-              sizes="(min-width: 640px) 64px, 56px"
-              className="object-cover"
-              priority={priority}
-            />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] text-white font-black text-2xl sm:text-3xl">
-              {initial}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Body alineado a la izquierda */}
-      <div className="flex flex-1 flex-col px-3 sm:px-4 pt-2 pb-3">
-        {/* Nombre */}
-        <p className="text-sm sm:text-base font-extrabold tracking-tight text-[var(--text-primary)] leading-tight line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
-          {s.name}
-        </p>
-
-        {/* Rating */}
-        {s.rating > 0 && (
-          <div className="mt-1">
-            <StoreRatingStars rating={s.rating} reviewCount={s.reviewCount} />
-          </div>
-        )}
-
-        {/* Chips categoría + zona */}
-        {(s.category || s.zone) && (
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            {s.category && (
-              <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] sm:text-xs font-bold text-[var(--accent)] line-clamp-1 max-w-full">
-                {s.category}
-              </span>
-            )}
-            {s.zone && (
-              <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-[var(--text-secondary)] line-clamp-1 max-w-full">
-                <MapPin className="h-2.5 w-2.5 shrink-0" strokeWidth={2} aria-hidden />
-                {s.zone}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Pie: delivery + estimación de entrega. "25–35 min" = estimación de
-            plataforma para Pucallpa (igual que el hero "delivery en 25 min" y el
-            storefront), no un dato inventado por tienda. Rellena la card. */}
-        <div className="mt-auto flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-2.5 text-[10px] sm:text-xs font-bold text-[var(--text-tertiary)] group-hover:text-[var(--accent)] transition-colors">
-          <Bike className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-          <span>Delivery</span>
-          <span aria-hidden className="opacity-50">·</span>
-          <span>25–35 min</span>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-// ── FeaturedStoreCard — card showcase XL para las 3 tiendas destacadas ──────
-// Brandon 2026-05-30: banner de portada (o gradiente de marca si no hay) +
-// logo avatar + rating/categoría/zona + PREVIEW del catálogo (hasta 4 productos
-// con imagen). "Lo que ofrecen" de un vistazo. Card entera clickeable (stretched
-// link a la tienda). Reemplaza la grilla de 10 cards chicas por 3 cards ricas.
-function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; priority?: boolean }) {
-  const initial = s.name.trim().charAt(0).toUpperCase();
-  const CoverIcon = CATEGORY_ICONS[s.category] ?? Store;
-  const extraProducts = Math.max(0, s.productCount - s.preview.length);
-  return (
-    <article
-      className={`group relative flex h-full flex-col overflow-hidden border bg-[var(--surface-raised)] transition-colors duration-[var(--dur-base)] ${
-        s.featuredHome
-          ? "border-[var(--accent)]"
-          : "border-[var(--rule-base)] hover:border-[var(--accent)]"
-      }`}
-    >
-      {/* Banner de portada — imagen real, o fondo plano (de-neon Brandon 2026-06-08). */}
-      <div className="relative h-24 sm:h-28 overflow-hidden bg-[var(--surface-sunken)]">
-        {s.banner ? (
-          <Image
-            src={s.banner}
-            alt=""
-            fill
-            sizes="(min-width: 1024px) 420px, (min-width: 640px) 50vw, 100vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            priority={priority}
-          />
-        ) : (
-          <>
-            <div
-              aria-hidden
-              className="absolute inset-0"
-              style={{
-                backgroundImage: "radial-gradient(circle, var(--accent) 1px, transparent 1px)",
-                backgroundSize: "16px 16px",
-                maskImage: "linear-gradient(to bottom, black, transparent)",
-                WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
-                opacity: 0.16,
-              }}
-            />
-            <CoverIcon
-              aria-hidden
-              className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-20 w-20 -rotate-12 text-[var(--accent)]/30"
-              strokeWidth={1.25}
-            />
-          </>
-        )}
-        {/* Velo inferior para que el logo/nombre respiren sobre el banner */}
-        <div aria-hidden className="absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-black/35 to-transparent" />
-        {/* Rating badge (si tiene reseñas reales) */}
-        {s.rating > 0 && (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 bg-[var(--surface-canvas)]/95 px-2.5 py-1 text-xs font-black tabular-nums text-[var(--text-primary)] shadow ring-1 ring-[var(--rule-soft)]">
-            <Star className="h-3 w-3 fill-[var(--accent)] text-[var(--accent)]" aria-hidden />
-            {s.rating.toFixed(1)}
-          </span>
-        )}
-        {/* Badge "Destacada" (beneficio superadmin) */}
-        {s.featuredHome && (
-          <span className="absolute right-3 top-3 inline-flex items-center gap-1 bg-[var(--accent)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow">
-            <Star className="h-2.5 w-2.5 fill-current" aria-hidden />
-            Destacada
-          </span>
-        )}
-      </div>
-
-      {/* Logo avatar solapando el banner + identidad */}
-      <div className="flex items-start gap-3 px-4 sm:px-5 -mt-8">
-        <div className="relative h-16 w-16 shrink-0 overflow-hidden bg-[var(--surface-canvas)] ring-4 ring-[var(--surface-raised)] shadow-sm">
-          {s.logo ? (
-            <Image src={s.logo} alt="" fill sizes="64px" className="object-cover" priority={priority} />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] text-2xl font-black text-white">
-              {initial}
-            </div>
-          )}
-        </div>
-        <div className="min-w-0 flex-1 pt-9">
-          <h3 className="text-lg sm:text-xl font-black tracking-tight leading-tight text-[var(--text-primary)] line-clamp-1 transition-colors group-hover:text-[var(--accent)]">
-            {s.name}
-          </h3>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            {s.category && (
-              <span className="inline-flex items-center bg-primary/10 px-2 py-0.5 text-[11px] font-bold capitalize text-[var(--accent)]">
-                {s.category}
-              </span>
-            )}
-            {s.zone && (
-              <span className="inline-flex items-center gap-0.5 bg-[var(--surface-sunken)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
-                <MapPin className="h-2.5 w-2.5" strokeWidth={2} aria-hidden />
-                {s.zone}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Cuerpo: preview (si hay) arriba + footer delivery + CTA anclados abajo.
-          Las 3 cards comparten el MISMO baseline (delivery + Ver tienda) → fila
-          pareja; los thumbs son el extra de quien los tiene. De-neon Brandon 2026-06-08. */}
-      <div className="flex flex-1 flex-col px-4 sm:px-5 pt-3 pb-4">
-        {s.preview.length > 0 && (
-          <div className="mb-3 grid grid-cols-4 gap-2">
-            {s.preview.map((p, i) => (
-              <div
-                key={p.id}
-                className="relative aspect-square overflow-hidden bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]"
-              >
-                <Image
-                  src={p.image}
-                  alt={p.name}
-                  fill
-                  sizes="80px"
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                {i === s.preview.length - 1 && extraProducts > 0 && (
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-sm font-black text-white">
-                    +{extraProducts}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Footer anclado abajo — delivery + CTA. Mismo baseline en las 3 cards. */}
-        <div className="mt-auto">
-          <div className="flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-2.5 text-[11px] sm:text-xs font-bold text-[var(--text-tertiary)]">
-            <Bike className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-            <span>Delivery · 25–35 min</span>
-            {s.productCount > 0 && (
-              <>
-                <span aria-hidden className="opacity-50">·</span>
-                <span>{s.productCount} productos</span>
-              </>
-            )}
-          </div>
-          {/* CTA — stretched link: toda la card es clickeable, 1 solo enlace (a11y) */}
-          <Link
-            href={`/marketplace/${s.slug}`}
-            aria-label={`Ver tienda ${s.name}`}
-            className="mt-3 inline-flex w-full h-10 items-center justify-center gap-1.5 border border-[var(--accent)] text-sm font-bold text-[var(--accent)] transition-colors after:absolute after:inset-0 after:content-[''] hover:bg-[var(--accent)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-          >
-            Ver tienda
-            <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-          </Link>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-async function TopStoresSection() {
-  // Brandon 2026-05-30: showcase de 3 tiendas destacadas RICAS (banner + logo +
-  // rating + preview de catálogo). El resto va al rail "Recomendadas".
-  const stores = await MarketplaceStatsDB.getFeaturedStoresWithPreview(12);
-  if (stores.length === 0) {
-    return <EmptyStoresPlaceholder />;
-  }
-  const destacadas = stores.slice(0, 3);
-  return (
-    <>
-      <section
-        aria-label="Tiendas destacadas"
-        className="bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)] py-5 sm:py-7"
-      >
-        <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
-          <SectionHeading
-            eyebrow="Tiendas destacadas"
-            title={`Las más elegidas en ${BRAND_GEO.city}`}
-            actionLabel="Ver todas"
-            actionHref="/tiendas"
-          />
-
-          {/* 3 cards showcase: 1 col mobile / 3 cols ≥640px */}
-          <ul
-            role="list"
-            aria-label={`${destacadas.length} tiendas destacadas`}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6"
-          >
-            {destacadas.map((s) => (
-              <li key={s.id}>
-                {/* Audit SEO 2026-05-31: SIN priority. Esta sección "Tiendas
-                    destacadas" va DEBAJO del fold (hero + categorías arriba),
-                    así que forzar priority en sus 3-6 imágenes (banner+logo)
-                    competía por ancho de banda con el LCP real del hero y las
-                    hacía cargar eager. Sin priority, next/image las lazy-loadea
-                    (loading="lazy") y mejora el LCP. */}
-                <FeaturedStoreCard s={s} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-    </>
-  );
-}
-
-function EmptyStoresPlaceholder() {
-  return (
-    <section className="bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)] py-12 sm:py-16">
-      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <span
-          aria-hidden
-          className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-5"
-        >
-          <Store className="h-8 w-8" strokeWidth={1.75} />
-        </span>
-        <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)]">
-          Las primeras tiendas están abriendo
-        </h2>
-        <p className="mt-2 text-base text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
-          Estamos arrancando con los primeros negocios de {BRAND_GEO.city}. ¿Tenés
-          una tienda? Sumate al Plan Fundador y arrancá hoy mismo.
-        </p>
-        <Link
-          href="/negocios"
-          className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-6 h-12 text-sm font-extrabold hover:opacity-90 transition-opacity"
-        >
-          Abrir mi tienda
-          <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-        </Link>
-      </div>
-    </section>
-  );
-}
-
 // ── 4. Trabajá con nosotros ──────────────────────────────────────────────────
 // Brandon 2026-05-31: extraído a components/marketing/JoinUsSection.tsx (importado
 // arriba) para reusarlo en /tiendas sin copy-paste (single source of truth).
@@ -1105,7 +713,7 @@ function HomeFaqSection() {
                      acento al abrir), tinte suave + número resaltado en open. */
                   <details
                     key={n}
-                    className="group border border-[var(--rule-base)] border-l-[3px] border-l-[var(--rule-strong)] bg-[var(--surface-raised)] transition-colors open:border-l-[var(--accent)] open:bg-primary/10/25"
+                    className="group border border-[var(--rule-base)] border-l-[3px] border-l-[var(--rule-strong)] bg-[var(--surface-raised)] transition-colors open:border-l-[var(--accent)] open:bg-primary/10"
                   >
                     <summary className="flex items-center gap-3.5 cursor-pointer list-none px-4 sm:px-5 py-4 [&::-webkit-details-marker]:hidden">
                       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center bg-[var(--surface-sunken)] text-[length:var(--ts-sm)] font-black tabular-nums text-[var(--text-tertiary)] transition-colors group-open:bg-[var(--accent)] group-open:text-white">

@@ -822,7 +822,7 @@ function OptionRow({
       <span className={cn(
         "shrink-0 h-14 w-14 rounded-none overflow-hidden border transition-colors",
         isSelected ? "border-[var(--accent)]/30" : "border-[var(--rule-soft)]",
-        option.imageUrl ? "bg-[var(--surface-sunken)]" : "bg-primary/10/40 flex items-center justify-center"
+        option.imageUrl ? "bg-[var(--surface-sunken)]" : "bg-primary/10 flex items-center justify-center"
       )}>
         {option.imageUrl ? (
           <Image

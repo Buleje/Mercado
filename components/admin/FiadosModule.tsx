@@ -4,11 +4,11 @@ import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
-  Plus, X, DollarSign, Calendar, User, FileText,
-  ChevronLeft, ChevronRight, Loader2, AlertTriangle, CreditCard,
+  Plus, X, DollarSign, Calendar, User,
+  ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   Clock, CheckCircle2, XCircle, Ban, MessageCircle, Printer, PenTool, Download,
   ArrowUp, ArrowDown, Maximize2, Minimize2,
-  LayoutList, Columns3, MapPin, Search, RefreshCw, HandCoins, Share2 } from "@buleje/design-system/icons";
+  MapPin, Search, RefreshCw, HandCoins, Share2 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import EmptyState from "@/components/admin/shared/EmptyState";
@@ -332,31 +332,6 @@ export default function FiadosModule() {
   // enviaba `customerId: nombre.trim()` y el backend resolvía por contains →
   // si había 2 clientes con el mismo nombre, la deuda se cargaba al primer
   // match. Eliminado para evitar reactivación accidental.
-
-  // Agrupar fiados por cliente para la vista libreta
-  const libretaClientes = useMemo(() => {
-    const activos = fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO");
-    const map = new Map<string, { nombre: string; customerId: string; fiados: Fiado[]; totalDeuda: number; totalPagado: number }>();
-    for (const f of activos) {
-      const key = f.customerId;
-      const existing = map.get(key);
-      const pagado = f.cuotas.reduce((s, c) => s + c.monto, 0);
-      if (existing) {
-        existing.fiados.push(f);
-        existing.totalDeuda += f.saldo;
-        existing.totalPagado += pagado;
-      } else {
-        map.set(key, {
-          nombre: f.customerName || f.customerId,
-          customerId: f.customerId,
-          fiados: [f],
-          totalDeuda: f.saldo,
-          totalPagado: pagado,
-        });
-      }
-    }
-    return Array.from(map.values()).sort((a, b) => b.totalDeuda - a.totalDeuda);
-  }, [fiados]);
 
   // Mejora 20 (ronda 3): Debtors map modal
   const [showDebtorsMap, setShowDebtorsMap] = useState(false);

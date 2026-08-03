@@ -516,7 +516,7 @@ export default function PhysicalCountTab() {
         )}
 
         {withDiff.length === 0 ? (
-          <div className="rounded-xl border border-[var(--data-success-500)]/30 bg-primary/10/50 p-8 text-center">
+          <div className="rounded-xl border border-[var(--data-success-500)]/30 bg-primary/10 p-8 text-center">
             <CheckCircle className="h-10 w-10 text-[var(--data-success-500)] mx-auto mb-2" />
             <p className="font-semibold text-[var(--data-success-500)]">Sin diferencias</p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">

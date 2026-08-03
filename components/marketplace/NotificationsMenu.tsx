@@ -226,7 +226,7 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
           className={cn(
             "group flex items-start gap-3 px-5 py-3.5 transition-colors",
             n.unread
-              ? "bg-primary/10/40 hover:bg-primary/10"
+              ? "bg-primary/10 hover:bg-primary/10"
               : "hover:bg-[var(--surface-sunken)]",
           )}
         >

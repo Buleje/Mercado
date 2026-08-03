@@ -80,7 +80,6 @@ export default function StoreHero({
   deliveryMin = 25,
   distanceLabel = "Callería",
   scheduleLabel = "Abierto",
-  address,
   paymentMethods = ["yape", "efectivo"],
   isOpen = true,
   freeDelivery = true,

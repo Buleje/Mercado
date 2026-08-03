@@ -97,7 +97,7 @@ function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo }: {
           ))}
         </tbody>
         <tfoot>
-          <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10/40 font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
+          <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
             <td className="px-3 py-2">Total</td>
             <td className="px-3 py-2 text-right font-mono tabular-nums">{total.cantidad}</td>
             <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">{fmtPt(total.pieTablar)}</td>

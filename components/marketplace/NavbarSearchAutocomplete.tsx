@@ -69,8 +69,6 @@ type Suggestion = {
   reviewCount?: number | null;
 };
 
-type StoreLite = { id: string; slug: string; name: string };
-
 // ── Categorías populares precargadas (estado vacío) ────────────────────────
 const POPULAR_CATEGORY_ICONS: Record<string, LucideIcon> = {
   abarrotes: ShoppingBasket,

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, startTransition } from "react";
-import Image from "next/image";
-import { Clock, ShoppingCart, Package, Minus, Plus } from "@buleje/design-system/icons";
+import { Clock, ShoppingCart, Minus, Plus } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useQuickAddSafe } from "@/contexts/quick-add-context";
 import { useToast } from "@/contexts/toast-context";

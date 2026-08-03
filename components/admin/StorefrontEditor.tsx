@@ -1,16 +1,16 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { activateProps } from "@/components/admin/shared/a11y";
 import Image from "next/image";
 import { Field } from "@/components/admin/shared/Field";
 import {
   Save, Eye, Loader2, Check, GripVertical,
-  Megaphone, Layout, Grid3x3, ShoppingBag, Tag,
-  Package, BookOpen, MessageSquare, HelpCircle,
+  Megaphone, Grid3x3, ShoppingBag, Tag,
+  Package, BookOpen,
   Phone, Map as MapIcon, ToggleLeft, ToggleRight,
-  Zap, TrendingUp, Star, Clock, Heart, Home, Store, AlertTriangle,
+  Zap, TrendingUp, Star, Clock, Heart, Store, AlertTriangle,
   Navigation, ChefHat, Award, Mail, History, Globe,
   X, Search, Plus, ChevronUp, ChevronDown, Pencil,
 } from "@buleje/design-system/icons";
@@ -70,86 +70,6 @@ type StorefrontSection = {
   iconBg: string;
   enabled: boolean;
 };
-
-const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
-  {
-    key: "announcement",
-    label: "Banner de anuncio",
-    description: "Barra superior con mensajes promocionales",
-    icon: <Megaphone className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
-  },
-  {
-    key: "hero",
-    label: "Hero principal",
-    description: "Banner grande con foto y llamada a la acción",
-    icon: <Layout className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
-  },
-  {
-    key: "categories",
-    label: "Categorías",
-    description: "Burbujas de categorías para explorar la tienda",
-    icon: <Grid3x3 className="h-4 w-4" />,
-    iconBg: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  },
-  {
-    key: "popular",
-    label: "Productos populares",
-    description: "Grilla de productos más vendidos o destacados",
-    icon: <ShoppingBag className="h-4 w-4" />,
-    iconBg: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/20",
-  },
-  {
-    key: "deals",
-    label: "Ofertas del día",
-    description: "Producto con descuento especial y cuenta regresiva",
-    icon: <Tag className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/40 dark:text-[var(--data-error-500)]",
-  },
-  {
-    key: "combos",
-    label: "Combos",
-    description: "Paquetes de productos con precio especial",
-    icon: <Package className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
-  },
-  {
-    key: "recipes",
-    label: "Recetas",
-    description: "Ideas de recetas peruanas con ingredientes de la bodega",
-    icon: <BookOpen className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
-  },
-  {
-    key: "testimonials",
-    label: "Testimonios",
-    description: "Opiniones de clientes satisfechos",
-    icon: <MessageSquare className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-info-100)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/40 dark:text-[var(--data-info-500)]",
-  },
-  {
-    key: "faq",
-    label: "Preguntas frecuentes",
-    description: "Respuestas a las dudas más comunes de los clientes",
-    icon: <HelpCircle className="h-4 w-4" />,
-    iconBg: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
-  },
-  {
-    key: "contact",
-    label: "Contacto",
-    description: "Formulario y datos de contacto de la bodega",
-    icon: <Phone className="h-4 w-4" />,
-    iconBg: "bg-teal-100 text-[var(--accent-dark)] dark:bg-teal-900/40 dark:text-teal-400",
-  },
-  {
-    key: "delivery_map",
-    label: "Mapa de delivery",
-    description: "Mapa interactivo con la zona de cobertura",
-    icon: <MapIcon className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-info-100)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/40 dark:text-[var(--data-info-500)]",
-  },
-];
 
 // ── Secciones de la página de TIENDA (/tienda) ─────────────────────────────
 
@@ -318,28 +238,6 @@ const NAV_ITEM_DEFAULTS: Omit<NavItem, "visible">[] = [
 ];
 
 // ── Utilidades ────────────────────────────────────────────────────────────────
-
-function buildSectionsFromData(
-  visibleKeys: SectionKey[],
-  orderKeys: SectionKey[],
-): StorefrontSection[] {
-  const enabledSet = new Set<SectionKey>(
-    visibleKeys.length > 0 ? visibleKeys : SECTION_DEFAULTS.map((s) => s.key)
-  );
-  const baseOrder = orderKeys.length > 0 ? orderKeys : SECTION_DEFAULTS.map((s) => s.key);
-  const allKeys = SECTION_DEFAULTS.map((s) => s.key);
-  const orderedKeys = [...baseOrder, ...allKeys.filter((k) => !baseOrder.includes(k))];
-
-  // Deduplicar
-  const unique = [...new Set(orderedKeys)];
-
-  return unique
-    .filter((key) => SECTION_DEFAULTS.some((s) => s.key === key))
-    .map((key) => {
-      const def = SECTION_DEFAULTS.find((s) => s.key === key)!;
-      return { ...def, enabled: enabledSet.has(key) };
-    });
-}
 
 function buildTiendaSectionsFromData(
   visibleKeys: TiendaSectionKey[],

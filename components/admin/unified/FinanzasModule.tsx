@@ -548,7 +548,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 1: 8 KPIs Premium ════════ */}
       <StaggerItem index={1}>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {KPI_DEFS.map((def, kpiIdx) => {
+        {KPI_DEFS.map((def, _kpiIdx) => {
           const Icon = def.icon;
           const val = kpis[def.key] ?? 0;
           let display: string;

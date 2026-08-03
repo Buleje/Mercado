@@ -76,7 +76,6 @@ export interface AdminTopHeaderProps {
 
 export function AdminTopHeader({
   presentationMode,
-  isSuperAdminImpersonating,
   focusMode,
   resolvedTheme,
   themeMode,
@@ -88,7 +87,6 @@ export function AdminTopHeader({
   onOpenCierreDiario,
   onToggleFocus,
   onTogglePresentation,
-  onToggleTheme,
   onSetTheme,
   onNavigate,
   onLogout,

@@ -34,7 +34,6 @@ import {
   Check,
   Minus,
   Plus,
-  ShoppingCart,
   ShoppingBag,
   ArrowRight,
   Store,

@@ -193,7 +193,7 @@ export default function CacaoNews() {
 
       {/* Resumen IA del día */}
       {(digest || digestLoading) && (
-        <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10/30 p-4">
+        <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10 p-4">
           <div role="heading" aria-level={3} className="mb-1.5 flex flex-wrap items-center gap-2 text-sm font-bold text-[var(--accent)]">
             <Sparkles className="h-4 w-4" /> Resumen del día
             {digest && digestAt && <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]"><Clock className="h-3 w-3" />generado {relTime(digestAt)}</span>}

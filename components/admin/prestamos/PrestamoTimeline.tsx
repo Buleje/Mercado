@@ -132,7 +132,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
               {/* Content */}
               <div className={cn(
                 "ml-2 rounded-xl p-3 transition-colors",
-                status === "pagada" && "bg-primary/10/50 dark:bg-primary/15",
+                status === "pagada" && "bg-primary/10 dark:bg-primary/15",
                 status === "vencida" && "bg-[var(--data-error-50)]/50 dark:bg-[var(--data-error-500)]/10",
                 status === "próxima" && "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning-500)]/10 ring-1 ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]",
                 status === "futura" && "bg-gray-50/50 dark:bg-white/[0.02]",

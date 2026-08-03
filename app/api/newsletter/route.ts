@@ -88,7 +88,7 @@ export async function POST(req: Request) {
         }
 
         return NextResponse.json({ ok: true, coupon });
-      } catch (_err) {
+      } catch {
         return NextResponse.json({ error: "Error al suscribir" }, { status: 500 });
       }
     }

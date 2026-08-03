@@ -22,8 +22,6 @@ import {
 import { cn } from "@/lib/utils";
 import { CanastaVacia, CorazonLatiendo } from "@/components/ui-system/illustrations";
 import { EmptyState } from "@/components/ui-system/EmptyState";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import {
   formatTimeAgo,
@@ -54,7 +52,6 @@ function mapApiNotification(n: ApiNotification): Notification {
 }
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
 // ── Types ──────────────────────────────────────────────────────────
 

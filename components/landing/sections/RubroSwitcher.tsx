@@ -130,7 +130,7 @@ export default function RubroSwitcher() {
               className={cn(
                 "group flex shrink-0 items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left transition-all lg:shrink",
                 selected
-                  ? "border-[var(--accent)] bg-primary/10/40 shadow-[var(--shadow-sm)]"
+                  ? "border-[var(--accent)] bg-primary/10 shadow-[var(--shadow-sm)]"
                   : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40",
               )}
             >
@@ -219,7 +219,7 @@ export default function RubroSwitcher() {
           </div>
 
           {/* Vocabulario que se adapta — el "habla tu idioma" */}
-          <div className="mt-6 rounded-2xl border border-dashed border-[var(--accent)]/35 bg-primary/10/25 p-4">
+          <div className="mt-6 rounded-2xl border border-dashed border-[var(--accent)]/35 bg-primary/10 p-4">
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
               Habla el idioma de tu negocio
             </p>

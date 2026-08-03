@@ -403,7 +403,7 @@ function HoursBlock({ section, primary }: { section: HoursSection; primary: stri
             <li
               key={row.day}
               className={`flex items-center justify-between gap-4 px-5 py-3.5 ${
-                isToday ? "bg-primary/10/40" : ""
+                isToday ? "bg-primary/10" : ""
               }`}
             >
               <span className={`text-sm font-extrabold ${isToday ? "text-[var(--accent)]" : "text-[var(--text-primary)]"}`}>

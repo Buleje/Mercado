@@ -61,8 +61,6 @@ const CAT_LABEL: Record<string, string> = {
 // Brandon mayo 2026: labels del eje X con día + fecha corta para que el
 // dueño de la bodega entienda inmediatamente "Lunes 10/05" sin tener que
 // adivinar qué semana es. Variantes según el ancho del rango.
-const DAY_FULL = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-const DAY_SHORT = ["Do", "L", "Ma", "Mi", "Ju", "Vi", "Sa"];
 const MONTH_LABELS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 const MS_DAY = 24 * 60 * 60 * 1000;

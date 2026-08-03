@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  DollarSign, Receipt, Truck, Filter, RefreshCw, Download,
+  DollarSign, Receipt, Truck, RefreshCw, Download,
   TrendingDown, Calendar, AlertTriangle, Search,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";

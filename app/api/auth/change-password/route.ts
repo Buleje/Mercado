@@ -4,7 +4,7 @@ import { getSessionPayload, SESSION } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { compare, hash } from "bcryptjs";
 import { z } from "zod";
-import { newPasswordSchema, newPasswordSchemaOptional } from "@/lib/auth/password-schema";
+import { newPasswordSchema } from "@/lib/auth/password-schema";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { TrustedDevicesDB, TRUSTED_DEVICE_COOKIE } from "@/lib/db/trusted-devices.db";

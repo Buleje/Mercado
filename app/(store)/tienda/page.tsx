@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
 import TiendaClientShell from "@/components/TiendaClientShell";
 import type { TiendaSectionKey } from "@/components/admin/StorefrontEditor";
@@ -11,8 +10,6 @@ import {
   SectionSkeleton,
 } from "@/components/LoadingSkeleton";
 import { zones } from "@/data/zones";
-import { categories } from "@/data/products";
-import { SettingsDB } from "@/lib/db/settings.db";
 import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
 
 /**
@@ -76,8 +73,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // ── Main catalog (still loaded individually — always visible) ──
 const ProductCatalog    = dynamic(() => import("@/components/ProductCatalog"));
-const Footer            = dynamic(() => import("@/components/Footer"));
-const TenantFooter      = dynamic(() => import("@/components/store/TenantFooter"));
 
 // ── Tienda section defaults (same order as StorefrontEditor) ────────────────
 const TIENDA_DEFAULT_ORDER: TiendaSectionKey[] = [

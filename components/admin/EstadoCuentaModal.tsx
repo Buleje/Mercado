@@ -3,7 +3,7 @@
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
-  X, Loader2, CreditCard, Banknote, Star, ShoppingBag,
+  X, CreditCard, Banknote, Star, ShoppingBag,
   MessageCircle, Printer, AlertCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";

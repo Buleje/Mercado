@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import {
   Target, Trophy, Flame, TrendingUp, TrendingDown, Pencil, Check, X, Calendar,
   Award, Rocket, Zap, Coins, Users, Star, Landmark, Sunrise, Smile,
-  Lock, Sparkles, ShoppingCart, BarChart3, RefreshCw, AlertTriangle,
+  Lock, Sparkles, ShoppingCart, RefreshCw, AlertTriangle,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";

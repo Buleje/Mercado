@@ -37,7 +37,6 @@ export function useAdminTabsDerived(params: Params) {
     userRole,
     savedRolePerms,
     hiddenTabs,
-    visibleCategories,
     sidebarSearch,
     favoriteTabs,
     recentTabs,

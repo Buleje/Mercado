@@ -18,7 +18,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft, Send, Store as StoreIcon, Loader2, ArrowRight, Check, CheckCheck,
-  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy, Bot, Paperclip, MapPin, Star, Mic, Square, Trash2,
+  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy, Bot, Paperclip, MapPin, Star, Mic, Trash2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -123,7 +123,7 @@ function dayLabel(iso: string): string {
 }
 
 export default function ChatConversationView({
-  threadId: threadIdProp, storeId, storeName, storeSlug, storeLogo,
+  threadId: threadIdProp, storeId: _storeId, storeName, storeSlug, storeLogo,
   customerPhone, customerName, onBack, onActivity, onThreadCreated,
 }: Props) {
   const [threadId, setThreadId] = useState<string | null>(threadIdProp);

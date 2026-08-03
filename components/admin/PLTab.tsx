@@ -4,7 +4,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
-  TrendingUp, TrendingDown, DollarSign, Loader2, RefreshCw,
+  TrendingUp, TrendingDown, DollarSign, RefreshCw,
   ChevronDown, ChevronUp, Download, BarChart2,
   ArrowUpRight, ArrowDownRight, Minus,
 } from "@buleje/design-system/icons";

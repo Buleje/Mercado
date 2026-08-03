@@ -9,12 +9,12 @@
  */
 
 import {
-  AreaChart, Area, BarChart, Bar, ComposedChart, Line,
+  Area, BarChart, Bar, ComposedChart,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell,
 } from "recharts";
 import {
   TrendingUp, Package, ShoppingCart, CreditCard, Target,
-  AlertTriangle, Users, Truck, Layers, BarChart3,
+  AlertTriangle, Truck, Layers, BarChart3,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DashboardData } from "./InicioDashboard";

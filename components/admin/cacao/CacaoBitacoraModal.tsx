@@ -242,7 +242,7 @@ export default function CacaoBitacoraModal({ beneficioId, loteCode, onClose, onC
           {/* Alta del día */}
           <form
             onSubmit={add}
-            className="rounded-xl border-2 border-[var(--accent)]/30 bg-primary/10/30 p-3"
+            className="rounded-xl border-2 border-[var(--accent)]/30 bg-primary/10 p-3"
           >
             <p className="mb-2 text-sm font-bold text-[var(--text-primary)]">
               Registrar día {proximoDia}

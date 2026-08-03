@@ -799,7 +799,7 @@ function PersonasView({
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
   };
 
-  const ordenChip = (val: typeof orden, label: string) =>
+  const ordenChip = (val: typeof orden, _label: string) =>
     `h-10 px-3 rounded-full border-2 text-sm font-bold transition-colors ${
       orden === val ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
     }`;
@@ -1119,7 +1119,7 @@ function EstadoCuentaModal({ persona, adelantos, onClose }: { persona: Beneficia
 // ── Cobranza ─────────────────────────────────────────────────────────────────
 type DeudorCobranza = { id: string; nombre: string; telefono: string | null; saldo: number; dias: number };
 
-function CobranzaView({ adelantos, loading, onGoTab }: { adelantos: DbAdelanto[]; loading: boolean; onGoTab: (t: string) => void }) {
+function CobranzaView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading: boolean; onGoTab: (t: string) => void }) {
   const [filtro, setFiltro] = useState<"todos" | "d0" | "d30" | "d60">("todos");
   const [recordados, setRecordados] = useState<Record<string, number>>({});
   const now = Date.now();

@@ -24,7 +24,6 @@ import {
   Loader2,
   BarChart3,
   Calendar,
-  ChevronDown,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import type { TenantRow, CommissionRow, PlanId } from "@/lib/superadmin-types";

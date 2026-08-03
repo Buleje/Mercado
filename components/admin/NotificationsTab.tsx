@@ -16,12 +16,6 @@ const TYPE_LABELS: Record<string, string> = {
   promotion: "Promoción",
 };
 
-const STATUS_ICONS: Record<string, string> = {
-  sent: "",
-  pending: "",
-  failed: "",
-};
-
 export default function NotificationsTab() {
   const [logs, setLogs] = useState<NotifLog[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);

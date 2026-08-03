@@ -198,8 +198,6 @@ export const GET = withApiHandler("orders-list", async (req) => {
       tenantId,
     })
   );
-  const total = orders.length;
-
   return NextResponse.json(orders, {
     headers: { "X-Total-Count": String(orders.length) },
   });

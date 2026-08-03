@@ -6,7 +6,6 @@ import {
   Camera,
   Upload,
   X,
-  Loader2,
   AlertCircle,
   RotateCcw,
   ShoppingCart,

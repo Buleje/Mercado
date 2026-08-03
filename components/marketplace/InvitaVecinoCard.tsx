@@ -83,7 +83,7 @@ export default function InvitaVecinoCard() {
 
   return (
     <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <div className="flex flex-col gap-5 rounded-2xl border border-[var(--accent)]/25 bg-primary/10/40 p-6 sm:p-7 lg:flex-row lg:items-center lg:gap-8">
+      <div className="flex flex-col gap-5 rounded-2xl border border-[var(--accent)]/25 bg-primary/10 p-6 sm:p-7 lg:flex-row lg:items-center lg:gap-8">
         <span
           aria-hidden
           className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-sm"

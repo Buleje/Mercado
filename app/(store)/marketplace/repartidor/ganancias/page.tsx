@@ -14,7 +14,6 @@ import {
   PinIcon,
   CheckBadge,
   TimerIcon,
-  LiveSignal,
 } from "@/components/delivery/icons";
 
 interface Assignment {
