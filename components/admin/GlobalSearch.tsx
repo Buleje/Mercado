@@ -256,6 +256,22 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
   const inputRef    = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Offset vertical del popover. Estaba fijo en `top-14` (56px), que asume que
+  // el header arranca en y=0 — pero arriba puede haber una barra de alertas o
+  // el banner de impersonación, así que el popover terminaba TAPANDO el header
+  // y su propio botón de búsqueda. Se mide el borde inferior real del header.
+  const [anchorTop, setAnchorTop] = useState(56);
+  useEffect(() => {
+    if (!open) return;
+    const measure = () => {
+      const header = document.querySelector<HTMLElement>("[data-admin-header]");
+      setAnchorTop(header ? Math.round(header.getBoundingClientRect().bottom + 8) : 56);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [open]);
+
   // Atajo global Ctrl+K / Cmd+K
   useEffect(() => {
     const handleGlobalKey = (e: KeyboardEvent) => {
@@ -368,11 +384,16 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
         onClick={onClose}
         aria-hidden
       />
-      {/* Popover anclado al search button del topbar (top-14 ~ debajo del header h-14).
-          Mismo ancho max-w-xl + posicionado a la izquierda con margen para alinear
-          con el botón del header. En mobile ocupa todo el ancho. */}
+      {/* Popover anclado al search button del topbar (top-14 ~ debajo del header
+          h-14), alineado a la izquierda con el botón. En mobile ocupa todo el ancho.
+
+          El ancho va en rem EXPLÍCITO, no `max-w-xl`: este repo overridea
+          `--container-xl` a 1440px (globals.css :2071), así que `sm:max-w-xl`
+          hacía que el popover midiera 1200px —casi toda la pantalla— en vez de
+          los ~576px que aparenta. Gotcha del DS: modales y popovers en rem. */}
       <div
-        className="fixed top-14 left-2 sm:left-12 lg:left-[calc(var(--admin-sidebar-w,260px)+1rem)] right-2 sm:right-auto z-[9999] sm:w-[calc(100vw-3rem)] sm:max-w-xl"
+        style={{ top: anchorTop }}
+        className="fixed left-2 sm:left-12 lg:left-[calc(var(--admin-sidebar-w,260px)+1rem)] right-2 sm:right-auto z-[9999] sm:w-[calc(100vw-3rem)] sm:max-w-[36rem]"
       >
         <div
           className="bg-[var(--surface-raised)] rounded-2xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] shadow-[var(--shadow-xl)]"
@@ -466,10 +487,13 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                         key={r.id}
                         onClick={() => handleSelect(r)}
                         className={cn(
-                          "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors border-b border-[var(--rule-base)] last:border-0",
+                          // Separador `--rule-soft`: con `--rule-base` cada fila
+                          // quedaba subrayada y la lista se leía como una tabla
+                          // rayada en vez de una lista de resultados.
+                          "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0",
                           isSelected
-                            ? "bg-primary/5 dark:bg-primary/10"
-                            : "hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+                            ? "bg-primary/10 ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_25%,transparent)]"
+                            : "hover:bg-[var(--surface-sunken)] dark:hover:bg-surface"
                         )}
                       >
                         <div className={cn(
@@ -488,7 +512,9 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                           {r.badge && (
                             <span
                               className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
-                              style={{ background: r.badgeColor ?? "#6b7280" }}
+                              // Fallback al token de la superficie fuerte: antes
+                              // era el hex #6b7280, que no existe en la paleta.
+                              style={{ background: r.badgeColor ?? "var(--rule-strong)" }}
                             >
                               {r.badge}
                             </span>

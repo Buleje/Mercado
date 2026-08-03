@@ -127,6 +127,9 @@ export function AdminTopHeader({
 
   return (
     <header
+      // Marca de anclaje: GlobalSearch se posiciona justo debajo del borde real
+      // de este header en vez de asumir una altura fija (ver GlobalSearch.tsx).
+      data-admin-header=""
       className={cn(
         // Brandon 2026-05-28: en MOBILE forzamos fondo CLARO (surface-raised)
         // y texto primary — los temas "Buleje" / "Ejecutivo" dejaban el header
@@ -161,34 +164,39 @@ export function AdminTopHeader({
           onClick={onOpenSearch}
           aria-label="Búsqueda global (atajo Ctrl+K)"
           className={cn(
-            // Brandon 2026-05-28: en MOBILE = botón lupa cuadrado branded
-            // (teal-soft + accent), igual que la hamburguesa. En sm+ vuelve a
-            // ser el pill ancho con placeholder y atajo ⌘K (theme-aware).
-            "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-xl sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer transition-all shrink-0 sm:shrink sm:min-w-11",
+            // MOBILE = botón lupa cuadrado branded (teal-soft + accent), igual
+            // que la hamburguesa. En sm+ = pill de búsqueda con placeholder y
+            // atajo ⌘K.
+            //
+            // El ancho va en rem explícito: `sm:max-w-xl` valía 1440px acá
+            // (globals.css overridea `--container-xl`), así que el pill se
+            // estiraba hasta comerse el espacio de los botones de la derecha.
+            "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-[30rem] sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer shrink-0 sm:shrink sm:min-w-11",
+            "transition-[background-color,border-color,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-editorial)]",
             "max-sm:bg-primary/10! max-sm:text-[var(--accent)]! max-sm:ring-1 max-sm:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]! max-sm:border-0!",
-            "sm:border",
-            isAutoDarkTheme
-              ? "sm:bg-white/[0.04] sm:border-[color-mix(in oklab, var(--accent) 15%, transparent)] sm:hover:border-[color-mix(in oklab, var(--accent) 40%, transparent)] sm:hover:bg-white/[0.07]"
-              : "sm:bg-[var(--surface-sunken)] sm:dark:bg-surface sm:border-[var(--rule-base)] sm:dark:border-[var(--rule-base)] sm:hover:border-primary/40 sm:hover:bg-white sm:dark:hover:bg-[var(--surface-raised)] sm:hover:shadow-[var(--shadow-sm)]"
+            // Un solo juego de clases para los dos temas: la superficie y la
+            // regla ya son tokens que cambian con `.dark`. Antes había dos
+            // ramas por `isAutoDarkTheme` con `white/[0.04]` hardcodeado, y la
+            // rama oscura escribía `color-mix(in oklab, …)` CON ESPACIOS —
+            // Tailwind corta la clase en el primer espacio, así que ese borde
+            // nunca se aplicó.
+            "sm:border sm:bg-[var(--surface-sunken)] sm:border-[var(--rule-base)]",
+            "sm:hover:bg-[var(--surface-raised)] sm:hover:border-[color-mix(in_oklab,var(--accent)_45%,var(--rule-base))] sm:hover:shadow-[var(--shadow-sm)]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-muted)] focus-visible:border-[var(--accent)]"
           )}
         >
-          <Search className={cn(
-            "h-5 w-5 sm:h-4 sm:w-4 shrink-0 transition-colors",
-            "max-sm:text-[var(--accent)]!",
-            isAutoDarkTheme ? "sm:text-white/50 sm:group-hover:text-[color-mix(in oklab, var(--accent) 60%, white)]" : "sm:text-[var(--text-tertiary)] sm:dark:text-muted sm:group-hover:text-primary"
-          )} strokeWidth={2.25} />
-          <span className={cn(
-            "hidden sm:block flex-1 text-left text-sm font-medium truncate transition-colors",
-            isAutoDarkTheme ? "text-white/55 group-hover:text-white/80" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-[var(--text-secondary)]"
-          )}>
-            Buscar módulos, productos, clientes...
+          <Search
+            className="h-5 w-5 sm:h-4 sm:w-4 shrink-0 transition-colors max-sm:text-[var(--accent)]! sm:text-[var(--text-tertiary)] sm:group-hover:text-[var(--accent)]"
+            strokeWidth={2.25}
+          />
+          {/* `--text-secondary`, no `--text-tertiary`: medido con getComputedStyle
+              + conversión oklch→rgb, terciario sobre `--surface-sunken` daba
+              3.51:1 en tema claro (AA pide 4.5:1 para texto normal). El kbd
+              tenía el mismo problema (3.94:1). */}
+          <span className="hidden sm:block flex-1 text-left text-sm font-medium truncate text-[var(--text-secondary)] transition-colors group-hover:text-[var(--text-primary)]">
+            Buscar módulos, productos, clientes…
           </span>
-          <kbd className={cn(
-            "hidden sm:inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border",
-            isAutoDarkTheme
-              ? "text-white/55 bg-white/[0.06] border-white/[0.1]"
-              : "text-[var(--text-tertiary)] dark:text-muted bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]"
-          )}>
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border text-[var(--text-secondary)] bg-[var(--surface-raised)] border-[var(--rule-base)] transition-colors group-hover:border-[color-mix(in_oklab,var(--accent)_35%,var(--rule-base))]">
             <span className="text-base leading-none">⌘</span>K
           </kbd>
         </button>

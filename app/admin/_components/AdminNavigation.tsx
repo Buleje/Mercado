@@ -117,7 +117,6 @@ export function AdminNavigation({
   const sharedAsSidebar = shared as unknown as {
     filteredTabs: SidebarProps["filteredTabs"];
     favoriteTabItems: SidebarProps["favoriteTabItems"];
-    recentTabItems: SidebarProps["recentTabItems"];
     customShortcutItems: SidebarProps["customShortcutItems"];
     resolvedShortcuts: SidebarProps["resolvedShortcuts"];
     availableForShortcut: SidebarProps["availableForShortcut"];
@@ -181,9 +180,6 @@ export function AdminNavigation({
         onSidebarFlyoutChange={sidebar.onSidebarFlyoutChange}
         flyoutTimerRef={sidebar.flyoutTimerRef}
         favoriteTabItems={sharedAsSidebar.favoriteTabItems}
-        recentTabItems={sharedAsSidebar.recentTabItems}
-        recentCollapsed={shared.recentCollapsed}
-        onToggleRecentCollapsed={shared.onToggleRecentCollapsed}
         favoriteTabs={shared.favoriteTabs}
         onToggleFavorite={shared.onToggleFavorite}
         customShortcutItems={sharedAsSidebar.customShortcutItems}

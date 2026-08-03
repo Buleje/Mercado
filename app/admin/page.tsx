@@ -25,7 +25,7 @@ import {
   useOnboardingTrigger, useAdminAlerts, useNewOrderNotification, useNewWaMessageNotification,
   useNotificationPermissionPrompt, useMobileTableCards, useOnboardingTourTrigger,
   useDocumentTitle, useSwipeNavigation, useAdminNavigateEvent, useSidebarShortcuts,
-  useClearDataFlow, useCustomShortcuts, useCommandItems, useAdminTabsDerived,
+  useClearDataFlow, useCustomShortcuts, useAdminTabsDerived,
   useAdminPageState, useAdminTenantPath, useFuzzyMatch, useVisibleCategories,
 } from "./_hooks";
 
@@ -46,15 +46,17 @@ import { AdminNavigation } from "./_components/AdminNavigation";
 import { AdminMainContent } from "./_components/AdminMainContent";
 
 // ── Deferred chrome (sessions 4-7) ─────────────────────────────────────────────
-// AdminCommandPalette, AdminGlobalModals and AdminOverlaysLayer are not on the
-// critical first-paint path. They are only visible on explicit user actions
-// (Ctrl+K, opening a modal, activating presentation/onboarding). Loading them
-// via next/dynamic removes their code from the initial admin chunk.
+// AdminGlobalModals and AdminOverlaysLayer are not on the critical first-paint
+// path. They are only visible on explicit user actions (Ctrl+K, opening a
+// modal, activating presentation/onboarding). Loading them via next/dynamic
+// removes their code from the initial admin chunk.
 // TASK-003 — companion tab wrappers live in @/components/admin/tabs/*.
-const AdminCommandPalette = dynamic(
-  () => import("@/components/admin/shared/AdminCommandPalette"),
-  { loading: () => null, ssr: false },
-);
+//
+// AdminCommandPalette se desmontó (Brandon 2026-08-02): el panel tenía DOS
+// paletas y las dos escuchaban Ctrl+K, así que el atajo abría las dos apiladas
+// —cada una con su propio buscador y las mismas acciones repetidas—. Queda
+// GlobalSearch, que es la que abre el botón del encabezado y además busca
+// productos, clientes y pedidos, no sólo módulos.
 const AdminGlobalModals = dynamic(
   () =>
     import("./_components/AdminGlobalModals").then((mod) => ({
@@ -207,12 +209,8 @@ function AdminPage() {
     sidebarSearch, favoriteTabs, recentTabs, currentTab: tab, fuzzyMatch,
   });
 
-  // Set de módulos actuales del negocio para el Command Palette (solo busca
-  // estos — sin historial). Brandon 2026-05-29.
-  const visibleTabIdSet = React.useMemo(
-    () => new Set(visibleTabs.map((t) => t.id as string)),
-    [visibleTabs],
-  );
+  // (visibleTabIdSet alimentaba al AdminCommandPalette, que se desmontó — ver
+  // el comentario del import arriba.)
 
   const customShortcutItems = useCustomShortcuts(ALL_TABS);
 
@@ -222,8 +220,6 @@ function AdminPage() {
     removeShortcut, addShortcut, moveShortcut,
     resolvedShortcuts, availableForShortcut,
   } = useSidebarShortcuts(ALL_TABS, allowedTabs);
-
-  const commandItems = useCommandItems(navigateTab, visibleTabIdSet);
 
   // Find active category based on current tab — drives the sub-sidebar
   const activeCategory = visibleCategories.find(cat => cat.tabs.includes(tab));
@@ -391,8 +387,6 @@ function AdminPage() {
         />
 
         {/* Breadcrumb removed — already shown in module headers */}
-
-        <AdminCommandPalette items={commandItems} />
 
         <AdminGlobalModals
           clearData={{

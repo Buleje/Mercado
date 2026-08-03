@@ -7,7 +7,6 @@ import { m } from "@/components/admin/providers";
 import { SectionTitle } from "@buleje/design-system";
 import {
   ChevronRight,
-  History,
   ChevronDown,
   Globe,
   Store,
@@ -91,11 +90,10 @@ export type AdminSidebarProps = {
   onSidebarFlyoutChange: (flyout: { categoryId: string; top: number } | null) => void;
   flyoutTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
 
-  // Favoritos + recientes
+  // Favoritos (el bloque "Recientes" salió del sidebar — Brandon 2026-08-02;
+  // el drawer mobile lo conserva, por eso los props siguen existiendo aguas
+  // arriba pero ya no llegan hasta acá).
   favoriteTabItems: TabItem[];
-  recentTabItems: TabItem[];
-  recentCollapsed: boolean;
-  onToggleRecentCollapsed: () => void;
   favoriteTabs: Set<Tab>;
   onToggleFavorite: (tab: Tab) => void;
 
@@ -150,9 +148,6 @@ export function AdminSidebar({
   onSidebarFlyoutChange,
   flyoutTimerRef,
   favoriteTabItems: _favoriteTabItems,
-  recentTabItems,
-  recentCollapsed,
-  onToggleRecentCollapsed,
   favoriteTabs: _favoriteTabs,
   onToggleFavorite: _onToggleFavorite,
   customShortcutItems: _customShortcutItems,
@@ -610,7 +605,7 @@ export function AdminSidebar({
         return {
           bg: "bg-[var(--surface-raised)]",
           text: "text-[var(--text-secondary)]",
-          hover: "hover:bg-primary/10/40 hover:text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]",
+          hover: "hover:bg-primary/10 hover:text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]",
           border: "border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
           activeItem: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold shadow-[inset_0_0_0_1px_color-mix(in oklab, var(--accent) 20%, transparent)]",
           headerBorder: "border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
@@ -628,15 +623,20 @@ export function AdminSidebar({
     return new Set();
   });
 
+  // Mismo criterio que toggleCompact: el updater queda puro y la escritura a
+  // localStorage vive en el handler.
   const toggleSection = React.useCallback((sectionKey: string) => {
     setCollapsedSections(prev => {
       const next = new Set(prev);
       if (next.has(sectionKey)) next.delete(sectionKey);
       else next.add(sectionKey);
-      try { localStorage.setItem("admin-sidebar-collapsed", JSON.stringify([...next])); } catch { /* ignore */ }
       return next;
     });
   }, []);
+
+  React.useEffect(() => {
+    try { localStorage.setItem("admin-sidebar-collapsed", JSON.stringify([...collapsedSections])); } catch { /* ignore */ }
+  }, [collapsedSections]);
 
   // ── Compact mode toggle (persisted in localStorage) ──
   const [isCompact, setIsCompact] = React.useState<boolean>(() => {
@@ -646,18 +646,22 @@ export function AdminSidebar({
     } catch { return false; }
   });
 
+  // Los efectos (localStorage + evento) van FUERA del updater de setState.
+  // Estaban adentro y React ejecuta los updaters en fase de render: el
+  // dispatchEvent corría durante el render de AdminSidebar, el listener de
+  // AdminPage lo atendía sincrónicamente y llamaba setSidebarCompact →
+  // "Cannot update a component (AdminPage) while rendering a different
+  // component (AdminSidebar)". Un updater tiene que ser puro.
   const toggleCompact = React.useCallback(() => {
-    setIsCompact(prev => {
-      const next = !prev;
-      try {
-        localStorage.setItem("admin-sidebar-compact", next ? "true" : "false");
-        /* Dispara evento custom para que el layout principal reajuste el
-           margin del main immediate (sin esperar el polling de 500ms). */
-        window.dispatchEvent(new CustomEvent("admin-sidebar-compact-change", { detail: { compact: next } }));
-      } catch { /* ignore */ }
-      return next;
-    });
-  }, []);
+    const next = !isCompact;
+    setIsCompact(next);
+    try {
+      localStorage.setItem("admin-sidebar-compact", next ? "true" : "false");
+      /* Evento custom para que el layout principal reajuste el margin del
+         main de inmediato (sin esperar el polling de 500ms). */
+      window.dispatchEvent(new CustomEvent("admin-sidebar-compact-change", { detail: { compact: next } }));
+    } catch { /* ignore */ }
+  }, [isCompact]);
 
   // Brandon 2026-07-22: se quitó el auto-colapso por ancho (<1024px). Debajo de
   // ese umbral el menú se reducía SOLO a íconos —sin etiquetas, imposible de
@@ -939,7 +943,7 @@ export function AdminSidebar({
                 <span className={cn(
                   "uppercase text-[length:var(--ts-2xs)] font-bold tracking-wider px-1.5 py-px rounded shrink-0",
                   isDarkTheme
-                    ? "bg-[color-mix(in oklab, var(--accent) 14%, transparent)] text-[color-mix(in oklab, var(--accent) 60%, white)] ring-1 ring-inset ring-[color-mix(in oklab, var(--accent) 25%, transparent)]"
+                    ? "bg-[color-mix(in_oklab,var(--accent)_14%,transparent)] text-[color-mix(in_oklab,var(--accent)_60%,white)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_25%,transparent)]"
                     : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-inset ring-primary/20"
                 )}>
                   {userRole}
@@ -954,46 +958,11 @@ export function AdminSidebar({
           "flex-1 overflow-y-auto py-2 transition-all duration-[var(--dur-base)] scrollbar-hide",
           effectiveCompact ? "px-1.5" : "px-2.5"
         )}>
-          {/* ── Recientes ──
-              El historial ya se calculaba y llegaba hasta acá, pero se
-              descartaba: nada lo mostraba. Es el atajo más usado de un panel
-              con 58 módulos — volver a lo último que tocaste sin recorrer el
-              acordeón. Se pliega y el estado se recuerda. */}
-          {!effectiveCompact && !sidebarSearch && recentTabItems.length > 0 && (
-            <div className="mb-2">
-              <button
-                type="button"
-                onClick={onToggleRecentCollapsed}
-                aria-expanded={!recentCollapsed}
-                className={cn(
-                  "flex w-full items-center gap-1.5 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider transition-colors",
-                  isDarkTheme ? "text-white/45 hover:text-white/70" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]",
-                )}
-              >
-                <History className="h-3 w-3 shrink-0" aria-hidden />
-                Recientes
-                <ChevronDown className={cn("ml-auto h-3 w-3 shrink-0 transition-transform", recentCollapsed && "-rotate-90")} aria-hidden />
-              </button>
-              {!recentCollapsed && recentTabItems.slice(0, 4).map(({ id, label, icon: Icon }) => (
-                <button
-                  key={`recent-${id}`}
-                  onClick={() => navigateTab(id)}
-                  onMouseEnter={() => preloadTab(id)}
-                  onFocus={() => preloadTab(id)}
-                  className={cn(
-                    "group relative mb-px flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[length:var(--ts-sm)] font-medium transition-all",
-                    tab === id
-                      ? "bg-gray-50 dark:bg-zinc-800/50 text-[var(--text-primary)] font-semibold"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]/40",
-                  )}
-                >
-                  {Icon && <Icon className="h-[18px] w-[18px] shrink-0 opacity-70 transition-transform duration-[var(--dur-base)] group-hover:scale-110" />}
-                  <span className="flex-1 truncate text-left">{label}</span>
-                </button>
-              ))}
-              <div className={cn("mx-3 mt-1.5 border-t", themeClasses.border)} />
-            </div>
-          )}
+          {/* El bloque "Recientes" salió del nav — Brandon 2026-08-02. Ocupaba
+              el tope del acordeón con 4 entradas que se movían solas, así que
+              la primera categoría real nunca estaba en el mismo lugar dos
+              veces. Favoritos y los atajos personalizados cubren el mismo
+              atajo sin cambiar de posición. */}
 
           {/* ── Main modules (expanded mode) ── */}
           {!effectiveCompact && navCategories.map((category, catIdx) => {
@@ -1059,7 +1028,7 @@ export function AdminSidebar({
                       <span className={cn(
                         "text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest transition-colors",
                         isDarkTheme
-                          ? "text-[rgba(94,234,212,0.6)] group-hover/section:text-[color-mix(in oklab, var(--accent) 60%, white)]"
+                          ? "text-[rgba(94,234,212,0.6)] group-hover/section:text-[color-mix(in_oklab,var(--accent)_60%,white)]"
                           : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
                       )}>
                         {sectionLabel}
@@ -1067,7 +1036,7 @@ export function AdminSidebar({
                       <span className={cn(
                         "flex-1 ml-2 h-px",
                         isDarkTheme
-                          ? "bg-linear-to-r from-[color-mix(in oklab, var(--accent) 18%, transparent)] to-transparent"
+                          ? "bg-linear-to-r from-[color-mix(in_oklab,var(--accent)_18%,transparent)] to-transparent"
                           : "bg-linear-to-r from-[var(--rule-soft)] to-transparent"
                       )} />
                     </button>
@@ -1128,7 +1097,7 @@ export function AdminSidebar({
                       <DisplayIcon className={cn(
                         "h-[18px] w-[18px] shrink-0 transition-all duration-[var(--dur-base)] group-hover:scale-110",
                         isActive
-                          ? (isDarkTheme ? "text-[color-mix(in oklab, var(--accent) 60%, white)] drop-shadow-[0_0_6px_color-mix(in oklab, var(--accent) 50%, transparent)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]")
+                          ? (isDarkTheme ? "text-[color-mix(in_oklab,var(--accent)_60%,white)] drop-shadow-[0_0_6px_color-mix(in oklab, var(--accent) 50%, transparent)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]")
                           : iconColor
                       )} />
 
@@ -1151,7 +1120,7 @@ export function AdminSidebar({
                           <ChevronRight className={cn(
                             "h-3.5 w-3.5 shrink-0 transition-colors",
                             isActive
-                              ? (isDarkTheme ? "text-[color-mix(in oklab, var(--accent) 60%, white)]" : "text-[var(--data-success-500)]")
+                              ? (isDarkTheme ? "text-[color-mix(in_oklab,var(--accent)_60%,white)]" : "text-[var(--data-success-500)]")
                               : (isDarkTheme ? "text-white/35 group-hover:text-white/60" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] group-hover:text-[var(--text-tertiary)]")
                           )} />
                         </m.div>
@@ -1212,7 +1181,7 @@ export function AdminSidebar({
                                   <SubIcon className={cn(
                                     "h-4 w-4 shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110",
                                     isSubActive
-                                      ? (isDarkTheme ? "text-[color-mix(in oklab, var(--accent) 60%, white)]" : "text-[var(--data-success-500)]")
+                                      ? (isDarkTheme ? "text-[color-mix(in_oklab,var(--accent)_60%,white)]" : "text-[var(--data-success-500)]")
                                       : (isDarkTheme ? "text-white/45" : "text-[var(--text-tertiary)]")
                                   )} />
                                   <span className="truncate">{subTabLabel}</span>
@@ -1350,20 +1319,10 @@ export function AdminSidebar({
           themeClasses.headerBorder,
           effectiveCompact ? "px-1.5" : "px-2.5"
         )}>
-          {/* Quick links: Ver tiendas (lista) + Ver mi tienda (storefront real) */}
-          <Link
-            href="/tiendas"
-            target="_blank"
-            rel="noopener noreferrer"
-            title={effectiveCompact ? "Ver tiendas (nueva pestaña)" : "Abre la lista de tiendas en una pestaña nueva"}
-            className={cn(
-              "flex items-center rounded-lg text-[length:var(--ts-sm)] font-medium transition-all",
-              themeClasses.text, themeClasses.hover,
-              effectiveCompact ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
-            )}
-          >
-            <Globe className="h-[18px] w-[18px] shrink-0" /> {!effectiveCompact && "Ver tiendas ↗"}
-          </Link>
+          {/* "Ver tiendas ↗" (lista del marketplace) salió del pie del sidebar
+              — Brandon 2026-08-02. Sacaba al dueño del panel hacia una vista
+              pública que no es suya. El storefront propio sigue accesible
+              desde Mi Tienda. */}
           {SHOW_MI_TIENDA_LINK && isRealTenant && (
             <Link
               href={storeHref}
