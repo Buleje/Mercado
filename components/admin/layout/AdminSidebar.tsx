@@ -19,7 +19,7 @@ import { useModuleTabs } from "@/contexts/module-tabs-context";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import { preloadTab } from "@/app/admin/_lib/tab-preload";
-import type { TabCategory } from "@/app/admin/_lib/tab-categories";
+import { SECTION_BEFORE, type TabCategory } from "@/app/admin/_lib/tab-categories";
 import { MODULE_INFO, TAB_CATEGORIES } from "@/app/admin/_lib/tab-categories";
 import { SPEC_GATED_MODULE_IDS, useEnabledSpecs } from "@/hooks/use-enabled-specs";
 import { SidebarFlyout } from "@/components/admin/shared/SidebarFlyout";
@@ -802,24 +802,6 @@ export function AdminSidebar({
   };
 
   // Section headers keyed by the first category id in each group
-  // Encabezado de sección que se dibuja ANTES de esta categoría. Cubre todo el
-  // menú: antes sólo había 4 anclas (y una, `documentos`, apuntaba a una
-  // categoría que no existe), así que la mayoría de los módulos quedaba
-  // flotando sin agrupar. El orden de TAB_CATEGORIES los deja contiguos.
-  // Cada sección se puede plegar y el estado se recuerda.
-  //
-  // "Inicio" no lleva encabezado a propósito: es el punto de entrada, no un
-  // grupo. Las especializaciones se auto-ocultan si el tenant no las tiene
-  // (la categoría no renderiza cuando catTabs.length === 0), y con ellas su
-  // encabezado.
-  const SECTION_BEFORE: Record<string, string> = {
-    ventas: "Operaciones",
-    clientes: "Clientes",
-    finanzas: "Gestión",
-    "marketplace-ops": "Canales",
-    forestal: "Especializaciones",
-    sistema: "Sistema",
-  };
 
   return (
     <>

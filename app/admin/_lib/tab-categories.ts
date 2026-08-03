@@ -602,6 +602,25 @@ export const SISTEMA_MODULE: TabCategory = {
 //   Sistema           sistema
 const byId = (id: string) => BASIC_MODULES.find((c) => c.id === id)!;
 
+/**
+ * Encabezado de sección que se dibuja ANTES de esta categoría.
+ *
+ * Single source: lo leen el sidebar de escritorio y el drawer móvil. Vivía
+ * dentro de AdminSidebar, así que el drawer agrupaba por CATEGORÍA (14
+ * encabezados) mientras el escritorio agrupaba por SECCIÓN (6) — el mismo menú
+ * con dos organizaciones distintas según el ancho de pantalla.
+ *
+ * "Inicio" no lleva encabezado a propósito: es el punto de entrada, no un grupo.
+ */
+export const SECTION_BEFORE: Record<string, string> = {
+  ventas: "Operaciones",
+  clientes: "Clientes",
+  finanzas: "Gestión",
+  "marketplace-ops": "Canales",
+  forestal: "Especializaciones",
+  sistema: "Sistema",
+};
+
 export const TAB_CATEGORIES: TabCategory[] = [
   byId("inicio"),
   // Operaciones — lo que pasa cada día en el mostrador y el almacén

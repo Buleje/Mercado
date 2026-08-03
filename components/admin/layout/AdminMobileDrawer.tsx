@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
-import type { TabCategory } from "@/app/admin/_lib/tab-categories";
+import { SECTION_BEFORE, type TabCategory } from "@/app/admin/_lib/tab-categories";
 import type { AllTabsItem, ResolvedShortcut } from "@/app/admin/_hooks/useSidebarShortcuts";
 
 // Re-exportamos AllTabsItem como TabItem para legibilidad
@@ -309,22 +309,38 @@ export function AdminMobileDrawer({
             </div>
           )}
 
-          {/* All tabs — agrupadas por categoría (como en desktop).
-              Brandon 2026-05-27: antes era lista plana; ahora cada categoría
-              es una sección con header + ícono. filteredTabs ya viene filtrado
-              por rol/búsqueda/categoría, así que respeta el dropdown de arriba. */}
+          {/* All tabs — agrupadas por las MISMAS secciones que el escritorio
+              (SECTION_BEFORE, single source en _lib/tab-categories). Antes acá
+              se ponía un encabezado por CATEGORÍA: 14 títulos en una pantalla
+              de 390px, contra los 6 del sidebar. Mismo menú, dos
+              organizaciones distintas según el ancho.
+              filteredTabs ya viene filtrado por rol/búsqueda/categoría, así que
+              respeta el dropdown de arriba. */}
           {visibleCategories.map((category) => {
             const CategoryIcon = category.icon;
             const catTabs = filteredTabs.filter((t) =>
               (category.tabs as readonly Tab[]).includes(t.id as Tab),
             );
             if (catTabs.length === 0) return null;
+            const sectionLabel = SECTION_BEFORE[category.id];
             return (
               <div key={`cat-${category.id}`} className="mb-2">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] dark:text-muted px-4 mb-1 flex items-center gap-1.5">
-                  <CategoryIcon className="h-3 w-3 shrink-0" />
-                  {category.label}
-                </p>
+                {sectionLabel && (
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] dark:text-muted px-4 mt-3 mb-1.5">
+                    {sectionLabel}
+                  </p>
+                )}
+                {/* La categoría sólo se nombra si AGRUPA más de un tab —misma
+                    regla que el sidebar de escritorio (isSingleTab)—. Si no,
+                    quedaban dos encabezados apilados sobre un único enlace
+                    ("INICIO" → "Inicio" → Inicio) y en 390px eso come toda la
+                    pantalla. */}
+                {catTabs.length > 1 && (
+                  <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted px-4 mb-1 flex items-center gap-1.5">
+                    <CategoryIcon className="h-3 w-3 shrink-0" />
+                    {category.label}
+                  </p>
+                )}
                 {catTabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -373,8 +389,16 @@ export function AdminMobileDrawer({
           })}
         </nav>
 
-        {/* Footer */}
-        <div className="px-3 py-4 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-1">
+        {/* Footer.
+            `shrink-0` + tope de altura: el bloque de accesos rápidos crece con
+            la cantidad de atajos y se comía ~40% del alto del drawer, dejando
+            el MENÚ —que es a lo que se abre esto— en una ventana de cinco
+            ítems en una pantalla de 390px. Medido en un iPhone 390×844: menú
+            391px contra 321px de atajos, con SEIS entradas de menú visibles de
+            veintiuna. Y los atajos son en su mayoría los mismos tabs que están
+            listados arriba. Con el tope en 24vh el menú se queda con el doble
+            de alto y los atajos scrollean dentro del suyo. */}
+        <div className="shrink-0 max-h-[24vh] overflow-y-auto px-3 py-4 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-1">
           {/* Quick access shortcuts — mobile */}
           <div className="mb-2 space-y-0.5">
             <div className="flex items-center justify-between px-4 mb-1">
