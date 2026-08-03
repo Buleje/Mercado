@@ -64,6 +64,7 @@ import LothCaratulaBanner, { type CaratulaUbicacion } from "./LothCaratulaBanner
 import LothContextoPanel from "./LothContextoPanel";
 import LothCoordsModal from "./LothCoordsModal";
 import LothMapaDrawBar from "./LothMapaDrawBar";
+import LothPredioPanel from "./LothPredioPanel";
 import LothMapaToolbar from "./LothMapaToolbar";
 import LothVerticesPanel from "./LothVerticesPanel";
 import {
@@ -139,7 +140,8 @@ export default function LothMapaView() {
   const [drawMode, setDrawMode] = useState(false);
   const [draft, setDraft] = useState<LatLng[]>([]);
   const [saving, setSaving] = useState(false);
-  const [coordsOpen, setCoordsOpen] = useState(false);
+  /** A dónde van los vértices que se peguen: al área declarada o al predio. */
+  const [coordsOpen, setCoordsOpen] = useState<null | "area" | "predio">(null);
 
   // Contexto del plano: referencias del territorio + cuadro de acceso.
   const [carto, setCarto] = useState<LothCartografia>(emptyCartografia());
@@ -596,6 +598,8 @@ export default function LothMapaView() {
 
   const planoBase = () => ({
     parcela: parcela.vertices,
+    predio: carto.predio.vertices,
+    predioMeta: { nombre: carto.predio.nombre, sector: carto.predio.sector, comunidad: carto.predio.comunidad },
     puntos: geoShown.map((g) => ({
       lat: g.lat,
       lng: g.lng,
@@ -802,6 +806,7 @@ export default function LothMapaView() {
             <LothMapaCanvas
               geo={geoShown}
               censo={censoShown}
+              predio={carto.predio.vertices}
               referencias={carto.referencias}
               markMode={markMode}
               onMarkReferencia={marcarReferencia}
@@ -842,7 +847,7 @@ export default function LothMapaView() {
                 saving={saving}
                 canWrapCenso={censoAll.length > 0}
                 onWrapCenso={envolverCenso}
-                onImportCoords={() => setCoordsOpen(true)}
+                onImportCoords={() => setCoordsOpen("area")}
                 onUndo={() => setDraft((d) => d.slice(0, -1))}
                 onSave={saveDraw}
                 onCancel={cancelDraw}
@@ -930,8 +935,24 @@ export default function LothMapaView() {
         onExportKml={doExportKml}
         onImportCoords={() => {
           if (!drawMode) startDraw();
-          setCoordsOpen(true);
+          setCoordsOpen("area");
         }}
+      />
+
+      <LothPredioPanel
+        cartografia={carto}
+        parcela={parcela}
+        ubicacion={{
+          distrito: caratula?.distrito ?? null,
+          provincia: caratula?.provincia ?? null,
+          departamento: caratula?.departamento ?? plan?.region ?? null,
+        }}
+        zonaUtm={zonaSugerida}
+        saving={savingCarto}
+        onChange={setCarto}
+        onSave={guardarCartografia}
+        onImportPredio={() => setCoordsOpen("predio")}
+        onCopiarDelArea={() => setCarto((c) => ({ ...c, predio: { ...c.predio, vertices: parcela.vertices } }))}
       />
 
       <LothContextoPanel
@@ -945,10 +966,16 @@ export default function LothMapaView() {
       />
 
       <LothCoordsModal
-        open={coordsOpen}
+        open={coordsOpen !== null}
         zonaDefault={zonaSugerida}
-        onClose={() => setCoordsOpen(false)}
+        onClose={() => setCoordsOpen(null)}
         onApply={(vertices) => {
+          if (coordsOpen === "predio") {
+            // El predio se guarda derecho: no pasa por el borrador del área,
+            // que tiene su propio flujo de dibujo y confirmación.
+            setCarto((c) => ({ ...c, predio: { ...c.predio, vertices } }));
+            return;
+          }
           if (!drawMode) setDrawMode(true);
           setDraft(vertices);
         }}

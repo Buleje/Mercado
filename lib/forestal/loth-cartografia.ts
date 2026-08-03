@@ -79,23 +79,58 @@ export interface LothVia {
   puntos: LatLng[];
 }
 
+/**
+ * El PREDIO: el inmueble entero donde vive el área de aprovechamiento.
+ *
+ * Un plano de expediente pide DOS polígonos —el del predio completo y el exacto
+ * del área trabajada— y hasta acá el módulo dibujaba uno solo: el segundo. Sin
+ * el contorno del predio no se puede mostrar que el área declarada cae adentro,
+ * que es justo lo que revisa quien recibe el expediente.
+ *
+ * Su identidad (nombre, sector, comunidad) tampoco vivía en ninguna tabla: la
+ * carátula del libro llega hasta distrito/provincia/departamento. Va acá, en el
+ * mismo KV que el resto del contexto cartográfico y sin migración.
+ */
+export interface LothPredio {
+  /** "Fundo San Miguel", "Predio rural N° 0123". */
+  nombre: string;
+  /** Sector o zona dentro del distrito. */
+  sector: string;
+  /** Comunidad nativa o campesina, si el predio pertenece a una. */
+  comunidad: string;
+  /** Contorno del inmueble ([lat, lng]); vacío = todavía no se levantó. */
+  vertices: LatLng[];
+}
+
 export interface LothCartografia {
   referencias: LothReferencia[];
   vias: LothVia[];
   accesos: LothAcceso[];
+  /** Contorno e identidad del inmueble que contiene el área de aprovechamiento. */
+  predio: LothPredio;
   /** Nota al pie de la lámina de dispersión (opcional). */
   nota: string;
   updatedAt: string | null;
 }
 
+export function emptyPredio(): LothPredio {
+  return { nombre: "", sector: "", comunidad: "", vertices: [] };
+}
+
 export function emptyCartografia(): LothCartografia {
-  return { referencias: [], vias: [], accesos: [], nota: "", updatedAt: null };
+  return { referencias: [], vias: [], accesos: [], predio: emptyPredio(), nota: "", updatedAt: null };
+}
+
+/** ¿El predio tiene contorno dibujable? Tres vértices es el mínimo de un área. */
+export function hasPredio(p: LothPredio | null | undefined): boolean {
+  return !!p && p.vertices.length >= 3;
 }
 
 const MAX_REFERENCIAS = 120;
 const MAX_ACCESOS = 20;
 const MAX_VIAS = 40;
 const MAX_PUNTOS_VIA = 500;
+const MAX_VERTICES_PREDIO = 500;
 
 const str = (v: unknown, max: number): string => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
@@ -185,10 +220,30 @@ export function normalizeCartografia(raw: unknown): LothCartografia {
     });
   });
 
+  const predioRaw = (o.predio ?? {}) as Record<string, unknown>;
+  const predioPts = Array.isArray(predioRaw.vertices) ? predioRaw.vertices.slice(0, MAX_VERTICES_PREDIO) : [];
+  const predioVertices: LatLng[] = [];
+  for (const p of predioPts) {
+    const pair = p as unknown[];
+    if (!Array.isArray(pair) || pair.length < 2) continue;
+    const lat = Number(pair[0]);
+    const lng = Number(pair[1]);
+    if (validLatLng(lat, lng)) predioVertices.push([lat, lng]);
+  }
+  const predio: LothPredio = {
+    nombre: str(predioRaw.nombre, 120),
+    sector: str(predioRaw.sector, 120),
+    comunidad: str(predioRaw.comunidad, 120),
+    // Menos de tres vértices no cierra un área: se guarda vacío antes que
+    // dejar una línea que la lámina intentaría rellenar.
+    vertices: predioVertices.length >= 3 ? predioVertices : [],
+  };
+
   return {
     referencias,
     vias,
     accesos,
+    predio,
     nota: str(o.nota, 300),
     updatedAt: typeof o.updatedAt === "string" ? o.updatedAt : null,
   };
@@ -196,7 +251,14 @@ export function normalizeCartografia(raw: unknown): LothCartografia {
 
 /** ¿Hay algo que dibujar/imprimir? */
 export function hasCartografia(c: LothCartografia | null | undefined): boolean {
-  return !!c && (c.referencias.length > 0 || c.vias.length > 0 || c.accesos.length > 0);
+  return (
+    !!c &&
+    (c.referencias.length > 0 ||
+      c.vias.length > 0 ||
+      c.accesos.length > 0 ||
+      hasPredio(c.predio) ||
+      Boolean(c.predio?.nombre || c.predio?.sector || c.predio?.comunidad))
+  );
 }
 
 /** Punto de una referencia en el formato del mapa. */

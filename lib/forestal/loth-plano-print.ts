@@ -51,6 +51,8 @@ const MIN_RANGE_DEG = 0.012; // ~1.3 km: bbox mínimo dentro del cache de Esri
 const FRAME_W = 1180;
 const FRAME_H = 780;
 const UMF_COLOR = "#dc2626";
+/** El predio va en gris pizarra: es el marco, no el protagonista. */
+const PREDIO_COLOR = "#334155";
 const CENSO_COLOR = "#15803d";
 
 export interface PlanoPunto {
@@ -125,6 +127,14 @@ export type PlanoVariante = "ubicacion" | "dispersion";
 
 export interface PlanoOptions {
   parcela: LatLng[];
+  /**
+   * Contorno del PREDIO que contiene al área. El plano del expediente pide los
+   * dos polígonos: sin el del inmueble no se puede mostrar que el área
+   * declarada cae adentro, que es lo primero que revisa quien lo recibe.
+   */
+  predio?: LatLng[];
+  /** Identidad del predio para el cajetín (nombre · sector · comunidad). */
+  predioMeta?: { nombre?: string | null; sector?: string | null; comunidad?: string | null };
   puntos: PlanoPunto[];
   censo: PlanoArbol[];
   meta: PlanoMeta;
@@ -195,11 +205,14 @@ export function printLothPlano(opts: PlanoOptions): void {
   const vias = opts.vias ?? [];
   const accesos = opts.accesos ?? [];
   const overlays = opts.overlays ?? [];
+  const predio = opts.predio ?? [];
+  const predioMeta = opts.predioMeta ?? {};
   const esDispersion = variante === "dispersion";
 
   // ── 1. Encuadre ────────────────────────────────────────────────────────────
   const all: LatLng[] = [
     ...parcela,
+    ...predio,
     ...puntos.map((p): LatLng => [p.lat, p.lng]),
     ...censo.map((t): LatLng => [t.lat, t.lng]),
     ...referencias.map((r): LatLng => [r.lat, r.lng]),
@@ -277,6 +290,22 @@ export function printLothPlano(opts: PlanoOptions): void {
   const hasParcela = parcela.length >= 3;
   const areaHa = hasParcela ? polygonAreaHa(parcela) : 0;
   const perimKm = hasParcela ? perimeterM(parcela) / 1000 : 0;
+
+  const hasPredio = predio.length >= 3;
+  const predioHa = hasPredio ? polygonAreaHa(predio) : 0;
+  // El predio es el MARCO: discontinuo y sin relleno, para que el área siga
+  // siendo lo que resalta. Se dibuja antes, así queda debajo.
+  const svgPredio = hasPredio
+    ? `<polygon points="${predio.map(([la, ln]) => `${px(ln).toFixed(1)},${py(la).toFixed(1)}`).join(" ")}" fill="none" stroke="${PREDIO_COLOR}" stroke-width="2.4" stroke-dasharray="12 7" stroke-linejoin="round" />` +
+      predio
+        .map((v, i) => {
+          const x = px(v[1]);
+          const y = py(v[0]);
+          return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.8" fill="#fff" stroke="${PREDIO_COLOR}" stroke-width="1.6" />` +
+            `<text x="${(x - 6).toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="end" font-size="9.5" font-weight="700" fill="${PREDIO_COLOR}" stroke="#fff" stroke-width="2.4" paint-order="stroke">P${i + 1}</text>`;
+        })
+        .join("")
+    : "";
 
   const svgParcela = hasParcela
     ? `<polygon points="${parcela.map(([la, ln]) => `${px(ln).toFixed(1)},${py(la).toFixed(1)}`).join(" ")}" fill="${UMF_COLOR}18" stroke="${UMF_COLOR}" stroke-width="3" stroke-linejoin="round" />`
@@ -361,6 +390,16 @@ export function printLothPlano(opts: PlanoOptions): void {
     const u = toUtm(v[0], v[1], zone);
     return { code: vertexCode(i), este: formatMeters(u.easting, 2), norte: formatMeters(u.northing, 2) };
   });
+  /** El cuadro del predio: mismos códigos P1…Pn que se rotulan en el mapa. */
+  const predioUtm = predio.map((v, i) => {
+    const u = toUtm(v[0], v[1], zone);
+    return { code: `P${i + 1}`, este: formatMeters(u.easting, 2), norte: formatMeters(u.northing, 2) };
+  });
+  const predioTable = predioUtm.length
+    ? `<table class="coord"><thead><tr><th>VÉRTICE</th><th>ESTE (m)</th><th>NORTE (m)</th></tr></thead><tbody>${predioUtm
+        .map((v) => `<tr><td>${esc(v.code)}</td><td class="num">${esc(v.este)}</td><td class="num">${esc(v.norte)}</td></tr>`)
+        .join("")}</tbody></table>`
+    : "";
   const OVERLAY_MAX = 22; // sobre el mapa solo si entra; si no, va debajo
   const coordRows = verticesUtm
     .map((v) => `<tr><td>${esc(v.code)}</td><td class="num">${esc(v.este)}</td><td class="num">${esc(v.norte)}</td></tr>`)
@@ -380,10 +419,15 @@ export function printLothPlano(opts: PlanoOptions): void {
     : verticesUtm.length > 0 && verticesUtm.length <= OVERLAY_MAX
       ? `<div class="box coordbox"><div class="box-h">COORDENADAS UTM · ${esc(zoneLabel(zone, south))}</div>${coordTable}</div>`
       : "";
-  const coordBelow =
+  const bloquesAbajo = [
     !esDispersion && verticesUtm.length > OVERLAY_MAX
-      ? `<section class="below"><h2>COORDENADAS UTM DE LOS VÉRTICES · WGS 84 ZONA ${esc(zoneLabel(zone, south))}</h2><div class="coordcols">${coordTable}</div></section>`
-      : "";
+      ? `<h2>COORDENADAS UTM DEL ÁREA DE APROVECHAMIENTO · WGS 84 ZONA ${esc(zoneLabel(zone, south))}</h2><div class="coordcols">${coordTable}</div>`
+      : "",
+    !esDispersion && predioTable
+      ? `<h2>COORDENADAS UTM DEL PREDIO · WGS 84 ZONA ${esc(zoneLabel(zone, south))}</h2><div class="coordcols">${predioTable}</div>`
+      : "",
+  ].filter(Boolean);
+  const coordBelow = bloquesAbajo.length ? `<section class="below">${bloquesAbajo.join("")}</section>` : "";
 
   // ── 6. Leyenda ─────────────────────────────────────────────────────────────
   const seccionesLeyenda = [...new Map(puntos.map((p) => [p.seccionLabel, p.color])).entries()];
@@ -391,6 +435,7 @@ export function printLothPlano(opts: PlanoOptions): void {
   const ESTADO_LABEL: Record<string, string> = { en_pie: "Árbol censado en pie", talado: "Árbol talado", descartado: "Árbol descartado" };
   const ESTADO_COLOR: Record<string, string> = { en_pie: CENSO_COLOR, talado: "#b45309", descartado: "#6b7280" };
   const legendItems = [
+    hasPredio ? `<li><span class="sw" style="border:2px dashed ${PREDIO_COLOR};background:transparent"></span>Predio (contorno del inmueble)</li>` : "",
     hasParcela ? `<li><span class="sw poly"></span>Área de aprovechamiento (UMF)</li>` : "",
     hasParcela ? `<li><span class="sw dot" style="background:#111827"></span>Vértice del polígono (C.001…)</li>` : "",
     ...censoEstados.map(
@@ -415,7 +460,9 @@ export function printLothPlano(opts: PlanoOptions): void {
   // ── 7. Cajetín ─────────────────────────────────────────────────────────────
   const fecha = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
   const ubicacion: [string, string][] = [
-    ["SECTOR", dash(meta.sector ?? meta.parcelaCorta)],
+    ["PREDIO", dash(predioMeta.nombre)],
+    ["SECTOR", dash(predioMeta.sector ?? meta.sector ?? meta.parcelaCorta)],
+    ["COMUNIDAD", dash(predioMeta.comunidad)],
     ["DISTRITO", dash(meta.distrito)],
     ["PROVINCIA", dash(meta.provincia)],
     ["DEPARTAMENTO", dash(meta.departamento)],
@@ -423,6 +470,7 @@ export function printLothPlano(opts: PlanoOptions): void {
   const centro = hasParcela ? centroid(parcela) : null;
   const centroUtm = centro ? toUtm(centro[0], centro[1], zone) : null;
   const tecnicos: [string, string][] = [
+    ["ÁREA DEL PREDIO", hasPredio ? `${predioHa.toFixed(2)} ha` : "—"],
     ["ÁREA UMF", hasParcela ? `${areaHa.toFixed(2)} ha` : "—"],
     ["PERÍMETRO", hasParcela ? `${perimKm.toFixed(2)} km` : "—"],
     ["VÉRTICES", hasParcela ? String(parcela.length) : "—"],
@@ -533,7 +581,7 @@ export function printLothPlano(opts: PlanoOptions): void {
       <img src="${imgUrl}" alt="Base cartográfica del área de aprovechamiento" onerror="this.onerror=null;this.src='${fallbackUrl}'" />
       ${overlayImgs}
       <svg viewBox="0 0 ${FRAME_W} ${FRAME_H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        ${gridPaths}${svgVias}${svgParcela}${svgCenso}${svgPuntos}${svgVertices}${svgRefs}${svgScaleBar}
+        ${gridPaths}${svgVias}${svgPredio}${svgParcela}${svgCenso}${svgPuntos}${svgVertices}${svgRefs}${svgScaleBar}
       </svg>
 
       ${coordOverlay}

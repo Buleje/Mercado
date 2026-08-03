@@ -54,6 +54,23 @@ const putSchema = z.object({
     )
     .max(20)
     .default([]),
+  /**
+   * Contorno e identidad del predio. Va en el schema y no sólo en el
+   * normalizador: Zod descarta lo que no declara, así que sin esto el PUT
+   * guardaba la cartografía SIN el predio y sin un solo error — la pantalla
+   * decía "guardado" y al recargar el contorno no estaba.
+   */
+  predio: z
+    .object({
+      nombre: z.string().trim().max(120).default(""),
+      sector: z.string().trim().max(120).default(""),
+      comunidad: z.string().trim().max(120).default(""),
+      vertices: z
+        .array(z.tuple([z.number().min(-90).max(90), z.number().min(-180).max(180)]))
+        .max(500)
+        .default([]),
+    })
+    .default({ nombre: "", sector: "", comunidad: "", vertices: [] }),
   nota: z.string().trim().max(300).default(""),
 });
 

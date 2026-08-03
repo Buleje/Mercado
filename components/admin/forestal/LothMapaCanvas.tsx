@@ -18,7 +18,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { LatLng } from "@/lib/forestal/loth-geo";
-import { pointInPolygon } from "@/lib/forestal/loth-geo";
+import { centroid, pointInPolygon } from "@/lib/forestal/loth-geo";
 import { dominantZone, gridLabel, utmGrid, vertexCode } from "@/lib/forestal/loth-utm";
 import { referenciaMeta, viaMeta, type LothReferencia, type LothVia } from "@/lib/forestal/loth-cartografia";
 import { OVERLAYS, type OverlayId } from "./loth-mapa-overlays";
@@ -49,10 +49,14 @@ const ATTR: Record<BasemapId, string> = {
 const MAX_NATIVE: Record<BasemapId, number> = { topo: 17, sat: 17, street: 19 };
 /** Hasta acá los códigos C.00N caben sin pisarse; arriba, van al hover. */
 const MAX_PERMANENT_LABELS = 12;
+/** El predio es el marco: gris pizarra, para que el área siga siendo lo que resalta. */
+const PREDIO_COLOR = "#475569";
 
 interface Props {
   geo: GeoEntry[];
   censo: CensoTree[];
+  /** Contorno del predio que contiene al área (vacío = todavía no se levantó). */
+  predio: LatLng[];
   /** Referencias del plano (centros poblados, campamentos, ingreso a la UMF…). */
   referencias: LothReferencia[];
   /** Modo "marcar referencia": el próximo click en el mapa crea una. */
@@ -105,6 +109,7 @@ interface Props {
 export default function LothMapaCanvas({
   geo,
   censo,
+  predio,
   referencias,
   markMode,
   onMarkReferencia,
@@ -142,6 +147,7 @@ export default function LothMapaCanvas({
   const LRef = useRef<any>(null);
   const baseRef = useRef<any>(null);
   const gridRef = useRef<any>(null);
+  const predioRef = useRef<any>(null);
   const parcelaRef = useRef<any>(null);
   const draftRef = useRef<any>(null);
   const markersRef = useRef<any>(null);
@@ -167,6 +173,7 @@ export default function LothMapaCanvas({
       mapRef.current = map;
       baseRef.current = L.tileLayer(TILES.topo, { maxZoom: 22, maxNativeZoom: MAX_NATIVE.topo, attribution: ATTR.topo }).addTo(map);
       gridRef.current = L.layerGroup().addTo(map);
+      predioRef.current = L.layerGroup().addTo(map);
       parcelaRef.current = L.layerGroup().addTo(map);
       markersRef.current = L.layerGroup().addTo(map);
       viasRef.current = L.layerGroup().addTo(map);
@@ -429,6 +436,46 @@ export default function LothMapaCanvas({
         .addTo(group),
     );
   }, [ready, parcela, declarada, drawMode]);
+
+  // ── Contorno del predio + centroide del área ───────────────────────────────
+  /**
+   * El plano del expediente pide DOS polígonos: el del inmueble completo y el
+   * exacto del área trabajada. El predio va en trazo discontinuo y SIN relleno
+   * —es el marco, no el protagonista— y debajo del área para que no la tape.
+   * El centroide se dibuja porque el cajetín lo declara: si sólo vive en el
+   * papel, nadie puede comprobar en pantalla que cayó donde corresponde.
+   */
+  useEffect(() => {
+    const L = LRef.current;
+    const group = predioRef.current;
+    if (!ready || !L || !group) return;
+    group.clearLayers();
+    if (predio.length >= 3) {
+      L.polygon(predio, {
+        color: PREDIO_COLOR,
+        weight: 2,
+        dashArray: "8 6",
+        fill: false,
+        interactive: false,
+      })
+        .bindTooltip("Predio", { direction: "center", className: "loth-vertex-label", sticky: true })
+        .addTo(group);
+      predio.forEach((v, i) =>
+        L.circleMarker(v, { radius: 3, color: PREDIO_COLOR, weight: 1.5, fillColor: "#fff", fillOpacity: 1, interactive: false })
+          .bindTooltip(`P${i + 1}`, { permanent: predio.length <= MAX_PERMANENT_LABELS, direction: "left", className: "loth-vertex-label", offset: [-6, 0] })
+          .addTo(group),
+      );
+    }
+    const centro = declarada && !drawMode ? centroid(parcela) : null;
+    if (centro) {
+      // Cruz de centroide (el símbolo del plano), no un pin: un marcador más
+      // se confundiría con las referencias del territorio.
+      L.circleMarker(centro, { radius: 6, color: "#0f172a", weight: 2, fill: false, interactive: false }).addTo(group);
+      L.circleMarker(centro, { radius: 1.5, color: "#0f172a", weight: 2, fillColor: "#0f172a", fillOpacity: 1, interactive: false })
+        .bindTooltip("Centroide", { permanent: false, direction: "top", className: "loth-vertex-label" })
+        .addTo(group);
+    }
+  }, [ready, predio, parcela, declarada, drawMode]);
 
   // ── Borrador en vivo: vértices arrastrables + puntos medios para insertar ──
   useEffect(() => {

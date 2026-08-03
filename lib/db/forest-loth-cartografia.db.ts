@@ -1,7 +1,7 @@
 import "server-only";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { auditLoth } from "@/lib/forestal/loth-audit";
-import { normalizeCartografia, emptyCartografia, type LothCartografia } from "@/lib/forestal/loth-cartografia";
+import { normalizeCartografia, emptyCartografia, hasPredio, type LothCartografia } from "@/lib/forestal/loth-cartografia";
 
 /**
  * ForestLothCartografiaDB — referencias (centros poblados, campamentos, ingreso
@@ -40,7 +40,7 @@ export const ForestLothCartografiaDB = {
       action: "loth_cartografia_update",
       entity: "ForestLothCartografia",
       entityId: tenantId,
-      detail: `Actualizó la cartografía del plano (${carto.referencias.length} referencia(s) · ${carto.vias.length} vía(s) · ${carto.accesos.length} tramo(s) de acceso)`,
+      detail: `Actualizó la cartografía del plano (${carto.referencias.length} referencia(s) · ${carto.vias.length} vía(s) · ${carto.accesos.length} tramo(s) de acceso${hasPredio(carto.predio) ? ` · predio de ${carto.predio.vertices.length} vértices` : ""})`,
       user,
     });
     return carto;
