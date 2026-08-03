@@ -329,7 +329,7 @@ function AdminPage() {
               prev.has(categoryId) ? new Set() : new Set([categoryId])
             ),
           sidebarFlyout, onSidebarFlyoutChange: setSidebarFlyout, flyoutTimerRef,
-          hiddenTabs, sidebarSearch, onSidebarSearchChange: setSidebarSearch, allTabs: ALL_TABS,
+          hiddenTabs, allTabs: ALL_TABS,
         }}
       />
 

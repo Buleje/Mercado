@@ -94,8 +94,6 @@ export interface AdminNavigationSidebar {
   ) => void;
   flyoutTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
   hiddenTabs: Set<Tab>;
-  sidebarSearch: string;
-  onSidebarSearchChange: (v: string) => void;
   allTabs: SidebarProps["allTabs"];
 }
 
@@ -114,7 +112,6 @@ export function AdminNavigation({
   // acepta los mismos valores sin problema, pero TS no lo deduce por nominal
   // typing. Los cast son seguros porque el runtime es el mismo objeto.
   const sharedAsSidebar = shared as unknown as {
-    filteredTabs: SidebarProps["filteredTabs"];
     favoriteTabItems: SidebarProps["favoriteTabItems"];
     customShortcutItems: SidebarProps["customShortcutItems"];
     resolvedShortcuts: SidebarProps["resolvedShortcuts"];
@@ -169,7 +166,6 @@ export function AdminNavigation({
         tab={shared.tab}
         navigateTab={shared.navigateTab}
         allowedTabs={shared.allowedTabs}
-        filteredTabs={sharedAsSidebar.filteredTabs}
         visibleCategories={shared.visibleCategories}
         openAccordionCategories={sidebar.openAccordionCategories}
         onToggleAccordion={sidebar.onToggleAccordion}
@@ -192,8 +188,6 @@ export function AdminNavigation({
         clearedDemoTabs={shared.clearedDemoTabs}
         alerts={shared.alerts}
         hiddenTabs={sidebar.hiddenTabs}
-        sidebarSearch={sidebar.sidebarSearch}
-        onSidebarSearchChange={sidebar.onSidebarSearchChange}
         allTabs={sidebar.allTabs}
       />
     </>
