@@ -32,6 +32,7 @@ import { fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid } from "./sha
 import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
+import { estadoDeCredito, ordenarPorRiesgoDeCredito, requiereAtencion } from "@/lib/adelantos/limite-credito";
 import {
   bucketDe,
   deudoresDeCobranza,
@@ -510,6 +511,16 @@ function CrearAdelantoModal({
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  /**
+   * ¿Este monto pasa el tope de la persona?
+   *
+   * El límite existía y sólo se pintaba en su ficha, en pasado («alcanzado»).
+   * Para cuando se leía eso, la plata ya había salido. Se avisa acá, ANTES —y
+   * se avisa, no se bloquea: el tope es del dueño y él decide saltárselo.
+   */
+  const persona = beneficiarios.find((b) => b.id === beneficiarioId);
+  const credito = estadoDeCredito(persona?.limiteCredito, persona?.saldoPendiente, Number(monto) || 0);
+
   const submit = async () => {
     setErr(null);
     const m = Number(monto);
@@ -517,6 +528,8 @@ function CrearAdelantoModal({
       setErr("Elegí una persona y un monto válido.");
       return;
     }
+    // Confirmación explícita: saltarse el tope es una decisión, no un descuido.
+    if (credito.estado === "excede" && !window.confirm(`${credito.aviso}\n\n¿Registrar el adelanto igual?`)) return;
     setSaving(true);
     const res = await fetch("/api/adelantos", {
       method: "POST",
@@ -540,6 +553,17 @@ function CrearAdelantoModal({
             <option key={b.id} value={b.id}>{b.nombre}</option>
           ))}
         </select>
+        {credito.estado === "holgado" && (
+          <p className="mt-1.5 text-sm text-[var(--text-tertiary)]">
+            Le queda {formatCurrency(credito.disponible)} de su límite de {formatCurrency(credito.limite)}.
+          </p>
+        )}
+        {requiereAtencion(credito) && (
+          <p className="mt-1.5 flex items-start gap-1.5 text-sm font-semibold text-[var(--data-warning)]">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            {credito.aviso}
+          </p>
+        )}
       </Field>
       <Field label="Modalidad">
         <div className="grid grid-cols-2 gap-2">
@@ -778,15 +802,24 @@ function PersonasView({
   const [adelantoPara, setAdelantoPara] = useState<string | null>(null);
   const [estadoCuenta, setEstadoCuenta] = useState<BeneficiarioConSaldo | null>(null);
   const [q, setQ] = useState("");
-  const [orden, setOrden] = useState<"saldo" | "nombre" | "adelantado">("saldo");
+  const [orden, setOrden] = useState<"riesgo" | "saldo" | "nombre" | "adelantado">("saldo");
 
-  const ordenados = beneficiarios
-    .filter((b) => !q.trim() || b.nombre.toLowerCase().includes(q.trim().toLowerCase()))
-    .sort((a, b) => {
-      if (orden === "nombre") return a.nombre.localeCompare(b.nombre);
-      if (orden === "adelantado") return b.totalAdelantado - a.totalAdelantado;
-      return b.saldoPendiente - a.saldoPendiente;
-    });
+  const filtradas = beneficiarios.filter(
+    (b) => !q.trim() || b.nombre.toLowerCase().includes(q.trim().toLowerCase()),
+  );
+  /**
+   * «Cerca del tope» responde la pregunta del mostrador —¿a quién ya no le puedo
+   * fiar más?— que por saldo no se contesta: quien debe S/ 900 de un tope de
+   * S/ 5.000 está mejor que quien debe S/ 400 de S/ 500.
+   */
+  const ordenados =
+    orden === "riesgo"
+      ? ordenarPorRiesgoDeCredito(filtradas)
+      : [...filtradas].sort((a, b) => {
+          if (orden === "nombre") return a.nombre.localeCompare(b.nombre);
+          if (orden === "adelantado") return b.totalAdelantado - a.totalAdelantado;
+          return b.saldoPendiente - a.saldoPendiente;
+        });
   const conSaldo = beneficiarios.filter((b) => b.saldoPendiente > 0).length;
 
   // Totales de toda la cartera de personas
@@ -840,6 +873,17 @@ function PersonasView({
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-semibold text-[var(--text-tertiary)]">Orden:</span>
               <button className={ordenChip("saldo", "")} onClick={() => setOrden("saldo")}>Saldo</button>
+              {/* Sólo si alguien tiene tope cargado: ordenar por «cerca del
+                  límite» sin límites que medir sería un botón que no hace nada. */}
+              {beneficiarios.some((b) => (b.limiteCredito ?? 0) > 0) && (
+                <button
+                  className={ordenChip("riesgo", "")}
+                  onClick={() => setOrden("riesgo")}
+                  title="Primero quien está más cerca de su límite de crédito"
+                >
+                  Cerca del tope
+                </button>
+              )}
               <button className={ordenChip("nombre", "")} onClick={() => setOrden("nombre")}>Nombre</button>
               <button className={ordenChip("adelantado", "")} onClick={() => setOrden("adelantado")}>Adelantado</button>
             </div>
@@ -897,12 +941,20 @@ function PersonasView({
                     <p className={`text-base font-extrabold tabular-nums ${debe ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>{formatCurrency(b.saldoPendiente)}</p>
                   </div>
                 </div>
-                {b.limiteCredito != null && b.limiteCredito > 0 && (
-                  <p className={`mt-1.5 text-sm font-semibold ${b.saldoPendiente >= b.limiteCredito ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}`}>
-                    Límite de crédito: {formatCurrency(b.limiteCredito)}
-                    {b.saldoPendiente >= b.limiteCredito && " · alcanzado"}
-                  </p>
-                )}
+                {/* Antes decía el tope y, en pasado, «alcanzado». Lo que se
+                    necesita saber es cuánto QUEDA: es lo que decide si se le
+                    puede adelantar de nuevo. */}
+                {(() => {
+                  const c = estadoDeCredito(b.limiteCredito, b.saldoPendiente);
+                  if (c.estado === "sin-limite") return null;
+                  return (
+                    <p className={`mt-1.5 text-sm font-semibold ${requiereAtencion(c) ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}`}>
+                      {c.disponible > 0
+                        ? `Le queda ${formatCurrency(c.disponible)} de ${formatCurrency(c.limite)}`
+                        : `Sin margen · debe ${formatCurrency(c.usado)} de un tope de ${formatCurrency(c.limite)}`}
+                    </p>
+                  );
+                })()}
 
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                   {debe ? (
