@@ -6,7 +6,9 @@
  * los compartan sin duplicar lógica de moneda ni estados vacíos.
  */
 
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
+import { CardTitle } from "@buleje/design-system";
+import { X } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/currency";
 
 /** Formatea un monto en su moneda (USD con "$ ", resto vía formatCurrency = S/). */
@@ -48,3 +50,53 @@ export function SkeletonGrid() {
     </div>
   );
 }
+
+// ── Primitivos de modal ───────────────────────────────────────────────────────
+// Movidos desde AdelantosModule para que el modal de alta pueda vivir en su
+// propio archivo sin importar el módulo entero (sería circular).
+
+export const inputCls =
+  "w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors";
+
+export function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+export function ModalShell({ title, onClose, children, wide }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className={`w-full ${wide ? "max-w-2xl" : "max-w-md"} max-h-[90vh] overflow-y-auto rounded-2xl bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-xl)]`}>
+        <div className="flex items-center justify-between mb-4">
+          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">{title}</CardTitle>
+          <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="space-y-4">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+export function ModalActions({ onClose, onSubmit, saving, label }: { onClose: () => void; onSubmit: () => void; saving: boolean; label: string }) {
+  return (
+    <div className="flex gap-2 pt-2">
+      <button onClick={onClose} className="flex-1 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+      <button onClick={onSubmit} disabled={saving} className="flex-1 h-12 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark disabled:opacity-50">{saving ? "Guardando…" : label}</button>
+    </div>
+  );
+}
+
+export function MiniStat({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "neutral" | "success" | "warning" }) {
+  const color = tone === "success" ? "text-[var(--data-success)]" : tone === "warning" ? "text-[var(--data-warning)]" : "text-[var(--text-primary)]";
+  return (
+    <div className="rounded-2xl border-2 border-[var(--rule-base)] p-3 text-center">
+      <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</p>
+      <p className={`text-lg font-extrabold tabular-nums ${color}`}>{value}</p>
+    </div>
+  );
+}
+

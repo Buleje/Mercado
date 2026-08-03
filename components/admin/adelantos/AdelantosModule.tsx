@@ -6,7 +6,6 @@ import {
   Coins,
   Users,
   Plus,
-  X,
   TrendingDown,
   TrendingUp,
   Wallet,
@@ -28,7 +27,8 @@ import {
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { AnalisisView } from "./AnalisisView";
-import { fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid } from "./shared";
+import CrearAdelantoModal from "./CrearAdelantoModal";
+import { fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, MiniStat } from "./shared";
 import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -43,7 +43,6 @@ import {
 import type {
   DbAdelanto,
   DbBeneficiario,
-  AdelantoModalidad,
   DbRecurrente,
   RecurrenteFrecuencia,
 } from "@/lib/db/adelantos.db";
@@ -486,6 +485,8 @@ function AdelantosView({
       {showCreate && (
         <CrearAdelantoModal
           beneficiarios={beneficiarios}
+          adelantos={adelantos}
+          onPersonaCreada={onChange}
           onClose={() => setShowCreate(false)}
           onCreated={() => {
             setShowCreate(false);
@@ -501,116 +502,6 @@ function AdelantosView({
         />
       )}
     </div>
-  );
-}
-
-function CrearAdelantoModal({
-  beneficiarios,
-  initialBeneficiarioId,
-  onClose,
-  onCreated,
-}: {
-  beneficiarios: BeneficiarioConSaldo[];
-  initialBeneficiarioId?: string;
-  onClose: () => void;
-  onCreated: () => void;
-}) {
-  const [beneficiarioId, setBeneficiarioId] = useState(initialBeneficiarioId ?? beneficiarios[0]?.id ?? "");
-  const [modalidad, setModalidad] = useState<AdelantoModalidad>("CUENTA_CORRIENTE");
-  const [monto, setMonto] = useState("");
-  const [moneda, setMoneda] = useState<"PEN" | "USD">("PEN");
-  const [notas, setNotas] = useState("");
-  const [comprobante, setComprobante] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  /**
-   * ¿Este monto pasa el tope de la persona?
-   *
-   * El límite existía y sólo se pintaba en su ficha, en pasado («alcanzado»).
-   * Para cuando se leía eso, la plata ya había salido. Se avisa acá, ANTES —y
-   * se avisa, no se bloquea: el tope es del dueño y él decide saltárselo.
-   */
-  const persona = beneficiarios.find((b) => b.id === beneficiarioId);
-  const credito = estadoDeCredito(persona?.limiteCredito, persona?.saldoPendiente, Number(monto) || 0);
-
-  const submit = async () => {
-    setErr(null);
-    const m = Number(monto);
-    if (!beneficiarioId || !m || m <= 0) {
-      setErr("Elegí una persona y un monto válido.");
-      return;
-    }
-    // Confirmación explícita: saltarse el tope es una decisión, no un descuido.
-    if (credito.estado === "excede" && !window.confirm(`${credito.aviso}\n\n¿Registrar el adelanto igual?`)) return;
-    setSaving(true);
-    const res = await fetch("/api/adelantos", {
-      method: "POST",
-      headers: jsonHeaders(),
-      credentials: "include",
-      body: JSON.stringify({ beneficiarioId, modalidad, montoAdelantado: m, moneda, notas: notas.trim() || undefined, comprobanteUrl: comprobante || undefined }),
-    });
-    setSaving(false);
-    if (res.ok) onCreated();
-    else {
-      const j = await res.json().catch(() => null);
-      setErr(j?.error ?? "No se pudo crear el adelanto.");
-    }
-  };
-
-  return (
-    <ModalShell title="Nuevo adelanto" onClose={onClose}>
-      <Field label="Persona">
-        <select value={beneficiarioId} onChange={(e) => setBeneficiarioId(e.target.value)} className={inputCls}>
-          {beneficiarios.map((b) => (
-            <option key={b.id} value={b.id}>{b.nombre}</option>
-          ))}
-        </select>
-        {credito.estado === "holgado" && (
-          <p className="mt-1.5 text-sm text-[var(--text-tertiary)]">
-            Le queda {formatCurrency(credito.disponible)} de su límite de {formatCurrency(credito.limite)}.
-          </p>
-        )}
-        {requiereAtencion(credito) && (
-          <p className="mt-1.5 flex items-start gap-1.5 text-sm font-semibold text-[var(--data-warning)]">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            {credito.aviso}
-          </p>
-        )}
-      </Field>
-      <Field label="Modalidad">
-        <div className="grid grid-cols-2 gap-2">
-          {([["CUENTA_CORRIENTE", "Cuenta corriente"], ["ENTREGAS_PACTADAS", "Entregas pactadas"]] as const).map(([val, lbl]) => (
-            <button
-              key={val}
-              type="button"
-              onClick={() => setModalidad(val)}
-              className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${modalidad === val ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}
-            >
-              {lbl}
-            </button>
-          ))}
-        </div>
-      </Field>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <div className="col-span-2">
-          <Field label="Monto adelantado">
-            <input type="number" min={1} value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="500.00" className={inputCls + " tabular-nums"} />
-          </Field>
-        </div>
-        <Field label="Moneda">
-          <select value={moneda} onChange={(e) => setMoneda(e.target.value as "PEN" | "USD")} className={inputCls}>
-            {MONEDAS.map((m) => <option key={m} value={m}>{m === "PEN" ? "S/ Soles" : "$ Dólares"}</option>)}
-          </select>
-        </Field>
-      </div>
-      <Field label="Notas (opcional)">
-        <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} className={inputCls + " py-3"} />
-      </Field>
-      <Field label="Comprobante (opcional)"><ComprobanteUpload url={comprobante} onChange={setComprobante} /></Field>
-      {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}
-      <ModalActions onClose={onClose} onSubmit={submit} saving={saving} label="Crear adelanto" />
-    </ModalShell>
   );
 }
 
@@ -1015,7 +906,7 @@ function PersonasView({
         <EliminarPersonaModal persona={deletePersona} onClose={() => setDeletePersona(null)} onDeleted={() => { setDeletePersona(null); onChange(); }} />
       )}
       {adelantoPara && (
-        <CrearAdelantoModal beneficiarios={beneficiarios} initialBeneficiarioId={adelantoPara} onClose={() => setAdelantoPara(null)} onCreated={() => { setAdelantoPara(null); onChange(); }} />
+        <CrearAdelantoModal beneficiarios={beneficiarios} adelantos={adelantos} initialBeneficiarioId={adelantoPara} onPersonaCreada={onChange} onClose={() => setAdelantoPara(null)} onCreated={() => { setAdelantoPara(null); onChange(); }} />
       )}
       {estadoCuenta && (
         <EstadoCuentaModal persona={estadoCuenta} adelantos={adelantos} onClose={() => setEstadoCuenta(null)} />
@@ -1705,50 +1596,9 @@ function ComprobanteUpload({ url, onChange }: { url: string | null; onChange: (u
   );
 }
 
-// ── Primitivos compartidos ─────────────────────────────────────────────────────
-const inputCls =
-  "w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block space-y-1.5">
-      <span className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
-      {children}
-    </label>
-  );
-}
 
-function ModalShell({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className={`w-full ${wide ? "max-w-2xl" : "max-w-md"} max-h-[90vh] overflow-y-auto rounded-2xl bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-xl)]`}>
-        <div className="flex items-center justify-between mb-4">
-          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">{title}</CardTitle>
-          <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"><X className="h-5 w-5" /></button>
-        </div>
-        <div className="space-y-4">{children}</div>
-      </div>
-    </div>
-  );
-}
 
-function ModalActions({ onClose, onSubmit, saving, label }: { onClose: () => void; onSubmit: () => void; saving: boolean; label: string }) {
-  return (
-    <div className="flex gap-2 pt-2">
-      <button onClick={onClose} className="flex-1 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-      <button onClick={onSubmit} disabled={saving} className="flex-1 h-12 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark disabled:opacity-50">{saving ? "Guardando…" : label}</button>
-    </div>
-  );
-}
 
-function MiniStat({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "neutral" | "success" | "warning" }) {
-  const color = tone === "success" ? "text-[var(--data-success)]" : tone === "warning" ? "text-[var(--data-warning)]" : "text-[var(--text-primary)]";
-  return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] p-3 text-center">
-      <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</p>
-      <p className={`text-lg font-extrabold tabular-nums ${color}`}>{value}</p>
-    </div>
-  );
-}
 
 // EmptyState, SkeletonGrid → movidos a ./shared (ADR-121 refactor).
