@@ -16,6 +16,7 @@ import {
   Power,
   Pencil,
   Plus,
+  Search,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
@@ -43,10 +44,8 @@ export type AdminMobileDrawerProps = {
 
   // Categorías
   visibleCategories: TabCategory[];
-  selectedCategory: string | null;
-  onSelectCategory: (id: string | null) => void;
-  categoryDropdownOpen: boolean;
-  onToggleCategoryDropdown: () => void;
+  sidebarSearch: string;
+  onSidebarSearchChange: (v: string) => void;
 
   // Favoritos, recientes y atajos
   favoriteTabItems: TabItem[];
@@ -87,10 +86,8 @@ export function AdminMobileDrawer({
   filteredTabs,
   allowedTabs,
   visibleCategories,
-  selectedCategory,
-  onSelectCategory,
-  categoryDropdownOpen,
-  onToggleCategoryDropdown,
+  sidebarSearch,
+  onSidebarSearchChange,
   favoriteTabItems,
   customShortcutItems,
   recentTabItems,
@@ -150,90 +147,34 @@ export function AdminMobileDrawer({
           </button>
         </div>
 
-        {/* Category selector (mobile) */}
-        <div className="relative px-3 py-3 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-          <button
-            onClick={onToggleCategoryDropdown}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-accent transition-all border border-[var(--rule-base)] dark:border-[var(--rule-base)]"
-          >
-            <div className="flex items-center gap-2">
-              {selectedCategory ? (
-                <>
-                  {visibleCategories.find(c => c.id === selectedCategory)?.icon && (
-                    React.createElement(
-                      visibleCategories.find(c => c.id === selectedCategory)!.icon,
-                      { className: "h-4 w-4 shrink-0" }
-                    )
-                  )}
-                  <span className="truncate">
-                    {visibleCategories.find(c => c.id === selectedCategory)?.label}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Layers className="h-4 w-4 shrink-0" />
-                  <span>Todas las categorías</span>
-                </>
-              )}
-            </div>
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 transition-transform shrink-0",
-                categoryDropdownOpen && "rotate-180"
-              )}
+        {/* Buscador. Reemplaza al selector "Todas las categorías", que
+            desplegaba las CATORCE categorías para filtrar por una — o sea, la
+            misma organización que ahora se ve agrupada en la lista de abajo,
+            pero escondida detrás de un clic. Y el sidebar de escritorio ya
+            tenía búsqueda… sin input: `sidebarSearch` se leía para filtrar pero
+            NADIE lo escribía, así que era código muerto. Un solo mecanismo,
+            presente en las dos superficies. */}
+        <div className="px-3 py-3 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+            <input
+              type="text"
+              value={sidebarSearch}
+              onChange={(e) => onSidebarSearchChange(e.target.value)}
+              placeholder="Buscar módulo…"
+              aria-label="Buscar módulo"
+              className="w-full h-12 pl-9 pr-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] focus:border-[var(--accent)]"
             />
-          </button>
-
-          {categoryDropdownOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={onToggleCategoryDropdown}
-              />
-              <div className="absolute top-full left-3 right-3 mt-1 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] z-20 max-h-80 overflow-y-auto py-2">
-                <button
-                  onClick={() => {
-                    onSelectCategory(null);
-                    onToggleCategoryDropdown();
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors",
-                    !selectedCategory
-                      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                      : "text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface"
-                  )}
-                >
-                  <Layers className="h-4 w-4 shrink-0" />
-                  <span>Todas ({allowedTabs.length})</span>
-                </button>
-                <div className="h-px bg-gray-100 dark:bg-card-border my-1" />
-                {visibleCategories.map(category => {
-                  const count = category.tabs.filter(t => allowedTabs.includes(t) && !isHiddenByTemplate(t)).length;
-                  if (count === 0) return null;
-                  const CategoryIcon = category.icon;
-                  return (
-                    <button
-                      key={category.id}
-                      onClick={() => {
-                        onSelectCategory(category.id);
-                        onToggleCategoryDropdown();
-                      }}
-                      className={cn(
-                        "w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors",
-                        selectedCategory === category.id
-                          ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                          : "text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface"
-                      )}
-                    >
-                      <CategoryIcon className="h-4 w-4 shrink-0" />
-                      <span className="truncate flex-1 text-left">{category.label}</span>
-                      <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">({count})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
+            {sidebarSearch && (
+              <button
+                onClick={() => onSidebarSearchChange("")}
+                aria-label="Limpiar búsqueda"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-[var(--rule-soft)] transition-colors"
+              >
+                <X className="h-4 w-4 text-[var(--text-tertiary)]" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Nav list */}

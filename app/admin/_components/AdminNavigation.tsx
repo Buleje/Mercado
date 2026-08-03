@@ -71,10 +71,8 @@ export interface AdminNavigationShared {
 export interface AdminNavigationDrawer {
   open: boolean;
   onClose: () => void;
-  selectedCategory: string | null;
-  onSelectCategory: (id: string | null) => void;
-  categoryDropdownOpen: boolean;
-  onToggleCategoryDropdown: () => void;
+  sidebarSearch: string;
+  onSidebarSearchChange: (v: string) => void;
   demoDataModules: DrawerProps["demoDataModules"];
   onOpenCierreDiario: () => void;
   onLogout: () => void;
@@ -97,6 +95,7 @@ export interface AdminNavigationSidebar {
   flyoutTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
   hiddenTabs: Set<Tab>;
   sidebarSearch: string;
+  onSidebarSearchChange: (v: string) => void;
   allTabs: SidebarProps["allTabs"];
 }
 
@@ -133,10 +132,8 @@ export function AdminNavigation({
         filteredTabs={shared.filteredTabs}
         allowedTabs={shared.allowedTabs}
         visibleCategories={shared.visibleCategories}
-        selectedCategory={drawer.selectedCategory}
-        onSelectCategory={drawer.onSelectCategory}
-        categoryDropdownOpen={drawer.categoryDropdownOpen}
-        onToggleCategoryDropdown={drawer.onToggleCategoryDropdown}
+        sidebarSearch={drawer.sidebarSearch}
+        onSidebarSearchChange={drawer.onSidebarSearchChange}
         favoriteTabItems={shared.favoriteTabItems}
         customShortcutItems={shared.customShortcutItems}
         recentTabItems={shared.recentTabItems}
@@ -196,6 +193,7 @@ export function AdminNavigation({
         alerts={shared.alerts}
         hiddenTabs={sidebar.hiddenTabs}
         sidebarSearch={sidebar.sidebarSearch}
+        onSidebarSearchChange={sidebar.onSidebarSearchChange}
         allTabs={sidebar.allTabs}
       />
     </>

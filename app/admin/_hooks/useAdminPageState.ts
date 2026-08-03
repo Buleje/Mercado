@@ -15,10 +15,6 @@ import { useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
 export interface UseAdminPageStateResult {
-  selectedCategory: string | null;
-  setSelectedCategory: Dispatch<SetStateAction<string | null>>;
-  categoryDropdownOpen: boolean;
-  setCategoryDropdownOpen: Dispatch<SetStateAction<boolean>>;
   sidebarSearch: string;
   setSidebarSearch: Dispatch<SetStateAction<string>>;
   showModuleHelp: boolean;
@@ -37,8 +33,6 @@ export interface UseAdminPageStateResult {
 }
 
 export function useAdminPageState(): UseAdminPageStateResult {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState("");
   const [showModuleHelp, setShowModuleHelp] = useState(false);
   // Arranca DESPLEGADA: la sección de recientes estuvo sin pintarse mucho
@@ -59,10 +53,6 @@ export function useAdminPageState(): UseAdminPageStateResult {
   const flyoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   return {
-    selectedCategory,
-    setSelectedCategory,
-    categoryDropdownOpen,
-    setCategoryDropdownOpen,
     sidebarSearch,
     setSidebarSearch,
     showModuleHelp,

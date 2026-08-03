@@ -24,7 +24,6 @@ type Params = {
   userRole: string;
   savedRolePerms: Record<string, string[]> | null;
   hiddenTabs: Set<Tab>;
-  selectedCategory: string | null;
   visibleCategories: TabCategory[];
   sidebarSearch: string;
   favoriteTabs: Set<Tab>;
@@ -38,7 +37,6 @@ export function useAdminTabsDerived(params: Params) {
     userRole,
     savedRolePerms,
     hiddenTabs,
-    selectedCategory,
     visibleCategories,
     sidebarSearch,
     favoriteTabs,
@@ -137,12 +135,9 @@ export function useAdminTabsDerived(params: Params) {
   const filteredTabs = useMemo(() => {
     let result = visibleTabs;
 
-    // Filtra por categoría seleccionada en el sidebar
-    if (selectedCategory) {
-      const categoryTabs =
-        visibleCategories.find(c => c.id === selectedCategory)?.tabs ?? [];
-      result = result.filter(t => categoryTabs.includes(t.id));
-    }
+    // (El filtro por categoría se retiró junto con el selector "Todas las
+    // categorías" del drawer: era el único que lo seteaba, así que quedaba
+    // siempre en null y el filtro no hacía nada. Ahora se filtra por búsqueda.)
 
     // Fuzzy search en el sidebar
     if (sidebarSearch.trim()) {
@@ -150,7 +145,7 @@ export function useAdminTabsDerived(params: Params) {
     }
 
     return result;
-  }, [visibleTabs, selectedCategory, visibleCategories, sidebarSearch, fuzzyMatch]);
+  }, [visibleTabs, sidebarSearch, fuzzyMatch]);
 
   const favoriteTabItems = useMemo(
     () =>

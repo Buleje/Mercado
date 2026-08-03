@@ -12,6 +12,8 @@ import {
   PanelLeftClose,
   PanelLeft,
   SlidersHorizontal,
+  Search,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 // resolveSessionStorefrontTarget removed — use activeTenantSlug directly
@@ -112,6 +114,7 @@ export type AdminSidebarProps = {
 
   // Búsqueda en sidebar
   sidebarSearch: string;
+  onSidebarSearchChange: (v: string) => void;
 
   // Modo fácil / avanzado
   isEasyMode?: boolean;
@@ -158,6 +161,7 @@ export function AdminSidebar({
   alerts,
   hiddenTabs,
   sidebarSearch,
+  onSidebarSearchChange,
   isEasyMode: _isEasyMode,
   onToggleAdminMode: _onToggleAdminMode,
   allTabs,
@@ -911,6 +915,45 @@ export function AdminSidebar({
             </div>
           )}
         </div>
+
+        {/* Buscador de módulos. El sidebar YA filtraba por `sidebarSearch`
+            (más abajo, cuando hay término) pero nunca hubo un input que lo
+            escribiera: el estado quedaba siempre en "" y esa rama era
+            inalcanzable. Ahora existe, y el drawer del celular usa el mismo
+            estado, así que buscar funciona igual en las dos superficies.
+            Se oculta en modo compacto (no hay ancho para un campo). */}
+        {!effectiveCompact && (
+          <div className="px-2.5 pb-2">
+            <div className="relative">
+              <Search className={cn(
+                "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none",
+                isDarkTheme ? "text-white/40" : "text-[var(--text-tertiary)]",
+              )} />
+              <input
+                type="text"
+                value={sidebarSearch}
+                onChange={(e) => onSidebarSearchChange(e.target.value)}
+                placeholder="Buscar módulo…"
+                aria-label="Buscar módulo"
+                className={cn(
+                  "w-full h-10 pl-9 pr-8 rounded-xl text-sm border transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] focus:border-[var(--accent)]",
+                  isDarkTheme
+                    ? "bg-white/[0.04] border-[color-mix(in_oklab,var(--accent)_15%,transparent)] text-white placeholder:text-white/40"
+                    : "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
+                )}
+              />
+              {sidebarSearch && (
+                <button
+                  onClick={() => onSidebarSearchChange("")}
+                  aria-label="Limpiar búsqueda"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-[var(--rule-soft)] dark:hover:bg-white/10 transition-colors"
+                >
+                  <X className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ── Navigation ── */}
         <nav className={cn(

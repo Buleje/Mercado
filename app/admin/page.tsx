@@ -87,9 +87,7 @@ function AdminPage() {
   } = useAdminLayout();
 
   const {
-    selectedCategory, setSelectedCategory,
-    categoryDropdownOpen, setCategoryDropdownOpen,
-    sidebarSearch, setShowModuleHelp,
+    sidebarSearch, setSidebarSearch, setShowModuleHelp,
     recentCollapsed, setRecentCollapsed,
     openAccordionCategories, setOpenAccordionCategories,
     sidebarFlyout, setSidebarFlyout, flyoutTimerRef,
@@ -205,7 +203,7 @@ function AdminPage() {
   const visibleCategories = useVisibleCategories(categoryOrder);
 
   const { allowedTabs, filteredTabs, visibleTabs, favoriteTabItems, recentTabItems } = useAdminTabsDerived({
-    userRole, savedRolePerms, hiddenTabs, selectedCategory, visibleCategories,
+    userRole, savedRolePerms, hiddenTabs, visibleCategories,
     sidebarSearch, favoriteTabs, recentTabs, currentTab: tab, fuzzyMatch,
   });
 
@@ -318,9 +316,7 @@ function AdminPage() {
         drawer={{
           open: mobileNavOpen,
           onClose: () => setMobileNavOpen(false),
-          selectedCategory, onSelectCategory: setSelectedCategory,
-          categoryDropdownOpen,
-          onToggleCategoryDropdown: () => setCategoryDropdownOpen(!categoryDropdownOpen),
+          sidebarSearch, onSidebarSearchChange: setSidebarSearch,
           demoDataModules: DEMO_DATA_MODULES,
           onOpenCierreDiario: () => setShowCierreDiario(true),
           onLogout: handleLogout,
@@ -333,7 +329,7 @@ function AdminPage() {
               prev.has(categoryId) ? new Set() : new Set([categoryId])
             ),
           sidebarFlyout, onSidebarFlyoutChange: setSidebarFlyout, flyoutTimerRef,
-          hiddenTabs, sidebarSearch, allTabs: ALL_TABS,
+          hiddenTabs, sidebarSearch, onSidebarSearchChange: setSidebarSearch, allTabs: ALL_TABS,
         }}
       />
 
