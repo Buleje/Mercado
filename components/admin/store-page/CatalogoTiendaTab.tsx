@@ -43,6 +43,7 @@ import {
 } from "@buleje/design-system";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -273,10 +274,10 @@ export default function CatalogoTiendaTab() {
       const tenantSlug = await resolveActiveTenantSlug();
       const res = await fetch("/api/store-page/visibility", {
         method: "PATCH",
-        headers: {
+        headers: csrfHeaders({
           "Content-Type": "application/json",
           "x-tenant-id": tenantSlug,
-        },
+        }),
         body: JSON.stringify({ productIds, visible }),
       });
       if (!res.ok) {

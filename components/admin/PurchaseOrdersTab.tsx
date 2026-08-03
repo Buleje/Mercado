@@ -377,7 +377,7 @@ export default function PurchaseOrdersTab() {
 
   const deleteOrder = async (id: string) => {
     if (!confirm("¿Eliminar esta orden de compra?")) return;
-    await fetch(`/api/purchases/${id}`, { method: "DELETE" });
+    await fetch(`/api/purchases/${id}`, { method: "DELETE", headers: csrfHeaders() });
     load();
   };
 

@@ -118,7 +118,7 @@ export default function ExpensesTab() {
   };
 
   const remove = async (id: string) => {
-    await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+    await fetch(`/api/expenses/${id}`, { method: "DELETE", headers: csrfHeaders() });
     setTick(v => v + 1);
   };
 

@@ -95,7 +95,7 @@ export default function TasksTab() {
   };
 
   const deleteTask = async (id: string) => {
-    await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+    await fetch(`/api/tasks/${id}`, { method: "DELETE", headers: csrfHeaders() });
     setTasks(prev => prev.filter(t => t.id !== id));
   };
 

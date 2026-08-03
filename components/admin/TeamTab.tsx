@@ -158,7 +158,7 @@ export default function TeamTab() {
       confirmLabel: "Eliminar acceso",
     });
     if (!ok) return;
-    const res = await fetch(`/api/admin-users?id=${u.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin-users?id=${u.id}`, { method: "DELETE", headers: csrfHeaders() });
     if (res.ok) {
       showUndo({ message: `Usuario "${u.name}" eliminado`, duration: 5000 });
       fetchUsers();

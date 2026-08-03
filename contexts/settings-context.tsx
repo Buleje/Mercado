@@ -10,6 +10,7 @@ import {
 } from "react";
 import { type HomepageContent, DEFAULT_HOMEPAGE, NEW_STORE_DEFAULTS } from "@/lib/homepage-content";
 import { cachedJson } from "@/lib/client-cache-fetch";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export type StoreMode = "whatsapp" | "checkout";
 
@@ -276,7 +277,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         : "main";
     await fetch("/api/settings", {
       method: "PUT",
-      headers: { "Content-Type": "application/json", "x-tenant-id": tenantSlug },
+      headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }),
       body: JSON.stringify({ mode: m }),
     });
     setModeState(m);

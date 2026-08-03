@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { m as motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const SPRING = [0.175, 0.885, 0.32, 1.275] as [number, number, number, number];
 const fadeUp = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, ease: SPRING } };
@@ -268,7 +269,7 @@ export default function SaasHero() {
     setDemoLoading(true);
     setDemoError(null);
     try {
-      const res = await fetch("/api/demo/create", { method: "POST" });
+      const res = await fetch("/api/demo/create", { method: "POST", headers: csrfHeaders() });
       const data = await res.json() as { slug?: string; error?: string };
       if (!res.ok) {
         setDemoError(data.error ?? "No se pudo crear el demo. Intenta en unos minutos.");

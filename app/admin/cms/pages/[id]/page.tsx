@@ -248,7 +248,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
     try {
       const res = await fetch(
         `/api/cms/pages/${params.id}/blocks?blockId=${blockId}`,
-        { method: "DELETE" }
+        { method: "DELETE", headers: csrfHeaders() }
       );
 
       if (res.ok) {

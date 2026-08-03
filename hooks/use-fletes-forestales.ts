@@ -8,9 +8,11 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { resumirFletes, type EstadoPago, type Flete, type FleteInput } from "@/lib/forestal/fletes";
 
-const json = { "Content-Type": "application/json" };
+/** Con el token CSRF: sin él el servidor rechaza la mutación con 403. */
+const jsonConCsrf = () => csrfHeaders({ "Content-Type": "application/json" });
 
 export function useFletesForestales(period: { from: string | null; to: string | null }) {
   const [fletes, setFletes] = useState<Flete[]>([]);
@@ -46,7 +48,7 @@ export function useFletesForestales(period: { from: string | null; to: string | 
     const r = await fetch("/api/admin/forestal/fletes", {
       method: "POST",
       credentials: "include",
-      headers: json,
+      headers: jsonConCsrf(),
       body: JSON.stringify(input),
     });
     const j = (await r.json().catch(() => ({}))) as { flete?: Flete; message?: string };
@@ -63,7 +65,7 @@ export function useFletesForestales(period: { from: string | null; to: string | 
     const r = await fetch("/api/admin/forestal/fletes", {
       method: "PATCH",
       credentials: "include",
-      headers: json,
+      headers: jsonConCsrf(),
       body: JSON.stringify({ id, estadoPago }),
     });
     const j = (await r.json().catch(() => ({}))) as { flete?: Flete };
@@ -76,6 +78,7 @@ export function useFletesForestales(period: { from: string | null; to: string | 
     const r = await fetch(`/api/admin/forestal/fletes?id=${encodeURIComponent(id)}`, {
       method: "DELETE",
       credentials: "include",
+      headers: csrfHeaders(),
     });
     if (!r.ok) throw new Error("No se pudo borrar el flete.");
     setFletes((prev) => prev.filter((f) => f.id !== id));

@@ -27,6 +27,7 @@ import {
   type MovimientoCuenta,
   type TipoMov,
 } from "@/lib/forestal/cuenta-corriente";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { Flete } from "@/lib/forestal/fletes";
 import { Btn, I, IconAction, TablaSkeleton } from "./ctp-shared";
@@ -70,7 +71,7 @@ export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
     const r = await fetch("/api/admin/forestal/cuenta", {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(body),
     });
     const j = (await r.json().catch(() => ({}))) as { movimiento?: MovimientoCuenta; message?: string };
@@ -109,6 +110,7 @@ export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
       const r = await fetch(`/api/admin/forestal/cuenta?id=${encodeURIComponent(id)}`, {
         method: "DELETE",
         credentials: "include",
+        headers: csrfHeaders(),
       });
       if (!r.ok) throw new Error("No se pudo borrar.");
       setMovs((p) => p.filter((m) => m.id !== id));

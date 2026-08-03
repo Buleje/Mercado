@@ -245,7 +245,7 @@ export default function PromocionesModule() {
     setFormError(null);
     setSaving(true);
     try {
-      const res = await fetch(`/api/discount-rules/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/discount-rules/${id}`, { method: "DELETE", headers: csrfHeaders() });
       if (res.ok) {
         setPromos(prev => prev.filter(p => p.id !== id));
         setSuccessMsg("Promoción eliminada");

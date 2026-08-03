@@ -24,6 +24,7 @@ const OfflineIndicator       = dynamic(() => import("@/components/admin/OfflineI
 const CommissionCalculator   = dynamic(() => import("@/components/admin/CommissionCalculator"),   { loading: S });
 
 import { usePOSOffline } from "@/components/admin/pos/usePOSOffline";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 
 // ── Tabs reordenados en flujo lógico del día ──────────────────────────────────
@@ -119,7 +120,7 @@ function ShiftCloseModal({
     setConfirming(true);
     // Attempt to close shift via API (best-effort)
     try {
-      await fetch("/api/cash-registers/close-shift", { method: "POST" });
+      await fetch("/api/cash-registers/close-shift", { method: "POST", headers: csrfHeaders() });
     } catch {
       // ignore — shift close is optional
     }
@@ -336,7 +337,7 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
             className={cn(
               "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors",
               turnoAbierto
-                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10/80"
+                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10"
                 : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200",
             )}
             title={turnoAbierto ? "Turno abierto — click para cerrar" : "Sin turno — click para abrir uno"}

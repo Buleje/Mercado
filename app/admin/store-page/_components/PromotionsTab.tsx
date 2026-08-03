@@ -112,7 +112,7 @@ export default function PromotionsTab() {
 
   async function remove(id: string) {
     if (!confirm("¿Eliminar esta promoción?")) return;
-    await fetch(`/api/store-page/promotions/${id}`, { method: "DELETE" });
+    await fetch(`/api/store-page/promotions/${id}`, { method: "DELETE", headers: csrfHeaders() });
     await load();
   }
 

@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   fuenteAutocompletado,
   normalizarDocumento,
@@ -51,7 +52,15 @@ interface RespuestaDni {
   nombreCompleto?: string | null;
 }
 
-const json = { "Content-Type": "application/json" };
+/**
+ * Cabeceras de toda mutación del directorio.
+ *
+ * Era `{ "Content-Type": "application/json" }` pelado y el servidor exige el
+ * `x-csrf-token` de la cookie (double-submit, `lib/csrf.ts`): alta, edición y
+ * baja de partes y vehículos respondían **403** y el modal sólo podía decir
+ * "no se pudo guardar". Se arma por llamada porque la cookie puede rotar.
+ */
+const jsonConCsrf = () => csrfHeaders({ "Content-Type": "application/json" });
 
 export function useDirectorioForestal(opts: { activo?: boolean } = {}) {
   const habilitado = opts.activo !== false;
@@ -88,7 +97,7 @@ export function useDirectorioForestal(opts: { activo?: boolean } = {}) {
     const r = await fetch("/api/admin/forestal/directorio", {
       method: "POST",
       credentials: "include",
-      headers: json,
+      headers: jsonConCsrf(),
       body: JSON.stringify(input),
     });
     const j = (await r.json().catch(() => ({}))) as { parte?: Parte; message?: string };
@@ -105,6 +114,7 @@ export function useDirectorioForestal(opts: { activo?: boolean } = {}) {
     const r = await fetch(`/api/admin/forestal/directorio?id=${encodeURIComponent(id)}`, {
       method: "DELETE",
       credentials: "include",
+      headers: csrfHeaders(),
     });
     if (!r.ok) throw new Error("No se pudo dar de baja.");
     setPartes((prev) => prev.filter((p) => p.id !== id));
@@ -114,7 +124,7 @@ export function useDirectorioForestal(opts: { activo?: boolean } = {}) {
     const r = await fetch("/api/admin/forestal/directorio/vehiculos", {
       method: "POST",
       credentials: "include",
-      headers: json,
+      headers: jsonConCsrf(),
       body: JSON.stringify(input),
     });
     const j = (await r.json().catch(() => ({}))) as { vehiculo?: Vehiculo; message?: string };
@@ -128,6 +138,7 @@ export function useDirectorioForestal(opts: { activo?: boolean } = {}) {
     const r = await fetch(`/api/admin/forestal/directorio/vehiculos?id=${encodeURIComponent(id)}`, {
       method: "DELETE",
       credentials: "include",
+      headers: csrfHeaders(),
     });
     if (!r.ok) throw new Error("No se pudo dar de baja el vehículo.");
     setVehiculos((prev) => prev.filter((v) => v.id !== id));
@@ -142,7 +153,7 @@ export function useDirectorioForestal(opts: { activo?: boolean } = {}) {
     void fetch("/api/admin/forestal/directorio", {
       method: "PATCH",
       credentials: "include",
-      headers: json,
+      headers: jsonConCsrf(),
       body: JSON.stringify(ids),
     }).catch((err) => console.error("[directorio] no se pudo marcar el uso", String(err)));
   }, []);

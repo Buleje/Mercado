@@ -27,6 +27,7 @@ import {
 } from "react";
 import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
 import type { SocioPlan } from "@/lib/validators/socio-buleje";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export type SocioBulejeState = {
   isSocio: boolean;
@@ -233,7 +234,7 @@ export function SocioBulejeProvider({ children }: { children: ReactNode }) {
             : null;
         const res = await fetch("/api/socio-buleje/subscribe", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ plan, userId: DEMO_USER_ID, ...(ref ? { ref } : {}) }),
         });
         if (res.ok) {
@@ -258,7 +259,7 @@ export function SocioBulejeProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch("/api/socio-buleje/cancel", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ userId: DEMO_USER_ID }),
       });
       if (res.ok) {

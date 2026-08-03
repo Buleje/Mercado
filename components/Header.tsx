@@ -360,7 +360,7 @@ export default function Header() {
 
   const _markAllRead = async () => {
     if (!customer?.phone) return;
-    await fetch(`/api/customer-notifications?phone=${encodeURIComponent(customer.phone!)}&all=1`, { method: "PATCH" });
+    await fetch(`/api/customer-notifications?phone=${encodeURIComponent(customer.phone!)}&all=1`, { method: "PATCH", headers: csrfHeaders() });
     setNotifs(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
   };

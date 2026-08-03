@@ -139,7 +139,7 @@ export default function ComisionesTab() {
   }
 
   async function handleDeleteTier(id: string) {
-    await fetch(`/api/commission-rules?id=${id}`, { method: "DELETE" }).catch((err) => console.warn("[ComisionesTab] delete rule failed:", err));
+    await fetch(`/api/commission-rules?id=${id}`, { method: "DELETE", headers: csrfHeaders() }).catch((err) => console.warn("[ComisionesTab] delete rule failed:", err));
     setDbRules(prev => prev.filter(r => r.id !== id));
     showToast("Regla eliminada");
   }

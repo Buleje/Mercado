@@ -4,6 +4,7 @@ import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState } from "react";
 import { Upload, Download, FileText, CheckCircle, AlertTriangle, Loader2, Package, Users, ShoppingCart, Truck, DollarSign } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type ExportModule = { id: string; label: string; icon: React.ElementType };
 type ImportRecord = { id: string; module: string; filename: string; records: number; status: "success" | "partial" | "error"; date: string; errors: number };
@@ -164,7 +165,7 @@ export default function ImportExportTab() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/products/import", { method: "POST", body: fd, credentials: "include" });
+      const res = await fetch("/api/products/import", { method: "POST", headers: csrfHeaders(), body: fd, credentials: "include" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setImportResult({ success: false, count: 0, errors: 0, message: typeof data?.error === "string" ? data.error : "No se pudo importar el archivo" });

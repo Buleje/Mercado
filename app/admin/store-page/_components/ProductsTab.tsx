@@ -101,6 +101,7 @@ export default function ProductsTab() {
     if (!confirm("¿Eliminar este producto de la página individual?")) return;
     const res = await fetch(`/api/store-page/overrides/${productId}`, {
       method: "DELETE",
+      headers: csrfHeaders(),
     });
     if (res.ok) await load();
   }

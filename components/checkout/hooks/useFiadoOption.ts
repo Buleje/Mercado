@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export type FiadoOptionState = {
   eligible: boolean;
@@ -33,7 +34,7 @@ export function useFiadoOption(finalTotal: number): FiadoOptionState {
     let alive = true;
     fetch("/api/checkout/fiado-option", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: csrfHeaders({ "content-type": "application/json" }),
       body: JSON.stringify({ total: finalTotal }),
     })
       .then((r) => (r.ok ? r.json() : null))

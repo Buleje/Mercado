@@ -592,7 +592,7 @@ function SectionCard({
   return (
     <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
       <div className="flex items-center gap-2.5 border-b border-white/5 bg-white/[0.02] px-3 py-2.5">
-        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10/15 text-[var(--accent-soft)]">
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-soft)]">
           <Icon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
@@ -893,7 +893,7 @@ function SectionStyleEditor({
   return (
     <div className="space-y-3">
       {/* Encabezado: volver + sección + scope */}
-      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-primary/10/10 px-2.5 py-2">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-primary/10 px-2.5 py-2">
         <button
           type="button"
           onClick={onBack}
@@ -958,7 +958,7 @@ function SectionStyleEditor({
                     onClick={() => onText("align", val)}
                     className={cn(
                       "flex flex-col items-center gap-1 rounded-lg border py-2 transition-colors",
-                      active ? "border-[var(--accent-soft)] bg-primary/10/10 text-white" : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/25",
+                      active ? "border-[var(--accent-soft)] bg-primary/10 text-white" : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/25",
                     )}
                   >
                     <Ico className="h-4 w-4" />
@@ -1002,7 +1002,7 @@ function SectionStyleEditor({
                 onClick={() => onPreset(p.style)}
                 className={cn(
                   "group rounded-lg border p-2 text-left transition-colors",
-                  active ? "border-[var(--accent-soft)] bg-primary/10/10" : "border-white/10 bg-white/[0.03] hover:border-white/25",
+                  active ? "border-[var(--accent-soft)] bg-primary/10" : "border-white/10 bg-white/[0.03] hover:border-white/25",
                 )}
               >
                 <span
@@ -1032,7 +1032,7 @@ function SectionStyleEditor({
       {/* Fondo avanzado (Brandon 2026-06-27 · #3): degradado / imagen+overlay / patrón */}
       <details className="group overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
         <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-white/[0.02]">
-          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10/15 text-[var(--accent-soft)]">
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-soft)]">
             <Palette className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
@@ -1257,7 +1257,7 @@ function CustomSectionEditor({
     : null;
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-primary/10/10 px-2.5 py-2">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-primary/10 px-2.5 py-2">
         <button type="button" onClick={onBack} aria-label="Volver al menú" className="shrink-0 rounded-md p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white">
           <ArrowLeft className="h-4 w-4" />
         </button>
@@ -1275,7 +1275,7 @@ function CustomSectionEditor({
             type="button"
             onClick={generateWithAi}
             disabled={aiBusy}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--accent-soft)]/40 bg-primary/10/10 px-3 py-2 text-xs font-bold text-[var(--accent-soft)] transition-colors hover:bg-primary/10/20 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--accent-soft)]/40 bg-primary/10 px-3 py-2 text-xs font-bold text-[var(--accent-soft)] transition-colors hover:bg-primary/10 disabled:opacity-50"
           >
             <Sparkles className={cn("h-3.5 w-3.5", aiBusy && "animate-pulse")} />
             {aiBusy ? "Generando…" : "Generar contenido con IA"}
@@ -1564,7 +1564,7 @@ function CardDesignEditor({
   const hasAny = Object.keys(value).length > 0;
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-primary/10/10 px-2.5 py-2">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-primary/10 px-2.5 py-2">
         <button type="button" onClick={onBack} aria-label="Volver al menú" className="shrink-0 rounded-md p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white">
           <ArrowLeft className="h-4 w-4" />
         </button>
@@ -2336,7 +2336,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       // Auto-save tienda section changes to backend
       fetch("/api/settings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-tenant-id": tenantSlug },
+        headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }),
         body: JSON.stringify({ storeTheme: { tiendaSections: next } }),
       }).catch((e) => { console.warn("[creative-mode] operación en background falló", e); });
       return next;
@@ -2354,7 +2354,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       // Auto-save order
       fetch("/api/settings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-tenant-id": tenantSlug },
+        headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }),
         body: JSON.stringify({ storeTheme: { tiendaSectionOrder: next } }),
       }).catch((e) => { console.warn("[creative-mode] operación en background falló", e); });
       return next;
@@ -3047,7 +3047,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   onClick={() => setNavMode((v) => !v)}
                   className={cn(
                     "inline-flex items-center gap-1.5 px-2.5 h-8 rounded-md text-xs font-bold transition-colors",
-                    navMode ? "bg-primary/10/20 text-[var(--accent-soft)]" : "text-gray-300 hover:text-white hover:bg-gray-700",
+                    navMode ? "bg-primary/10 text-[var(--accent-soft)]" : "text-gray-300 hover:text-white hover:bg-gray-700",
                   )}
                   title={navMode ? "Volver a editar (click selecciona)" : "Probar la tienda: scroll y clicks reales"}
                 >
@@ -4115,7 +4115,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* ── Bandas de imagen extra (sectionImages REAL) — secundario ── */}
                 <details className="group overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
                   <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-white/[0.02]">
-                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10/15 text-[var(--accent-soft)]">
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-soft)]">
                       <ImageIcon className="h-4 w-4" />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -4723,7 +4723,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
                 {/* Lote G: comparación side-by-side de 2 versiones seleccionadas. */}
                 {compareIdx.length === 2 && (
-                  <div className="rounded-lg border border-[var(--accent-soft)]/40 bg-primary/10/10 p-2.5">
+                  <div className="rounded-lg border border-[var(--accent-soft)]/40 bg-primary/10 p-2.5">
                     <p className="mb-2 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">Comparando 2 versiones</p>
                     <div className="grid grid-cols-2 gap-2">
                       {compareIdx.map((ci) => {

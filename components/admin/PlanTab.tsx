@@ -332,7 +332,7 @@ export default function PlanTab() {
   const handleRemoveDomain = async () => {
     setDomainRemoving(true);
     try {
-      const res = await fetch("/api/tenant/custom-domain", { method: "DELETE" });
+      const res = await fetch("/api/tenant/custom-domain", { method: "DELETE", headers: csrfHeaders() });
       if (!res.ok) { showToast("Error al eliminar dominio", false); return; }
       setStatus((prev) => prev ? { ...prev, tenant: { ...prev.tenant, customDomain: null } } : prev);
       setDomainInput("");

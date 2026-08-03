@@ -154,7 +154,7 @@ export default function CouponsTab() {
       confirmLabel: "Eliminar",
     });
     if (!ok) return;
-    await fetch(`/api/coupons/${id}`, { method: "DELETE" });
+    await fetch(`/api/coupons/${id}`, { method: "DELETE", headers: csrfHeaders() });
     showUndo({ message: `Cupón "${code}" eliminado`, duration: 5000 });
     load();
   };

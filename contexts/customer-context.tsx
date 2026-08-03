@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { tenantKey } from "@/contexts/tenant-context";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export type SavedLocation = {
   id: string;
@@ -250,7 +251,7 @@ export function CustomerProvider({
     if (data.phone && hasAdminSession) {
       fetch("/api/customers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           phone: data.phone,
           name: data.name,

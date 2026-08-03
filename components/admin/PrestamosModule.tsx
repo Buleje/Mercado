@@ -2173,7 +2173,7 @@ ${cuotas.map(c => { const row = `<tr>
                         <label className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[var(--rule-base)] cursor-pointer hover:bg-[var(--surface-sunken)]">
                           <input type="file" className="hidden" onChange={async (e) => {
                             const file = e.target.files?.[0]; if (!file) return; setUploadingDoc(true);
-                            try { const form = new FormData(); form.append("file", file); form.append("nombre", file.name); await fetch(`/api/prestamos/${selected.id}/documentos`, { method: "POST", body: form }); await openDetail(selected); } catch { /* silent */ } finally { setUploadingDoc(false); e.target.value = ""; }
+                            try { const form = new FormData(); form.append("file", file); form.append("nombre", file.name); await fetch(`/api/prestamos/${selected.id}/documentos`, { method: "POST", headers: csrfHeaders(), body: form }); await openDetail(selected); } catch { /* silent */ } finally { setUploadingDoc(false); e.target.value = ""; }
                           }} />
                           {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--accent)]" /> : <Plus className="h-3.5 w-3.5 text-[var(--data-info-500)]" />}
                           <span className="text-xs text-[var(--text-secondary)]">Subir documento</span>

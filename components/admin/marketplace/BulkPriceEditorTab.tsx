@@ -9,6 +9,7 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -207,7 +208,7 @@ export default function BulkPriceEditorTab() {
       const updates = Array.from(changes.entries()).map(([id, ch]) => ({ id, ...ch }));
       const res = await fetch("/api/marketplace/products/bulk-edit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ updates }),
       });
       setProgress(90);
