@@ -24,6 +24,12 @@ export interface CtpEntry {
   /** Cuánto de ESTA corrida ya salió y cuánto se reprocesó — el "¿ya se fue?". */
   despachadoQty?: number;
   reprocesadoQty?: number;
+  /**
+   * Sólo en despacho: cuánto de lo despachado tiene corrida de origen declarada.
+   * Lo agrega el listado para que la fila pueda avisar del faltante sin abrir la
+   * ficha de cadena de custodia (ver `lib/forestal/atribucion-despacho.ts`).
+   */
+  atribuidoQty?: number;
 }
 
 /**
@@ -32,6 +38,13 @@ export interface CtpEntry {
  * Un paquete parcialmente despachado es lo normal (un camión no se lleva todo),
  * y no verlo obliga a abrir el detalle para saber si queda algo.
  */
+/**
+ * Cómo se escribe cada unidad. Estaba copiado en la tabla, la card mobile y la
+ * ficha del despacho: tres lugares donde agregar una unidad nueva y olvidarse de
+ * dos deja "pt" crudo en pantalla.
+ */
+export const UNIT_LABELS: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "unidad" };
+
 export function estadoSalida(e: CtpEntry): { label: string; tono: "stock" | "parcial" | "salido" } | null {
   if (e.section !== "produccion") return null;
   const producido = Number(e.quantity ?? 0);

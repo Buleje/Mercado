@@ -361,11 +361,40 @@ export class ForestCtpDB {
       prisma.forestCtpEntry.count({ where }),
     ]);
 
+    /**
+     * ¿Cuánto de cada despacho tiene origen declarado?
+     *
+     * La atribución parcial es LEGAL (invariante I4: siempre `≤`, nunca `==` —
+     * forzar el 100% fabrica el fraude que previene), pero tiene que VERSE: un
+     * despacho de 10 m³ con 5 atribuidos son 5 m³ que salieron de la planta sin
+     * corrida de origen, y es lo primero que cruza un fiscalizador. Hasta ahora
+     * sólo se sabía abriendo el despacho, de a uno.
+     *
+     * Un `groupBy` por página, igual que el de las corridas de abajo.
+     */
+    const despachos = entries.filter((e) => e.section === "despacho").map((e) => e.id);
+    const atribuido = new Map<string, number>();
+    if (despachos.length > 0) {
+      const filas = await prisma.forestCtpDespachoOrigen.groupBy({
+        by: ["despachoEntryId"],
+        where: { tenantId, despachoEntryId: { in: despachos } },
+        _sum: { quantity: true },
+      });
+      for (const f of filas) atribuido.set(f.despachoEntryId, Number(f._sum.quantity ?? 0));
+    }
+
     // ¿Este paquete ya salió? Es la pregunta del reporte "estado de productos":
     // se produjo, ¿sigue en el patio o ya se lo llevaron? Va agregado acá y no
     // en el cliente porque la respuesta son dos tablas puente, no un campo.
     const corridas = entries.filter((e) => e.section === "produccion").map((e) => e.id);
-    if (corridas.length === 0) return { entries, total };
+    if (corridas.length === 0) {
+      return {
+        entries: entries.map((e) =>
+          e.section === "despacho" ? { ...e, atribuidoQty: atribuido.get(e.id) ?? 0 } : e,
+        ),
+        total,
+      };
+    }
 
     const [salidas, reprocesos] = await Promise.all([
       prisma.forestCtpDespachoOrigen.groupBy({
@@ -393,7 +422,9 @@ export class ForestCtpDB {
               despachadoQty: desp.get(e.id) ?? 0,
               reprocesadoQty: repro.get(e.id) ?? 0,
             }
-          : e,
+          : e.section === "despacho"
+            ? { ...e, atribuidoQty: atribuido.get(e.id) ?? 0 }
+            : e,
       ),
       total,
     };

@@ -11,8 +11,10 @@
  */
 
 import { AlertCircle, Boxes, Calendar, FileText, Link2, PackagePlus, Truck } from "@buleje/design-system/icons";
+import { atribucionDeDespacho, faltaAtribuir } from "@/lib/forestal/atribucion-despacho";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import type { CtpEntry, CtpSection } from "./CtpSectionViews";
+import { UNIT_LABELS } from "./ctp-section-shared";
 
 interface CtpSeccionCardMobileProps {
   entry: CtpEntry;
@@ -37,6 +39,12 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
   const anulado = e.status === "anulado";
   const KindIcon = section === "produccion" ? Boxes : Truck;
   const rend = section === "produccion" ? evaluarRendimiento(e.productType, e.rendimientoPct != null ? Number(e.rendimientoPct) : null) : null;
+  /** Cuánto de este despacho salió sin origen declarado — misma regla que la tabla. */
+  const atribucion = atribucionDeDespacho(
+    e.quantity == null ? null : Number(e.quantity),
+    e.atribuidoQty,
+    UNIT_LABELS[e.unit ?? "m3"] ?? e.unit ?? "",
+  );
 
   return (
     <article className={`rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 ${anulado ? "opacity-60" : ""}`}>
@@ -74,9 +82,22 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
             </span>
           )
         ) : (
-          <span className="text-sm text-[var(--text-secondary)]">
-            <strong className="font-mono tabular-nums text-[var(--text-primary)]">{e.pieces ?? "—"}</strong> pz
-          </span>
+          <>
+            <span className="text-sm text-[var(--text-secondary)]">
+              <strong className="font-mono tabular-nums text-[var(--text-primary)]">{e.pieces ?? "—"}</strong> pz
+            </span>
+            {/* Mismo aviso que la tabla: en dual-render, mostrarlo sólo del lado
+                escritorio lo hace invisible para quien despacha desde el patio. */}
+            {faltaAtribuir(atribucion) && (
+              <span
+                title="Este volumen salió sin corrida de producción atribuida. Sin origen no se puede certificar."
+                className="basis-full inline-flex items-center gap-1 rounded-lg bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+              >
+                <AlertCircle className="h-3 w-3 shrink-0" aria-hidden />
+                {atribucion.aviso}
+              </span>
+            )}
+          </>
         )}
       </div>
 

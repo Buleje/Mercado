@@ -11,7 +11,7 @@ import dynamic from "next/dynamic";
 import {
   Plus, RefreshCw, Search, Boxes, Truck, AlertCircle, X as XIcon,
   Scale, PackageCheck, PackagePlus, Link2, Calculator, FileText, Download,
-  ArrowUp, ArrowDown, ArrowUpDown,
+  ArrowUp, ArrowDown, ArrowUpDown, AlertTriangle,
   ClipboardList,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
@@ -35,10 +35,11 @@ import {
   type FiltrosSeccion,
 } from "@/lib/forestal/ctp-secciones-filtro";
 import { nombreArchivoSeccion, seccionACsv } from "@/lib/forestal/ctp-secciones-csv";
+import { atribucionDeDespacho, faltaAtribuir } from "@/lib/forestal/atribucion-despacho";
 
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
-import { type CtpEntry, type CtpSection, Th, Td, n2, estadoSalida } from "./ctp-section-shared";
+import { type CtpEntry, type CtpSection, Th, Td, n2, estadoSalida, UNIT_LABELS } from "./ctp-section-shared";
 import { Btn, IconAction, TablaSkeleton } from "./ctp-shared";
 
 /** Una tarjeta que filtra se ve hundida: si no, nadie sabe por qué la tabla
@@ -53,6 +54,36 @@ const SECTION_META: Record<CtpSection, { label: string; icon: typeof Boxes; cta:
 // timeZone UTC: entryDate es date-only guardada a medianoche UTC — en hora Lima se corría un día.
 const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; } };
 const n4 = (v: string | null) => (v == null ? "—" : Number(v).toFixed(4));
+
+
+/**
+ * ¿Cuánto de este despacho salió SIN corrida de origen declarada?
+ *
+ * La atribución parcial está permitida a propósito (invariante I4: `≤`, nunca
+ * `==` — exigir el 100% para poder guardar empuja a inventar un origen). Lo que
+ * no puede pasar es que sea invisible: hasta ahora el faltante sólo se veía
+ * abriendo la ficha de cadena de custodia, de a un despacho por vez, y es lo
+ * primero que cruza un fiscalizador.
+ *
+ * Silencioso cuando está completo o cuando el despacho no declara cantidad.
+ */
+function AtribucionBadge({ entry }: { entry: CtpEntry }) {
+  const estado = atribucionDeDespacho(
+    entry.quantity == null ? null : Number(entry.quantity),
+    entry.atribuidoQty,
+    UNIT_LABELS[entry.unit ?? "m3"] ?? entry.unit ?? "",
+  );
+  if (!faltaAtribuir(estado)) return null;
+  return (
+    <div
+      title="Este volumen salió de la planta sin corrida de producción atribuida. Abrí la cadena de custodia para completarlo: sin origen no se puede certificar."
+      className="mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+    >
+      <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
+      {estado.aviso}
+    </div>
+  );
+}
 
 /**
  * ¿El paquete sigue en el patio o ya se lo llevaron?
@@ -473,7 +504,10 @@ export function CtpEntriesView({
                   </>
                 ) : (
                   <>
-                    <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{n4(e.quantity)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span></Td>
+                    <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                      {n4(e.quantity)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span>
+                      <AtribucionBadge entry={e} />
+                    </Td>
                     <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{e.pieces ?? "—"}</Td>
                     <Td className="font-mono text-xs font-bold text-[var(--text-primary)]">{e.gtfNumber ?? "—"}</Td>
                     <Td className="text-[var(--text-secondary)]">{e.destino ?? "—"}</Td>

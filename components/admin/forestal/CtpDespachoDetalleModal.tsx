@@ -15,6 +15,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { UNIT_LABELS } from "./ctp-section-shared";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle, SuccessAlert, WarningAlert, ErrorAlert } from "@buleje/design-system";
 import {
@@ -69,8 +70,6 @@ interface CogsDTO {
   sinAtribuir: number;
   detalle: { lineNo: number; quantity: number; costoUnitario: number | null; costo: number | null; congelado: boolean }[];
 }
-
-const UNIT_LABELS: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "unidad" };
 
 /** Por qué la cadena NO está completa, en el idioma del operador. */
 const TRAZA_MOTIVO: Record<Exclude<TrazabilidadDTO["motivo"], "ok">, string> = {
