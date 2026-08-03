@@ -8,7 +8,6 @@ import { SectionTitle } from "@buleje/design-system";
 import {
   ChevronRight,
   ChevronDown,
-  Globe,
   Store,
   PanelLeftClose,
   PanelLeft,
@@ -40,11 +39,6 @@ import {
 // 2026-05-29: en la barra solo queda "Ver tiendas" (lista del marketplace).
 // Cambiar a true para reactivar el link al storefront propio.
 const SHOW_MI_TIENDA_LINK = false;
-
-// Umbral de categorización del sidebar (Brandon 2026-05-29): con MÁS de N
-// módulos visibles se agrupan en categorías desplegables; con N o menos se
-// muestran como links sueltos (sin categorización).
-const MODULE_FLAT_THRESHOLD = 15;
 
 // ─── Tipos del tab-item que se usa en esta pantalla ───────────────────────────
 type TabItem = {
@@ -528,38 +522,15 @@ export function AdminSidebar({
   }, [visibleCategories, categoryOrder, hiddenCategories]);
 
   // ── Modo "suelto" vs categorizado (Brandon 2026-05-29) ──────────────────
-  // Regla: ≤15 módulos visibles → links SUELTOS (sin agrupar en categorías);
-  // >15 → se categorizan en grupos desplegables. En modo suelto cada tab se
-  // vuelve una pseudo-categoría de 1 tab → el render existente la pinta como
-  // enlace directo (isSingleTab), sin headers ni acordeones.
-  const flattenedVisibleTabIds = React.useMemo(() => {
-    const ids: Tab[] = [];
-    for (const category of orderedVisibleCategories) {
-      const rbac = category.tabs.filter(
-        (t) =>
-          allowedTabs.includes(t) &&
-          !hiddenTabs.has(t) &&
-          !hiddenSubTabs.has(t) &&
-          !isHiddenByTemplate(t),
-      );
-      const { visible } = applyVerticalFilter(rbac);
-      for (const id of visible) ids.push(id as Tab);
-    }
-    return ids;
-  }, [orderedVisibleCategories, allowedTabs, hiddenTabs, hiddenSubTabs, isHiddenByTemplate, applyVerticalFilter]);
-
-  const navCategories = React.useMemo<TabCategory[]>(() => {
-    if (flattenedVisibleTabIds.length > MODULE_FLAT_THRESHOLD) return orderedVisibleCategories;
-    return flattenedVisibleTabIds.map((id) => {
-      const info = allTabs.find((t) => t.id === id);
-      return {
-        id: `flat:${id}`,
-        label: info?.label ?? String(id),
-        icon: info?.icon ?? Globe,
-        tabs: [id],
-      } as TabCategory;
-    });
-  }, [flattenedVisibleTabIds, orderedVisibleCategories, allTabs]);
+  // Siempre se navega POR CATEGORÍA. Había una rama "plana" que, por debajo de
+  // 15 módulos visibles, reemplazaba las categorías por pseudo-categorías
+  // `flat:<tab>` de un solo tab. Como los encabezados de sección se anclan al
+  // id de la categoría real, con esa rama activa NINGÚN encabezado matcheaba:
+  // el menú quedaba en 21 enlaces sueltos, sin un solo agrupador (medido en el
+  // DOM: 0 encabezados). No hacía falta: una categoría con un solo tab visible
+  // ya se dibuja como enlace directo más abajo, así que los tenants chicos
+  // siguen viendo enlaces sueltos — pero ahora bajo su sección.
+  const navCategories = orderedVisibleCategories;
 
   /* 3 temas editoriales del sidebar:
      - cristal: slate-900 profundo con acento teal (inspirado en iOS/Linear)
@@ -831,17 +802,23 @@ export function AdminSidebar({
   };
 
   // Section headers keyed by the first category id in each group
+  // Encabezado de sección que se dibuja ANTES de esta categoría. Cubre todo el
+  // menú: antes sólo había 4 anclas (y una, `documentos`, apuntaba a una
+  // categoría que no existe), así que la mayoría de los módulos quedaba
+  // flotando sin agrupar. El orden de TAB_CATEGORIES los deja contiguos.
+  // Cada sección se puede plegar y el estado se recuerda.
+  //
+  // "Inicio" no lleva encabezado a propósito: es el punto de entrada, no un
+  // grupo. Las especializaciones se auto-ocultan si el tenant no las tiene
+  // (la categoría no renderiza cuando catTabs.length === 0), y con ellas su
+  // encabezado.
   const SECTION_BEFORE: Record<string, string> = {
     ventas: "Operaciones",
+    clientes: "Clientes",
     finanzas: "Gestión",
     "marketplace-ops": "Canales",
-    documentos: "Más",
-    // ADR-124 — Especializaciones tiene su propio super-section. Solo
-    // aparece si el tenant tiene specs habilitadas (la categoría se
-    // auto-oculta en el render cuando catTabs.length === 0). Brandon
-    // 2026-05-29: dividido en Forestal + Agricultura; el header se ancla a
-    // la PRIMERA categoría de spec (forestal) que precede a agricultura.
     forestal: "Especializaciones",
+    sistema: "Sistema",
   };
 
   return (
@@ -1274,32 +1251,69 @@ export function AdminSidebar({
             );
           })}
 
-          {/* Icon-only in compact/focus mode.
-              Tooltip lateral se renderiza globalmente via compactTooltip state
-              (position:fixed, escapa del overflow clip del nav). */}
-          {effectiveCompact && filteredTabs.map(({ id, label, icon: Icon }) => {
-            const alertCount = alerts[id] ?? 0;
-            const isActive = tab === id;
+          {/* Modo compacto: un icono POR CATEGORÍA, no por tab.
+              Antes acá se listaban los tabs sueltos (`filteredTabs`), así que
+              el menú colapsado ofrecía otra cosa que el desplegado: sin
+              secciones, sin grupos y sin forma de ver qué había dentro de una
+              categoría. Ahora recorre las MISMAS `navCategories`: si la
+              categoría tiene un solo tab visible navega directo, y si tiene
+              varios, el hover abre el flyout con la lista completa — las
+              mismas opciones que al desplegar. */}
+          {effectiveCompact && navCategories.map((category) => {
+            const rbacC = category.tabs.filter(
+              t => allowedTabs.includes(t as Tab) && !hiddenTabs.has(t as Tab)
+                && !hiddenSubTabs.has(t as Tab) && !isHiddenByTemplate(t),
+            );
+            const { visible: catTabs } = applyVerticalFilter(rbacC);
+            if (catTabs.length === 0) return null;
+            const single = catTabs.length === 1;
+            const first = catTabs[0];
+            const info = allTabs.find(t => t.id === first);
+            const useCatIdentity = !single || category.alwaysGroup;
+            const id = first as Tab;
+            const label = useCatIdentity
+              ? resolveLabel(category.id, category.label)
+              : resolveLabel(first, info?.label ?? category.label);
+            const Icon = (useCatIdentity ? category.icon : (info?.icon ?? category.icon)) as React.ElementType;
+            const alertCount = catTabs.reduce((sum, t) => sum + (alerts[t] || 0), 0);
+            const isActive = (catTabs as string[]).includes(tab as string);
             return (
-              <div key={id} className="relative">
+              <div key={category.id} className="relative">
                 <button
                   data-tour-tab={id}
-                  onClick={() => navigateTab(id)}
-                  onMouseEnter={(e) => { preloadTab(id); handleCompactHover(e.currentTarget, label); }}
-                  onMouseLeave={handleCompactLeave}
+                  onClick={(e) => {
+                    if (single) { navigateTab(id); return; }
+                    const r = e.currentTarget.getBoundingClientRect();
+                    onSidebarFlyoutChange({ categoryId: category.id, top: r.top });
+                  }}
+                  onMouseEnter={(e) => {
+                    preloadTab(id);
+                    handleCompactHover(e.currentTarget, label);
+                    if (!single) {
+                      if (flyoutTimerRef.current) clearTimeout(flyoutTimerRef.current);
+                      const r = e.currentTarget.getBoundingClientRect();
+                      onSidebarFlyoutChange({ categoryId: category.id, top: r.top });
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    handleCompactLeave();
+                    if (!single) {
+                      flyoutTimerRef.current = setTimeout(() => onSidebarFlyoutChange(null), 150);
+                    }
+                  }}
                   aria-label={label}
+                  aria-haspopup={single ? undefined : "menu"}
                   className={cn(
                     "relative w-full flex items-center justify-center rounded-lg transition-all mb-0.5 px-0 py-2.5",
-                    isActive
-                      ? cn(themeClasses.activeItem)
-                      : cn(themeClasses.text, themeClasses.hover),
+                    isActive ? cn(themeClasses.activeItem) : cn(themeClasses.text, themeClasses.hover),
                   )}
                 >
                   {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-white/70" />}
                   <Icon className="h-5 w-5 shrink-0 transition-transform duration-[var(--dur-base)]" />
+                  {!single && (
+                    <span className="absolute bottom-1 right-1.5 h-1 w-1 rounded-full bg-current opacity-50" aria-hidden />
+                  )}
                   {alertCount > 0 && (
-                    // Modo compact: badge en esquina sup-der del icono con ring
-                    // que separa visualmente del icon. Sin animación.
                     <span
                       className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--data-error-500)] text-white text-xs font-extrabold tabular-nums leading-none ring-2 ring-[var(--surface-raised)] dark:ring-[var(--surface-canvas)] shadow-sm"
                       title={`${alertCount} ${alertCount === 1 ? "alerta" : "alertas"} sin leer`}
@@ -1311,6 +1325,7 @@ export function AdminSidebar({
               </div>
             );
           })}
+
         </nav>
 
         {/* ── Footer: mode toggle + external links + compact toggle ── */}
@@ -1447,7 +1462,12 @@ export function AdminSidebar({
       )}
 
       {/* Sidebar category flyout panel — only for multi-tab categories */}
-      {!effectiveCompact && sidebarFlyout && (() => {
+      {/* Flyout del modo compacto: la lista de tabs de la categoría bajo el
+          cursor. Estaba escrito pero MUERTO — nadie llamaba a
+          onSidebarFlyoutChange con un valor, y encima la condición pedía
+          `!effectiveCompact`, o sea que sólo habría aparecido con el sidebar
+          desplegado, donde el acordeón ya muestra lo mismo. */}
+      {effectiveCompact && sidebarFlyout && (() => {
         const cat = visibleCategories.find(c => c.id === sidebarFlyout.categoryId);
         if (!cat) return null;
         const catTabs = cat.tabs.filter(t => allowedTabs.includes(t as Tab) && !isHiddenByTemplate(t));
@@ -1458,7 +1478,10 @@ export function AdminSidebar({
             initial={{ opacity: 0, x: -8, scale: 0.97 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             transition={{ duration: 0.15 }}
-            style={{ position: "fixed", top: sidebarFlyout.top, left: 264, zIndex: 50 }}
+            // El sidebar compacto mide 60px (l.859); el 264 hardcodeado era el
+            // ancho del EXPANDIDO, así que el panel habría aparecido flotando a
+            // 200px del icono.
+            style={{ position: "fixed", top: sidebarFlyout.top, left: 68, zIndex: 50 }}
             onMouseEnter={() => { if (flyoutTimerRef.current) clearTimeout(flyoutTimerRef.current); }}
             onMouseLeave={() => { flyoutTimerRef.current = setTimeout(() => onSidebarFlyoutChange(null), 150); }}
             className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl py-2 w-60 max-h-[80vh] overflow-y-auto"

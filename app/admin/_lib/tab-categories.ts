@@ -587,12 +587,42 @@ export const SISTEMA_MODULE: TabCategory = {
 //    habilitan; ponerlas arriba las hace descubribles sin scroll. Cada una
 //    auto-oculta si vacía (tenant solo-forestal no ve Agricultura y viceversa).
 // 3. TIENDA_MODULE — al final (configuración visual, menos frecuente).
+// Orden 2026-08-02 (Brandon: "categorías más ordenadas y manejables"): las
+// categorías se agrupan en SECCIONES con encabezado en el sidebar
+// (`SECTION_BEFORE` en AdminSidebar), y una sección sólo se lee como bloque si
+// sus categorías van seguidas. Antes el orden las intercalaba —"Equipo" caía
+// después de "Marketplace"— así que ningún encabezado agrupaba algo contiguo.
+//
+//   Inicio            (sin encabezado: es el punto de entrada)
+//   Operaciones       ventas · compras · productos-inventario
+//   Clientes          clientes · crecimiento
+//   Gestión           finanzas · graficos · equipo
+//   Canales           marketplace-ops · mi-tienda
+//   Especializaciones forestal · agricultura
+//   Sistema           sistema
+const byId = (id: string) => BASIC_MODULES.find((c) => c.id === id)!;
+
 export const TAB_CATEGORIES: TabCategory[] = [
-  ...BASIC_MODULES,
+  byId("inicio"),
+  // Operaciones — lo que pasa cada día en el mostrador y el almacén
+  byId("ventas"),
+  byId("compras"),
+  byId("productos-inventario"),
+  // Clientes — quién compra y qué lo hace volver
+  byId("clientes"),
+  byId("crecimiento"),
+  // Gestión — la plata, los números y el equipo
+  byId("finanzas"),
+  byId("graficos"),
+  byId("equipo"),
+  // Canales — por dónde vende
+  byId("marketplace-ops"),
+  TIENDA_MODULE,
+  // Especializaciones por vertical
   FORESTAL_MODULE,
   AGRICULTURA_MODULE,
+  // Sistema
   SISTEMA_MODULE,
-  TIENDA_MODULE,
 ];
 
 // ── Modo Fácil vs Avanzado ──────────────────────────────────────────────────
