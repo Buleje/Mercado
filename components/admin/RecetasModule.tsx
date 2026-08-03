@@ -1,5 +1,6 @@
 "use client";
 
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -248,6 +249,9 @@ const PER_PAGE = 10;
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+/** Las vistas del módulo, estables: el hook las usa como dependencia. */
+const RECETAS_VISTAS = ["dashboard", "recetas", "produccion", "recetario"] as const;
+
 const RECETAS_MODULE_ID = "recetas";
 const RECETAS_TAB_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: BarChart3 },
@@ -257,13 +261,13 @@ const RECETAS_TAB_ITEMS = [
 ];
 
 export default function RecetasModule() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "recetas" | "produccion" | "recetario">(() => {
-    if (typeof window === "undefined") return "dashboard";
-    const stored = localStorage.getItem(`admin-last-tab-${RECETAS_MODULE_ID}`);
-    if (stored === "dashboard" || stored === "recetas" || stored === "produccion" || stored === "recetario") return stored;
-    return "dashboard";
-  });
-  useEffect(() => { localStorage.setItem(`admin-last-tab-${RECETAS_MODULE_ID}`, activeTab); }, [activeTab]);
+  // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
+  // destino del buscador global.
+  const { vista: activeTab, irA: setActiveTab } = useVistaModulo(
+    RECETAS_MODULE_ID,
+    RECETAS_VISTAS,
+    RECETAS_VISTAS[0],
+  );
 
   // Recetas list
   const [recetas, setRecetas] = useState<Receta[]>([]);

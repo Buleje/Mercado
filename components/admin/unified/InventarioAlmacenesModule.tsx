@@ -8,6 +8,7 @@ import {
   LayoutDashboard, Package, ArrowLeftRight, CalendarClock, TrendingDown,
   ListChecks, X as XIcon,
 } from "@buleje/design-system/icons";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AutoRefreshControl from "@/components/admin/shared/AutoRefreshControl";
@@ -44,12 +45,14 @@ const TABS = [
   { id: "mermas" as const, label: "Pérdidas", icon: TrendingDown },
 ];
 
+/** Los ids, estables: el hook los usa como dependencia. */
+const TAB_IDS = TABS.map((t) => t.id);
+
 export default function InventarioAlmacenesModule() {
-  const [sub, setSub] = useState(() => {
-    if (typeof window === "undefined") return TABS[0].id;
-    return (localStorage.getItem(`admin-last-tab-${MODULE_ID}`) as typeof TABS[number]["id"]) || TABS[0].id;
-  });
-  useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
+  // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
+  // destino del buscador global. `initialTab` gana cuando el módulo se abre
+  // desde un tab alias (ver useVistaModulo).
+  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
   const [conteoMode, setConteoMode] = useState<"wizard" | "manual" | "scanner">("wizard");
   const [showConteoModal, setShowConteoModal] = useState(false);
   const [showDeclaracionModal, setShowDeclaracionModal] = useState(false);

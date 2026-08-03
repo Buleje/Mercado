@@ -7,6 +7,7 @@ import {
   Banknote, History, ArrowRight, Clock, Users,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { cn } from "@/lib/utils";
 
@@ -41,13 +42,8 @@ const _SEPARATOR_AFTER_INDICES = [1, 3, 4]; // Después de Dashboard (idx 1), Tu
 
 type TabId = typeof TABS[number]["id"];
 
-function normalizeVentasCajaTab(savedTab: string | null): TabId {
-  if (savedTab === "resumen" || savedTab === "pedidos" || savedTab === "dashboard") {
-    return "pos";
-  }
-
-  return TABS.some(tab => tab.id === savedTab) ? (savedTab as TabId) : TABS[0].id;
-}
+/** Los ids, estables: el hook los usa como dependencia. */
+const TAB_IDS = TABS.map((t) => t.id);
 
 // ── Shift Close Modal Types ─────────────────────────────────────────────────
 
@@ -243,12 +239,10 @@ function ShiftCloseModal({
 // ── Main Module ─────────────────────────────────────────────────────────────
 
 export default function POSCajaModule({ initialTab }: { initialTab?: string } = {}) {
-  const [sub, setSub] = useState<TabId>(() => {
-    if (initialTab) return initialTab as TabId;
-    if (typeof window === "undefined") return TABS[0].id;
-    return normalizeVentasCajaTab(localStorage.getItem(`admin-last-tab-${MODULE_ID}`));
-  });
-  useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
+  // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
+  // destino del buscador global. `initialTab` gana cuando el módulo se abre
+  // desde un tab alias (ej. `?tab=turnos`).
+  const { vista: sub, irA: setSub } = useVistaModulo<TabId>(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab);
   const [showShiftClose, setShowShiftClose] = useState(false);
   const { pendingCount, isOnline: _isOnline } = usePOSOffline();
 

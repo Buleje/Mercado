@@ -196,6 +196,9 @@ export default function AdminTabBar({
                 <button
                   key={tab.id}
                   onClick={() => !tab.disabled && onTabChange(tab.id)}
+                  /* La pestaña activa sólo se distinguía por el color y el borde: un
+                     lector de pantalla leía botones iguales sin decir en cuál estás. */
+                  aria-current={activeTab === tab.id ? "page" : undefined}
                   onMouseEnter={() => onTabHover?.(tab.id)}
                   title={tab.title ?? tab.label}
                   className={cn(
@@ -283,6 +286,7 @@ export default function AdminTabBar({
                 setDragOverTab(null);
               }}
               onClick={() => !tab.disabled && onTabChange(tab.id)}
+              aria-current={activeTab === tab.id ? "page" : undefined}
               onMouseEnter={() => onTabHover?.(tab.id)}
               disabled={tab.disabled}
               title={tab.title ?? tab.label}

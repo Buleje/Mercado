@@ -22,6 +22,7 @@ import { formatCurrency } from "@/lib/currency";
 import { ChartTooltip } from "@/lib/chart-tooltip";
 import { formatSolesShort } from "@/lib/chart-helpers";
 import { Suspense } from "react";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { SERIES, SERIE, colorMedioPago } from "@/components/admin/shared/chart-palette";
 import AutoRefreshControl from "@/components/admin/shared/AutoRefreshControl";
@@ -159,6 +160,13 @@ const DONDE_VIVE: Record<string, { tab: TabId; sub?: string }> = {
 
 /** El primer hijo de una pestaña, o la pestaña misma si no se divide. */
 const primeraSub = (tab: TabId): string => SUBS[tab]?.[0]?.id ?? tab;
+
+/**
+ * Las secciones direccionables por `?vista=`, derivadas de la estructura real:
+ * la hoja de cada pestaña, o la pestaña misma cuando no se divide. Derivarlas
+ * —en vez de listarlas— evita que agregar una sección la deje sin dirección.
+ */
+const VISTAS: readonly string[] = TABS.flatMap((t) => SUBS[t.id]?.map((s) => s.id) ?? [t.id]);
 
 /** Traduce cualquier nombre —viejo o nuevo— a en qué pestaña y sección cae. */
 function ubicar(id: string | undefined): { tab: TabId; sub: string } {
@@ -1223,17 +1231,27 @@ function FinanzasDashboard() {
 export default function FinanzasModule({ initialTab }: { initialTab?: string } = {}) {
   // Se guarda la SECCIÓN, no la pestaña: volver a "Mi Plata" tiene que devolver
   // a "Fiados" si ahí estabas, no al padre que lo contiene.
-  const [ubic, setUbic] = useState(() => {
-    if (initialTab) return ubicar(initialTab);
-    if (typeof window === "undefined") return ubicar(undefined);
-    return ubicar(localStorage.getItem(`admin-last-tab-${MODULE_ID}`) ?? undefined);
-  });
+  /**
+   * La sección vive en `?vista=`: link compartible, atrás del navegador y
+   * destino del buscador global.
+   *
+   * Lo que se guarda es la SECCIÓN (la hoja), no la pestaña: volver a "Mi Plata"
+   * tiene que devolver a "Fiados" si ahí estabas, no al padre que lo contiene.
+   * Por eso todo pasa por `ubicar()`, que traduce cualquier nombre —viejo o
+   * nuevo, pestaña o sección— a la hoja donde de verdad cae.
+   */
+  const { vista, irA: irAVista } = useVistaModulo(
+    MODULE_ID,
+    VISTAS,
+    ubicar(undefined).sub,
+    initialTab ? ubicar(initialTab).sub : undefined,
+  );
+  const ubic = ubicar(vista);
   const tab = ubic.tab;
   const sub = ubic.sub;
-  const irA = useCallback((id: string) => setUbic(ubicar(id)), []);
-  useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
+  const irA = useCallback((id: string) => irAVista(ubicar(id).sub), [irAVista]);
   // Un atajo del menú puede llegar con el módulo ya montado (`?tab=fiados`).
-  useEffect(() => { if (initialTab) setUbic(ubicar(initialTab)); }, [initialTab]);
+  useEffect(() => { if (initialTab) irAVista(ubicar(initialTab).sub); }, [initialTab, irAVista]);
 
   const secciones = SUBS[tab];
 

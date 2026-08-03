@@ -79,6 +79,13 @@ function normalizeTab(value: string | null): TabId {
   return "sections";
 }
 
+/**
+ * ⚠️ Este módulo NO usa `useVistaModulo` (`?vista=`) a propósito: se renderiza
+ * DENTRO de MiTiendaHubModule, que ya es dueño de ese parámetro. Dos componentes
+ * escribiendo el mismo `?vista=` se pisarían — el de adentro le cambiaría la
+ * pestaña al de afuera en cada click. Su sub-vista se queda en localStorage
+ * hasta que exista un segundo nivel de direccionamiento.
+ */
 export default function StorePageAdminPage() {
   const [tab, setTab] = useState<TabId>(() => {
     if (typeof window === "undefined") return "sections";

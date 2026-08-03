@@ -278,6 +278,13 @@ const COTIZACIONES_TABS: AdminTab[] = [
   { id: "nueva", label: "Nueva Cotización", shortLabel: "Nueva", icon: Plus },
 ];
 
+/**
+ * ⚠️ Este módulo NO usa `useVistaModulo` (`?vista=`) a propósito: se renderiza
+ * DENTRO de DocumentosHubModule, que ya es dueño de ese parámetro. Dos componentes
+ * escribiendo el mismo `?vista=` se pisarían — el de adentro le cambiaría la
+ * pestaña al de afuera en cada click. Su sub-vista se queda en localStorage
+ * hasta que exista un segundo nivel de direccionamiento.
+ */
 export default function CotizacionesModule() {
   // Recuerda el último tab, igual que los hubs y Mi Plata.
   const [activeTab, setActiveTab] = useState<"dashboard" | "lista" | "nueva">(() => {

@@ -161,6 +161,13 @@ function LegalTooltip({ term, explanation, example }: { term: string; explanatio
 
 // ── Main Component ──────────────────────────────────────────────────────
 
+/**
+ * ⚠️ Este módulo NO usa `useVistaModulo` (`?vista=`) a propósito: se renderiza
+ * DENTRO de DocumentosHubModule, que ya es dueño de ese parámetro. Dos componentes
+ * escribiendo el mismo `?vista=` se pisarían — el de adentro le cambiaría la
+ * pestaña al de afuera en cada click. Su sub-vista se queda en localStorage
+ * hasta que exista un segundo nivel de direccionamiento.
+ */
 export default function ContratosModule() {
   // -- Data from API
   const [contratos, setContratos] = useState<ContratoAPI[]>([]);

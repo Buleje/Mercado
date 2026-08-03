@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ALL_TABS } from "@/app/admin/_lib/tab-data";
-import { CTP_VISTAS, LOTH_VISTAS } from "@/lib/admin/subvistas-modulos";
+import { CTP_VISTAS, LOTH_VISTAS, VISTAS_POR_MODULO } from "@/lib/admin/subvistas-modulos";
 import {
   Search, X, Package, Users, ShoppingCart, FileText, ShoppingBasket, Tag, AlertTriangle, TrendingUp, Loader2, LayoutDashboard, Monitor, Boxes, Shield, Zap, ArrowRight,
 } from "@buleje/design-system/icons";
@@ -95,17 +95,17 @@ const SINONIMOS: Record<string, string[]> = {
  * Sólo tiene sentido para módulos cuya vista es direccionable por `?vista=`
  * (los que usan `useVistaModulo`); el resto no tendría a dónde navegar.
  */
+const aSubtabs = (vistas: readonly { key: string; label: string; hint: string }[]) =>
+  vistas.map((v) => ({
+    id: v.key,
+    label: v.label,
+    keywords: [sinTildes(v.label), ...sinTildes(v.hint).split(/[^a-z0-9]+/).filter((w) => w.length > 3)],
+  }));
+
 const SUBTABS_POR_MODULO: Record<string, { id: string; label: string; keywords?: string[] }[]> = {
-  "ctp-libro-operaciones": CTP_VISTAS.map((v) => ({
-    id: v.key,
-    label: v.label,
-    keywords: [sinTildes(v.label), ...sinTildes(v.hint).split(/[^a-z0-9]+/).filter((w) => w.length > 3)],
-  })),
-  "loth-libro-operaciones": LOTH_VISTAS.map((v) => ({
-    id: v.key,
-    label: v.label,
-    keywords: [sinTildes(v.label), ...sinTildes(v.hint).split(/[^a-z0-9]+/).filter((w) => w.length > 3)],
-  })),
+  "ctp-libro-operaciones": aSubtabs(CTP_VISTAS),
+  "loth-libro-operaciones": aSubtabs(LOTH_VISTAS),
+  ...Object.fromEntries(Object.entries(VISTAS_POR_MODULO).map(([id, v]) => [id, aSubtabs(v)])),
 };
 
 const MODULE_INDEX: ModuleEntry[] = ALL_TABS.map((t) => {
