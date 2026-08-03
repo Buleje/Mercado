@@ -89,6 +89,8 @@ interface Props {
   declarada: boolean;
   draft: LatLng[];
   drawMode: boolean;
+  /** Cuál de los dos polígonos está en el borrador. */
+  drawTarget: "area" | "predio";
   basemap: BasemapId;
   showGrid: boolean;
   center: LatLng;
@@ -130,6 +132,7 @@ export default function LothMapaCanvas({
   declarada,
   draft,
   drawMode,
+  drawTarget,
   basemap,
   showGrid,
   center,
@@ -425,7 +428,7 @@ export default function LothMapaCanvas({
     const group = parcelaRef.current;
     if (!ready || !L || !group) return;
     group.clearLayers();
-    if (drawMode || !declarada) return;
+    if ((drawMode && drawTarget === "area") || !declarada) return;
     L.polygon(parcela, { color: PARCELA_COLOR, weight: 2.5, fillColor: PARCELA_COLOR, fillOpacity: 0.12 }).addTo(group);
     // Con muchos vértices los rótulos se pisan y tapan el polígono: a partir de
     // ~12 se muestran al pasar el mouse (el cuadro de coordenadas los lista todos).
@@ -435,7 +438,7 @@ export default function LothMapaCanvas({
         .bindTooltip(vertexCode(i), { permanent, direction: "right", className: "loth-vertex-label", offset: [6, 0] })
         .addTo(group),
     );
-  }, [ready, parcela, declarada, drawMode]);
+  }, [ready, parcela, declarada, drawMode, drawTarget]);
 
   // ── Contorno del predio + centroide del área ───────────────────────────────
   /**
@@ -450,7 +453,7 @@ export default function LothMapaCanvas({
     const group = predioRef.current;
     if (!ready || !L || !group) return;
     group.clearLayers();
-    if (predio.length >= 3) {
+    if (predio.length >= 3 && !(drawMode && drawTarget === "predio")) {
       L.polygon(predio, {
         color: PREDIO_COLOR,
         weight: 2,
@@ -466,7 +469,7 @@ export default function LothMapaCanvas({
           .addTo(group),
       );
     }
-    const centro = declarada && !drawMode ? centroid(parcela) : null;
+    const centro = declarada && !(drawMode && drawTarget === "area") ? centroid(parcela) : null;
     if (centro) {
       // Cruz de centroide (el símbolo del plano), no un pin: un marcador más
       // se confundiría con las referencias del territorio.
@@ -475,7 +478,7 @@ export default function LothMapaCanvas({
         .bindTooltip("Centroide", { permanent: false, direction: "top", className: "loth-vertex-label" })
         .addTo(group);
     }
-  }, [ready, predio, parcela, declarada, drawMode]);
+  }, [ready, predio, parcela, declarada, drawMode, drawTarget]);
 
   // ── Borrador en vivo: vértices arrastrables + puntos medios para insertar ──
   useEffect(() => {

@@ -20,18 +20,20 @@ import { useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, Check, ClipboardList, MapPin, Trash2, Upload } from "@buleje/design-system/icons";
 import { hasPredio, type LothCartografia, type LothPredio } from "@/lib/forestal/loth-cartografia";
-import { evaluarPlano, type ChecklistPlano, type UbicacionPlano } from "@/lib/forestal/loth-plano-checklist";
+import type { ChecklistPlano } from "@/lib/forestal/loth-plano-checklist";
 import { polygonAreaHa, type LatLng, type LothParcela } from "@/lib/forestal/loth-geo";
 import { Btn, Field, I } from "./ctp-shared";
 
 interface Props {
+  /** Calculado por el orquestador: el mismo que gatea la impresión del plano. */
+  check: ChecklistPlano;
   cartografia: LothCartografia;
   parcela: LothParcela;
-  ubicacion: UbicacionPlano | null;
-  zonaUtm: string | null;
   saving: boolean;
   onChange: (c: LothCartografia) => void;
   onSave: () => void;
+  /** Entra al modo dibujo con el borrador apuntando al PREDIO. */
+  onDibujarPredio: () => void;
   /** Abre el modal de pegado de coordenadas apuntando al PREDIO. */
   onImportPredio: () => void;
   /** Copia el área declarada como contorno provisional del predio. */
@@ -39,13 +41,13 @@ interface Props {
 }
 
 export default function LothPredioPanel({
+  check,
   cartografia,
   parcela,
-  ubicacion,
-  zonaUtm,
   saving,
   onChange,
   onSave,
+  onDibujarPredio,
   onImportPredio,
   onCopiarDelArea,
 }: Props) {
@@ -53,8 +55,6 @@ export default function LothPredioPanel({
   const predio = cartografia.predio;
   const conPredio = hasPredio(predio);
   const predioHa = conPredio ? polygonAreaHa(predio.vertices) : 0;
-
-  const check: ChecklistPlano = evaluarPlano({ parcela, cartografia, ubicacion, zonaUtm });
 
   const patch = (p: Partial<LothPredio>) => onChange({ ...cartografia, predio: { ...predio, ...p } });
 
@@ -171,6 +171,10 @@ export default function LothPredioPanel({
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Btn size="sm" variant="secondary" onClick={onDibujarPredio}>
+            <MapPin className="h-4 w-4" />
+            {conPredio ? "Corregir en el mapa" : "Dibujar en el mapa"}
+          </Btn>
           <Btn size="sm" variant="secondary" onClick={onImportPredio}>
             <Upload className="h-4 w-4" />
             Pegar el cuadro de coordenadas

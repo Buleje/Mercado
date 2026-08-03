@@ -65,6 +65,7 @@ import LothContextoPanel from "./LothContextoPanel";
 import LothCoordsModal from "./LothCoordsModal";
 import LothMapaDrawBar from "./LothMapaDrawBar";
 import LothPredioPanel from "./LothPredioPanel";
+import { evaluarPlano } from "@/lib/forestal/loth-plano-checklist";
 import LothMapaToolbar from "./LothMapaToolbar";
 import LothVerticesPanel from "./LothVerticesPanel";
 import {
@@ -137,6 +138,12 @@ export default function LothMapaView() {
   const [metersPerPixel, setMetersPerPixel] = useState(30);
 
   // Dibujo de la parcela (sin leaflet-draw: click en el mapa = vértice).
+  /**
+   * Qué polígono se está dibujando: el área declarada o el contorno del predio.
+   * El borrador, los vértices arrastrables y la barra son los MISMOS — lo único
+   * que cambia es dónde se guarda al confirmar.
+   */
+  const [drawTarget, setDrawTarget] = useState<"area" | "predio">("area");
   const [drawMode, setDrawMode] = useState(false);
   const [draft, setDraft] = useState<LatLng[]>([]);
   const [saving, setSaving] = useState(false);
@@ -343,16 +350,31 @@ export default function LothMapaView() {
   );
 
   const startDraw = useCallback(() => {
+    setDrawTarget("area");
     setDraft(parcela.vertices.slice());
     setDrawMode(true);
   }, [parcela.vertices]);
+  /** Levantar el contorno del predio a mano (o corregir el que ya está). */
+  const startDrawPredio = useCallback(() => {
+    setDrawTarget("predio");
+    setDraft(carto.predio.vertices.slice());
+    setDrawMode(true);
+  }, [carto.predio.vertices]);
   const cancelDraw = () => {
     setDrawMode(false);
     setDraft([]);
   };
   const saveDraw = async () => {
     if (draft.length < 3) return;
-    await persistParcela({ vertices: draft, nota: parcela.nota, deforestacionCero: parcela.deforestacionCero });
+    if (drawTarget === "predio") {
+      // El predio vive en la cartografía: se guarda ahí y se persiste en el
+      // mismo PUT que las referencias y las vías.
+      const siguiente = { ...carto, predio: { ...carto.predio, vertices: draft } };
+      setCarto(siguiente);
+      await guardarCartografia(siguiente);
+    } else {
+      await persistParcela({ vertices: draft, nota: parcela.nota, deforestacionCero: parcela.deforestacionCero });
+    }
     setDrawMode(false);
     setDraft([]);
   };
@@ -503,7 +525,16 @@ export default function LothMapaView() {
     setViaDraft(null);
   };
 
-  const guardarCartografia = useCallback(async () => {
+  /**
+   * `siguiente` permite guardar un estado recién armado sin esperar al re-render
+   * (lo usa el guardado del dibujo del predio).
+   *
+   * El cuerpo se arma con TODOS los campos y no con una lista escrita a mano:
+   * cuando era `{referencias, vias, accesos, nota}` el predio se perdía en cada
+   * guardado —el PUT reemplaza el documento entero— y sin un solo error.
+   */
+  const guardarCartografia = useCallback(async (siguiente?: LothCartografia) => {
+    const cuerpo = siguiente ?? carto;
     setSavingCarto(true);
     setError(null);
     try {
@@ -511,7 +542,13 @@ export default function LothMapaView() {
         method: "PUT",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
-        body: JSON.stringify({ referencias: carto.referencias, vias: carto.vias, accesos: carto.accesos, nota: carto.nota }),
+        body: JSON.stringify({
+          referencias: cuerpo.referencias,
+          vias: cuerpo.vias,
+          accesos: cuerpo.accesos,
+          predio: cuerpo.predio,
+          nota: cuerpo.nota,
+        }),
       });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
       setCarto(normalizeCartografia((await r.json()).cartografia));
@@ -662,7 +699,39 @@ export default function LothMapaView() {
     }
   };
 
-  const doPrintPlano = () => {
+  /**
+   * El checklist del plano, vivo: lo lee el panel del predio y también el
+   * camino de impresión, así que los dos dicen lo mismo.
+   */
+  const checkPlano = useMemo(
+    () =>
+      evaluarPlano({
+        parcela,
+        cartografia: carto,
+        ubicacion: {
+          distrito: caratula?.distrito ?? null,
+          provincia: caratula?.provincia ?? null,
+          departamento: caratula?.departamento ?? plan?.region ?? null,
+        },
+        zonaUtm: zonaSugerida,
+      }),
+    [parcela, carto, caratula, plan, zonaSugerida],
+  );
+
+  const doPrintPlano = async () => {
+    // Avisa, no bloquea: un plano borrador sirve para trabajar. Lo que no puede
+    // pasar es imprimir para el expediente sin saber que le falta algo — que es
+    // exactamente de lo que vuelve de mesa de partes.
+    if (checkPlano.pendientes.length > 0) {
+      const ok = await confirm({
+        title: `Al plano le faltan ${checkPlano.pendientes.length} requisito(s)`,
+        description: `Falta: ${checkPlano.pendientes.map((r) => r.label).join(" · ")}. Se puede imprimir igual como borrador de trabajo, pero así NO conviene presentarlo.`,
+        intent: "warning",
+        confirmLabel: "Imprimir igual",
+        cancelLabel: "Volver a completarlo",
+      });
+      if (!ok) return;
+    }
     try {
       printLothPlano(planoBase());
     } catch (err) {
@@ -827,6 +896,7 @@ export default function LothMapaView() {
               declarada={declarada}
               draft={draft}
               drawMode={drawMode}
+              drawTarget={drawTarget}
               basemap={basemap}
               showGrid={showGrid}
               center={center}
@@ -842,6 +912,7 @@ export default function LothMapaView() {
 
             {drawMode && (
               <LothMapaDrawBar
+                target={drawTarget}
                 count={draft.length}
                 areaHa={draftAreaHa}
                 saving={saving}
@@ -940,17 +1011,13 @@ export default function LothMapaView() {
       />
 
       <LothPredioPanel
+        check={checkPlano}
         cartografia={carto}
         parcela={parcela}
-        ubicacion={{
-          distrito: caratula?.distrito ?? null,
-          provincia: caratula?.provincia ?? null,
-          departamento: caratula?.departamento ?? plan?.region ?? null,
-        }}
-        zonaUtm={zonaSugerida}
         saving={savingCarto}
         onChange={setCarto}
         onSave={guardarCartografia}
+        onDibujarPredio={startDrawPredio}
         onImportPredio={() => setCoordsOpen("predio")}
         onCopiarDelArea={() => setCarto((c) => ({ ...c, predio: { ...c.predio, vertices: parcela.vertices } }))}
       />
