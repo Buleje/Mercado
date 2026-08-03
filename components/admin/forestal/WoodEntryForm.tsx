@@ -17,7 +17,7 @@ import {
   ClipboardList,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { Btn, estaFueraDePlazo, Field, I, ModalFooter, PLAZO_REGISTRO_DIAS, Seccion } from "./ctp-shared";
+import { Btn, estaFueraDePlazo, Field, I, ModalFooter, PLAZO_REGISTRO_DIAS, Seccion, useAtajoGuardar } from "./ctp-shared";
 import CtpParteBarra from "./CtpParteBarra";
 import CtpTrozasImportModal from "./CtpTrozasImportModal";
 import type { TrozaImportada } from "@/lib/forestal/trozas-import";
@@ -114,6 +114,8 @@ type GtfSerforLite = GtfSerfor;
 const TOP_SPECIES_SLUGS = ["tornillo", "capirona", "shihuahuaco", "cedro", "caoba"];
 
 const DRAFT_KEY = "buleje:ctp-wood-entry-draft";
+/** Cómo carga este operador: se respeta su última elección entre altas. */
+const MODO_CARGA_KEY = "buleje:ctp-wood-entry-modo";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -234,7 +236,28 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
    *   dato vino de SERFOR, editarlo al lado invita a "corregir" un documento que
    *   no es nuestro.
    */
-  const [modo, setModo] = useState<"manual" | "serfor">("manual");
+  /**
+   * El modo se RECUERDA entre altas. El que trabaja contra SERFOR carga veinte
+   * guías seguidas y tenía que elegir «Desde SERFOR» en cada una: el default
+   * fijo en «manual» le cobraba un click por ingreso. Sigue arrancando en
+   * manual la primera vez —si el servicio no responde, el camino de siempre es
+   * el que no depende de nadie—, pero después respeta lo último que se usó.
+   */
+  const [modo, setModo] = useState<"manual" | "serfor">(() => {
+    if (typeof window === "undefined") return "manual";
+    try {
+      return localStorage.getItem(MODO_CARGA_KEY) === "serfor" ? "serfor" : "manual";
+    } catch {
+      return "manual";
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(MODO_CARGA_KEY, modo);
+    } catch {
+      // modo privado: sin memoria, sin bug
+    }
+  }, [modo]);
   const [gtfMsg, setGtfMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [gtfItems, setGtfItems] = useState<GtfItem[]>([]);
   const [showGuias, setShowGuias] = useState(false);
@@ -669,6 +692,17 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
    *   · la madera no puede haber entrado ANTES de que se emitiera su guía;
    *     eso es un typo de fecha, y hasta ahora se guardaba sin chistar.
    */
+  /**
+   * Ctrl/⌘+Enter registra, como en el resto de los modales del libro. Acá
+   * faltaba: quien carga veinte guías seguidas terminaba yendo al botón con el
+   * mouse en cada una. Sólo con el formulario válido — si falta algo, el atajo
+   * no hace nada y el pie sigue diciendo qué falta.
+   */
+  const refAtajo = useAtajoGuardar<HTMLFormElement>(
+    () => { void handleSubmit(new Event("submit") as unknown as React.FormEvent); },
+    isValid && !submitting,
+  );
+
   const avisoPlazo = useMemo(() => {
     if (!data.entryDate) return null;
     if (data.gtfDate && data.entryDate < data.gtfDate) {
@@ -923,6 +957,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
           {/* ─── Panel izquierdo: formulario ──────────────────────── */}
           <form
             id="wood-entry-form"
+            ref={refAtajo}
             onSubmit={handleSubmit}
             className="min-w-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6"
           >
@@ -1046,6 +1081,45 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   </p>
                 )}
               </Field>
+
+              {/* Antes de consultar, este modo era UN campo y medio modal en
+                  blanco: no decía qué iba a pasar ni dónde sacar el número, y
+                  el que no lo encontraba se quedaba mirando el vacío. Se va
+                  apenas la guía llega. */}
+              {!serforGtf && (
+                <div className="sm:col-span-12 grid gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                      <ShieldCheck className="h-3.5 w-3.5" /> Qué trae la consulta
+                    </p>
+                    <ul className="space-y-1 text-sm text-[var(--text-secondary)]">
+                      {["Titular y su documento", "Origen y código de procedencia", "Especie, producto y volumen", "La lista de trozas, pieza por pieza"].map((t) => (
+                        <li key={t} className="flex items-start gap-1.5">
+                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--data-success-600)]" />
+                          {t}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                      <Search className="h-3.5 w-3.5" /> Dónde está el número
+                    </p>
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      Es el <strong>N° de constancia del SNIFFS</strong>, el que acompaña al código QR
+                      de la guía — no el N° de GTF impreso arriba. Tiene guiones:{" "}
+                      <span className="whitespace-nowrap font-mono text-[var(--text-primary)]">2-25-0002326</span>.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setModo("manual")}
+                      className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                    >
+                      La guía no está en SERFOR — cargarla a mano
+                    </button>
+                  </div>
+                </div>
+              )}
 
                 </Seccion>
               </div>
@@ -1782,6 +1856,13 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   <CardTitle className="text-lg font-bold leading-tight text-[var(--text-primary)]">
                     {especiesResumen.titulo}
                   </CardTitle>
+                  {/* La especie manda en el registro y es lo más grande del
+                      panel: si sigue siendo la que vino puesta, se dice. */}
+                  {data.speciesSlug === INITIAL.speciesSlug && !data.customSpeciesName && (
+                    <span className="mt-1 shrink-0 whitespace-nowrap rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-tertiary)]">
+                      por defecto
+                    </span>
+                  )}
                   {finalCites && <CitesPill />}
                 </div>
                 {especiesResumen.sub && (
@@ -1895,7 +1976,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
               {/* 3 · El registro, campo por campo */}
               <dl className="space-y-2.5">
                 <SummaryRow label="Documento" value={`${data.docType || "GTF"} ${data.gtfNumber.trim()}`.trim() || "—"} mono />
-                <SummaryRow label="Producto" value={productLabel(data.productType)} />
+                <SummaryRow label="Producto" value={productLabel(data.productType)} porDefecto={data.productType === INITIAL.productType} />
                 <SummaryRow label="Piezas" value={data.pieces ? Number(data.pieces).toLocaleString("es-PE") : "—"} />
                 <SummaryRow
                   label="Ingreso al CTP"
@@ -1911,6 +1992,11 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 <SummaryRow
                   label="Origen"
                   value={`${originLabel(data.originType)}${data.originRegion && data.originRegion !== "Otra" ? ` · ${data.originRegion}` : ""}${data.originDistrict ? ` · ${data.originDistrict}` : ""}`}
+                  porDefecto={
+                    data.originType === INITIAL.originType &&
+                    data.originRegion === INITIAL.originRegion &&
+                    !data.originDistrict
+                  }
                 />
                 {data.humidityPct && <SummaryRow label="Humedad" value={`${data.humidityPct}%`} />}
               </dl>
@@ -2041,14 +2127,28 @@ function DatoGuia({ n, label, value }: { n?: string; label: string; value: strin
   );
 }
 
-function SummaryRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+/**
+ * Una fila del resumen. `porDefecto` marca los valores que el operador NO
+ * confirmó: el formulario arranca con especie «Tornillo», producto «Rolliza» y
+ * región «Ucayali» —buenos defaults para esta planta, ahorran clicks— pero el
+ * panel los mostraba igual que un dato tipeado, bajo el título «lo que se va a
+ * registrar». Cargando rápido, la especie equivocada entraba al libro con el
+ * panel confirmándola en grande. El dato sigue ahí; lo que cambia es que se
+ * distingue a simple vista lo revisado de lo que vino puesto.
+ */
+function SummaryRow({ label, value, mono, porDefecto }: { label: string; value: string; mono?: boolean; porDefecto?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
       <dt className="shrink-0 text-xs text-[var(--text-tertiary)]">{label}</dt>
       <dd
-        className={`min-w-0 truncate text-right text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums" : ""}`}
+        className={`min-w-0 truncate text-right text-sm font-medium ${porDefecto ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]"} ${mono ? "font-mono tabular-nums" : ""}`}
       >
         {value}
+        {porDefecto && (
+          <span className="ml-1.5 whitespace-nowrap rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-tertiary)]">
+            por defecto
+          </span>
+        )}
       </dd>
     </div>
   );

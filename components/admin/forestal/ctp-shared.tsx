@@ -479,8 +479,9 @@ export function useHayCambios(valor: unknown): boolean {
   return inicial.current !== actual;
 }
 
-export function useAtajoGuardar(guardar: () => void, activo = true) {
-  const ref = useRef<HTMLDivElement>(null);
+export function useAtajoGuardar<T extends HTMLElement = HTMLDivElement>(guardar: () => void, activo = true) {
+  // Genérico: el ref se cuelga del `ModalBody` (div) o del `<form>` del alta.
+  const ref = useRef<T>(null);
   const cb = useRef(guardar);
   cb.current = guardar;
   useEffect(() => {
