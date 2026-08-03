@@ -19,6 +19,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import {
   Upload, Search, Grid3x3, List, FolderArchive,
   FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
@@ -253,6 +254,37 @@ function daysUntil(iso: string | null): number | null {
 // Componente principal
 // ─────────────────────────────────────────────────────────────────
 
+
+/** Los modos del drive, estables: el hook los usa como dependencia. */
+const DRIVE_MODOS = [
+  "all", "dashboard", "assistant", "favorites", "recent", "expiring", "calendar",
+  "folder", "activity", "enlaces", "duplicados", "sync", "trash", "smart",
+] as const;
+
+/**
+ * La carpeta abierta viaja en `?carpeta=` — es lo que hace compartible un
+ * «mirá acá». Va aparte de `?sub=folder` porque es un ID de entidad, no una
+ * vista: el modo dice QUÉ se está mirando y la carpeta CUÁL.
+ */
+function leerCarpetaDeUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get("carpeta");
+}
+
+/** Escribe la carpeta sin tocar el historial: la entrada la crea el cambio de
+ *  modo (`irAModo`), y duplicarla haría falta apretar «atrás» dos veces. */
+function escribirCarpetaEnUrl(id: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    const url = new URL(window.location.href);
+    if (id) url.searchParams.set("carpeta", id);
+    else url.searchParams.delete("carpeta");
+    window.history.replaceState(null, "", url.toString());
+  } catch {
+    // history no disponible
+  }
+}
+
 export default function DocumentosModule() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "size" | "expiry" | "relevancia">("recent");
@@ -269,8 +301,57 @@ export default function DocumentosModule() {
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [semantic, setSemantic] = useState(false);
-  const [filterMode, setFilterMode] = useState<"all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "folder" | "activity" | "enlaces" | "duplicados" | "sync" | "trash" | "smart">("all");
-  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
+  /**
+   * El modo y la carpeta viven en la URL (`?sub=` y `?carpeta=`).
+   *
+   * El drive es la pantalla donde MÁS se pasan links —«mirá la carpeta de
+   * contratos 2026»— y hasta ahora eso era imposible: se mandaba el link del
+   * módulo y se explicaba de palabra dónde hacer click. Va en `?sub=` y no en
+   * `?vista=` porque el drive se renderiza dentro de Documentos, que ya es
+   * dueño de ese parámetro.
+   *
+   * SIN memoria a propósito (`recordar: false`): reabrir el drive en «Papelera»
+   * porque ahí quedaste la vez pasada sería una sorpresa. Empieza en «todos».
+   */
+  const { vista: filterMode, irA: irAModo } = useSubvistaModulo(
+    "documentos-drive",
+    DRIVE_MODOS,
+    "all",
+    undefined,
+    { recordar: false },
+  );
+  const [activeFolderId, setActiveFolderIdRaw] = useState<string | null>(
+    () => leerCarpetaDeUrl(),
+  );
+
+  /** Abrir/cerrar carpeta: estado + URL, siempre juntos. Se llama en una docena
+   *  de lugares, así que envuelve al setter en vez de repetir el par. */
+  const setActiveFolderId = useCallback((id: string | null) => {
+    setActiveFolderIdRaw(id);
+    escribirCarpetaEnUrl(id);
+  }, []);
+
+  /** Atrás/adelante: la carpeta la dicta la URL, igual que el modo. */
+  useEffect(() => {
+    const onPop = () => setActiveFolderIdRaw(leerCarpetaDeUrl());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  /**
+   * Cambiar de modo, soltando la carpeta si el modo nuevo no la usa.
+   *
+   * Va DESPUÉS del estado de la carpeta a propósito: si sólo limpiara la URL
+   * —como estaba— el estado quedaría con una carpeta abierta que el link ya no
+   * menciona, y recargar mostraría otra cosa que la pantalla actual.
+   */
+  const setFilterMode = useCallback(
+    (modo: (typeof DRIVE_MODOS)[number]) => {
+      if (modo !== "folder") setActiveFolderId(null);
+      irAModo(modo);
+    },
+    [irAModo, setActiveFolderId],
+  );
   const [scanResult, setScanResult] = useState<{ name: string; expiresAt: string | null } | null>(null);
   // Resultado del análisis IA de contenido (resumen + datos clave).
   const [analyzeResult, setAnalyzeResult] = useState<{ name: string; summary: string; keyFacts: string[] } | null>(null);

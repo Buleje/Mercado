@@ -1,5 +1,6 @@
 "use client";
 
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { m, AnimatePresence } from "@/components/admin/providers";
@@ -272,6 +273,9 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
 
 const MODULE_ID = "cotizaciones";
 
+/** Las vistas direccionables, estables: el hook las usa como dependencia. */
+const COTIZACIONES_VISTAS = ["dashboard", "lista", "nueva"] as const;
+
 const COTIZACIONES_TABS: AdminTab[] = [
   { id: "dashboard", label: "Dashboard", icon: BarChart3 },
   { id: "lista", label: "Lista", icon: List },
@@ -279,22 +283,18 @@ const COTIZACIONES_TABS: AdminTab[] = [
 ];
 
 /**
- * ⚠️ Este módulo NO usa `useVistaModulo` (`?vista=`) a propósito: se renderiza
+ * Este módulo usa `useSubvistaModulo` (`?sub=`) y no `?vista=`: se renderiza
  * DENTRO de DocumentosHubModule, que ya es dueño de ese parámetro. Dos componentes
- * escribiendo el mismo `?vista=` se pisarían — el de adentro le cambiaría la
- * pestaña al de afuera en cada click. Su sub-vista se queda en localStorage
- * hasta que exista un segundo nivel de direccionamiento.
+ * escribiendo el mismo se pisarían — el de adentro le cambiaría la pestaña al
+ * de afuera en cada click.
  */
 export default function CotizacionesModule() {
   // Recuerda el último tab, igual que los hubs y Mi Plata.
-  const [activeTab, setActiveTab] = useState<"dashboard" | "lista" | "nueva">(() => {
-    if (typeof window === "undefined") return "dashboard";
-    const saved = localStorage.getItem(`admin-last-tab-${MODULE_ID}`);
-    return (saved as "dashboard" | "lista" | "nueva") || "dashboard";
-  });
-  useEffect(() => {
-    try { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, activeTab); } catch { /* modo privado */ }
-  }, [activeTab]);
+  const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo(
+    MODULE_ID,
+    COTIZACIONES_VISTAS,
+    COTIZACIONES_VISTAS[0],
+  );
 
   // ── LIST STATE ──
   const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);

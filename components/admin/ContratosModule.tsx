@@ -1,5 +1,6 @@
 "use client";
 
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -57,6 +58,9 @@ type ContratoAPI = DbContract;
 const MODULE_ID = "contratos";
 
 type TabId = "dashboard" | "plantillas" | "contratos" | "crear" | "editor";
+
+/** Las vistas direccionables, estables: el hook las usa como dependencia. */
+const CONTRATOS_VISTAS = ["dashboard", "plantillas", "contratos", "crear", "editor"] as const;
 
 // ── Icon Map ────────────────────────────────────────────────────────────
 
@@ -162,11 +166,10 @@ function LegalTooltip({ term, explanation, example }: { term: string; explanatio
 // ── Main Component ──────────────────────────────────────────────────────
 
 /**
- * ⚠️ Este módulo NO usa `useVistaModulo` (`?vista=`) a propósito: se renderiza
+ * Este módulo usa `useSubvistaModulo` (`?sub=`) y no `?vista=`: se renderiza
  * DENTRO de DocumentosHubModule, que ya es dueño de ese parámetro. Dos componentes
- * escribiendo el mismo `?vista=` se pisarían — el de adentro le cambiaría la
- * pestaña al de afuera en cada click. Su sub-vista se queda en localStorage
- * hasta que exista un segundo nivel de direccionamiento.
+ * escribiendo el mismo se pisarían — el de adentro le cambiaría la pestaña al
+ * de afuera en cada click.
  */
 export default function ContratosModule() {
   // -- Data from API
@@ -177,14 +180,11 @@ export default function ContratosModule() {
   // -- UI
   // Recuerda el último tab, igual que los hubs y Mi Plata: entrar a Contratos
   // y caer siempre en Dashboard obligaba a re-navegar en cada visita.
-  const [activeTab, setActiveTab] = useState<TabId>(() => {
-    if (typeof window === "undefined") return "dashboard";
-    const saved = localStorage.getItem(`admin-last-tab-${MODULE_ID}`);
-    return (saved as TabId) || "dashboard";
-  });
-  useEffect(() => {
-    try { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, activeTab); } catch { /* modo privado */ }
-  }, [activeTab]);
+  const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo<TabId>(
+    MODULE_ID,
+    CONTRATOS_VISTAS,
+    "dashboard",
+  );
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);

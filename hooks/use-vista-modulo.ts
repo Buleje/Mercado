@@ -24,16 +24,28 @@
  *
  * El parámetro se limpia al cambiar de módulo (lo hace `navigateTab`): sin eso
  * un `?vista=saldos` viajaría a un módulo que no tiene esa vista.
+ *
+ * DOS NIVELES. Algunos módulos se renderizan DENTRO de otro —Contratos vive en
+ * Documentos, el Drive también— y no pueden usar `?vista=`: se lo pisarían al
+ * padre en cada click. Para esos está `useSubvistaModulo`, idéntico pero sobre
+ * `?sub=`. Más profundidad no hay: un tercer nivel es señal de que el módulo
+ * quiere ser un módulo.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const PARAM = "vista";
+/** Nivel 1: la vista del módulo. Nivel 2: la del módulo anidado adentro. */
+const PARAM_VISTA = "vista";
+const PARAM_SUB = "sub";
+
+/** Todos los parámetros de navegación interna, para que `navigateTab` los limpie
+ *  de una: si borrara sólo `vista`, un `?sub=` huérfano sobreviviría al salto. */
+export const PARAMS_DE_VISTA = [PARAM_VISTA, PARAM_SUB] as const;
 
 /** Lee la vista que pide la URL, validada contra las que el módulo declara. */
-function vistaDeUrl(validas: readonly string[]): string | null {
+function vistaDeUrl(validas: readonly string[], param: string): string | null {
   if (typeof window === "undefined") return null;
-  const v = new URLSearchParams(window.location.search).get(PARAM);
+  const v = new URLSearchParams(window.location.search).get(param);
   return v && validas.includes(v) ? v : null;
 }
 
@@ -64,6 +76,37 @@ export function useVistaModulo<T extends string>(
    */
   forzada?: string,
 ): UseVistaModuloResult<T> {
+  return useVistaEnParam(moduleId, validas, porDefecto, forzada, PARAM_VISTA);
+}
+
+/**
+ * Igual que `useVistaModulo` pero sobre `?sub=`: para el módulo que se renderiza
+ * DENTRO de otro y no puede tocar el parámetro del padre.
+ */
+export function useSubvistaModulo<T extends string>(
+  moduleId: string,
+  validas: readonly T[],
+  porDefecto: T,
+  forzada?: string,
+  /**
+   * Si además se recuerda entre visitas. Por defecto sí, como el resto del
+   * panel. El Drive lo apaga: nunca tuvo memoria y reabrirlo en «Papelera» o
+   * «Sincronización» porque ahí quedaste la vez pasada sería una sorpresa, no
+   * una comodidad.
+   */
+  opciones?: { recordar?: boolean },
+): UseVistaModuloResult<T> {
+  return useVistaEnParam(moduleId, validas, porDefecto, forzada, PARAM_SUB, opciones?.recordar ?? true);
+}
+
+function useVistaEnParam<T extends string>(
+  moduleId: string,
+  validas: readonly T[],
+  porDefecto: T,
+  forzada: string | undefined,
+  param: string,
+  recordar = true,
+): UseVistaModuloResult<T> {
   const storageKey = `admin-last-tab-${moduleId}`;
 
   const [vista, setVista] = useState<T>(() => {
@@ -72,11 +115,12 @@ export function useVistaModulo<T extends string>(
     }
     // 1. La URL manda: un link compartido tiene que abrir SIEMPRE lo mismo,
     //    sin importar dónde quedó esta persona la última vez.
-    const deUrl = vistaDeUrl(validas);
+    const deUrl = vistaDeUrl(validas, param);
     if (deUrl) return deUrl as T;
     // 2. La vista que impone el tab alias.
     if (forzada && (validas as readonly string[]).includes(forzada)) return forzada as T;
     // 3. Memoria del módulo: reabrirlo desde el sidebar retoma donde estabas.
+    if (!recordar) return porDefecto;
     try {
       const guardada = localStorage.getItem(storageKey);
       if (guardada && (validas as readonly string[]).includes(guardada)) return guardada as T;
@@ -88,12 +132,13 @@ export function useVistaModulo<T extends string>(
 
   // La memoria se escribe siempre, venga la vista de donde venga.
   useEffect(() => {
+    if (!recordar) return;
     try {
       localStorage.setItem(storageKey, vista);
     } catch {
       // sin persistencia, sin bug
     }
-  }, [storageKey, vista]);
+  }, [storageKey, vista, recordar]);
 
   /**
    * Al montar con una vista que NO viene de la URL (memoria o default), se
@@ -106,10 +151,10 @@ export function useVistaModulo<T extends string>(
     sincronizado.current = true;
     // Si la URL ya trae una vista válida, no hay nada que sincronizar; si la
     // decidió el tab alias o la memoria, se escribe para que el link sea copiable.
-    if (vistaDeUrl(validas)) return;
+    if (vistaDeUrl(validas, param)) return;
     try {
       const url = new URL(window.location.href);
-      url.searchParams.set(PARAM, vista);
+      url.searchParams.set(param, vista);
       window.history.replaceState(null, "", url.toString());
     } catch {
       // history no disponible
@@ -124,25 +169,25 @@ export function useVistaModulo<T extends string>(
       setVista(v as T);
       try {
         const url = new URL(window.location.href);
-        if (url.searchParams.get(PARAM) === v) return;
-        url.searchParams.set(PARAM, v);
+        if (url.searchParams.get(param) === v) return;
+        url.searchParams.set(param, v);
         window.history.pushState(null, "", url.toString());
       } catch {
         // history no disponible
       }
     },
-    [validas],
+    [validas, param],
   );
 
   /** Atrás/adelante → seguir a la URL. Sin esto el historial mentiría. */
   useEffect(() => {
     const onPop = () => {
-      const deUrl = vistaDeUrl(validas);
+      const deUrl = vistaDeUrl(validas, param);
       if (deUrl) setVista(deUrl as T);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, [validas]);
+  }, [validas, param]);
 
   return { vista, irA };
 }

@@ -33,12 +33,15 @@ import { useCallback, useEffect, useState } from "react";
 import { TAB_MIGRATION } from "../_lib/tab-migration";
 import { VALID_TABS, type Tab } from "../_lib/tabs.types";
 import { useTabFrequency } from "./useTabFrequency";
+import { PARAMS_DE_VISTA } from "@/hooks/use-vista-modulo";
 
 export interface UseAdminTabsResult {
   tab: Tab;
   setTab: (id: Tab) => void;
-  /** `vista` = sub-vista dentro del módulo destino (la usa el buscador). */
-  navigateTab: (id: Tab, vista?: string) => void;
+  /** `vista` = sub-vista del módulo destino; `sub` = la del módulo ANIDADO
+   *  adentro (Contratos dentro de Documentos, el drive y sus modos). Las usa el
+   *  buscador para aterrizar en el destino exacto, no en la puerta del módulo. */
+  navigateTab: (id: Tab, vista?: string, sub?: string) => void;
   topTabs: (n: number) => string[];
 }
 
@@ -110,7 +113,7 @@ export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
   const { trackTab, getTopTabs } = useTabFrequency();
 
   const navigateTab = useCallback(
-    (id: Tab, vista?: string) => {
+    (id: Tab, vista?: string, sub?: string) => {
       setTab(id);
       try {
         localStorage.setItem("admin_active_tab", id);
@@ -126,8 +129,13 @@ export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
         // módulo nuevo recibe un `?vista=` que no es suyo (ver useVistaModulo).
         // Salvo que el destino traiga la suya —el buscador manda a una vista
         // concreta— en cuyo caso esa gana.
+        //
+        // Se limpian TODOS los niveles, no sólo `vista`: un `?sub=` del módulo
+        // anidado que quedara huérfano sobreviviría al salto y le impondría una
+        // vista al que viene.
+        if (tabActual !== id) for (const p of PARAMS_DE_VISTA) url.searchParams.delete(p);
         if (vista) url.searchParams.set("vista", vista);
-        else if (tabActual !== id) url.searchParams.delete("vista");
+        if (sub) url.searchParams.set("sub", sub);
         url.hash = id;
         /**
          * `pushState` y no `replaceState`: con replace, saltar de módulo NUNCA

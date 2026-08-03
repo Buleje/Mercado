@@ -50,9 +50,16 @@ export const CTP_VISTAS: readonly SubvistaModulo[] = [
  * compara. Sin ese test esta tabla se desincroniza en silencio y el buscador
  * empieza a ofrecer destinos que ya no existen.
  *
+ * ⚠️ La clave es el **id del tab**, no el `MODULE_ID` del componente. No siempre
+ * coinciden: los ocho hubs (`documentos-hub`, `equipo-hub`…) NO son tabs — sólo
+ * se llega a ellos por tabs alias (`?tab=tareas`, `?tab=contratos`), que el
+ * buscador ya indexa como módulos de primer nivel. Declararlos acá con su
+ * MODULE_ID no rompía nada, simplemente no se leía nunca. Lo cuida
+ * `admin-subvistas-sincronizadas`.
+ *
  * Los módulos ANIDADOS (Contratos y Cotizaciones dentro de Documentos, la
- * página de tienda dentro de Mi Tienda) NO están acá: comparten `?vista=` con
- * su padre y se pisarían.
+ * página de tienda dentro de Mi Tienda) van en `ANIDADAS_POR_MODULO`: comparten
+ * `?vista=` con su padre y necesitan las dos coordenadas.
  */
 export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[]>> = {
   "ventas-caja": [
@@ -104,60 +111,50 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "mapa", label: "Mapa", hint: "Dónde viven los clientes" },
     { key: "mensajes", label: "Mensajes masivos", hint: "Conversaciones con clientes" },
   ],
-  "mensajes-hub": [
-    { key: "whatsapp", label: "WhatsApp", hint: "Bandeja de entrada de WhatsApp" },
-    { key: "chat", label: "Chat con clientes", hint: "Chat de la tienda" },
-    { key: "soporte", label: "Soporte", hint: "Tickets y reclamos" },
-    { key: "avisos", label: "Avisos por pedido", hint: "Notificaciones a clientes" },
-    { key: "plantillas", label: "Plantillas WhatsApp", hint: "Mensajes prearmados" },
-    { key: "bot", label: "Bot WhatsApp", hint: "Configurar las respuestas automáticas" },
-  ],
-  "crecimiento-hub": [
-    { key: "campanas", label: "Campañas", hint: "Promos y envíos masivos" },
-    { key: "segmentos", label: "Segmentos", hint: "A quién apuntar cada campaña" },
-    { key: "puntos", label: "Puntos & Fidelización", hint: "Programa de fidelidad" },
-    { key: "rfm", label: "Análisis RFM", hint: "Clientes por frecuencia y valor" },
-    { key: "gift-cards", label: "Gift Cards", hint: "Tarjetas de regalo" },
-    { key: "socio", label: "Socio Buleje", hint: "Membresía y beneficios" },
-    { key: "subscriptions", label: "Bodega al Mes", hint: "Compras que se repiten solas" },
-    { key: "lives", label: "En Vivo", hint: "Ventas en vivo" },
-  ],
-  "documentos-hub": [
-    { key: "facturacion", label: "Facturación SUNAT", hint: "Comprobantes electrónicos" },
-    { key: "cotizaciones", label: "Cotizaciones", hint: "Presupuestos a clientes" },
-    { key: "guias", label: "Guías de Remisión", hint: "Traslado de mercadería" },
-    { key: "notas", label: "Notas de Crédito", hint: "Anular o corregir un comprobante" },
-    { key: "contratos", label: "Contratos", hint: "Contratos y firmas" },
-    { key: "drive", label: "Documentación", hint: "El drive: archivos, carpetas y búsqueda" },
-  ],
-  "analisis-hub": [
-    { key: "analytics", label: "Analytics Pro", hint: "Métricas del negocio" },
-    { key: "forecast", label: "Predicción Demanda", hint: "Cuánto se va a vender" },
-    { key: "inteligencia", label: "Inteligencia", hint: "Hallazgos automáticos" },
-  ],
-  "asistente-ia-hub": [
-    { key: "chat", label: "Chat IA", hint: "Preguntarle al asistente" },
-    { key: "comandos", label: "Comandos IA", hint: "Acciones que la IA puede ejecutar" },
-    { key: "sugerencias", label: "Sugerencias IA", hint: "Qué recomienda mejorar" },
-  ],
-  "sistema-hub": [
-    { key: "rendimiento", label: "Rendimiento", hint: "Qué tan rápido va el sitio" },
-    { key: "auditoria", label: "Auditoría", hint: "Quién hizo qué y cuándo" },
-    { key: "colas", label: "Colas", hint: "Trabajos en segundo plano" },
-  ],
-  "equipo-hub": [
-    { key: "tareas", label: "Tareas", hint: "Pendientes del equipo" },
-    { key: "notas", label: "Notas", hint: "Notas rápidas internas" },
-  ],
-  "mi-tienda-hub": [
-    { key: "identidad", label: "Identidad y tema", hint: "Logo, colores y tipografía" },
-    { key: "pagina", label: "Mi tienda pública", hint: "Cómo se ve la tienda al cliente" },
-  ],
   recetas: [
     { key: "dashboard", label: "Resumen", hint: "Cómo viene la producción" },
     { key: "recetas", label: "Recetas", hint: "Insumos de cada producto elaborado" },
     { key: "produccion", label: "Producción", hint: "Producir según receta y descontar insumos" },
     { key: "recetario", label: "Recetario", hint: "El recetario impreso" },
+  ],
+};
+
+/**
+ * Destinos de SEGUNDO nivel: viven dentro de un módulo que ya está dentro de un
+ * hub, así que llegar a ellos necesita `?vista=` (la del hub) y `?sub=` (la del
+ * módulo anidado) a la vez.
+ *
+ * Sin esto, buscar «plantillas de contrato» o «papelera» dejaba en la puerta del
+ * hub y había que hacer dos clicks más adivinando dónde.
+ */
+export interface SubvistaAnidada extends SubvistaModulo {
+  /** La vista del hub que hay que abrir para que el módulo exista en pantalla. */
+  vista: string;
+}
+
+export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnidada[]>> = {
+  // Clave = id del TAB (`?tab=documentos` abre el hub de Documentos).
+  documentos: [
+    { vista: "contratos", key: "plantillas", label: "Plantillas de contrato", hint: "Modelos para generar contratos" },
+    { vista: "contratos", key: "contratos", label: "Mis Contratos", hint: "Contratos emitidos y su estado de firma" },
+    { vista: "contratos", key: "crear", label: "Crear Contrato", hint: "Redactar un contrato nuevo" },
+    { vista: "cotizaciones", key: "lista", label: "Lista de cotizaciones", hint: "Presupuestos enviados" },
+    { vista: "cotizaciones", key: "nueva", label: "Nueva cotización", hint: "Armar un presupuesto" },
+    // Modos del drive. No están todos: se declaran los que alguien buscaría por
+    // nombre, no los catorce estados internos del componente.
+    { vista: "drive", key: "favorites", label: "Documentos favoritos", hint: "Los archivos marcados" },
+    { vista: "drive", key: "expiring", label: "Documentos por vencer", hint: "Lo que caduca pronto" },
+    { vista: "drive", key: "trash", label: "Papelera de documentos", hint: "Archivos borrados, para restaurar" },
+    { vista: "drive", key: "enlaces", label: "Enlaces compartidos", hint: "Links públicos activos y cómo cortarlos" },
+    { vista: "drive", key: "duplicados", label: "Documentos duplicados", hint: "Archivos repetidos que ocupan lugar" },
+    { vista: "drive", key: "sync", label: "Sincronización de carpeta", hint: "La carpeta de Windows espejada en el drive" },
+    { vista: "drive", key: "activity", label: "Actividad del drive", hint: "Quién subió, movió o borró qué" },
+  ],
+  "pagina-inicio": [
+    { vista: "pagina", key: "sections", label: "Secciones de la tienda", hint: "El orden de los bloques de la página" },
+    { vista: "pagina", key: "branding", label: "Branding de la tienda", hint: "Logo, colores y tipografía" },
+    { vista: "pagina", key: "banners", label: "Banners", hint: "Las imágenes grandes del inicio" },
+    { vista: "pagina", key: "promotions", label: "Promociones de la página", hint: "Qué ofertas se destacan" },
   ],
 };
 

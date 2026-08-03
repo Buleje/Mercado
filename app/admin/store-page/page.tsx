@@ -26,6 +26,7 @@
  * Patrón estándar: AdminModuleHeader + AdminTabBar.
  */
 
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -74,28 +75,16 @@ const TABS: TabConfig[] = [
 
 const VALID_TABS = TABS.map((t) => t.id) as readonly TabId[];
 
-function normalizeTab(value: string | null): TabId {
-  if (value && (VALID_TABS as readonly string[]).includes(value)) return value as TabId;
-  return "sections";
-}
-
 /**
- * ⚠️ Este módulo NO usa `useVistaModulo` (`?vista=`) a propósito: se renderiza
+ * Este módulo usa `useSubvistaModulo` (`?sub=`) y no `?vista=`: se renderiza
  * DENTRO de MiTiendaHubModule, que ya es dueño de ese parámetro. Dos componentes
- * escribiendo el mismo `?vista=` se pisarían — el de adentro le cambiaría la
- * pestaña al de afuera en cada click. Su sub-vista se queda en localStorage
- * hasta que exista un segundo nivel de direccionamiento.
+ * escribiendo el mismo se pisarían — el de adentro le cambiaría la pestaña al
+ * de afuera en cada click.
  */
 export default function StorePageAdminPage() {
-  const [tab, setTab] = useState<TabId>(() => {
-    if (typeof window === "undefined") return "sections";
-    return normalizeTab(localStorage.getItem(`admin-last-tab-${MODULE_ID}`));
-  });
+  const { vista: tab, irA: setTab } = useSubvistaModulo<TabId>(MODULE_ID, VALID_TABS, "sections");
   const [slug, setSlug] = useState("main");
 
-  useEffect(() => {
-    try { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, tab); } catch { /* ignore */ }
-  }, [tab]);
 
   useEffect(() => {
     let active = true;

@@ -56,7 +56,7 @@ export interface AdminGlobalModalsProps {
   searchOpen: boolean;
   setSearchOpen: (v: boolean) => void;
   /** `vista` opcional: sub-vista dentro del módulo destino (la manda el buscador). */
-  navigateTab: (tab: Tab, vista?: string) => void;
+  navigateTab: (tab: Tab, vista?: string, sub?: string) => void;
 
   // Cierre diario
   showCierreDiario: boolean;
@@ -125,7 +125,7 @@ export function AdminGlobalModals(props: AdminGlobalModalsProps) {
         open={searchOpen}
         onOpen={() => setSearchOpen(true)}
         onClose={() => setSearchOpen(false)}
-        onNavigate={(t, vista) => navigateTab(t as Tab, vista)}
+        onNavigate={(t, vista, sub) => navigateTab(t as Tab, vista, sub)}
       />
 
       <CierreDiarioModal

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ALL_TABS } from "@/app/admin/_lib/tab-data";
-import { CTP_VISTAS, LOTH_VISTAS, VISTAS_POR_MODULO } from "@/lib/admin/subvistas-modulos";
+import { ANIDADAS_POR_MODULO, CTP_VISTAS, LOTH_VISTAS, VISTAS_POR_MODULO } from "@/lib/admin/subvistas-modulos";
 import {
   Search, X, Package, Users, ShoppingCart, FileText, ShoppingBasket, Tag, AlertTriangle, TrendingUp, Loader2, LayoutDashboard, Monitor, Boxes, Shield, Zap, ArrowRight,
 } from "@buleje/design-system/icons";
@@ -29,6 +29,8 @@ interface SearchResult {
   navigateTo?: string;
   /** Sub-vista dentro del módulo destino (`?vista=`). */
   vista?: string;
+  /** Sub-vista del módulo ANIDADO dentro del destino (ver navigateTab). */
+  sub?: string;
   /** Para acciones: callback directo */
   action?: () => void;
   /** Texto original para highlight */
@@ -56,6 +58,8 @@ interface ModuleEntry {
   icon: React.ElementType;
   keywords: string[];
   subtabs?: { id: string; label: string; keywords?: string[] }[];
+  /** Destinos que además necesitan abrir una vista del hub (ver ANIDADAS_INDEX). */
+  anidadas?: { id: string; vista: string; label: string; keywords: string[] }[];
 }
 
 /** "Análisis" → "analisis": así "analisis" sin tilde también encuentra. */
@@ -108,6 +112,24 @@ const SUBTABS_POR_MODULO: Record<string, { id: string; label: string; keywords?:
   ...Object.fromEntries(Object.entries(VISTAS_POR_MODULO).map(([id, v]) => [id, aSubtabs(v)])),
 };
 
+/**
+ * Los destinos de segundo nivel, aplanados por módulo. Llevan `vista` además de
+ * `id`: el buscador tiene que abrir la vista del hub Y la sub-vista de adentro,
+ * o aterriza en la puerta del módulo equivocado.
+ */
+const ANIDADAS_INDEX: Record<string, { id: string; vista: string; label: string; keywords: string[] }[]> =
+  Object.fromEntries(
+    Object.entries(ANIDADAS_POR_MODULO).map(([id, vistas]) => [
+      id,
+      vistas.map((v) => ({
+        id: v.key,
+        vista: v.vista,
+        label: v.label,
+        keywords: [sinTildes(v.label), ...sinTildes(v.hint).split(/[^a-z0-9]+/).filter((w) => w.length > 3)],
+      })),
+    ]),
+  );
+
 const MODULE_INDEX: ModuleEntry[] = ALL_TABS.map((t) => {
   const base = sinTildes(t.label).split(/[^a-z0-9]+/).filter((w) => w.length > 2);
   return {
@@ -116,6 +138,7 @@ const MODULE_INDEX: ModuleEntry[] = ALL_TABS.map((t) => {
     icon: t.icon,
     keywords: [...new Set([...base, ...(SINONIMOS[t.id as string] ?? [])])],
     subtabs: SUBTABS_POR_MODULO[t.id as string],
+    anidadas: ANIDADAS_INDEX[t.id as string],
   };
 });
 
@@ -222,6 +245,26 @@ function searchModules(q: string): SearchResult[] {
         }
       }
     }
+
+    // Y los de segundo nivel: mismo criterio, pero el destino lleva las DOS
+    // coordenadas (la vista del hub y la sub-vista del módulo de adentro).
+    if (mod.anidadas) {
+      for (const a of mod.anidadas) {
+        const match = a.label.toLowerCase().includes(lower) || a.keywords.some((k) => k.includes(lower));
+        if (match && !labelMatch) {
+          results.push({
+            id: `anidada-${mod.tab}-${a.vista}-${a.id}`,
+            type: "modulo",
+            title: a.label,
+            subtitle: `En ${mod.label}`,
+            navigateTo: mod.tab,
+            tab: mod.tab,
+            vista: a.vista,
+            sub: a.id,
+          });
+        }
+      }
+    }
   }
 
   return results.slice(0, 5);
@@ -252,7 +295,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onOpen?: () => void;
-  onNavigate: (tab: string, vista?: string) => void;
+  onNavigate: (tab: string, vista?: string, sub?: string) => void;
 }
 
 // ── Metadatos de grupos ───────────────────────────────────────────────────────
@@ -387,7 +430,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
       if (e.key === "Enter" && flatResults[selected]) {
         const r = flatResults[selected];
         if (r.action) { r.action(); }
-        else if (r.navigateTo) { onNavigate(r.navigateTo, r.vista); onClose(); }
+        else if (r.navigateTo) { onNavigate(r.navigateTo, r.vista, r.sub); onClose(); }
       }
       if (e.key === "Escape") { onClose(); }
     };
@@ -398,7 +441,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
 
   const handleSelect = (r: SearchResult) => {
     if (r.action) { r.action(); }
-    else if (r.navigateTo) { onNavigate(r.navigateTo, r.vista); onClose(); }
+    else if (r.navigateTo) { onNavigate(r.navigateTo, r.vista, r.sub); onClose(); }
   };
 
   if (!open) return null;

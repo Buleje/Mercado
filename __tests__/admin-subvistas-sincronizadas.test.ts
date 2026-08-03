@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { VISTAS_POR_MODULO } from "@/lib/admin/subvistas-modulos";
+import { ANIDADAS_POR_MODULO, VISTAS_POR_MODULO } from "@/lib/admin/subvistas-modulos";
+import { VALID_TABS } from "@/app/admin/_lib/tabs.types";
 
 /**
  * `VISTAS_POR_MODULO` es un espejo: declara las sub-vistas de cada módulo para
@@ -22,14 +23,6 @@ const MODULOS: Record<string, { archivo: string; extraer: (src: string) => strin
   compras: { archivo: "components/admin/unified/ComprasModule.tsx", extraer: idsDeTABS },
   inventario: { archivo: "components/admin/unified/InventarioAlmacenesModule.tsx", extraer: idsDeTABS },
   clientes: { archivo: "components/admin/unified/CRMClientesModule.tsx", extraer: idsDeTABS },
-  "mensajes-hub": { archivo: "components/admin/unified/MensajesHubModule.tsx", extraer: idsDeTABS },
-  "crecimiento-hub": { archivo: "components/admin/unified/CrecimientoHubModule.tsx", extraer: idsDeTABS },
-  "documentos-hub": { archivo: "components/admin/unified/DocumentosHubModule.tsx", extraer: idsDeTABS },
-  "analisis-hub": { archivo: "components/admin/unified/AnalisisHubModule.tsx", extraer: idsDeTABS },
-  "asistente-ia-hub": { archivo: "components/admin/unified/AsistenteIAHubModule.tsx", extraer: idsDeTABS },
-  "sistema-hub": { archivo: "components/admin/unified/SistemaHubModule.tsx", extraer: idsDeTABS },
-  "equipo-hub": { archivo: "components/admin/unified/EquipoHubModule.tsx", extraer: idsDeTABS },
-  "mi-tienda-hub": { archivo: "components/admin/unified/MiTiendaHubModule.tsx", extraer: idsDeTABS },
   recetas: { archivo: "components/admin/RecetasModule.tsx", extraer: idsDeRecetas },
   // Mi Plata es de dos niveles: las vistas direccionables son las HOJAS (la
   // sección dentro de la pestaña), no las pestañas.
@@ -72,6 +65,20 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
     expect(Object.keys(VISTAS_POR_MODULO).sort()).toEqual(Object.keys(MODULOS).sort());
   });
 
+  /**
+   * EL guard que faltaba. `GlobalSearch` indexa por id de TAB, y el MODULE_ID
+   * del componente no siempre lo es: los ocho hubs (`documentos-hub`,
+   * `equipo-hub`…) no son tabs, sólo se llega por alias. Declarados con su
+   * MODULE_ID, sus vistas no rompían nada — simplemente no se indexaban nunca,
+   * y buscarlas no devolvía resultados. No lo atrapó ni tsc ni el lint ni la
+   * verificación en navegador, que probó `inventario` (donde sí coinciden).
+   */
+  it("todas las claves son tabs reales, o el buscador no las lee", () => {
+    for (const clave of [...Object.keys(VISTAS_POR_MODULO), ...Object.keys(ANIDADAS_POR_MODULO)]) {
+      expect(VALID_TABS, `"${clave}" no es un tab del panel`).toContain(clave);
+    }
+  });
+
   for (const [moduleId, { archivo, extraer }] of Object.entries(MODULOS)) {
     it(`${moduleId} — los ids coinciden con ${archivo.split("/").pop()}`, () => {
       const src = readFileSync(join(RAIZ, archivo), "utf8");
@@ -108,6 +115,48 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       }
     });
   }
+
+  /**
+   * Los destinos de segundo nivel apuntan a módulos ANIDADOS (Contratos dentro
+   * de Documentos, el drive y sus modos). Si una `key` no existe allá, el
+   * buscador manda a un `?sub=` que el módulo descarta y la persona aterriza en
+   * el default sin entender por qué.
+   */
+  const ANIDADOS: Record<string, { archivo: string; constante: RegExp }> = {
+    "documentos/contratos": {
+      archivo: "components/admin/ContratosModule.tsx",
+      constante: /const CONTRATOS_VISTAS = \[([^\]]+)\]/,
+    },
+    "documentos/cotizaciones": {
+      archivo: "components/admin/CotizacionesModule.tsx",
+      constante: /const COTIZACIONES_VISTAS = \[([^\]]+)\]/,
+    },
+    "documentos/drive": {
+      archivo: "components/admin/documentos/DocumentosModule.tsx",
+      constante: /const DRIVE_MODOS = \[([\s\S]*?)\] as const;/,
+    },
+    // Acá los ids no están en un array literal sino en `const TABS = [...]`
+    // (VALID_TABS se deriva de él): se lee el TABS, que es la fuente.
+    "pagina-inicio/pagina": {
+      archivo: "app/admin/store-page/page.tsx",
+      constante: /const TABS(?::\s*[^=]+)?\s*=\s*\[([\s\S]*?)\n\];/,
+    },
+  };
+
+  it("los destinos anidados existen en el módulo al que apuntan", () => {
+    for (const [moduleId, anidadas] of Object.entries(ANIDADAS_POR_MODULO)) {
+      for (const a of anidadas) {
+        const ref = ANIDADOS[`${moduleId}/${a.vista}`];
+        expect(ref, `sin fuente declarada para ${moduleId}/${a.vista}`).toBeTruthy();
+        const src = readFileSync(join(RAIZ, ref.archivo), "utf8");
+        const bloque = src.match(ref.constante);
+        expect(bloque, `no se pudo leer la lista de ${ref.archivo}`).toBeTruthy();
+        const ids = [...bloque![1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+        expect(ids.length).toBeGreaterThan(0);
+        expect(ids, `${moduleId} ▸ ${a.vista} ▸ ${a.key}`).toContain(a.key);
+      }
+    }
+  });
 
   it("ninguna vista se declara sin etiqueta ni pista", () => {
     for (const [moduleId, vistas] of Object.entries(VISTAS_POR_MODULO)) {
