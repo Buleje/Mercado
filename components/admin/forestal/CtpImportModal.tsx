@@ -19,6 +19,7 @@
 
 import { useRef, useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { MODAL_BODY } from "./ctp-shared";
 import {
   AlertCircle,
   CheckCircle2,
@@ -285,7 +286,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
 
   return (
     <AdminModal open onClose={onClose} variant="info" title="Importar Libro de Operaciones" description="Excel oficial LO-CTP (SERFOR) — el libro completo de una, o un registro a la vez" icon={Upload}>
-      <div className="space-y-4 p-5">
+      <div className={`space-y-4 ${MODAL_BODY}`}>
         {error && (
           <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div>

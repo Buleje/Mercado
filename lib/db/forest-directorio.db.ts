@@ -226,11 +226,26 @@ export const ForestDirectorioDB = {
       ...(input.adjuntos === undefined ? {} : { adjuntos: input.adjuntos }),
     };
 
-    const existente = input.id
+    const vivo = input.id
       ? await prisma.forestParty.findFirst({ where: { id: input.id, tenantId, deletedAt: null } })
       : docNumero && docTipo
         ? await prisma.forestParty.findFirst({ where: { tenantId, docTipo, docNumero, deletedAt: null } })
         : null;
+
+    /**
+     * Mismo criterio que las placas: volver a cargar un RUC que se dio de baja
+     * revive su ficha en vez de crear una segunda. Sin esto el directorio
+     * terminaba con dos entradas del mismo titular —una viva y una borrada— y
+     * la que traía la dirección cargada era justamente la borrada.
+     */
+    const dadoDeBaja =
+      !vivo && !input.id && docNumero && docTipo
+        ? await prisma.forestParty.findFirst({
+            where: { tenantId, docTipo, docNumero, deletedAt: { not: null } },
+            orderBy: { deletedAt: "desc" },
+          })
+        : null;
+    const existente = vivo ?? dadoDeBaja;
 
     let row: ParteRow;
     if (existente) {
@@ -245,7 +260,11 @@ export const ForestDirectorioDB = {
       const data = input.id ? campos : soloConValor(campos);
       row = await prisma.forestParty.update({
         where: { id: existente.id },
-        data: { ...data, roles },
+        data: {
+          ...data,
+          roles,
+          ...(existente.deletedAt ? { deletedAt: null, activo: input.activo ?? true } : {}),
+        },
       });
     } else {
       row = await prisma.forestParty.create({
@@ -258,7 +277,7 @@ export const ForestDirectorioDB = {
       action: "ctp_parte_upsert",
       entity: "ForestParty",
       entityId: row.id,
-      detail: `${existente ? "Actualizó" : "Agregó"} a ${row.nombre}${row.docNumero ? ` (${row.docTipo} ${row.docNumero})` : ""} como ${(row.roles as string[]).join(", ")}`,
+      detail: `${existente?.deletedAt ? "Reactivó" : existente ? "Actualizó" : "Agregó"} a ${row.nombre}${row.docNumero ? ` (${row.docTipo} ${row.docNumero})` : ""} como ${(row.roles as string[]).join(", ")}`,
       user: usuario,
     });
     this.invalidar(tenantId);
@@ -356,9 +375,27 @@ export const ForestDirectorioDB = {
     // real, no un re-alta — se avisa en vez de fusionar dos camiones distintos.
     if (input.id && porPlaca && porPlaca.id !== input.id) throw new PlacaDuplicadaError(placa);
 
+    /**
+     * La baja es lógica, pero el índice único `(tenantId, placa)` **no** excluye
+     * las borradas: volver a dar de alta una placa dada de baja se iba por
+     * `create` y reventaba contra el índice — el operador veía "internal_error"
+     * sin una sola pista. Re-alta de una placa que ya estuvo = revivir su ficha,
+     * que además conserva su historial de viajes.
+     */
+    const dadoDeBaja =
+      !porPlaca
+        ? await prisma.forestVehiculo.findFirst({
+            where: { tenantId, placa, deletedAt: { not: null } },
+            orderBy: { deletedAt: "desc" },
+          })
+        : null;
+    // Editando OTRO vehículo hacia una placa que pertenece a una ficha de baja:
+    // el índice tampoco lo permite. Se avisa con el motivo en vez del 500.
+    if (input.id && dadoDeBaja && dadoDeBaja.id !== input.id) throw new PlacaDuplicadaError(placa);
+
     const objetivo = input.id
       ? await prisma.forestVehiculo.findFirst({ where: { id: input.id, tenantId, deletedAt: null } })
-      : porPlaca;
+      : (porPlaca ?? dadoDeBaja);
 
     const row = objetivo
       ? await prisma.forestVehiculo.update({
@@ -366,7 +403,11 @@ export const ForestDirectorioDB = {
           // Mismo criterio que las partes: sin `id`, el match fue por placa y el
           // que llamó puede no conocer la marca ni la capacidad. Sólo la edición
           // explícita vacía campos.
-          data: input.id ? campos : soloConValor(campos),
+          data: {
+            ...(input.id ? campos : soloConValor(campos)),
+            // Revivir la ficha: sin esto el alta "no haría nada visible".
+            ...(objetivo.deletedAt ? { deletedAt: null, activo: input.activo ?? true } : {}),
+          },
           include: { transportista: { select: { nombre: true } } },
         })
       : await prisma.forestVehiculo.create({
@@ -379,7 +420,9 @@ export const ForestDirectorioDB = {
       action: "ctp_vehiculo_upsert",
       entity: "ForestVehiculo",
       entityId: row.id,
-      detail: `${objetivo ? "Actualizó" : "Agregó"} el vehículo ${row.placa}${row.marca ? ` (${row.marca})` : ""}`,
+      // El re-alta se distingue en la auditoría: "reactivó" y "actualizó" son
+      // hechos distintos para quien después lee el rastro.
+      detail: `${objetivo?.deletedAt ? "Reactivó" : objetivo ? "Actualizó" : "Agregó"} el vehículo ${row.placa}${row.marca ? ` (${row.marca})` : ""}`,
       user: usuario,
     });
     this.invalidar(tenantId);

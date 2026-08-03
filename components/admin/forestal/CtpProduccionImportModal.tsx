@@ -20,11 +20,11 @@
  */
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, Check, ClipboardList, Loader2 } from "@buleje/design-system/icons";
+import { AlertTriangle, ClipboardList, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { filasDesdeTexto, interpretarProduccion } from "@/lib/forestal/produccion-import";
-import { Btn, Field, I } from "./ctp-shared";
+import { Btn, Field, I, ModalBody, ModalFooter } from "./ctp-shared";
 
 const hoy = () => new Date().toISOString().slice(0, 10);
 
@@ -97,8 +97,36 @@ export default function CtpProduccionImportModal({
   const cargando = progreso !== null;
 
   return (
-    <AdminModal open onClose={onClose} title="Cargar el parte de turno" variant="info">
-      <div className="space-y-3">
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Cargar el parte de turno"
+      description="Cada fila entra como una corrida, sin origen atribuido"
+      icon={ClipboardList}
+      variant="info"
+      footer={
+        <ModalFooter
+          error={fallo ? `Se cortó en la fila ${fallo.fila}: ${fallo.motivo}` : null}
+          aviso={!fallo && creadas > 0 && !cargando ? `${creadas} corrida(s) cargadas. Falta atribuirles el origen.` : null}
+          nota={
+            cargando
+              ? `Cargando ${progreso?.hechas ?? 0} de ${progreso?.total ?? 0}…`
+              : texto.trim()
+                ? `${resultado.corridas.length} corrida(s)${resultado.errores.length > 0 ? ` · ${resultado.errores.length} fila(s) rechazada(s)` : ""}`
+                : undefined
+          }
+        >
+          <Btn variant="ghost" onClick={onClose} disabled={cargando}>
+            {creadas > 0 ? "Cerrar" : "Cancelar"}
+          </Btn>
+          <Btn variant="primary" disabled={resultado.corridas.length === 0 || cargando} onClick={() => void cargar()}>
+            {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
+            Cargar {resultado.corridas.length || ""} corrida{resultado.corridas.length === 1 ? "" : "s"}
+          </Btn>
+        </ModalFooter>
+      }
+    >
+      <ModalBody className="space-y-3">
         <p className="text-sm text-[var(--text-secondary)]">
           Pegá la planilla del turno. Cada fila entra como una corrida de producción —{" "}
           <strong>sin origen atribuido</strong>: hay que decir de qué ingresos salió antes de certificar.
@@ -123,21 +151,13 @@ export default function CtpProduccionImportModal({
           className="w-full rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 font-mono text-sm text-[var(--text-primary)] outline-none transition-[border-color,box-shadow] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] disabled:opacity-60"
         />
 
+        {/* El conteo va en el pie, donde se ve sin scrollear; acá queda el
+            total producido, que es el número que se contrasta con el papel. */}
         {texto.trim() && (
           <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-              <span className="text-sm font-bold text-[var(--text-primary)]">
-                {resultado.corridas.length} corrida{resultado.corridas.length === 1 ? "" : "s"}
-              </span>
-              <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
-                {Number(resultado.cantidadTotal).toFixed(4)}
-              </span>
-              {resultado.errores.length > 0 && (
-                <span className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-                  {resultado.errores.length} fila(s) rechazada(s)
-                </span>
-              )}
-            </div>
+            <p className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
+              Total del parte: {Number(resultado.cantidadTotal).toFixed(4)}
+            </p>
 
             {resultado.avisos.map((a) => (
               <p key={a} className="flex items-start gap-2 text-sm text-[var(--text-tertiary)]">
@@ -175,39 +195,14 @@ export default function CtpProduccionImportModal({
           </div>
         )}
 
-        {progreso && (
-          <p className="flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)]">
-            <Loader2 className="h-4 w-4 animate-spin" /> Cargando {progreso.hechas} de {progreso.total}…
+        {/* El corte parcial deja madera A MEDIO cargar: el detalle de qué hacer
+            con lo que YA entró no cabe en el pie, así que se queda acá. */}
+        {fallo && creadas > 0 && (
+          <p role="alert" className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-sunken)] p-2.5 text-sm font-medium text-[var(--text-secondary)]">
+            Las {creadas} corrida(s) anteriores YA quedaron en el libro — corregí esa fila y volvé a pegar sólo lo que falta.
           </p>
         )}
-
-        {fallo && (
-          <p role="alert" className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-sunken)] p-2.5 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-            Se cortó en la fila {fallo.fila}: {fallo.motivo}
-            {creadas > 0 && (
-              <span className="mt-1 block font-medium text-[var(--text-secondary)]">
-                Las {creadas} corrida(s) anteriores YA quedaron en el libro — corregí esa fila y volvé a pegar sólo lo que falta.
-              </span>
-            )}
-          </p>
-        )}
-
-        {!fallo && creadas > 0 && !cargando && (
-          <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-2.5 text-sm font-bold text-[var(--data-success-700)]">
-            <Check className="h-4 w-4" /> {creadas} corrida(s) cargadas. Falta atribuirles el origen.
-          </p>
-        )}
-
-        <div className="flex justify-end gap-2 border-t border-[var(--rule-base)] pt-3">
-          <Btn variant="ghost" onClick={onClose} disabled={cargando}>
-            {creadas > 0 ? "Cerrar" : "Cancelar"}
-          </Btn>
-          <Btn variant="primary" disabled={resultado.corridas.length === 0 || cargando} onClick={() => void cargar()}>
-            {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
-            Cargar {resultado.corridas.length || ""} corrida{resultado.corridas.length === 1 ? "" : "s"}
-          </Btn>
-        </div>
-      </div>
+      </ModalBody>
     </AdminModal>
   );
 }

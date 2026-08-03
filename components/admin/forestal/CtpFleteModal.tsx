@@ -12,7 +12,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Loader2, Save } from "@buleje/design-system/icons";
+import { Loader2, Save, Truck } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import { formatearPlaca } from "@/lib/forestal/directorio";
@@ -27,7 +27,7 @@ import {
   type Flete,
   type FleteInput,
 } from "@/lib/forestal/fletes";
-import { Btn, Field, I, Seccion } from "./ctp-shared";
+import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, useHayCambios } from "./ctp-shared";
 
 type Borrador = FleteInput & { id?: string };
 
@@ -78,6 +78,21 @@ export default function CtpFleteModal({
 
   const unitario = costoPorM3({ monto: b.monto ?? null, volumenM3: b.volumenM3 ?? null });
 
+  /**
+   * "Para avisar si la carga no entra" decía la ficha del vehículo desde que se
+   * creó el directorio, pero nadie miraba el dato: se podía anotar un viaje de
+   * 40 m³ en un camión de 30 sin una sola señal. La capacidad del vehículo
+   * elegido contra el volumen anotado — advertencia, no bloqueo: hay viajes que
+   * de verdad salen sobrecargados y el libro tiene que poder decirlo.
+   */
+  const excedeCapacidad = useMemo(() => {
+    const v = dir.vehiculos.find((x) => x.id === b.vehiculoId);
+    const cap = v?.capacidadM3 == null ? null : Number(v.capacidadM3);
+    const vol = b.volumenM3 == null ? null : Number(b.volumenM3);
+    if (cap == null || !Number.isFinite(cap) || cap <= 0 || vol == null || !Number.isFinite(vol)) return null;
+    return vol > cap ? { cap, vol, placa: formatearPlaca(v?.placa ?? "") } : null;
+  }, [dir.vehiculos, b.vehiculoId, b.volumenM3]);
+
   /** Elegir la placa trae también a su dueño, si el vehículo lo tiene cargado. */
   function elegirVehiculo(id: string) {
     const v = dir.vehiculos.find((x) => x.id === id);
@@ -110,9 +125,38 @@ export default function CtpFleteModal({
     }
   }
 
+  const bodyRef = useAtajoGuardar(() => void guardar(), !guardando);
+  const cerrar = useCierreSeguro(useHayCambios(b) && !guardando, onClose);
+
   return (
-    <AdminModal open onClose={onClose} title={flete ? "Editar el viaje" : "Anotar un viaje"} variant="info">
-      <div className="space-y-1">
+    <AdminModal
+      open
+      onClose={cerrar}
+      title={flete ? "Editar el viaje" : "Anotar un viaje"}
+      description="Lo único obligatorio es la fecha; el monto se cierra después"
+      icon={Truck}
+      variant="info"
+      footer={
+        <ModalFooter
+          error={error}
+          nota={
+            excedeCapacidad
+              ? `${excedeCapacidad.placa} declara ${excedeCapacidad.cap} m³ y el viaje lleva ${excedeCapacidad.vol} m³.`
+              : unitario != null
+                ? `Sale S/ ${unitario.toFixed(2)} por m³.`
+                : undefined
+          }
+          atajo
+        >
+          <Btn variant="ghost" onClick={cerrar}>Cancelar</Btn>
+          <Btn variant="primary" disabled={guardando} onClick={() => void guardar()}>
+            {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {flete ? "Guardar cambios" : "Anotar el viaje"}
+          </Btn>
+        </ModalFooter>
+      }
+    >
+      <ModalBody ref={bodyRef}>
         <Seccion numero={1} title="El viaje" hint="Lo único obligatorio es la fecha">
           <Field label="Fecha" required span={4}>
             <input type="date" className={I} value={b.fecha} onChange={(e) => set({ fecha: e.target.value })} />
@@ -194,17 +238,23 @@ export default function CtpFleteModal({
         </Seccion>
 
         <Seccion numero={3} title="Cuánto" hint="Sin monto queda pendiente de cerrar, no en cero">
-          <Field label="Volumen movido (m³)" span={4}>
+          <Field
+            label="Volumen movido (m³)"
+            span={4}
+            hint={excedeCapacidad ? `Supera los ${excedeCapacidad.cap} m³ de ${excedeCapacidad.placa}` : undefined}
+          >
             <input
               type="number"
               step="0.0001"
               min="0"
-              className={`${I} text-right font-mono tabular-nums`}
+              className={`${I} text-right font-mono tabular-nums ${excedeCapacidad ? "border-[var(--data-warning-500)]" : ""}`}
               value={b.volumenM3 ?? ""}
               onChange={(e) => set({ volumenM3: e.target.value === "" ? null : Number(e.target.value) })}
             />
           </Field>
-          <Field label="Monto del flete (S/)" span={4} hint={unitario != null ? `Sale S/ ${unitario.toFixed(2)} por m³` : "Vacío = todavía no se sabe"}>
+          {/* El costo por m³ se calcula, pero vive en el pie: ahí se lee sin
+              perder de vista los dos campos que lo producen. */}
+          <Field label="Monto del flete (S/)" span={4} hint="Vacío = todavía no se sabe">
             <input
               type="number"
               step="0.01"
@@ -248,21 +298,7 @@ export default function CtpFleteModal({
             <input type="text" className={I} value={b.notas ?? ""} onChange={(e) => set({ notas: e.target.value })} />
           </Field>
         </Seccion>
-
-        {error && (
-          <p role="alert" className="pt-3 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-            {error}
-          </p>
-        )}
-
-        <div className="mt-5 flex justify-end gap-2 border-t border-[var(--rule-base)] pt-4">
-          <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
-          <Btn variant="primary" disabled={guardando} onClick={() => void guardar()}>
-            {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Guardar
-          </Btn>
-        </div>
-      </div>
+      </ModalBody>
     </AdminModal>
   );
 }

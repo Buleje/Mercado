@@ -20,7 +20,7 @@ import {
   interpretarTrozas,
   type TrozaImportada,
 } from "@/lib/forestal/trozas-import";
-import { Btn } from "./ctp-shared";
+import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 
 const EJEMPLO = `Código\tEspecie\tD1\tD2\tLargo\nT-01\tTornillo\t45\t40\t3.5`;
 
@@ -55,8 +55,37 @@ export default function CtpTrozasImportModal({
   );
 
   return (
-    <AdminModal open onClose={onClose} title="Cargar la lista de trozas" variant="info">
-      <div className="space-y-3">
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Cargar la lista de trozas"
+      description="Pegado desde el Excel o el papel de la guía"
+      icon={ClipboardList}
+      variant="info"
+      footer={
+        <ModalFooter
+          nota={
+            texto.trim()
+              ? `${resultado.trozas.length} troza(s) · ${resultado.volumenTotal.toFixed(4)} m³${resultado.errores.length > 0 ? ` · ${resultado.errores.length} fila(s) rechazada(s)` : ""}`
+              : undefined
+          }
+        >
+          <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
+          <Btn
+            variant="primary"
+            disabled={resultado.trozas.length === 0}
+            onClick={() => {
+              onAceptar(resultado.trozas);
+              onClose();
+            }}
+          >
+            {resultado.trozas.length === 0 ? <ClipboardList className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+            Usar {resultado.trozas.length || ""} troza{resultado.trozas.length === 1 ? "" : "s"}
+          </Btn>
+        </ModalFooter>
+      }
+    >
+      <ModalBody className="space-y-3">
         <p className="text-sm text-[var(--text-secondary)]">
           Pegá la lista tal como está en el Excel o en el papel de la guía. Se aceptan tabuladores, comas, punto y coma o
           columnas separadas por espacios. Si trae encabezados, se leen solos.
@@ -71,22 +100,10 @@ export default function CtpTrozasImportModal({
           className="w-full rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 font-mono text-sm text-[var(--text-primary)] outline-none transition-[border-color,box-shadow] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
         />
 
+        {/* El conteo/volumen vive en el pie (visible sin scrollear): acá sólo
+            lo que hay que LEER — el desajuste, los avisos y la vista previa. */}
         {texto.trim().length > 0 && (
           <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-              <span className="text-sm font-bold text-[var(--text-primary)]">
-                {resultado.trozas.length} troza{resultado.trozas.length === 1 ? "" : "s"}
-              </span>
-              <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
-                {resultado.volumenTotal.toFixed(4)} m³
-              </span>
-              {resultado.errores.length > 0 && (
-                <span className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-                  {resultado.errores.length} fila(s) rechazada(s)
-                </span>
-              )}
-            </div>
-
             {desajuste && (
               <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-2.5 text-sm font-medium text-[var(--data-warning-700)]">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -128,21 +145,7 @@ export default function CtpTrozasImportModal({
           </div>
         )}
 
-        <div className="flex justify-end gap-2 border-t border-[var(--rule-base)] pt-3">
-          <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
-          <Btn
-            variant="primary"
-            disabled={resultado.trozas.length === 0}
-            onClick={() => {
-              onAceptar(resultado.trozas);
-              onClose();
-            }}
-          >
-            {resultado.trozas.length === 0 ? <ClipboardList className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-            Usar {resultado.trozas.length || ""} troza{resultado.trozas.length === 1 ? "" : "s"}
-          </Btn>
-        </div>
-      </div>
+      </ModalBody>
     </AdminModal>
   );
 }

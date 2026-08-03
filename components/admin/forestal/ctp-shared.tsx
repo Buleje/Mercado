@@ -5,7 +5,16 @@
  * re-tipean por vista (si no, la tabla y el detalle terminan diciendo distinto).
  */
 
-import { Children, cloneElement, isValidElement, useId, type ReactElement } from "react";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  type ReactElement,
+} from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, Check, CheckCircle2, Clock, X as XIcon } from "@buleje/design-system/icons";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "@/lib/forestal/ctp-compliance";
@@ -318,7 +327,7 @@ export function Field({
       <label
         id={`${base}-rotulo`}
         {...(esControl ? { htmlFor: idCampo } : {})}
-        className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-[var(--text-primary)]"
+        className="mb-1 flex items-center gap-1.5 text-sm font-medium text-[var(--text-primary)]"
       >
         <span className="truncate">{label}</span>
         {required && <span className="text-[var(--data-error-600)]" aria-hidden="true">*</span>}
@@ -353,7 +362,141 @@ export function Field({
  * En celular todo cae a una columna.
  */
 export function CampoGrid({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <div className={`grid grid-cols-1 gap-x-4 gap-y-3.5 sm:grid-cols-12 ${className}`}>{children}</div>;
+  return <div className={`grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-12 ${className}`}>{children}</div>;
+}
+
+// ── Cuerpo y pie estándar de los modales del Libro ──────────────────────────
+// El wrapper `AdminModal` no pone padding (a propósito: hay modales de mapa y
+// de tabla que lo quieren a sangre), así que cada modal decidía el suyo — y
+// tres de ellos NO decidían ninguno: los campos del directorio, del vehículo y
+// del flete tocaban el borde del panel y las ayudas de sección se cortaban
+// contra el filo derecho. `ModalBody` es el único lugar donde se decide.
+
+/**
+ * Padding del cuerpo de un modal del Libro. Se exporta suelto para los modales
+ * cuyo cuerpo ya es otro elemento (un `<form>`, un contenedor con su propio
+ * layout) y no pueden envolverse en `ModalBody` sin sumar un div.
+ */
+export const MODAL_BODY = "px-5 py-5 sm:px-6";
+
+/** Cuerpo de un modal del Libro: padding uniforme (el mismo en los 20). */
+export function ModalBody({
+  children,
+  className = "",
+  ref,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  ref?: React.Ref<HTMLDivElement>;
+}) {
+  return (
+    <div ref={ref} className={`${MODAL_BODY} ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Pie de acciones. Se pasa a la prop `footer` de `AdminModal`, que lo deja
+ * FUERA del área scrolleable: el botón «Guardar» de un formulario largo no
+ * tiene que ganarse con scroll (el del directorio quedaba a 1228px en una
+ * pantalla de 900). Por lo mismo el error viaja acá y no al final del
+ * formulario, donde el modal scrolleado lo escondía justo cuando hacía falta.
+ */
+export function ModalFooter({
+  error,
+  aviso,
+  nota,
+  atajo,
+  children,
+}: {
+  error?: string | null;
+  /** Confirmación efímera (verde), p. ej. "Datos traídos de SUNAT". */
+  aviso?: string | null;
+  /** Contexto neutro a la izquierda (conteos, totales, qué falta). */
+  nota?: React.ReactNode;
+  /** Muestra "Ctrl + Enter guarda" cuando no hay nada más que decir. */
+  atajo?: boolean;
+  children: React.ReactNode;
+}) {
+  const mensaje = error ? (
+    <p role="alert" className="min-w-0 flex-1 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+      {error}
+    </p>
+  ) : aviso ? (
+    <p className="min-w-0 flex-1 text-sm font-medium text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">{aviso}</p>
+  ) : nota ? (
+    <div className="min-w-0 flex-1 text-sm text-[var(--text-tertiary)]">{nota}</div>
+  ) : atajo ? (
+    <p className="hidden min-w-0 flex-1 text-xs text-[var(--text-tertiary)] sm:block">
+      <kbd className="rounded border border-[var(--rule-base)] px-1 py-0.5 font-mono text-[length:var(--ts-2xs,11px)]">Ctrl</kbd>
+      {" + "}
+      <kbd className="rounded border border-[var(--rule-base)] px-1 py-0.5 font-mono text-[length:var(--ts-2xs,11px)]">Enter</kbd>
+      {" guarda"}
+    </p>
+  ) : null;
+
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 px-5 py-3.5 sm:px-6">
+      {mensaje}
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Ctrl/⌘ + Enter guarda, en todos los modales de alta por igual.
+ *
+ * Devuelve el ref que va en el `ModalBody`: con él el atajo sabe en qué diálogo
+ * vive y **sólo responde el de más arriba** — si un formulario abre otro modal
+ * encima (importar trozas sobre el alta de ingreso), Ctrl+Enter guarda el de
+ * arriba, no los dos.
+ */
+/**
+ * Cerrar un formulario a medio llenar pide confirmación.
+ *
+ * Escape y el click fuera son gestos baratos —y Radix los atiende a los dos— así
+ * que un roce cerraba seis secciones de directorio ya tipeadas sin una palabra.
+ * Sólo pregunta si de verdad hay algo que perder: sin cambios cierra derecho,
+ * como siempre. (El alta de ingreso NO lo usa: ésa guarda borrador solo.)
+ */
+export function useCierreSeguro(hayCambios: boolean, onClose: () => void) {
+  return useCallback(() => {
+    if (hayCambios && !window.confirm("Hay cambios sin guardar. ¿Cerrar y perderlos?")) return;
+    onClose();
+  }, [hayCambios, onClose]);
+}
+
+/**
+ * ¿Cambió algo desde que se abrió? Compara contra la foto del montaje, así que
+ * volver un campo a su valor original cuenta como "sin cambios" — que es lo que
+ * el operador entiende por no haber tocado nada.
+ */
+export function useHayCambios(valor: unknown): boolean {
+  const inicial = useRef<string>(undefined as unknown as string);
+  const actual = JSON.stringify(valor ?? null);
+  if (inicial.current === undefined) inicial.current = actual;
+  return inicial.current !== actual;
+}
+
+export function useAtajoGuardar(guardar: () => void, activo = true) {
+  const ref = useRef<HTMLDivElement>(null);
+  const cb = useRef(guardar);
+  cb.current = guardar;
+  useEffect(() => {
+    if (!activo) return;
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key !== "Enter" || !(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
+      const mio = ref.current?.closest('[role="dialog"]');
+      const abiertos = Array.from(document.querySelectorAll('[role="dialog"]'));
+      if (mio && abiertos.length > 0 && abiertos[abiertos.length - 1] !== mio) return;
+      ev.preventDefault();
+      cb.current();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [activo]);
+  return ref;
 }
 
 /**
@@ -381,8 +524,8 @@ export function Seccion({
   className?: string;
 }) {
   return (
-    <section className={`break-inside-avoid border-t border-[var(--rule-base)] pt-5 mt-5 first:mt-0 first:border-t-0 first:pt-0 ${className}`}>
-      <div className="mb-3 flex items-baseline gap-2">
+    <section className={`break-inside-avoid border-t border-[var(--rule-base)] pt-4 mt-4 first:mt-0 first:border-t-0 first:pt-0 ${className}`}>
+      <div className="mb-2.5 flex items-baseline gap-2">
         {numero != null && (
           <span className="text-[length:var(--ts-2xs,11px)] font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">
             {String(numero).padStart(2, "0")}

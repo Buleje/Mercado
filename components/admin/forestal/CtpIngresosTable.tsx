@@ -129,11 +129,11 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
       {/* El alto tope + scroll propio sólo se activa con muchas filas: es lo que
           hace REAL a la cabecera pegajosa (un `sticky` dentro de un contenedor
           sin scroll no se pega a nada). Con 5 filas no se toca el layout. */}
-      {/* Once columnas no entran en el ancho del panel ni en un monitor de
-          1600px: medido, la tabla pide ~1580 y el contenedor da ~1290. Se
-          scrollea —está bien, son datos de referencia— pero sin aviso el borde
-          se lee como el fin de la tabla y "Acciones" no existe para el que no
-          arrastra. El degradé sólo aparece cuando de verdad sobra ancho. */}
+      {/* Nueve columnas entran en el panel (medido: pedía 1585px con once y el
+          contenedor da 1290). El degradé del borde derecho queda por si el
+          panel se angosta —sidebar abierto, monitor chico—: sin él, el corte se
+          lee como el fin de la tabla y "Acciones" no existe para el que no
+          arrastra. */}
       <div className="relative hidden sm:block">
       <div
         className={`overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] ${
@@ -159,10 +159,14 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
               <ThSort field="entryDate" sort={sort} onSort={onSort}>Fecha</ThSort>
               <Th>Documento</Th>
               <ThSort field="providerName" sort={sort} onSort={onSort}>Proveedor / Origen</ThSort>
-              <ThSort field="speciesCommonName" sort={sort} onSort={onSort}>Especie</ThSort>
-              <Th>Producto</Th>
-              <ThSort field="volumeM3" sort={sort} onSort={onSort} align="right">Volumen (m³)</ThSort>
-              <ThSort field="pieces" sort={sort} onSort={onSort} align="right">Piezas</ThSort>
+              {/* Especie y producto son UN dato para el que lee la fila
+                  ("tornillo rolliza"), y separarlos costaba una columna. */}
+              <ThSort field="speciesCommonName" sort={sort} onSort={onSort}>Especie / producto</ThSort>
+              {/* Volumen y piezas también van juntos: son las dos caras de
+                  "cuánto entró" y nadie ordena por una sin mirar la otra.
+                  Con once columnas la tabla pedía 1585px en un panel de 1290 y
+                  «Acciones» quedaba fuera de pantalla — medido, no estimado. */}
+              <ThSort field="volumeM3" sort={sort} onSort={onSort} align="right">Cantidad</ThSort>
               <Th>Estado</Th>
               <Th className="text-right">Acciones</Th>
             </tr>
@@ -205,7 +209,7 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                         // el número que la autoridad pide quedaba aplastado.
                         <span
                           title={resumenFaltantes(faltan)}
-                          className="mt-1 inline-block whitespace-nowrap rounded-full bg-[var(--data-warning-500)]/15 px-2 py-0.5 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                          className="mt-1 inline-block whitespace-nowrap rounded-full bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                         >
                           −{faltan.length} SERFOR
                         </span>
@@ -228,7 +232,7 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                       type="button"
                       onClick={() => onDetail(e)}
                       title={e.gtfNumber}
-                      className="block max-w-36 truncate text-left font-mono text-sm font-bold text-[var(--brand-ink)] dark:text-[var(--text-primary)] underline-offset-2 hover:underline"
+                      className="block max-w-32 truncate text-left font-mono text-sm font-bold text-[var(--brand-ink)] dark:text-[var(--text-primary)] underline-offset-2 hover:underline"
                     >
                       {e.gtfNumber}
                     </button>
@@ -240,7 +244,7 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                     )}
                   </Td>
                   <Td>
-                    <div title={e.providerName} className="max-w-40 truncate font-medium text-[var(--text-primary)]">
+                    <div title={e.providerName} className="max-w-36 truncate font-medium text-[var(--text-primary)]">
                       {e.providerName}
                     </div>
                     <div className="text-sm text-[var(--text-tertiary)]">{originLabel(e.originType)}</div>
@@ -259,24 +263,27 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                         </span>
                       )}
                     </div>
-                    {e.speciesScientificName && (
-                      <div className="text-xs italic text-[var(--text-tertiary)]">
-                        {e.speciesScientificName}
-                      </div>
-                    )}
-                  </Td>
-                  <Td>
-                    <span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
-                      {productLabel(e.productType)}
-                    </span>
-                  </Td>
-                  <Td className="text-right">
-                    <div className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {Number(e.volumeM3).toFixed(4)}
+                    <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
+                      <span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
+                        {productLabel(e.productType)}
+                      </span>
+                      {e.speciesScientificName && (
+                        <span className="truncate text-xs italic text-[var(--text-tertiary)]">
+                          {e.speciesScientificName}
+                        </span>
+                      )}
                     </div>
                   </Td>
                   <Td className="text-right">
-                    <div className="font-mono tabular-nums text-[var(--text-primary)]">{e.pieces}</div>
+                    <div className="whitespace-nowrap font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                      {Number(e.volumeM3).toFixed(4)}{" "}
+                      <span className="text-xs font-medium text-[var(--text-tertiary)]">m³</span>
+                    </div>
+                    {/* Las piezas debajo y no en su propia columna: el número
+                        que se compara es el volumen, las piezas lo acompañan. */}
+                    <div className="whitespace-nowrap font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
+                      {e.pieces} {e.pieces === 1 ? "pieza" : "piezas"}
+                    </div>
                   </Td>
                   <Td>
                     <StatusBadge status={e.status} />
@@ -303,16 +310,23 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
           {entries.length > 0 && (
             <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
               <tr>
-                <td colSpan={6} className="px-4 py-3 text-sm font-bold text-[var(--text-secondary)]">
+                {/* Los `colSpan` suman las NUEVE columnas de arriba. Con once
+                    sumaban diez: el total de volumen caía bajo «Producto» y el
+                    de piezas bajo «Volumen» — un pie de totales corrido una
+                    columna en un registro que se presenta a la autoridad. */}
+                <td colSpan={6} className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">
                   {marcados.length > 0
                     ? `${marcados.length} marcados de ${entries.length} en pantalla`
                     : `${entries.length} en pantalla`}
                 </td>
-                <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                  {(marcados.length > 0 ? totalMarcado.vol : totalPagina.vol).toFixed(4)}
-                </td>
-                <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                  {marcados.length > 0 ? totalMarcado.pz : totalPagina.pz}
+                <td className="px-3 py-2.5 text-right">
+                  <div className="whitespace-nowrap font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                    {(marcados.length > 0 ? totalMarcado.vol : totalPagina.vol).toFixed(4)}{" "}
+                    <span className="text-xs font-medium text-[var(--text-tertiary)]">m³</span>
+                  </div>
+                  <div className="whitespace-nowrap font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
+                    {marcados.length > 0 ? totalMarcado.pz : totalPagina.pz} piezas
+                  </div>
                 </td>
                 <td colSpan={2} />
               </tr>
@@ -372,7 +386,7 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
 
 // ─── Piezas internas ───────────────────────────────────────────────────────
 function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <th className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}>{children}</th>;
+  return <th className={`px-3 py-2.5 font-bold text-[var(--text-primary)] ${className ?? ""}`}>{children}</th>;
 }
 
 /** Encabezado ordenable. `aria-sort` real (no sólo la flecha) para que un lector
@@ -395,7 +409,7 @@ function ThSort({
   return (
     <th
       aria-sort={activo ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
-      className={`px-4 py-3 font-bold text-[var(--text-primary)] ${align === "right" ? "text-right" : ""}`}
+      className={`px-3 py-2.5 font-bold text-[var(--text-primary)] ${align === "right" ? "text-right" : ""}`}
     >
       <button
         type="button"
@@ -413,5 +427,5 @@ function ThSort({
 }
 
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;
+  return <td className={`px-3 py-2.5 ${className ?? ""}`}>{children}</td>;
 }

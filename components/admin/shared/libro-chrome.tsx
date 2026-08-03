@@ -18,11 +18,10 @@
  */
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, Loader2, type LucideIcon } from "@buleje/design-system/icons";
+import { ChevronDown, Keyboard, Loader2, type LucideIcon } from "@buleje/design-system/icons";
 import { Kicker, PageTitle } from "@buleje/design-system";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
-import Kbd from "./kbd";
 import {
   useAdminShortcuts,
   useRegisterShortcuts,
@@ -239,6 +238,22 @@ export default function LibroChrome({
             {status}
             {context}
             {tools}
+            {/* Los atajos vivían en DOS tiras de texto al pie —una del libro y
+                otra de la tabla— que juntas se comían dos renglones de cada
+                vista para decir algo que se lee una vez. Acá quedan en un solo
+                botón que abre la hoja completa (que ya incluye los de la vista
+                activa vía `atajosDeVista`). */}
+            {flat.length > 1 && (
+              <button
+                type="button"
+                onClick={abrirAyuda}
+                title="Atajos del teclado (?)"
+                aria-label="Ver los atajos del teclado"
+                className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] lg:inline-flex"
+              >
+                <Keyboard className="h-4 w-4" />
+              </button>
+            )}
             {actions && actions.length > 0 && <ActionMenu label={actionsLabel} actions={actions} />}
           </div>
         </div>
@@ -327,18 +342,6 @@ export default function LibroChrome({
       </section>
 
       {children}
-
-      {/* Descubribilidad: el pie dice que existen los atajos. Sin esto, los usa
-          quien los programó. */}
-      {flat.length > 1 && (
-        <button
-          type="button"
-          onClick={abrirAyuda}
-          className="hidden items-center gap-1.5 text-xs text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)] lg:inline-flex"
-        >
-          <Kbd>?</Kbd> atajos del teclado · <Kbd>g</Kbd> + letra salta de vista
-        </button>
-      )}
 
     </div>
   );

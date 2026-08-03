@@ -7,22 +7,25 @@
  * dos veces, y se muestra con guión, que es como se lee en el papel.
  */
 
-import { useState } from "react";
-import { Loader2, Save } from "@buleje/design-system/icons";
+import { useMemo, useState } from "react";
+import { Loader2, Save, Truck } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { formatearPlaca, normalizarPlaca, type Parte, type Vehiculo, type VehiculoInput } from "@/lib/forestal/directorio";
-import { Btn, Field, I, Seccion } from "./ctp-shared";
+import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, useHayCambios } from "./ctp-shared";
 
 type Borrador = VehiculoInput & { id?: string };
 
 export default function CtpVehiculoModal({
   vehiculo,
   transportistas,
+  existentes = [],
   onGuardar,
   onClose,
 }: {
   vehiculo: Vehiculo | null;
   transportistas: Parte[];
+  /** Las placas ya cargadas — para avisar del duplicado ANTES de guardar. */
+  existentes?: Vehiculo[];
   onGuardar: (input: Borrador) => Promise<void>;
   onClose: () => void;
 }) {
@@ -45,9 +48,28 @@ export default function CtpVehiculoModal({
   const [error, setError] = useState<string | null>(null);
   const set = (v: Partial<Borrador>) => setB((p) => ({ ...p, ...v }));
 
+  const placaNorm = normalizarPlaca(b.placa);
+  /**
+   * El mismo camión entrando dos veces rompe el conteo de viajes por placa y
+   * deja dos dueños posibles para el mismo vehículo. El servidor ya normaliza
+   * la placa; acá se avisa ANTES, con el nombre de la ficha que ya existe.
+   */
+  const duplicado = useMemo(
+    () =>
+      placaNorm.length >= 5
+        ? (existentes.find((v) => normalizarPlaca(v.placa) === placaNorm && v.id !== b.id) ?? null)
+        : null,
+    [existentes, placaNorm, b.id],
+  );
+  const placaCorta = placaNorm.length > 0 && placaNorm.length < 5;
+
   async function guardar() {
-    if (normalizarPlaca(b.placa).length < 5) {
+    if (placaNorm.length < 5) {
       setError("La placa es obligatoria (mínimo 5 caracteres).");
+      return;
+    }
+    if (duplicado) {
+      setError(`${formatearPlaca(duplicado.placa)} ya está en el directorio. Editá esa ficha en vez de crear otra.`);
       return;
     }
     setGuardando(true);
@@ -61,14 +83,50 @@ export default function CtpVehiculoModal({
     }
   }
 
+  const bodyRef = useAtajoGuardar(() => void guardar(), !guardando);
+  const cerrar = useCierreSeguro(useHayCambios(b) && !guardando, onClose);
+
   return (
-    <AdminModal open onClose={onClose} title={vehiculo ? `Editar ${formatearPlaca(vehiculo.placa)}` : "Agregar vehículo"} variant="info">
-      <div className="space-y-1">
+    <AdminModal
+      open
+      onClose={cerrar}
+      title={vehiculo ? `Editar ${formatearPlaca(vehiculo.placa)}` : "Agregar vehículo"}
+      description={vehiculo?.transportistaNombre ?? "La placa que va en la guía de transporte"}
+      icon={Truck}
+      variant="info"
+      footer={
+        <ModalFooter
+          error={error}
+          nota={
+            duplicado
+              ? `Ya existe ${formatearPlaca(duplicado.placa)} en el directorio.`
+              : placaCorta
+                ? "Una placa peruana tiene 6 caracteres (ABC-123)."
+                : undefined
+          }
+          atajo
+        >
+          <Btn variant="ghost" onClick={cerrar}>Cancelar</Btn>
+          <Btn variant="primary" disabled={guardando || !!duplicado} onClick={() => void guardar()}>
+            {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Guardar
+          </Btn>
+        </ModalFooter>
+      }
+    >
+      <ModalBody ref={bodyRef}>
         <Seccion numero={1} title="El vehículo">
-          <Field label="Placa" required span={4} hint="Lo primero que compara un control">
+          <Field
+            label="Placa"
+            required
+            span={4}
+            hint={duplicado ? "Ya está en el directorio" : "Lo primero que compara un control"}
+          >
             <input
               type="text"
-              className={`${I} font-mono uppercase`}
+              autoFocus
+              aria-invalid={duplicado ? true : undefined}
+              className={`${I} font-mono uppercase ${duplicado ? "border-[var(--data-error-500)]" : ""}`}
               value={b.placa}
               onChange={(e) => set({ placa: e.target.value.toUpperCase() })}
             />
@@ -109,21 +167,7 @@ export default function CtpVehiculoModal({
             <input type="text" className={I} value={b.notas ?? ""} onChange={(e) => set({ notas: e.target.value })} />
           </Field>
         </Seccion>
-
-        {error && (
-          <p role="alert" className="pt-3 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-            {error}
-          </p>
-        )}
-
-        <div className="mt-5 flex justify-end gap-2 border-t border-[var(--rule-base)] pt-4">
-          <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
-          <Btn variant="primary" disabled={guardando} onClick={() => void guardar()}>
-            {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Guardar
-          </Btn>
-        </div>
-      </div>
+      </ModalBody>
     </AdminModal>
   );
 }

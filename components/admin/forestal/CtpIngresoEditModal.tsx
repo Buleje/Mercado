@@ -17,7 +17,7 @@ import { useState } from "react";
 import { AlertCircle, Pencil } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { Btn, Field, I, type WoodEntry } from "./ctp-shared";
+import { Btn, Field, I, MODAL_BODY, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, type WoodEntry } from "./ctp-shared";
 
 const ORIGENES = [
   { value: "concesion", label: "Concesión forestal" },
@@ -152,111 +152,137 @@ export default function CtpIngresoEditModal({
     }
   }
 
+  const bodyRef = useAtajoGuardar(() => void guardar(), !guardando && !invalido && nCambios > 0);
+  const cerrar = useCierreSeguro(nCambios > 0 && !guardando, onClose);
+
   return (
     <AdminModal
       open
-      onClose={onClose}
+      onClose={cerrar}
       variant="info"
       title={`Corregir ingreso · ${entry.gtfNumber}`}
       description="Queda registrado qué cambió, quién y cuándo"
       icon={Pencil}
+      /* El pie vive FUERA del scroll (prop `footer` de AdminModal): con doce
+         campos, "Guardar corrección" quedaba al final de la lista y había que
+         recorrer todo el formulario para encontrarlo. */
+      footer={
+        <ModalFooter
+          error={error}
+          nota={nCambios === 0 ? "Sin cambios todavía" : `${nCambios} ${nCambios === 1 ? "campo" : "campos"} por corregir`}
+        >
+          <Btn variant="ghost" onClick={cerrar}>Cancelar</Btn>
+          <Btn variant="primary" disabled={invalido || guardando || nCambios === 0} onClick={() => void guardar()}>
+            {guardando ? "Guardando…" : "Guardar corrección"}
+          </Btn>
+        </ModalFooter>
+      }
     >
-      <div className="space-y-4 p-5">
+      <div ref={bodyRef} className={MODAL_BODY}>
         {error && (
-          <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+          <div className="mb-4 flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Fecha de la operación" required>
-            <input type="date" className={I} value={data.entryDate} onChange={(e) => set("entryDate", e.target.value)} />
-          </Field>
-          <Field label="N° de GTF" required hint="El origen legal de la madera">
-            <input type="text" className={I} value={data.gtfNumber} onChange={(e) => set("gtfNumber", e.target.value)} />
-          </Field>
-          <Field label="Fecha de la GTF">
-            <input type="date" className={I} value={data.gtfDate} onChange={(e) => set("gtfDate", e.target.value)} />
-          </Field>
-          <Field label="Proveedor" required>
-            <input type="text" className={I} value={data.providerName} onChange={(e) => set("providerName", e.target.value)} />
-          </Field>
-          <Field label="Documento del proveedor">
-            <input type="text" className={I} value={data.providerDocument} onChange={(e) => set("providerDocument", e.target.value)} />
-          </Field>
-          <Field label="Tipo de origen">
-            <select className={I} value={data.originType} onChange={(e) => set("originType", e.target.value)}>
-              {ORIGENES.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Código de origen" hint="Concesión, predio o comunidad">
-            <input type="text" className={I} value={data.originCode} onChange={(e) => set("originCode", e.target.value)} />
-          </Field>
-          <Field label="Especie" required>
-            <input type="text" className={I} value={data.speciesCommonName} onChange={(e) => set("speciesCommonName", e.target.value)} />
-          </Field>
-          <Field label="Nombre científico">
-            <input type="text" className={I} value={data.speciesScientificName} onChange={(e) => set("speciesScientificName", e.target.value)} />
-          </Field>
-          <Field label="Producto">
-            <select className={I} value={data.productType} onChange={(e) => set("productType", e.target.value)}>
-              {PRODUCTOS.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Volumen (m³)" required>
-            <input
-              type="number"
-              step="0.0001"
-              min="0"
-              className={I}
-              value={data.volumeM3}
-              onChange={(e) => set("volumeM3", e.target.value)}
-            />
-          </Field>
-          <Field label="Piezas">
-            <input
-              type="number"
-              min="0"
-              className={I}
-              value={data.pieces}
-              onChange={(e) => set("pieces", e.target.value)}
-            />
-          </Field>
-        </div>
+        {/* Mismas secciones y mismos números que el alta: quien corrige un
+            ingreso ya llenó ese formulario y busca los campos donde estaban. */}
+        <div className="grid gap-x-8 md:grid-cols-2">
+          <div>
+            <Seccion numero={1} title="Documento de origen">
+              <Field span={6} label="Fecha de la operación" required casillero={2}>
+                <input type="date" className={I} value={data.entryDate} onChange={(e) => set("entryDate", e.target.value)} />
+              </Field>
+              <Field span={6} label="Fecha de la GTF">
+                <input type="date" className={I} value={data.gtfDate} onChange={(e) => set("gtfDate", e.target.value)} />
+              </Field>
+              <Field span={12} label="N° de GTF" required casillero={4} hint="El origen legal de la madera">
+                <input type="text" className={`${I} font-mono`} value={data.gtfNumber} onChange={(e) => set("gtfNumber", e.target.value)} />
+              </Field>
+            </Seccion>
 
-        <label className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
-          <input
-            type="checkbox"
-            checked={data.speciesCites}
-            onChange={(e) => set("speciesCites", e.target.checked)}
-            className="h-4 w-4 accent-[var(--brand-ink)]"
-          />
-          Especie protegida CITES
-        </label>
+            <Seccion numero={2} title="Titular habilitante">
+              <Field span={12} label="Proveedor" required>
+                <input type="text" className={I} value={data.providerName} onChange={(e) => set("providerName", e.target.value)} />
+              </Field>
+              <Field span={12} label="Documento del proveedor">
+                <input type="text" className={I} value={data.providerDocument} onChange={(e) => set("providerDocument", e.target.value)} />
+              </Field>
+            </Seccion>
 
-        <Field label="Observaciones">
-          <textarea
-            rows={2}
-            className={`${I} h-auto py-2`}
-            value={data.notes}
-            onChange={(e) => set("notes", e.target.value)}
-          />
-        </Field>
+            <Seccion numero={3} title="Origen del material">
+              <Field span={12} label="Tipo de origen">
+                <select className={I} value={data.originType} onChange={(e) => set("originType", e.target.value)}>
+                  {ORIGENES.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field span={12} label="Código de origen" casillero={9} hint="Concesión, predio o comunidad">
+                <input type="text" className={I} value={data.originCode} onChange={(e) => set("originCode", e.target.value)} />
+              </Field>
+            </Seccion>
+          </div>
 
-        <div className="flex items-center justify-between gap-3 border-t-2 border-[var(--rule-soft)] pt-4">
-          <p className="text-sm text-[var(--text-tertiary)]">
-            {nCambios === 0 ? "Sin cambios todavía" : `${nCambios} ${nCambios === 1 ? "campo" : "campos"} por corregir`}
-          </p>
-          <div className="flex gap-2">
-            <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
-            <Btn variant="primary" disabled={invalido || guardando || nCambios === 0} onClick={() => void guardar()}>
-              {guardando ? "Guardando…" : "Guardar corrección"}
-            </Btn>
+          <div>
+            <Seccion numero={4} title="Especie forestal">
+              <Field span={12} label="Especie" required casillero={7}>
+                <input type="text" className={I} value={data.speciesCommonName} onChange={(e) => set("speciesCommonName", e.target.value)} />
+              </Field>
+              <Field span={12} label="Nombre científico" casillero={8}>
+                <input type="text" className={`${I} italic`} value={data.speciesScientificName} onChange={(e) => set("speciesScientificName", e.target.value)} />
+              </Field>
+              <label className="sm:col-span-12 flex items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
+                <input
+                  type="checkbox"
+                  checked={data.speciesCites}
+                  onChange={(e) => set("speciesCites", e.target.checked)}
+                  className="h-4 w-4 accent-[var(--brand-ink)]"
+                />
+                Especie protegida CITES
+              </label>
+            </Seccion>
+
+            <Seccion numero={5} title="Producto y medidas">
+              <Field span={12} label="Producto" casillero={6}>
+                <select className={I} value={data.productType} onChange={(e) => set("productType", e.target.value)}>
+                  {PRODUCTOS.map((p) => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field span={6} label="Volumen (m³)" required casillero={12}>
+                <input
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  className={`${I} font-mono tabular-nums`}
+                  value={data.volumeM3}
+                  onChange={(e) => set("volumeM3", e.target.value)}
+                />
+              </Field>
+              <Field span={6} label="Piezas">
+                <input
+                  type="number"
+                  min="0"
+                  className={`${I} tabular-nums`}
+                  value={data.pieces}
+                  onChange={(e) => set("pieces", e.target.value)}
+                />
+              </Field>
+            </Seccion>
+
+            <Seccion numero={6} title="Observaciones">
+              <Field span={12} label="Notas" casillero={13}>
+                <textarea
+                  rows={3}
+                  className={`${I} h-auto py-2.5`}
+                  value={data.notes}
+                  onChange={(e) => set("notes", e.target.value)}
+                />
+              </Field>
+            </Seccion>
           </div>
         </div>
       </div>

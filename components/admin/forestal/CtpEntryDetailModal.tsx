@@ -20,24 +20,14 @@ import {
   AlertCircle,
   FileText,
   MapPin,
+  Pencil,
   Scale,
   ShieldAlert,
   TreePine,
   User,
 } from "@buleje/design-system/icons";
-import {
-  PLAZO_REGISTRO_DIAS,
-  STATUS_META,
-  diasDeRegistro,
-  estaFueraDePlazo,
-  formatDate,
-  formatDateTime,
-  originLabel,
-  parseCitesPermiso,
-  productLabel,
-  type WoodEntry,
-} from "./ctp-shared";
-import { UNIDADES_LOCTP } from "@/lib/forestal/loctp-campos";
+import { Btn, diasDeRegistro, estaFueraDePlazo, formatDate, formatDateTime, MODAL_BODY, ModalFooter, originLabel, parseCitesPermiso, PLAZO_REGISTRO_DIAS, productLabel, STATUS_META, type WoodEntry } from "./ctp-shared";
+import { faltantesIngresoPorTipo, UNIDADES_LOCTP } from "@/lib/forestal/loctp-campos";
 import CtpIngresoCompletitud from "./CtpIngresoCompletitud";
 
 /**
@@ -64,6 +54,8 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar }: Ctp
   const dias = diasDeRegistro(entry); // para mostrar
   const fueraDePlazo = estaFueraDePlazo(entry); // para decidir — matchea el SQL
   const photos = Array.isArray(entry.photos) ? entry.photos : [];
+  /** Los que IMPIDEN presentar el libro — misma fuente que el aviso de arriba. */
+  const faltanObligatorios = faltantesIngresoPorTipo(entry as unknown as Record<string, unknown>).obligatorios.length;
   // Permiso CITES vinculado (estructurado, leído de notes) — visible si es CITES.
   const citesPermiso = parseCitesPermiso(entry.notes);
 
@@ -76,19 +68,44 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar }: Ctp
       description={`${entry.speciesCommonName} · ${Number(entry.volumeM3).toFixed(4)} m³`}
       icon={TreePine}
       className="sm:w-[min(95vw,84rem)] sm:max-w-none sm:max-h-[95vh]"
+      /* La ficha mide ~1270px de contenido en 870 visibles: la única acción
+         («Completar») vivía dentro del aviso de arriba y desaparecía apenas se
+         scrolleaba a la lista de trozas. Al pie queda siempre a mano. */
+      footer={
+        <ModalFooter
+          nota={
+            faltanObligatorios > 0
+              ? `Faltan ${faltanObligatorios} casillero(s) obligatorio(s) del formato LO-CTP.`
+              : "Los casilleros obligatorios del formato están completos."
+          }
+        >
+          <Btn variant="secondary" onClick={onClose}>Cerrar</Btn>
+          {onCompletar && (
+            <Btn variant={faltanObligatorios > 0 ? "primary" : "secondary"} onClick={() => onCompletar(entry)}>
+              <Pencil className="h-4 w-4" />
+              {faltanObligatorios > 0 ? "Completar lo que falta" : "Corregir el ingreso"}
+            </Btn>
+          )}
+        </ModalFooter>
+      }
     >
-      <div className="space-y-5 p-5 sm:p-6">
+      <div className={`space-y-5 ${MODAL_BODY}`}>
         {/* Antes de la ficha: qué falta para el formato. Los bloques de abajo
             siguen nombrando sus vacíos, pero sólo acá se distingue lo que
             IMPIDE presentar de lo que es complemento — y sale de la misma
-            fuente que el chip de la tabla, así que los números coinciden. */}
-        <CtpIngresoCompletitud
-          entry={entry as unknown as Record<string, unknown>}
-          onCompletar={onCompletar ? () => onCompletar(entry) : undefined}
-        />
+            fuente que el chip de la tabla, así que los números coinciden.
+            El botón salió de acá: está en el pie, donde no se pierde. */}
+        <CtpIngresoCompletitud entry={entry as unknown as Record<string, unknown>} />
         {/* Hero: la especie y el volumen — lo que se pregunta primero — con el
             estado y las alertas de cumplimiento, sobre una banda editorial. */}
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--accent-soft)] to-[var(--surface-canvas)] p-4">
+        {/* Tinte con alpha, NO un degradé de tokens: `--accent-soft` es un claro
+            opaco que no se da vuelta en oscuro, así que la banda salía casi
+            blanca y encima iba texto `--text-primary` (casi blanco también) —
+            "Tornillo", las etiquetas y el chip de estado se leían apenas.
+            Con `bg-primary/N` el tinte se compone sobre la superficie real y
+            funciona en los dos temas. Lo delató el screenshot: medir el color
+            devolvía transparente porque el degradé vive en `background-image`. */}
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-primary/10 p-4 dark:bg-primary/15">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <CardTitle as="h2" className="truncate text-xl font-bold text-[var(--text-primary)]">{entry.speciesCommonName}</CardTitle>
@@ -328,12 +345,15 @@ function Section({
   if (opcional && conDato.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4">
-      <div className="mb-3 flex items-center gap-2 border-b border-[var(--rule-soft)] pb-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
-          <Icon className="h-4 w-4" />
-        </span>
-        <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+    /* Sin caja, como las secciones de los modales de alta: seis tarjetas con
+       borde y fondo dentro del marco del modal daban ocho recuadros peleando en
+       la misma pantalla, y el padding de cada una sumaba ~200px de scroll. Un
+       encabezado con su línea separa igual y deja leer los datos, que es a lo
+       que se viene. */
+    <section className="border-t border-[var(--rule-base)] pt-3">
+      <div className="mb-2.5 flex items-center gap-2">
+        <Icon className="h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" strokeWidth={1.75} />
+        <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           {title}
         </CardTitle>
       </div>

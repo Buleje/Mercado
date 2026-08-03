@@ -10,7 +10,7 @@
  */
 
 import { useState } from "react";
-import { Download, Loader2, Save } from "@buleje/design-system/icons";
+import { Download, Loader2, Save, Users } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import {
   DOC_TIPOS,
@@ -25,7 +25,7 @@ import {
   type RolParte,
 } from "@/lib/forestal/directorio";
 import { consultarDocumento } from "@/hooks/use-directorio-forestal";
-import { Btn, CampoGrid, Field, I, Seccion } from "./ctp-shared";
+import { Btn, CampoGrid, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, useHayCambios } from "./ctp-shared";
 import CtpParteLogo from "./CtpParteLogo";
 import CtpParteAdjuntos from "./CtpParteAdjuntos";
 
@@ -144,10 +144,37 @@ export default function CtpParteModal({
   const esConductor = b.roles.includes("conductor");
   const esProveedor = b.roles.includes("proveedor");
 
+  /**
+   * «Según el papel» sólo aparece para ciertos roles, y con los números fijos el
+   * formulario mostraba 01·02·03·05: el operador buscaba una sección 04 que no
+   * existía. Se numeran las que de verdad se pintan.
+   */
+  const hayPapel = esTransportista || esConductor || esProveedor;
+  const nro = { roles: 1, identidad: 2, donde: 3, papel: 4, logo: hayPapel ? 5 : 4, notas: hayPapel ? 6 : 5 };
+
+  const bodyRef = useAtajoGuardar(() => void guardar(), estado === "idle");
+  const cerrar = useCierreSeguro(useHayCambios(b) && estado !== "guardando", onClose);
+
   return (
-    <AdminModal open onClose={onClose} title={parte ? `Editar ${parte.nombre}` : "Agregar al directorio"} variant="info">
-      <div className="space-y-1">
-        <Seccion numero={1} title="Qué papel cumple" hint="Se puede marcar más de uno">
+    <AdminModal
+      open
+      onClose={cerrar}
+      title={parte ? `Editar ${parte.nombre}` : "Agregar al directorio"}
+      description={b.roles.map((r) => ROL_LABEL[r]).join(" · ")}
+      icon={Users}
+      variant="info"
+      footer={
+        <ModalFooter error={error} aviso={aviso} atajo>
+          <Btn variant="ghost" onClick={cerrar}>Cancelar</Btn>
+          <Btn variant="primary" disabled={estado === "guardando"} onClick={() => void guardar()}>
+            {estado === "guardando" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Guardar
+          </Btn>
+        </ModalFooter>
+      }
+    >
+      <ModalBody ref={bodyRef}>
+        <Seccion numero={nro.roles} title="Qué papel cumple" hint="Se puede marcar más de uno">
           <div className="sm:col-span-12 flex flex-wrap gap-2">
             {ROLES_PARTE.map((rol) => {
               const on = b.roles.includes(rol);
@@ -171,7 +198,7 @@ export default function CtpParteModal({
           </div>
         </Seccion>
 
-        <Seccion numero={2} title="Identidad">
+        <Seccion numero={nro.identidad} title="Identidad">
           <Field label="Tipo de documento" span={3}>
             <select className={I} value={docTipo} onChange={(e) => set({ docTipo: e.target.value as DocTipo })}>
               {DOC_TIPOS.map((t) => (
@@ -200,7 +227,7 @@ export default function CtpParteModal({
           </Field>
         </Seccion>
 
-        <Seccion numero={3} title="Dónde está" hint="La dirección del destinatario es el punto de llegada de la guía">
+        <Seccion numero={nro.donde} title="Dónde está" hint="La dirección del destinatario es el punto de llegada de la guía">
           <Field label="Dirección" span={12}>
             <input type="text" className={I} value={b.direccion ?? ""} onChange={(e) => set({ direccion: e.target.value })} />
           </Field>
@@ -222,7 +249,7 @@ export default function CtpParteModal({
         </Seccion>
 
         {(esTransportista || esConductor || esProveedor) && (
-          <Seccion numero={4} title="Según el papel">
+          <Seccion numero={nro.papel} title="Según el papel">
             {esTransportista && (
               <Field label="Registro MTC" span={4} hint="Si es empresa de transporte">
                 <input type="text" className={I} value={b.registroMtc ?? ""} onChange={(e) => set({ registroMtc: e.target.value })} />
@@ -258,7 +285,7 @@ export default function CtpParteModal({
           </Seccion>
         )}
 
-        <Seccion numero={5} title="Logo y papeles del titular">
+        <Seccion numero={nro.logo} title="Logo y papeles del titular">
           <CampoGrid className="sm:col-span-12">
             <Field label="Membrete de sus documentos" span={12} hint="Sale en la cabecera de la guía y sus anexos">
               <CtpParteLogo logo={b.logo ?? ""} onCambio={(logo) => set({ logo })} />
@@ -273,7 +300,7 @@ export default function CtpParteModal({
           </CampoGrid>
         </Seccion>
 
-        <Seccion numero={6} title="Notas">
+        <Seccion numero={nro.notas} title="Notas">
           <CampoGrid className="sm:col-span-12">
             <Field label="Observaciones internas" span={12}>
               <input type="text" className={I} value={b.notas ?? ""} onChange={(e) => set({ notas: e.target.value })} />
@@ -281,21 +308,7 @@ export default function CtpParteModal({
           </CampoGrid>
         </Seccion>
 
-        {aviso && <p className="pt-3 text-sm font-medium text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">{aviso}</p>}
-        {error && (
-          <p role="alert" className="pt-3 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-            {error}
-          </p>
-        )}
-
-        <div className="mt-5 flex justify-end gap-2 border-t border-[var(--rule-base)] pt-4">
-          <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
-          <Btn variant="primary" disabled={estado === "guardando"} onClick={() => void guardar()}>
-            {estado === "guardando" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Guardar
-          </Btn>
-        </div>
-      </div>
+      </ModalBody>
     </AdminModal>
   );
 }

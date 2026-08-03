@@ -29,7 +29,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import CtpAtribucionEditor from "./CtpAtribucionEditor";
 import CtpHistorial from "./CtpHistorial";
-import { Btn } from "./ctp-shared";
+import { Btn, MODAL_BODY } from "./ctp-shared";
 
 export interface ProduccionResumen {
   id: string;
@@ -158,7 +158,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
       description={`${entry.productType ?? "—"} · ${entry.speciesCommon ?? "—"} · ${entry.quantity ? n4(Number(entry.quantity)) : "—"} ${unitLabel}`}
       icon={Boxes}
     >
-      <div className="space-y-4 p-5">
+      <div className={`space-y-4 ${MODAL_BODY}`}>
         {loading && (
           <div className="p-8 text-center text-[var(--text-tertiary)]">
             <Loader2 className="mx-auto h-6 w-6 animate-spin" />

@@ -12,7 +12,7 @@
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Share2 } from "@buleje/design-system/icons";
 import TrazaForwardSection from "./CtpTrazaForward";
-import type { WoodEntry } from "./ctp-shared";
+import { MODAL_BODY, type WoodEntry } from "./ctp-shared";
 
 export default function CtpIngresoCadenaModal({ entry, onClose }: { entry: WoodEntry; onClose: () => void }) {
   return (
@@ -24,7 +24,7 @@ export default function CtpIngresoCadenaModal({ entry, onClose }: { entry: WoodE
       description={`${entry.speciesCommonName} · ${Number(entry.volumeM3).toFixed(4)} m³`}
       icon={Share2}
     >
-      <div className="p-5">
+      <div className={MODAL_BODY}>
         <TrazaForwardSection entryId={entry.id} />
       </div>
     </AdminModal>

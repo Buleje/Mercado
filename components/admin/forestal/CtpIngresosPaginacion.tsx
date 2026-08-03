@@ -13,15 +13,6 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "@buleje/
 const BTN =
   "inline-flex h-10 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-40";
 
-/** Tecla del atajo, con aspecto de tecla. */
-function Tecla({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd className="rounded border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
-      {children}
-    </kbd>
-  );
-}
-
 export default function CtpIngresosPaginacion({
   total,
   page,
@@ -48,12 +39,10 @@ export default function CtpIngresosPaginacion({
           Mostrando <strong className="text-[var(--text-secondary)]">{rangeFrom}–{rangeTo}</strong> de{" "}
           <strong className="text-[var(--text-secondary)]">{total}</strong> registros
         </p>
-        {/* Un atajo que nadie ve no existe. Sólo en desktop: en el celular no
-            hay teclado físico y ocuparía una línea al pedo. */}
-        <p className="mt-1 hidden text-xs text-[var(--text-tertiary)] lg:block">
-          Atajos: <Tecla>N</Tecla> nuevo · <Tecla>/</Tecla> buscar · <Tecla>V</Tecla> validar lo marcado ·{" "}
-          <Tecla>R</Tecla> recargar
-        </p>
+        {/* La lista de atajos salió de acá: vivía como un renglón fijo bajo cada
+            tabla y decía una vez lo que después ocupa siempre. Ahora está en el
+            botón de teclado de la cabina, que abre la hoja completa —incluidos
+            los de ESTA vista, que el shell ya registra. */}
       </div>
       <div className="flex items-center gap-2">
         <button

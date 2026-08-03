@@ -176,6 +176,7 @@ export default function CtpDirectorioView() {
         <CtpVehiculoModal
           vehiculo={editando.valor}
           transportistas={transportistas}
+          existentes={dir.vehiculos}
           onGuardar={async (input) => {
             await dir.guardarVehiculo(input);
           }}

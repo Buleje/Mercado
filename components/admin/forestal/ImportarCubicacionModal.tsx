@@ -11,6 +11,7 @@
 import { useCallback, useRef, useState } from "react";
 import { AlertTriangle, Check, Download, FileSpreadsheet, Loader2, Upload } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
 import { parsearFilasImportadas, PLANTILLA_IMPORT, type PiezaImportada, type ResultadoImport } from "@/lib/forestal/cubicacion-import";
 import { leerArchivoAFilas } from "@/lib/forestal/cubicacion-import-file";
 import { descargarPlantillaImport } from "@/lib/forestal/cubicador-export";
@@ -60,6 +61,8 @@ export default function ImportarCubicacionModal({
   const totalPt = resultado?.piezas.reduce((a, p) => a + p.pieTablar, 0) ?? 0;
   const totalPiezas = resultado?.piezas.reduce((a, p) => a + p.cantidad, 0) ?? 0;
   const raras = resultado?.piezas.filter((p) => p.sospechosa).length ?? 0;
+  /** Lo que hay para agregar, ya leído: `null` mientras no haya nada. */
+  const listas = resultado && !cargando && resultado.piezas.length > 0 ? resultado.piezas : null;
 
   return (
     // AdminModal (Radix): trae Escape, focus trap, scroll lock y bottom-sheet en
@@ -69,9 +72,33 @@ export default function ImportarCubicacionModal({
       onClose={onCerrar}
       variant="wide"
       title="Importar cubicación desde Excel"
+      description="Especie · Cantidad · Espesor · Ancho · Largo"
       icon={FileSpreadsheet}
+      // El pie vivía `sticky` DENTRO del scroll con un `-mx-5` calzado a mano al
+      // padding del cuerpo: cualquier cambio de padding lo descuadraba. Con la
+      // prop `footer` de AdminModal queda fuera del scroll y sin compensaciones.
+      footer={
+        <ModalFooter
+          error={errorGeneral}
+          nota={
+            listas
+              ? `${listas.length} fila(s) · ${totalPiezas} piezas · ${fmtPt(totalPt)} PT${raras > 0 ? ` · ${raras} con medidas raras` : ""}`
+              : undefined
+          }
+        >
+          <Btn variant="ghost" onClick={onCerrar}>Cancelar</Btn>
+          {/* Sólo se ofrece agregar cuando hay algo que agregar; el pie existe
+              igual para que "Cancelar" no dependa de que el archivo se leyera. */}
+          {listas && (
+            <Btn variant="dark" onClick={() => { onAgregar(listas); onCerrar(); }}>
+              <Check className="h-4 w-4" /> Agregar {listas.length} al lote
+              {filasActuales > 0 ? ` (quedará con ${filasActuales + listas.length})` : ""}
+            </Btn>
+          )}
+        </ModalFooter>
+      }
     >
-      <div className="p-5">
+      <div className={MODAL_BODY}>
 
         <p className="mb-3 text-sm text-[var(--text-secondary)]">
           El archivo tiene que tener las columnas <b>Especie · Cantidad · Espesor · Ancho · Largo</b> (Cantidad opcional; por defecto 1). El espesor y el ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad.
@@ -107,29 +134,12 @@ export default function ImportarCubicacionModal({
             <Loader2 className="h-4 w-4 animate-spin" /> Leyendo el archivo…
           </p>
         )}
-        {errorGeneral && (
-          <p className="mt-4 flex items-center gap-1.5 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
-            <AlertTriangle className="h-4 w-4 shrink-0" /> {errorGeneral}
-          </p>
-        )}
+        {/* El error del archivo va en el pie (fijo): repetirlo acá lo dejaba
+            fuera de vista justo cuando la vista previa empujaba el scroll. */}
 
         {/* Preview */}
         {resultado && !cargando && (
           <div className="mt-4 space-y-3">
-            {resultado.piezas.length > 0 && (
-              <div className="flex flex-wrap items-center gap-4 rounded-xl bg-[var(--data-success-100)] px-4 py-3 dark:bg-[var(--data-success-500)]/12">
-                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-                  <Check className="h-4 w-4" /> {resultado.piezas.length} {resultado.piezas.length === 1 ? "fila lista" : "filas listas"} · {totalPiezas} piezas
-                </span>
-                <span className="font-mono text-sm font-extrabold tabular-nums text-[var(--accent)]">{fmtPt(totalPt)} PT</span>
-                {raras > 0 && (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                    <AlertTriangle className="h-3.5 w-3.5" /> {raras} con medidas raras
-                  </span>
-                )}
-              </div>
-            )}
-
             {resultado.errores.length > 0 && (
               <div className="rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 dark:bg-[var(--data-warning-500)]/12">
                 <p className="mb-1 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
@@ -166,14 +176,6 @@ export default function ImportarCubicacionModal({
                       ))}
                     </tbody>
                   </table>
-                </div>
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  <button type="button" onClick={onCerrar} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-                    Cancelar
-                  </button>
-                  <button type="button" onClick={() => { onAgregar(resultado.piezas); onCerrar(); }} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95">
-                    <Check className="h-4 w-4" /> Agregar {resultado.piezas.length} al lote{filasActuales > 0 ? ` (quedará con ${filasActuales + resultado.piezas.length})` : ""}
-                  </button>
                 </div>
               </>
             ) : resultado.errores.length > 0 ? null : (

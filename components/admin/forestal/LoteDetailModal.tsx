@@ -7,6 +7,8 @@
  * + etiqueta). El certificado respeta el gate de trazabilidad completa.
  */
 
+import CtpCadenaLote from "./CtpCadenaLote";
+import type { CadenaLote } from "@/lib/forestal/ctp-cadena-lote";
 import { useCallback, useEffect, useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle, SuccessAlert, WarningAlert, ErrorAlert } from "@buleje/design-system";
@@ -17,7 +19,7 @@ import {
 import { csrfHeaders } from "@/lib/csrf-client";
 import { printCertificadoLote, printEtiquetaLote } from "@/lib/forestal/lote-certificado";
 import LoteMiembrosEditor, { loteRowsValidas, type LoteRow } from "./LoteMiembrosEditor";
-import { Btn } from "./ctp-shared";
+import { Btn, I, MODAL_BODY } from "./ctp-shared";
 
 const UNIT_LABELS: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "unidad" };
 const n4 = (v: number) => v.toFixed(4);
@@ -52,6 +54,8 @@ const STATUS_META: Record<LoteStatus, { label: string; cls: string }> = {
 export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId: string; onClose: () => void; onChanged: () => void }) {
   const [lote, setLote] = useState<LoteDetail | null>(null);
   const [traza, setTraza] = useState<TrazaDTO | null>(null);
+  /** La cadena completa: de qué guías vino y a qué despachos fue (ADR-315). */
+  const [cadena, setCadena] = useState<CadenaLote | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -70,6 +74,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
       const json = await r.json();
       setLote(json.lote);
       setTraza(json.trazabilidad);
+      setCadena(json.cadena ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -163,19 +168,25 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
     <AdminModal
       open
       onClose={onClose}
-      variant="side"
+      /* Rediseño 2026-07-30: era un drawer de 28rem donde la tabla de corridas
+         —tres columnas con guías GTF— quedaba comprimida y las acciones caían
+         al final de un scroll largo. En `info` entra la ficha completa: la
+         cadena a la izquierda, los documentos y el estado a la derecha. */
+      variant="info"
+      className="sm:w-[min(95vw,80rem)] sm:max-w-none sm:max-h-[95vh]"
       title={lote ? `Lote ${lote.loteCode}` : "Lote"}
       description={lote ? `${lote.productType ?? "—"} · ${lote.speciesCommon ?? "—"} · ${n4(traza?.totalCantidad ?? 0)} ${unitLabel}` : undefined}
       icon={Layers}
     >
-      <div className="space-y-4">
+      <div className={`space-y-4 ${MODAL_BODY}`}>
         {loading && <div className="p-8 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando lote…</p></div>}
         {error && (
           <ErrorAlert title="Error" description={error} action={<Btn variant="secondary" size="sm" onClick={() => void load()}><RefreshCw className="h-3.5 w-3.5" /> Reintentar</Btn>} />
         )}
 
         {lote && traza && !loading && (
-          <>
+          <div className="grid gap-4 md:grid-cols-[2.6fr_1fr] md:items-start">
+            <div className="space-y-4">
             {/* Estado + grado */}
             <div className="flex flex-wrap items-center gap-2">
               <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${STATUS_META[lote.status].cls}`}>{STATUS_META[lote.status].label}</span>
@@ -191,6 +202,11 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
             ) : (
               <WarningAlert icon={AlertCircle} title="Cadena de custodia incompleta" description={TRAZA_MOTIVO[traza.motivo as Exclude<TrazaDTO["motivo"], "ok">] ?? "Faltan datos de origen."} />
             )}
+
+            {/* La cadena de punta a punta. Va antes de las corridas porque
+                responde la pregunta grande —de dónde salió y a dónde fue— y las
+                corridas son el detalle de su tramo del medio. */}
+            {cadena && <CtpCadenaLote cadena={cadena} />}
 
             {/* Miembros */}
             <section className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]">
@@ -231,6 +247,11 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
               )}
             </section>
 
+            </div>
+
+            {/* Columna derecha: lo que se hace CON el lote (documentos y estado),
+                separado de lo que el lote ES (su cadena). */}
+            <div className="space-y-4">
             {/* Documentos con QR */}
             <div className="grid grid-cols-2 gap-2">
               <Btn variant="dark" onClick={() => void imprimir("cert")} disabled={!traza.completa || printing} title={!traza.completa ? "Requiere cadena completa" : undefined}>
@@ -267,7 +288,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
             {annulReason !== null && (
               <div className="space-y-2 rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3">
                 <p className="text-sm text-[var(--text-primary)]"><strong>Anular {lote.loteCode}:</strong> indicá el motivo (queda en el historial, no se borra).</p>
-                <input autoFocus value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (mín. 3 caracteres)" className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--data-error-500)]" />
+                <input autoFocus value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (mín. 3 caracteres)" className={`${I} border-[var(--data-error-500)]/40 focus:border-[var(--data-error-500)] focus:ring-[var(--data-error-500)]/20`} />
                 <div className="flex justify-end gap-2">
                   <Btn variant="secondary" size="sm" onClick={() => setAnnulReason(null)} disabled={busy}>Cancelar</Btn>
                   <Btn variant="danger" size="sm" onClick={() => void changeStatus("anular", undefined, annulReason)} disabled={busy || annulReason.trim().length < 3}>{busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Confirmar anulación</Btn>
@@ -276,7 +297,8 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
             )}
 
             {lote.notes && <p className="rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 text-sm text-[var(--text-secondary)]">{lote.notes}</p>}
-          </>
+            </div>
+          </div>
         )}
       </div>
     </AdminModal>

@@ -12,7 +12,7 @@ import { Layers, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
-import { Btn, Field, I, Seccion } from "./ctp-shared";
+import { Btn, Field, I, ModalBody, ModalFooter, Seccion } from "./ctp-shared";
 import { avisosVentana } from "@/lib/forestal/lote-ventana";
 import LoteMiembrosEditor, { loteRowsValidas, type LoteRow } from "./LoteMiembrosEditor";
 
@@ -96,21 +96,17 @@ export default function LoteForm({ onClose, onSaved }: { onClose: () => void; on
       description="Agrupá corridas del CTP en un lote comercial"
       icon={Layers}
       footer={
-        <div className="flex flex-wrap items-center justify-end gap-2 px-5 py-4">
+        <ModalFooter error={error}>
           <Btn variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Btn>
           <Btn variant="dark" onClick={() => void save()} disabled={!canSave}>
             {saving && <Loader2 className="h-4 w-4 animate-spin" />} Crear lote
           </Btn>
-        </div>
+        </ModalFooter>
       }
     >
-      <div className="px-5 py-5">
-        {error && (
-          <p className="mb-4 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 px-3 py-2.5 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-            {error}
-          </p>
-        )}
-
+      {/* El error dejó de repetirse arriba del formulario: vive en el pie,
+          donde se ve aunque el modal esté scrolleado. */}
+      <ModalBody>
         <div className="grid gap-x-6 md:grid-cols-2">
           <div>
             <Seccion numero={1} title="Identidad del lote">
@@ -175,7 +171,7 @@ export default function LoteForm({ onClose, onSaved }: { onClose: () => void; on
             </Seccion>
           </div>
         </div>
-      </div>
+      </ModalBody>
     </AdminModal>
   );
 }

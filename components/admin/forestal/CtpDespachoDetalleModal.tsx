@@ -35,7 +35,7 @@ import { useFichaCtp } from "@/hooks/use-ficha-ctp";
 import CtpAtribucionEditor from "./CtpAtribucionEditor";
 import CtpGtfSeccion from "./CtpGtfSeccion";
 import CtpHistorial from "./CtpHistorial";
-import { Btn } from "./ctp-shared";
+import { Btn, MODAL_BODY } from "./ctp-shared";
 
 export interface DespachoResumen {
   id: string;
@@ -171,7 +171,7 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
       description={`${entry.speciesCommon ?? "—"} · ${entry.quantity ? n4(Number(entry.quantity)) : "—"} ${unitLabel}${entry.gtfNumber ? ` · GTF ${entry.gtfNumber}` : ""}`}
       icon={Truck}
     >
-      <div className="space-y-4 p-5">
+      <div className={`space-y-4 ${MODAL_BODY}`}>
         {loading && (
           <div className="p-8 text-center text-[var(--text-tertiary)]">
             <Loader2 className="mx-auto h-6 w-6 animate-spin" />

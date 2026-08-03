@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Download, MessageCircle, Printer, Receipt } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import {
   construirLiquidacion, liquidacionAHtml, liquidacionAWhatsApp,
@@ -59,8 +60,29 @@ export default function LiquidacionModal({
 
   return (
     // AdminModal: focus trap + scroll lock + bottom-sheet en móvil.
-    <AdminModal open onClose={onCerrar} variant="wide" title="Liquidación para el cliente" icon={Receipt}>
-      <div className="p-5">
+    <AdminModal
+      open
+      onClose={onCerrar}
+      variant="wide"
+      title="Liquidación para el cliente"
+      icon={Receipt}
+      /* Las tres salidas del documento (imprimir, PDF, WhatsApp) viven al pie
+         fijo: con el detalle de piezas largo quedaban al final del scroll. */
+      footer={
+        <ModalFooter>
+          <Btn variant="secondary" onClick={() => imprimirHtml(liquidacionAHtml(datos(), liq))}>
+            <Printer className="h-4 w-4" /> Imprimir
+          </Btn>
+          <Btn variant="secondary" onClick={() => { void exportarLiquidacionPDF(datos(), liq); }}>
+            <Download className="h-4 w-4" /> PDF
+          </Btn>
+          <Btn variant="dark" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(liquidacionAWhatsApp(datos(), liq))}`, "_blank")}>
+            <MessageCircle className="h-4 w-4" /> WhatsApp
+          </Btn>
+        </ModalFooter>
+      }
+    >
+      <div className={MODAL_BODY}>
 
         {/* Datos del comprobante */}
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -83,7 +105,7 @@ export default function LiquidacionModal({
         </div>
 
         {/* Preview del desglose por especie */}
-        <div className="mt-4 overflow-x-auto rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10/30">
+        <div className="mt-4 overflow-x-auto rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10">
           <table className="w-full min-w-[420px] text-sm">
             <thead>
               <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
@@ -120,18 +142,6 @@ export default function LiquidacionModal({
           <p className="mt-2 text-xs text-[var(--text-tertiary)]">Poné un precio (general o por especie) en el cubicador para ver los montos.</p>
         )}
 
-        {/* Acciones */}
-        <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-          <button type="button" onClick={() => imprimirHtml(liquidacionAHtml(datos(), liq))} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-            <Printer className="h-4 w-4" /> Imprimir
-          </button>
-          <button type="button" onClick={() => { void exportarLiquidacionPDF(datos(), liq); }} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-            <Download className="h-4 w-4" /> PDF
-          </button>
-          <button type="button" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(liquidacionAWhatsApp(datos(), liq))}`, "_blank")} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95">
-            <MessageCircle className="h-4 w-4" /> WhatsApp
-          </button>
-        </div>
       </div>
     </AdminModal>
   );

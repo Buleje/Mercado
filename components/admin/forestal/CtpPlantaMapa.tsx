@@ -16,6 +16,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { BRAND_GEO } from "@/lib/geo";
 import { geodesicAreaM2, haversineM, formatDist } from "@/lib/cacao/geo-area";
 import { ZONA_TIPOS, zonaTipoMeta, type PlantaZona, type ZonaTipo } from "@/lib/forestal/planta-zona-types";
+import { Btn, CampoGrid, Field, I, MODAL_BODY, ModalBody, ModalFooter } from "./ctp-shared";
 
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 const fmtArea = (m2: number) => (m2 >= 10000 ? `${(m2 / 10000).toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : `${Math.round(m2).toLocaleString("es-PE")} m²`);
@@ -506,29 +507,43 @@ function CoordenadasModal({ onClose, onCreate, onGoTo }: { onClose: () => void; 
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) { setError("Coordenada inválida."); return; }
     onGoTo(lat, lng);
   }
-  const I = "h-11 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
-    <AdminModal open onClose={onClose} variant="wide" icon={Navigation} title="Mapeo por coordenadas" description="Creá una zona desde tu levantamiento GPS o andá a una coordenada exacta.">
-      <div className="space-y-5 p-5">
+    <AdminModal
+      open
+      onClose={onClose}
+      variant="wide"
+      icon={Navigation}
+      title="Mapeo por coordenadas"
+      description="Creá una zona desde tu levantamiento GPS o andá a una coordenada exacta."
+      footer={
+        <ModalFooter error={error} nota={`${pts.length} punto(s) válido(s)${area > 0 ? ` · ${fmtArea(area)}` : ""}`}>
+          <Btn variant="ghost" onClick={onClose}>Cerrar</Btn>
+          <Btn variant="primary" onClick={crear} disabled={pts.length < 3}>
+            <Check className="h-4 w-4" />
+            Crear la zona
+          </Btn>
+        </ModalFooter>
+      }
+    >
+      <ModalBody className="space-y-5">
         <div>
           <p className="mb-1 text-sm font-bold text-[var(--text-primary)]">Crear zona por coordenadas</p>
           <p className="mb-2 text-xs text-[var(--text-tertiary)]">Pegá los vértices, una coordenada por línea: <span className="font-mono">latitud, longitud</span>. Se cierra el polígono solo.</p>
           <textarea value={text} onChange={(e) => { setText(e.target.value); setError(null); }} rows={6} placeholder={"-8.38200, -74.53100\n-8.38150, -74.52950\n-8.38300, -74.52980"} className={`${I} h-auto py-2 font-mono`} />
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="inline-flex h-9 items-center rounded-lg bg-[var(--surface-sunken)] px-3 text-xs font-bold text-[var(--text-secondary)]">{pts.length} puntos válidos{area > 0 ? ` · ${fmtArea(area)}` : ""}</span>
-            <button type="button" onClick={crear} disabled={pts.length < 3} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Check className="h-4 w-4" />Continuar</button>
-          </div>
         </div>
-        <div className="border-t-2 border-[var(--rule-base)] pt-4">
+        <div className="border-t border-[var(--rule-base)] pt-4">
           <p className="mb-2 text-sm font-bold text-[var(--text-primary)]">Ir a una coordenada</p>
           <div className="flex flex-wrap items-end gap-2">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Latitud<input value={goLat} onChange={(e) => setGoLat(e.target.value)} placeholder="-8.3820" className={`mt-1 ${I} w-36`} /></label>
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Longitud<input value={goLng} onChange={(e) => setGoLng(e.target.value)} placeholder="-74.5310" className={`mt-1 ${I} w-36`} /></label>
-            <button type="button" onClick={ir} className="inline-flex h-11 items-center gap-2 rounded-lg border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Navigation className="h-4 w-4" />Ir</button>
+            <Field label="Latitud">
+              <input value={goLat} onChange={(e) => setGoLat(e.target.value)} placeholder="-8.3820" className={`${I} w-36 font-mono`} />
+            </Field>
+            <Field label="Longitud">
+              <input value={goLng} onChange={(e) => setGoLng(e.target.value)} placeholder="-74.5310" className={`${I} w-36 font-mono`} />
+            </Field>
+            <Btn variant="secondary" onClick={ir}><Navigation className="h-4 w-4" />Ir</Btn>
           </div>
         </div>
-        {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
-      </div>
+      </ModalBody>
     </AdminModal>
   );
 }
@@ -560,10 +575,26 @@ function AsignarZonaModal({ poligono, suggest, onClose, onSaved }: { poligono: [
       onSaved();
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); setSubmitting(false); }
   }
-  const I = "h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
-    <AdminModal open onClose={onClose} variant="default" icon={Pencil} title="Nueva zona de la planta" description={`${poligono.length} puntos · ${fmtArea(areaCalc)} · ${formatDist(perimCalc)} de perímetro`}>
-      <form onSubmit={submit} className="space-y-4 p-5">
+    <AdminModal
+      open
+      onClose={onClose}
+      variant="default"
+      icon={Pencil}
+      title="Nueva zona de la planta"
+      description={`${poligono.length} puntos · ${fmtArea(areaCalc)} · ${formatDist(perimCalc)} de perímetro`}
+      footer={
+        <ModalFooter error={error}>
+          <Btn variant="ghost" onClick={onClose}><X className="h-4 w-4" />Cancelar</Btn>
+          {/* El submit vive fuera del <form>: `form=` lo vuelve a atar. */}
+          <Btn variant="primary" type="submit" form="planta-zona-nueva" disabled={!valido || submitting}>
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            Guardar zona
+          </Btn>
+        </ModalFooter>
+      }
+    >
+      <form id="planta-zona-nueva" onSubmit={submit} className={`space-y-4 ${MODAL_BODY}`}>
         <div>
           <p className="mb-1.5 text-sm font-bold text-[var(--text-primary)]">Tipo de zona *</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -575,16 +606,17 @@ function AsignarZonaModal({ poligono, suggest, onClose, onSaved }: { poligono: [
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="text-sm font-bold text-[var(--text-primary)]">Código *<input value={f.codigo} onChange={(e) => setF((s) => ({ ...s, codigo: e.target.value }))} placeholder="PT-01" className={`mt-1 ${I}`} autoFocus /></label>
-          <label className="text-sm font-bold text-[var(--text-primary)]">Nombre<input value={f.nombre} onChange={(e) => setF((s) => ({ ...s, nombre: e.target.value }))} placeholder="Patio principal" className={`mt-1 ${I}`} /></label>
-        </div>
-        <label className="block text-sm font-bold text-[var(--text-primary)]">Notas<textarea value={f.notas} onChange={(e) => setF((s) => ({ ...s, notas: e.target.value }))} rows={2} placeholder="Capacidad, referencia, qué se guarda acá…" className={`mt-1 ${I} h-auto py-2`} /></label>
-        {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
-        <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
-          <button type="submit" disabled={!valido || submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar zona</button>
-        </div>
+        <CampoGrid>
+          <Field label="Código" required span={6}>
+            <input value={f.codigo} onChange={(e) => setF((s) => ({ ...s, codigo: e.target.value }))} placeholder="PT-01" className={`${I} font-mono uppercase`} autoFocus />
+          </Field>
+          <Field label="Nombre" span={6}>
+            <input value={f.nombre} onChange={(e) => setF((s) => ({ ...s, nombre: e.target.value }))} placeholder="Patio principal" className={I} />
+          </Field>
+          <Field label="Notas" span={12}>
+            <textarea value={f.notas} onChange={(e) => setF((s) => ({ ...s, notas: e.target.value }))} rows={2} placeholder="Capacidad, referencia, qué se guarda acá…" className={`${I} h-auto py-2`} />
+          </Field>
+        </CampoGrid>
       </form>
     </AdminModal>
   );
@@ -619,10 +651,37 @@ function ZonaFichaModal({ zona, onClose, onSaved, onDeleted }: { zona: PlantaZon
       onDeleted();
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); setSubmitting(false); setConfirmDel(false); }
   }
-  const I = "h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
-    <AdminModal open onClose={onClose} variant="default" icon={MapPin} title={`Zona ${zona.codigo}`} description={`${meta.label}${zona.areaM2 != null ? ` · ${fmtArea(zona.areaM2)}` : ""}`}>
-      <form onSubmit={save} className="space-y-4 p-5">
+    <AdminModal
+      open
+      onClose={onClose}
+      variant="default"
+      icon={MapPin}
+      title={`Zona ${zona.codigo}`}
+      description={`${meta.label}${zona.areaM2 != null ? ` · ${fmtArea(zona.areaM2)}` : ""}`}
+      footer={
+        <ModalFooter error={error}>
+          {/* Borrar queda a la izquierda, separado de guardar: son opuestos y
+              pegados uno al lado del otro se aprieta el que no era. */}
+          <span className="mr-auto">
+            {!confirmDel ? (
+              <Btn variant="danger" onClick={() => setConfirmDel(true)}><Trash2 className="h-4 w-4" />Borrar zona</Btn>
+            ) : (
+              <Btn variant="danger" onClick={() => void del()} disabled={submitting}>
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Confirmar borrar
+              </Btn>
+            )}
+          </span>
+          <Btn variant="ghost" onClick={onClose}><X className="h-4 w-4" />Cerrar</Btn>
+          <Btn variant="primary" type="submit" form="planta-zona-ficha" disabled={submitting}>
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            Guardar
+          </Btn>
+        </ModalFooter>
+      }
+    >
+      <form id="planta-zona-ficha" onSubmit={save} className={`space-y-4 ${MODAL_BODY}`}>
         <div>
           <p className="mb-1.5 text-sm font-bold text-[var(--text-primary)]">Tipo de zona</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -634,23 +693,17 @@ function ZonaFichaModal({ zona, onClose, onSaved, onDeleted }: { zona: PlantaZon
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="text-sm font-bold text-[var(--text-primary)]">Código *<input value={f.codigo} onChange={(e) => setF((s) => ({ ...s, codigo: e.target.value }))} className={`mt-1 ${I}`} /></label>
-          <label className="text-sm font-bold text-[var(--text-primary)]">Nombre<input value={f.nombre} onChange={(e) => setF((s) => ({ ...s, nombre: e.target.value }))} className={`mt-1 ${I}`} /></label>
-        </div>
-        <label className="block text-sm font-bold text-[var(--text-primary)]">Notas<textarea value={f.notas} onChange={(e) => setF((s) => ({ ...s, notas: e.target.value }))} rows={2} className={`mt-1 ${I} h-auto py-2`} /></label>
-        {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
-        <div className="flex items-center justify-between gap-2 pt-1">
-          {!confirmDel ? (
-            <button type="button" onClick={() => setConfirmDel(true)} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--data-error-500)] px-3 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" />Borrar zona</button>
-          ) : (
-            <button type="button" onClick={del} disabled={submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Confirmar borrar</button>
-          )}
-          <div className="flex gap-2">
-            <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cerrar</button>
-            <button type="submit" disabled={submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar</button>
-          </div>
-        </div>
+        <CampoGrid>
+          <Field label="Código" required span={6}>
+            <input value={f.codigo} onChange={(e) => setF((s) => ({ ...s, codigo: e.target.value }))} className={`${I} font-mono uppercase`} />
+          </Field>
+          <Field label="Nombre" span={6}>
+            <input value={f.nombre} onChange={(e) => setF((s) => ({ ...s, nombre: e.target.value }))} className={I} />
+          </Field>
+          <Field label="Notas" span={12}>
+            <textarea value={f.notas} onChange={(e) => setF((s) => ({ ...s, notas: e.target.value }))} rows={2} className={`${I} h-auto py-2`} />
+          </Field>
+        </CampoGrid>
       </form>
     </AdminModal>
   );
