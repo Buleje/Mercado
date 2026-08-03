@@ -165,7 +165,7 @@ function POSCajeroFavorites({ products, onAddToCart }: { products: Product[]; on
 
   if (favIds.length === 0 && !configMode) {
     return (
-      <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30">
+      <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface/30">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mis Rapidos</span>
           <button onClick={() => setConfigMode(true)} className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline">Configurar</button>
@@ -176,7 +176,7 @@ function POSCajeroFavorites({ products, onAddToCart }: { products: Product[]; on
   }
 
   return (
-    <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30">
+    <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface/30">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mis Rapidos ({favIds.length}/12)</span>
         <button
@@ -199,7 +199,7 @@ function POSCajeroFavorites({ products, onAddToCart }: { products: Product[]; on
               onClick={() => configMode ? toggleFav(id) : onAddToCart(p)}
               className={cn(
                 "bg-[var(--surface-raised)] border text-left px-1.5 rounded-lg transition-all flex items-center gap-1",
-                configMode ? "border-[var(--data-error-500)] hover:bg-[var(--data-error-50)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface"
+                configMode ? "border-[var(--data-error-500)] hover:bg-[var(--data-error-50)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface"
               )}
               style={{ height: 48 }}
               title={configMode ? `Quitar ${p.name}` : p.name}
@@ -285,7 +285,7 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
   const time = new Date(sale.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
   const itemCount = sale.items.reduce((sum, i) => sum + i.quantity, 0);
   return (
-    <div className="bg-gray-50 dark:bg-surface rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-primary transition-colors">
+    <div className="bg-[var(--surface-sunken)] dark:bg-surface rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-primary transition-colors">
       <button onClick={() => setExpanded(!expanded)} className="w-full text-left p-3">
         <div className="flex items-start justify-between mb-1.5">
           <div className="flex items-center gap-1.5">
@@ -303,7 +303,7 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
             sale.payment === "plin" ? "bg-teal-50 text-[var(--accent-dark)] dark:text-[var(--accent)]" :
             sale.payment === "tarjeta" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
             sale.payment === "fiado" ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" :
-            "bg-gray-50 text-[var(--text-secondary)]"
+            "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
           )}>
             {sale.payment}
           </span>
@@ -319,7 +319,7 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
             </div>
           ))}
           <div className="flex gap-1.5 pt-1">
-            <a href={`/venta/${sale.id}/recibo`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+            <a href={`/venta/${sale.id}/recibo`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
               <Printer className="h-3 w-3" /> Reimprimir
             </a>
           </div>
@@ -451,7 +451,7 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
           className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-[var(--data-success-500)] hover:text-white transition-colors disabled:opacity-50">
           Todo S/{Number(fiado.saldo).toFixed(2)}
         </button>
-        <button onClick={() => setFiado(null)} className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-surface transition-colors">No, gracias</button>
+        <button onClick={() => setFiado(null)} className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">No, gracias</button>
       </div>
     </div>
   );
@@ -576,7 +576,7 @@ function SaleCompleteModal({
           <button
             onClick={onClose}
             aria-label="Cerrar"
-            className="absolute top-4 right-4 z-30 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+            className="absolute top-4 right-4 z-30 p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"
           >
             <X className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted" />
           </button>
@@ -605,7 +605,7 @@ function SaleCompleteModal({
           >
             {fmt(animatedTotal)}
           </m.p>
-          <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-gray-50 dark:bg-surface border border-[var(--rule-soft)]">
+          <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-[var(--surface-sunken)] dark:bg-surface border border-[var(--rule-soft)]">
             <PayIcon className="h-4 w-4 text-[var(--text-secondary)]" />
             <span className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">
               Pagado con <span className="capitalize">{method}</span>
@@ -628,7 +628,7 @@ function SaleCompleteModal({
           ) : null}
 
           {lastSaleDetails?.comprobanteNumero ? (
-            <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 flex items-center gap-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <Receipt className="h-5 w-5 text-primary" />
               </div>
@@ -682,7 +682,7 @@ function SaleCompleteModal({
                 ) : (
                   <button
                     disabled
-                    className="px-5 py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] font-semibold text-base cursor-not-allowed flex items-center gap-2 shrink-0"
+                    className="px-5 py-3 rounded-xl bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] font-semibold text-base cursor-not-allowed flex items-center gap-2 shrink-0"
                   >
                     <Send className="h-4 w-4" />
                     Enviar
@@ -694,13 +694,13 @@ function SaleCompleteModal({
         </div>
 
         {/* Footer — acciones principales */}
-        <div className="px-6 py-5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 space-y-2.5">
+        <div className="px-6 py-5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface/30 space-y-2.5">
           <div className="grid grid-cols-2 gap-2.5">
             <a
               href={`/venta/${saleComplete.id}/recibo`}
               target="_blank"
               rel="noopener noreferrer"
-              className="py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] font-semibold text-base hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-2"
+              className="py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] font-semibold text-base hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors flex items-center justify-center gap-2"
             >
               <Printer className="h-5 w-5" />
               Imprimir
@@ -731,7 +731,7 @@ function SaleCompleteModal({
                   alert(e instanceof Error ? e.message : "Error al imprimir");
                 }
               }}
-              className="w-full py-2.5 rounded-xl text-[var(--text-secondary)] dark:text-muted font-semibold text-sm hover:bg-gray-100 dark:hover:bg-surface transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl text-[var(--text-secondary)] dark:text-muted font-semibold text-sm hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors flex items-center justify-center gap-2"
             >
               <Printer className="h-4 w-4" /> Ticket térmico (ESC/POS)
             </button>
@@ -1727,7 +1727,7 @@ export default function POSView() {
                   href={`/venta/${lastSaleInfo.id}/recibo`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hidden md:inline-flex items-center gap-1 text-xs bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted rounded-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-surface transition-colors"
+                  className="hidden md:inline-flex items-center gap-1 text-xs bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted rounded-full px-2 py-1 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
                   title="Reimprimir última venta"
                 >
                   Última: {fmt(lastSaleInfo.total)} · {Math.max(1, lastSaleInfo.minutesAgo)}m
@@ -1782,7 +1782,7 @@ export default function POSView() {
               <div className="relative">
                 <button
                   onClick={() => setShowMoreTools(v => !v)}
-                  className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 max-sm:min-h-[44px] rounded-lg transition-colors"
+                  className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent px-3 py-2 max-sm:min-h-[44px] rounded-lg transition-colors"
                   title="Opciones del POS"
                 >
                   <Settings className="h-4 w-4" /> <span className="hidden sm:inline">Opciones</span>
@@ -1799,10 +1799,10 @@ export default function POSView() {
                       </button>
                       <button
                         onClick={() => { setShowHistory(!showHistory); setShowMoreTools(false); }}
-                        className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
+                        className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
                       >
                         <History className="h-4 w-4" /> Historial de ventas
-                        <kbd className="ml-auto text-[length:var(--ts-2xs)] bg-gray-200 dark:bg-gray-700 px-1 rounded">F4</kbd>
+                        <kbd className="ml-auto text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] px-1 rounded">F4</kbd>
                       </button>
                       {(() => {
                         try { const ls = localStorage.getItem("pos-last-sale-items"); if (!ls) return null; } catch { return null; }
@@ -1844,7 +1844,7 @@ export default function POSView() {
                       <div className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted px-3 py-1">
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase tracking-wider">Tamano fuente</span>
                       </div>
-                      <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5 mx-2">
+                      <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-lg p-0.5 mx-2">
                         {(["normal", "large", "xlarge"] as const).map(size => (
                           <button
                             key={size}
@@ -1863,7 +1863,7 @@ export default function POSView() {
                         onClick={() => { toggleSound(); setShowMoreTools(false); }}
                         className={cn(
                           "w-full flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-lg transition-colors",
-                          soundEnabled ? "text-primary hover:bg-primary/5" : "text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-50"
+                          soundEnabled ? "text-primary hover:bg-primary/5" : "text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)]"
                         )}
                       >
                         {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
@@ -1947,14 +1947,14 @@ export default function POSView() {
                         outOfStock && "opacity-40 cursor-not-allowed"
                       )}
                     >
-                      <div className="aspect-[5/4] rounded-md overflow-hidden bg-gray-50 dark:bg-surface mb-1 relative">
+                      <div className="aspect-[5/4] rounded-md overflow-hidden bg-[var(--surface-sunken)] dark:bg-surface mb-1 relative">
                         <Image src={p.image || "/products/placeholder.svg"} alt={p.name} fill sizes="(max-width:768px) 25vw, 160px" className="object-cover" loading="lazy" />
                         <span
                           role="button"
                           tabIndex={0}
                           onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
                           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); toggleFavorite(p.id); } }}
-                          className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white/90 dark:bg-[var(--surface-raised)]/90 backdrop-blur-sm flex items-center justify-center hover:bg-white dark:hover:bg-[var(--surface-raised)] transition-colors z-10 cursor-pointer"
+                          className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white/90 dark:bg-[var(--surface-raised)]/90 backdrop-blur-sm flex items-center justify-center hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] transition-colors z-10 cursor-pointer"
                         >
                           <Star className={cn("h-3 w-3", favorites.includes(p.id) ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)] dark:text-muted")} />
                         </span>
@@ -2052,7 +2052,7 @@ export default function POSView() {
                           const qTotal = q.reduce((s, i) => s + i.product.price * i.quantity, 0);
                           const qItems = q.reduce((s, i) => s + i.quantity, 0);
                           return (
-                            <div key={idx} className="flex items-center gap-2 text-xs p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-surface">
+                            <div key={idx} className="flex items-center gap-2 text-xs p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface">
                               <button onClick={() => loadFromQueue(idx)} className="flex-1 text-left">
                                 <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cliente {idx + 1}</span>
                                 <span className="text-[var(--text-tertiary)] dark:text-muted ml-1">{qItems} items · {fmt(qTotal)}</span>
@@ -2075,7 +2075,7 @@ export default function POSView() {
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Vaciar
-                    <kbd className="text-[length:var(--ts-2xs)] bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] px-1 rounded">F3</kbd>
+                    <kbd className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] px-1 rounded">F3</kbd>
                   </button>
                 )}
                 {cart.length > 0 && confirmClear && (
@@ -2090,7 +2090,7 @@ export default function POSView() {
                     </button>
                     <button
                       onClick={() => setConfirmClear(false)}
-                      className="px-2 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-bold border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                      className="px-2 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-bold border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
                       aria-label="Cancelar: mantener carrito"
                     >
                       No
@@ -2122,12 +2122,12 @@ export default function POSView() {
                 const discountMultiplier = 1 - (item.discount || 0) / 100;
                 const itemTotal = item.product.price * item.quantity * discountMultiplier;
                 return (
-                  <div key={item.product.id} className={cn("rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-2 hover:bg-gray-50 dark:hover:bg-surface transition-all duration-[var(--dur-base)]", lastAddedId === item.product.id && "ring-2 ring-[var(--data-success-500)]/40 bg-primary/10 dark:bg-primary/15")}>
+                  <div key={item.product.id} className={cn("rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-2 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-all duration-[var(--dur-base)]", lastAddedId === item.product.id && "ring-2 ring-[var(--data-success-500)]/40 bg-primary/10 dark:bg-primary/15")}>
                     <div className="flex flex-wrap items-center gap-2">
                       {item.product.image ? (
                         <Image src={item.product.image} alt={item.product.name} width={48} height={48} className="rounded-lg object-cover shrink-0 w-12 h-12" />
                       ) : (
-                        <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-accent flex items-center justify-center shrink-0">
+                        <div className="w-12 h-12 rounded-lg bg-[var(--surface-sunken)] dark:bg-accent flex items-center justify-center shrink-0">
                           <Package className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted" />
                         </div>
                       )}
@@ -2155,14 +2155,14 @@ export default function POSView() {
                       <div className="flex items-center gap-0.5 shrink-0">
                         <button
                           onClick={() => updateQuantity(item.product.id, -1)}
-                          className="h-6 w-6 rounded-md bg-gray-100 dark:bg-accent flex items-center justify-center hover:bg-gray-200 transition-colors"
+                          className="h-6 w-6 rounded-md bg-[var(--surface-sunken)] dark:bg-accent flex items-center justify-center hover:bg-[var(--surface-sunken)] transition-colors"
                         >
                           <Minus className="h-3 w-3 text-[var(--text-secondary)] dark:text-muted" />
                         </button>
                         <span className="w-6 text-center text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.product.id, 1)}
-                          className="h-6 w-6 rounded-md bg-gray-100 dark:bg-accent flex items-center justify-center hover:bg-gray-200 transition-colors"
+                          className="h-6 w-6 rounded-md bg-[var(--surface-sunken)] dark:bg-accent flex items-center justify-center hover:bg-[var(--surface-sunken)] transition-colors"
                         >
                           <Plus className="h-3 w-3 text-[var(--text-secondary)] dark:text-muted" />
                         </button>
@@ -2367,7 +2367,7 @@ export default function POSView() {
                 <MessageCircle className="h-5 w-5 text-[var(--data-success-500)]" />
                 <CardTitle className="text-base font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Pedido por WhatsApp</CardTitle>
               </div>
-              <button onClick={() => setShowWhatsAppOrder(false)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"><X className="h-4 w-4" /></button>
+              <button onClick={() => setShowWhatsAppOrder(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"><X className="h-4 w-4" /></button>
             </div>
 
             <p className="text-xs text-[var(--text-secondary)] mb-3">Pega aqui el mensaje del cliente y el sistema encontrara los productos:</p>
@@ -2377,7 +2377,7 @@ export default function POSView() {
               onChange={e => { setWaText(e.target.value); parseWhatsAppOrder(e.target.value); }}
               placeholder={"Ej: 2 arroz, 3 leche gloria, 1 aceite\no: dame 5 huevos y 2 gaseosas"}
               rows={4}
-              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 resize-none font-mono"
+              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 resize-none font-mono"
               autoFocus
             />
 
@@ -2385,7 +2385,7 @@ export default function POSView() {
               <div className="mt-4 space-y-2">
                 <p className="text-xs font-bold text-[var(--text-secondary)]">Productos encontrados</p>
                 {waParsedItems.map((item, idx) => (
-                  <div key={idx} className="p-2.5 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                  <div key={idx} className="p-2.5 rounded-lg bg-[var(--surface-sunken)] dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                     {item.selected || item.matches.length === 1 ? (
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
@@ -2468,7 +2468,7 @@ export default function POSView() {
             </div>
             <button
               onClick={() => setShowHistory(false)}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+              className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"
             >
               <X className="h-4 w-4 text-[var(--text-tertiary)] dark:text-muted" />
             </button>
@@ -2521,7 +2521,7 @@ export default function POSView() {
                   onChange={e => setTruequeDesc(e.target.value)}
                   placeholder="Ej: 5 kg de platano, 2 gallinas..."
                   rows={2}
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                 />
               </Field>
               <Field label="Valor estimado (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">
@@ -2532,7 +2532,7 @@ export default function POSView() {
                   value={truequeValor}
                   onChange={e => setTruequeValor(e.target.value)}
                   placeholder="0.00"
-                  className="w-32 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-32 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </Field>
               {Number(truequeValor) > 0 && cartTotal > 0 && (
@@ -2565,7 +2565,7 @@ export default function POSView() {
                 >
                   Confirmar trueque
                 </button>
-                <button onClick={() => setShowTrueque(false)} className="px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors">
+                <button onClick={() => setShowTrueque(false)} className="px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
                   Cancelar
                 </button>
               </div>
@@ -2648,7 +2648,7 @@ export default function POSView() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowZeroStockConfirm(null)}
-                className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
+                className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 Cancelar
               </button>
@@ -2689,7 +2689,7 @@ export default function POSView() {
 
   if (expanded) {
     return (
-      <div className={cn("fixed inset-0 z-50 bg-gray-50 dark:bg-surface overflow-y-auto", fontSize === "large" && "pos-large", fontSize === "xlarge" && "pos-xlarge")}>
+      <div className={cn("fixed inset-0 z-50 bg-[var(--surface-sunken)] dark:bg-surface overflow-y-auto", fontSize === "large" && "pos-large", fontSize === "xlarge" && "pos-xlarge")}>
         {fontSizeStyle}
         <div className="max-w-480 mx-auto px-4 sm:px-6 py-4 space-y-4">
           {posContent}

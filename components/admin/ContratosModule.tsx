@@ -761,7 +761,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Por tipo */}
                   {stats.typeData.length > 0 && (
-                  <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+                  <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                     <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Contratos por Tipo</CardTitle>
                     <ResponsiveContainer minWidth={0} width="100%" height={250}>
                       <RechartsPie>
@@ -777,7 +777,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                   {/* Por mes */}
                   {stats.monthData.length > 0 && (
-                  <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+                  <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                     <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Contratos por Mes</CardTitle>
                     <ResponsiveContainer minWidth={0} width="100%" height={250}>
                       <BarChart data={stats.monthData}>
@@ -823,7 +823,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <m.div
                       key={tpl.id}
                       whileHover={{ scale: 1.02 }}
-                      className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-[var(--shadow-lg)] transition-all group"
+                      className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-[var(--shadow-lg)] transition-all group"
                       onClick={() => startWizard(tpl)}
                     >
                       <div className="flex items-start gap-3">
@@ -859,14 +859,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       placeholder="Buscar por cliente, número..."
                       value={search}
                       onChange={e => setSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
-                  <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="ALL">Todos los tipos</option>
                     {Object.entries(TIPO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
-                  <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="ALL">Todos los estados</option>
                     <option value="VIGENTE">Vigentes</option>
                     <option value="POR_VENCER">Por vencer</option>
@@ -895,7 +895,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         <div
                           key={c.id}
                           {...activateProps(() => setSelected(c))}
-                          className={cn("bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg  hover:shadow-[var(--shadow-lg)] transition-all cursor-pointer border-l-4", borderColor)}
+                          className={cn("bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg  hover:shadow-[var(--shadow-lg)] transition-all cursor-pointer border-l-4", borderColor)}
                         >
                           <div className="p-4 space-y-3">
                             <div className="flex items-start justify-between">
@@ -931,7 +931,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     })}
                   </div>
                 ) : (
-                  <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl overflow-hidden ">
+                  <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
@@ -949,7 +949,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           {paginated.map(c => {
                             const estado = estadoVisible(c);
                             return (
-                              <tr key={c.id} onClick={() => setSelected(c)} className="border-b border-gray-50 dark:border-white/5 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 cursor-pointer transition-colors">
+                              <tr key={c.id} onClick={() => setSelected(c)} className="border-b border-[var(--rule-soft)] dark:border-white/5 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 cursor-pointer transition-colors">
                                 <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">{c.numero}</td>
                                 <td className="px-4 py-3">
                                   <p className="font-medium text-[var(--text-primary)] truncate">{c.clienteNombre}</p>
@@ -1004,7 +1004,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 ) : (
                   <>
                     {/* Wizard Header */}
-                    <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+                    <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           <TemplateIcon icon={selectedTemplate.icon} className="h-5 w-5" />
@@ -1047,7 +1047,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       const filledRequired = allFields.filter(f => f.required && wizardData[f.key]?.trim()).length;
                       const progress = totalRequired > 0 ? Math.round((filledRequired / totalRequired) * 100) : 0;
                       return (
-                        <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+                        <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-bold text-[var(--text-secondary)]">Progreso del contrato</span>
                             <span className="text-xs font-bold text-[var(--text-primary)]">{filledRequired} de {totalRequired} campos completados ({progress}%)</span>
@@ -1064,7 +1064,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                     {/* Wizard Steps 0-2: Form Fields */}
                     {wizardStep < 3 && (
-                      <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
+                      <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
                         <h4 className="text-sm font-bold text-[var(--text-primary)]">{wizardGroupLabels[wizardStep]}</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {wizardGroups[wizardStep]?.fields.map(field => {
@@ -1108,7 +1108,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       placeholder={field.placeholder}
                                       className={cn(
                                         "flex-1 px-3 py-2 rounded-lg border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
-                                        isAutoFilled ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
+                                        isAutoFilled ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : "border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5"
                                       )}
                                     />
                                     <button
@@ -1144,7 +1144,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                         }
                                         setAutoFilledFields(prev => { const n = new Set(prev); n.delete(field.key); return n; });
                                       }}
-                                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     >
                                       <option value="">Seleccionar...</option>
                                       {selectOptions?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -1173,7 +1173,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       setWizardData(p => ({ ...p, [field.key]: e.target.value }));
                                       setAutoFilledFields(prev => { const n = new Set(prev); n.delete(field.key); return n; });
                                     }}
-                                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                                   >
                                     <option value="">Seleccionar...</option>
                                     {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -1190,7 +1190,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                     }}
                                     placeholder={field.placeholder}
                                     rows={3}
-                                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                                   />
                                 )}
 
@@ -1226,7 +1226,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                     step={field.type === "number" ? "0.01" : undefined}
                                     className={cn(
                                       "w-full px-3 py-2 rounded-lg border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
-                                      isAutoFilled && !isCiudadField ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : validationError ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
+                                      isAutoFilled && !isCiudadField ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : validationError ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : "border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5"
                                     )}
                                   />
                                 )}
@@ -1264,13 +1264,13 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         </div>
 
                         {/* Full Document Preview — with highlighted filled fields */}
-                        <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 sm:p-8 max-h-[60vh] overflow-y-auto">
+                        <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 sm:p-8 max-h-[60vh] overflow-y-auto">
                           <div className="max-w-[680px] mx-auto font-serif" ref={printRef}>
                             <SectionTitle className="text-center text-base font-bold mb-1">
                               CONTRATO DE {selectedTemplate.name.toUpperCase()}
                             </SectionTitle>
                             <p className="text-center text-xs text-[var(--text-tertiary)] mb-6">{selectedTemplate.legalBasis}</p>
-                            <div className="border-t-2 border-double border-gray-400 mb-6" />
+                            <div className="border-t-2 border-double border-[var(--rule-strong)] mb-6" />
                             {selectedTemplate.clausulas.map((clause, i) => {
                               // Replace {{KEY}} with highlighted spans for filled data
                               const parts = clause.split(/(\{\{\w+\}\})/g);
@@ -1293,10 +1293,10 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             })}
                             <div className="mt-12 flex justify-between gap-8">
                               <div className="flex-1 text-center">
-                                <div className="border-t border-gray-400 mt-16 pt-2 text-xs text-[var(--text-secondary)]">PRIMERA PARTE</div>
+                                <div className="border-t border-[var(--rule-strong)] mt-16 pt-2 text-xs text-[var(--text-secondary)]">PRIMERA PARTE</div>
                               </div>
                               <div className="flex-1 text-center">
-                                <div className="border-t border-gray-400 mt-16 pt-2 text-xs text-[var(--text-secondary)]">SEGUNDA PARTE</div>
+                                <div className="border-t border-[var(--rule-strong)] mt-16 pt-2 text-xs text-[var(--text-secondary)]">SEGUNDA PARTE</div>
                               </div>
                             </div>
                           </div>
@@ -1313,7 +1313,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     {/* Step 4: Confirm */}
                     {wizardStep === 4 && (
                       <div className="space-y-6">
-                        <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
+                        <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
                           <div className="flex items-center gap-3">
                             <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center text-white">
                               <CheckCircle className="h-6 w-6" />
@@ -1367,7 +1367,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                   value={vencimientoManual}
                                   min={inicioDelContrato(wizardData)}
                                   onChange={e => setVencimientoManual(e.target.value)}
-                                  className="w-full sm:w-auto px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)]"
+                                  className="w-full sm:w-auto px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)]"
                                 />
                               </div>
                             );
@@ -1391,7 +1391,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         {wizardStep < 4 && (
                           <button
                             onClick={() => setWizardStep(s => s + 1)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
                           >
                             Siguiente
                             <ArrowRight className="h-4 w-4" />
@@ -1401,7 +1401,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <button
                             onClick={handleCreate}
                             disabled={creating}
-                            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-colors"
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                           >
                             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                             Guardar Contrato
@@ -1429,7 +1429,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         setEditorPreview(false);
                       }
                     }}
-                    className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                   >
                     <option value="">Seleccionar plantilla...</option>
                     {PLANTILLAS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -1455,7 +1455,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Editor */}
                     <div className="space-y-3">
-                      <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+                      <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                         <p className="text-xs font-bold text-[var(--text-secondary)] mb-2">Campos disponibles (clic para insertar):</p>
                         <div className="flex flex-wrap gap-1 mb-3">
                           {editorTemplate.fields.map(f => (
@@ -1479,7 +1479,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     </div>
 
                     {/* Preview */}
-                    <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 max-h-[70vh] overflow-y-auto">
+                    <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 max-h-[70vh] overflow-y-auto">
                       <h4 className="text-sm font-bold text-[var(--text-primary)] mb-4">Vista Previa</h4>
                       <div className="font-serif space-y-3">
                         {editorText.split("\n\n").filter(p => p.trim()).map((para, i) => (
@@ -1511,7 +1511,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-[#1a1a2e] border-l border-[var(--rule-base)] dark:border-white/10 overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] dark:bg-[#1a1a2e] border-l border-[var(--rule-base)] dark:border-white/10 overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Header */}
@@ -1659,7 +1659,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       <select
                         value={mesesRenovacion}
                         onChange={e => setMesesRenovacion(Number(e.target.value))}
-                        className="px-2.5 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[var(--text-primary)]"
+                        className="px-2.5 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-xs text-[var(--text-primary)]"
                         aria-label="Meses de renovación"
                       >
                         {[3, 6, 12, 24, 36].map(m => (

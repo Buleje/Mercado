@@ -445,7 +445,7 @@ export default function CRMTab() {
 
       {/* Mejora 13: Canal de adquisicion pie chart */}
       {(() => {
-        const CHANNEL_COLORS = ["var(--accent)", "#ff6b5b", "#457b9d", "#9b5de5", "#6b7280"];
+        const CHANNEL_COLORS = ["var(--accent)", "#ff6b5b", "#457b9d", "#9b5de5", "var(--text-secondary)"];
         const CHANNEL_LABELS: Record<string, string> = { local: "Local", whatsapp: "WhatsApp", web: "Web", referido: "Referido", redes: "Redes" };
         const channelCounts: Record<string, number> = {};
         for (const c of customers) {
@@ -486,7 +486,7 @@ export default function CRMTab() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Nombre o teléfono..."
-            className="w-full pl-10 pr-9 h-11 sm:h-auto sm:py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-[var(--text-primary)] focus:ring-2 focus:ring-[var(--rule-base)] outline-none transition-all"
+            className="w-full pl-10 pr-9 h-11 sm:h-auto sm:py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] focus:border-[var(--text-primary)] focus:ring-2 focus:ring-[var(--rule-base)] outline-none transition-all"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -513,14 +513,14 @@ export default function CRMTab() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               filterSegment === f.key
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
           >
             {f.label}
             {f.count > 0 && (
               <span className={cn(
                 "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-                filterSegment === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+                filterSegment === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
               )}>
                 {f.count > 99 ? "99+" : f.count}
               </span>
@@ -564,13 +564,13 @@ export default function CRMTab() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               quickFilter === f.key
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
           >
             {f.label}
             <span className={cn(
               "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              quickFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+              quickFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
             )}>
               {quickFilterCounts[f.key] > 99 ? "99+" : quickFilterCounts[f.key]}
             </span>
@@ -598,13 +598,13 @@ export default function CRMTab() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               freqFilter === f.key
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
           >
             {f.label}
             <span className={cn(
               "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              freqFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+              freqFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
             )}>
               {freqCounts[f.key] > 99 ? "99+" : freqCounts[f.key]}
             </span>
@@ -621,7 +621,7 @@ export default function CRMTab() {
             className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               filterTag === "todos"
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
           >
             Todas
@@ -635,7 +635,7 @@ export default function CRMTab() {
                 className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
                   isActive
                     ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                    : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                    : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
                 )}
               >
                 {tag}
@@ -673,7 +673,7 @@ export default function CRMTab() {
                 <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Ver</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50 dark:divide-card-border">
+            <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
               {paginated.length === 0 && (
                 <tr>
                   <td colSpan={9} className="py-16 text-center">
@@ -772,7 +772,7 @@ export default function CRMTab() {
                             step={0.01}
                             value={creditLimitInput}
                             onChange={e => setCreditLimitInput(e.target.value)}
-                            className="w-20 text-xs border border-primary/40 rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="w-20 text-xs border border-primary/40 rounded-lg px-2 py-1 bg-[var(--surface-raised)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                             placeholder="0.00"
                           />
                           <button type="submit" className="text-xs px-1.5 py-1 bg-primary text-white rounded-lg font-bold">OK</button>
@@ -848,7 +848,7 @@ export default function CRMTab() {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={effectivePage === 1}
-                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-white dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
+                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
               </button>
@@ -861,7 +861,7 @@ export default function CRMTab() {
                     className={cn("w-8 h-8 text-xs rounded-lg font-semibold transition-colors",
                       effectivePage === p
                         ? "bg-primary text-white"
-                        : "border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-white dark:hover:bg-[var(--surface-raised)]"
+                        : "border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)]"
                     )}
                   >
                     {p}
@@ -871,7 +871,7 @@ export default function CRMTab() {
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={effectivePage === totalPages}
-                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-white dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
+                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
               >
                 <ChevronRight className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
               </button>
@@ -946,7 +946,7 @@ export default function CRMTab() {
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-card-border">
+                    <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
                       {/* Total gastado */}
                       {(() => {
                         const values = compareCustomers.map(c => c.totalSpent ?? 0);

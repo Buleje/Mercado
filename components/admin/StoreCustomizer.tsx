@@ -544,7 +544,7 @@ function StyleSection({
 }
 
 const inputCls =
-  "w-full px-4 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all";
+  "w-full px-4 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all";
 
 // ── Sugerencias rápidas para Hero (chips para auto-completar) ───────────────
 
@@ -633,7 +633,7 @@ function HeroTab({
         <div className="space-y-3">
           {/* Device toggle + abrir tienda */}
           <div className="flex items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-gray-100 dark:bg-surface border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               {[
                 { value: "desktop" as const, label: "Desktop", icon: Monitor },
                 { value: "mobile" as const, label: "Mobile", icon: Smartphone },
@@ -663,7 +663,7 @@ function HeroTab({
               href={storefrontUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface"
+              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface"
             >
               <ExternalLink className="h-4 w-4" />
               Ver en tienda
@@ -1096,7 +1096,7 @@ function HeroTab({
                   >
                     <div className={cn(
                       "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
-                      active ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-primary)]"
+                      active ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)]"
                     )}>
                       {s.icon}
                     </div>
@@ -1248,9 +1248,9 @@ function HeroTab({
               onClick={() => update("heroShowBadges", !(theme.heroShowBadges ?? true))}
               aria-pressed={theme.heroShowBadges ?? true}
               aria-label="Mostrar badges del hero"
-              className={cn("relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors", (theme.heroShowBadges ?? true) ? "bg-primary" : "bg-gray-300 dark:bg-surface")}
+              className={cn("relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors", (theme.heroShowBadges ?? true) ? "bg-primary" : "bg-[var(--surface-sunken)] dark:bg-surface")}
             >
-              <span className={cn("inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform", (theme.heroShowBadges ?? true) ? "translate-x-6" : "translate-x-1")} />
+              <span className={cn("inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transform transition-transform", (theme.heroShowBadges ?? true) ? "translate-x-6" : "translate-x-1")} />
             </button>
           </div>
         </div>
@@ -1366,10 +1366,15 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
   const spacingPad = theme.spacing === "compact" ? "8px" : theme.spacing === "spacious" ? "24px" : "16px";
 
   return (
+    // OJO: de acá para adentro es la PREVIEW de la tienda del comerciante, no
+    // chrome del admin. Sus colores literales son a propósito: conmutan con
+    // `theme.darkModeDefault` (el ajuste del TENANT) y no deben seguir el tema
+    // del panel. Si acá se meten tokens del admin, la preview en modo oscuro se
+    // ve clara mientras el admin está en claro.
     <div
       className={cn(
         "w-full h-full rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col text-sm shadow-inner",
-        theme.darkModeDefault ? "bg-gray-900 text-white" : "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]"
+        theme.darkModeDefault ? "bg-neutral-900 text-white" : "bg-white text-neutral-900"
       )}
       style={{ fontFamily: fontMap[theme.fontFamily] ?? fontMap.sistema }}
     >
@@ -1476,8 +1481,8 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
                 className={cn(
                   "rounded-xl p-2 border",
                   theme.darkModeDefault
-                    ? "bg-gray-800 border-gray-700"
-                    : "bg-gray-50 border-[var(--rule-soft)]"
+                    ? "bg-[var(--surface-sunken)] border-[var(--rule-base)]"
+                    : "bg-[var(--surface-sunken)] border-[var(--rule-soft)]"
                 )}
                 style={{ borderRadius: `${Math.min(theme.borderRadius, 16)}px` }}
               >
@@ -1502,7 +1507,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
       <div
         className="shrink-0 px-3 py-2 text-xs text-center"
         style={{
-          color: theme.darkModeDefault ? "#6b7280" : "#9ca3af",
+          color: theme.darkModeDefault ? "#d1d5db" : "#374151",
           borderTop: `1px solid ${theme.darkModeDefault ? "#374151" : "#f3f4f6"}`,
         }}
       >
@@ -1796,7 +1801,7 @@ export default function StoreCustomizer() {
             href={`/t/${activeTenantSlug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"
           >
             <Store className="h-4 w-4" />
             Ver tienda
@@ -2208,7 +2213,7 @@ export default function StoreCustomizer() {
                               <div className="h-3 w-10 rounded-md ml-auto" style={{ backgroundColor: t.colors.secondaryColor }} />
                             </div>
                             {active && (
-                              <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-white dark:bg-[var(--color-card)] flex items-center justify-center shadow">
+                              <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-[var(--surface-raised)] flex items-center justify-center shadow">
                                 <Check className="h-3 w-3 text-primary" />
                               </div>
                             )}
@@ -2309,7 +2314,7 @@ export default function StoreCustomizer() {
                   </div>
 
                   {/* Pista de contraste WCAG */}
-                  <div className="mt-4 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 flex items-start gap-2.5">
+                  <div className="mt-4 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 flex items-start gap-2.5">
                     <div className="shrink-0 mt-0.5">
                       <Sliders className="h-4 w-4 text-muted" />
                     </div>
@@ -2338,11 +2343,11 @@ export default function StoreCustomizer() {
                           : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                       )}
                     >
-                      <div className="aspect-[4/3] mb-3 rounded-xl bg-white dark:bg-[var(--color-card)] border border-gray-200 overflow-hidden flex flex-col">
+                      <div className="aspect-[4/3] mb-3 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] overflow-hidden flex flex-col">
                         <div className="h-3 w-full" style={{ backgroundColor: theme.primaryColor }} />
                         <div className="flex-1 p-2 space-y-1">
-                          <div className="h-1.5 rounded-full bg-gray-300 w-3/4" />
-                          <div className="h-1 rounded-full bg-gray-200 w-1/2" />
+                          <div className="h-1.5 rounded-full bg-[var(--surface-sunken)] w-3/4" />
+                          <div className="h-1 rounded-full bg-[var(--surface-sunken)] w-1/2" />
                           <div className="h-2 w-10 rounded mt-1" style={{ backgroundColor: theme.primaryColor }} />
                         </div>
                       </div>
@@ -2364,11 +2369,11 @@ export default function StoreCustomizer() {
                           : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                       )}
                     >
-                      <div className="aspect-[4/3] mb-3 rounded-xl bg-gray-950 border border-gray-800 overflow-hidden flex flex-col">
+                      <div className="aspect-[4/3] mb-3 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] overflow-hidden flex flex-col">
                         <div className="h-3 w-full" style={{ backgroundColor: theme.primaryColor }} />
                         <div className="flex-1 p-2 space-y-1">
-                          <div className="h-1.5 rounded-full bg-gray-700 w-3/4" />
-                          <div className="h-1 rounded-full bg-gray-800 w-1/2" />
+                          <div className="h-1.5 rounded-full bg-[var(--surface-sunken)] w-3/4" />
+                          <div className="h-1 rounded-full bg-[var(--surface-sunken)] w-1/2" />
                           <div className="h-2 w-10 rounded mt-1" style={{ backgroundColor: theme.primaryColor }} />
                         </div>
                       </div>
@@ -2620,7 +2625,7 @@ export default function StoreCustomizer() {
                                 [key]: { ...theme.schedules[key], open: e.target.value },
                               })
                             }
-                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             aria-label={`Apertura ${label}`}
                           />
                           <input
@@ -2632,7 +2637,7 @@ export default function StoreCustomizer() {
                                 [key]: { ...theme.schedules[key], close: e.target.value },
                               })
                             }
-                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             aria-label={`Cierre ${label}`}
                           />
                         </div>
@@ -2691,7 +2696,7 @@ export default function StoreCustomizer() {
                         >
                           {/* Mini-card preview */}
                           <div className={cn(
-                            "aspect-[4/3] mb-3 rounded-xl overflow-hidden flex flex-col bg-white dark:bg-surface relative",
+                            "aspect-[4/3] mb-3 rounded-xl overflow-hidden flex flex-col bg-[var(--surface-raised)] relative",
                             s.value === "minimal" && "border-0",
                             s.value === "shadow"  && "shadow-[var(--shadow-md)]",
                             s.value === "border"  && "border-2",
@@ -2700,11 +2705,11 @@ export default function StoreCustomizer() {
                           style={s.value === "border" ? { borderColor: theme.primaryColor } : undefined}>
                             {/* Imagen placeholder */}
                             <div className="flex-1 bg-linear-to-br from-[var(--surface-sunken)] to-[var(--rule-soft)] dark:from-[var(--surface-sunken)] dark:to-[var(--surface-canvas)] flex items-center justify-center">
-                              <ShoppingBag className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                              <ShoppingBag className="h-5 w-5 text-[var(--text-tertiary)]" />
                             </div>
                             {/* Texto + precio */}
                             <div className="px-2 py-1.5 space-y-0.5">
-                              <div className="h-1.5 w-3/4 rounded-full bg-gray-300 dark:bg-gray-600" />
+                              <div className="h-1.5 w-3/4 rounded-full bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)]" />
                               <div className="h-2 w-1/3 rounded-full" style={{ backgroundColor: theme.primaryColor }} />
                             </div>
                           </div>
@@ -2792,7 +2797,7 @@ export default function StoreCustomizer() {
                               className={cn(
                                 "absolute top-0 inset-x-0 h-7 flex items-center px-2 gap-1.5",
                                 s.value === "solid"       && "shadow-[var(--shadow-sm)]",
-                                s.value === "transparent" && "border-b border-gray-300 dark:border-gray-700",
+                                s.value === "transparent" && "border-b border-[var(--rule-base)]",
                                 s.value === "blur"        && "backdrop-blur-md border-b border-white/30",
                                 s.value === "minimal"     && "border-b-2"
                               )}
@@ -2811,13 +2816,13 @@ export default function StoreCustomizer() {
                               <div className="flex-1 h-2 rounded-full bg-white/30 dark:bg-white/10" />
                               <div className={cn(
                                 "h-2 w-2 rounded-full",
-                                s.value === "solid" || s.value === "blur" ? "bg-white/80" : "bg-gray-400"
+                                s.value === "solid" || s.value === "blur" ? "bg-white/80" : "bg-[var(--surface-sunken)]"
                               )} />
                             </div>
                             {/* Body placeholder */}
                             <div className="absolute inset-x-2 bottom-2 space-y-1">
-                              <div className="h-1.5 w-1/2 rounded-full bg-gray-300 dark:bg-gray-700" />
-                              <div className="h-1.5 w-3/4 rounded-full bg-gray-200 dark:bg-gray-700" />
+                              <div className="h-1.5 w-1/2 rounded-full bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)]" />
+                              <div className="h-1.5 w-3/4 rounded-full bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)]" />
                             </div>
                           </div>
                           <p className="text-sm font-bold text-[var(--text-primary)]">{s.label}</p>
@@ -2858,7 +2863,7 @@ export default function StoreCustomizer() {
                                   : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                               )}
                             >
-                              <div className={cn("w-10 h-10 rounded-xl bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)]", s.cls)} />
+                              <div className={cn("w-10 h-10 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)]", s.cls)} />
                               <p className="text-sm font-bold text-[var(--text-primary)]">{s.label}</p>
                             </button>
                           );
@@ -2892,7 +2897,7 @@ export default function StoreCustomizer() {
                               <Sparkles
                                 className={cn(
                                   "h-6 w-6 mx-auto mb-1.5 transition-transform",
-                                  s.value === "none"    && "text-gray-400",
+                                  s.value === "none"    && "text-[var(--text-tertiary)]",
                                   s.value === "subtle"  && "text-primary",
                                   s.value === "dynamic" && "text-primary animate-pulse"
                                 )}
@@ -2932,7 +2937,7 @@ export default function StoreCustomizer() {
                               <div
                                 className={cn(
                                   "aspect-[5/3] rounded-xl mb-2 overflow-hidden",
-                                  s.value === "none" && "bg-gray-50 dark:bg-surface",
+                                  s.value === "none" && "bg-[var(--surface-sunken)] dark:bg-surface",
                                 )}
                                 style={
                                   s.value === "dots"
@@ -3026,7 +3031,7 @@ export default function StoreCustomizer() {
                     "rounded-2xl border-2 p-5 transition-colors",
                     theme.welcomePopupEnabled
                       ? "bg-primary/5 dark:bg-primary/10 border-primary/30"
-                      : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)]"
+                      : "bg-[var(--surface-sunken)] dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                   )}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -3046,13 +3051,13 @@ export default function StoreCustomizer() {
                           "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)]",
                           theme.welcomePopupEnabled
                             ? "bg-primary border-primary"
-                            : "bg-gray-200 dark:bg-gray-700 border-transparent"
+                            : "bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] border-transparent"
                         )}
                         aria-label="Toggle popup"
                         aria-pressed={theme.welcomePopupEnabled}
                       >
                         <span className={cn(
-                          "inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform duration-[var(--dur-base)]",
+                          "inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transition-transform duration-[var(--dur-base)]",
                           theme.welcomePopupEnabled ? "translate-x-6" : "translate-x-1"
                         )} />
                       </button>
@@ -3107,8 +3112,8 @@ export default function StoreCustomizer() {
                   title="QR de tu tienda"
                   description="Imprímelo y pégalo en tu local físico. Los clientes lo escanean y entran a tu tienda online."
                 >
-                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface p-5 flex flex-col sm:flex-row items-center sm:items-stretch gap-5">
-                    <div className="bg-white dark:bg-[var(--color-card)] p-3 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
+                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface p-5 flex flex-col sm:flex-row items-center sm:items-stretch gap-5">
+                    <div className="bg-[var(--surface-raised)] p-3 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
                       <Image
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/t/${activeTenantSlug}` : "https://tu-tienda.buleje.pe")}`}
                         alt="QR de la tienda"
@@ -3199,7 +3204,7 @@ export default function StoreCustomizer() {
                           )}
                         >
                           <div
-                            className="h-12 mb-2 rounded-xl bg-gray-50 dark:bg-surface flex items-center justify-center text-2xl font-extrabold text-[var(--text-primary)]"
+                            className="h-12 mb-2 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface flex items-center justify-center text-2xl font-extrabold text-[var(--text-primary)]"
                             style={{ fontFamily: f.stack }}
                           >
                             Aa
@@ -3237,7 +3242,7 @@ export default function StoreCustomizer() {
                         />
                       </Field>
                       {/* Preview multi-elemento: input, badge, card, botón */}
-                      <div className="rounded-2xl bg-gray-50 dark:bg-surface p-4 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                      <div className="rounded-2xl bg-[var(--surface-sunken)] dark:bg-surface p-4 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-3">Vista previa en vivo</p>
                         <div className="flex items-center gap-3 flex-wrap">
                           <div
@@ -3290,10 +3295,10 @@ export default function StoreCustomizer() {
                                   : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                               )}
                             >
-                              <div className={cn("rounded-xl bg-gray-50 dark:bg-surface mb-2 flex flex-col justify-center px-2", s.pad, s.gap)}>
+                              <div className={cn("rounded-xl bg-[var(--surface-sunken)] dark:bg-surface mb-2 flex flex-col justify-center px-2", s.pad, s.gap)}>
                                 <div className="h-1.5 rounded-full bg-primary/30 w-1/2 mx-auto" />
-                                <div className="h-0.5 rounded-full bg-gray-300 dark:bg-gray-600 w-3/4" />
-                                <div className="h-0.5 rounded-full bg-gray-300 dark:bg-gray-600 w-2/3" />
+                                <div className="h-0.5 rounded-full bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] w-3/4" />
+                                <div className="h-0.5 rounded-full bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] w-2/3" />
                                 <div className="h-2 rounded-md mt-1 mx-auto w-12" style={{ backgroundColor: theme.primaryColor }} />
                               </div>
                               <p className="text-sm font-bold text-[var(--text-primary)]">{s.label}</p>
@@ -3316,7 +3321,7 @@ export default function StoreCustomizer() {
                     {/* Browser tab preview */}
                     <div>
                       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">Cómo se verá la pestaña del navegador</p>
-                      <div className="rounded-t-xl bg-gray-200 dark:bg-gray-800 px-2 pt-2 border border-b-0 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                      <div className="rounded-t-xl bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] px-2 pt-2 border border-b-0 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                         <div className="inline-flex items-center gap-2 max-w-[260px] bg-[var(--surface-raised)] rounded-t-lg border-t border-x border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-3 py-2">
                           {theme.favicon ? (
                             <Image src={theme.favicon} alt="favicon" width={16} height={16} className="h-4 w-4 rounded shrink-0 object-cover" />
@@ -3328,7 +3333,7 @@ export default function StoreCustomizer() {
                           <span className="text-xs text-[var(--text-primary)] truncate">{theme.storeName || "Tu tienda"}</span>
                         </div>
                       </div>
-                      <div className="rounded-b-xl bg-gray-100 dark:bg-surface px-3 py-2 border border-t-0 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                      <div className="rounded-b-xl bg-[var(--surface-sunken)] dark:bg-surface px-3 py-2 border border-t-0 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                         <span className="text-xs font-mono text-muted">localhost:3000/t/{activeTenantSlug}</span>
                       </div>
                     </div>
@@ -3508,9 +3513,9 @@ export default function StoreCustomizer() {
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <p className="text-xs text-muted">
                           Selectores útiles:
-                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-surface">.product-card</span>
-                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-surface">.store-card</span>
-                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-surface">.store-header</span>
+                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] dark:bg-surface">.product-card</span>
+                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] dark:bg-surface">.store-card</span>
+                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] dark:bg-surface">.store-header</span>
                         </p>
                         {theme.customCSS && (
                           <button
@@ -3586,11 +3591,11 @@ export default function StoreCustomizer() {
       {showPreview && (
         <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
           {/* Header del modal */}
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-900 shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-neutral-900 shrink-0">
             <div className="flex items-center gap-3">
               <p className="text-sm font-bold text-white">Vista previa en vivo</p>
               {/* Toggle responsive */}
-              <div className="flex gap-0.5 bg-gray-800 rounded-lg p-0.5">
+              <div className="flex gap-0.5 bg-neutral-800 rounded-lg p-0.5">
                 {([
                   { label: "Móvil", w: 375 },
                   { label: "Tablet", w: 768 },
@@ -3598,7 +3603,7 @@ export default function StoreCustomizer() {
                 ]).map((v) => (
                   <button key={v.label} type="button" onClick={() => setPreviewWidth(v.w)}
                     className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all",
-                      previewWidth === v.w ? "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] shadow" : "text-[var(--text-tertiary)] hover:text-white")}>
+                      previewWidth === v.w ? "bg-white text-neutral-900 shadow" : "text-neutral-400 hover:text-white")}>
                     {v.label}
                   </button>
                 ))}
@@ -3612,7 +3617,7 @@ export default function StoreCustomizer() {
                 Abrir en nueva pestaña
               </a>
               <button type="button" onClick={() => setShowPreview(false)}
-                className="h-8 w-8 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-white transition-colors">
+                className="h-8 w-8 rounded-lg bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-white transition-colors">
                 <EyeOff className="h-4 w-4" />
               </button>
             </div>
@@ -3620,7 +3625,7 @@ export default function StoreCustomizer() {
           {/* Iframe */}
           <div className="flex-1 flex justify-center items-start p-4 overflow-auto bg-[var(--surface-sunken)]">
             <div
-              className="bg-white dark:bg-[var(--color-card)] rounded-xl overflow-hidden transition-all duration-[var(--dur-base)]"
+              className="bg-[var(--surface-raised)] rounded-xl overflow-hidden transition-all duration-[var(--dur-base)]"
               style={{ width: previewWidth > 0 ? `${previewWidth}px` : "100%", maxWidth: "100%", height: "calc(100vh - 80px)" }}
             >
               <iframe key={previewKey} src={`/t/${activeTenantSlug}?preview=true`} title="Vista previa" className="w-full h-full border-0" />
