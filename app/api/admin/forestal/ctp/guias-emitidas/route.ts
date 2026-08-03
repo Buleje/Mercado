@@ -58,6 +58,10 @@ export const GET = withApiHandler("forestal-guias-emitidas", async (req: NextReq
       gtfDatos: d.gtfDatos,
       serforNumeroRegistro: d.serforNumeroRegistro,
       serforVerificadoEn: d.serforVerificadoEn ? d.serforVerificadoEn.toISOString() : null,
+      // Este re-mapeo es una WHITELIST: un campo que existe en la fila pero no
+      // se copia acá desaparece sin error. Sin esta línea la bandeja no podría
+      // decir que una guía ampara madera sin origen declarado.
+      atribuidoQty: (d as { atribuidoQty?: number }).atribuidoQty,
     }));
     return NextResponse.json({ guias: guiasDeDespachos(filas) });
   } catch (err) {

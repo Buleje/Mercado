@@ -120,3 +120,48 @@ describe("búsqueda y duplicados", () => {
     expect(numerosRepetidos(guias)).toEqual([]);
   });
 });
+
+/**
+ * «Faltan N campos» y «ampara madera sin origen» son cosas DISTINTAS: una guía
+ * puede estar impecablemente llena y amparar madera cuya corrida de producción
+ * todavía no se declaró. Ese documento ya salió a la calle, y hasta que se
+ * agregó `atribuidoQty` la bandeja no podía verlo — el tipo de fila era una
+ * whitelist y el dato se perdía en el camino.
+ */
+describe("origen declarado de lo que ampara la guía", () => {
+  it("una guía con todo atribuido no reporta faltante", () => {
+    const [g] = guiasDeDespachos([fila({ quantity: 10, atribuidoQty: 10 })]);
+    expect(g.sinOrigen).toBe(0);
+  });
+
+  it("reporta cuánto del volumen no tiene corrida de origen", () => {
+    const [g] = guiasDeDespachos([fila({ quantity: 10, atribuidoQty: 4 })]);
+    expect(g.sinOrigen).toBe(6);
+  });
+
+  it("sin atribución declarada, todo el volumen queda sin origen", () => {
+    const [g] = guiasDeDespachos([fila({ quantity: 10 })]);
+    expect(g.sinOrigen).toBe(10);
+  });
+
+  it("una guía ANULADA no persigue origen: ya no ampara nada", () => {
+    const [g] = guiasDeDespachos([fila({ quantity: 10, atribuidoQty: 0, status: "anulado" })]);
+    expect(g.sinOrigen).toBe(0);
+  });
+
+  it("nunca devuelve un faltante negativo si viniera sobre-atribuida", () => {
+    const [g] = guiasDeDespachos([fila({ quantity: 10, atribuidoQty: 12 })]);
+    expect(g.sinOrigen).toBe(0);
+  });
+
+  it("el resumen cuenta las guías vigentes que amparan madera sin origen", () => {
+    const r = resumirGuias(
+      guiasDeDespachos([
+        fila({ id: "a", gtfNumber: "G-1", quantity: 10, atribuidoQty: 10 }),
+        fila({ id: "b", gtfNumber: "G-2", quantity: 10, atribuidoQty: 3 }),
+        fila({ id: "c", gtfNumber: "G-3", quantity: 10, status: "anulado" }),
+      ]),
+    );
+    expect(r.sinOrigen).toBe(1);
+  });
+});

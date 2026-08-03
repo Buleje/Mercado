@@ -40,6 +40,8 @@ export type FilaDespachoGuia = {
   gtfDatos: unknown;
   serforNumeroRegistro: string | null;
   serforVerificadoEn: string | null;
+  /** Cuánto del despacho tiene corrida de origen declarada (lo agrega `list`). */
+  atribuidoQty?: number;
 };
 
 export type EstadoGuia = "completa" | "incompleta" | "anulada";
@@ -63,6 +65,16 @@ export interface GuiaEmitida {
   placa: string | null;
   /** Se verificó contra el SNIFFS de SERFOR (ADR-312). */
   verificada: boolean;
+  /**
+   * Cuánto de lo que ampara esta guía NO tiene corrida de origen declarada.
+   *
+   * Es distinto de `faltan`, que cuenta CAMPOS del documento: una guía puede
+   * estar perfectamente llena y amparar madera cuyo origen todavía no se
+   * declaró. Un documento ya entregado en esa situación es el que más caro
+   * sale, y hasta ahora esta bandeja no podía verlo — el tipo de fila era una
+   * whitelist y el dato se perdía en el camino.
+   */
+  sinOrigen: number;
 }
 
 export interface ResumenGuias {
@@ -72,6 +84,8 @@ export interface ResumenGuias {
   anuladas: number;
   /** Emitidas sin verificar contra SERFOR: lo primero que revisa un control. */
   sinVerificar: number;
+  /** Guías vigentes que amparan madera sin corrida de origen declarada. */
+  sinOrigen: number;
 }
 
 /**
@@ -103,6 +117,9 @@ export function guiasDeDespachos(filas: FilaDespachoGuia[]): GuiaEmitida[] {
         destinatario: datos.destinatario.nombre.trim() || null,
         placa: datos.vehiculo.placa.trim() || null,
         verificada: Boolean(f.serforNumeroRegistro && f.serforVerificadoEn),
+        // Una guía anulada no ampara nada: perseguir su origen sería perseguir
+        // un fantasma, igual que con `faltan`.
+        sinOrigen: anulada ? 0 : Math.max(0, Number(((f.quantity ?? 0) - (f.atribuidoQty ?? 0)).toFixed(4))),
       };
     })
     .sort((a, b) => b.fecha.localeCompare(a.fecha) || (b.lineNo ?? 0) - (a.lineNo ?? 0));
@@ -113,13 +130,16 @@ export function resumirGuias(guias: GuiaEmitida[]): ResumenGuias {
   let incompletas = 0;
   let anuladas = 0;
   let sinVerificar = 0;
+  let sinOrigen = 0;
   for (const g of guias) {
     if (g.estado === "anulada") anuladas += 1;
     else if (g.estado === "completa") completas += 1;
     else incompletas += 1;
     if (g.estado !== "anulada" && !g.verificada) sinVerificar += 1;
+    // La misma tolerancia que el resto del libro: el redondeo de SERFOR.
+    if (g.sinOrigen > 0.001) sinOrigen += 1;
   }
-  return { total: guias.length, completas, incompletas, anuladas, sinVerificar };
+  return { total: guias.length, completas, incompletas, anuladas, sinVerificar, sinOrigen };
 }
 
 /** Filtra por número, destino, destinatario o placa — sin tildes ni mayúsculas. */

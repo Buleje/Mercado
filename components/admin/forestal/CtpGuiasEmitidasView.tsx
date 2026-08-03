@@ -74,7 +74,7 @@ export default function CtpGuiasEmitidasView({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatCard label="Guías emitidas" value={String(resumen.total)} subValue={period.label} icon={FileText} emphasis="neutral" />
         <StatCard
           label="Listas para imprimir"
@@ -96,6 +96,13 @@ export default function CtpGuiasEmitidasView({
           subValue={resumen.sinVerificar > 0 ? "lo primero que mira un control" : "todas verificadas"}
           icon={AlertTriangle}
           emphasis={resumen.sinVerificar > 0 ? "warning" : "success"}
+        />
+        <StatCard
+          label="Amparan madera sin origen"
+          value={String(resumen.sinOrigen)}
+          subValue={resumen.sinOrigen > 0 ? "el documento ya salió" : "todas con origen declarado"}
+          icon={AlertTriangle}
+          emphasis={resumen.sinOrigen > 0 ? "warning" : "success"}
         />
       </div>
 
@@ -198,6 +205,17 @@ export default function CtpGuiasEmitidasView({
                   title="No se verificó contra el SNIFFS de SERFOR"
                 >
                   sin verificar
+                </span>
+              )}
+              {/* Distinto de «faltan N», que cuenta CAMPOS del documento: una
+                  guía puede estar impecable y amparar madera cuyo origen todavía
+                  no se declaró. Ese documento ya salió a la calle. */}
+              {g.sinOrigen > 0.001 && (
+                <span
+                  className="shrink-0 rounded bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                  title="Esta guía ampara madera sin corrida de producción atribuida. Completá el origen desde Despacho ▸ cadena de custodia."
+                >
+                  {g.sinOrigen.toFixed(4)} {g.unidad ?? ""} sin origen
                 </span>
               )}
             </li>
