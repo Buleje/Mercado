@@ -29,7 +29,7 @@
  * ```
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { TAB_MIGRATION } from "../_lib/tab-migration";
 import { VALID_TABS, type Tab } from "../_lib/tabs.types";
 import { useTabFrequency } from "./useTabFrequency";
@@ -41,8 +41,16 @@ export interface UseAdminTabsResult {
   topTabs: (n: number) => string[];
 }
 
-function resolveInitialTab(): Tab {
-  if (typeof window === "undefined") return "vendor-dashboard";
+/**
+ * El tab que dicta la URL (query o hash), o `null` si la URL no dice nada.
+ *
+ * Vive aparte de `resolveInitialTab` porque el historial NO puede caer a
+ * localStorage: al volver atrás a Inicio (URL sin `?tab=`), el "último tab
+ * guardado" es justamente el módulo que se está dejando, y el atrás no hacía
+ * nada visible.
+ */
+function tabDesdeUrl(): Tab | null {
+  if (typeof window === "undefined") return null;
 
   // 1. Query param ?tab=...
   const urlTab = new URLSearchParams(window.location.search).get("tab");
@@ -64,6 +72,15 @@ function resolveInitialTab(): Tab {
     if (VALID_TABS.includes(hash as Tab)) return hash as Tab;
     return "vendor-dashboard";
   }
+
+  return null;
+}
+
+function resolveInitialTab(): Tab {
+  if (typeof window === "undefined") return "vendor-dashboard";
+
+  const deLaUrl = tabDesdeUrl();
+  if (deLaUrl) return deLaUrl;
 
   // 3. localStorage — "retomar último tab". Brandon 2026-05-28: SOLO en
   // desktop. En mobile, abrir `/admin` directo (sin ?tab ni #hash) debe llevar
@@ -99,12 +116,27 @@ export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
       } catch {
         // localStorage no disponible — ignorar
       }
-      // Persiste en URL hash + search param para deep-linking y reload
+      // Persiste en URL hash + search param para deep-linking y reload.
       try {
         const url = new URL(window.location.href);
+        const tabActual = url.searchParams.get("tab");
         url.searchParams.set("tab", id);
         url.hash = id;
-        window.history.replaceState(null, "", url.toString());
+        /**
+         * `pushState` y no `replaceState`: con replace, saltar de módulo NUNCA
+         * dejaba entrada en el historial, así que el botón «atrás» del
+         * navegador (y el gesto del trackpad, y Alt+←) se saltaba el panel
+         * entero y salía al sitio anterior. En un panel de 133 módulos, volver
+         * a donde estabas es de las cosas que más se hacen.
+         *
+         * Si es el MISMO tab se reemplaza: hacer click en el módulo en el que
+         * ya estás no debe llenar el historial de entradas iguales.
+         */
+        if (tabActual === id) {
+          window.history.replaceState(null, "", url.toString());
+        } else {
+          window.history.pushState(null, "", url.toString());
+        }
       } catch {
         // window.history no disponible — ignorar
       }
@@ -113,6 +145,23 @@ export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
     },
     [addRecent, trackTab],
   );
+
+  /**
+   * Atrás/adelante del navegador → sincronizar el tab con la URL.
+   *
+   * Sin esto, `pushState` sería peor que el estado anterior: la URL cambiaría
+   * al ir atrás pero la pantalla seguiría mostrando el módulo viejo. `popstate`
+   * sólo dispara en navegaciones del historial, no en las nuestras.
+   *
+   * Resuelve SÓLO desde la URL, nunca desde localStorage: `admin_active_tab`
+   * guarda el último módulo visitado, así que volver a una entrada sin `?tab=`
+   * (Inicio) reabría justo el módulo del que venías. El historial manda.
+   */
+  useEffect(() => {
+    const onPop = () => setTab(tabDesdeUrl() ?? "vendor-dashboard");
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   return { tab, setTab, navigateTab, topTabs: getTopTabs };
 }
