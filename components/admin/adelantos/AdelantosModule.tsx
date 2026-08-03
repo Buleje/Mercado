@@ -25,8 +25,8 @@ import {
   FileText,
   Repeat,
 } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { AnalisisView } from "./AnalisisView";
 import { fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid } from "./shared";
 import { formatCurrency } from "@/lib/currency";
@@ -83,6 +83,9 @@ const TABS = [
   { id: "analisis", label: "Análisis", icon: BarChart3 },
 ];
 
+/** Los ids, DERIVADOS de TABS: listarlos aparte los deja desincronizarse. */
+const TAB_IDS = TABS.map((t) => t.id);
+
 const jsonHeaders = () => csrfHeaders({ "Content-Type": "application/json" });
 
 // ── Multi-moneda (ADR-118): formato por moneda + totales segmentados ───────────
@@ -90,7 +93,13 @@ const MONEDAS = ["PEN", "USD"] as const;
 // fmtMon, sumByMoneda, fmtMonedas → movidos a ./shared (ADR-121 refactor).
 
 export default function AdelantosModule() {
-  const [tab, setTab] = useState("resumen");
+  /**
+   * La sub-vista vive en `?sub=` y no en `?vista=`: este módulo se renderiza
+   * DENTRO de Mi Plata, que ya es dueño de ese parámetro. Antes era un
+   * `useState` pelado — ni se compartía por link, ni recordaba, ni el atrás la
+   * recorría.
+   */
+  const { vista: tab, irA: setTab } = useSubvistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
   const [resumen, setResumen] = useState<Resumen | null>(null);
   const [adelantos, setAdelantos] = useState<DbAdelanto[]>([]);
   const [beneficiarios, setBeneficiarios] = useState<BeneficiarioConSaldo[]>([]);
@@ -123,23 +132,27 @@ export default function AdelantosModule() {
 
   return (
     <div>
-      <AdminModuleHeader
-        as="h2"
-        eyebrow="Finanzas · Adelantos"
-        title="Adelantos & Liquidaciones"
-        description="Adelantos de dinero a personas por servicios. Se liquidan con lo que te entregan (producto o servicio)."
-        icon={Coins}
-      >
-        <button
-          onClick={() => setTab(sinPersonas ? "personas" : "lista")}
-          className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors"
-        >
-          <Plus className="h-5 w-5" />
-          {sinPersonas ? "Agregar persona" : "Nuevo adelanto"}
-        </button>
-      </AdminModuleHeader>
+      {/* SIN encabezado propio: lo pinta Mi Plata, que ya sabe que estás en
+          Adelantos (ver CABECERA en FinanzasModule). Antes había dos títulos y
+          dos descripciones apilados, y la acción primaria competía con la del
+          padre por el mismo peso visual. La de acá va en la barra de pestañas,
+          pegada a lo que se está mirando. */}
 
-      <AdminTabBar tabs={TABS} activeTab={tab} onTabChange={setTab} moduleId={MODULE_ID}>
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={tab}
+        onTabChange={setTab}
+        moduleId={MODULE_ID}
+        rightSlot={
+          <button
+            onClick={() => setTab(sinPersonas ? "personas" : "lista")}
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary-dark"
+          >
+            <Plus className="h-4 w-4" />
+            {sinPersonas ? "Agregar persona" : "Nuevo adelanto"}
+          </button>
+        }
+      >
         <div className="pt-5 lg:pt-6">
           {error && (
             <div className="mb-4 rounded-xl border border-[var(--data-error)]/30 bg-[var(--data-error)]/10 px-4 py-3 text-base font-semibold text-[var(--data-error)]">
@@ -1378,7 +1391,11 @@ function CobranzaView({ adelantos, loading, onRecordado }: { adelantos: DbAdelan
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => void marcarRecordado(d.id)}
-                    className={`inline-flex items-center gap-1 h-9 px-3 rounded-xl border text-sm font-bold transition-colors ${ts ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-primary text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10"}`}
+                    /* Es un <a> a WhatsApp, así que `disabled` no aplica:
+                       mientras la anotación va en camino se marca con
+                       `aria-busy` y se apagan los eventos. */
+                    aria-busy={marcando === d.id}
+                    className={`inline-flex items-center gap-1 h-9 px-3 rounded-xl border text-sm font-bold transition-colors ${marcando === d.id ? "pointer-events-none opacity-60" : ""} ${ts ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-primary text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10"}`}
                   >
                     <MessageCircle className="h-4 w-4" /> {ts ? "Recordar de nuevo" : "Recordar"}
                   </a>

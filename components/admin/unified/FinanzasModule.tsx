@@ -162,6 +162,20 @@ const DONDE_VIVE: Record<string, { tab: TabId; sub?: string }> = {
 const primeraSub = (tab: TabId): string => SUBS[tab]?.[0]?.id ?? tab;
 
 /**
+ * Qué dice el encabezado en cada sección.
+ *
+ * Sólo las que tienen identidad propia —las que antes pintaban su PROPIO
+ * encabezado debajo del de Mi Plata—. El resto hereda el general.
+ */
+const CABECERA: Record<string, { eyebrow: string; title: string; description: string }> = {
+  adelantos: {
+    eyebrow: "Finanzas · Adelantos",
+    title: "Adelantos & Liquidaciones",
+    description: "Adelantos de dinero a personas por servicios. Se liquidan con lo que te entregan (producto o servicio).",
+  },
+};
+
+/**
  * Las secciones direccionables por `?vista=`, derivadas de la estructura real:
  * la hoja de cada pestaña, o la pestaña misma cuando no se divide. Derivarlas
  * —en vez de listarlas— evita que agregar una sección la deje sin dirección.
@@ -1270,10 +1284,15 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
           Adelantos, Activos, Scoring) — igual que Tesorería/Reportes. El módulo
           hijo conserva su propio sub-header debajo, dando jerarquía clara
           "Mi Plata → <sección>". Antes las foldeadas solo tenían un breadcrumb. */}
+      {/* El encabezado dice dónde estás DE VERDAD.
+          Fijo en «Mi Plata · Pérdidas y ganancias, gastos, flujo de caja»
+          mentía apenas se entraba a Adelantos o Fiados, y encima esas secciones
+          pintaban su propio encabezado completo debajo: dos títulos, dos
+          descripciones y tres barras de pestañas antes del primer dato. */}
       <AdminModuleHeader
-        eyebrow="Finanzas · Reportes"
-        title="Mi Plata"
-        description="Pérdidas y ganancias, gastos, flujo de caja y reportes financieros."
+        eyebrow={CABECERA[sub]?.eyebrow ?? "Finanzas · Reportes"}
+        title={CABECERA[sub]?.title ?? "Mi Plata"}
+        description={CABECERA[sub]?.description ?? "Pérdidas y ganancias, gastos, flujo de caja y reportes financieros."}
         icon={Wallet}
       >
         {sub === "resumen" && (
