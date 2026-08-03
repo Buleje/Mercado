@@ -37,7 +37,8 @@ import { useTabFrequency } from "./useTabFrequency";
 export interface UseAdminTabsResult {
   tab: Tab;
   setTab: (id: Tab) => void;
-  navigateTab: (id: Tab) => void;
+  /** `vista` = sub-vista dentro del módulo destino (la usa el buscador). */
+  navigateTab: (id: Tab, vista?: string) => void;
   topTabs: (n: number) => string[];
 }
 
@@ -109,7 +110,7 @@ export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
   const { trackTab, getTopTabs } = useTabFrequency();
 
   const navigateTab = useCallback(
-    (id: Tab) => {
+    (id: Tab, vista?: string) => {
       setTab(id);
       try {
         localStorage.setItem("admin_active_tab", id);
@@ -121,6 +122,12 @@ export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
         const url = new URL(window.location.href);
         const tabActual = url.searchParams.get("tab");
         url.searchParams.set("tab", id);
+        // La sub-vista pertenece al módulo que se está dejando: si viaja, el
+        // módulo nuevo recibe un `?vista=` que no es suyo (ver useVistaModulo).
+        // Salvo que el destino traiga la suya —el buscador manda a una vista
+        // concreta— en cuyo caso esa gana.
+        if (vista) url.searchParams.set("vista", vista);
+        else if (tabActual !== id) url.searchParams.delete("vista");
         url.hash = id;
         /**
          * `pushState` y no `replaceState`: con replace, saltar de módulo NUNCA

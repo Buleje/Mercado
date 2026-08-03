@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ALL_TABS } from "@/app/admin/_lib/tab-data";
+import { CTP_VISTAS, LOTH_VISTAS } from "@/lib/admin/subvistas-modulos";
 import {
   Search, X, Package, Users, ShoppingCart, FileText, ShoppingBasket, Tag, AlertTriangle, TrendingUp, Loader2, LayoutDashboard, Monitor, Boxes, Shield, Zap, ArrowRight,
 } from "@buleje/design-system/icons";
@@ -26,6 +27,8 @@ interface SearchResult {
   tab?: string;
   /** Para módulos: navegar directo al tab */
   navigateTo?: string;
+  /** Sub-vista dentro del módulo destino (`?vista=`). */
+  vista?: string;
   /** Para acciones: callback directo */
   action?: () => void;
   /** Texto original para highlight */
@@ -80,6 +83,31 @@ const SINONIMOS: Record<string, string[]> = {
   plan: ["suscripcion", "facturacion buleje", "limites", "upgrade"],
 };
 
+/**
+ * Sub-vistas buscables por módulo.
+ *
+ * `subtabs` existía en la interfaz y el buscador ya lo leía, pero NADA lo
+ * llenaba: con el Libro CTP (18 vistas) o el de Títulos Habilitantes, la mayor
+ * parte de los destinos reales del panel no aparecía al buscar. Se derivan de
+ * las MISMAS constantes que dibujan la cabina de cada módulo, así que agregar
+ * una vista allá la hace buscable acá sin tocar este archivo.
+ *
+ * Sólo tiene sentido para módulos cuya vista es direccionable por `?vista=`
+ * (los que usan `useVistaModulo`); el resto no tendría a dónde navegar.
+ */
+const SUBTABS_POR_MODULO: Record<string, { id: string; label: string; keywords?: string[] }[]> = {
+  "ctp-libro-operaciones": CTP_VISTAS.map((v) => ({
+    id: v.key,
+    label: v.label,
+    keywords: [sinTildes(v.label), ...sinTildes(v.hint).split(/[^a-z0-9]+/).filter((w) => w.length > 3)],
+  })),
+  "loth-libro-operaciones": LOTH_VISTAS.map((v) => ({
+    id: v.key,
+    label: v.label,
+    keywords: [sinTildes(v.label), ...sinTildes(v.hint).split(/[^a-z0-9]+/).filter((w) => w.length > 3)],
+  })),
+};
+
 const MODULE_INDEX: ModuleEntry[] = ALL_TABS.map((t) => {
   const base = sinTildes(t.label).split(/[^a-z0-9]+/).filter((w) => w.length > 2);
   return {
@@ -87,6 +115,7 @@ const MODULE_INDEX: ModuleEntry[] = ALL_TABS.map((t) => {
     label: t.label,
     icon: t.icon,
     keywords: [...new Set([...base, ...(SINONIMOS[t.id as string] ?? [])])],
+    subtabs: SUBTABS_POR_MODULO[t.id as string],
   };
 });
 
@@ -182,9 +211,13 @@ function searchModules(q: string): SearchResult[] {
             id: `subtab-${mod.tab}-${sub.label}`,
             type: "modulo",
             title: sub.label,
-            subtitle: `Tab en ${mod.label}`,
-            navigateTo: sub.id,
-            tab: sub.id,
+            subtitle: `En ${mod.label}`,
+            // El destino es el MÓDULO; la vista viaja en la URL (useVistaModulo
+            // la lee al montar). Antes se mandaba el id de la sub-vista como si
+            // fuera un tab de primer nivel — un destino que no existe.
+            navigateTo: mod.tab,
+            tab: mod.tab,
+            vista: sub.id,
           });
         }
       }
@@ -219,7 +252,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onOpen?: () => void;
-  onNavigate: (tab: string) => void;
+  onNavigate: (tab: string, vista?: string) => void;
 }
 
 // ── Metadatos de grupos ───────────────────────────────────────────────────────
@@ -354,7 +387,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
       if (e.key === "Enter" && flatResults[selected]) {
         const r = flatResults[selected];
         if (r.action) { r.action(); }
-        else if (r.navigateTo) { onNavigate(r.navigateTo); onClose(); }
+        else if (r.navigateTo) { onNavigate(r.navigateTo, r.vista); onClose(); }
       }
       if (e.key === "Escape") { onClose(); }
     };
@@ -365,7 +398,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
 
   const handleSelect = (r: SearchResult) => {
     if (r.action) { r.action(); }
-    else if (r.navigateTo) { onNavigate(r.navigateTo); onClose(); }
+    else if (r.navigateTo) { onNavigate(r.navigateTo, r.vista); onClose(); }
   };
 
   if (!open) return null;

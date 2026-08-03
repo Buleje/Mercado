@@ -52,6 +52,7 @@ import { exportarLibroCtp, exportarLibroCtpOficial } from "@/lib/forestal/ctp-ex
 import { printInformePeriodo } from "@/lib/forestal/ctp-informe";
 import { abrirDossierFiscalizacion } from "@/lib/forestal/ctp-dossier-abrir";
 import { resolveCtpPeriod, type CtpPeriodKey } from "@/lib/forestal/ctp-period";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import CtpPeriodPicker, { type CtpCustomRange } from "./CtpPeriodPicker";
 import CtpIngresosView from "./CtpIngresosView";
 import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
@@ -87,6 +88,7 @@ import {
   type CtpFiltroRapido,
   type CtpIngresosFiltroRapido,
 } from "./ctp-shared";
+import { CTP_VISTAS } from "@/lib/admin/subvistas-modulos";
 
 type CtpView = "ingresos" | "consumos" | "produccion" | "despacho" | "trozas" | "radar" | "planta" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "fletes" | "guias" | "directorio" | "ficha";
 
@@ -96,52 +98,58 @@ type CtpView = "ingresos" | "consumos" | "produccion" | "despacho" | "trozas" | 
  * grupos es el de un mes de trabajo: se opera, se demuestra de dónde salió,
  * se controla y recién al final se mira el negocio.
  */
+/** label y hint salen de `lib/admin/subvistas-modulos` — la MISMA fuente que
+ *  indexa el buscador global. Acá sólo se agrega lo visual (icono) y la tecla. */
+const CTP_VISTAS_POR_KEY = Object.fromEntries(CTP_VISTAS.map((v) => [v.key, { label: v.label, hint: v.hint }]));
+
 const CTP_GROUPS: LibroGroup[] = [
   {
     id: "operacion",
     label: "Operación",
     views: [
-      { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida", tecla: "i" },
-      { key: "consumos", label: "Consumos", icon: Flame, hint: "Qué madera entró a la sierra", tecla: "n" },
-      { key: "produccion", label: "Producción", icon: Boxes, hint: "Transformación", tecla: "p" },
-      { key: "despacho", label: "Despacho", icon: Truck, hint: "Salida de producto", tecla: "d" },
+      { key: "ingresos", ...CTP_VISTAS_POR_KEY["ingresos"], icon: PackageOpen, tecla: "i" },
+      { key: "consumos", ...CTP_VISTAS_POR_KEY["consumos"], icon: Flame, tecla: "n" },
+      { key: "produccion", ...CTP_VISTAS_POR_KEY["produccion"], icon: Boxes, tecla: "p" },
+      { key: "despacho", ...CTP_VISTAS_POR_KEY["despacho"], icon: Truck, tecla: "d" },
     ],
   },
   {
     id: "trazabilidad",
     label: "Trazabilidad",
     views: [
-      { key: "trozas", label: "Trozas", icon: PackageOpen, hint: "Buscar una pieza por su codificación", tecla: "t" },
-      { key: "radar", label: "Radar", icon: Share2, hint: "Cadena de custodia visual", tecla: "r" },
-      { key: "planta", label: "Planta", icon: MapPin, hint: "Mapa del aserradero", tecla: "m" },
-      { key: "eudr", label: "EUDR", icon: Globe, hint: "Geolocalización + dossier UE", tecla: "u" },
-      { key: "guias", label: "Guías emitidas", icon: FileText, hint: "Las GTF de salida del CTP y cuáles quedaron a medio llenar", tecla: "e" },
+      { key: "trozas", ...CTP_VISTAS_POR_KEY["trozas"], icon: PackageOpen, tecla: "t" },
+      { key: "radar", ...CTP_VISTAS_POR_KEY["radar"], icon: Share2, tecla: "r" },
+      { key: "planta", ...CTP_VISTAS_POR_KEY["planta"], icon: MapPin, tecla: "m" },
+      { key: "eudr", ...CTP_VISTAS_POR_KEY["eudr"], icon: Globe, tecla: "u" },
+      { key: "guias", ...CTP_VISTAS_POR_KEY["guias"], icon: FileText, tecla: "e" },
     ],
   },
   {
     id: "control",
     label: "Control",
     views: [
-      { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta", tecla: "s" },
-      { key: "resumenes", label: "Cuadros SERFOR", icon: ClipboardList, hint: "Los 3 cuadros resumen del formato oficial", tecla: "q" },
-      { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Alertas del período", tecla: "c" },
-      { key: "cierre", label: "Cierre", icon: Lock, hint: "Cerrar mes · bloquear el acta", tecla: "x" },
+      { key: "saldos", ...CTP_VISTAS_POR_KEY["saldos"], icon: Scale, tecla: "s" },
+      { key: "resumenes", ...CTP_VISTAS_POR_KEY["resumenes"], icon: ClipboardList, tecla: "q" },
+      { key: "cumplimiento", ...CTP_VISTAS_POR_KEY["cumplimiento"], icon: ShieldCheck, tecla: "c" },
+      { key: "cierre", ...CTP_VISTAS_POR_KEY["cierre"], icon: Lock, tecla: "x" },
     ],
   },
   {
     id: "gestion",
     label: "Gestión",
     views: [
-      { key: "rentabilidad", label: "Rentabilidad", icon: Coins, hint: "Margen: venta − COGS", tecla: "b" },
-      { key: "analisis", label: "Análisis", icon: TrendingUp, hint: "Reorden + tendencias", tecla: "a" },
-      { key: "fletes", label: "Fletes", icon: Truck, hint: "Lo que cuesta traer la madera y a quién se le debe", tecla: "j" },
-      { key: "directorio", label: "Directorio", icon: Users, hint: "Proveedores, compradores, transportistas y placas", tecla: "g" },
-      { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR", tecla: "f" },
+      { key: "rentabilidad", ...CTP_VISTAS_POR_KEY["rentabilidad"], icon: Coins, tecla: "b" },
+      { key: "analisis", ...CTP_VISTAS_POR_KEY["analisis"], icon: TrendingUp, tecla: "a" },
+      { key: "fletes", ...CTP_VISTAS_POR_KEY["fletes"], icon: Truck, tecla: "j" },
+      { key: "directorio", ...CTP_VISTAS_POR_KEY["directorio"], icon: Users, tecla: "g" },
+      { key: "ficha", ...CTP_VISTAS_POR_KEY["ficha"], icon: Building2, tecla: "f" },
     ],
   },
 ];
 
 const CTP_VIEW_KEYS = CTP_GROUPS.flatMap((g) => g.views.map((v) => v.key));
+/** Las mismas claves, tipadas: es lo que valida la vista que pide la URL. */
+const CTP_VIEW_KEYS_TIPADAS = CTP_VIEW_KEYS as CtpView[];
 const CTP_MODULE_ID = "ctp-libro";
 /** Vistas que YA muestran los pendientes en detalle: la tira arriba sobraría. */
 const SIN_TIRA: CtpView[] = ["cumplimiento", "cierre"];
@@ -154,18 +162,9 @@ export default function CTPLibroOperaciones() {
   const cierres = useCtpCierres();
   /** Lo anotado en el patio sin señal, esperando subir al libro. */
   const cola = usePatioCola();
-  const [view, setView] = useState<CtpView>(() => {
-    if (typeof window === "undefined") return "ingresos";
-    const saved = localStorage.getItem(`admin-last-tab-${CTP_MODULE_ID}`);
-    return saved && CTP_VIEW_KEYS.includes(saved) ? (saved as CtpView) : "ingresos";
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(`admin-last-tab-${CTP_MODULE_ID}`, view);
-    } catch {
-      // localStorage puede fallar (modo privado): sin persistencia, sin bug.
-    }
-  }, [view]);
+  // La vista vive en la URL (`?vista=`) con localStorage de memoria: así se
+  // puede compartir un link a Saldos y el atrás recorre las vistas del libro.
+  const { vista: view, irA: setView } = useVistaModulo<CtpView>(CTP_MODULE_ID, CTP_VIEW_KEYS_TIPADAS, "ingresos");
   // Default = trimestre, no "mes actual": una planta con un mes flojo abriría el
   // libro vacío teniendo datos, y "vacío al abrir" se lee como "roto".
   // El cierre mensual está a un click en el selector.

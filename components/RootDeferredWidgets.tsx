@@ -56,7 +56,9 @@ export default function RootDeferredWidgets() {
   // acciones repetidas. Cada panel ya trae la suya (GlobalSearch en admin,
   // superadmin/CommandPalette en superadmin) y son las que conocen sus módulos.
   const pathname = usePathname();
-  const hasOwnPalette = pathname?.startsWith("/admin") || pathname?.startsWith("/superadmin");
+  // `startsWith` no cubría el admin multi-tenant, que vive en `/t/<slug>/admin`:
+  // ahí el guard nunca aplicaba y las dos paletas seguían apiladas.
+  const hasOwnPalette = /(^|\/)(admin|superadmin)(\/|$)/.test(pathname ?? "");
 
   return (
     <>

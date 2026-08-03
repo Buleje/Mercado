@@ -55,7 +55,8 @@ export interface AdminGlobalModalsProps {
   // Global search
   searchOpen: boolean;
   setSearchOpen: (v: boolean) => void;
-  navigateTab: (tab: Tab) => void;
+  /** `vista` opcional: sub-vista dentro del módulo destino (la manda el buscador). */
+  navigateTab: (tab: Tab, vista?: string) => void;
 
   // Cierre diario
   showCierreDiario: boolean;
@@ -116,10 +117,15 @@ export function AdminGlobalModals(props: AdminGlobalModalsProps) {
         demoDataModuleKeys={clearData.demoDataModuleKeys}
       />
 
+      {/* `onOpen` nunca se pasaba, así que el Ctrl+K de la propia búsqueda del
+          panel no podía abrirla: el único que respondía era el de la paleta del
+          storefront (root layout), con su lista corta escrita a mano. El botón
+          del encabezado anunciaba «atajo Ctrl+K» y abría otra cosa. */}
       <GlobalSearch
         open={searchOpen}
+        onOpen={() => setSearchOpen(true)}
         onClose={() => setSearchOpen(false)}
-        onNavigate={(t) => navigateTab(t as Tab)}
+        onNavigate={(t, vista) => navigateTab(t as Tab, vista)}
       />
 
       <CierreDiarioModal

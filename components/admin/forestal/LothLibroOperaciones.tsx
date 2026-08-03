@@ -61,6 +61,8 @@ import LothCierrePanel from "./LothCierrePanel";
 import LothMapaView from "./LothMapaView";
 import LothRentabilidadPanel from "./LothRentabilidadPanel";
 import type { LothNavTarget } from "@/lib/forestal/loth-compliance";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
+import { LOTH_VISTAS } from "@/lib/admin/subvistas-modulos";
 
 type LothEntry = LothEntryDTO;
 
@@ -136,43 +138,49 @@ type LothView = "secciones" | "trazabilidad" | "plan" | "gtf" | "analitica" | "c
 // vistas agrupadas por fase, con los MISMOS nombres de grupo que el otro libro
 // — quien sabe moverse en uno se mueve en el otro sin volver a aprender.
 const LOTH_MODULE_ID = "loth-libro";
+/** label y hint salen de `lib/admin/subvistas-modulos` — la MISMA fuente que
+ *  indexa el buscador global. Acá sólo se agrega lo visual (icono) y la tecla. */
+const LOTH_VISTAS_POR_KEY = Object.fromEntries(LOTH_VISTAS.map((v) => [v.key, { label: v.label, hint: v.hint }]));
+
 const LOTH_GROUPS: LibroGroup[] = [
   {
     id: "operacion",
     label: "Operación",
     views: [
-      { key: "secciones", label: "Secciones", icon: Layers, hint: "Las 6 secciones SERFOR" },
-      { key: "gtf", label: "GTF", icon: Truck, hint: "Guías de transporte forestal" },
+      { key: "secciones", ...LOTH_VISTAS_POR_KEY["secciones"], icon: Layers },
+      { key: "gtf", ...LOTH_VISTAS_POR_KEY["gtf"], icon: Truck },
     ],
   },
   {
     id: "trazabilidad",
     label: "Trazabilidad",
     views: [
-      { key: "plan", label: "Plan de Manejo", icon: MapIcon, hint: "Censo + especies autorizadas" },
-      { key: "mapa", label: "Mapa", icon: MapPin, hint: "Dónde se taló cada árbol (GPS de campo)" },
-      { key: "trazabilidad", label: "Por árbol", icon: Share2, hint: "Operación completa de un árbol" },
+      { key: "plan", ...LOTH_VISTAS_POR_KEY["plan"], icon: MapIcon },
+      { key: "mapa", ...LOTH_VISTAS_POR_KEY["mapa"], icon: MapPin },
+      { key: "trazabilidad", ...LOTH_VISTAS_POR_KEY["trazabilidad"], icon: Share2 },
     ],
   },
   {
     id: "control",
     label: "Control",
     views: [
-      { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Veredicto de fiscalización + reporte imprimible" },
-      { key: "cierre", label: "Cierre", icon: Lock, hint: "Cerrar el mes → acta inmutable (OSINFOR)" },
+      { key: "cumplimiento", ...LOTH_VISTAS_POR_KEY["cumplimiento"], icon: ShieldCheck },
+      { key: "cierre", ...LOTH_VISTAS_POR_KEY["cierre"], icon: Lock },
     ],
   },
   {
     id: "gestion",
     label: "Gestión",
     views: [
-      { key: "rentabilidad", label: "Rentabilidad", icon: Coins, hint: "Margen por especie (ingreso − costos)" },
-      { key: "analitica", label: "Analítica", icon: TrendingUp, hint: "Aprovechamiento + anomalías" },
+      { key: "rentabilidad", ...LOTH_VISTAS_POR_KEY["rentabilidad"], icon: Coins },
+      { key: "analitica", ...LOTH_VISTAS_POR_KEY["analitica"], icon: TrendingUp },
     ],
   },
 ];
 
 const LOTH_VIEW_KEYS = LOTH_GROUPS.flatMap((g) => g.views.map((v) => v.key));
+/** Las mismas claves, tipadas: es lo que valida la vista que pide la URL. */
+const LOTH_VIEW_KEYS_TIPADAS = LOTH_VIEW_KEYS as LothView[];
 
 export default function LothLibroOperaciones() {
   const [section, setSection] = useState<LothSection>("tala");
@@ -192,20 +200,9 @@ export default function LothLibroOperaciones() {
   // se refresquen solos, sin depender de que el usuario apriete "Recargar".
   const [reloadSignal, setReloadSignal] = useState(0);
   const [pending, setPending] = useState<string | null>(null);
-  const [view, setView] = useState<LothView>(() => {
-    if (typeof window === "undefined") return "secciones";
-    const saved = localStorage.getItem(`admin-last-tab-${LOTH_MODULE_ID}`);
-    return saved && LOTH_VIEW_KEYS.includes(saved) ? (saved as LothView) : "secciones";
-  });
-  /** Estable: la cabina la registra en el contexto del sidebar y en atajos. */
-  const irA = useCallback((v: string) => setView(v as LothView), []);
-  useEffect(() => {
-    try {
-      localStorage.setItem(`admin-last-tab-${LOTH_MODULE_ID}`, view);
-    } catch {
-      // localStorage puede fallar (modo privado): sin persistencia, sin bug.
-    }
-  }, [view]);
+  // Misma cabina que el CTP: la vista vive en la URL con memoria de respaldo.
+  const { vista: view, irA } = useVistaModulo<LothView>(LOTH_MODULE_ID, LOTH_VIEW_KEYS_TIPADAS, "secciones");
+  const setView = irA;
   const [allEntries, setAllEntries] = useState<LothEntry[]>([]);
   /** Censo del plan activo — alimenta el cuadro "censo vs realidad". */
   const [censoArboles, setCensoArboles] = useState<
