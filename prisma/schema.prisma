@@ -4922,6 +4922,7 @@ model DocumentTemplate {
 enum AdelantoModalidad {
   CUENTA_CORRIENTE // saldo se consume libremente con cada entrega
   ENTREGAS_PACTADAS // plan fijo de entregas esperadas
+  DESCUENTO_PLANILLA // adelanto de sueldo: se descuenta del pago del período (ADR-329)
 }
 
 enum AdelantoStatus {
@@ -4982,6 +4983,14 @@ model AdelantoRecurrente {
 model Adelanto {
   id               String                   @id @default(cuid())
   tenantId         String
+  /// (ADR-329) El identificador que se dice por teléfono y se escribe en el
+  /// papel: «ADL-2026-0007». El `id` es un cuid de 25 caracteres — sirve para la
+  /// máquina, no para alguien que tiene que buscarlo o dictarlo. Único POR
+  /// TENANT: cada negocio lleva su numeración.
+  codigoOperacion  String?
+  /// N° del talonario de papel que se le entregó a la persona: el puente entre
+  /// el sistema y lo que quedó firmado sobre el mostrador.
+  reciboManual     String?
   beneficiarioId   String
   modalidad        AdelantoModalidad        @default(CUENTA_CORRIENTE)
   montoAdelantado  Decimal                  @db.Decimal(12, 2)
@@ -4999,8 +5008,10 @@ model Adelanto {
   entregas         AdelantoEntrega[]
   entregasPactadas AdelantoEntregaPactada[]
 
+  @@unique([tenantId, codigoOperacion])
   @@index([tenantId, status])
   @@index([tenantId, fechaAdelanto])
+  @@index([tenantId, reciboManual])
   @@index([beneficiarioId])
 }
 

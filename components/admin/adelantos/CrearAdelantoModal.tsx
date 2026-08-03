@@ -27,6 +27,47 @@ import { Field, ModalActions, ModalShell, fmtMon, inputCls } from "./shared";
 
 const MONEDAS = ["PEN", "USD"] as const;
 
+/**
+ * Las tres modalidades. `DESCUENTO_PLANILLA` (ADR-329) es el adelanto de sueldo,
+ * de los más comunes acá: hasta ahora había que forzarlo como cuenta corriente
+ * y el motivo se perdía. La mecánica de liquidación es la misma; lo que cambia
+ * es de dónde sale la entrega — del pago del mes, no de un producto.
+ */
+const MODALIDADES = [
+  { id: "CUENTA_CORRIENTE", label: "Cuenta corriente", hint: "Se liquida con lo que vaya entregando" },
+  { id: "ENTREGAS_PACTADAS", label: "Entregas pactadas", hint: "Plan fijo de entregas con fecha" },
+  { id: "DESCUENTO_PLANILLA", label: "Descuento por planilla", hint: "Adelanto de sueldo: se descuenta del pago" },
+] as const;
+
+/**
+ * Notas rápidas: los motivos que se repiten, a un toque.
+ *
+ * Escribir el motivo a mano en cada adelanto termina en notas vacías o en tres
+ * formas distintas de decir lo mismo, que después no se pueden buscar. Se
+ * guardan en el navegador porque son de quien atiende, no del negocio: cada
+ * bodega usa las suyas y no vale la pena una tabla para esto.
+ */
+const NOTAS_KEY = "buleje:adelantos-notas-rapidas";
+const NOTAS_POR_DEFECTO = [
+  "Adelanto de sueldo",
+  "Compra de insumos",
+  "Emergencia familiar",
+  "Adelanto por cosecha",
+  "Pago de flete",
+];
+
+function leerNotasRapidas(): string[] {
+  if (typeof window === "undefined") return NOTAS_POR_DEFECTO;
+  try {
+    const raw = window.localStorage.getItem(NOTAS_KEY);
+    if (!raw) return NOTAS_POR_DEFECTO;
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) && arr.every((x) => typeof x === "string") ? arr : NOTAS_POR_DEFECTO;
+  } catch {
+    return NOTAS_POR_DEFECTO;
+  }
+}
+
 export type BeneficiarioConSaldo = DbBeneficiario & {
   totalAdelantado: number;
   saldoPendiente: number;
@@ -59,7 +100,9 @@ export default function CrearAdelantoModal({
   const [monto, setMonto] = useState("");
   const [moneda, setMoneda] = useState<"PEN" | "USD">("PEN");
   const [notas, setNotas] = useState("");
+  const [reciboManual, setReciboManual] = useState("");
   const [comprobante, setComprobante] = useState<string | null>(null);
+  const [notasRapidas, setNotasRapidas] = useState<string[]>(leerNotasRapidas);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -87,8 +130,14 @@ export default function CrearAdelantoModal({
       setErr("Elegí una persona y un monto válido.");
       return;
     }
-    // Confirmación explícita: saltarse el tope es una decisión, no un descuido.
-    if (credito.estado === "excede" && !window.confirm(`${credito.aviso}\n\n¿Registrar el adelanto igual?`)) return;
+    /**
+     * Saltarse el tope es una decisión, no un descuido: se confirma acá y recién
+     * entonces viaja `forzarLimite`. El backend sigue rechazando por defecto —si
+     * este flag no va, el guard de siempre actúa— y deja anotado en el adelanto
+     * que se autorizó por encima, para que dentro de un mes se pueda explicar.
+     */
+    const forzarLimite = credito.estado === "excede";
+    if (forzarLimite && !window.confirm(`${credito.aviso}\n\n¿Registrar el adelanto igual? Va a quedar anotado que se autorizó por encima del tope.`)) return;
     setSaving(true);
     const res = await fetch("/api/adelantos", {
       method: "POST",
@@ -100,7 +149,9 @@ export default function CrearAdelantoModal({
         montoAdelantado: m,
         moneda,
         notas: notas.trim() || undefined,
+        reciboManual: reciboManual.trim() || undefined,
         comprobanteUrl: comprobante || undefined,
+        forzarLimite: forzarLimite || undefined,
       }),
     });
     setSaving(false);
@@ -196,19 +247,22 @@ export default function CrearAdelantoModal({
 
       {/* ── El adelanto ─────────────────────────────────────────────────── */}
       <Field label="Modalidad">
-        <div className="grid grid-cols-2 gap-2">
-          {([["CUENTA_CORRIENTE", "Cuenta corriente"], ["ENTREGAS_PACTADAS", "Entregas pactadas"]] as const).map(([val, lbl]) => (
+        <div className="grid gap-2 sm:grid-cols-3">
+          {MODALIDADES.map((m) => (
             <button
-              key={val}
+              key={m.id}
               type="button"
-              onClick={() => setModalidad(val)}
-              className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${
-                modalidad === val
+              onClick={() => setModalidad(m.id)}
+              /* La pista debajo del nombre: «entregas pactadas» y «descuento por
+                 planilla» no se distinguen por el título si es la primera vez. */
+              className={`flex flex-col items-start gap-0.5 rounded-2xl border-2 px-3 py-2.5 text-left transition-colors ${
+                modalidad === m.id
                   ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                  : "border-[var(--rule-base)] text-[var(--text-secondary)]"
+                  : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/50"
               }`}
             >
-              {lbl}
+              <span className="text-base font-bold">{m.label}</span>
+              <span className="text-xs font-medium opacity-70">{m.hint}</span>
             </button>
           ))}
         </div>
@@ -236,9 +290,34 @@ export default function CrearAdelantoModal({
         </Field>
       </div>
 
+      {/* El N° del talonario, al lado del monto: es lo que se escribe en el
+          papel en ese mismo momento. Buscar por él funciona igual que por el
+          código de operación. */}
+      <Field label="N° de recibo manual (opcional)">
+        <input
+          value={reciboManual}
+          onChange={(e) => setReciboManual(e.target.value)}
+          placeholder="Ej. 001-04578"
+          aria-label="Número de recibo manual"
+          className={`${inputCls} tabular-nums`}
+        />
+      </Field>
+
       <Field label="Notas (opcional)">
         <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} className={`${inputCls} py-3`} />
       </Field>
+      <NotasRapidas
+        opciones={notasRapidas}
+        onElegir={(t) => setNotas((n) => (n.trim() ? `${n.trim()} · ${t}` : t))}
+        onCambiarOpciones={(nuevas) => {
+          setNotasRapidas(nuevas);
+          try {
+            window.localStorage.setItem(NOTAS_KEY, JSON.stringify(nuevas));
+          } catch {
+            // sin persistencia, sin bug: la sesión igual las usa
+          }
+        }}
+      />
 
       <Field label="Comprobante (opcional)">
         <Comprobante
@@ -253,6 +332,89 @@ export default function CrearAdelantoModal({
 
       {conCamara && <CapturaFoto onSubida={setComprobante} onCerrar={() => setConCamara(false)} />}
     </ModalShell>
+  );
+}
+
+/**
+ * Los motivos que se repiten, a un toque — y editables.
+ *
+ * Escribir el motivo a mano en cada adelanto termina en notas vacías o en tres
+ * formas distintas de decir lo mismo, que después no se pueden buscar. Suma al
+ * texto en vez de reemplazarlo: se pueden encadenar («Adelanto de sueldo ·
+ * Emergencia familiar») sin perder lo ya escrito.
+ */
+function NotasRapidas({
+  opciones,
+  onElegir,
+  onCambiarOpciones,
+}: {
+  opciones: string[];
+  onElegir: (texto: string) => void;
+  onCambiarOpciones: (nuevas: string[]) => void;
+}) {
+  const [editando, setEditando] = useState(false);
+  const [nueva, setNueva] = useState("");
+
+  const agregar = () => {
+    const t = nueva.trim();
+    if (!t || opciones.includes(t)) return;
+    onCambiarOpciones([...opciones, t]);
+    setNueva("");
+  };
+
+  return (
+    <div className="-mt-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {opciones.map((t) => (
+          <span key={t} className="inline-flex items-center">
+            <button
+              type="button"
+              onClick={() => onElegir(t)}
+              className="rounded-full border border-[var(--rule-base)] px-3 py-1 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+            >
+              {t}
+            </button>
+            {editando && (
+              <button
+                type="button"
+                onClick={() => onCambiarOpciones(opciones.filter((x) => x !== t))}
+                aria-label={`Quitar la nota rápida ${t}`}
+                className="-ml-1 rounded-full px-1.5 text-sm font-bold text-[var(--data-error)] hover:underline"
+              >
+                ×
+              </button>
+            )}
+          </span>
+        ))}
+        <button
+          type="button"
+          onClick={() => setEditando((v) => !v)}
+          className="rounded-full px-2 py-1 text-sm font-bold text-[var(--text-tertiary)] underline-offset-2 hover:underline"
+        >
+          {editando ? "Listo" : "Personalizar"}
+        </button>
+      </div>
+
+      {editando && (
+        <div className="mt-2 flex gap-2">
+          <input
+            value={nueva}
+            onChange={(e) => setNueva(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); agregar(); } }}
+            placeholder="Agregar una nota rápida…"
+            aria-label="Nueva nota rápida"
+            className={`${inputCls} h-10`}
+          />
+          <button
+            type="button"
+            onClick={agregar}
+            className="h-10 shrink-0 rounded-xl bg-primary px-4 text-sm font-bold text-white hover:bg-primary-dark"
+          >
+            Agregar
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

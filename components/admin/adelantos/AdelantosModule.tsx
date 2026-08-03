@@ -33,6 +33,7 @@ import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { estadoDeCredito, ordenarPorRiesgoDeCredito, requiereAtencion } from "@/lib/adelantos/limite-credito";
+import { normalizarBusquedaCodigo } from "@/lib/adelantos/codigo-operacion";
 import {
   bucketDe,
   deudoresDeCobranza,
@@ -356,7 +357,21 @@ function AdelantosView({
 
   const filtrados = adelantos.filter((a) => {
     const okEstado = filtro === "TODOS" || a.status === filtro;
-    const okQ = !q.trim() || (a.beneficiario?.nombre ?? "").toLowerCase().includes(q.trim().toLowerCase());
+    const texto = q.trim().toLowerCase();
+    /**
+     * Se busca por lo que una persona tiene a mano: el nombre, el código de
+     * operación —dictado como sea: «2026-7», «adl-2026-7»— o el número del
+     * recibo de papel. Filtrar sólo por nombre obligaba a saber a quién
+     * pertenece un recibo antes de poder encontrarlo.
+     */
+    const codigoBuscado = normalizarBusquedaCodigo(q);
+    const okQ =
+      !texto ||
+      (a.beneficiario?.nombre ?? "").toLowerCase().includes(texto) ||
+      (a.reciboManual ?? "").toLowerCase().includes(texto) ||
+      (codigoBuscado
+        ? a.codigoOperacion === codigoBuscado
+        : (a.codigoOperacion ?? "").toLowerCase().includes(texto));
     return okEstado && okQ;
   });
 
@@ -410,7 +425,7 @@ function AdelantosView({
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar persona..."
+                placeholder="Buscar por persona, código (ADL-2026-7) o recibo…"
                 className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </div>
@@ -450,7 +465,18 @@ function AdelantosView({
                 const pct = a.montoAdelantado > 0 ? Math.min(100, Math.max(0, Math.round(((a.montoAdelantado - a.saldoPendiente) / a.montoAdelantado) * 100))) : 0;
                 return (
                   <tr key={a.id} onClick={() => setDetalle(a)} className="cursor-pointer hover:bg-[var(--surface-sunken)]/50 transition-colors">
-                    <td className="px-4 py-3 font-bold text-[var(--text-primary)]">{a.beneficiario?.nombre ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <span className="block font-bold text-[var(--text-primary)]">{a.beneficiario?.nombre ?? "—"}</span>
+                      {/* El código de operación (ADR-329) va acá y no en su
+                          propia columna: se lee junto al nombre, que es como se
+                          identifica el adelanto por teléfono. */}
+                      {(a.codigoOperacion || a.reciboManual) && (
+                        <span className="mt-0.5 flex flex-wrap items-center gap-x-2 font-mono text-xs text-[var(--text-tertiary)]">
+                          {a.codigoOperacion && <span>{a.codigoOperacion}</span>}
+                          {a.reciboManual && <span title="N° del recibo de papel">· recibo {a.reciboManual}</span>}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 tabular-nums text-[var(--text-secondary)]">{fmtMon(a.montoAdelantado, a.moneda)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -770,7 +796,7 @@ function PersonasView({
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar persona..."
+                placeholder="Buscar por persona, código (ADL-2026-7) o recibo…"
                 className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </div>
@@ -1391,7 +1417,7 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
         <button className={chip(tipo === "entrega")} onClick={() => setTipo("entrega")}>Entregas</button>
         <div className="relative ml-auto min-w-[200px] flex-1 sm:flex-none">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar persona..." className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por persona, código (ADL-2026-7) o recibo…" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary" />
         </div>
         <button onClick={exportarPdf} disabled={filtrados.length === 0} className="inline-flex items-center gap-1 h-12 px-4 rounded-xl border border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50">
           <FileText className="h-5 w-5" /> PDF

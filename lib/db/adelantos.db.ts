@@ -1,6 +1,11 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
+import {
+  PREFIJO_ADELANTO,
+  normalizarBusquedaCodigo,
+  siguienteCodigo,
+} from "@/lib/adelantos/codigo-operacion";
 
 /**
  * AdelantosDB — Adelantos de dinero a personas/proveedores por servicios,
@@ -14,7 +19,7 @@ import type { Prisma } from "@/lib/generated/prisma/client";
  */
 
 // ── Types ───────────────────────────────────────────────────────────────────
-export type AdelantoModalidad = "CUENTA_CORRIENTE" | "ENTREGAS_PACTADAS";
+export type AdelantoModalidad = "CUENTA_CORRIENTE" | "ENTREGAS_PACTADAS" | "DESCUENTO_PLANILLA";
 export type AdelantoStatus = "ABIERTO" | "LIQUIDADO" | "EXCEDIDO" | "CANCELADO";
 export type AdelantoEntregaTipo = "LIBRE" | "PRODUCTO";
 
@@ -91,6 +96,10 @@ export type DbEntregaPactada = {
 export type DbAdelanto = {
   id: string;
   tenantId: string;
+  /** «ADL-2026-0007» — el que se dicta por teléfono (ADR-329). */
+  codigoOperacion?: string | null;
+  /** N° del talonario de papel firmado. */
+  reciboManual?: string | null;
   beneficiarioId: string;
   beneficiario?: DbBeneficiario;
   modalidad: AdelantoModalidad;
@@ -140,6 +149,8 @@ function mapAdelanto(row: AdelantoRow): DbAdelanto {
   return {
     id: row.id,
     tenantId: row.tenantId,
+    codigoOperacion: row.codigoOperacion,
+    reciboManual: row.reciboManual,
     beneficiarioId: row.beneficiarioId,
     beneficiario: row.beneficiario ? mapBeneficiario(row.beneficiario) : undefined,
     modalidad: row.modalidad as AdelantoModalidad,
@@ -186,7 +197,19 @@ export type AdelantoCreateInput = {
   fechaAdelanto?: string;
   notas?: string;
   comprobanteUrl?: string;
+  /** N° del talonario de papel que firmó la persona (ADR-329). */
+  reciboManual?: string;
   entregasPactadas?: EntregaPactadaInput[]; // solo modalidad ENTREGAS_PACTADAS
+  /**
+   * Pasar por encima del límite de crédito, a sabiendas.
+   *
+   * El tope sigue bloqueando por DEFECTO —un desborde por descuido es un
+   * desborde— pero es plata del dueño y hay clientes de años a los que se les
+   * fía de más a propósito. La pantalla avisa con el número exacto y pide
+   * confirmación; recién entonces manda esto. Queda en las notas del adelanto,
+   * porque una decisión así tiene que poder explicarse después.
+   */
+  forzarLimite?: boolean;
 };
 
 export type EntregaInput = {
@@ -208,6 +231,27 @@ export type AdelantoListFilters = {
   modalidad?: AdelantoModalidad;
   search?: string;
 };
+
+/**
+ * El próximo código de operación del tenant (ADR-329).
+ *
+ * Se calcula sobre los códigos YA EMITIDOS del año, no con un `count(*)`: si un
+ * adelanto se cancela, el contador no puede retroceder y reusar un número que ya
+ * anda escrito en un recibo de papel.
+ *
+ * El índice único `(tenantId, codigoOperacion)` es la red: si dos altas
+ * simultáneas piden el mismo, la segunda falla en la base en vez de duplicar.
+ */
+async function siguienteCodigoDeTenant(tenantId: string): Promise<string> {
+  const anio = new Date().getFullYear();
+  const emitidos = await prisma.adelanto.findMany({
+    where: { tenantId, codigoOperacion: { startsWith: `${PREFIJO_ADELANTO}-${anio}-` } },
+    select: { codigoOperacion: true },
+    orderBy: { codigoOperacion: "desc" },
+    take: 1,
+  });
+  return siguienteCodigo(emitidos.map((e) => e.codigoOperacion), anio);
+}
 
 // ── DB ───────────────────────────────────────────────────────────────────────
 export const AdelantosDB = {
@@ -285,9 +329,14 @@ export const AdelantosDB = {
     if (filters?.beneficiarioId) where.beneficiarioId = filters.beneficiarioId;
     if (filters?.modalidad) where.modalidad = filters.modalidad;
     if (filters?.search) {
+      // Un código dictado («2026-7», «adl-2026-7») se normaliza y se busca
+      // EXACTO; el resto va por nombre, notas y recibo de papel.
+      const comoCodigo = normalizarBusquedaCodigo(filters.search);
       where.OR = [
         { beneficiario: { nombre: { contains: filters.search, mode: "insensitive" } } },
         { notas: { contains: filters.search, mode: "insensitive" } },
+        { reciboManual: { contains: filters.search, mode: "insensitive" } },
+        { codigoOperacion: comoCodigo ? { equals: comoCodigo } : { contains: filters.search, mode: "insensitive" } },
       ];
     }
     const rows = await prisma.adelanto.findMany({
@@ -306,6 +355,8 @@ export const AdelantosDB = {
 
   async create(tenantId: string, data: AdelantoCreateInput): Promise<DbAdelanto> {
     const monto = Math.round(data.montoAdelantado * 100) / 100;
+    /** Se llena sólo si se pasó el tope a propósito; va a las notas. */
+    let excedioLimite = "";
     const modalidad = data.modalidad ?? "CUENTA_CORRIENTE";
     const pactadas = modalidad === "ENTREGAS_PACTADAS" ? (data.entregasPactadas ?? []) : [];
 
@@ -321,8 +372,13 @@ export const AdelantosDB = {
         _sum: { saldoPendiente: true },
       });
       const actual = Number(abiertos._sum.saldoPendiente ?? 0);
-      if (actual + monto > limite) {
+      if (actual + monto > limite && !data.forzarLimite) {
         throw new Error(`Supera el límite de crédito de ${benef.nombre} (S/${limite.toFixed(2)}). Ya tiene S/${actual.toFixed(2)} sin liquidar.`);
+      }
+      if (actual + monto > limite && data.forzarLimite) {
+        // Que quede escrito en el adelanto: dentro de un mes nadie se acuerda de
+        // que fue una decisión y parece un error del sistema.
+        excedioLimite = `Se autorizó por encima del límite (S/${limite.toFixed(2)}; quedaba S/${Math.max(0, limite - actual).toFixed(2)}).`;
       }
     }
 
@@ -336,7 +392,9 @@ export const AdelantosDB = {
         fechaAdelanto: data.fechaAdelanto ? new Date(data.fechaAdelanto) : new Date(),
         status: "ABIERTO",
         saldoPendiente: monto, // arranca con saldo completo a favor del negocio
-        notas: data.notas?.trim() || null,
+        codigoOperacion: await siguienteCodigoDeTenant(tenantId),
+        reciboManual: data.reciboManual?.trim() || null,
+        notas: [data.notas?.trim(), excedioLimite].filter(Boolean).join(" · ") || null,
         comprobanteUrl: data.comprobanteUrl?.trim() || null,
         entregasPactadas: pactadas.length
           ? {
