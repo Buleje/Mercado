@@ -17,7 +17,7 @@ import {
   ClipboardList,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { Btn, Field, I, ModalFooter, Seccion } from "./ctp-shared";
+import { Btn, estaFueraDePlazo, Field, I, ModalFooter, PLAZO_REGISTRO_DIAS, Seccion } from "./ctp-shared";
 import CtpParteBarra from "./CtpParteBarra";
 import CtpTrozasImportModal from "./CtpTrozasImportModal";
 import type { TrozaImportada } from "@/lib/forestal/trozas-import";
@@ -660,6 +660,27 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   const isValid = missing.length === 0;
 
   /**
+   * Dos avisos sobre las fechas, calculados con la MISMA función que juzga el
+   * libro (`estaFueraDePlazo`) para que el formulario no prometa algo distinto
+   * de lo que después va a mostrar la tabla:
+   *
+   *   · el ingreso quedaría registrado fuera del plazo de SERFOR — se avisa
+   *     ANTES de guardar, no después con un chip rojo en la lista;
+   *   · la madera no puede haber entrado ANTES de que se emitiera su guía;
+   *     eso es un typo de fecha, y hasta ahora se guardaba sin chistar.
+   */
+  const avisoPlazo = useMemo(() => {
+    if (!data.entryDate) return null;
+    if (data.gtfDate && data.entryDate < data.gtfDate) {
+      return "El ingreso al CTP es anterior a la fecha de la guía: revisá las fechas.";
+    }
+    const tarde = estaFueraDePlazo({ entryDate: data.entryDate, createdAt: new Date().toISOString() });
+    return tarde
+      ? `Registrarlo hoy queda fuera del plazo de ${PLAZO_REGISTRO_DIAS} días hábiles.`
+      : null;
+  }, [data.entryDate, data.gtfDate]);
+
+  /**
    * Qué secciones ya están listas. Se deriva de `missing`, la MISMA lista que
    * bloquea el registro: si el tilde verde y el botón se calcularan por separado
    * terminarían diciendo cosas distintas —una sección "completa" que igual no
@@ -920,10 +941,20 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
               </div>
             )}
 
-            {/* 2 columnas explícitas en pantallas anchas (xl+): [1·2·3 | 4·5·6].
-                NO usamos CSS multicol porque, con la altura fija del panel, hace
-                column-fill:auto y desborda las secciones a una 3ª columna fuera
-                del form. El grid explícito es determinístico. */}
+            {/* Rediseño 2026-08-03 — el grid reparte por FILAS, no por columnas.
+                Antes eran dos columnas independientes, [1·2·3 | 4·5·6], y eso
+                rompía las dos cosas que importan al transcribir una guía:
+                  · el ORDEN DE LECTURA — se bajaba por 01→03 y había que SUBIR
+                    al tope de la otra columna para el 04, aunque el formulario
+                    está numerado como el papel que se copia;
+                  · el ESPACIO — medido: la izquierda pedía 987px y la derecha
+                    786, así que quedaban ~200px de aire muerto a la derecha
+                    mientras a la izquierda seguían habiendo campos.
+                Con las secciones como hijas DIRECTAS del grid fluyen 01·02 /
+                03·04 / 05·06: se lee izquierda→derecha como se numera, y el
+                aire sobrante se reparte por fila en vez de acumularse al pie de
+                una columna. (Sigue sin ser CSS multicol: con altura fija hace
+                column-fill:auto y desborda a una 3ª columna fuera del form.) */}
             {/* Selector de modo: es lo primero que se decide al abrir el alta. */}
             <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl bg-[var(--surface-sunken)] p-3">
               <SegmentedControl
@@ -1020,14 +1051,13 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
               </div>
             )}
 
-            <div className={modo === "manual" ? "xl:grid xl:grid-cols-2 xl:gap-x-5 xl:items-start" : "hidden"}>
-            <div>
+            <div className={modo === "manual" ? "xl:grid xl:grid-cols-2 xl:items-start xl:gap-x-5" : "hidden"}>
             {/* ─── 1 · GTF ─────────────────────────────────────────── */}
             <Seccion numero={1} title="Guía de Transporte Forestal" estado={estadoSeccion.guia}>
               {/* (3) del formato LO-CTP: casi siempre GTF, pero la madera también
                   puede entrar con Guía de Remisión Remitente y el libro tiene
                   que decir con cuál (ADR-311). */}
-              <Field span={12} label="Tipo de documento" required casillero={3}>
+              <Field span={6} label="Tipo de documento" required casillero={3}>
                 <select
                   value={data.docType}
                   onChange={(e) => update("docType", e.target.value)}
@@ -1039,6 +1069,15 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   ))}
                 </select>
               </Field>
+                <Field span={6} label="Serie">
+                  <input
+                    type="text"
+                    value={data.gtfSeries}
+                    onChange={(e) => update("gtfSeries", e.target.value)}
+                    placeholder="A001"
+                    className={I}
+                  />
+                </Field>
               <Field span={12} label="N° GTF" required hint="Escribí el número y tocá «Cargar guía» para traer todos los datos.">
                 {/* El número manda: fila propia. Con los tres botones al lado,
                     al input le quedaban 35px de ancho y no se veía lo tipeado. */}
@@ -1123,6 +1162,11 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   </div>
                 </div>
               )}
+                {/* Las DOS fechas, juntas y en ese orden: la distancia entre
+                    ellas es la que decide si el registro entra en el plazo de
+                    SERFOR (2 días hábiles, RDE D000025-2023). Estaban separadas
+                    por el campo Serie, así que el desfase —lo único que se mira
+                    acá— había que calcularlo de memoria. */}
                 <Field span={6} label="Fecha del GTF">
                   <input
                     type="date"
@@ -1131,162 +1175,21 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     className={I}
                   />
                 </Field>
-                <Field span={6} label="Serie">
+                <Field span={6} label="Fecha de ingreso al CTP" required hint={avisoPlazo ?? undefined}>
                   <input
-                    type="text"
-                    value={data.gtfSeries}
-                    onChange={(e) => update("gtfSeries", e.target.value)}
-                    placeholder="A001"
-                    className={I}
-                  />
-                </Field>
-              <Field span={12} label="Fecha de ingreso al CTP" required>
-                <input
-                  type="date"
-                  value={data.entryDate}
-                  onChange={(e) => update("entryDate", e.target.value)}
-                  required
-                  className={I}
-                />
-              </Field>
-            </Seccion>
-
-            {/* ─── 2 · Titular ─────────────────────────────────────── */}
-            <Seccion numero={2} title="Titular habilitante" estado={estadoSeccion.titular}>
-              {/* La libreta del CTP (ADR-317): el mismo titular trae madera todo
-                  el año y su nombre entraba escrito distinto cada vez. */}
-              <div className="sm:col-span-12">
-                <CtpParteBarra
-                  rol="proveedor"
-                  valor={{
-                    nombre: data.providerName,
-                    docTipo: (data.providerDocumentType || "RUC") as DocTipo,
-                    docNumero: data.providerDocument,
-                    direccion: "",
-                  }}
-                  opciones={directorio.porRol("proveedor")}
-                  onAplicar={(v) => {
-                    if (v.nombre !== undefined) update("providerName", v.nombre);
-                    if (v.docNumero !== undefined) update("providerDocument", v.docNumero);
-                    if (v.docTipo !== undefined) update("providerDocumentType", v.docTipo);
-                  }}
-                  onElegir={(parte) => {
-                    partesUsadas.current.add(parte.id);
-                    // El título habilitante del proveedor propone el código de
-                    // origen, pero SÓLO si está vacío: lo tipeado manda.
-                    if (parte.tituloHabilitante) {
-                      setData((prev) => (prev.originCode ? prev : { ...prev, originCode: parte.tituloHabilitante ?? "" }));
-                    }
-                  }}
-                  onGuardar={async (v) => {
-                    const parte = await directorio.guardarParte({
-                      roles: ["proveedor"],
-                      nombre: v.nombre,
-                      docTipo: v.docTipo,
-                      docNumero: v.docNumero,
-                      // El código de origen del ingreso ES el título con el que
-                      // extrae: se guarda con el proveedor para la próxima guía.
-                      tituloHabilitante: data.originCode.trim() || undefined,
-                    });
-                    partesUsadas.current.add(parte.id);
-                  }}
-                />
-              </div>
-              <Field span={12} label="Nombre o razón social" required>
-                <input
-                  type="text"
-                  value={data.providerName}
-                  onChange={(e) => update("providerName", e.target.value)}
-                  placeholder="Concesión Forestal X"
-                  required
-                  className={I}
-                />
-              </Field>
-                <Field span={4} label="Tipo doc">
-                  <select
-                    value={data.providerDocumentType}
-                    onChange={(e) => update("providerDocumentType", e.target.value)}
-                    className={I}
-                  >
-                    {DOC_TYPES.map((d) => (
-                      <option key={d.value} value={d.value}>{d.label}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field span={8} label="Número">
-                  <input
-                    type="text"
-                    value={data.providerDocument}
-                    onChange={(e) => update("providerDocument", e.target.value)}
-                    placeholder={data.providerDocumentType === "RUC" ? "20XXXXXXXXX" : "Documento"}
-                    className={I}
-                  />
-                </Field>
-            </Seccion>
-
-            {/* ─── 3 · Origen ──────────────────────────────────────── */}
-            <Seccion numero={3} title="Origen del material" estado={estadoSeccion.origen}>
-                <Field span={6} label="Tipo de origen" required>
-                  <select
-                    value={data.originType}
-                    onChange={(e) => update("originType", e.target.value)}
+                    type="date"
+                    value={data.entryDate}
+                    onChange={(e) => update("entryDate", e.target.value)}
                     required
-                    className={I}
-                  >
-                    {ORIGIN_TYPES.map((o) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field span={6} label="Código de origen" casillero={9} hint="El código con el que salió del bosque">
-                  <input
-                    type="text"
-                    value={data.originCode}
-                    onChange={(e) => update("originCode", e.target.value)}
-                    placeholder="N° concesión o predio"
-                    className={I}
-                  />
-                </Field>
-                <Field span={6} label="N° fuente de origen" casillero={5} hint="De qué fuente viene la madera (Apartado 1)">
-                  <input
-                    type="text"
-                    value={data.originSourceNumber}
-                    onChange={(e) => update("originSourceNumber", e.target.value)}
-                    placeholder="RD-SD-549"
-                    className={`${I} font-mono`}
-                  />
-                </Field>
-                <Field span={6} label="Código que asigna el CTP" casillero={10} hint="El que vos le ponés a la troza o al paquete">
-                  <input
-                    type="text"
-                    value={data.ctpProductCode}
-                    onChange={(e) => update("ctpProductCode", e.target.value)}
-                    placeholder="T-0142 / PQ-08"
-                    className={`${I} font-mono`}
-                  />
-                </Field>
-                <Field span={6} label="Región">
-                  <select
-                    value={data.originRegion}
-                    onChange={(e) => update("originRegion", e.target.value)}
-                    className={I}
-                  >
-                    {REGIONS_PE.map((r) => <option key={r} value={r}>{r}</option>)}
-                  </select>
-                </Field>
-                <Field span={6} label="Distrito">
-                  <input
-                    type="text"
-                    value={data.originDistrict}
-                    onChange={(e) => update("originDistrict", e.target.value)}
-                    className={I}
+                    className={`${I} ${avisoPlazo ? "border-[var(--data-warning-500)]" : ""}`}
                   />
                 </Field>
             </Seccion>
-            </div>
-            <div>
-            {/* ─── 4 · Especie ─────────────────────────────────────── */}
-            <Seccion numero={4} title="Especie forestal" estado={estadoSeccion.especie}>
+
+            {/* 2 · Especie + producto: eran dos secciones y la de especie gastaba
+                un encabezado numerado entero para UN campo. Para el que copia la
+                guía es una sola pregunta: qué madera es y cuánta hay. */}
+            <Seccion numero={2} title="Especie, producto y medidas" estado={estadoSeccion.especie === "pendiente" || estadoSeccion.producto === "pendiente" ? "pendiente" : "ok"}>
               <Field span={12} label="Especie" required>
                 <button
                   type="button"
@@ -1427,10 +1330,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   )}
                 </div>
               )}
-            </Seccion>
 
-            {/* ─── 5 · Producto y medidas ──────────────────────────── */}
-            <Seccion numero={5} title="Producto y medidas" estado={estadoSeccion.producto}>
               {/* La lista de trozas normalmente viene de SERFOR; cuando el
                   servicio no responde o el detalle llegó en un Excel, se pega
                   acá en vez de tipear ochenta filas o quedarse sin trozas. */}
@@ -1585,9 +1485,142 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
 
             </Seccion>
 
-            {/* ─── 6 · Observaciones ───────────────────────────────── */}
-            <Seccion numero={6} title="Observaciones" estado={estadoSeccion.observaciones}>
-              <Field span={12} label="Defectos visibles">
+            {/* ─── 3 · Titular ─────────────────────────────────────── */}
+            <Seccion numero={3} title="Titular habilitante" estado={estadoSeccion.titular}>
+              {/* La libreta del CTP (ADR-317): el mismo titular trae madera todo
+                  el año y su nombre entraba escrito distinto cada vez. */}
+              <div className="sm:col-span-12">
+                <CtpParteBarra
+                  rol="proveedor"
+                  valor={{
+                    nombre: data.providerName,
+                    docTipo: (data.providerDocumentType || "RUC") as DocTipo,
+                    docNumero: data.providerDocument,
+                    direccion: "",
+                  }}
+                  opciones={directorio.porRol("proveedor")}
+                  onAplicar={(v) => {
+                    if (v.nombre !== undefined) update("providerName", v.nombre);
+                    if (v.docNumero !== undefined) update("providerDocument", v.docNumero);
+                    if (v.docTipo !== undefined) update("providerDocumentType", v.docTipo);
+                  }}
+                  onElegir={(parte) => {
+                    partesUsadas.current.add(parte.id);
+                    // El título habilitante del proveedor propone el código de
+                    // origen, pero SÓLO si está vacío: lo tipeado manda.
+                    if (parte.tituloHabilitante) {
+                      setData((prev) => (prev.originCode ? prev : { ...prev, originCode: parte.tituloHabilitante ?? "" }));
+                    }
+                  }}
+                  onGuardar={async (v) => {
+                    const parte = await directorio.guardarParte({
+                      roles: ["proveedor"],
+                      nombre: v.nombre,
+                      docTipo: v.docTipo,
+                      docNumero: v.docNumero,
+                      // El código de origen del ingreso ES el título con el que
+                      // extrae: se guarda con el proveedor para la próxima guía.
+                      tituloHabilitante: data.originCode.trim() || undefined,
+                    });
+                    partesUsadas.current.add(parte.id);
+                  }}
+                />
+              </div>
+              <Field span={12} label="Nombre o razón social" required>
+                <input
+                  type="text"
+                  value={data.providerName}
+                  onChange={(e) => update("providerName", e.target.value)}
+                  placeholder="Concesión Forestal X"
+                  required
+                  className={I}
+                />
+              </Field>
+                <Field span={4} label="Tipo doc">
+                  <select
+                    value={data.providerDocumentType}
+                    onChange={(e) => update("providerDocumentType", e.target.value)}
+                    className={I}
+                  >
+                    {DOC_TYPES.map((d) => (
+                      <option key={d.value} value={d.value}>{d.label}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field span={8} label="Número">
+                  <input
+                    type="text"
+                    value={data.providerDocument}
+                    onChange={(e) => update("providerDocument", e.target.value)}
+                    placeholder={data.providerDocumentType === "RUC" ? "20XXXXXXXXX" : "Documento"}
+                    className={I}
+                  />
+                </Field>
+            </Seccion>
+
+            {/* ─── 4 · Origen ──────────────────────────────────────── */}
+            <Seccion numero={4} title="Origen del material" estado={estadoSeccion.origen}>
+                <Field span={6} label="Tipo de origen" required>
+                  <select
+                    value={data.originType}
+                    onChange={(e) => update("originType", e.target.value)}
+                    required
+                    className={I}
+                  >
+                    {ORIGIN_TYPES.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field span={6} label="Código de origen" casillero={9} hint="El código con el que salió del bosque">
+                  <input
+                    type="text"
+                    value={data.originCode}
+                    onChange={(e) => update("originCode", e.target.value)}
+                    placeholder="N° concesión o predio"
+                    className={I}
+                  />
+                </Field>
+                <Field span={6} label="N° fuente de origen" casillero={5} hint="De qué fuente viene la madera (Apartado 1)">
+                  <input
+                    type="text"
+                    value={data.originSourceNumber}
+                    onChange={(e) => update("originSourceNumber", e.target.value)}
+                    placeholder="RD-SD-549"
+                    className={`${I} font-mono`}
+                  />
+                </Field>
+                <Field span={6} label="Código que asigna el CTP" casillero={10} hint="El que vos le ponés a la troza o al paquete">
+                  <input
+                    type="text"
+                    value={data.ctpProductCode}
+                    onChange={(e) => update("ctpProductCode", e.target.value)}
+                    placeholder="T-0142 / PQ-08"
+                    className={`${I} font-mono`}
+                  />
+                </Field>
+                <Field span={6} label="Región">
+                  <select
+                    value={data.originRegion}
+                    onChange={(e) => update("originRegion", e.target.value)}
+                    className={I}
+                  >
+                    {REGIONS_PE.map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </Field>
+                <Field span={6} label="Distrito">
+                  <input
+                    type="text"
+                    value={data.originDistrict}
+                    onChange={(e) => update("originDistrict", e.target.value)}
+                    className={I}
+                  />
+                </Field>
+            </Seccion>
+
+            {/* ─── 5 · Observaciones ───────────────────────────────── */}
+            <Seccion numero={5} title="Observaciones" estado={estadoSeccion.observaciones} className="xl:col-span-2">
+              <Field span={6} label="Defectos visibles">
                 <input
                   type="text"
                   value={data.defectsNotes}
@@ -1596,7 +1629,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   className={I}
                 />
               </Field>
-              <Field span={12} label="Notas adicionales">
+              <Field span={6} label="Notas adicionales">
                 <textarea
                   value={data.notes}
                   onChange={(e) => update("notes", e.target.value)}
@@ -1607,9 +1640,8 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
               </Field>
             </Seccion>
             </div>
-            </div>
 
-            {/* La guía, a ANCHO COMPLETO y fuera de las dos columnas: en media
+            {/* La guía, a ANCHO COMPLETO: en media
                 columna la tabla de productos se cortaba y la lista de trozas
                 —lo que un fiscalizador compara pieza por pieza— quedaba
                 ilegible. Sólo existe en el modo SERFOR: en carga manual no hay
@@ -1690,7 +1722,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                       className={I}
                     />
                   </Field>
-                  <Field span={4} label="Código que asigna el CTP" casillero={10} hint="El que le ponés a la troza o al paquete">
+                  <Field span={6} label="Código que asigna el CTP" casillero={10} hint="El que le ponés a la troza o al paquete">
                     <input
                       type="text"
                       value={data.ctpProductCode}
