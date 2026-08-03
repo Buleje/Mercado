@@ -46,6 +46,12 @@ Como `full` + además:
 Como `quick` + además:
 - Arranca dev server si no está vivo (`curl http://localhost:3000 || npm run dev &`)
 - MCP Playwright screenshot de la ruta donde aparece el componente
+- **Si el diff agrega un `fetch` con `method: POST|PUT|PATCH|DELETE`**:
+  `node scripts/audit-csrf-cliente.mjs` (~2s). El proxy exige `x-csrf-token` en
+  toda mutación de `/api/**` y una llamada sin token compila, testea y pasa lint
+  en verde — pero devuelve **403 en runtime** (lección 2026-08-03: el Directorio
+  forestal entero no podía guardar). Exit 1 = hay mutaciones sin token, con
+  archivo:línea.
 
 ### `/verify build` — SI toqué páginas server, layouts, sitemap, lib usada en prerender
 

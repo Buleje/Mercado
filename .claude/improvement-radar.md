@@ -45,7 +45,7 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 - **MCP patch ahora auto-ejecutable**: `mcp-patch-oneshot.timer` (systemd user, cada 10min) corre `mcp-direct-bin-patch.py` apenas no haya sesiones claude y se auto-desactiva. Ya no depende de que Brandon lo corra a mano.
 - Playwright: chromium-1208 fantasma (0 bytes) purgado; el real es 1223. Hook `session-start-autonomy.mjs` ahora resuelve el chromium dinámicamente (no más "not_installed" falso).
 
-### [pending] qdrant client 1.13 vs server 1.18: `cd ~/.local/qdrant/rag && npm i @qdrant/js-client-rest@latest` cuando NO haya re-index corriendo (2026-07-13: re-index activo, se pospuso).
+### [applied] 2026-08-03 — qdrant client ya está en ^1.18.0 (verificado en ~/.local/qdrant/rag/package.json; se aplicó en la ronda Ubuntu del 07-13 y la entrada quedó duplicada).
 
 ### [pending→nota] Telegram bot: evaluar si el tool nativo `PushNotification` del harness ya cubre el push al móvil antes de armar bot.
 
@@ -190,7 +190,11 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 - Nota: BodegueroSpotlight conserva 4 `no-unreachable` INTENCIONALES (UI guardada post-CMS, documentado en el archivo).
 
 ### [pending] Correr `/doctor` quincenal (2.1.203+: checkup con auto-fix + propone podar CLAUDE.md). Primera corrida: próxima sesión.
-### [pending] Configurar knip (`knip.json` con entry points: next.config, scripts/, .storybook, prisma/seed) para que el reporte de deps muertas sea confiable; hoy da 20/21 falsos positivos.
+### [applied] 2026-08-03 — knip confiable: `knip.jsonc` con TODOS los falsos positivos documentados con su porqué (storybook webpack loaders, scripts/, critters-por-require-runtime, posthog/embla huérfanos). `npx knip --dependencies` = 0 hallazgos. Borradas 5 deps muertas reales (gsap, vaul, hover-card, select, @types/bcryptjs); `critters` se intentó borrar y se RESTAURÓ (next lo requiere en runtime con optimizeCss — el radar del 07-13 ya lo sabía y el grep de imports no lo ve).
+
+### [applied] 2026-08-03 — RUM de PostHog VIVO por primera vez: el provider huérfano de mayo (nunca montado en toda la historia del repo — `git log -S "<PostHogProvider"` vacío) se reemplazó por `instrumentation-client.ts` (patrón oficial Next 15.3+, pageviews por history_change). Key en .env.local, dominios en la CSP de middleware-utils. Verificado end-to-end: evento en el backend de PostHog vía SQL. Gotcha mayor documentado en memoria: posthog-js descarta eventos de webdriver/headless (`_is_bot()`), la verificación con Playwright exige `opt_out_useragent_filter` (activo solo en dev).
+
+### [pending] 2026-08-03 — `lib/security/csp.ts` está huérfano (nadie lo importa; la CSP real vive en `lib/middleware-utils.ts`). Dos fuentes de CSP = la trampa de siempre. Candidato a borrar tras confirmar que ningún plan lo referencia.
 ### [pending] Barrer los ~420 `no-unused-vars` restantes de `lint:fast` por lotes (los 490 hallazgos actuales son casi todos código muerto de baja prioridad; los de correctness ya se fijaron).
 ### [applied] 2026-07-13 — **oxlint** adoptado como pre-check (`npm run lint:fast`)
 - Medido en este repo: oxlint **7.6s / 204MB / 506 hallazgos** vs ESLint **98.9s / 1.84GB / 1746 warnings** → 13× más rápido, 9× menos RAM. Instalado como devDep (v1.73).
