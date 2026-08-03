@@ -3,6 +3,7 @@
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { activateProps } from "@/components/admin/shared/a11y";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
@@ -52,6 +53,8 @@ import VinculoContraparte from "@/components/admin/contratos/VinculoContraparte"
  * de la contraparte salía vacío. Ahora es el mismo tipo de la capa de datos.
  */
 type ContratoAPI = DbContract;
+
+const MODULE_ID = "contratos";
 
 type TabId = "dashboard" | "plantillas" | "contratos" | "crear" | "editor";
 
@@ -165,7 +168,16 @@ export default function ContratosModule() {
   const [error, setError] = useState<string | null>(null);
 
   // -- UI
-  const [activeTab, setActiveTab] = useState<TabId>("dashboard");
+  // Recuerda el último tab, igual que los hubs y Mi Plata: entrar a Contratos
+  // y caer siempre en Dashboard obligaba a re-navegar en cada visita.
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    if (typeof window === "undefined") return "dashboard";
+    const saved = localStorage.getItem(`admin-last-tab-${MODULE_ID}`);
+    return (saved as TabId) || "dashboard";
+  });
+  useEffect(() => {
+    try { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, activeTab); } catch { /* modo privado */ }
+  }, [activeTab]);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -630,7 +642,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
   // ── Tab definitions ───────────────────────────────────────────────────
 
-  const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  const TABS: AdminTab[] = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "plantillas", label: "Plantillas", icon: BookOpen },
     { id: "contratos", label: "Mis Contratos", icon: FileText },
@@ -660,27 +672,17 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
         </button>
       </AdminModuleHeader>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
-        {TABS.map(tab => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all",
-                activeTab === tab.id
-                  ? "bg-primary text-white "
-                  : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      {/* AdminTabBar, el mismo componente que el resto del panel. Antes esto
+          era un segmented control propio: mismo rol que las sub-pestañas de
+          Mi Plata o Marketplace pero con otro alto, otro radio y otro estado
+          activo, y sin el reorden por arrastre ni la persistencia del último
+          tab que el resto sí tiene. */}
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as TabId)}
+        moduleId={MODULE_ID}
+      />
 
       {/* Loading / Error */}
       {loading && (

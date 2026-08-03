@@ -17,6 +17,7 @@ const CotizacionesChart = dynamic(() => import("./CotizacionesChart"), {
 });
 import { CardTitle, ErrorAlert, LoadingState } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { Field } from "@/components/admin/shared/Field";
 import { printCotizacion, type EmpresaEmisor } from "@/lib/documentos/cotizacion-print";
 import { cn } from "@/lib/utils";
@@ -269,8 +270,24 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+const MODULE_ID = "cotizaciones";
+
+const COTIZACIONES_TABS: AdminTab[] = [
+  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+  { id: "lista", label: "Lista", icon: List },
+  { id: "nueva", label: "Nueva Cotización", shortLabel: "Nueva", icon: Plus },
+];
+
 export default function CotizacionesModule() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "lista" | "nueva">("dashboard");
+  // Recuerda el último tab, igual que los hubs y Mi Plata.
+  const [activeTab, setActiveTab] = useState<"dashboard" | "lista" | "nueva">(() => {
+    if (typeof window === "undefined") return "dashboard";
+    const saved = localStorage.getItem(`admin-last-tab-${MODULE_ID}`);
+    return (saved as "dashboard" | "lista" | "nueva") || "dashboard";
+  });
+  useEffect(() => {
+    try { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, activeTab); } catch { /* modo privado */ }
+  }, [activeTab]);
 
   // ── LIST STATE ──
   const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
@@ -588,27 +605,19 @@ export default function CotizacionesModule() {
         })()}
       </AdminModuleHeader>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-[var(--surface-sunken)] rounded-xl p-1 w-fit">
-        {([["dashboard", "Dashboard"], ["lista", "Lista"], ["nueva", "Nueva Cotización"]] as const).map(([id, label]) => (
-          <button
-            key={id}
-            onClick={() => setActiveTab(id)}
-            className={cn(
-              "px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5",
-              activeTab === id
-                ? "bg-[var(--surface-raised)] text-primary "
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            {id === "dashboard" && <BarChart3 className="h-3.5 w-3.5" />}
-            {label}
-            {id === "lista" && cotizaciones.length > 0 && (
-              <span className="bg-[var(--rule-soft)] text-xs px-1.5 rounded-full">{cotizaciones.length}</span>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* AdminTabBar como el resto del panel (antes: segmented control propio,
+          con su propio alto/radio/estado activo y sin persistencia del último
+          tab). El contador de la lista viaja como `badge`, que AdminTabBar ya
+          sabe dibujar. Ojo: `moduleId` sólo persiste el ORDEN de arrastre; la
+          memoria del último tab la pone el llamador, igual que en los hubs. */}
+      <AdminTabBar
+        tabs={COTIZACIONES_TABS.map((t) =>
+          t.id === "lista" && cotizaciones.length > 0 ? { ...t, badge: cotizaciones.length } : t,
+        )}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as "dashboard" | "lista" | "nueva")}
+        moduleId={MODULE_ID}
+      />
 
       {/* ── TAB: DASHBOARD ──────────────────────────────────────────────── */}
       {activeTab === "dashboard" && <CotizacionesDashboard cotizaciones={cotizaciones} loading={loading} />}
