@@ -14,6 +14,8 @@ import type {
 import type { DbCustomer, DbReview } from "./misc.db";
 import { normalizePhone } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { invalidateByPrefix } from "@/lib/cache";
+import { loyaltyCachePrefix } from "./loyalty.db";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -480,32 +482,53 @@ export const LoyaltyDB = {
     const normalized = normalizePhone(phone);
     // TD-116: read-modify-write en UNA tx RLS (de paso cierra la carrera
     // entre dos accruals concurrentes del mismo customer).
-    return withRlsTx(tenantId, async (tx) => {
+    const result = await withRlsTx(tenantId, async (tx) => {
       const c = await tx.customer.findFirst({ where: { phone: normalized, tenantId } });
       if (!c) return null;
       const newTotal = toNumOrZero(c.totalSpent) + amount;
-      const newPoints = c.loyaltyPoints + computePoints(amount);
+      const earned = computePoints(amount);
+      const newPoints = c.loyaltyPoints + earned;
       const newTier = computeTier(newTotal);
       await tx.customer.updateMany({
         where: { phone: normalized, tenantId },
         data: { totalSpent: newTotal, loyaltyPoints: newPoints, loyaltyTier: newTier },
       });
+      // El asiento va DENTRO de la misma tx: si el update falla, no queda un
+      // movimiento fantasma. Antes este camino movía la columna sin escribir
+      // el ledger, así que el historial que muestra el marketplace
+      // (LoyaltyDB.getHistory) tenía huecos y no cuadraba contra el saldo.
+      if (earned > 0) {
+        await tx.loyaltyTransaction.create({
+          data: { customerId: normalized, tenantId, amount: earned, reason: "purchase" },
+        });
+      }
       return { phone: normalized, loyaltyPoints: newPoints, loyaltyTier: newTier, totalSpent: newTotal };
     });
+    // getBalance/getHistory cachean 60s con este prefijo. Sin invalidar, el
+    // marketplace mostraba el saldo viejo hasta un minuto después de la venta.
+    if (result) invalidateByPrefix(loyaltyCachePrefix(tenantId, normalized));
+    return result;
   },
   /** Redeem points (returns false if insufficient) */
   async redeemPoints(tenantId: string, phone: string, points: number) {
     const normalized = normalizePhone(phone);
     // TD-116: check + decremento en UNA tx RLS (cierra doble-canje concurrente).
-    return withRlsTx(tenantId, async (tx) => {
+    const ok = await withRlsTx(tenantId, async (tx) => {
       const c = await tx.customer.findFirst({ where: { phone: normalized, tenantId } });
       if (!c || c.loyaltyPoints < points) return false;
       await tx.customer.updateMany({
         where: { phone: normalized, tenantId },
         data: { loyaltyPoints: c.loyaltyPoints - points },
       });
+      if (points > 0) {
+        await tx.loyaltyTransaction.create({
+          data: { customerId: normalized, tenantId, amount: -points, reason: "redemption" },
+        });
+      }
       return true;
     });
+    if (ok) invalidateByPrefix(loyaltyCachePrefix(tenantId, normalized));
+    return ok;
   },
   TIERS: LOYALTY_TIERS,
 };

@@ -67,8 +67,18 @@ const HISTORY_DEFAULT_LIMIT = 20;
 const HISTORY_MAX_LIMIT = 100;
 const HISTORY_TTL_SEC = 60;
 
-function cachePrefix(tenantId: string, customerId: string): string {
+/**
+ * Prefijo de caché del loyalty de un cliente. Exportado porque el camino
+ * legacy (LoyaltyDB de customers.db.ts) también mueve `Customer.loyaltyPoints`
+ * y tiene que invalidar la MISMA clave — si duplica el formato, un cambio acá
+ * deja saldos stale por allá.
+ */
+export function loyaltyCachePrefix(tenantId: string, customerId: string): string {
   return `loyalty:${tenantId}:${customerId}`;
+}
+
+function cachePrefix(tenantId: string, customerId: string): string {
+  return loyaltyCachePrefix(tenantId, customerId);
 }
 
 function historyCacheKey(

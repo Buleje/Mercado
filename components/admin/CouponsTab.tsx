@@ -366,7 +366,12 @@ export default function CouponsTab() {
               <select value={form.discountType} onChange={e => setForm(f => ({ ...f, discountType: e.target.value as "percent" | "fixed" | "giftcard" }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm">
                 <option value="percent">Porcentaje (%)</option>
                 <option value="fixed">Monto fijo (S/)</option>
-                <option value="giftcard">Gift Card (saldo)</option>
+                {/* "Gift Card (saldo)" salió de acá: el Zod de POST /api/coupons
+                    sólo acepta percent|fixed, así que elegirla devolvía 400 y el
+                    cupón nunca se creaba. Las gift cards tienen su propio modelo
+                    (GiftCard + GiftCardRedemption) y su módulo en Crecimiento →
+                    Gift Cards. Los cupones giftcard que ya existan se siguen
+                    leyendo y canjeando; sólo no se crean nuevos desde acá. */}
               </select>
             </Field>
             <Field label={form.discountType === "giftcard" ? "Saldo inicial (S/) *" : "Valor *"} labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">

@@ -207,9 +207,20 @@ export const MarketplaceOrdersDB = {
       // mismo cliente + mismo cupón ambos veían prevUses=0 y ambos creaban
       // órdenes con descuento. Ahora el check vive dentro de la tx después de
       // bloquear el cupón con un raw lock implícito del update increment.
+      // Gift cards: el descuento sale del saldo y hay que deducirlo al canjear.
+      // Este canal sólo incrementa usedCount (ver tx más abajo), nunca tocó
+      // `balance` — aceptarlas acá regalaría el valor nominal en cada pedido.
+      // Se canjean en la tienda, que sí deduce (CouponsDB.redeem con deductAmount).
+      if (coupon.discountType === "giftcard") {
+        throw new Error("Las gift cards se canjean desde la tienda, no en el marketplace");
+      }
       const dv = toNumOrZero(coupon.discountValue);
       if (coupon.discountType === "percent") {
-        couponDiscount = parseFloat(Math.min((subtotal * dv) / 100, subtotal).toFixed(2));
+        // Cap explícito al 100% antes de aplicar: un cupón legacy con
+        // discountValue>100 daba subtotal completo (pedido gratis) en vez de
+        // fallar. El Math.min contra subtotal se mantiene como segunda red.
+        const capped = Math.min(dv, 100);
+        couponDiscount = parseFloat(Math.min((subtotal * capped) / 100, subtotal).toFixed(2));
       } else {
         couponDiscount = parseFloat(Math.min(dv, subtotal).toFixed(2));
       }
