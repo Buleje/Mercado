@@ -14,7 +14,7 @@ import {
   FileBarChart, Waves, Calculator, GitCompareArrows,
   DollarSign, Wallet,
   BarChart3, Percent, Truck, CreditCard, RefreshCw, AlertTriangle, Maximize2, X as XIcon,
-  Landmark, HandCoins, Banknote, Coins, Construction, Gauge,
+  Landmark, HandCoins, Banknote, Coins, Construction, Gauge, ChevronRight,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ import { ChartTooltip } from "@/lib/chart-tooltip";
 import { formatSolesShort } from "@/lib/chart-helpers";
 import { Suspense } from "react";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { SERIES, SERIE, colorMedioPago } from "@/components/admin/shared/chart-palette";
 import AutoRefreshControl from "@/components/admin/shared/AutoRefreshControl";
 import FavStar from "@/components/admin/shared/FavStar";
 import ChartExpandModal from "@/components/admin/shared/ChartExpandModal";
@@ -215,7 +216,7 @@ function generarReporteBancario() {
 
       const fecha = now.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
 
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte Financiero - Buleje</title><style>body{font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#333;font-size:14px}h1{color:var(--color-primary);border-bottom:3px solid var(--color-primary);padding-bottom:10px;font-size:22px}h2{color:#333;margin-top:30px;font-size:16px;border-bottom:1px solid #ddd;padding-bottom:5px}table{width:100%;border-collapse:collapse;margin:15px 0}th{background:#f8f9fa;padding:10px 8px;border:1px solid #ddd;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}td{padding:8px;font-size:13px}.kpi{display:inline-block;background:#f8f9fa;border:1px solid #ddd;border-radius:8px;padding:15px 20px;margin:5px;text-align:center;min-width:150px}.kpi-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.5px}.kpi-value{font-size:20px;font-weight:bold;color:var(--color-primary);margin-top:4px}.footer{margin-top:40px;padding-top:15px;border-top:1px solid #ddd;color:#999;font-size:11px;text-align:center}@media print{body{padding:20px}}</style></head><body><h1>REPORTE FINANCIERO — Buleje</h1><p style="color:#666;font-size:12px">Período: últimos 6 meses &middot; Generado el ${fecha}</p><h2>1. Datos del Negocio</h2><table><tr><td style="padding:8px;border:1px solid #ddd;width:200px;font-weight:bold">Razon Social</td><td style="padding:8px;border:1px solid #ddd">Buleje</td></tr><tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Ubicacion</td><td style="padding:8px;border:1px solid #ddd">Pucallpa, Ucayali, Peru</td></tr><tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Giro</td><td style="padding:8px;border:1px solid #ddd">Comercio minorista - Abarrotes</td></tr></table><h2>2. Resumen de Ingresos</h2><table><thead><tr><th>Mes</th><th style="text-align:right">Ingresos</th><th style="text-align:right">Gastos</th><th style="text-align:right">Utilidad</th></tr></thead><tbody>${tablaRows}<tr style="background:#f0f0f0;font-weight:bold"><td style="padding:8px;border:1px solid #ddd">TOTAL</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${totalIngresos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${totalGastos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right;color:${totalUtilidad >= 0 ? "var(--color-primary)" : "#e63946"}">S/${totalUtilidad.toLocaleString("es-PE")}</td></tr></tbody></table><h2>3. Tendencia de Ingresos</h2><div style="display:flex;align-items:end;gap:8px;height:140px;padding:10px;background:#fafafa;border:1px solid #eee;border-radius:8px">${barrasHtml}</div><h2>4. Indicadores Clave</h2><div style="display:flex;flex-wrap:wrap;gap:5px"><div class="kpi"><div class="kpi-label">Margen de utilidad</div><div class="kpi-value">${margen}%</div></div><div class="kpi"><div class="kpi-label">Clientes activos</div><div class="kpi-value">${clientesActivos}</div></div><div class="kpi"><div class="kpi-label">Ingreso prom./mes</div><div class="kpi-value">S/${Math.round(avgIngresosMensual).toLocaleString("es-PE")}</div></div></div><h2>5. Proyeccion</h2><p>Basado en la tendencia de los últimos 6 meses, el ingreso estimado para el próximo mes es: <strong style="color:var(--color-primary);font-size:18px">S/${proyeccion.toLocaleString("es-PE")}</strong></p><div class="footer">Generado el ${fecha} — Buleje &middot; Este reporte es de caracter informativo</div></body></html>`;
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte Financiero - Buleje</title><style>:root{--color-primary:#00A0A0}body{font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#333;font-size:14px}h1{color:var(--color-primary);border-bottom:3px solid var(--color-primary);padding-bottom:10px;font-size:22px}h2{color:#333;margin-top:30px;font-size:16px;border-bottom:1px solid #ddd;padding-bottom:5px}table{width:100%;border-collapse:collapse;margin:15px 0}th{background:#f8f9fa;padding:10px 8px;border:1px solid #ddd;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}td{padding:8px;font-size:13px}.kpi{display:inline-block;background:#f8f9fa;border:1px solid #ddd;border-radius:8px;padding:15px 20px;margin:5px;text-align:center;min-width:150px}.kpi-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.5px}.kpi-value{font-size:20px;font-weight:bold;color:var(--color-primary);margin-top:4px}.footer{margin-top:40px;padding-top:15px;border-top:1px solid #ddd;color:#999;font-size:11px;text-align:center}@media print{body{padding:20px}}</style></head><body><h1>REPORTE FINANCIERO — Buleje</h1><p style="color:#666;font-size:12px">Período: últimos 6 meses &middot; Generado el ${fecha}</p><h2>1. Datos del Negocio</h2><table><tr><td style="padding:8px;border:1px solid #ddd;width:200px;font-weight:bold">Razon Social</td><td style="padding:8px;border:1px solid #ddd">Buleje</td></tr><tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Ubicacion</td><td style="padding:8px;border:1px solid #ddd">Pucallpa, Ucayali, Peru</td></tr><tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Giro</td><td style="padding:8px;border:1px solid #ddd">Comercio minorista - Abarrotes</td></tr></table><h2>2. Resumen de Ingresos</h2><table><thead><tr><th>Mes</th><th style="text-align:right">Ingresos</th><th style="text-align:right">Gastos</th><th style="text-align:right">Utilidad</th></tr></thead><tbody>${tablaRows}<tr style="background:#f0f0f0;font-weight:bold"><td style="padding:8px;border:1px solid #ddd">TOTAL</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${totalIngresos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right">S/${totalGastos.toLocaleString("es-PE")}</td><td style="padding:8px;border:1px solid #ddd;text-align:right;color:${totalUtilidad >= 0 ? "var(--color-primary)" : "#e63946"}">S/${totalUtilidad.toLocaleString("es-PE")}</td></tr></tbody></table><h2>3. Tendencia de Ingresos</h2><div style="display:flex;align-items:end;gap:8px;height:140px;padding:10px;background:#fafafa;border:1px solid #eee;border-radius:8px">${barrasHtml}</div><h2>4. Indicadores Clave</h2><div style="display:flex;flex-wrap:wrap;gap:5px"><div class="kpi"><div class="kpi-label">Margen de utilidad</div><div class="kpi-value">${margen}%</div></div><div class="kpi"><div class="kpi-label">Clientes activos</div><div class="kpi-value">${clientesActivos}</div></div><div class="kpi"><div class="kpi-label">Ingreso prom./mes</div><div class="kpi-value">S/${Math.round(avgIngresosMensual).toLocaleString("es-PE")}</div></div></div><h2>5. Proyeccion</h2><p>Basado en la tendencia de los últimos 6 meses, el ingreso estimado para el próximo mes es: <strong style="color:var(--color-primary);font-size:18px">S/${proyeccion.toLocaleString("es-PE")}</strong></p><div class="footer">Generado el ${fecha} — Buleje &middot; Este reporte es de caracter informativo</div></body></html>`;
 
       const w = window.open("", "_blank");
       if (w) {
@@ -230,26 +231,21 @@ function generarReporteBancario() {
 
 // ── Dashboard de Finanzas (Premium) ──────────────────────────────────────────
 
-const DASHBOARD_EXPENSE_COLORS = ["var(--color-primary)", "#457b9d", "#ff6b5b", "#9b5de5", "#06b6d4", "#6b7280"];
-const PAYMENT_METHOD_COLORS: Record<string, string> = {
-  efectivo: "var(--accent)", EFECTIVO: "var(--accent)", Efectivo: "var(--accent)",
-  yape: "#7c3aed", YAPE: "#7c3aed", Yape: "#7c3aed",
-  plin: "#06b6d4", PLIN: "#06b6d4", Plin: "#06b6d4",
-  tarjeta: "#3b82f6", TARJETA: "#3b82f6", Tarjeta: "#3b82f6",
-  fiado: "#ff6b5b", FIADO: "#ff6b5b", Fiado: "#ff6b5b",
-  transferencia: "#8b5cf6", TRANSFERENCIA: "#8b5cf6", Transferencia: "#8b5cf6",
-};
-const PM_FALLBACK_COLORS = ["var(--accent)", "#7c3aed", "#06b6d4", "#3b82f6", "#ff6b5b", "#8b5cf6", "#e63946"];
+// Colores de serie desde la paleta única del admin (chart-palette.ts). Antes
+// este archivo declaraba 101 hex sueltos y su propio mapa de medios de pago
+// —duplicado del que arman otros módulos— y ninguno era theme-aware.
+const DASHBOARD_EXPENSE_COLORS = SERIES;
+const PM_FALLBACK_COLORS = SERIES;
 
 type KpiDef = { key: string; label: string; icon: typeof TrendingUp; color: string; bg: string };
 const KPI_DEFS: KpiDef[] = [
   { key: "ingresos", label: "Ingresos del mes", icon: TrendingUp, color: "var(--accent)", bg: "bg-primary/10" },
-  { key: "gastos", label: "Gastos del mes", icon: TrendingDown, color: "#ef4444", bg: "bg-[var(--data-error-50)]" },
-  { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: "#3b82f6", bg: "bg-primary/10" },
-  { key: "margen", label: "Margen %", icon: Percent, color: "#8b5cf6", bg: "bg-[var(--surface-sunken)]" },
-  { key: "deuda", label: "Deuda proveedores", icon: Truck, color: "#ff6b5b", bg: "bg-[var(--data-warning-50)]" },
-  { key: "fiados", label: "Fiados pendientes", icon: CreditCard, color: "#ff6b5b", bg: "bg-[var(--data-warning-50)]" },
-  { key: "igv", label: "IGV a pagar", icon: Calculator, color: "#e63946", bg: "bg-[var(--surface-sunken)]" },
+  { key: "gastos", label: "Gastos del mes", icon: TrendingDown, color: SERIE.gastos, bg: "bg-[var(--data-error-50)]" },
+  { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: SERIE.utilidad, bg: "bg-primary/10" },
+  { key: "margen", label: "Margen %", icon: Percent, color: SERIES[3], bg: "bg-[var(--surface-sunken)]" },
+  { key: "deuda", label: "Deuda proveedores", icon: Truck, color: SERIE.alerta, bg: "bg-[var(--data-warning-50)]" },
+  { key: "fiados", label: "Fiados pendientes", icon: CreditCard, color: SERIE.alerta, bg: "bg-[var(--data-warning-50)]" },
+  { key: "igv", label: "IGV a pagar", icon: Calculator, color: SERIE.gastos, bg: "bg-[var(--surface-sunken)]" },
   { key: "puntoEq", label: "Punto equilibrio", icon: Target, color: "var(--color-primary)", bg: "bg-primary/10" },
 ];
 function FinanzasDashboard() {
@@ -455,31 +451,31 @@ function FinanzasDashboard() {
       <div className="space-y-6 animate-pulse">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
+            <div key={i} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
               <div className="flex items-center gap-3 mb-3">
-                <div className="h-10 w-10 rounded-full bg-gray-200" />
+                <div className="h-10 w-10 rounded-full bg-[var(--surface-sunken)]" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3 bg-gray-200 rounded w-16" />
-                  <div className="h-5 bg-gray-200 rounded w-24" />
+                  <div className="h-3 bg-[var(--surface-sunken)] rounded w-16" />
+                  <div className="h-5 bg-[var(--surface-sunken)] rounded w-24" />
                 </div>
               </div>
             </div>
           ))}
         </div>
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6">
-          <div className="h-4 bg-gray-200 rounded w-48 mb-4" />
-          <div className="h-80 bg-gray-100 rounded-xl" />
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6">
+          <div className="h-4 bg-[var(--surface-sunken)] rounded w-48 mb-4" />
+          <div className="h-80 bg-[var(--surface-sunken)] rounded-xl" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6">
-            <div className="h-50 bg-gray-100 rounded-xl" />
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6">
+            <div className="h-50 bg-[var(--surface-sunken)] rounded-xl" />
           </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6">
-            <div className="h-50 bg-gray-100 rounded-xl" />
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6">
+            <div className="h-50 bg-[var(--surface-sunken)] rounded-xl" />
           </div>
         </div>
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6">
-          <div className="h-70 bg-gray-100 rounded-xl" />
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6">
+          <div className="h-70 bg-[var(--surface-sunken)] rounded-xl" />
         </div>
       </div>
     );
@@ -508,7 +504,7 @@ function FinanzasDashboard() {
   if (Object.values(kpis).every(v => v === 0) && monthlyData.every(m => m.ingresos === 0 && m.gastos === 0)) {
     return (
       <div className="text-center py-16">
-        <div className="h-16 w-16 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
+        <div className="h-16 w-16 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface flex items-center justify-center mx-auto mb-4">
           <BarChart3 className="h-8 w-8 text-[var(--text-tertiary)] dark:text-muted" />
         </div>
         <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">Sin datos financieros</CardTitle>
@@ -527,7 +523,7 @@ function FinanzasDashboard() {
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
             <span>Actualizado hace {minAgo} min</span>
-            <button onClick={() => { setLastRefresh(new Date()); setMinAgo(0); }} className="p-1 h-11 w-11 flex items-center justify-center hover:bg-gray-100 rounded transition-colors" title="Actualizar datos">
+            <button onClick={() => { setLastRefresh(new Date()); setMinAgo(0); }} className="p-1 h-11 w-11 flex items-center justify-center hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Actualizar datos">
               <RefreshCw className="h-3 w-3" />
             </button>
           </div>
@@ -578,11 +574,11 @@ function FinanzasDashboard() {
             valColor = val >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-600)]";
           } else if (def.key === "igv") {
             display = formatCurrency(Math.abs(val), { decimals: 0 });
-            subtexto = val > 0 ? "A pagar" : "Credito fiscal";
+            subtexto = val > 0 ? "A pagar" : "Crédito fiscal";
             valColor = val > 0 ? "text-[var(--data-error-600)]" : "text-[var(--data-success-500)]";
           } else if (def.key === "puntoEq") {
             display = formatCurrency(val, { decimals: 0 });
-            subtexto = "por dia";
+            subtexto = "por día";
           } else {
             display = formatCurrency(val, { decimals: 0 });
           }
@@ -597,7 +593,7 @@ function FinanzasDashboard() {
             : null;
 
           return (
-            <div key={def.key} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-4  hover:shadow-sm transition-shadow">
+            <div key={def.key} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-4 hover:shadow-sm transition-shadow">
               <div className="flex items-center gap-3">
                 <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${def.bg}`}>
                   <Icon className="h-5 w-5" style={{ color: def.color }} />
@@ -635,7 +631,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 2: Ingresos vs Gastos vs Utilidad (ComposedChart) ════════ */}
       <StaggerItem index={1}>
       {monthlyData.length > 0 && (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FavStar id="ingresos-vs-gastos" favs={finFavs} />
@@ -644,7 +640,7 @@ function FinanzasDashboard() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-[var(--text-tertiary)] font-medium">Últimos 6 meses</span>
-              <button onClick={() => setExpandedChart("ingresos-gastos")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
+              <button onClick={() => setExpandedChart("ingresos-gastos")} className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
           <ResponsiveContainer minWidth={0} width="100%" height={320}>
@@ -655,39 +651,39 @@ function FinanzasDashboard() {
                   <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.7} />
                 </linearGradient>
                 <linearGradient id="gradGastos" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#e63946" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#e63946" stopOpacity={0.7} />
+                  <stop offset="0%" stopColor={SERIE.gastos} stopOpacity={0.9} />
+                  <stop offset="100%" stopColor={SERIE.gastos} stopOpacity={0.7} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="" vertical={false} />
-              <XAxis dataKey="mes" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} tickFormatter={formatSolesShort} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-base)" className="" vertical={false} />
+              <XAxis dataKey="mes" tick={{ fontSize: 12, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "var(--text-secondary)" }} tickFormatter={formatSolesShort} axisLine={false} tickLine={false} />
               <Tooltip content={<ChartTooltip />} />
               <Legend
                 formatter={(value: unknown) => { const v = String(value); const l: Record<string, string> = { ingresos: "Ingresos", gastos: "Gastos", utilidad: "Utilidad" }; return l[v] ?? v; }}
                 iconType="circle"
                 wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }}
               />
-              <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="3 3" />
-              <ReferenceLine y={15000} stroke="#ff6b5b" strokeDasharray="5 5" label={{ value: "Meta: S/15,000", position: "right", fill: "#ff6b5b", fontSize: 11 }} />
+              <ReferenceLine y={0} stroke="var(--text-tertiary)" strokeDasharray="3 3" />
+              <ReferenceLine y={15000} stroke={SERIE.alerta} strokeDasharray="5 5" label={{ value: "Meta: S/15,000", position: "right", fill: SERIE.alerta, fontSize: 11 }} />
               <Bar dataKey="ingresos" fill="url(#gradIngresos)" radius={[6, 6, 0, 0]} barSize={30} />
               <Bar dataKey="gastos" fill="url(#gradGastos)" radius={[6, 6, 0, 0]} barSize={30} />
-              <Line type="monotone" dataKey="utilidad" stroke="#3b82f6" strokeWidth={3} dot={{ r: 5, fill: "#3b82f6", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 7 }} />
+              <Line type="monotone" dataKey="utilidad" stroke={SERIE.utilidad} strokeWidth={3} dot={{ r: 5, fill: SERIE.utilidad, strokeWidth: 2, stroke: "var(--surface-raised)" }} activeDot={{ r: 7 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
       )}
       </StaggerItem>
 
-      {/* ════════ SECCION 3: Gastos por Categoria + Metodos de Ingreso (2 donuts) ════════ */}
+      {/* ════════ SECCION 3: Gastos por Categoría + Metodos de Ingreso (2 donuts) ════════ */}
       <StaggerItem index={2}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Donut izquierda: Gastos por categoria */}
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <FavStar id="gastos-categoria" favs={finFavs} />
             <div className="h-2 w-2 rounded-full bg-[var(--data-error-500)]" />
-            <p className="text-sm font-bold text-[var(--text-primary)]">Gastos por Categoria</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Gastos por Categoría</p>
             <div className="flex-1" />
             {gastosPieFilter && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold">
@@ -695,7 +691,7 @@ function FinanzasDashboard() {
                 <button onClick={() => setGastosPieFilter(null)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
               </span>
             )}
-            <button onClick={() => setExpandedChart("gastos-cat")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
+            <button onClick={() => setExpandedChart("gastos-cat")} className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
           </div>
           {expensesByCategory.length > 0 ? (
             <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -735,10 +731,10 @@ function FinanzasDashboard() {
         </div>
 
         {/* Donut derecha: Metodos de pago */}
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-2 w-2 rounded-full bg-primary" />
-            <p className="text-sm font-bold text-[var(--text-primary)]">Ingresos por Metodo de Pago</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Ingresos por Método de Pago</p>
           </div>
           {paymentMethods.length > 0 ? (
             <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -747,7 +743,7 @@ function FinanzasDashboard() {
                   <PieChart>
                     <Pie data={paymentMethods} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value" stroke="none">
                       {paymentMethods.map((entry, index) => (
-                        <Cell key={`pm-${index}`} fill={PAYMENT_METHOD_COLORS[entry.name] ?? PM_FALLBACK_COLORS[index % PM_FALLBACK_COLORS.length]} />
+                        <Cell key={`pm-${index}`} fill={colorMedioPago(entry.name) ?? PM_FALLBACK_COLORS[index % PM_FALLBACK_COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value: unknown, name: unknown) => [formatCurrency(Number(value), { decimals: 0 }), String(name)]} />
@@ -763,7 +759,7 @@ function FinanzasDashboard() {
               <div className="flex-1 space-y-2 w-full">
                 {paymentMethods.filter(g => g.name).map((g, i) => (
                   <div key={g.name || i} className="flex items-center gap-2 text-xs">
-                    <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: PAYMENT_METHOD_COLORS[g.name] ?? PM_FALLBACK_COLORS[i % PM_FALLBACK_COLORS.length] }} />
+                    <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: colorMedioPago(g.name) }} />
                     <span className="flex-1 text-[var(--text-primary)] font-semibold truncate">{g.name}</span>
                     <span className="text-[var(--text-secondary)] font-mono">{formatCurrency(g.value, { decimals: 0 })}</span>
                     <span className="text-[var(--text-tertiary)] w-9 text-right font-bold">{totalIncome > 0 ? Math.round((g.value / totalIncome) * 100) : 0}%</span>
@@ -783,7 +779,7 @@ function FinanzasDashboard() {
       {/* Guard: el array siempre tiene 30 elementos (uno por día), pero si todos
           son cero no hay movimientos reales → no mostrar ejes vacíos */}
       {cashFlow.some(d => d.ingresos > 0 || d.gastos > 0) && (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FavStar id="flujo-caja" favs={finFavs} />
@@ -792,7 +788,7 @@ function FinanzasDashboard() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-[var(--text-tertiary)] font-medium">Últimos 30 días</span>
-              <button onClick={() => setExpandedChart("flujo-caja")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
+              <button onClick={() => setExpandedChart("flujo-caja")} className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
           <ResponsiveContainer minWidth={0} width="100%" height={280}>
@@ -803,21 +799,21 @@ function FinanzasDashboard() {
                   <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradCashGastos" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                  <stop offset="5%" stopColor={SERIE.gastos} stopOpacity={0.2} />
+                  <stop offset="95%" stopColor={SERIE.gastos} stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradCashBalance" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.35} />
                   <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="" vertical={false} />
-              <XAxis dataKey="dia" tick={{ fontSize: 10, fill: "#9ca3af" }} interval={4} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} tickFormatter={formatSolesShort} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-base)" className="" vertical={false} />
+              <XAxis dataKey="dia" tick={{ fontSize: 10, fill: "var(--text-tertiary)" }} interval={4} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} tickFormatter={formatSolesShort} axisLine={false} tickLine={false} />
               <Tooltip content={<ChartTooltip />} />
-              <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="4 4" label={{ value: "S/0", position: "left", fill: "#9ca3af", fontSize: 10 }} />
+              <ReferenceLine y={0} stroke="var(--text-tertiary)" strokeDasharray="4 4" label={{ value: "S/0", position: "left", fill: "var(--text-tertiary)", fontSize: 10 }} />
               <Area type="monotone" dataKey="ingresos" stroke="var(--accent)" fill="url(#gradCashIngresos)" strokeWidth={1.5} />
-              <Area type="monotone" dataKey="gastos" stroke="#ef4444" fill="url(#gradCashGastos)" strokeWidth={1.5} />
+              <Area type="monotone" dataKey="gastos" stroke={SERIE.gastos} fill="url(#gradCashGastos)" strokeWidth={1.5} />
               <Area type="monotone" dataKey="balance" stroke="var(--color-primary)" fill="url(#gradCashBalance)" strokeWidth={2.5} dot={false} />
               <Legend
                 formatter={(value: unknown) => { const v = String(value); const l: Record<string, string> = { ingresos: "Ingresos", gastos: "Gastos", balance: "Balance" }; return l[v] ?? v; }}
@@ -860,12 +856,12 @@ function FinanzasDashboard() {
               <span className="font-medium">Dia {projection.diasTranscurridos} de {projection.diasTotales}</span>
               <span className="font-bold">{Math.round(projProgreso)}% del mes</span>
             </div>
-            <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-[var(--dur-slower)]"
                 style={{
                   width: `${projProgreso}%`,
-                  backgroundColor: projPctTarget > 70 ? "var(--accent)" : projPctTarget >= 40 ? "#ff6b5b" : "#ef4444",
+                  backgroundColor: projPctTarget > 70 ? "var(--accent)" : projPctTarget >= 40 ? SERIE.alerta : SERIE.gastos,
                 }}
               />
             </div>
@@ -883,7 +879,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 6: Resumen Fiscal Mejorado ════════ */}
       <StaggerItem index={5}>
       {fiscal && (
-        <div className="bg-white dark:bg-[var(--color-card)] border-2 border-secondary/40 rounded-xl p-4 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] border-2 border-secondary/40 rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <Calculator className="h-5 w-5 text-secondary" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Resumen Fiscal — {mesCapitalized}</p>
@@ -937,12 +933,12 @@ function FinanzasDashboard() {
       {healthScore && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#ff6b5b" : "#ef4444" }} />
+            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? SERIE.alerta : SERIE.gastos }} />
             <p className="text-sm font-bold text-[var(--text-primary)]">
               Indicadores de Salud Financiera
               <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{
-                backgroundColor: healthScore.total > 70 ? "color-mix(in oklab, var(--accent) 12%, transparent)" : healthScore.total >= 40 ? "#ff6b5b20" : "#ef444420",
-                color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#ff6b5b" : "#ef4444",
+                backgroundColor: healthScore.total > 70 ? "color-mix(in oklab, var(--accent) 12%, transparent)" : healthScore.total >= 40 ? "color-mix(in oklab, var(--data-warning-500) 12%, transparent)" : "color-mix(in oklab, var(--data-error-500) 12%, transparent)",
+                color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? SERIE.alerta : SERIE.gastos,
               }}>
                 {healthScore.total}/100 — {healthScore.total > 70 ? "Saludable" : healthScore.total >= 40 ? "Precaucion" : "Critico"}
               </span>
@@ -954,21 +950,21 @@ function FinanzasDashboard() {
               max={100}
               label="Margen de utilidad"
               unit="%"
-              color={healthScore.margen > 25 ? "var(--accent)" : healthScore.margen >= 15 ? "#ff6b5b" : "#ef4444"}
+              color={healthScore.margen > 25 ? "var(--accent)" : healthScore.margen >= 15 ? SERIE.alerta : SERIE.gastos}
             />
             <GaugeChart
               value={healthScore.liquidez}
               max={4}
               label="Liquidez"
               unit="x"
-              color={healthScore.liquidez > 2 ? "var(--accent)" : healthScore.liquidez >= 1 ? "#ff6b5b" : "#ef4444"}
+              color={healthScore.liquidez > 2 ? "var(--accent)" : healthScore.liquidez >= 1 ? SERIE.alerta : SERIE.gastos}
             />
             <GaugeChart
               value={healthScore.deudaRatio}
               max={100}
               label="Endeudamiento"
               unit="%"
-              color={healthScore.deudaRatio < 10 ? "var(--accent)" : healthScore.deudaRatio <= 30 ? "#ff6b5b" : "#ef4444"}
+              color={healthScore.deudaRatio < 10 ? "var(--accent)" : healthScore.deudaRatio <= 30 ? SERIE.alerta : SERIE.gastos}
             />
           </div>
         </div>
@@ -979,7 +975,7 @@ function FinanzasDashboard() {
       <StaggerItem index={7}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Debo a proveedores */}
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <Truck className="h-4 w-4 text-secondary" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Debo a proveedores</p>
@@ -988,16 +984,16 @@ function FinanzasDashboard() {
             <ResponsiveContainer minWidth={0} width="100%" height={Math.max(topPayables.length * 44, 120)}>
               <BarChart data={topPayables} layout="vertical" margin={{ top: 0, right: 60, left: 0, bottom: 0 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} width={120} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} width={120} axisLine={false} tickLine={false} />
                 <Tooltip
-                  contentStyle={{ borderRadius: "10px", border: "1px solid #e5e7eb", fontSize: "12px" }}
+                  contentStyle={{ borderRadius: "10px", border: "1px solid var(--rule-base)", fontSize: "12px" }}
                   formatter={(value: unknown) => [formatCurrency(Number(value), { decimals: 0 }), "Monto"]}
                 />
                 <Bar dataKey="monto" radius={[0, 6, 6, 0]} barSize={20}>
                   {topPayables.map((entry, index) => (
-                    <Cell key={`pay-${index}`} fill={entry.vencido ? "#ef4444" : "#ff6b5b"} />
+                    <Cell key={`pay-${index}`} fill={entry.vencido ? SERIE.gastos : SERIE.alerta} />
                   ))}
-                  <LabelList dataKey="monto" position="right" formatter={(v: unknown) => formatCurrency(Number(v), { decimals: 0 })} style={{ fontSize: 10, fill: "#6b7280", fontWeight: 600 }} />
+                  <LabelList dataKey="monto" position="right" formatter={(v: unknown) => formatCurrency(Number(v), { decimals: 0 })} style={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 600 }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -1016,7 +1012,7 @@ function FinanzasDashboard() {
         </div>
 
         {/* Me deben (fiados) */}
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <CreditCard className="h-4 w-4 text-[var(--data-warning-500)]" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Me deben (fiados)</p>
@@ -1025,16 +1021,16 @@ function FinanzasDashboard() {
             <ResponsiveContainer minWidth={0} width="100%" height={Math.max(topFiados.length * 44, 120)}>
               <BarChart data={topFiados} layout="vertical" margin={{ top: 0, right: 60, left: 0, bottom: 0 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} width={120} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} width={120} axisLine={false} tickLine={false} />
                 <Tooltip
-                  contentStyle={{ borderRadius: "10px", border: "1px solid #e5e7eb", fontSize: "12px" }}
+                  contentStyle={{ borderRadius: "10px", border: "1px solid var(--rule-base)", fontSize: "12px" }}
                   formatter={(value: unknown) => [formatCurrency(Number(value), { decimals: 0 }), "Monto"]}
                 />
                 <Bar dataKey="monto" radius={[0, 6, 6, 0]} barSize={20}>
                   {topFiados.map((entry, index) => (
-                    <Cell key={`fia-${index}`} fill={entry.vencido ? "#ef4444" : "#ff6b5b"} />
+                    <Cell key={`fia-${index}`} fill={entry.vencido ? SERIE.gastos : SERIE.alerta} />
                   ))}
-                  <LabelList dataKey="monto" position="right" formatter={(v: unknown) => formatCurrency(Number(v), { decimals: 0 })} style={{ fontSize: 10, fill: "#6b7280", fontWeight: 600 }} />
+                  <LabelList dataKey="monto" position="right" formatter={(v: unknown) => formatCurrency(Number(v), { decimals: 0 })} style={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 600 }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -1057,13 +1053,13 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 9: Mejora 19 — Salud del Negocio (gauge 0-100) ════════ */}
       {healthScore && (
         <StaggerItem index={8}>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
-              <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#ff6b5b" : "#ef4444" }} />
+              <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? SERIE.alerta : SERIE.gastos }} />
               <p className="text-sm font-bold text-[var(--text-primary)]">Salud del Negocio</p>
               <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full" style={{
-                backgroundColor: healthScore.total > 70 ? "color-mix(in oklab, var(--accent) 12%, transparent)" : healthScore.total >= 40 ? "#ff6b5b20" : "#ef444420",
-                color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#ff6b5b" : "#ef4444",
+                backgroundColor: healthScore.total > 70 ? "color-mix(in oklab, var(--accent) 12%, transparent)" : healthScore.total >= 40 ? "color-mix(in oklab, var(--data-warning-500) 12%, transparent)" : "color-mix(in oklab, var(--data-error-500) 12%, transparent)",
+                color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? SERIE.alerta : SERIE.gastos,
               }}>
                 {healthScore.total}/100
               </span>
@@ -1077,13 +1073,13 @@ function FinanzasDashboard() {
                       data={[{ name: "score", value: healthScore.total }, { name: "empty", value: 100 - healthScore.total }]}
                       cx="50%" cy="100%" startAngle={180} endAngle={0} innerRadius={50} outerRadius={70} dataKey="value" stroke="none"
                     >
-                      <Cell fill={healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#ff6b5b" : "#ef4444"} />
-                      <Cell fill="#e5e7eb" className="" />
+                      <Cell fill={healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? SERIE.alerta : SERIE.gastos} />
+                      <Cell fill="var(--rule-base)" className="" />
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-end justify-center pb-1 pointer-events-none">
-                  <span className="text-2xl font-extrabold" style={{ color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#ff6b5b" : "#ef4444" }}>
+                  <span className="text-2xl font-extrabold" style={{ color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? SERIE.alerta : SERIE.gastos }}>
                     {healthScore.total}
                   </span>
                 </div>
@@ -1101,8 +1097,8 @@ function FinanzasDashboard() {
                       <span className="text-xs font-semibold text-[var(--text-secondary)]">{f.label}</span>
                       <span className="text-xs font-bold text-[var(--text-secondary)]">{f.detail}</span>
                     </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-[var(--dur-slow)]" style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts >= f.max * 0.8 ? "var(--accent)" : f.pts >= f.max * 0.5 ? "#ff6b5b" : "#ef4444" }} />
+                    <div className="h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-[var(--dur-slow)]" style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts >= f.max * 0.8 ? "var(--accent)" : f.pts >= f.max * 0.5 ? SERIE.alerta : SERIE.gastos }} />
                     </div>
                     <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{f.desc}</p>
                   </div>
@@ -1115,15 +1111,15 @@ function FinanzasDashboard() {
 
       {/* ════════ SECCION 10: Mejora 20 — Comparativo entre meses ════════ */}
       <StaggerItem index={9}>
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <p className="text-sm font-bold text-[var(--text-primary)]">Comparar Meses</p>
             <div className="flex items-center gap-2">
-              <select value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]">
+              <select value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-[var(--surface-raised)] text-[var(--text-primary)]">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
               <span className="text-xs text-[var(--text-tertiary)]">vs</span>
-              <select value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]">
+              <select value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-[var(--surface-raised)] text-[var(--text-primary)]">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
             </div>
@@ -1145,11 +1141,11 @@ function FinanzasDashboard() {
             return (
               <>
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="text-center p-2 bg-gray-50 rounded-xl">
+                  <div className="text-center p-2 bg-[var(--surface-sunken)] rounded-xl">
                     <p className="text-xs text-[var(--text-tertiary)] uppercase font-bold">Ventas</p>
                     <p className={cn("text-sm font-bold", diffIngresos >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{diffIngresos >= 0 ? "+" : ""}{diffIngresos}%</p>
                   </div>
-                  <div className="text-center p-2 bg-gray-50 rounded-xl">
+                  <div className="text-center p-2 bg-[var(--surface-sunken)] rounded-xl">
                     <p className="text-xs text-[var(--text-tertiary)] uppercase font-bold">Gastos</p>
                     <p className={cn("text-sm font-bold", diffGastos <= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{diffGastos >= 0 ? "+" : ""}{diffGastos}%</p>
                   </div>
@@ -1162,7 +1158,7 @@ function FinanzasDashboard() {
                     <Tooltip content={<ChartTooltip />} />
                     <Legend />
                     <Bar dataKey={cmpMonth1} fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey={cmpMonth2} fill="#ff6b5b" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey={cmpMonth2} fill={SERIE.alerta} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </>
@@ -1173,30 +1169,30 @@ function FinanzasDashboard() {
 
       {/* ════════ Expand Chart Modals ════════ */}
       {expandedChart && (
-        <ChartExpandModal title={expandedChart === "ingresos-gastos" ? "Ingresos vs Gastos vs Utilidad" : expandedChart === "flujo-caja" ? "Flujo de Caja" : expandedChart === "gastos-cat" ? "Gastos por Categoria" : expandedChart} onClose={() => setExpandedChart(null)}>
+        <ChartExpandModal title={expandedChart === "ingresos-gastos" ? "Ingresos vs Gastos vs Utilidad" : expandedChart === "flujo-caja" ? "Flujo de Caja" : expandedChart === "gastos-cat" ? "Gastos por Categoría" : expandedChart} onClose={() => setExpandedChart(null)}>
             {expandedChart === "ingresos-gastos" && monthlyData.length > 0 && (
               <ResponsiveContainer minWidth={0} width="100%" height={500}>
                 <ComposedChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-base)" />
                   <XAxis dataKey="mes" tick={{ fontSize: 14 }} />
                   <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 13 }} />
                   <Tooltip content={<ChartTooltip />} />
                   <Legend />
                   <Bar dataKey="ingresos" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="gastos" fill="#e63946" radius={[6, 6, 0, 0]} />
-                  <Line type="monotone" dataKey="utilidad" stroke="#3b82f6" strokeWidth={3} dot={{ r: 5, fill: "#3b82f6" }} />
+                  <Bar dataKey="gastos" fill={SERIE.gastos} radius={[6, 6, 0, 0]} />
+                  <Line type="monotone" dataKey="utilidad" stroke={SERIE.utilidad} strokeWidth={3} dot={{ r: 5, fill: SERIE.utilidad }} />
                 </ComposedChart>
               </ResponsiveContainer>
             )}
             {expandedChart === "flujo-caja" && cashFlow.some(d => d.ingresos > 0 || d.gastos > 0) && (
               <ResponsiveContainer minWidth={0} width="100%" height={500}>
                 <AreaChart data={cashFlow}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-base)" />
                   <XAxis dataKey="dia" tick={{ fontSize: 12 }} />
                   <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 13 }} />
                   <Tooltip content={<ChartTooltip />} />
                   <Area type="monotone" dataKey="ingresos" stroke="var(--accent)" fill="color-mix(in oklab, var(--accent) 12%, transparent)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="gastos" stroke="#ef4444" fill="#ef444420" strokeWidth={2} />
+                  <Area type="monotone" dataKey="gastos" stroke={SERIE.gastos} fill={SERIE.gastos} fillOpacity={0.12} strokeWidth={2} />
                   <Area type="monotone" dataKey="balance" stroke="var(--color-primary)" fill="var(--color-primary)30" strokeWidth={3} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -1315,14 +1311,30 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
       {sub === "resumen" && (
         <div className="space-y-6" key={refreshKey}>
           <FinanzasDashboard />
-          {/* Resumen automático integrado en dashboard */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <ProfitLossAutoCard />
-            <MonthProjectionCard />
-            <BudgetAlertWidget />
-            <WeeklyReportCard />
-            <MoneyLeakDetector />
-          </div>
+          {/* Cuatro de estas cinco tarjetas son la versión corta de otra sección
+              —resultado, caja, presupuesto, reportes— y colgaban al final de un
+              tablero que ya medía casi 5000 px. La quinta, el detector de fugas,
+              no vive en ninguna otra parte: por eso queda afuera del pliegue.
+
+              Plegadas y no borradas: un resumen automático al lado del tablero
+              sirve cuando se lo busca; lo que no puede es cobrarle mil píxeles
+              de scroll a quien entró a mirar el gráfico de arriba. */}
+          <MoneyLeakDetector />
+          <details className="group rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+            <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+              <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-open:rotate-90" aria-hidden />
+              Resúmenes automáticos
+              <span className="font-medium text-[var(--text-tertiary)]">
+                · resultado del mes, proyección, presupuesto y reporte semanal
+              </span>
+            </summary>
+            <div className="grid grid-cols-1 gap-4 border-t border-[var(--rule-base)] p-4 lg:grid-cols-2">
+              <ProfitLossAutoCard />
+              <MonthProjectionCard />
+              <BudgetAlertWidget />
+              <WeeklyReportCard />
+            </div>
+          </details>
         </div>
       )}
       {sub === "pl" && (

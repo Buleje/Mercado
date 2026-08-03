@@ -277,13 +277,13 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
     <div
       ref={fillRef}
       style={fillHeight ? { height: `${fillHeight}px` } : undefined}
-      className="flex min-h-[420px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/20"
+      className="flex min-h-[420px] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] dark:bg-[var(--surface-sunken)]"
     >
       {/* Header: estado de conexión + no leídos */}
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 dark:border-[var(--rule-base)] dark:bg-[var(--surface-sunken)]">
         <div className="flex items-center gap-2">
           <MessageCircle className="h-5 w-5 text-primary" />
-          <span className="text-base font-bold text-slate-900 dark:text-white">
+          <span className="text-base font-bold text-[var(--text-primary)]">
             WhatsApp del negocio
           </span>
           {totalUnread > 0 && (
@@ -300,7 +300,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
               "flex h-9 w-9 items-center justify-center rounded-full border-2 transition",
               soundOn
                 ? "border-primary/40 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                : "border-slate-200 text-slate-400 dark:border-slate-700",
+                : "border-[var(--rule-base)] text-[var(--text-tertiary)] dark:border-[var(--rule-base)]",
             )}
             title={soundOn ? "Sonido de mensaje nuevo: activado" : "Sonido de mensaje nuevo: apagado"}
             aria-label="Alternar sonido de notificación"
@@ -337,8 +337,8 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
 
       {/* Mini-dashboard del día */}
       {stats && (stats.recibidos > 0 || stats.porBot + stats.porHumano > 0) && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-slate-200 bg-white px-4 py-1.5 text-[length:var(--ts-xs)] font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-          <span className="font-bold text-slate-700 dark:text-slate-200">Hoy:</span>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] dark:border-[var(--rule-base)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-tertiary)]">
+          <span className="font-bold text-[var(--text-secondary)]">Hoy:</span>
           <span>📥 {stats.recibidos} recibidos</span>
           <span>💬 {stats.respondidos} respondidos</span>
           <span>🤖 {stats.porBot} bot · 🙋 {stats.porHumano} tú</span>
@@ -354,9 +354,9 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
 
       {/* Form nueva conversación (➕) */}
       {showNewChat && (
-        <div className="flex flex-wrap items-end gap-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-wrap items-end gap-3 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 dark:border-[var(--rule-base)] dark:bg-[var(--surface-sunken)]">
           <div className="min-w-[220px] flex-1">
-            <label htmlFor="wa-new-phone" className="mb-1 block text-[length:var(--ts-xs)] font-bold text-slate-500">
+            <label htmlFor="wa-new-phone" className="mb-1 block text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)]">
               Número de WhatsApp
             </label>
             <input
@@ -367,10 +367,10 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
               onKeyDown={(e) => { if (e.key === "Enter") handleStartNewChat(); }}
               placeholder="917 013 738 (agrega 51 si no es Perú)"
               className={cn(
-                "h-12 w-full rounded-2xl border-2 bg-white px-4 text-base text-slate-900 outline-none transition focus:border-primary dark:bg-slate-950 dark:text-white",
+                "h-12 w-full rounded-2xl border-2 bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none transition focus:border-primary dark:bg-[var(--surface-canvas)] dark:text-white",
                 newPhoneError
                   ? "border-[var(--data-error-500)]"
-                  : "border-slate-200 dark:border-slate-700",
+                  : "border-[var(--rule-base)]",
               )}
             />
             {newPhoneError && (
@@ -380,7 +380,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
             )}
           </div>
           <div className="min-w-[180px] flex-1">
-            <label htmlFor="wa-new-name" className="mb-1 block text-[length:var(--ts-xs)] font-bold text-slate-500">
+            <label htmlFor="wa-new-name" className="mb-1 block text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)]">
               Nombre (opcional)
             </label>
             <input
@@ -389,7 +389,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleStartNewChat(); }}
               placeholder="Juan Pérez"
-              className="h-12 w-full rounded-2xl border-2 border-slate-200 bg-white px-4 text-base text-slate-900 outline-none transition focus:border-primary dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+              className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none transition focus:border-primary dark:border-[var(--rule-base)] dark:bg-[var(--surface-canvas)] dark:text-white"
             />
           </div>
           <button
@@ -403,12 +403,12 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
           <button
             type="button"
             onClick={() => setShowNewChat(false)}
-            className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-slate-200 text-slate-500 transition hover:border-slate-300 dark:border-slate-700"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-[var(--rule-base)]"
             aria-label="Cerrar nueva conversación"
           >
             <X className="h-5 w-5" />
           </button>
-          <p className="w-full text-[length:var(--ts-xs)] text-slate-500">
+          <p className="w-full text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
             💡 Si esta persona nunca te escribió, WhatsApp exige iniciar con una <strong>plantilla</strong> (botón 📄 del chat). Con el número de prueba de Meta solo puedes escribir a tus contactos registrados.
           </p>
         </div>
@@ -417,7 +417,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
       {/* Banner: no conectado */}
       {!loadingConvs && !connected && (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-4 py-3 dark:bg-[var(--data-warning-500)]/10">
-          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          <p className="text-sm font-medium text-[var(--text-secondary)]">
             Conecta tu número de WhatsApp para recibir y responder mensajes desde acá.
           </p>
           <button
@@ -442,7 +442,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
 
       {/* Filtro por número del negocio (solo con 2+ números conectados) */}
       {numbers.length > 1 && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-4 py-2.5 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 dark:border-[var(--rule-base)] dark:bg-[var(--surface-sunken)]">
           <button
             type="button"
             onClick={() => setNumberFilter(null)}
@@ -450,7 +450,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
               "h-9 rounded-full border-2 px-3.5 text-sm font-bold transition",
               numberFilter === null
                 ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                : "border-slate-200 text-slate-600 hover:border-primary/50 dark:border-slate-700 dark:text-slate-300",
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/50 dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)]",
             )}
           >
             Todos
@@ -464,7 +464,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                 "h-9 rounded-full border-2 px-3.5 text-sm font-bold transition",
                 numberFilter === n.phoneNumberId
                   ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                  : "border-slate-200 text-slate-600 hover:border-primary/50 dark:border-slate-700 dark:text-slate-300",
+                  : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/50 dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)]",
                 !n.isActive && "opacity-50",
               )}
             >
@@ -481,7 +481,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
       <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)] overflow-hidden md:grid-cols-[340px_1fr]">
         <aside
           className={cn(
-            "h-full min-h-0 overflow-hidden border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/40",
+            "h-full min-h-0 overflow-hidden border-r border-[var(--rule-base)] bg-[var(--surface-raised)] dark:border-[var(--rule-base)] dark:bg-[var(--surface-sunken)]",
             mobileView === "chat" && "hidden md:block",
           )}
         >
@@ -506,17 +506,17 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
           {selected ? (
             <>
               {/* Header del hilo */}
-              <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5 dark:border-slate-700 dark:bg-slate-900">
+              <div className="flex items-center gap-3 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 dark:border-[var(--rule-base)] dark:bg-[var(--surface-sunken)]">
                 <button
                   type="button"
                   onClick={() => setMobileView("list")}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 md:hidden dark:hover:bg-slate-800"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-tertiary)] transition hover:bg-[var(--surface-sunken)] md:hidden dark:hover:bg-[var(--surface-sunken)]"
                   aria-label="Volver a la lista"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
+                  <p className="truncate text-sm font-bold text-[var(--text-primary)]">
                     {selected.customerName !== "Cliente"
                       ? selected.customerName
                       : prettyPhone(selected.customerPhone)}
@@ -524,7 +524,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                   <span className="flex items-center gap-2">
                     <a
                       href={`tel:+${selected.customerPhone}`}
-                      className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] text-slate-500 underline-offset-2 hover:text-primary hover:underline"
+                      className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] underline-offset-2 hover:text-primary hover:underline"
                     >
                       <Phone className="h-3 w-3" />
                       {prettyPhone(selected.customerPhone)}
@@ -551,7 +551,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                 <button
                   type="button"
                   onClick={() => exportThreadTxt(selected.customerName, selected.customerPhone, messages)}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-200 text-slate-500 transition hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-primary/50 hover:text-primary dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)]"
                   title="Descargar la conversación (.txt)"
                   aria-label="Exportar conversación"
                 >
@@ -564,7 +564,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                     void markUnreadAndClose(selected.customerPhone);
                     setMobileView("list");
                   }}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-200 text-slate-500 transition hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-primary/50 hover:text-primary dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)]"
                   title="Dejar como no leída (queda resaltada en la bandeja)"
                   aria-label="Dejar como no leída"
                 >
@@ -584,7 +584,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                         "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
                         archived
                           ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                          : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
+                          : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-primary/50 hover:text-primary dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)]",
                       )}
                       title={archived ? "Volver a la bandeja principal" : "Archivar conversación (sigue recibiendo mensajes)"}
                     >
@@ -625,13 +625,13 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
               {summary && (
                 <div className="flex items-start gap-2 border-b border-primary/30 bg-primary/5 px-4 py-2">
                   <ScrollText className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-                  <p className="min-w-0 flex-1 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">
+                  <p className="min-w-0 flex-1 whitespace-pre-wrap text-sm text-[var(--text-secondary)]">
                     {summary}
                   </p>
                   <button
                     type="button"
                     onClick={() => setSummary(null)}
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] transition hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-sunken)]"
                     aria-label="Cerrar resumen"
                   >
                     <X className="h-4 w-4" />
@@ -639,7 +639,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                 </div>
               )}
               {/* Etiquetas de triage del hilo (compartidas entre cajeros) */}
-              <div className="border-b border-slate-200 bg-white px-4 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+              <div className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-1.5 dark:border-[var(--rule-base)] dark:bg-[var(--surface-sunken)]">
                 <WaLabelPicker
                   value={labelsMap[selected.customerPhone] ?? []}
                   onToggle={(id) => void toggleLabel(selected.customerPhone, id)}
@@ -674,10 +674,10 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
               <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <MessageCircle className="h-8 w-8 text-primary" />
               </span>
-              <p className="text-base font-semibold text-slate-700 dark:text-slate-200">
+              <p className="text-base font-semibold text-[var(--text-secondary)]">
                 Elige una conversación
               </p>
-              <p className="max-w-sm text-sm text-slate-500">
+              <p className="max-w-sm text-sm text-[var(--text-tertiary)]">
                 Acá ves los mensajes que llegan al WhatsApp de tu negocio y respondes
                 directo, sin salir del panel.
               </p>
