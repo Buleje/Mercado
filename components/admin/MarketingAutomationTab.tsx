@@ -237,16 +237,20 @@ export default function MarketingAutomationTab({
         </button>
       </AdminModuleHeader>
 
+      {/* Mismo molde de tarjeta que el resto del panel: superficie ÚNICA y el
+          color en la cifra, no en el fondo. Antes cada KPI traía su propio
+          `bg` (gris, celeste, verde, gris) y la fila parecía cuatro
+          componentes distintos puestos uno al lado del otro. */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Campañas", value: String(stats.total), bg: "bg-[var(--surface-sunken)]", color: "text-[var(--text-primary)]" },
-          { label: "Programadas", value: String(stats.programadas), bg: "bg-[var(--data-info-50)] dark:bg-[var(--data-info-500)]/15", color: "text-[var(--data-info-500)]" },
-          { label: "Completadas", value: String(stats.completadas), bg: "bg-primary/10 dark:bg-primary/15", color: "text-[var(--data-success-500)]" },
-          { label: "Clientes alcanzados", value: stats.alcance.toLocaleString("es-PE"), bg: "bg-[var(--surface-sunken)]", color: "text-[var(--text-primary)]" },
-        ].map(({ label, value, bg, color }) => (
-          <div key={label} className={cn("rounded-xl p-4", bg)}>
-            <p className="text-xs font-semibold text-[var(--text-secondary)] mb-1">{label}</p>
-            <p className={cn("text-xl font-extrabold", color)}>{value}</p>
+          { label: "Campañas", value: String(stats.total), color: "text-[var(--text-primary)]" },
+          { label: "Programadas", value: String(stats.programadas), color: "text-[var(--data-info-500)]" },
+          { label: "Completadas", value: String(stats.completadas), color: "text-[var(--data-success-500)]" },
+          { label: "Clientes alcanzados", value: stats.alcance.toLocaleString("es-PE"), color: "text-[var(--text-primary)]" },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+            <p className="text-xs font-bold text-[var(--text-tertiary)]">{label}</p>
+            <p className={cn("mt-1 text-2xl font-extrabold tabular-nums", color)}>{value}</p>
           </div>
         ))}
       </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Gauge, Shield, Activity } from "@buleje/design-system/icons";
-import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -34,11 +34,11 @@ export default function SistemaHubModule({ initialTab }: { initialTab?: string }
 
   return (
     <div className="space-y-4">
-      <AdminBreadcrumb
-        items={[
-          { label: "Sistema", onClick: () => setSub(TABS[0].id) },
-          { label: TABS.find((t) => t.id === sub)?.label ?? "" },
-        ]}
+      <AdminModuleHeader
+        eyebrow="Sistema · Técnico"
+        title="Sistema"
+        description="Salud técnica, registro de actividad y colas de trabajo."
+        icon={Gauge}
       />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "rendimiento" && <RendimientoModule />}

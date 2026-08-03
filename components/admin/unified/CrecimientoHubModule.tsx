@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { Megaphone, Heart, Users, Target, Gift, HeartHandshake, Repeat, Radio } from "@buleje/design-system/icons";
-import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -57,11 +57,11 @@ export default function CrecimientoHubModule({ initialTab }: { initialTab?: stri
 
   return (
     <div className="space-y-4">
-      <AdminBreadcrumb
-        items={[
-          { label: "Crecimiento", onClick: () => setSub(TABS[0].id) },
-          { label: TABS.find((t) => t.id === sub)?.label ?? "" },
-        ]}
+      <AdminModuleHeader
+        eyebrow="Crecimiento · Marketing"
+        title="Crecimiento"
+        description="Campañas, fidelización y programas para que el cliente vuelva."
+        icon={Megaphone}
       />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "campanas" && <CampanasTab initialSegment={campaignSegment} onConsumeSegment={consumeSegment} />}

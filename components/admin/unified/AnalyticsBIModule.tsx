@@ -62,9 +62,9 @@ const MODULE_ID = "analytics-bi";
 const SECTIONS: { id: SectionId; label: string; icon: typeof LayoutDashboard; description: string }[] = [
   { id: "resumen",   label: "Resumen",   icon: LayoutDashboard, description: "Vista general de tu negocio" },
   { id: "ventas",    label: "Ventas",    icon: TrendingUp,      description: "Tendencias, horarios y patrones de venta" },
-  { id: "productos", label: "Productos", icon: Package,         description: "Clasificacion ABC, BCG y margenes" },
+  { id: "productos", label: "Productos", icon: Package,         description: "Clasificación ABC, BCG y márgenes" },
   { id: "clientes",  label: "Clientes",  icon: Users,           description: "Segmentación RFM (Recencia, Frecuencia, Monetario — clasifica clientes por comportamiento de compra), ranking y fidelidad" },
-  { id: "predicciones", label: "Predicciones", icon: Target,          description: "Pronosticos y alertas basados en historial" },
+  { id: "predicciones", label: "Predicciones", icon: Target,          description: "Pronósticos y alertas basados en tu historial" },
 ];
 
 // ── AnalyticsCard — wrapper profesional para cada grafico ────────────────────
@@ -77,7 +77,7 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
 }) {
   return (
     <div className={cn(
-      "bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
+      "bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-6 transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-5">
@@ -169,9 +169,9 @@ function InlineKPIStrip() {
 
   if (!kpis) {
     return (
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+          <div key={i} className="h-[86px] bg-[var(--surface-sunken)] rounded-2xl animate-pulse" />
         ))}
       </div>
     );
@@ -187,14 +187,18 @@ function InlineKPIStrip() {
   ];
 
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
+    // Mismo molde de tarjeta que "Por cobrar" y "Scoring": rounded-2xl sobre
+    // --surface-raised, rótulo arriba a la izquierda y cifra grande debajo.
+    // Antes eran cajitas centradas con `bg-[var(--surface-raised)]` crudo (sin variante dark) —
+    // el único KPI con esa forma en todo el panel.
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2.5  text-center"
+          className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3"
         >
-          <p className="text-xs font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
-          <p className={cn("text-lg font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
+          <p className="text-xs font-bold text-[var(--text-tertiary)]">{item.label}</p>
+          <p className={cn("mt-1 text-2xl font-extrabold tabular-nums", item.color)}>{item.value}</p>
         </div>
       ))}
     </div>
@@ -245,7 +249,7 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
     return (
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />
+          <div key={i} className="h-14 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
         ))}
       </div>
     );
@@ -254,7 +258,7 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
       {items.map((item) => (
-        <div key={item.label} className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2  text-center">
+        <div key={item.label} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2  text-center">
           <p className="text-xs font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
           <p className={cn("text-base font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
         </div>
@@ -274,7 +278,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   return (
     <div className={cn(
-      "bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
+      "bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-6 transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-4">
@@ -352,7 +356,7 @@ function Top10Clientes({ refreshKey, reportEmpty = true }: { refreshKey: number;
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
+          <div key={i} className="h-12 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
         ))}
       </div>
     );
@@ -485,7 +489,7 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
     <div className="rounded-xl bg-[var(--surface-sunken)] p-4 border border-[var(--rule-base)]">
       <div className="flex items-start gap-3">
         {star.imageUrl && (
-          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white dark:bg-[var(--color-card)] shrink-0 border border-[var(--rule-base)]">
+          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-[var(--surface-raised)] shrink-0 border border-[var(--rule-base)]">
             <Image src={star.imageUrl} alt={star.name} fill className="object-cover" sizes="64px" />
           </div>
         )}
@@ -839,7 +843,15 @@ export default function AnalyticsBIModule() {
     <div className="space-y-4">
       {/* La descripción era «analítica avanzada de ventas, productos, clientes y
           predicciones»: la lista de las pestañas que vienen justo abajo. */}
-      <AdminModuleHeader title="Analytics BI" icon={BarChart3} />
+      {/* `as="h2"`: el hub de Análisis ya puso el h1. Y título en español con
+          descripción, como el resto del panel — "Analytics BI" era el único
+          nombre en inglés y el único header sin una línea que lo explique. */}
+      <AdminModuleHeader
+        as="h2"
+        title="Métricas del negocio"
+        description="Ventas, productos, clientes y predicciones, en una sola vista."
+        icon={BarChart3}
+      />
       {dataState === "empty" ? (
         <ChartsEmptyState
           title="Todavía no hay datos para analizar"

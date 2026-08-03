@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { BarChart3, TrendingUp, Sparkles } from "@buleje/design-system/icons";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -34,9 +35,17 @@ export default function AnalisisHubModule({ initialTab }: { initialTab?: string 
 
   return (
     <div className="space-y-4">
-      {/* Sin breadcrumb: decía «Análisis › Analytics Pro» justo encima de una
-          barra de pestañas donde «Analytics Pro» ya está marcada como activa.
-          Dos líneas para la misma información, y el contenido 40 px más abajo. */}
+      {/* Header ARRIBA de las pestañas, igual que Mi Plata. Sin él, la primera
+          cosa de la pantalla era la barra de sub-tabs y el título aparecía
+          debajo — al revés que el resto del panel. (El breadcrumb que había
+          antes decía «Análisis › Analytics Pro» encima de una barra donde
+          «Analytics Pro» ya está marcada: dos líneas para el mismo dato.) */}
+      <AdminModuleHeader
+        eyebrow="Análisis · Negocio"
+        title="Análisis"
+        description="Métricas del negocio, predicción de demanda e inteligencia comercial."
+        icon={BarChart3}
+      />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "analytics" && <AnalyticsProModule />}
         {sub === "forecast" && <ForecastingDashboard />}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { FileCheck, ClipboardList, Truck, FileMinus, FileSignature, Archive } from "@buleje/design-system/icons";
-import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -46,11 +46,11 @@ export default function DocumentosHubModule({ initialTab }: { initialTab?: strin
 
   return (
     <div className="space-y-4">
-      <AdminBreadcrumb
-        items={[
-          { label: "Documentos", onClick: () => setSub(TABS[0].id) },
-          { label: TABS.find((t) => t.id === sub)?.label ?? "" },
-        ]}
+      <AdminModuleHeader
+        eyebrow="Ventas · Documentos"
+        title="Documentos"
+        description="Facturación SUNAT, cotizaciones, guías, notas de crédito y contratos."
+        icon={FileCheck}
       />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "facturacion" && <FacturacionModule />}

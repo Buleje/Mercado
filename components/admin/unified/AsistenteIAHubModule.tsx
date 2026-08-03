@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { BotMessageSquare, Wand2, Lightbulb } from "@buleje/design-system/icons";
-import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -34,11 +34,11 @@ export default function AsistenteIAHubModule({ initialTab }: { initialTab?: stri
 
   return (
     <div className="space-y-4">
-      <AdminBreadcrumb
-        items={[
-          { label: "Asistente IA", onClick: () => setSub(TABS[0].id) },
-          { label: TABS.find((t) => t.id === sub)?.label ?? "" },
-        ]}
+      <AdminModuleHeader
+        eyebrow="Inicio · Asistente"
+        title="Asistente IA"
+        description="Chat, comandos y sugerencias sobre tu negocio."
+        icon={BotMessageSquare}
       />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "chat" && <ChatIAModule />}
