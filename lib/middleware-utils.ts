@@ -236,11 +236,11 @@ export function buildCSP(pathname: string, nonce?: string): string {
      En prod: nonce + strict-dynamic para máxima seguridad. */
   let scriptSrc: string;
   if (isDev) {
-    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
+    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com`;
   } else if (nonce) {
-    scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
+    scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com`;
   } else {
-    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
+    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com`;
   }
 
   // SECURITY 2026-05-12 (audit defensivo P1-1): `img-src *` permitía cargar
@@ -253,7 +253,7 @@ export function buildCSP(pathname: string, nonce?: string): string {
     "style-src":                 "'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src":                   "'self' data: blob: https:",
     "font-src":                  "'self' data: https://fonts.gstatic.com",
-    "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com",
+    "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com https://us.i.posthog.com https://us-assets.i.posthog.com",
     "media-src":                 "'self'",
     // frame-src: sin declararlo hereda `default-src 'self'`, que NO incluye
     // blob: — y la vista previa del drive arma un blob con el archivo para
