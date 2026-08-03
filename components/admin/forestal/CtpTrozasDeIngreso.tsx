@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { ArrowDownRight, FileText, Loader2, PackageCheck, PackageOpen, Scissors } from "@buleje/design-system/icons";
+import { AlertTriangle, ArrowDownRight, Check, FileText, Loader2, PackageCheck, PackageOpen, Scissors, Search } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import CtpRetrozarModal, { type TrozaParaCortar } from "./CtpRetrozarModal";
 import CtpRecepcionTrozas from "./CtpRecepcionTrozas";
@@ -71,6 +71,9 @@ export default function CtpTrozasDeIngreso({
   const [recibiendo, setRecibiendo] = useState(false);
   /** La lista de trozas como documento: se mira antes de imprimir o archivar. */
   const [viendoLista, setViendoLista] = useState(false);
+  /** Filtro por pieza. Una guía trae hasta ochenta trozas y el fiscalizador
+   *  pregunta por UNA: sin esto había que buscarla scrolleando a ojo. */
+  const [filtro, setFiltro] = useState("");
 
   const cargar = useCallback(async () => {
     try {
@@ -110,6 +113,45 @@ export default function CtpTrozasDeIngreso({
   const total = trozas.reduce((a, t) => a + (t.volumenM3 ?? 0), 0);
   const balance = balanceRecepcion(trozas);
 
+  /**
+   * ¿La lista cuadra con el ingreso?
+   *
+   * `volumenDelIngreso` llegaba como prop y sólo se pasaba hacia abajo: la
+   * cabecera mostraba el total de las trozas AL LADO del volumen declarado del
+   * ingreso sin decir nunca si coincidían. Con 5 m³ de trozas contra 10 m³
+   * declarados —el caso que destapó esto— había que restar de memoria. Y es
+   * justo lo que se contrasta pieza por pieza en una fiscalización: o falta
+   * cargar trozas, o el volumen del ingreso está mal.
+   *
+   * Tolerancia de 0.001 m³: los volúmenes se guardan con 4 decimales y sumar
+   * ochenta piezas arrastra centésimas de milésimo que no son una diferencia
+   * real.
+   */
+  /** Coincide con codificación, código de planta, parcela o especie: son los
+   *  cuatro campos por los que alguien pregunta por una pieza. */
+  const norm = (v: string) => v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const q = norm(filtro.trim());
+  const visibles = q
+    ? trozas.filter((t) =>
+        [t.codificacion, t.codigoPlanta, t.parcela, t.especieComun]
+          .some((c) => c && norm(String(c)).includes(q)),
+      )
+    : trozas;
+
+  const cuadre = (() => {
+    if (volumenDelIngreso == null || volumenDelIngreso <= 0) return null;
+    const brecha = Number((volumenDelIngreso - total).toFixed(4));
+    if (Math.abs(brecha) <= 0.001) return { ok: true as const, aviso: "" };
+    // El texto se arma acá, donde `brecha` es un número recién calculado: en el
+    // JSX sería `cuadre.brecha.toFixed()` sobre una propiedad de objeto, que es
+    // justo lo que la regla del proyecto marca como frágil.
+    const aviso =
+      brecha > 0
+        ? `faltan ${brecha.toFixed(4)} m³ por detallar`
+        : `${Math.abs(brecha).toFixed(4)} m³ de más`;
+    return { ok: false as const, aviso };
+  })();
+
   return (
     <section className="@container overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--rule-soft)] px-4 py-3">
@@ -127,7 +169,26 @@ export default function CtpTrozasDeIngreso({
               {balance.faltantes} no llegó al patio
             </span>
           )}
-          <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">{total.toFixed(4)} m³</span>
+          <span className="flex items-baseline gap-1.5">
+            <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">{total.toFixed(4)} m³</span>
+            {cuadre?.ok && (
+              <span
+                title={`Las piezas suman lo mismo que el volumen declarado del ingreso (${volumenDelIngreso?.toFixed(4)} m³).`}
+                className="inline-flex items-center gap-1 rounded-lg bg-[var(--data-success-500)]/15 px-2 py-0.5 text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+              >
+                <Check className="h-3 w-3" strokeWidth={3} /> cuadra
+              </span>
+            )}
+            {cuadre && !cuadre.ok && (
+              <span
+                title={`El ingreso declara ${volumenDelIngreso?.toFixed(4)} m³ y las piezas suman ${total.toFixed(4)} m³. O falta cargar trozas, o el volumen del ingreso no es el de la guía.`}
+                className="inline-flex items-center gap-1 rounded-lg bg-[var(--data-warning-500)]/15 px-2 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+              >
+                <AlertTriangle className="h-3 w-3" />
+                {cuadre.aviso}
+              </span>
+            )}
+          </span>
           <button
             type="button"
             onClick={() => setRecibiendo(true)}
@@ -146,6 +207,33 @@ export default function CtpTrozasDeIngreso({
           </button>
         </div>
       </div>
+
+      {trozas.length > 8 && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] px-4 py-2.5">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+            <input
+              type="search"
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+              placeholder="Buscar una pieza por código, parcela o especie…"
+              aria-label="Buscar una troza de esta guía"
+              className="h-9 w-full rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none transition-[border-color] focus:border-[var(--accent)]"
+            />
+          </div>
+          <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
+            {visibles.length} de {trozas.length}
+          </span>
+        </div>
+      )}
+
+      {/* Un filtro sin resultados no puede verse igual que "esta guía no trae
+          trozas": lo segundo es un problema del registro, lo primero un typo. */}
+      {q && visibles.length === 0 && (
+        <p className="border-b border-[var(--rule-soft)] px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">
+          Ninguna de las {trozas.length} piezas de esta guía coincide con «{filtro.trim()}».
+        </p>
+      )}
 
       {/* 9 columnas necesitan ~56rem. El umbral se mide contra el CONTENEDOR y no
           contra el viewport porque esto vive dentro del modal de detalle del
@@ -167,7 +255,7 @@ export default function CtpTrozasDeIngreso({
             </tr>
           </thead>
           <tbody>
-            {trozas.map((t) => {
+            {visibles.map((t) => {
               const pedazos = t.retrozos ?? [];
               const cortado = pedazos.reduce((a, r) => a + (r.volumenM3 ?? 0), 0);
               const libre = (t.volumenM3 ?? 0) - cortado;
@@ -261,7 +349,7 @@ export default function CtpTrozasDeIngreso({
       </div>
 
       <ul className="divide-y divide-[var(--rule-soft)] @4xl:hidden">
-        {trozas.map((t) => (
+        {visibles.map((t) => (
           <li key={t.id} className="px-4 py-3">
             <div className="flex items-baseline justify-between gap-2">
               <span className="font-mono font-bold text-[var(--text-primary)]">{t.codificacion ?? "—"}</span>
