@@ -1,6 +1,7 @@
 "use client";
 
-import { LoadingState, PageTitle, SectionTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
   TrendingUp, TrendingDown, DollarSign, Loader2, RefreshCw,
@@ -163,17 +164,16 @@ export default function PLTab() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
-            <DollarSign className="h-6 w-6 text-primary" />
-            Ganancias y Pérdidas del Mes
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Cuánto entró, cuánto salió y cuánto quedó de ganancia</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="space-y-4">
+      {/* Header estándar del panel. Antes era un div a mano con PageTitle, que
+          se saltea el `font-display` de AdminModuleHeader: al lado de sus
+          hermanos de Mi Plata se leía como otro producto. */}
+      <AdminModuleHeader
+        as="h2"
+        title="Ganancias y pérdidas del mes"
+        description="Cuánto entró, cuánto salió y cuánto quedó de ganancia"
+        icon={DollarSign}
+      >
           <select
             value={month}
             onChange={e => setMonth(Number(e.target.value))}
@@ -194,8 +194,7 @@ export default function PLTab() {
           <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Descargar
           </button>
-        </div>
-      </div>
+      </AdminModuleHeader>
 
       {loading ? (
         <LoadingState />
