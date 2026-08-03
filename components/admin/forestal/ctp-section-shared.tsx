@@ -25,6 +25,12 @@ export interface CtpEntry {
   despachadoQty?: number;
   reprocesadoQty?: number;
   /**
+   * Sólo en producción: m³ de materia prima de ESTA corrida que están atados a
+   * un ingreso con GTF. Menos que `volumeInputM3` es producto sin origen
+   * declarado (ver `origenDeCorrida`).
+   */
+  mpAtribuidaM3?: number;
+  /**
    * Sólo en despacho: cuánto de lo despachado tiene corrida de origen declarada.
    * Lo agrega el listado para que la fila pueda avisar del faltante sin abrir la
    * ficha de cadena de custodia (ver `lib/forestal/atribucion-despacho.ts`).

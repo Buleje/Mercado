@@ -63,3 +63,22 @@ export function faltaAtribuir(
 ): e is Extract<EstadoAtribucion, { estado: "parcial" | "sin-atribucion" }> {
   return e.estado === "parcial" || e.estado === "sin-atribucion";
 }
+
+/**
+ * Lo mismo, un eslabón más atrás: ¿la materia prima que entró a una corrida
+ * tiene ingreso declarado?
+ *
+ * Es la misma pregunta con otros sustantivos, así que comparte la regla: una
+ * corrida sin materia prima atribuida es producto que apareció de la nada. El
+ * libro lo admite —el guard vive en el certificado, no en el guardado— pero
+ * tiene que verse.
+ *
+ * @param consumido m³ de materia prima que declara haber consumido la corrida.
+ * @param atribuido m³ efectivamente atados a ingresos con GTF.
+ */
+export function origenDeCorrida(
+  consumido: number | null | undefined,
+  atribuido: number | null | undefined,
+): EstadoAtribucion {
+  return atribucionDeDespacho(consumido, atribuido, "m³");
+}

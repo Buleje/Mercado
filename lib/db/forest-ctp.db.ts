@@ -396,7 +396,19 @@ export class ForestCtpDB {
       };
     }
 
-    const [salidas, reprocesos] = await Promise.all([
+    /**
+     * ¿De qué ingreso salió la madera que entró a esta corrida?
+     *
+     * Una corrida sin materia prima atribuida es producto que apareció de la
+     * nada: el libro lo admite —el guard vive en el certificado, no en el
+     * guardado— pero la fila tiene que decirlo. Consumos ya lo calculaba
+     * (`corridasSinOrigen`), sólo que ahí hay que ir a buscarlo; en la tabla de
+     * Producción, que es donde se miran las corridas, no se veía.
+     *
+     * Cierra el trío: el ingreso se cuadra contra sus piezas, la corrida contra
+     * su materia prima, el despacho contra su corrida.
+     */
+    const [salidas, reprocesos, consumos] = await Promise.all([
       prisma.forestCtpDespachoOrigen.groupBy({
         by: ["produccionEntryId"],
         where: { tenantId, produccionEntryId: { in: corridas }, despacho: { deletedAt: null, status: "registrado" } },
@@ -410,9 +422,15 @@ export class ForestCtpDB {
         where: { tenantId, origenEntryId: { in: corridas }, destino: { deletedAt: null, status: "registrado" } },
         _sum: { quantity: true },
       }),
+      prisma.forestCtpConsumo.groupBy({
+        by: ["ctpEntryId"],
+        where: { tenantId, ctpEntryId: { in: corridas } },
+        _sum: { volumeM3: true },
+      }),
     ]);
     const desp = new Map(salidas.map((r) => [r.produccionEntryId, Number(r._sum.quantity ?? 0)]));
     const repro = new Map(reprocesos.map((r) => [r.origenEntryId, Number(r._sum.quantity ?? 0)]));
+    const mpAtribuida = new Map(consumos.map((c) => [c.ctpEntryId, Number(c._sum.volumeM3 ?? 0)]));
 
     return {
       entries: entries.map((e) =>
@@ -421,6 +439,7 @@ export class ForestCtpDB {
               ...e,
               despachadoQty: desp.get(e.id) ?? 0,
               reprocesadoQty: repro.get(e.id) ?? 0,
+              mpAtribuidaM3: mpAtribuida.get(e.id) ?? 0,
             }
           : e.section === "despacho"
             ? { ...e, atribuidoQty: atribuido.get(e.id) ?? 0 }

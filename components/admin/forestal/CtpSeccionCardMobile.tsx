@@ -11,7 +11,7 @@
  */
 
 import { AlertCircle, Boxes, Calendar, FileText, Link2, PackagePlus, Truck } from "@buleje/design-system/icons";
-import { atribucionDeDespacho, faltaAtribuir } from "@/lib/forestal/atribucion-despacho";
+import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import type { CtpEntry, CtpSection } from "./CtpSectionViews";
 import { UNIT_LABELS } from "./ctp-section-shared";
@@ -39,6 +39,11 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
   const anulado = e.status === "anulado";
   const KindIcon = section === "produccion" ? Boxes : Truck;
   const rend = section === "produccion" ? evaluarRendimiento(e.productType, e.rendimientoPct != null ? Number(e.rendimientoPct) : null) : null;
+  /** De dónde salió la materia prima de esta corrida — misma regla que la tabla. */
+  const origen = origenDeCorrida(
+    e.volumeInputM3 == null ? null : Number(e.volumeInputM3),
+    e.mpAtribuidaM3,
+  );
   /** Cuánto de este despacho salió sin origen declarado — misma regla que la tabla. */
   const atribucion = atribucionDeDespacho(
     e.quantity == null ? null : Number(e.quantity),
@@ -75,12 +80,25 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
           <span className="text-xs text-[var(--text-tertiary)]">{e.unit ?? ""}</span>
         </span>
         {section === "produccion" ? (
-          rend && (
+          <>
+          {rend && (
             <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${rend.estado === "alto" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" : "bg-[var(--data-info-100)] text-[var(--data-info-700)]"}`}>
               {rend.estado === "alto" && <AlertCircle className="h-3.5 w-3.5" aria-label={`Rendimiento sobre el referencial SERFOR (${rend.ref}%)`} />}
               Rend. {e.rendimientoPct != null ? `${Number(e.rendimientoPct).toFixed(1)}%` : "—"}
             </span>
-          )
+          )}
+          {/* Mismo aviso que la tabla: sin esto, quien mira desde el patio no ve
+              que la corrida no tiene materia prima atribuida. */}
+          {faltaAtribuir(origen) && (
+            <span
+              title="Esta corrida consumió madera que no está atada a ningún ingreso con GTF."
+              className="basis-full inline-flex items-center gap-1 rounded-lg bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+            >
+              <AlertCircle className="h-3 w-3 shrink-0" aria-hidden />
+              {origen.aviso}
+            </span>
+          )}
+          </>
         ) : (
           <>
             <span className="text-sm text-[var(--text-secondary)]">

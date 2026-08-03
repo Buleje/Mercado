@@ -19,7 +19,7 @@
 import { AlertTriangle, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, FileText, Link2, PackagePlus, Scale, X as XIcon } from "@buleje/design-system/icons";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
-import { atribucionDeDespacho, faltaAtribuir } from "@/lib/forestal/atribucion-despacho";
+import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
 import { type CtpEntry, type CtpSection, Th, Td, estadoSalida, UNIT_LABELS } from "./ctp-section-shared";
 import { IconAction } from "./ctp-shared";
 import type { totalesDeSeccion } from "@/lib/forestal/ctp-secciones-filtro";
@@ -74,6 +74,31 @@ function AtribucionBadge({ entry }: { entry: CtpEntry }) {
   return (
     <div
       title="Este volumen salió de la planta sin corrida de producción atribuida. Abrí la cadena de custodia para completarlo: sin origen no se puede certificar."
+      className="mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+    >
+      <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
+      {estado.aviso}
+    </div>
+  );
+}
+
+/**
+ * ¿De qué ingreso salió la materia prima de esta corrida?
+ *
+ * Una corrida sin origen atribuido es producto que apareció de la nada. La
+ * pestaña de Consumos ya lo contaba, pero había que ir a buscarlo; acá se ve en
+ * la fila, que es donde se miran las corridas. Mismo criterio que el aviso de
+ * despacho: el faltante se declara, no se bloquea el guardado.
+ */
+function OrigenBadge({ entry }: { entry: CtpEntry }) {
+  const estado = origenDeCorrida(
+    entry.volumeInputM3 == null ? null : Number(entry.volumeInputM3),
+    entry.mpAtribuidaM3,
+  );
+  if (!faltaAtribuir(estado)) return null;
+  return (
+    <div
+      title="Esta corrida consumió madera que no está atada a ningún ingreso con GTF. Atribuila desde su ficha: sin origen no se puede certificar la cadena."
       className="mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
     >
       <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
@@ -194,7 +219,10 @@ export default function CtpEntriesTabla({
                 </Td>
                 {section === "produccion" ? (
                   <>
-                    <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{n4(e.volumeInputM3)}</Td>
+                    <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                      {n4(e.volumeInputM3)}
+                      <OrigenBadge entry={e} />
+                    </Td>
                     <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{n4(e.quantity)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span></Td>
                     <Td className="text-right"><RendimientoCell productType={e.productType} rendimientoPct={e.rendimientoPct} /></Td>
                     <Td><SalidaBadge entry={e} /></Td>

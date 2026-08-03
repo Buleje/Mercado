@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   atribucionDeDespacho,
   faltaAtribuir,
+  origenDeCorrida,
   TOLERANCIA_ATRIBUCION,
 } from "@/lib/forestal/atribucion-despacho";
 
@@ -54,5 +55,33 @@ describe("atribucionDeDespacho", () => {
 
   it("no inventa faltante por el error de coma flotante", () => {
     expect(atribucionDeDespacho(0.3, 0.1 + 0.2).estado).toBe("completa");
+  });
+});
+
+/**
+ * `origenDeCorrida` es la misma pregunta un eslabón más atrás: la materia prima
+ * que entró a una corrida, ¿tiene ingreso declarado? Comparte la regla a
+ * propósito — si se separaran, Producción y Despacho terminarían opinando
+ * distinto sobre el mismo hueco de la cadena.
+ */
+describe("origenDeCorrida", () => {
+  it("toda la materia prima atribuida = sin alarma", () => {
+    expect(origenDeCorrida(8, 8).estado).toBe("completa");
+  });
+
+  it("una corrida sin nada atribuido es producto que apareció de la nada", () => {
+    const e = origenDeCorrida(8, 0);
+    expect(e.estado).toBe("sin-atribucion");
+    expect(faltaAtribuir(e) && e.aviso).toBe("sin origen declarado (8.0000 m³)");
+  });
+
+  it("atribuida a medias dice cuánto falta", () => {
+    const e = origenDeCorrida(8, 5);
+    expect(faltaAtribuir(e) && e.aviso).toBe("3.0000 m³ sin origen");
+  });
+
+  it("una corrida que no declara consumo no se juzga", () => {
+    expect(origenDeCorrida(null, 0).estado).toBe("sin-cantidad");
+    expect(origenDeCorrida(0, 0).estado).toBe("sin-cantidad");
   });
 });
