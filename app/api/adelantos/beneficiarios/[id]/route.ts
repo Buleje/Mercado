@@ -7,6 +7,13 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 
+/**
+ * Dos formas de PATCH: editar la ficha, o anotar que se le mandó un
+ * recordatorio. Van juntas porque son la misma persona; se distinguen por
+ * `action` para que editar sin querer no pise el recordatorio ni al revés.
+ */
+const RecordatorioSchema = z.object({ action: z.literal("recordatorio") });
+
 const UpdateSchema = z.object({
   nombre: z.string().min(1).max(200),
   documento: z.string().max(20).optional(),
@@ -23,7 +30,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (auth instanceof NextResponse) return auth;
   try {
     const { id } = await params;
-    const parsed = UpdateSchema.safeParse(await req.json());
+    const body: unknown = await req.json();
+
+    // Anotar el recordatorio: la MISMA columna que escribe el cron, así los dos
+    // se enteran y al deudor no le llega el aviso automático y el manual juntos.
+    const esRecordatorio = RecordatorioSchema.safeParse(body);
+    if (esRecordatorio.success) {
+      const r = await AdelantosDB.marcarRecordatorio(auth.tenantId, id);
+      if (!r) {
+        // Ya se le recordó hoy. No es un error de quien pide: es que no hay
+        // nada que hacer, y decirlo es más útil que fingir que se mandó.
+        return NextResponse.json({ yaRecordadoHoy: true }, { status: 200 });
+      }
+      logActivity("Recordatorio", "adelanto", `Cobranza recordada`, id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+      return NextResponse.json(r);
+    }
+
+    const parsed = UpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
     }

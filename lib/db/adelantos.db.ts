@@ -25,6 +25,15 @@ export type DbBeneficiario = {
   telefono?: string | null;
   notas?: string | null;
   limiteCredito?: number | null;
+  /**
+   * Cuándo se le mandó el último recordatorio de cobranza.
+   *
+   * Vive en la BASE, no en el navegador: el cron `adelantos-recordatorios` la
+   * escribe, y si la pantalla mirara `localStorage` (como hacía) no se
+   * enterarían uno del otro — al mismo deudor le llegaba el aviso automático y
+   * el manual el mismo día. Además, desde otra computadora no se veía nada.
+   */
+  ultimoRecordatorio?: string | null;
   createdAt: string;
 };
 
@@ -114,11 +123,13 @@ type AdelantoRow = Prisma.AdelantoGetPayload<{ include: typeof INCLUDE_FULL }>;
 
 function mapBeneficiario(b: {
   id: string; nombre: string; documento: string | null; telefono: string | null;
-  notas: string | null; limiteCredito?: Prisma.Decimal | number | null; createdAt: Date;
+  notas: string | null; limiteCredito?: Prisma.Decimal | number | null;
+  ultimoRecordatorio?: Date | null; createdAt: Date;
 }): DbBeneficiario {
   return {
     id: b.id, nombre: b.nombre, documento: b.documento, telefono: b.telefono,
     notas: b.notas, limiteCredito: b.limiteCredito != null ? Number(b.limiteCredito) : null,
+    ultimoRecordatorio: iso(b.ultimoRecordatorio),
     createdAt: b.createdAt.toISOString(),
   };
 }
@@ -232,6 +243,39 @@ export const AdelantosDB = {
       },
     });
     return mapBeneficiario(b);
+  },
+
+  /**
+   * Anotar que se le mandó un recordatorio de cobranza a alguien.
+   *
+   * El cron `adelantos-recordatorios` escribe la MISMA columna. Antes la
+   * pantalla lo guardaba en `localStorage`, así que ninguno de los dos sabía del
+   * otro: al mismo deudor le podía llegar el aviso automático y el manual el
+   * mismo día, y desde otra computadora no se veía que ya se había avisado.
+   *
+   * Devuelve `null` si ya se le recordó hoy — quien llama decide si eso es un
+   * error o simplemente no hacer nada. Insistir dos veces en un día no cobra
+   * más rápido; molesta.
+   */
+  async marcarRecordatorio(
+    tenantId: string,
+    beneficiarioId: string,
+  ): Promise<{ ultimoRecordatorio: string } | null> {
+    const b = await prisma.adelantoBeneficiario.findFirst({
+      where: { id: beneficiarioId, tenantId },
+      select: { ultimoRecordatorio: true },
+    });
+    if (!b) throw new Error("Persona no encontrada");
+
+    const hoy = new Date().toISOString().slice(0, 10);
+    if (b.ultimoRecordatorio && b.ultimoRecordatorio.toISOString().slice(0, 10) === hoy) return null;
+
+    const upd = await prisma.adelantoBeneficiario.update({
+      where: { id: beneficiarioId },
+      data: { ultimoRecordatorio: new Date() },
+      select: { ultimoRecordatorio: true },
+    });
+    return { ultimoRecordatorio: upd.ultimoRecordatorio!.toISOString() };
   },
 
   // ── Adelantos ──
