@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useId, useRef, useCallback } from "react";
 import { ALL_TABS } from "@/app/admin/_lib/tab-data";
 import { ANIDADAS_POR_MODULO, CTP_VISTAS, LOTH_VISTAS, VISTAS_POR_MODULO } from "@/lib/admin/subvistas-modulos";
 import {
@@ -324,6 +324,8 @@ const QUICK_ACCESS = [
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Props) {
+  /** Para atar el diálogo con su título. */
+  const idBase = useId();
   const [query, setQuery]       = useState("");
   const [grouped, setGrouped]   = useState<GroupedResults>({ modulos: [], productos: [], clientes: [], pedidos: [], acciones: [] });
   const [loading, setLoading]   = useState(false);
@@ -471,13 +473,25 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
         style={{ top: anchorTop }}
         className="fixed left-2 sm:left-12 lg:left-[calc(var(--admin-sidebar-w,260px)+1rem)] right-2 sm:right-auto z-[9999] sm:w-[calc(100vw-3rem)] sm:max-w-[36rem]"
       >
+        {/* `role="dialog"` + `aria-modal`: el buscador se comportaba como un
+            modal —tapa la página, atrapa Escape, se cierra al click fuera— pero
+            no lo DECÍA, así que un lector de pantalla lo leía como un trozo más
+            de la página y no anunciaba que se había abierto algo.
+            `aria-labelledby` apunta al «Buscar en todo el panel» de adentro, que
+            ya existía: no hace falta un título invisible aparte. */}
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`${idBase}-titulo`}
           className="bg-[var(--surface-raised)] rounded-2xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] shadow-[var(--shadow-xl)]"
           onClick={e => e.stopPropagation()}
         >
         {/* ── Input de búsqueda — más prominente, h-14, con eyebrow ── */}
         <div className="px-5 pt-4 pb-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+          <p
+            id={`${idBase}-titulo`}
+            className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2"
+          >
             Buscar en todo el panel
           </p>
           <div className="flex items-center gap-3">

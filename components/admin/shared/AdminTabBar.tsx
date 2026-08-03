@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useRef, useEffect, useId, useCallback, type ReactNode } from "react";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { ChevronLeft, ChevronRight, GripVertical } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -52,6 +52,47 @@ export default function AdminTabBar({
   rightSlot,
 }: AdminTabBarProps) {
   const { registerSubTabs, registerOnChange, clearSubTabs } = useModuleTabs();
+
+  /**
+   * Ids para atar cada pestaña con su panel (`aria-controls`/`aria-labelledby`).
+   * `useId` y no el `moduleId`: dos barras del mismo módulo en pantalla —pasa
+   * con los hubs— repetirían ids y el lector de pantalla ataría mal los pares.
+   */
+  const barraId = useId();
+  const idDeTab = (id: string) => `${barraId}-tab-${id}`;
+  const idDelPanel = `${barraId}-panel`;
+
+  /**
+   * Flechas dentro de la barra, como manda el patrón de tabs de ARIA.
+   *
+   * Es distinto del Alt+←/→ global de arriba: aquel funciona desde cualquier
+   * lado de la pantalla, éste sólo cuando el foco YA está en las pestañas, que
+   * es lo que espera quien navega con teclado. Home/End van a los extremos.
+   *
+   * Activación automática (mover el foco cambia de pestaña): es lo habitual en
+   * barras donde el panel es barato de renderizar, y evita el doble paso de
+   * "flecha, flecha, Enter".
+   */
+  const teclasDeBarra = (e: React.KeyboardEvent) => {
+    const anterior = vertical ? "ArrowUp" : "ArrowLeft";
+    const siguiente = vertical ? "ArrowDown" : "ArrowRight";
+    if (!["Home", "End", anterior, siguiente].includes(e.key)) return;
+    const usables = orderedTabs.filter((t) => !t.disabled);
+    if (usables.length < 2) return;
+    const i = usables.findIndex((t) => t.id === activeTab);
+    if (i === -1) return;
+    e.preventDefault();
+    const destino =
+      e.key === "Home"
+        ? usables[0]
+        : e.key === "End"
+          ? usables[usables.length - 1]
+          : usables[(i + (e.key === siguiente ? 1 : -1) + usables.length) % usables.length];
+    onTabChange(destino.id);
+    // El foco sigue a la selección: si se quedara donde estaba, la próxima
+    // flecha partiría desde otro lugar del que se ve resaltado.
+    requestAnimationFrame(() => document.getElementById(idDeTab(destino.id))?.focus());
+  };
 
   /**
    * Alt+← / Alt+→ recorren las sub-tabs del módulo activo.
@@ -188,7 +229,17 @@ export default function AdminTabBar({
           "lg:bg-white lg:dark:bg-[var(--surface-raised)]",
           "lg:pt-1 lg:pb-4",
         )}>
-          <div className="grid grid-cols-2 gap-0.5 sm:grid-cols-3 lg:grid-cols-1 lg:pt-0">
+          {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus --
+              el tablist NO debe ser focusable: el patrón de ARIA pone el foco
+              en las pestañas con tabIndex roving y el tablist sólo escucha las
+              flechas por burbujeo. Hacerlo focusable agregaría una parada de
+              Tab que no lleva a ningún lado. */}
+          <div
+            role="tablist"
+            aria-orientation="vertical"
+            onKeyDown={teclasDeBarra}
+            className="grid grid-cols-2 gap-0.5 sm:grid-cols-3 lg:grid-cols-1 lg:pt-0"
+          >
             {orderedTabs.map((tab) => {
               const Icon = tab.icon;
 
@@ -196,9 +247,17 @@ export default function AdminTabBar({
                 <button
                   key={tab.id}
                   onClick={() => !tab.disabled && onTabChange(tab.id)}
-                  /* La pestaña activa sólo se distinguía por el color y el borde: un
-                     lector de pantalla leía botones iguales sin decir en cuál estás. */
-                  aria-current={activeTab === tab.id ? "page" : undefined}
+                  /* Patrón de tabs de ARIA: la pestaña activa sólo se
+                     distinguía por color y borde, y un lector leía botones
+                     iguales sin decir en cuál estás. `aria-selected` es la
+                     señal correcta acá (no `aria-current`, que es para
+                     navegación) y el `tabIndex` roving hace que Tab entre y
+                     salga de la barra en un paso, no pestaña por pestaña. */
+                  role="tab"
+                  id={idDeTab(tab.id)}
+                  aria-selected={activeTab === tab.id}
+                  aria-controls={children ? idDelPanel : undefined}
+                  tabIndex={activeTab === tab.id ? 0 : -1}
                   onMouseEnter={() => onTabHover?.(tab.id)}
                   title={tab.title ?? tab.label}
                   className={cn(
@@ -234,7 +293,18 @@ export default function AdminTabBar({
         </nav>
 
         {/* Content: fills 100% remaining space */}
-        <div className="min-w-0 flex-1 lg:pl-4">{children}</div>
+        {/* `tabIndex={0}`: el panel tiene que poder recibir foco para que Tab
+            desde la pestaña activa lleve a su contenido y no al siguiente
+            control de la página. */}
+        <div
+          id={idDelPanel}
+          role={children ? "tabpanel" : undefined}
+          aria-labelledby={children ? idDeTab(activeTab) : undefined}
+          tabIndex={children ? 0 : undefined}
+          className="min-w-0 flex-1 outline-none lg:pl-4"
+        >
+          {children}
+        </div>
       </div>
     );
   }
@@ -252,9 +322,14 @@ export default function AdminTabBar({
         </button>
       )}
 
+      {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- ver el
+          comentario de la rama vertical: el foco va en las pestañas, no acá. */}
       <div
         ref={tabsRef}
         onScroll={checkScroll}
+        role="tablist"
+        aria-orientation="horizontal"
+        onKeyDown={teclasDeBarra}
         className={cn(
           "-mx-1 flex gap-0.5 border-b border-[var(--rule-base)] px-1 sm:gap-1",
           // Angosto: una sola fila que se desliza (recupera ~90px verticales
@@ -286,7 +361,11 @@ export default function AdminTabBar({
                 setDragOverTab(null);
               }}
               onClick={() => !tab.disabled && onTabChange(tab.id)}
-              aria-current={activeTab === tab.id ? "page" : undefined}
+              role="tab"
+              id={idDeTab(tab.id)}
+              aria-selected={activeTab === tab.id}
+              aria-controls={children ? idDelPanel : undefined}
+              tabIndex={activeTab === tab.id ? 0 : -1}
               onMouseEnter={() => onTabHover?.(tab.id)}
               disabled={tab.disabled}
               title={tab.title ?? tab.label}
@@ -351,7 +430,17 @@ export default function AdminTabBar({
         </button>
       )}
     </div>
-    {children}
+    {/* El panel de la barra horizontal es hermano, no hijo: `aria-labelledby`
+        ata el par por id, así que no necesitan ser contiguos en el árbol. */}
+    <div
+      id={idDelPanel}
+      role={children ? "tabpanel" : undefined}
+      aria-labelledby={children ? idDeTab(activeTab) : undefined}
+      tabIndex={children ? 0 : undefined}
+      className="outline-none"
+    >
+      {children}
+    </div>
     </>
   );
 }
