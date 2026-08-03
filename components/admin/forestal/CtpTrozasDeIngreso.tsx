@@ -1,14 +1,18 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { AlertTriangle, ArrowDownRight, Check, FileText, Loader2, PackageCheck, PackageOpen, Scissors, Search } from "@buleje/design-system/icons";
+import { AlertTriangle, ArrowDownRight, Check, ClipboardList, FileText, Loader2, PackageCheck, PackageOpen, Pencil, Scissors, Search } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import CtpRetrozarModal, { type TrozaParaCortar } from "./CtpRetrozarModal";
 import CtpRecepcionTrozas from "./CtpRecepcionTrozas";
 import CtpDocumentoVisor from "./CtpDocumentoVisor";
+import CtpTrozasImportModal from "./CtpTrozasImportModal";
+import type { TrozaImportada } from "@/lib/forestal/trozas-import";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { CSS_LISTA_TROZAS, htmlListaTrozas } from "@/lib/forestal/ctp-lista-trozas";
 import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { balanceRecepcion } from "@/lib/forestal/recepcion-trozas";
+import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 
 /**
  * La lista de trozas que amparó este ingreso (ADR-312).
@@ -17,8 +21,11 @@ import { balanceRecepcion } from "@/lib/forestal/recepcion-trozas";
  * cargados desde SERFOR: si la sección viviera adentro, el modal tendría que
  * cargar siempre algo que la mitad de los ingresos no tiene.
  *
- * Cuando no hay trozas no renderiza NADA —ni un "sin datos"—: un ingreso viejo
- * cargado a mano no tiene por qué mostrar un hueco.
+ * Cuando no hay trozas casi no renderiza nada —ni un "sin datos"—: un ingreso
+ * viejo cargado a mano no tiene por qué mostrar un hueco. La excepción es el
+ * ingreso PENDIENTE, donde ofrece pegar la lista del proveedor (ADR-320): ahí
+ * el vacío sí se puede resolver, y sin esa puerta la única salida era anular el
+ * ingreso y volver a cargarlo entero.
  */
 
 type Troza = {
@@ -54,6 +61,10 @@ export default function CtpTrozasDeIngreso({
   gtfNumber = null,
   productType = null,
   titular = null,
+  status = null,
+  especie = null,
+  especieCientifica = null,
+  onIngresoCambiado,
 }: {
   entryId: string;
   /** m³ con que está registrado el ingreso, para contrastarlo con lo recibido. */
@@ -64,6 +75,14 @@ export default function CtpTrozasDeIngreso({
   gtfNumber?: string | null;
   productType?: string | null;
   titular?: string | null;
+  /** Sólo un ingreso `pendiente` se corrige (lo impone la DB, no la pantalla):
+   *  sin esto los botones de arreglo se ofrecerían para fallar con un 422. */
+  status?: string | null;
+  /** Con qué especie se precargan las piezas que se importen. */
+  especie?: string | null;
+  especieCientifica?: string | null;
+  /** Recargar la lista del libro: corregir el volumen cambia la fila de la tabla. */
+  onIngresoCambiado?: () => void;
 }) {
   const [trozas, setTrozas] = useState<Troza[] | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -74,6 +93,13 @@ export default function CtpTrozasDeIngreso({
   /** Filtro por pieza. Una guía trae hasta ochenta trozas y el fiscalizador
    *  pregunta por UNA: sin esto había que buscarla scrolleando a ojo. */
   const [filtro, setFiltro] = useState("");
+  /** Import de la lista desde el Excel del proveedor. */
+  const [importando, setImportando] = useState(false);
+  const [arreglando, setArreglando] = useState(false);
+  const [errorArreglo, setErrorArreglo] = useState<string | null>(null);
+
+  /** Corregir sólo se puede mientras el ingreso está pendiente (guard de la DB). */
+  const editable = status === "pendiente";
 
   const cargar = useCallback(async () => {
     try {
@@ -89,6 +115,84 @@ export default function CtpTrozasDeIngreso({
 
   useEffect(() => { void cargar(); }, [cargar]);
 
+  /**
+   * Las dos salidas del descuadre, que son las dos causas reales:
+   *  · faltan piezas por cargar   → `agregarPiezas` (el Excel del proveedor)
+   *  · el volumen se tipeó mal    → `corregirVolumen`
+   *
+   * No se ofrece una sola: "ajustar el volumen a lo que suman las piezas" como
+   * único camino enseñaría a tapar una lista incompleta cambiando el número que
+   * declara la guía, que es exactamente el dato que el libro NO puede inventar.
+   */
+  const corregirVolumen = useCallback(
+    async (nuevo: number) => {
+      setArreglando(true);
+      setErrorArreglo(null);
+      try {
+        const r = await fetch(`/api/admin/forestal/wood-entries/${encodeURIComponent(entryId)}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ action: "update", fields: { volumeM3: nuevo } }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j?.message || j?.error || `HTTP ${r.status}`);
+        onIngresoCambiado?.();
+      } catch (e) {
+        setErrorArreglo(e instanceof Error ? e.message : "No se pudo corregir el volumen.");
+      } finally {
+        setArreglando(false);
+      }
+    },
+    [entryId, onIngresoCambiado],
+  );
+
+  const agregarPiezas = useCallback(
+    async (nuevas: TrozaImportada[]) => {
+      setArreglando(true);
+      setErrorArreglo(null);
+      try {
+        const r = await fetch(`/api/admin/forestal/wood-entries/${encodeURIComponent(entryId)}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            action: "trozas",
+            trozas: nuevas.map((t) => ({
+              codificacion: t.codificacion ?? null,
+              especieComun: t.especieComun ?? null,
+              especieCientifica: t.especieCientifica ?? null,
+              dimensiones: t.dimensiones ?? null,
+              largoM: t.largoM ?? null,
+              diametroCm: t.diametroCm ?? null,
+              d1Cm: t.d1Cm ?? null,
+              d2Cm: t.d2Cm ?? null,
+              cantidad: t.cantidad ?? null,
+              volumenM3: t.volumenM3 ?? null,
+            })),
+          }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j?.message || j?.error || `HTTP ${r.status}`);
+        setImportando(false);
+        // Las repetidas no son un error: se avisan y se sigue. Re-subir el mismo
+        // archivo es lo que hace cualquiera que no está seguro de haber guardado.
+        if (j?.repetidas?.length) {
+          setErrorArreglo(
+            `Se agregaron ${j.agregadas}. ${j.repetidas.length} ya estaban en la lista y se saltaron.`,
+          );
+        }
+        await cargar();
+        onIngresoCambiado?.();
+      } catch (e) {
+        setErrorArreglo(e instanceof Error ? e.message : "No se pudieron agregar las piezas.");
+      } finally {
+        setArreglando(false);
+      }
+    },
+    [entryId, cargar, onIngresoCambiado],
+  );
+
   if (cargando) {
     return (
       <div className="flex items-center gap-2 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-3 text-sm text-[var(--text-tertiary)]">
@@ -96,7 +200,47 @@ export default function CtpTrozasDeIngreso({
       </div>
     );
   }
-  if (!trozas || trozas.length === 0) return null;
+  /**
+   * Sin lista de piezas.
+   *
+   * Antes esto era `return null` a secas y estaba bien pensado —un ingreso viejo
+   * cargado a mano no tiene por qué mostrar un hueco—, pero dejaba sin salida el
+   * caso que sí importa: el ingreso PENDIENTE al que todavía se le puede pegar
+   * la lista. Se ofrece sólo ahí, en una línea, y el ingreso cerrado sigue sin
+   * mostrar nada.
+   */
+  if (!trozas || trozas.length === 0) {
+    if (!editable) return null;
+    return (
+      <>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3">
+          <p className="text-sm text-[var(--text-secondary)]">
+            Este ingreso no tiene lista de piezas. Sin ella no se puede consumir por troza ni cruzar
+            contra el POA.
+          </p>
+          <button
+            type="button"
+            onClick={() => setImportando(true)}
+            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]"
+          >
+            <ClipboardList className="h-4 w-4" aria-hidden /> Pegar la lista del proveedor
+          </button>
+        </div>
+        {errorArreglo && (
+          <p className="mt-2 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{errorArreglo}</p>
+        )}
+        {importando && (
+          <CtpTrozasImportModal
+            especie={especie}
+            especieCientifica={especieCientifica}
+            volumenDeclarado={volumenDelIngreso ?? undefined}
+            onAceptar={(t) => void agregarPiezas(t)}
+            onClose={() => setImportando(false)}
+          />
+        )}
+      </>
+    );
+  }
 
   if (recibiendo) {
     return (
@@ -113,20 +257,6 @@ export default function CtpTrozasDeIngreso({
   const total = trozas.reduce((a, t) => a + (t.volumenM3 ?? 0), 0);
   const balance = balanceRecepcion(trozas);
 
-  /**
-   * ¿La lista cuadra con el ingreso?
-   *
-   * `volumenDelIngreso` llegaba como prop y sólo se pasaba hacia abajo: la
-   * cabecera mostraba el total de las trozas AL LADO del volumen declarado del
-   * ingreso sin decir nunca si coincidían. Con 5 m³ de trozas contra 10 m³
-   * declarados —el caso que destapó esto— había que restar de memoria. Y es
-   * justo lo que se contrasta pieza por pieza en una fiscalización: o falta
-   * cargar trozas, o el volumen del ingreso está mal.
-   *
-   * Tolerancia de 0.001 m³: los volúmenes se guardan con 4 decimales y sumar
-   * ochenta piezas arrastra centésimas de milésimo que no son una diferencia
-   * real.
-   */
   /** Coincide con codificación, código de planta, parcela o especie: son los
    *  cuatro campos por los que alguien pregunta por una pieza. */
   const norm = (v: string) => v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -138,19 +268,9 @@ export default function CtpTrozasDeIngreso({
       )
     : trozas;
 
-  const cuadre = (() => {
-    if (volumenDelIngreso == null || volumenDelIngreso <= 0) return null;
-    const brecha = Number((volumenDelIngreso - total).toFixed(4));
-    if (Math.abs(brecha) <= 0.001) return { ok: true as const, aviso: "" };
-    // El texto se arma acá, donde `brecha` es un número recién calculado: en el
-    // JSX sería `cuadre.brecha.toFixed()` sobre una propiedad de objeto, que es
-    // justo lo que la regla del proyecto marca como frágil.
-    const aviso =
-      brecha > 0
-        ? `faltan ${brecha.toFixed(4)} m³ por detallar`
-        : `${Math.abs(brecha).toFixed(4)} m³ de más`;
-    return { ok: false as const, aviso };
-  })();
+  // La MISMA regla que usa la tabla del libro: si cada pantalla la calculara por
+  // su cuenta, una diría «cuadra» y la otra «faltan 5 m³» del mismo ingreso.
+  const cuadre = cuadreDeIngreso(volumenDelIngreso, total, trozas.length);
 
   return (
     <section className="@container overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
@@ -171,7 +291,7 @@ export default function CtpTrozasDeIngreso({
           )}
           <span className="flex items-baseline gap-1.5">
             <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">{total.toFixed(4)} m³</span>
-            {cuadre?.ok && (
+            {cuadre.estado === "cuadra" && (
               <span
                 title={`Las piezas suman lo mismo que el volumen declarado del ingreso (${volumenDelIngreso?.toFixed(4)} m³).`}
                 className="inline-flex items-center gap-1 rounded-lg bg-[var(--data-success-500)]/15 px-2 py-0.5 text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
@@ -179,7 +299,7 @@ export default function CtpTrozasDeIngreso({
                 <Check className="h-3 w-3" strokeWidth={3} /> cuadra
               </span>
             )}
-            {cuadre && !cuadre.ok && (
+            {descuadra(cuadre) && (
               <span
                 title={`El ingreso declara ${volumenDelIngreso?.toFixed(4)} m³ y las piezas suman ${total.toFixed(4)} m³. O falta cargar trozas, o el volumen del ingreso no es el de la guía.`}
                 className="inline-flex items-center gap-1 rounded-lg bg-[var(--data-warning-500)]/15 px-2 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
@@ -207,6 +327,63 @@ export default function CtpTrozasDeIngreso({
           </button>
         </div>
       </div>
+
+      {/* El descuadre con sus dos salidas. El chip de arriba AVISA; acá se
+          resuelve, que es lo que faltaba: hasta ahora había que salir del
+          detalle, abrir el editor y tipear el volumen a mano. */}
+      {descuadra(cuadre) && editable && (
+        <div className="border-b border-[var(--rule-soft)] bg-[var(--data-warning-500)]/8 px-4 py-3">
+          <p className="text-sm text-[var(--text-secondary)]">
+            El ingreso declara{" "}
+            <strong className="font-mono tabular-nums text-[var(--text-primary)]">
+              {volumenDelIngreso?.toFixed(4)} m³
+            </strong>{" "}
+            y las {trozas.length} piezas suman{" "}
+            <strong className="font-mono tabular-nums text-[var(--text-primary)]">
+              {total.toFixed(4)} m³
+            </strong>
+            . O falta cargar piezas, o el volumen no es el de la guía.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {cuadre.estado === "faltan" && (
+              <button
+                type="button"
+                disabled={arreglando}
+                onClick={() => setImportando(true)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)] disabled:opacity-60"
+              >
+                <ClipboardList className="h-3.5 w-3.5" aria-hidden /> Cargar las piezas que faltan
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={arreglando}
+              /* Confirmación explícita: el volumen del ingreso es el que declara
+                 la GTF. Bajarlo para que "cuadre" con una lista incompleta es
+                 falsear el libro, así que se dice antes de hacerlo. */
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `El volumen del ingreso pasará de ${volumenDelIngreso?.toFixed(4)} a ${total.toFixed(4)} m³.\n\n` +
+                      `Hacelo sólo si el volumen estaba mal tipeado. Si lo que falta son piezas por cargar, este cambio haría que el libro declare menos madera de la que ampara la guía.`,
+                  )
+                ) {
+                  void corregirVolumen(Number(total.toFixed(4)));
+                }
+              }}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)] disabled:opacity-60"
+            >
+              {arreglando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" aria-hidden />}
+              Corregir el volumen a {total.toFixed(4)} m³
+            </button>
+          </div>
+          {errorArreglo && (
+            <p className="mt-2 text-sm font-medium text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+              {errorArreglo}
+            </p>
+          )}
+        </div>
+      )}
 
       {trozas.length > 8 && (
         <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] px-4 py-2.5">
@@ -367,6 +544,16 @@ export default function CtpTrozasDeIngreso({
           troza={cortando}
           onClose={() => setCortando(null)}
           onSaved={() => { setCortando(null); void cargar(); }}
+        />
+      )}
+
+      {importando && (
+        <CtpTrozasImportModal
+          especie={especie}
+          especieCientifica={especieCientifica}
+          volumenDeclarado={volumenDelIngreso ?? undefined}
+          onAceptar={(t) => void agregarPiezas(t)}
+          onClose={() => setImportando(false)}
         />
       )}
 

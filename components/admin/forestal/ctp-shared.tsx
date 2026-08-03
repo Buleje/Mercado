@@ -16,8 +16,9 @@ import {
   type ReactElement,
 } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { AlertCircle, Check, CheckCircle2, Clock, X as XIcon } from "@buleje/design-system/icons";
+import { AlertCircle, AlertTriangle, Check, CheckCircle2, Clock, X as XIcon } from "@buleje/design-system/icons";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "@/lib/forestal/ctp-compliance";
+import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 
 // Re-exportados: single source vive en lib/forestal/ctp-compliance.ts (lo
 // consume también lib/forestal/ctp-export.ts, que no puede importar de acá).
@@ -93,6 +94,15 @@ export interface WoodEntry {
   unit: string | null;
   volumeM3: string;
   pieces: number;
+  /**
+   * La lista de trozas del ingreso, resumida por el listado (ADR-320): cuántas
+   * piezas MADRE tiene y cuántos m³ suman. Sirve para avisar en la tabla que un
+   * ingreso no cuadra con su propio detalle, que antes sólo se veía abriéndolos
+   * de a uno. `trozasM3` es `null` cuando ninguna pieza trae volumen —"no sé"
+   * no es "cero"— y `trozasCount` 0 cuando el ingreso no tiene lista.
+   */
+  trozasCount?: number;
+  trozasM3?: number | null;
   avgLengthM: string | null;
   avgDiameterCm: string | null;
   humidityPct: string | null;
@@ -619,3 +629,28 @@ export {
   IconAction,
   type IconActionTone,
 } from "@/components/admin/shared/module-primitives";
+
+/**
+ * El ingreso no cuadra con su propia lista de piezas.
+ *
+ * Antes esto sólo se veía abriendo el ingreso, de a uno: un libro de doscientas
+ * filas con tres descuadradas no tenía forma de mostrarlas. Es exactamente el
+ * cruce que hace un fiscalizador —volumen declarado contra el detalle que lo
+ * ampara— así que va en la fila, pegado al volumen que contradice.
+ *
+ * Silencioso cuando no hay lista de trozas: la mayoría de los ingresos viejos
+ * no la tienen y no están mal por eso (ver `cuadreDeIngreso`).
+ */
+export function DescuadreChip({ entry }: { entry: WoodEntry }) {
+  const cuadre = cuadreDeIngreso(Number(entry.volumeM3), entry.trozasM3, entry.trozasCount ?? 0);
+  if (!descuadra(cuadre)) return null;
+  return (
+    <div
+      title={`El ingreso declara ${Number(entry.volumeM3).toFixed(4)} m³ y sus ${entry.trozasCount} piezas suman ${(entry.trozasM3 ?? 0).toFixed(4)} m³. Abrilo para cargar las que faltan o corregir el volumen.`}
+      className="mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+    >
+      <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
+      {cuadre.aviso}
+    </div>
+  );
+}

@@ -48,9 +48,12 @@ interface CtpEntryDetailModalProps {
   onClose: () => void;
   /** Abre el editor con este ingreso. Sin esto el panel informa pero no resuelve. */
   onCompletar?: (entry: WoodEntry) => void;
+  /** El detalle ahora ESCRIBE (corrige el volumen, agrega piezas): sin esto la
+   *  tabla de atrás seguiría mostrando el número viejo hasta recargar la página. */
+  onCambio?: () => void;
 }
 
-export default function CtpEntryDetailModal({ entry, onClose, onCompletar }: CtpEntryDetailModalProps) {
+export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCambio }: CtpEntryDetailModalProps) {
   const dias = diasDeRegistro(entry); // para mostrar
   const fueraDePlazo = estaFueraDePlazo(entry); // para decidir — matchea el SQL
   const photos = Array.isArray(entry.photos) ? entry.photos : [];
@@ -246,6 +249,10 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar }: Ctp
           gtfNumber={entry.gtfNumber}
           productType={entry.productType}
           titular={entry.providerName}
+          status={entry.status}
+          especie={entry.speciesCommonName}
+          especieCientifica={entry.speciesScientificName}
+          onIngresoCambiado={onCambio}
         />
 
         {/* Trazabilidad hacia adelante + auditoría, en 2 columnas para ahorrar scroll. */}

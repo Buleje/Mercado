@@ -96,6 +96,10 @@ export class CtpInvariantError extends Error {
       /** La guía ya está en el libro: se corrige anulando y recargando, no
        *  registrándola dos veces (dejaría el saldo duplicado). */
       | "GTF_DUPLICADA"
+      // ── Lista de trozas (ADR-320) ──
+      /** El agregado de piezas pasaría el tope por ingreso. Casi siempre es un
+       *  pegado accidental, no una guía de mil trozas. */
+      | "TOPE_TROZAS"
       // ── Retrozado (ADR-313) ──
       /** De una troza no salen pedazos más grandes que ella, ni más volumen del
        *  que tiene. Es física, no una preferencia de negocio. */

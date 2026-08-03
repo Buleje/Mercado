@@ -62,23 +62,39 @@ export interface WoodEntryDesdeGtfInput {
     presentacion?: string | null;
     volumenM3: number;
     piezas?: number;
-    trozas: Array<{
-      orden: number;
-      codificacion: string | null;
-      especieComun: string | null;
-      especieCientifica: string | null;
-      dimensiones: string | null;
-      largoM: number | null;
-      diametroCm: number | null;
-      d1Cm: number | null;
-      d2Cm: number | null;
-      cantidad: number | null;
-      volumenM3: number | null;
-    }>;
+    trozas: WoodEntryTrozaInput[];
   }>;
 
   createdBy: string;
 }
+
+/**
+ * Una pieza de la lista de trozas, como entra al libro.
+ *
+ * Estaba escrito tres veces (alta desde SERFOR, alta manual y ahora el agregado
+ * a un ingreso existente). Un campo nuevo en una copia y no en las otras deja
+ * una vía por la que el dato se pierde en silencio.
+ */
+export interface WoodEntryTrozaInput {
+  orden: number;
+  codificacion: string | null;
+  especieComun: string | null;
+  especieCientifica: string | null;
+  dimensiones: string | null;
+  largoM: number | null;
+  diametroCm: number | null;
+  d1Cm: number | null;
+  d2Cm: number | null;
+  cantidad: number | null;
+  volumenM3: number | null;
+}
+
+/**
+ * Tope de piezas por ingreso. Una guía real no trae más, y sin tope un pegado
+ * accidental en el importador tumba la request. Es el mismo número que valida
+ * el endpoint: si se cambia, se cambia en los dos lados.
+ */
+export const TOPE_TROZAS_POR_INGRESO = 500;
 
 export interface WoodEntryCreateInput {
   /**
@@ -86,19 +102,7 @@ export interface WoodEntryCreateInput {
    * (ADR-320). Se crean en la MISMA transacción que el ingreso: media guía
    * registrada deja un saldo que no corresponde a ningún documento.
    */
-  trozas?: Array<{
-    orden: number;
-    codificacion: string | null;
-    especieComun: string | null;
-    especieCientifica: string | null;
-    dimensiones: string | null;
-    largoM: number | null;
-    diametroCm: number | null;
-    d1Cm: number | null;
-    d2Cm: number | null;
-    cantidad: number | null;
-    volumenM3: number | null;
-  }>;
+  trozas?: WoodEntryTrozaInput[];
   // Fecha + GTF
   entryDate?: Date; // default now
   /** (3) Tipo de documento del LO-CTP: GTF | GRR (ADR-311). */
@@ -1290,7 +1294,51 @@ export class WoodEntriesDB {
       prisma.woodEntry.count({ where }),
     ]);
 
-    return { entries, total };
+    const trozas = await WoodEntriesDB.resumenTrozasDe(entries.map((e) => e.id));
+
+    return {
+      entries: entries.map((e) => ({ ...e, ...(trozas.get(e.id) ?? { trozasCount: 0, trozasM3: null }) })),
+      total,
+    };
+  }
+
+  /**
+   * Cuántas piezas tiene cada ingreso y cuántos m³ suman.
+   *
+   * Existe para que la TABLA pueda avisar del descuadre: hasta ahora la única
+   * forma de ver que un ingreso declara 10 m³ y sus piezas suman 5 era abrir el
+   * ingreso, uno por uno. Una fila que no cuadra con su propio detalle es
+   * exactamente lo que un fiscalizador cruza.
+   *
+   * Un `groupBy` por página (≤500 ingresos), no una consulta por fila.
+   *
+   * ⚠️ Sólo las MADRES (`trozaOrigenId: null`). Un retrozo es un pedazo de una
+   * troza que ya está contada: sumar los dos es la misma madera dos veces, el
+   * mismo error que el consumo por pieza evita (ADR-313/326). Es también lo que
+   * hace la pantalla, que anida los retrozos dentro de su madre.
+   */
+  private static async resumenTrozasDe(
+    ids: string[],
+  ): Promise<Map<string, { trozasCount: number; trozasM3: number | null }>> {
+    const mapa = new Map<string, { trozasCount: number; trozasM3: number | null }>();
+    if (ids.length === 0) return mapa;
+
+    const filas = await prisma.woodEntryTroza.groupBy({
+      by: ["woodEntryId"],
+      where: { woodEntryId: { in: ids }, trozaOrigenId: null },
+      _count: { _all: true },
+      _sum: { volumenM3: true },
+    });
+
+    for (const f of filas) {
+      mapa.set(f.woodEntryId, {
+        trozasCount: f._count._all,
+        // Sin volumen cargado el total es `null`, no 0: "no sé" y "cero" son
+        // distintos, y un 0 haría que la tabla gritara descuadre en todas.
+        trozasM3: f._sum.volumenM3 == null ? null : Number(f._sum.volumenM3),
+      });
+    }
+    return mapa;
   }
 
   /**
@@ -1588,6 +1636,128 @@ export class WoodEntriesDB {
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
     return entry;
+  }
+
+  /**
+   * Agregar piezas a un ingreso YA registrado (ADR-320).
+   *
+   * EL HUECO QUE TAPA. La lista de trozas sólo se podía cargar en el ALTA. Si
+   * la guía se registró a mano —porque SERFOR no respondía, que es la mitad de
+   * las veces— el ingreso quedaba para siempre sin detalle de piezas, y un
+   * ingreso sin piezas es el que después no se puede cruzar contra el POA ni
+   * consumir por pieza. La única salida era anular y volver a cargar todo.
+   *
+   * AGREGA, NUNCA REEMPLAZA. Pisar la lista destruiría trazabilidad viva: una
+   * troza puede estar ya recibida en patio, consumida en una corrida o
+   * retrozada. Las piezas cuya codificación ya existe en el ingreso se saltan y
+   * se informan, así re-subir el mismo Excel no duplica nada.
+   *
+   * Mismos guards que corregir: sólo `pendiente` y con el período abierto.
+   */
+  static async agregarTrozas(
+    tenantId: string,
+    id: string,
+    trozas: WoodEntryTrozaInput[],
+    user: string,
+  ): Promise<{ agregadas: number; repetidas: string[]; m3Agregados: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!id) throw new Error("id is required");
+    if (trozas.length === 0) return { agregadas: 0, repetidas: [], m3Agregados: 0 };
+
+    const actual = await prisma.woodEntry.findFirst({ where: { id, tenantId, deletedAt: null } });
+    if (!actual) throw new Error("Ingreso no encontrado");
+    if (actual.status !== "pendiente") {
+      throw new CtpInvariantError(
+        `Sólo se le agregan piezas a un ingreso pendiente. Este está ${actual.status}.`,
+        "ESTADO_NO_EDITABLE",
+        { status: actual.status },
+      );
+    }
+    await WoodEntriesDB.assertPeriodoAbierto(tenantId, id, "agregarle piezas");
+
+    const resultado = await prisma.$transaction(async (tx) => {
+      // Dentro de la tx: entre el chequeo y el insert, otra tablet puede haber
+      // cargado las mismas piezas.
+      const existentes = await tx.woodEntryTroza.findMany({
+        where: { tenantId, woodEntryId: id },
+        select: { codificacion: true, orden: true },
+      });
+
+      const clave = (c: string | null | undefined) => (c ?? "").trim().toUpperCase();
+      const yaEstan = new Set(existentes.map((t) => clave(t.codificacion)).filter(Boolean));
+
+      const repetidas: string[] = [];
+      const nuevas: WoodEntryTrozaInput[] = [];
+      for (const t of trozas) {
+        const k = clave(t.codificacion);
+        // Sin codificación no hay con qué deduplicar: entra (es una pieza más),
+        // porque descartarla perdería madera declarada de verdad.
+        if (k && yaEstan.has(k)) {
+          repetidas.push(t.codificacion as string);
+          continue;
+        }
+        if (k) yaEstan.add(k);
+        nuevas.push(t);
+      }
+
+      if (nuevas.length === 0) return { agregadas: 0, repetidas, m3Agregados: 0 };
+
+      if (existentes.length + nuevas.length > TOPE_TROZAS_POR_INGRESO) {
+        throw new CtpInvariantError(
+          `Un ingreso admite hasta ${TOPE_TROZAS_POR_INGRESO} piezas y esto lo llevaría a ${existentes.length + nuevas.length}.`,
+          "TOPE_TROZAS",
+          { actuales: existentes.length, nuevas: nuevas.length },
+        );
+      }
+
+      // La numeración sigue donde quedó: `orden` es la columna del papel y
+      // reiniciarla en 1 dejaría dos piezas "número 1" en la misma lista.
+      const desde = existentes.reduce((max, t) => Math.max(max, t.orden ?? 0), 0);
+
+      await tx.woodEntryTroza.createMany({
+        data: nuevas.map((t, i) => ({
+          tenantId,
+          woodEntryId: id,
+          orden: desde + i + 1,
+          codificacion: t.codificacion,
+          especieComun: t.especieComun,
+          especieCientifica: t.especieCientifica,
+          dimensiones: t.dimensiones,
+          largoM: t.largoM != null ? new Prisma.Decimal(t.largoM) : null,
+          diametroCm: t.diametroCm != null ? new Prisma.Decimal(t.diametroCm) : null,
+          d1Cm: t.d1Cm != null ? new Prisma.Decimal(t.d1Cm) : null,
+          d2Cm: t.d2Cm != null ? new Prisma.Decimal(t.d2Cm) : null,
+          cantidad: t.cantidad,
+          volumenM3: t.volumenM3 != null ? new Prisma.Decimal(t.volumenM3) : null,
+        })),
+      });
+
+      return {
+        agregadas: nuevas.length,
+        repetidas,
+        // Los m³ que de verdad entraron, no los del archivo: si la mitad eran
+        // repetidas, auditar el total del Excel diría que entró el doble.
+        m3Agregados: nuevas.reduce((a, t) => a + (t.volumenM3 ?? 0), 0),
+      };
+    });
+
+    if (resultado.agregadas > 0) {
+      const m3Agregados = resultado.m3Agregados;
+      auditCtp({
+        tenantId,
+        action: "ctp_ingreso_trozas_add",
+        entity: "WoodEntry",
+        entityId: id,
+        detail:
+          `Agregó ${resultado.agregadas} pieza${resultado.agregadas === 1 ? "" : "s"} a la lista del ingreso ${actual.gtfNumber}` +
+          (m3Agregados > 0 ? ` · ${m3(m3Agregados)}` : "") +
+          (resultado.repetidas.length > 0 ? ` · ${resultado.repetidas.length} ya estaban` : ""),
+        user,
+      });
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    }
+
+    return resultado;
   }
 
   /**

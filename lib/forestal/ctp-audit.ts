@@ -74,6 +74,10 @@ export type CtpAuditAction =
   // detalle narra campo por campo qué cambió — un libro fiscalizable tiene que
   // poder responder "¿esto siempre dijo 5.20 m³?".
   | "ctp_ingreso_update"
+  // Piezas agregadas a la lista de trozas de un ingreso ya registrado (ADR-320).
+  // Va aparte de `update` porque no corrige un campo: suma madera al detalle que
+  // ampara el ingreso, y el fiscalizador pregunta cuándo apareció cada pieza.
+  | "ctp_ingreso_trozas_add"
   | "ctp_ingreso_validate"
   | "ctp_ingreso_reject"
   | "ctp_ingreso_annul"

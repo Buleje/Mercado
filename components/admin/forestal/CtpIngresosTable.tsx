@@ -34,6 +34,7 @@ import {
   originLabel,
   productLabel,
   TablaSkeleton,
+  DescuadreChip,
   type WoodEntry,
 } from "./ctp-shared";
 
@@ -284,6 +285,7 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
                     <div className="whitespace-nowrap font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
                       {e.pieces} {e.pieces === 1 ? "pieza" : "piezas"}
                     </div>
+                    <DescuadreChip entry={e} />
                   </Td>
                   <Td>
                     <StatusBadge status={e.status} />

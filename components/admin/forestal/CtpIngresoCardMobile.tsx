@@ -18,6 +18,7 @@ import type { FotoEspecie } from "@/lib/forestal/especies-fotos";
 import {
   PLAZO_REGISTRO_DIAS,
   StatusBadge,
+  DescuadreChip,
   diasDeRegistro,
   estaFueraDePlazo,
   formatDate,
@@ -92,6 +93,11 @@ export default function CtpIngresoCardMobile(props: CtpIngresoCardMobileProps) {
         </span>
         <span className="rounded-full bg-[var(--surface-raised)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
           {productLabel(e.productType)}
+        </span>
+        {/* Mismo aviso que la tabla: en dual-render, poner el descuadre sólo del
+            lado desktop lo hace invisible justo para quien carga en el patio. */}
+        <span className="basis-full">
+          <DescuadreChip entry={e} />
         </span>
       </div>
 

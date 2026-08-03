@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
+import { WoodEntriesDB, TOPE_TROZAS_POR_INGRESO } from "@/lib/db/wood-entries.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
@@ -13,7 +13,7 @@ import { TIPOS_DOCUMENTO_LOCTP, UNIDADES_LOCTP } from "@/lib/forestal/loctp-camp
  * /api/admin/forestal/wood-entries/[id]
  *
  * GET    — obtener detalle de un entry
- * PATCH  — { action: "validate" | "reject" | "annul" | "delete" | "update" }
+ * PATCH  — { action: "validate" | "reject" | "annul" | "delete" | "update" | "trozas" }
  *          Solo admin/owner (también para `update`: separación de funciones —
  *          quien carga la madera no corrige el libro sin un segundo par de ojos).
  *          Cambia status y registra validatedBy/At; `update` corrige los datos
@@ -69,6 +69,29 @@ const patchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("annul"), reason: z.string().trim().min(3).max(500) }),
   z.object({ action: z.literal("delete") }),
   z.object({ action: z.literal("update"), fields: updateFieldsSchema }),
+  // Agregar piezas a la lista de trozas de un ingreso ya registrado (ADR-320).
+  // Mismo shape que el alta: los campos son `nullable` pero NO opcionales, así
+  // una pieza a la que le falta una columna se rechaza acá y no entra a medias.
+  z.object({
+    action: z.literal("trozas"),
+    trozas: z
+      .array(
+        z.object({
+          codificacion: z.string().trim().max(60).nullable(),
+          especieComun: z.string().trim().max(120).nullable(),
+          especieCientifica: z.string().trim().max(160).nullable(),
+          dimensiones: z.string().trim().max(80).nullable(),
+          largoM: z.number().nonnegative().max(200).nullable(),
+          diametroCm: z.number().nonnegative().max(999).nullable(),
+          d1Cm: z.number().nonnegative().max(999).nullable(),
+          d2Cm: z.number().nonnegative().max(999).nullable(),
+          cantidad: z.number().int().min(0).max(9999).nullable(),
+          volumenM3: z.number().positive().max(9999).nullable(),
+        }),
+      )
+      .min(1)
+      .max(TOPE_TROZAS_POR_INGRESO),
+  }),
 ]);
 
 async function ensureSpec(tenantId: string) {
@@ -134,6 +157,28 @@ export const PATCH = withApiHandler("forestal-wood-entries-id-patch", async (req
   }
 
   try {
+    // Devuelve el recuento, no el ingreso: lo que la pantalla necesita saber es
+    // cuántas entraron y cuáles se saltaron por estar ya cargadas.
+    if (parsed.data.action === "trozas") {
+      const r = await WoodEntriesDB.agregarTrozas(
+        auth.tenantId,
+        id,
+        // `orden` lo asigna el servidor continuando la numeración del ingreso:
+        // si lo mandara el cliente, dos importaciones dejarían dos piezas con el
+        // mismo número de fila en el papel.
+        parsed.data.trozas.map((t, i) => ({ ...t, orden: i + 1 })),
+        auth.username ?? "unknown",
+      );
+      logger.info("[wood-entries.PATCH] trozas", {
+        tenantId: auth.tenantId,
+        id,
+        agregadas: r.agregadas,
+        repetidas: r.repetidas.length,
+        actor: auth.username,
+      });
+      return NextResponse.json(r);
+    }
+
     let entry;
     if (parsed.data.action === "validate") {
       entry = await WoodEntriesDB.validate(auth.tenantId, id, auth.username);

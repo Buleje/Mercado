@@ -701,6 +701,31 @@ export default function CtpIngresosView({
           // Completar cierra el detalle y abre el editor: dejar los dos modales
           // apilados obliga a cerrar dos veces para volver a la lista.
           onCompletar={(e) => { setDetail(null); setEditEntry(e); }}
+          /**
+           * Refresca la LISTA y además el ingreso que está abierto.
+           *
+           * Sólo con `reload()` la tabla de atrás quedaba al día pero el modal
+           * seguía mostrando el `entry` con el que se abrió: al corregir el
+           * volumen desde el detalle, la pantalla seguía diciendo "faltan 5 m³"
+           * sobre un ingreso ya corregido, y el camino natural era volver a
+           * apretar el botón. Lo destapó la verificación en navegador.
+           */
+          onCambio={() => {
+            void reload();
+            void (async () => {
+              try {
+                const r = await fetch(`/api/admin/forestal/wood-entries/${encodeURIComponent(detail.id)}`, {
+                  credentials: "include",
+                });
+                if (!r.ok) return;
+                const fresco = (await r.json())?.entry;
+                if (fresco) setDetail(fresco as WoodEntry);
+              } catch {
+                // Si falla, la tabla de atrás ya se recargó: el modal muestra el
+                // dato viejo hasta reabrirlo, que es molesto pero no incorrecto.
+              }
+            })();
+          }}
         />
       )}
       {chainEntry && <CtpIngresoCadenaModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
