@@ -1,6 +1,7 @@
 "use client";
 
-import { LoadingState, PageTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
@@ -154,18 +155,15 @@ export default function ObligacionesTab() {
   const estadoIgvRenta = declaraciones.find(d => d.periodo === periodoActual && d.tipo === "igv-renta")?.estado ?? "pendiente";
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Header — mismo patrón que Impuestos/Cuentas por Pagar */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">SUNAT / Tributario</p>
-          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <Landmark className="h-5 w-5 currentColor" />
-            Obligaciones &amp; Declaraciones
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Cuánto debe pagar y declarar tu empresa este mes (IGV, Renta y más)</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="space-y-4">
+      {/* Header estándar — mismo que Impuestos y Cuentas por pagar. */}
+      <AdminModuleHeader
+        as="h2"
+        eyebrow="SUNAT · Tributario"
+        title="Obligaciones y declaraciones"
+        description="Cuánto debe pagar y declarar tu empresa este mes (IGV, Renta y más)"
+        icon={Landmark}
+      >
           <select value={regimen} onChange={e => { const v = e.target.value as RegimenTributario; setRegimen(v); saveSetting({ regimenTributario: v }); }} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {(Object.keys(REGIMEN_LABELS) as RegimenTributario[]).map(r => <option key={r} value={r}>{REGIMEN_LABELS[r]}</option>)}
           </select>
@@ -175,8 +173,7 @@ export default function ObligacionesTab() {
           <select value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {[now.getFullYear() - 1, now.getFullYear()].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-        </div>
-      </div>
+      </AdminModuleHeader>
 
       {/* Disclaimer — honesto: son estimaciones, no reemplazan al contador */}
       <AdminCard padding="md" className="flex items-start gap-3 border-l-2 border-l-[var(--data-info-500)]">
@@ -262,7 +259,7 @@ export default function ObligacionesTab() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
                   {anual.rows.map((r, i) => (
-                    <tr key={i} className={cn("transition-colors hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50", i === month && "bg-primary/10/40")}>
+                    <tr key={i} className={cn("transition-colors hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50", i === month && "bg-primary/10")}>
                       <td className="px-3 py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">{MONTHS[i]}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-[var(--data-warning-500)]">{fmt(r.igv)}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)] dark:text-muted">{fmt(r.renta)}</td>

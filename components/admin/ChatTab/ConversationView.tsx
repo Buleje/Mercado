@@ -59,7 +59,7 @@ export function ConversationView({
 
   if (loading && messages.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-slate-500">
+      <div className="flex h-full items-center justify-center text-sm text-[var(--text-tertiary)]">
         Cargando mensajes…
       </div>
     );
@@ -68,8 +68,8 @@ export function ConversationView({
   if (messages.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center">
-        <Bot className="h-12 w-12 text-slate-300" />
-        <p className="text-sm text-slate-500">{emptyState}</p>
+        <Bot className="h-12 w-12 text-[var(--text-tertiary)]" />
+        <p className="text-sm text-[var(--text-tertiary)]">{emptyState}</p>
       </div>
     );
   }
@@ -128,10 +128,10 @@ function MessageBubble({
   if (isSystem) {
     return (
       <div className="flex justify-center">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-[length:var(--ts-xs)] text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 py-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
           <Settings2 className="h-3 w-3" />
           <span>{message.body}</span>
-          <span className="text-slate-400">· {time}</span>
+          <span className="text-[var(--text-tertiary)]">· {time}</span>
         </div>
       </div>
     );
@@ -142,10 +142,10 @@ function MessageBubble({
       {/* Avatar */}
       <div
         className={cn(
-          "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full",
+ "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full",
           isSeller
             ? "bg-primary text-white"
-            : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-secondary)]",
         )}
         aria-hidden
       >
@@ -160,25 +160,25 @@ function MessageBubble({
           onClick={onToggle}
           aria-label="Reaccionar o responder"
           className={cn(
-            "rounded-xl px-4 py-2 text-left text-sm leading-relaxed outline-none transition-shadow",
+ "rounded-xl px-4 py-2 text-left text-sm leading-relaxed outline-none transition-shadow",
             active && "ring-2 ring-primary/40",
             isSeller
               ? "rounded-br-sm bg-primary text-white"
-              : "rounded-bl-sm bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100",
+              : "rounded-bl-sm bg-[var(--surface-sunken)] text-[var(--text-primary)]  dark:text-[var(--text-secondary)]",
           )}
         >
           {/* Cita (reply) */}
           {meta.replyTo && (
             <div
               className={cn(
-                "mb-1 rounded-md border-l-[3px] px-2 py-1",
+ "mb-1 rounded-md border-l-[3px] px-2 py-1",
                 isSeller ? "border-white/70 bg-white/15" : "border-primary bg-primary/10",
               )}
             >
               <div className={cn("text-[length:var(--ts-2xs)] font-bold", isSeller ? "text-white/90" : "text-primary")}>
                 {meta.replyTo.senderType === "seller" ? "Vos" : meta.replyTo.senderName}
               </div>
-              <div className={cn("truncate text-[length:var(--ts-xs)]", isSeller ? "text-white/80" : "text-slate-600 dark:text-slate-300")}>
+              <div className={cn("truncate text-[length:var(--ts-xs)]", isSeller ? "text-white/80" : "text-[var(--text-secondary)]")}>
                 {meta.replyTo.body}
               </div>
             </div>
@@ -186,34 +186,34 @@ function MessageBubble({
           {/* Bot AI-first (Tanda 3) — marca las respuestas que mandó el asistente */}
           {meta.autoReply && (
             <div className={cn(
-              "mb-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide",
+ "mb-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide",
               isSeller ? "bg-white/20 text-white" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
             )}>
               <Bot className="h-3 w-3" aria-hidden /> Asistente automático
             </div>
           )}
           {!isSeller && (
-            <div className="mb-0.5 text-[length:var(--ts-xs)] font-semibold text-slate-500 dark:text-slate-400">
+            <div className="mb-0.5 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)]">
               {message.senderName}
             </div>
           )}
           {/* Tarjeta de producto compartido (Tanda 2) — el vendedor ve lo que mandó */}
           {shared && (
             <div className={cn(
-              "mb-1 flex items-center gap-2 rounded-lg border p-2",
-              isSeller ? "border-white/30 bg-white/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+ "mb-1 flex items-center gap-2 rounded-lg border p-2",
+              isSeller ? "border-white/30 bg-white/10" : "border-[var(--rule-base)] bg-[var(--surface-raised)] ",
             )}>
-              <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-white">
+              <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-[var(--surface-raised)]">
                 {shared.image ? (
                   <Image src={shared.image} alt="" fill sizes="44px" className="object-contain p-0.5" />
                 ) : (
-                  <span className="absolute inset-0 flex items-center justify-center text-slate-400">
+                  <span className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)]">
                     <ShoppingCart className="h-4 w-4" aria-hidden />
                   </span>
                 )}
               </span>
               <div className="min-w-0">
-                <p className={cn("truncate text-[length:var(--ts-xs)] font-bold", isSeller ? "text-white" : "text-slate-900 dark:text-slate-100")}>
+                <p className={cn("truncate text-[length:var(--ts-xs)] font-bold", isSeller ? "text-white" : "text-[var(--text-primary)] dark:text-[var(--text-secondary)]")}>
                   {shared.name}
                 </p>
                 <p className={cn("text-sm font-black tabular-nums", isSeller ? "text-white" : "text-primary")}>
@@ -225,8 +225,8 @@ function MessageBubble({
           {/* Pedido armado (Tanda 2) — read-only */}
           {order && (
             <div className={cn(
-              "mb-1 overflow-hidden rounded-lg border",
-              isSeller ? "border-white/30 bg-white/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+ "mb-1 overflow-hidden rounded-lg border",
+              isSeller ? "border-white/30 bg-white/10" : "border-[var(--rule-base)] bg-[var(--surface-raised)] ",
             )}>
               <p className={cn("px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase", isSeller ? "text-white/90" : "text-primary")}>
                 Pedido armado
@@ -234,8 +234,8 @@ function MessageBubble({
               <ul>
                 {order.items.map((it, i) => (
                   <li key={`${it.storeProductId}-${i}`} className={cn(
-                    "flex items-center justify-between gap-2 border-t px-2.5 py-1 text-[length:var(--ts-xs)]",
-                    isSeller ? "border-white/20 text-white/90" : "border-slate-100 text-slate-700 dark:border-slate-800 dark:text-slate-200",
+ "flex items-center justify-between gap-2 border-t px-2.5 py-1 text-[length:var(--ts-xs)]",
+                    isSeller ? "border-white/20 text-white/90" : "border-[var(--rule-base)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)]",
                   )}>
                     <span className="min-w-0 truncate">{it.quantity}× {it.name}</span>
                     <span className="shrink-0 font-bold tabular-nums">{fmtSoles(it.price * it.quantity)}</span>
@@ -243,8 +243,8 @@ function MessageBubble({
                 ))}
               </ul>
               <div className={cn(
-                "flex items-center justify-between border-t px-2.5 py-1 text-[length:var(--ts-xs)] font-black",
-                isSeller ? "border-white/20 text-white" : "border-slate-100 text-primary dark:border-slate-800",
+ "flex items-center justify-between border-t px-2.5 py-1 text-[length:var(--ts-xs)] font-black",
+                isSeller ? "border-white/20 text-white" : "border-[var(--rule-base)] text-primary dark:border-[var(--rule-base)]",
               )}>
                 <span>Total</span><span className="tabular-nums">{fmtSoles(order.total)}</span>
               </div>
@@ -253,13 +253,13 @@ function MessageBubble({
           {/* Sustitución propuesta (Tanda 2) — read-only */}
           {sub && (
             <div className={cn(
-              "mb-1 rounded-lg border p-2",
-              isSeller ? "border-white/30 bg-white/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+ "mb-1 rounded-lg border p-2",
+              isSeller ? "border-white/30 bg-white/10" : "border-[var(--rule-base)] bg-[var(--surface-raised)] ",
             )}>
               <p className={cn("text-[length:var(--ts-2xs)] font-bold uppercase", isSeller ? "text-white/90" : "text-[var(--data-warning-700)]")}>
                 Cambio propuesto
               </p>
-              <p className={cn("text-[length:var(--ts-xs)]", isSeller ? "text-white/90" : "text-slate-600 dark:text-slate-300")}>
+              <p className={cn("text-[length:var(--ts-xs)]", isSeller ? "text-white/90" : "text-[var(--text-secondary)]")}>
                 Falta <strong>{sub.originalName}</strong> → <strong>{sub.replacement.name}</strong> ({fmtSoles(sub.replacement.price)})
               </p>
             </div>
@@ -267,11 +267,11 @@ function MessageBubble({
           {/* Cobro Yape/Plin (Tanda 2) — read-only, lo que pidió la tienda */}
           {payment && (
             <div className={cn(
-              "mb-1 overflow-hidden rounded-lg border",
-              isSeller ? "border-white/30 bg-white/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+ "mb-1 overflow-hidden rounded-lg border",
+              isSeller ? "border-white/30 bg-white/10" : "border-[var(--rule-base)] bg-[var(--surface-raised)] ",
             )}>
               <div className={cn(
-                "flex items-center justify-between gap-2 px-2.5 py-1.5",
+ "flex items-center justify-between gap-2 px-2.5 py-1.5",
                 isSeller ? "text-white" : "text-primary",
               )}>
                 <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase">
@@ -281,16 +281,16 @@ function MessageBubble({
               </div>
               {payment.number && (
                 <p className={cn(
-                  "border-t px-2.5 py-1 text-[length:var(--ts-xs)] tabular-nums",
-                  isSeller ? "border-white/20 text-white/90" : "border-slate-100 text-slate-600 dark:border-slate-800 dark:text-slate-300",
+ "border-t px-2.5 py-1 text-[length:var(--ts-xs)] tabular-nums",
+                  isSeller ? "border-white/20 text-white/90" : "border-[var(--rule-base)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)]",
                 )}>
                   {payment.method === "plin" ? "Plin" : "Yape"}: <strong>{payment.number}</strong>
                 </p>
               )}
               {payment.note && (
                 <p className={cn(
-                  "border-t px-2.5 py-1 text-[length:var(--ts-xs)]",
-                  isSeller ? "border-white/20 text-white/80" : "border-slate-100 text-slate-500 dark:border-slate-800 dark:text-slate-400",
+ "border-t px-2.5 py-1 text-[length:var(--ts-xs)]",
+                  isSeller ? "border-white/20 text-white/80" : "border-[var(--rule-base)] text-[var(--text-tertiary)] dark:border-[var(--rule-base)] ",
                 )}>
                   {payment.note}
                 </p>
@@ -322,9 +322,9 @@ function MessageBubble({
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="mb-1 block overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700"
+              className="mb-1 block overflow-hidden rounded-lg border border-[var(--rule-base)]"
             >
-              <span className="relative block h-24 w-full max-w-[220px] overflow-hidden bg-slate-100 dark:bg-slate-800">
+              <span className="relative block h-24 w-full max-w-[220px] overflow-hidden bg-[var(--surface-sunken)]">
                 <Image src={tile.url} alt="Mapa de la ubicación" fill sizes="220px" className="object-cover" unoptimized />
                 <MapPin
                   className="absolute h-6 w-6 -translate-x-1/2 -translate-y-full text-[var(--data-error-500)] drop-shadow"
@@ -334,8 +334,8 @@ function MessageBubble({
                 />
               </span>
               <span className={cn(
-                "flex items-center justify-between gap-2 px-2 py-1 text-[length:var(--ts-2xs)] font-bold",
-                isSeller ? "text-white" : "text-slate-700 dark:text-slate-200",
+ "flex items-center justify-between gap-2 px-2 py-1 text-[length:var(--ts-2xs)] font-bold",
+                isSeller ? "text-white" : "text-[var(--text-secondary)]",
               )}>
                 <span className="truncate">{location.label ?? "Ubicación del cliente"}</span>
                 <span className={isSeller ? "text-white/90" : "text-primary"}>Maps →</span>
@@ -345,8 +345,8 @@ function MessageBubble({
           {/* Pedido de reseña post-entrega (Tanda 4) — read-only */}
           {reviewReq && (
             <div className={cn(
-              "mb-1 flex items-center gap-2 rounded-lg border px-2.5 py-1.5",
-              isSeller ? "border-white/30 bg-white/10 text-white" : "border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200",
+ "mb-1 flex items-center gap-2 rounded-lg border px-2.5 py-1.5",
+              isSeller ? "border-white/30 bg-white/10 text-white" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]   dark:text-[var(--text-secondary)]",
             )}>
               <Star className={cn("h-4 w-4 shrink-0", isSeller ? "fill-white text-white" : "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]")} aria-hidden />
               <span className="text-[length:var(--ts-xs)] font-bold">Pediste una reseña</span>
@@ -370,7 +370,7 @@ function MessageBubble({
 
         {/* Barra de acciones — emojis + responder */}
         {active && (
-          <div className="z-10 mt-1 flex items-center gap-0.5 rounded-full border border-slate-200 bg-white px-1.5 py-1 shadow-md dark:border-slate-700 dark:bg-slate-900">
+          <div className="z-10 mt-1 flex items-center gap-0.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 py-1 shadow-md">
             {REACTION_EMOJIS.map((e) => (
               <button
                 key={e}
@@ -382,7 +382,7 @@ function MessageBubble({
                 {e}
               </button>
             ))}
-            <span className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-700" aria-hidden />
+            <span className="mx-0.5 h-4 w-px bg-[var(--surface-sunken)]" aria-hidden />
             <button
               type="button"
               onClick={() =>
@@ -394,7 +394,7 @@ function MessageBubble({
                 })
               }
               aria-label="Responder a este mensaje"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)] dark:hover:text-[var(--text-primary)]"
             >
               <Undo2 className="h-4 w-4" strokeWidth={2.25} />
             </button>
@@ -411,10 +411,10 @@ function MessageBubble({
                 onClick={() => { if (r.by === "seller") onReact?.(message.id, r.emoji); }}
                 aria-label={`Reacción ${r.emoji}${r.by === "seller" ? " (tuya)" : " del cliente"}`}
                 className={cn(
-                  "inline-flex items-center rounded-full border px-1.5 py-0.5 text-xs leading-none",
+ "inline-flex items-center rounded-full border px-1.5 py-0.5 text-xs leading-none",
                   r.by === "seller"
                     ? "border-primary/40 bg-primary/10"
-                    : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] ",
                 )}
               >
                 {r.emoji}
@@ -425,7 +425,7 @@ function MessageBubble({
 
         <div
           className={cn(
-            "mt-1 flex items-center gap-1 text-[length:var(--ts-2xs)] text-slate-400",
+ "mt-1 flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]",
             isSeller ? "justify-end" : "justify-start",
           )}
         >

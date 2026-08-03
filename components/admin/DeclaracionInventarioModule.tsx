@@ -1,6 +1,7 @@
 "use client";
 
-import { CardTitle, DataTable, LoadingState, PageTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect } from "react";
 import {
@@ -210,16 +211,13 @@ export default function DeclaracionInventarioModule() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header — Mejora 20 */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="h-10 w-10 rounded-lg bg-primary text-white flex items-center justify-center ">
-          <BarChart3 className="h-5 w-5" />
-        </div>
-        <div>
-          <PageTitle className="text-xl font-bold text-[var(--text-primary)]">Declaración de Inventario</PageTitle>
-          <p className="text-sm text-[var(--text-secondary)]">Snapshot oficial de tu inventario</p>
-        </div>
-      </div>
+      {/* Header estándar (antes: ícono + PageTitle armados a mano). */}
+      <AdminModuleHeader
+        as="h2"
+        title="Declaración de inventario"
+        description="La foto oficial de tu almacén en un momento dado"
+        icon={BarChart3}
+      />
 
       {/* Card informativa */}
       {!infoDismissed ? (

@@ -111,12 +111,12 @@ export function TemplatesPanel({ tenantSlug, customerName, storeName, onPick, on
   const isCustom = (id: string) => id.startsWith("c-");
 
   return (
-    <div className="mb-2 rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
+    <div className="mb-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
       <div className="mb-1.5 flex items-center justify-between px-1">
-        <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold text-slate-600 dark:text-slate-300">
+        <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">
           <FileText className="h-4 w-4 text-primary" aria-hidden /> Plantillas
         </span>
-        <button type="button" onClick={onClose} aria-label="Cerrar plantillas" className="rounded-full p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+        <button type="button" onClick={onClose} aria-label="Cerrar plantillas" className="rounded-full p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-sunken)]">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -127,10 +127,10 @@ export function TemplatesPanel({ tenantSlug, customerName, storeName, onPick, on
             <button
               type="button"
               onClick={() => onPick(fillTemplate(t.text, customerName, storeName))}
-              className="min-w-0 flex-1 rounded-lg px-2.5 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
+              className="min-w-0 flex-1 rounded-lg px-2.5 py-1.5 text-left hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-sunken)]"
             >
               <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-primary">{t.label}</span>
-              <span className="block truncate text-[length:var(--ts-xs)] text-slate-600 dark:text-slate-300">
+              <span className="block truncate text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
                 {fillTemplate(t.text, customerName, storeName)}
               </span>
             </button>
@@ -139,7 +139,7 @@ export function TemplatesPanel({ tenantSlug, customerName, storeName, onPick, on
                 type="button"
                 onClick={() => removeTemplate(t.id)}
                 aria-label={`Borrar plantilla ${t.label}`}
-                className="shrink-0 rounded-full p-1.5 text-slate-300 hover:bg-slate-100 hover:text-[var(--data-error-500)] dark:hover:bg-slate-800"
+                className="shrink-0 rounded-full p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-500)] dark:hover:bg-[var(--surface-sunken)]"
               >
                 <Trash2 className="h-3.5 w-3.5" aria-hidden />
               </button>
@@ -150,14 +150,14 @@ export function TemplatesPanel({ tenantSlug, customerName, storeName, onPick, on
 
       {/* Alta de plantilla custom */}
       {adding ? (
-        <div className="mt-2 space-y-1.5 border-t border-slate-100 pt-2 dark:border-slate-800">
+        <div className="mt-2 space-y-1.5 border-t border-[var(--rule-base)] pt-2 dark:border-[var(--rule-base)]">
           <input
             value={newLabel}
             onChange={(e) => setNewLabel(e.target.value)}
             placeholder="Nombre corto (ej: Promo del día)"
             aria-label="Nombre de la plantilla"
             maxLength={40}
-            className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-800"
+            className="h-9 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 text-sm outline-none focus:border-primary"
           />
           <textarea
             value={newText}
@@ -166,7 +166,7 @@ export function TemplatesPanel({ tenantSlug, customerName, storeName, onPick, on
             aria-label="Texto de la plantilla"
             rows={2}
             maxLength={600}
-            className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-800"
+            className="w-full resize-none rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 py-1.5 text-sm outline-none focus:border-primary"
           />
           <div className="flex gap-1.5">
             <button
@@ -180,7 +180,7 @@ export function TemplatesPanel({ tenantSlug, customerName, storeName, onPick, on
             <button
               type="button"
               onClick={() => { setAdding(false); setNewLabel(""); setNewText(""); }}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+              className="rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm font-semibold text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-sunken)]"
             >
               Cancelar
             </button>
@@ -191,9 +191,9 @@ export function TemplatesPanel({ tenantSlug, customerName, storeName, onPick, on
           type="button"
           onClick={() => setAdding(true)}
           className={cn(
-            "mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 py-2",
-            "text-[length:var(--ts-xs)] font-semibold text-slate-500 hover:border-primary hover:text-primary",
-            "dark:border-slate-600 dark:text-slate-400",
+ "mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] py-2",
+ "text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:border-primary hover:text-primary",
+ "dark:border-[var(--rule-base)] ",
           )}
         >
           <Plus className="h-3.5 w-3.5" aria-hidden /> Nueva plantilla

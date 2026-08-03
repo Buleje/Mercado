@@ -1,6 +1,7 @@
 "use client";
 
-import { LoadingState, PageTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
   Receipt, RefreshCw, AlertTriangle,
@@ -149,18 +150,17 @@ export default function TaxTab() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Header — kicker uppercase + H1 + subtitle */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">SUNAT / Tributario</p>
-          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <Receipt className="h-5 w-5 currentColor" />
-            Impuestos &amp; IGV
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Registro de ventas y compras, libro tributario, IGV a pagar</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="space-y-4">
+      {/* Header estándar: el kicker + título + subtítulo estaban armados a
+          mano, replicando lo que AdminModuleHeader ya hace (y sin su
+          font-display). */}
+      <AdminModuleHeader
+        as="h2"
+        eyebrow="SUNAT · Tributario"
+        title="Impuestos e IGV"
+        description="Registro de ventas y compras, libro tributario, IGV a pagar"
+        icon={Receipt}
+      >
           <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
@@ -176,8 +176,7 @@ export default function TaxTab() {
           <button onClick={() => handleExportBook("compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <BookOpen className="h-4 w-4" /> Libro compras
           </button>
-        </div>
-      </div>
+      </AdminModuleHeader>
 
       {loading ? (
         <LoadingState />

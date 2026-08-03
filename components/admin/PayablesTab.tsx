@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { CardTitle, PageTitle, StatCard } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { CardTitle, StatCard } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
@@ -13,7 +14,6 @@ import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
-import AdminCard from "./shared/AdminCard";
 import StatusBadge from "./shared/StatusBadge";
 import { Field } from "@/components/admin/shared/Field";
 const PAY_STATUS_LABELS = { pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado" } as const;
@@ -143,21 +143,19 @@ export default function PayablesTab() {
   }).filter(s => s.count > 0);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">Finanzas / Obligaciones</p>
-          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <CreditCard className="h-5 w-5 currentColor" />
-            Cuentas por Pagar
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">{filtered.length} cuentas activas con proveedores</p>
-        </div>
+    <div className="space-y-4">
+      {/* Header estándar (antes: kicker + PageTitle + subtítulo a mano). */}
+      <AdminModuleHeader
+        as="h2"
+        eyebrow="Finanzas · Obligaciones"
+        title="Cuentas por pagar"
+        description={`${filtered.length} cuentas activas con proveedores`}
+        icon={CreditCard}
+      >
         <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-1.5 text-sm font-semibold text-white bg-primary hover:bg-primary-dark px-4 py-2 rounded-xl transition-colors">
           <Plus className="h-4 w-4" /> Nueva cuenta
         </button>
-      </div>
+      </AdminModuleHeader>
 
       {/* Error banner — antes las mutaciones fallaban en silencio */}
       {error && (

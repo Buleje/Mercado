@@ -1,6 +1,7 @@
 "use client";
 
-import { CardTitle, PageTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { CardTitle } from "@buleje/design-system";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
@@ -220,21 +221,21 @@ export default function MarketingAutomationTab({
   };
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] flex flex-wrap items-center gap-2">
-            <Megaphone className="h-6 w-6 text-primary" /> Campañas
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">Envía promos y avisos a tus clientes por WhatsApp o por la app, segmentado.</p>
-        </div>
+    <div className="space-y-4">
+      {/* Header estándar (antes: div a mano con PageTitle suelto). */}
+      <AdminModuleHeader
+        as="h2"
+        title="Campañas"
+        description="Mandá promos y avisos a tus clientes por WhatsApp o por la app, segmentado."
+        icon={Megaphone}
+      >
         <button
           onClick={() => { setForm(emptyForm); setError(null); setShowForm(true); }}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" /> Nueva campaña
         </button>
-      </div>
+      </AdminModuleHeader>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
