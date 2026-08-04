@@ -330,8 +330,14 @@ export default function PremiumStoreCard({
                         showName={false}
                       />
                     )}
+                    {/* El badge iba en 8px: ilegible en un celular real (medido
+                        por el túnel a DPR 3). Existe para leerse de reojo, y a
+                        ese tamaño es una mancha. Va al token más chico del DS
+                        (--ts-2xs = 10px), que es el piso que el sistema admite.
+                        El comentario va AFUERA del `{cond && (`: adentro es un
+                        segundo hijo del expression container y no parsea. */}
                     {p.category && (
-                      <span className="absolute left-1 top-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+                      <span className="absolute left-1 top-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
                         {formatCategoryLabel(p.category)}
                       </span>
                     )}

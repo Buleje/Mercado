@@ -513,12 +513,23 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         className="max-md:rounded-none"
         footer={footer}
         coverOverlay={coverOverlay}
+        /**
+         * El avatar sólo cuando hay LOGO.
+         *
+         * Sin logo caía a un círculo con la inicial, y como esas tiendas
+         * tampoco tienen cover, la card terminaba diciendo dos veces lo mismo:
+         * la ilustración «Sin foto» de fondo y encima una «B» gris. Dos marcas
+         * de ausencia no identifican mejor que una — sólo ensucian la esquina.
+         *
+         * Con logo el avatar sigue haciendo su trabajo (identidad sobre un
+         * cover genérico, estilo Rappi).
+         */
         coverBottomLeft={
-          <div
-            className="h-9 w-9 sm:h-11 sm:w-11 rounded-full overflow-hidden bg-[var(--surface-raised)] border-2 border-white dark:border-gray-900 shadow-md hidden md:flex items-center justify-center"
-            aria-hidden="true"
-          >
-            {store.logo ? (
+          store.logo ? (
+            <div
+              className="h-9 w-9 sm:h-11 sm:w-11 rounded-full overflow-hidden bg-[var(--surface-raised)] border-2 border-white dark:border-gray-900 shadow-md hidden md:flex items-center justify-center"
+              aria-hidden="true"
+            >
               <Image
                 src={store.logo}
                 alt=""
@@ -529,12 +540,8 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
                 loading="lazy"
                 className="object-cover w-full h-full"
               />
-            ) : (
-              <span className="text-sm sm:text-base font-black text-[var(--text-secondary)] bg-[var(--surface-sunken)] h-full w-full flex items-center justify-center">
-                {store.name.trim().charAt(0).toUpperCase()}
-              </span>
-            )}
-          </div>
+            </div>
+          ) : undefined
         }
         // Brandon 2026-05-21: mobile cards menos altas estilo Rappi.
         // 16/9 mobile (360x202) vs 4/3 desktop (360x270). Reduce el alto
