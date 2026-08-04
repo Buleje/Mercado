@@ -7,8 +7,6 @@ import type { PremiumProduct } from "@/components/marketplace/PremiumStoreCard";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 import { BRAND_GEO } from "@/lib/geo";
-import { getLiveBannersForSlot } from "@/lib/promo-banners";
-import HomeHeroBanner from "@/components/marketplace/home/HomeHeroBanner";
 
 const BASE_URL = "https://www.buleje.pe";
 
@@ -122,14 +120,6 @@ export const metadata: Metadata = {
  */
 export default async function TiendasPage() {
   const initialStores = await getInitialMarketplaceStores();
-
-  // Banner promocional al tope, IGUAL que la home (mismo slot "tiendas-hero" →
-  // banners idénticos). Resuelto en el server (banners cacheados con "use cache")
-  // y pasado como initialBanners → se pinta en el primer byte, sin cascada
-  // hidratar→fetch→pintar. Brandon 2026-06-13: re-añadido a /tiendas.
-  const heroBanners = (await getLiveBannersForSlot("tiendas-hero"))
-    .filter((b) => b.active)
-    .sort((a, b) => a.order - b.order);
 
   // Productos para las cards Premium (beneficio superadmin): solo se necesitan
   // para las tiendas con displayTier "premium". Reusa el helper que ya embebe
@@ -327,13 +317,11 @@ export default async function TiendasPage() {
       <h1 className="sr-only">
         {`Tiendas y bodegas en ${BRAND_GEO.city} con delivery — Buleje Marketplace`}
       </h1>
-      {/* Banner promocional — alineado a la IZQUIERDA con las secciones (mismo
-          max-w + padding-left) y REBASA a la derecha (sin padding-right → las
-          cards se cortan contra el borde, efecto carrusel Betano). Brandon
-          2026-07-06. */}
-      <div className="mx-auto w-full max-w-[1760px] pl-4 pt-4 sm:pl-6 sm:pt-5 lg:pl-8">
-        <HomeHeroBanner initialBanners={heroBanners} layout="row" />
-      </div>
+      {/* Banner promocional REMOVIDO de /tiendas (Brandon 2026-08-03).
+          El mismo banner sigue viviendo en la home y en /marketplace; acá
+          —directorio donde se viene a BUSCAR una tienda— empujaba la lista
+          hacia abajo. El slot "tiendas-hero" queda igual en el panel: dejar de
+          pintarlo no borra los banners cargados. */}
       <TiendasClient initialStores={initialStores} premiumProducts={productsBySlug} />
 
       {/* Trabajá con nosotros — reclutamiento (tiendas/comercios/repartidores),
