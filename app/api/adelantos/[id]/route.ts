@@ -10,6 +10,14 @@ import { assertCsrf } from "@/lib/auth/csrf";
 const PatchSchema = z.object({
   notas: z.string().max(1000).nullable().optional(),
   cancelar: z.boolean().optional(),
+  /**
+   * Al anular: por qué vía volvió la plata al cajón. Ausente = NO revierte.
+   *
+   * Anular puede significar que fue un error y el efectivo nunca salió, o que se
+   * está dando por perdido. Sólo el primero devuelve plata, y eso lo sabe la
+   * persona — por eso es explícito y por defecto no hace nada.
+   */
+  devolucionCaja: z.enum(["efectivo", "yape", "plin", "tarjeta", "transferencia"]).nullable().optional(),
 });
 
 // GET /api/adelantos/[id]
@@ -40,7 +48,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
     }
     const updated = parsed.data.cancelar
-      ? await AdelantosDB.cancel(auth.tenantId, id)
+      ? await AdelantosDB.cancel(auth.tenantId, id, parsed.data.devolucionCaja)
       : await AdelantosDB.updateNotas(auth.tenantId, id, parsed.data.notas ?? null);
     if (!updated) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     logActivity(parsed.data.cancelar ? "Cancelar" : "Editar", "adelanto", `Adelanto ${id}`, id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
@@ -59,6 +67,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (auth instanceof NextResponse) return auth;
   const { id } = await params;
   try {
+    // El DELETE no lleva body: cancela sin tocar la caja. Para anular
+    // devolviendo el efectivo se usa el PATCH con `devolucionCaja`, que es donde
+    // alguien puede decir por qué vía volvió la plata.
     const cancelled = await AdelantosDB.cancel(auth.tenantId, id);
     if (!cancelled) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     logActivity("Cancelar", "adelanto", `Adelanto ${id} cancelado`, id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));

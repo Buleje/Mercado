@@ -28,6 +28,22 @@ import { Field, ModalActions, ModalShell, fmtMon, inputCls } from "./shared";
 const MONEDAS = ["PEN", "USD"] as const;
 
 /**
+ * De dónde sale la plata. Decide si se anota un egreso en la caja del día.
+ *
+ * «No mover la caja» existe porque no todo adelanto sale del cajón: una
+ * transferencia desde el banco no toca el efectivo, y a veces se carga un
+ * adelanto de ayer, cuando esa caja ya cerró. Anotarlo igual descuadraría el
+ * arqueo de hoy — que es el problema que esto vino a resolver.
+ */
+const ORIGENES_CAJA = [
+  { id: "efectivo", label: "Efectivo de caja" },
+  { id: "yape", label: "Yape" },
+  { id: "plin", label: "Plin" },
+  { id: "transferencia", label: "Transferencia" },
+  { id: "", label: "No mover la caja" },
+] as const;
+
+/**
  * Las tres modalidades. `DESCUENTO_PLANILLA` (ADR-329) es el adelanto de sueldo,
  * de los más comunes acá: hasta ahora había que forzarlo como cuenta corriente
  * y el motivo se perdía. La mecánica de liquidación es la misma; lo que cambia
@@ -101,6 +117,8 @@ export default function CrearAdelantoModal({
   const [moneda, setMoneda] = useState<"PEN" | "USD">("PEN");
   const [notas, setNotas] = useState("");
   const [reciboManual, setReciboManual] = useState("");
+  /** De dónde sale la plata; "" = no anotar movimiento de caja. */
+  const [metodoCaja, setMetodoCaja] = useState<string>("efectivo");
   const [comprobante, setComprobante] = useState<string | null>(null);
   const [notasRapidas, setNotasRapidas] = useState<string[]>(leerNotasRapidas);
   const [saving, setSaving] = useState(false);
@@ -150,6 +168,7 @@ export default function CrearAdelantoModal({
         moneda,
         notas: notas.trim() || undefined,
         reciboManual: reciboManual.trim() || undefined,
+        metodoCaja: metodoCaja || undefined,
         comprobanteUrl: comprobante || undefined,
         forzarLimite: forzarLimite || undefined,
       }),
@@ -289,6 +308,19 @@ export default function CrearAdelantoModal({
           </select>
         </Field>
       </div>
+
+      <Field label="De dónde sale la plata">
+        <select value={metodoCaja} onChange={(e) => setMetodoCaja(e.target.value)} className={inputCls}>
+          {ORIGENES_CAJA.map((o) => (
+            <option key={o.id} value={o.id}>{o.label}</option>
+          ))}
+        </select>
+        <p className="mt-1.5 text-sm text-[var(--text-tertiary)]">
+          {metodoCaja
+            ? "Se anota el egreso en la caja abierta, para que el arqueo cuadre."
+            : "No se anota nada en la caja. Elegilo así si la plata no salió del cajón de hoy."}
+        </p>
+      </Field>
 
       {/* El N° del talonario, al lado del monto: es lo que se escribe en el
           papel en ese mismo momento. Buscar por él funciona igual que por el

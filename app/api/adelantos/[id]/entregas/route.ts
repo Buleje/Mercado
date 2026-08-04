@@ -19,6 +19,11 @@ const EntregaSchema = z
     notas: z.string().max(500).optional(),
     comprobanteUrl: z.string().url().max(500).optional(),
     fecha: z.string().optional(),
+    /**
+     * Si la persona liquidó con PLATA y esa plata entró al cajón. Sólo aplica a
+     * entregas libres: recibir mercadería no mueve efectivo.
+     */
+    metodoCaja: z.enum(["efectivo", "yape", "plin", "tarjeta", "transferencia"]).nullable().optional(),
   })
   .refine((d) => (d.tipo === "PRODUCTO" ? d.productId != null || d.valorManual != null : d.valorManual != null), {
     message: "Entrega LIBRE requiere valorManual; PRODUCTO requiere productId o valorManual",

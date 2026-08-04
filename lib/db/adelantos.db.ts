@@ -6,6 +6,13 @@ import {
   normalizarBusquedaCodigo,
   siguienteCodigo,
 } from "@/lib/adelantos/codigo-operacion";
+import {
+  etiquetaEgreso,
+  etiquetaIngreso,
+  etiquetaReversion,
+  moverCaja,
+  type MetodoPago,
+} from "@/lib/adelantos/movimiento-caja";
 
 /**
  * AdelantosDB — Adelantos de dinero a personas/proveedores por servicios,
@@ -210,6 +217,14 @@ export type AdelantoCreateInput = {
    * porque una decisión así tiene que poder explicarse después.
    */
   forzarLimite?: boolean;
+  /**
+   * Si esta plata salió del cajón, y por qué vía.
+   *
+   * `null`/ausente = no mover la caja (transferencia desde el banco, o el
+   * adelanto se está cargando en diferido). Sólo el efectivo y lo que pasa por
+   * caja se anota; ver `lib/adelantos/movimiento-caja.ts`.
+   */
+  metodoCaja?: MetodoPago | null;
 };
 
 export type EntregaInput = {
@@ -223,6 +238,13 @@ export type EntregaInput = {
   notas?: string;
   comprobanteUrl?: string;
   fecha?: string;
+  /**
+   * Si la persona liquidó con PLATA y esa plata entró al cajón.
+   *
+   * Sólo aplica a entregas libres: una entrega de producto no mueve efectivo.
+   * Ausente = no tocar la caja.
+   */
+  metodoCaja?: MetodoPago | null;
 };
 
 export type AdelantoListFilters = {
@@ -409,6 +431,19 @@ export const AdelantosDB = {
       },
       include: INCLUDE_FULL,
     });
+
+    // La caja se mueve DESPUÉS de crear el adelanto y sin poder tumbarlo: la
+    // plata ya salió, y perder el registro del préstamo por no poder anotar el
+    // movimiento sería el peor de los dos errores.
+    if (data.metodoCaja) {
+      await moverCaja(tenantId, {
+        tipo: "egreso",
+        monto,
+        metodo: data.metodoCaja,
+        etiqueta: etiquetaEgreso(row.codigoOperacion, row.beneficiario?.nombre ?? "—"),
+      });
+    }
+
     return mapAdelanto(row);
   },
 
@@ -419,7 +454,7 @@ export const AdelantosDB = {
    * e incrementa stock si tipo=PRODUCTO && sumarAStock.
    */
   async registrarEntrega(tenantId: string, adelantoId: string, input: EntregaInput): Promise<DbAdelanto | null> {
-    return prisma.$transaction(async (tx) => {
+    const resultado = await prisma.$transaction(async (tx) => {
       const adelanto = await tx.adelanto.findFirst({ where: { id: adelantoId, tenantId } });
       if (!adelanto) return null;
       if (adelanto.status === "CANCELADO") {
@@ -434,11 +469,23 @@ export const AdelantosDB = {
         } else {
           const prod = await tx.product.findFirst({
             where: { id: input.productId, tenantId },
-            select: { price: true },
+            select: { price: true, costPrice: true },
           });
           if (!prod) throw new Error("Producto no encontrado en este tenant");
           const cantidad = input.cantidad ?? 1;
-          valor = toNum(prod.price) * cantidad;
+          /**
+           * Se valúa al COSTO, no al precio de venta.
+           *
+           * Acá el negocio está RECIBIENDO mercadería para saldar una deuda: es
+           * una compra. Acreditarla al precio al que después la vende liquidaba
+           * el adelanto con menos producto del que corresponde — el margen se
+           * regalaba en cada liquidación, en silencio.
+           *
+           * Sin costo cargado se cae al precio de venta, que es lo único que
+           * hay; `valorManual` sigue pisando todo cuando se pacta otro valor.
+           */
+          const unitario = prod.costPrice != null ? toNum(prod.costPrice) : toNum(prod.price);
+          valor = unitario * cantidad;
         }
       } else {
         valor = input.valorManual ?? 0;
@@ -499,12 +546,51 @@ export const AdelantosDB = {
       const full = await tx.adelanto.findFirst({ where: { id: adelantoId, tenantId }, include: INCLUDE_FULL });
       return full ? mapAdelanto(full) : null;
     });
+
+    // Fuera de la transacción: anotar el efectivo que entró no puede hacer
+    // rollback de una liquidación ya asentada.
+    if (resultado && input.metodoCaja && input.tipo === "LIBRE") {
+      await moverCaja(tenantId, {
+        tipo: "ingreso",
+        monto: resultado.entregas[0]?.valor ?? 0,
+        metodo: input.metodoCaja,
+        etiqueta: etiquetaIngreso(resultado.codigoOperacion, resultado.beneficiario?.nombre ?? "—"),
+      });
+    }
+    return resultado;
   },
 
-  async cancel(tenantId: string, id: string): Promise<DbAdelanto | null> {
-    const existing = await prisma.adelanto.findFirst({ where: { id, tenantId } });
+  /**
+   * Anular un adelanto.
+   *
+   * `devolucionCaja` es EXPLÍCITO y por defecto no revierte nada: anular puede
+   * significar dos cosas opuestas —que fue un error y la plata nunca salió, o
+   * que se está dando por perdida— y sólo la primera devuelve efectivo al
+   * cajón. Eso lo sabe la persona, no el sistema.
+   */
+  async cancel(
+    tenantId: string,
+    id: string,
+    devolucionCaja?: MetodoPago | null,
+  ): Promise<DbAdelanto | null> {
+    const existing = await prisma.adelanto.findFirst({
+      where: { id, tenantId },
+      include: { beneficiario: { select: { nombre: true } } },
+    });
     if (!existing) return null;
     await prisma.adelanto.updateMany({ where: { id, tenantId }, data: { status: "CANCELADO" } });
+
+    if (devolucionCaja) {
+      // Se devuelve lo que todavía debía, no el monto original: si ya había
+      // liquidado la mitad, esa mitad nunca volvió como efectivo.
+      await moverCaja(tenantId, {
+        tipo: "ingreso",
+        monto: Number(existing.saldoPendiente),
+        metodo: devolucionCaja,
+        etiqueta: etiquetaReversion(existing.codigoOperacion, existing.beneficiario?.nombre ?? "—"),
+      });
+    }
+
     const row = await prisma.adelanto.findFirst({ where: { id, tenantId }, include: INCLUDE_FULL });
     return row ? mapAdelanto(row) : null;
   },

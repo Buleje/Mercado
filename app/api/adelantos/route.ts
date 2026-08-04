@@ -23,6 +23,11 @@ const CreateSchema = z.object({
    * después de que alguien confirmó el aviso con el monto exacto.
    */
   forzarLimite: z.boolean().optional(),
+  /**
+   * Por qué vía salió la plata del cajón. Ausente = no mover la caja (el
+   * adelanto salió del banco, o se está cargando en diferido).
+   */
+  metodoCaja: z.enum(["efectivo", "yape", "plin", "tarjeta", "transferencia"]).nullable().optional(),
   entregasPactadas: z
     .array(
       z.object({
