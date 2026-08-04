@@ -28,12 +28,14 @@ import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { AnalisisView } from "./AnalisisView";
 import CrearAdelantoModal from "./CrearAdelantoModal";
+import DescuentoPlanillaModal from "./DescuentoPlanillaModal";
 import { fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, MiniStat } from "./shared";
 import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { estadoDeCredito, ordenarPorRiesgoDeCredito, requiereAtencion } from "@/lib/adelantos/limite-credito";
 import { normalizarBusquedaCodigo } from "@/lib/adelantos/codigo-operacion";
+import { descargarComprobante } from "@/lib/adelantos/comprobante";
 import {
   bucketDe,
   deudoresDeCobranza,
@@ -346,6 +348,8 @@ function AdelantosView({
 }) {
   const [showCreate, setShowCreate] = useState(false);
   const [detalle, setDetalle] = useState<DbAdelanto | null>(null);
+  /** Los descuentos de planilla del período, en una pasada. */
+  const [planilla, setPlanilla] = useState(false);
   const [filtro, setFiltro] = useState<string>("TODOS");
   const [q, setQ] = useState("");
 
@@ -400,15 +404,36 @@ function AdelantosView({
         <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">
           {adelantos.length} adelanto{adelantos.length === 1 ? "" : "s"}
         </CardTitle>
-        <button
-          onClick={() => setShowCreate(true)}
-          disabled={beneficiarios.length === 0}
-          className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
-          title={beneficiarios.length === 0 ? "Creá primero una persona" : undefined}
-        >
-          <Plus className="h-5 w-5" /> Nuevo adelanto
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Sólo si hay adelantos de planilla abiertos: un botón que abre una
+              lista vacía es un botón que enseña a no confiar en los botones. */}
+          {adelantos.some((a) => a.modalidad === "DESCUENTO_PLANILLA" && a.status === "ABIERTO" && a.saldoPendiente > 0) && (
+            <button
+              onClick={() => setPlanilla(true)}
+              title="Descontar los adelantos de sueldo del período, todos de una"
+              className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-base font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+            >
+              <Users className="h-5 w-5" /> Descuentos de planilla
+            </button>
+          )}
+          <button
+            onClick={() => setShowCreate(true)}
+            disabled={beneficiarios.length === 0}
+            className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+            title={beneficiarios.length === 0 ? "Creá primero una persona" : undefined}
+          >
+            <Plus className="h-5 w-5" /> Nuevo adelanto
+          </button>
+        </div>
       </div>
+
+      {planilla && (
+        <DescuentoPlanillaModal
+          adelantos={adelantos}
+          onClose={() => setPlanilla(false)}
+          onAplicado={onChange}
+        />
+      )}
 
       {adelantos.length > 0 && (
         <>
@@ -621,6 +646,37 @@ function DetalleAdelantoModal({
         <SkeletonGrid />
       ) : (
         <div className="space-y-5">
+          {/* El código y el comprobante, arriba de todo: es lo primero que se
+              pide cuando alguien llama preguntando por un adelanto. */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[var(--surface-sunken)] px-4 py-3">
+            <div className="min-w-0">
+              <p className="font-mono text-base font-extrabold text-[var(--text-primary)]">
+                {a.codigoOperacion ?? "— sin código —"}
+              </p>
+              {a.reciboManual && (
+                <p className="font-mono text-sm text-[var(--text-tertiary)]">Recibo de papel {a.reciboManual}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => void descargarComprobante({
+                codigoOperacion: a.codigoOperacion,
+                reciboManual: a.reciboManual,
+                persona: a.beneficiario?.nombre ?? "—",
+                documento: a.beneficiario?.documento,
+                telefono: a.beneficiario?.telefono,
+                monto: a.montoAdelantado,
+                moneda: a.moneda,
+                fecha: a.fechaAdelanto,
+                modalidad: a.modalidad,
+                notas: a.notas,
+              })}
+              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+            >
+              <FileText className="h-4 w-4" /> Comprobante para firmar
+            </button>
+          </div>
+
           <div className="grid grid-cols-3 gap-3">
             <MiniStat label="Adelantado" value={fmtMon(a.montoAdelantado, a.moneda)} />
             <MiniStat label="Entregado" value={fmtMon(a.totalEntregado, a.moneda)} tone="success" />
@@ -1016,7 +1072,9 @@ function EstadoCuentaModal({ persona, adelantos, onClose }: { persona: Beneficia
   const mios = adelantos.filter((a) => a.beneficiarioId === persona.id && a.status !== "CANCELADO");
   const movs: { fecha: string; concepto: string; monto: number }[] = [];
   for (const a of mios) {
-    movs.push({ fecha: a.fechaAdelanto, concepto: "Adelanto", monto: a.montoAdelantado });
+    // Con el código: si el deudor pregunta «¿cuál?», el estado de cuenta lo
+    // responde solo en vez de mandarlo a otra pantalla.
+    movs.push({ fecha: a.fechaAdelanto, concepto: `Adelanto ${a.codigoOperacion ?? ""}`.trim(), monto: a.montoAdelantado });
     for (const e of a.entregas) movs.push({ fecha: e.fecha, concepto: e.descripcion || "Entrega", monto: -e.valor });
   }
   movs.sort((x, y) => new Date(x.fecha).getTime() - new Date(y.fecha).getTime());
