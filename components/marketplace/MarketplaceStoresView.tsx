@@ -69,7 +69,6 @@ import { PaymentMethodIcon } from "./PaymentIcons";
 // productos. Se re-habilita para que /tiendas honre los niveles que promete la
 // previsualizacion de /superadmin/stores (Brandon 2026-07-05).
 import PremiumStoreCard, { type PremiumProduct } from "./PremiumStoreCard";
-import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
 import FollowStoreButton from "@/components/marketplace/FollowStoreButton";
 import ShareStoreButton from "@/components/marketplace/ShareStoreButton";
 import {
@@ -561,9 +560,16 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
             fetchPriority={index < 3 ? "high" : "low"}
           />
         )}
-        renderImageFallback={() => (
-          <MiniBulejeBanner storeName={store.name} category={store.category} />
-        )}
+        /**
+         * SIN `renderImageFallback`: se usa el placeholder canónico del DS
+         * (`StoreImagePlaceholder`, ADR-075), que dibuja una ilustración Buleje
+         * distinta por tienda.
+         *
+         * Antes iba `MiniBulejeBanner`: la inicial del nombre en 7xl al 20% de
+         * opacidad sobre gris. Al lado de las cards de comida —con su tira de
+         * productos— las tiendas sin foto se leían como rotas, no como «sin
+         * foto todavía». Y era clonar algo que el DS ya resuelve.
+         */
         // Brandon 2026-05-21 perf v4: SPA navigation con Next Link en lugar de
         // <a> nativo. El DS expone el slot `renderLink` precisamente para que
         // los consumers Next obtengan prefetch automático + client-side routing.
@@ -1132,12 +1138,25 @@ export default function MarketplaceStoresView({
         filteredStores.length > 0 &&
         (showGroups && verticalGroups ? (
           <div className="mt-6 space-y-10">
-            {/* Saltos por categoría — atajo a cada sección (tabla de contenidos
-                + leyenda de mundos disponibles). Scrollea suave al encabezado. */}
+            {/* Saltos por categoría — tabla de contenidos.
+                
+                Sólo con 4+ secciones. Con tres, la página entera se recorre de
+                un vistazo y estos chips quedaban 250px debajo de los TILES de
+                categoría, con las mismas etiquetas y los mismos conteos pero
+                haciendo otra cosa: los de arriba FILTRAN, éstos SALTAN. Dos
+                controles idénticos con comportamiento distinto es peor que no
+                tener el atajo.
+                
+                Cuando aparecen, van rotulados «Ir a» para que se lean como
+                navegación y no como un segundo filtro. */}
+            {verticalGroups.length > 3 && (
             <nav
               aria-label="Ir a una categoría"
               className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
+              <span className="shrink-0 pr-1 text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                Ir a
+              </span>
               {verticalGroups.map((g) => (
                 <button
                   key={g.id}
@@ -1155,6 +1174,7 @@ export default function MarketplaceStoresView({
                 </button>
               ))}
             </nav>
+            )}
             {verticalGroups.map((g) => (
               <section
                 key={g.id}
