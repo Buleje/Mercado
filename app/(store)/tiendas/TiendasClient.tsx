@@ -764,6 +764,24 @@ export default function TiendasClient({
   }, [stores]);
 
 
+  /**
+   * ¿Los filtros van como tiles grandes o como chips?
+   *
+   * Con cuatro tiendas y tres verticales, dos filas de tiles de 112-128px son
+   * MÁS CONTROLES QUE RESULTADOS: ocupan media pantalla para elegir entre cosas
+   * que se ven todas de un vistazo, y en escritorio dejan ~750px de aire a la
+   * derecha.
+   *
+   * No se esconden —un filtro invisible es una función que nadie puede usar—:
+   * se degrada la FORMA. Pocas tiendas → chips en una fila; cuando el
+   * directorio crezca, vuelven los tiles con su jerarquía.
+   *
+   * El umbral es "más tiendas de las que entran de un vistazo". Ocho es una
+   * pantalla de scroll en mobile.
+   */
+  const UMBRAL_TILES = 8;
+  const filtrosCompactos = stores.length < UMBRAL_TILES;
+
   // Chips de filtro activo (audit filtros #4) — feedback claro de qué está
   // filtrado + remoción por chip. Cada uno se pinta arriba del grid con una ×.
   const activeFilterPills: { key: string; label: string; remove: () => void }[] = [];
@@ -1136,13 +1154,21 @@ export default function TiendasClient({
             {/* Categorías como TILES grandes (Brandon 2026-07-06): mismo formato
                 que las subcategorías pero con MÁS jerarquía — tiles más grandes,
                 border-2, badge de ícono prominente + conteo de tiendas. */}
-            <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
+            <div
+              className={cn(
+                "-mx-4 flex overflow-x-auto px-4 [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0",
+                filtrosCompactos ? "gap-2 sm:flex-wrap" : "gap-2.5",
+              )}
+            >
               <button
                 type="button"
                 onClick={() => setVertical(null)}
                 aria-pressed={vertical === null}
                 className={cn(
-                  "group flex h-[112px] w-[112px] shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 transition-all sm:h-[128px] sm:w-[128px]",
+                  "group shrink-0 items-center justify-center transition-all",
+                  filtrosCompactos
+                    ? "inline-flex h-11 gap-2 rounded-full border-2 px-4"
+                    : "flex h-[112px] w-[112px] flex-col gap-2 rounded-2xl border-2 sm:h-[128px] sm:w-[128px]",
                   vertical === null
                     ? "border-[var(--accent)] bg-primary/10"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
@@ -1150,8 +1176,13 @@ export default function TiendasClient({
               >
                 <span
                   className={cn(
-                    "inline-flex h-11 w-11 items-center justify-center rounded-2xl transition-colors",
-                    vertical === null ? "bg-[var(--accent)] text-white" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+                    "inline-flex items-center justify-center transition-colors",
+                    filtrosCompactos
+                      ? "h-5 w-5 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : cn(
+                          "h-11 w-11 rounded-2xl",
+                          vertical === null ? "bg-[var(--accent)] text-white" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+                        ),
                   )}
                 >
                   <Boxes className="h-5 w-5" strokeWidth={2} aria-hidden />
@@ -1167,7 +1198,10 @@ export default function TiendasClient({
                     onClick={() => setVertical(active ? null : v.id)}
                     aria-pressed={active}
                     className={cn(
-                      "group flex h-[112px] w-[112px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 px-1 text-center transition-all sm:h-[128px] sm:w-[128px]",
+                      "group shrink-0 items-center justify-center text-center transition-all",
+                      filtrosCompactos
+                        ? "inline-flex h-11 gap-2 rounded-full border-2 px-4"
+                        : "flex h-[112px] w-[112px] flex-col gap-1.5 rounded-2xl border-2 px-1 sm:h-[128px] sm:w-[128px]",
                       active
                         ? "border-[var(--accent)] bg-primary/10"
                         : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
@@ -1175,8 +1209,13 @@ export default function TiendasClient({
                   >
                     <span
                       className={cn(
-                        "inline-flex h-11 w-11 items-center justify-center rounded-2xl transition-colors",
-                        active ? "bg-[var(--accent)] text-white" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white",
+                        "inline-flex items-center justify-center transition-colors",
+                        filtrosCompactos
+                          ? "h-5 w-5 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                          : cn(
+                              "h-11 w-11 rounded-2xl",
+                              active ? "bg-[var(--accent)] text-white" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white",
+                            ),
                       )}
                     >
                       <v.Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
@@ -1184,8 +1223,16 @@ export default function TiendasClient({
                     <span className="text-sm font-bold text-[var(--text-primary)] leading-tight line-clamp-1">
                       {v.label}
                     </span>
-                    <span className="text-[length:var(--ts-2xs)] font-semibold tabular-nums text-[var(--text-tertiary)]">
-                      {v.count} {v.count === 1 ? "tienda" : "tiendas"}
+                    {/* En compacto el conteo va INLINE: una segunda línea dentro
+                        de un chip de 44px no entra, y el número es justo lo que
+                        dice si vale la pena tocar el filtro. */}
+                    <span
+                      className={cn(
+                        "font-semibold tabular-nums text-[var(--text-tertiary)]",
+                        filtrosCompactos ? "text-sm" : "text-[length:var(--ts-2xs)]",
+                      )}
+                    >
+                      {filtrosCompactos ? v.count : `${v.count} ${v.count === 1 ? "tienda" : "tiendas"}`}
                     </span>
                   </button>
                 );
@@ -1198,16 +1245,29 @@ export default function TiendasClient({
              MÁS FINO, DESPUÉS de las categorías principales. Solo si hay. */}
         {visibleSubcategories.length > 0 && (
           <div ref={subcategorySectionRef} className="mb-4">
-            <h2 className="mb-2.5 text-base font-extrabold tracking-tight text-[var(--text-primary)] sm:text-lg">
-              ¿Qué se te antoja hoy?
-            </h2>
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+            {/* El título sobra en compacto: con dos opciones, «Todas · Pollos ·
+                Pizzas» en una fila se entiende sin encabezarlo, y el h2 costaba
+                otra línea. En modo tile sí ayuda a separar los dos niveles. */}
+            {!filtrosCompactos && (
+              <h2 className="mb-2.5 text-base font-extrabold tracking-tight text-[var(--text-primary)] sm:text-lg">
+                ¿Qué se te antoja hoy?
+              </h2>
+            )}
+            <div
+              className={cn(
+                "-mx-4 flex overflow-x-auto px-4 [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+                filtrosCompactos ? "gap-2 sm:flex-wrap" : "gap-2",
+              )}
+            >
               <button
                 type="button"
                 onClick={() => setSubCategoryId(null)}
                 aria-pressed={subCategoryId === null}
                 className={cn(
-                  "group flex h-[84px] w-[84px] shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border transition-all sm:h-[100px] sm:w-[100px]",
+                  "group shrink-0 items-center justify-center transition-all",
+                  filtrosCompactos
+                    ? "inline-flex h-10 gap-1.5 rounded-full border px-3.5"
+                    : "flex h-[84px] w-[84px] flex-col gap-1 rounded-2xl border sm:h-[100px] sm:w-[100px]",
                   subCategoryId === null
                     ? "border-[var(--accent)] bg-primary/10"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
@@ -1222,7 +1282,7 @@ export default function TiendasClient({
                 subcategories={visibleSubcategories}
                 activeId={subCategoryId}
                 onSelect={setSubCategoryId}
-                variant="tile"
+                variant={filtrosCompactos ? "pill" : "tile"}
               />
             </div>
           </div>
