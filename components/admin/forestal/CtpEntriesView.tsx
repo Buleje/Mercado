@@ -22,6 +22,7 @@ import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
 import CtpDeclararProduccionModal from "./CtpDeclararProduccionModal";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
+import CtpLotesParaProducir from "./CtpLotesParaProducir";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { trozasDelLote } from "@/lib/forestal/lote-programacion";
 import { useCtpSeccion } from "@/hooks/use-ctp-secciones";
@@ -367,6 +368,19 @@ export function CtpEntriesView({
         </div>
       </div>
       {showSim && section === "produccion" && <CtpSimuladorModal onClose={() => setShowSim(false)} />}
+
+      {/* Los lotes, a la vista y no dentro de un menú: el que entra a Producción
+          viene a registrar una jornada y lo primero que necesita es ver qué hay
+          apartado. Tocar uno abre abajo sus trozas para elegir cuáles van. */}
+      {section === "produccion" && (
+        <CtpLotesParaProducir
+          lotes={lotesConMadera}
+          cargando={lotes.cargando}
+          elegido={loteProd}
+          onElegir={(id) => setLoteProd((actual) => (actual === id ? "" : id))}
+          onIrALotes={onIr ? () => onIr("lotes") : undefined}
+        />
+      )}
 
       {section === "produccion" && loteElegido && (
         <CtpProduccionDeLote
