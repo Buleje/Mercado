@@ -24,7 +24,6 @@ import CtpDeclararProduccionModal from "./CtpDeclararProduccionModal";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
 import CtpLotesParaProducir from "./CtpLotesParaProducir";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
-import { trozasDelLote } from "@/lib/forestal/lote-programacion";
 import { useCtpSeccion } from "@/hooks/use-ctp-secciones";
 import CtpSimuladorModal from "./CtpSimuladorModal";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
@@ -123,7 +122,11 @@ export function CtpEntriesView({
       lotes.lotes
         .filter((l) => l.status === "abierto")
         .map((l) => {
-          const suyas = trozasDelLote(lotes.trozas, l);
+          /* Las piezas APARTADAS en el lote, no el patio de su especie: la
+             tarjeta promete lo que se va a ver al abrirla. Con `trozasDelLote`
+             un lote de 6 anunciaba «26 pza» —las 26 Tornillo del patio— y la
+             tabla de abajo mostraba otra cosa. */
+          const suyas = lotes.trozas.filter((t) => t.loteAserrioId === l.id && !t.consumidaEnId);
           return {
             lote: l,
             piezas: suyas.length,
