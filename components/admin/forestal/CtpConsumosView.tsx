@@ -19,21 +19,36 @@ import {
   Download,
   Flame,
   Gauge,
+  Layers,
   Leaf,
   Loader2,
   Search,
   TreePine,
+  X,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
+import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { unidadOficial } from "@/lib/forestal/loctp-campos";
 import {
   filasConsumo,
   type FilaConsumo,
   type GrafoConsumos,
-  type IngresoConsumo,
 } from "@/lib/forestal/loctp-consumos";
 import { consumosACsv, nombreArchivoSeccion } from "@/lib/forestal/ctp-secciones-csv";
+import { loteAserrioPorCorrida, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import { trozasDelLote } from "@/lib/forestal/lote-programacion";
+import CtpLotesTira from "./CtpLotesTira";
+import CtpCargarSierra from "./CtpCargarSierra";
+import CtpTrozasIngresadas from "./CtpTrozasIngresadas";
+import CtpPatioFiltros from "./CtpPatioFiltros";
+import CtpPatioKpis from "./CtpPatioKpis";
+import CtpApartados, { useApartado, type Apartado } from "./ctp-apartados";
+import { CtpPaginacion, usePaginacion } from "./ctp-tabla";
+import { useActionToasts, ActionToasts } from "./cubicador-toasts";
+import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
+import { useFiltroPatio } from "./hooks/use-filtro-patio";
 import {
   agruparConsumos,
   juzgarRendimientoConsumo,
@@ -59,6 +74,15 @@ const fmtFecha = (iso: string | null) => {
 const CAMPO =
   "h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
+/** Las cuatro lecturas del cuadro. El botón muestra la activa: un menú que
+ *  guarda estado y no lo dice obliga a abrirlo para saber cómo quedó. */
+const ETIQUETA_AGRUPAR: Record<AgrupacionConsumo, string> = {
+  ninguna: "Sin agrupar",
+  especie: "Por especie",
+  guia: "Por guía",
+  corrida: "Por corrida",
+};
+
 /** Una fila del cuadro. Fuera del render para no re-montarla en cada estado. */
 function filaConsumo(f: FilaConsumo) {
   return (
@@ -72,14 +96,31 @@ function filaConsumo(f: FilaConsumo) {
       <Texto v={f.fuenteOrigen} className="font-mono" />
       <Texto v={unidadOficial(f.unidad)} />
       <Celda v={f.cantidad} />
-      <td className="px-3 py-2 text-sm text-[var(--text-secondary)]">
+      {/* (10) El lote de aserrío que entró a la sierra. Vacío en las corridas
+          cargadas a mano: el libro admite huecos, no datos inventados. */}
+      <Texto v={f.lote || null} className="font-mono" />
+      {/* En una sola línea: apretada, la observación partía cada fila en cuatro
+          renglones y el cuadro se leía como una escalera. El cuadro ya scrollea
+          a lo ancho —es el formato oficial, tiene once casilleros. */}
+      <td className="whitespace-nowrap px-3 py-2 text-sm text-[var(--text-secondary)]">
         <span className="font-mono font-bold text-[var(--text-primary)]">{f.gtf}</span> → {f.observaciones}
       </td>
     </tr>
   );
 }
 
-export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
+export default function CtpConsumosView({
+  period,
+  onIr,
+  presetLoteId,
+  onPresetLoteUsado,
+}: {
+  period: CtpPeriod;
+  onIr?: (vista: string) => void;
+  /** Lote que llega desde la pestaña Lotes con «Cargar» (ADR-342). */
+  presetLoteId?: string | null;
+  onPresetLoteUsado?: () => void;
+}) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filas, setFilas] = useState<FilaConsumo[]>([]);
@@ -90,6 +131,46 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
   const [grafo, setGrafo] = useState<GrafoConsumos | null>(null);
   const [agrupar, setAgrupar] = useState<AgrupacionConsumo>("ninguna");
   const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
+  /** Cargar la sierra (ADR-340): el lote que se está aserrando y el día. */
+  const [loteCarga, setLoteCarga] = useState("");
+  const [fechaConsumo, setFechaConsumo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [aviso, setAviso] = useState<{ tono: "ok" | "aviso"; texto: string } | null>(null);
+  /** Lo tildado en la tabla del patio. Vive acá porque el filtro que decide
+   *  qué se ve también vive acá (ADR-345). */
+  const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  const { toasts, push: pushToast, dismiss: dismissToast } = useActionToasts();
+  const lotes = useLotesAserrio();
+  const lotesAbiertos = useMemo(() => lotes.lotes.filter((l) => l.status === "abierto"), [lotes.lotes]);
+  const loteElegido = useMemo(
+    () => lotesAbiertos.find((l) => l.id === loteCarga) ?? null,
+    [lotesAbiertos, loteCarga],
+  );
+  /** Cuánta madera de su especie tiene cada lote esperando: se elige con el dato
+   *  a la vista, sin abrir el lote para enterarse. */
+  const disponiblePorLote = useMemo(() => {
+    const mapa = new Map<string, { piezas: number; volumen: number }>();
+    for (const l of lotesAbiertos) {
+      const suyas = trozasDelLote(lotes.trozas, l);
+      mapa.set(l.id, {
+        piezas: suyas.length,
+        volumen: Math.round(suyas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
+      });
+    }
+    return mapa;
+  }, [lotesAbiertos, lotes.trozas]);
+
+  /**
+   * La pila sobre la que trabaja el patio. Con un lote elegido se acota sola a
+   * lo que ESE lote puede tomar —su especie— (ADR-342): antes había que
+   * acordarse de filtrar por especie a mano y el servidor rechazaba el resto.
+   */
+  const baseDelPatio = useMemo(
+    () => (loteElegido ? trozasDelLote(lotes.trozas, loteElegido) : lotes.trozas),
+    [loteElegido, lotes.trozas],
+  );
+  /* El lote va al filtro: sus piezas ya apartadas cuentan como disponibles
+     PARA ÉL, o la tabla queda vacía mientras el botón promete seis piezas. */
+  const patio = useFiltroPatio(baseDelPatio, { loteId: loteElegido?.id });
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -101,20 +182,25 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
         applyCtpPeriodParams(u.searchParams, period);
         return u.toString();
       };
-      const pedir = async <T,>(u: string): Promise<T> => {
-        const r = await fetch(u, { credentials: "include" });
-        if (!r.ok) throw new Error(`El servidor respondió ${r.status}`);
-        return (await r.json()) as T;
-      };
-      const [gra, ing] = await Promise.all([
+      /* Deduplicado (ADR-347): el grafo lo piden también la cabina y el
+         semáforo de pendientes en el mismo montaje. */
+      const pedir = <T,>(u: string): Promise<T> => ctpGet<T>(u);
+      const [gra, lot] = await Promise.all([
         pedir<{ grafo?: GrafoConsumos }>(url("/api/admin/forestal/ctp", { grafo: "1" })),
-        pedir<{ entries?: (IngresoConsumo & { status?: string })[] }>(
-          url("/api/admin/forestal/wood-entries", { limit: "5000" }),
-        ),
+        /* Los lotes de aserrío llenan el casillero (10) —«N° de lote
+           consumido»— y NO se acotan al período: un lote armado en junio puede
+           haberse aserrado en julio, y filtrarlo dejaría la columna vacía sobre
+           un consumo que sí tiene lote.
+           Va con su propio catch: es un dato SECUNDARIO de esta pantalla y si el
+           endpoint falla tiene que faltar la columna (10), no la Sección 2
+           entera. */
+        pedir<{ lotes?: LoteAserrio[] }>("/api/admin/forestal/lotes-aserrio?limite=500").catch(() => ({ lotes: [] })),
       ]);
-      const ingresos = (ing.entries ?? []).filter((e) => e.status !== "anulado" && e.status !== "rechazado");
       setGrafo(gra.grafo ?? null);
-      setFilas(filasConsumo(gra.grafo ?? null, ingresos));
+      /* Los ingresos salen del propio grafo (ADR-347): trae sus casilleros y ya
+         descarta anulados y rechazados en la consulta. Un fetch menos —y era el
+         más pesado de la pantalla: 5000 ingresos enteros. */
+      setFilas(filasConsumo(gra.grafo ?? null, undefined, loteAserrioPorCorrida(lot.lotes ?? [])));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -150,13 +236,82 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
     });
   }, [filas, texto, especie, gtf]);
 
+  /** Los dos apartados de la pestaña, con su contador: el patio y el cuadro. */
+  const piezasEnPatio = useMemo(
+    () => lotes.trozas.filter((t) => t.guiaRecepcionada !== false && !t.consumidaEnId && !t.loteAserrioId).length,
+    [lotes.trozas],
+  );
+  const apartados: Apartado[] = useMemo(
+    () => [
+      {
+        id: "patio",
+        label: "Trozas en el patio",
+        hint: "La madera recibida que todavía no entró a la sierra — de acá se elige lo que se consume",
+        contador: piezasEnPatio,
+      },
+      {
+        id: "seccion2",
+        label: "Sección 2 · Consumos",
+        hint: "El cuadro oficial del libro: qué madera entró a la sierra en el período",
+        contador: filas.length,
+      },
+    ],
+    [piezasEnPatio, filas.length],
+  );
+  const { activo: apartado, ir: irApartado } = useApartado("consumos", apartados);
+
+  /* El lote que mandó la pestaña Lotes se aplica cuando la lista ya cargó: antes
+     sería un id que el `<select>` todavía no tiene entre sus opciones. Y lleva
+     al patio: elegir un lote y quedarse en el cuadro no hace nada visible. */
+  useEffect(() => {
+    if (!presetLoteId || !lotesAbiertos.some((l) => l.id === presetLoteId)) return;
+    setLoteCarga(presetLoteId);
+    irApartado("patio");
+    onPresetLoteUsado?.();
+  }, [presetLoteId, lotesAbiertos, onPresetLoteUsado, irApartado]);
+
   const total = useMemo(() => visibles.reduce((a, f) => a + f.cantidad, 0), [visibles]);
+  /* El cuadro se pagina cuando está SIN agrupar: agrupado ya son pocas filas
+     de grupo, y cortarlas dejaría un subtotal sin sus líneas (ADR-344). */
+  const { visibles: filasEnPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(visibles);
   const especies = useMemo(() => new Set(visibles.map((f) => f.especieComun)).size, [visibles]);
 
   /** Rendimiento y huecos de la cadena — lo que la tabla sola no dice. */
   const resumen = useMemo(() => resumenConsumos(visibles, grafo), [visibles, grafo]);
   const veredicto = useMemo(() => juzgarRendimientoConsumo(resumen.rendimientoPct), [resumen.rendimientoPct]);
   const grupos = useMemo(() => agruparConsumos(visibles, agrupar), [visibles, agrupar]);
+
+  /** Cómo se está leyendo el cuadro, para que el botón lo diga sin abrirlo. */
+  const opcionesCuadro: MenuAccion[] = useMemo(() => {
+    const lista: MenuAccion[] = (Object.keys(ETIQUETA_AGRUPAR) as AgrupacionConsumo[]).map((clave) => ({
+      id: `agrupar-${clave}`,
+      label: ETIQUETA_AGRUPAR[clave],
+      hint: clave === "ninguna" ? "Una fila por consumo" : "Subtotal arriba, el detalle se despliega",
+      icon: Layers,
+      activo: agrupar === clave,
+      onSelect: () => { setAgrupar(clave); setAbiertos(new Set()); },
+    }));
+    lista.push({
+      id: "descargar",
+      label: "Descargar en Excel",
+      hint: `${visibles.length === 1 ? "El consumo" : `Los ${visibles.length} consumos`} de este filtro`,
+      icon: Download,
+      disabled: visibles.length === 0,
+      onSelect: descargarCsv,
+    });
+    if (texto || especie || gtf) {
+      lista.push({
+        id: "limpiar",
+        label: "Limpiar el filtro",
+        hint: "Volver a ver los consumos de todo el período",
+        icon: X,
+        onSelect: () => { setTexto(""); setEspecie(""); setGtf(""); },
+      });
+    }
+    return lista;
+    // `descargarCsv` se redefine en cada render (cierra sobre `visibles`).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agrupar, visibles.length, texto, especie, gtf]);
 
   /** Se baja lo que se está VIENDO — el filtro es parte de lo que se exporta. */
   function descargarCsv() {
@@ -189,12 +344,38 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
+      {/* Lo que TODAVÍA no entró a la sierra, arriba de lo que ya entró: sin
+          esto, esta pantalla sólo cuenta el pasado. El armado del lote vive en
+          su pestaña (ADR-334) — acá va el semáforo y el camino. */}
+      {onIr && apartado === "patio" && !loteElegido && <CtpLotesTira onIr={() => onIr("lotes")} />}
+
+      {aviso && (
+        <p
+          className={`flex items-start gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold ${
+            aviso.tono === "ok"
+              ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]"
+              : "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
+          }`}
+        >
+          <span className="flex-1">{aviso.texto}</span>
+          {onIr && (
+            <button type="button" onClick={() => onIr("produccion")} className="shrink-0 underline">
+              Ir a Producción
+            </button>
+          )}
+        </p>
+      )}
+
       {/* Las cifras del período con el mismo peso que en Ingresos: es el mismo
           libro, no puede tener dos jerarquías según la pestaña. Reflejan lo
-          FILTRADO —igual que el CSV— así el número y lo que se baja coinciden. */}
+          FILTRADO —igual que el CSV— así el número y lo que se baja coinciden.
+          Son las del CUADRO: en el apartado del patio manda `CtpPatioKpis`, que
+          cuenta la pila (ADR-345). */}
+      {apartado === "seccion2" && (
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard
+          density="compact"
           label="Consumos"
           value={nf(visibles.length)}
           subValue={visibles.length === filas.length ? period.label : `de ${nf(filas.length)} · filtrado`}
@@ -202,6 +383,7 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
           emphasis="neutral"
         />
         <StatCard
+          density="compact"
           label="Volumen consumido"
           value={`${total.toFixed(4)} m³`}
           subValue="Entró a la sierra"
@@ -209,6 +391,7 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
           emphasis="success"
         />
         <StatCard
+          density="compact"
           label="Especies"
           value={nf(especies)}
           subValue={especies === 1 ? "Una sola especie" : "Distintas en el período"}
@@ -218,6 +401,7 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
         {/* Reemplaza a «guías de origen» —que ya se ve en el filtro— por la
             pregunta del negocio: de lo que entró a la sierra, ¿cuánto salió? */}
         <StatCard
+          density="compact"
           label="Rendimiento"
           value={resumen.rendimientoPct != null ? `${resumen.rendimientoPct}%` : "—"}
           subValue={
@@ -231,11 +415,18 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
           emphasis={veredicto.tono === "ok" ? "success" : veredicto.tono === "neutro" ? "neutral" : "warning"}
         />
       </div>
+      )}
+
+      {/* Los del patio van en el MISMO renglón de la pantalla que los de arriba
+          (ADR-345): el apartado cambia lo que dicen, no dónde están. */}
+      {apartado === "patio" && (
+        <CtpPatioKpis resumen={patio.resumen} totalSinFiltrar={patio.delPatio.length} />
+      )}
 
       {/* El hueco de la cadena, arriba de todo: el libro admite una corrida sin
           origen declarado, el certificado de trazabilidad no. Se mide contra el
           período entero, no contra el filtro. */}
-      {resumen.corridasSinOrigen.length > 0 && (
+      {apartado === "seccion2" && resumen.corridasSinOrigen.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
           <span className="font-bold">
@@ -252,70 +443,197 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        <label className="relative min-w-48 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
-          <input
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            placeholder="Guía, especie, código de origen…"
-            aria-label="Buscar en los consumos"
-            className={`${CAMPO} w-full pl-9 pr-3`}
-          />
-        </label>
-        <select
-          value={especie}
-          onChange={(e) => setEspecie(e.target.value)}
-          aria-label="Filtrar por especie"
-          className={`${CAMPO} px-3`}
-        >
-          <option value="">Todas las especies</option>
-          {opcionesEspecie.map((e) => <option key={e} value={e}>{e}</option>)}
-        </select>
-        <select
-          value={gtf}
-          onChange={(e) => setGtf(e.target.value)}
-          aria-label="Filtrar por guía de ingreso"
-          className={`${CAMPO} px-3`}
-        >
-          <option value="">Todas las guías</option>
-          {opcionesGtf.map((g) => <option key={g} value={g}>{g}</option>)}
-        </select>
-        <select
-          value={agrupar}
-          onChange={(e) => { setAgrupar(e.target.value as AgrupacionConsumo); setAbiertos(new Set()); }}
-          aria-label="Agrupar los consumos"
-          title="Con doscientas filas la pregunta nunca es «mostrame todo»"
-          className={`${CAMPO} px-3`}
-        >
-          <option value="ninguna">Sin agrupar</option>
-          <option value="especie">Agrupar por especie</option>
-          <option value="guia">Agrupar por guía</option>
-          <option value="corrida">Agrupar por corrida</option>
-        </select>
-        <button
-          type="button"
-          onClick={descargarCsv}
-          disabled={visibles.length === 0}
-          title={`Descargar en Excel/CSV los ${visibles.length} consumos de este filtro`}
-          className="flex h-12 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
-        >
-          <Download className="h-4 w-4" aria-hidden /> Descargar
-        </button>
-        {(texto || especie || gtf) && (
-          <button
-            type="button"
-            onClick={() => { setTexto(""); setEspecie(""); setGtf(""); }}
-            className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
-          >
-            Limpiar
-          </button>
-        )}
-      </div>
+      {/* Cada apartado trae SUS controles (ADR-345): en el patio se elige el lote
+          y el día —lo que se hace ahí es cargar la sierra—; en el cuadro se
+          busca, se agrupa y se baja el CSV. Mezclados, la mitad de la barra no
+          hacía nada sobre lo que se estaba mirando. */}
+      {apartado === "patio" && (
+        <CtpPatioFiltros
+          filtro={patio}
+          accion={
+            <>
+              {/* El lote y el día van PRIMEROS y dentro de la misma grilla que
+                  el resto: son el filtro que más manda —acota la pila a su
+                  especie— y estaban en otra barra, arriba de los KPI.
+                  Ocupa dos celdas sólo mientras no hay fecha: con las dos, la
+                  barra pasaba a un segundo renglón por un campo (ADR-347). */}
+              {lotesAbiertos.length > 0 && (
+              <select
+                value={loteCarga}
+                onChange={(e) => {
+                  /* Cambiar de lote limpia lo tildado: son piezas de otra
+                     especie y el contador arrastraba una cuenta ajena. */
+                  setLoteCarga(e.target.value);
+                  setSeleccion(new Set());
+                }}
+                aria-label="Lote de aserrío a cargar"
+                title="Elegí el lote que entra a la sierra para declarar su consumo"
+                className={`${CAMPO} w-full px-3 ${loteCarga ? "" : "sm:col-span-2"}`}
+              >
+                <option value="">Consumir en un lote…</option>
+                {lotesAbiertos.map((l) => {
+                  const hay = disponiblePorLote.get(l.id);
+                  return (
+                    <option key={l.id} value={l.id}>
+                      {l.code} · {l.speciesCommon}
+                      {hay && hay.piezas > 0 ? ` · ${hay.piezas} pza disponibles` : " · sin madera de esa especie"}
+                    </option>
+                  );
+                })}
+              </select>
+              )}
+              {loteCarga && (
+                <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                  {/* Corto: junto al `date` dentro de una celda de la grilla,
+                      «Fecha de consumo» se cortaba a media palabra. */}
+                  <span className="whitespace-nowrap">Fecha</span>
+                  <input
+                    type="date"
+                    value={fechaConsumo}
+                    onChange={(e) => setFechaConsumo(e.target.value)}
+                    aria-label="Fecha del consumo"
+                    className={`${CAMPO} w-full px-3`}
+                  />
+                </label>
+              )}
+              {/* Sin lotes abiertos, un selector vacío no es un filtro: es un
+                  cartel de «no hay». En su lugar va el camino. */}
+              {lotesAbiertos.length === 0 && onIr && (
+                <button
+                  type="button"
+                  onClick={() => onIr("lotes")}
+                  className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] sm:col-span-2"
+                >
+                  Programar un lote para cargar la sierra
+                </button>
+              )}
+            </>
+          }
+        />
+      )}
 
+      {apartado === "seccion2" && (
+        /* La misma grilla que la del patio: los dos apartados alinean sus campos
+           igual, y envueltos en flex quedaban de anchos distintos (ADR-345). */
+        /* Una sola fila (ADR-347): con dos, la tabla del cuadro arrancaba a
+           media pantalla y lo que se mira es la tabla. */
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+            <input
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              placeholder="Guía, especie, código de origen…"
+              aria-label="Buscar en los consumos"
+              className={`${CAMPO} w-full pl-9 pr-3`}
+            />
+          </label>
+          <select
+            value={especie}
+            onChange={(e) => setEspecie(e.target.value)}
+            aria-label="Filtrar por especie"
+            className={`${CAMPO} w-full px-3`}
+          >
+            <option value="">Todas las especies</option>
+            {opcionesEspecie.map((e) => <option key={e} value={e}>{e}</option>)}
+          </select>
+          <select
+            value={gtf}
+            onChange={(e) => setGtf(e.target.value)}
+            aria-label="Filtrar por guía de ingreso"
+            className={`${CAMPO} w-full px-3`}
+          >
+            <option value="">Todas las guías</option>
+            {opcionesGtf.map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
+          {/* Cómo leer el cuadro y qué llevarse, en un solo botón (ADR-360): el
+              agrupado eran cuatro opciones en un `<select>` que no se usan todos
+              los días, y descargar/limpiar dos cuadraditos sin explicación. */}
+          <ActionMenu
+            /* «Opciones» siempre delante para que se lea como menú, y el
+               agrupado activo detrás: si sólo dijera «Por especie», descargar
+               el CSV quedaba escondido tras un botón que parece un filtro. */
+            label={agrupar === "ninguna" ? "Opciones" : `Opciones · ${ETIQUETA_AGRUPAR[agrupar]}`}
+            title="Agrupar el cuadro, descargarlo o limpiar el filtro"
+            actions={opcionesCuadro}
+            size="md"
+            className="w-full"
+          />
+        </div>
+      )}
+
+      {/* Los dos apartados se turnan en el MISMO lugar (ADR-343): el patio —de
+          donde sale la madera— y el cuadro oficial —donde queda registrada—.
+          Apilados obligaban a scrollear una tabla entera para llegar a la otra. */}
+      <CtpApartados apartados={apartados} activo={apartado} onIr={irApartado} />
+
+      {apartado === "patio" && (loteElegido ? (
+        <CtpCargarSierra
+          lote={loteElegido}
+          fecha={fechaConsumo}
+          estado={lotes}
+          filas={patio.visibles}
+          libres={patio.libres}
+          totalPatio={patio.delPatio.length}
+          filtrando={patio.hayFiltro}
+          seleccion={seleccion}
+          onSeleccion={setSeleccion}
+          onConsumido={(texto, tono) => {
+            /* Toast y no cartel inline: al consumir se cambia de apartado y el
+               aviso quedaba en una pantalla que ya nadie está mirando. */
+            pushToast({
+              tono: tono === "ok" ? "success" : "warning",
+              msg: tono === "ok" ? "Consumo registrado" : "Consumo registrado con avisos",
+              detail: texto,
+            });
+            setAviso({ texto, tono });
+            setLoteCarga("");
+            irApartado("seccion2");
+            void cargar();
+          }}
+        />
+      ) : (
+        <div className="space-y-2">
+          <CtpTrozasIngresadas
+            filas={patio.visibles}
+            libres={patio.libres}
+            totalPatio={patio.delPatio.length}
+            filtrando={patio.hayFiltro}
+            cargando={lotes.cargando}
+            seleccion={seleccion}
+            onSeleccion={setSeleccion}
+            seleccionable={false}
+          />
+          {lotesAbiertos.length > 0 && (
+            <p className="text-sm text-[var(--text-tertiary)]">
+              Para llevar piezas a la sierra, elegí un lote arriba en{" "}
+              <b className="text-[var(--text-secondary)]">«Consumir en un lote…»</b>.
+            </p>
+          )}
+        </div>
+      ))}
+
+      {apartado === "seccion2" && (
       <Cuadro
+        pie={
+          agrupar === "ninguna" ? (
+            <CtpPaginacion
+              rango={rango}
+              porPagina={porPagina}
+              onPorPagina={setPorPagina}
+              onIr={ir}
+              sustantivo="consumo"
+              extra={<span className="font-mono tabular-nums">{total.toFixed(4)} m³ en el filtro</span>}
+            />
+          ) : (
+            <p className="text-sm text-[var(--text-tertiary)]">
+              <span className="font-mono tabular-nums text-[var(--text-secondary)]">{grupos.length} grupo(s)</span> ·{" "}
+              {visibles.length} consumos · {total.toFixed(4)} m³
+            </p>
+          )
+        }
         titulo="Sección 2 · Consumos"
-        subtitulo="11 casilleros. Un consumo no es un registro suelto: es la madera de una guía entrando a una corrida. El casillero (10) va vacío porque las trozas no tienen lote — los lotes se arman recién en producción."
+        subtitulo="11 casilleros. Un consumo no es un registro suelto: es la madera de una guía entrando a una corrida. El casillero (10) trae el lote de aserrío con el que se cargó la sierra; queda vacío en las corridas declaradas a mano."
       >
         <thead className="border-b-2 border-[var(--rule-base)]">
           <tr>
@@ -328,18 +646,19 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
             <Th>(7) N° fuente</Th>
             <Th>(8) Unidad</Th>
             <Th>(9) Cantidad</Th>
+            <Th>(10) Lote consumido</Th>
             <Th>(11) Observaciones</Th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--rule-base)]">
           {visibles.length === 0 ? (
-            <SinDatos cols={10}>
+            <SinDatos cols={11}>
               {filas.length === 0
                 ? "Sin consumos atribuidos en el período. Se registran al declarar de qué ingreso salió cada corrida de producción."
                 : "Ningún consumo coincide con el filtro."}
             </SinDatos>
           ) : agrupar === "ninguna" ? (
-            visibles.map(filaConsumo)
+            filasEnPagina.map(filaConsumo)
           ) : (
             // Agrupado: el subtotal arriba y el detalle plegado. Lo que se
             // busca casi siempre es el total del grupo, no sus veinte líneas.
@@ -371,6 +690,8 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
                       </button>
                     </td>
                     <Celda v={g.cantidad} />
+                    {/* (10) no se totaliza: un grupo puede juntar varios lotes. */}
+                    <td className="px-3 py-2" />
                     <td className="px-3 py-2 text-sm text-[var(--text-tertiary)]">
                       {total > 0 ? `${Math.round((g.cantidad / total) * 100)}% del filtro` : ""}
                     </td>
@@ -382,6 +703,9 @@ export default function CtpConsumosView({ period }: { period: CtpPeriod }) {
           )}
         </tbody>
       </Cuadro>
+      )}
+
+      <ActionToasts toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }

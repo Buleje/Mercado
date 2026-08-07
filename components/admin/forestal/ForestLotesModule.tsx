@@ -98,6 +98,7 @@ export default function ForestLotesModule() {
           da un total sin unidad que parece exacto. */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
+          density="compact"
           label="Lotes"
           value={String(kpis.total)}
           subValue={`${kpis.abiertos} ${kpis.abiertos === 1 ? "abierto" : "abiertos"} · ${
@@ -107,6 +108,7 @@ export default function ForestLotesModule() {
           emphasis="neutral"
         />
         <StatCard
+          density="compact"
           label="Armado"
           value={`${n4(resumen.armadoM3)} m³`}
           subValue={`${resumen.armadoPt.toLocaleString("es-PE")} pt`}
@@ -114,6 +116,7 @@ export default function ForestLotesModule() {
           emphasis="neutral"
         />
         <StatCard
+          density="compact"
           label="Despachado"
           value={`${n4(resumen.despachadoM3)} m³`}
           subValue={resumen.avancePct == null ? "Sin lotes armados" : `${resumen.avancePct}% de lo armado`}
@@ -121,6 +124,7 @@ export default function ForestLotesModule() {
           emphasis="neutral"
         />
         <StatCard
+          density="compact"
           label="Disponible"
           value={`${n4(resumen.disponibleM3)} m³`}
           subValue={

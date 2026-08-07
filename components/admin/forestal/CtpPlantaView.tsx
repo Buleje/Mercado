@@ -165,7 +165,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <p className="max-w-2xl text-sm text-[var(--text-tertiary)]">
           <strong className="text-[var(--text-secondary)]">Mapa de tu aserradero.</strong> Dibujá las zonas de la planta (entrada, patio de trozas, aserrado, despacho…) sobre el satélite: el mapa muestra <em>dónde</em> está la madera y el Libro, <em>cuánta</em> se mueve.
@@ -185,10 +185,10 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
 
       {/* Qué se mueve en la planta AHORA (del Libro) — el contexto del mapa. */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Zonas mapeadas" value={String(zonas.length)} subValue={areaTotal > 0 ? `${areaTotal >= 10000 ? `${(areaTotal / 10000).toFixed(2)} ha` : `${Math.round(areaTotal).toLocaleString("es-PE")} m²`} en total` : "sin dibujar"} icon={MapIcon} emphasis="neutral" />
-        <StatCard label="Materia prima en patio" value={saldos ? `${n2(saldos.materiaPrima.saldoM3)} m³` : "—"} subValue="troza sin consumir" icon={Boxes} emphasis={saldos && saldos.materiaPrima.saldoM3 < 0 ? "error" : "success"} />
-        <StatCard label="Producto terminado" value={saldos ? n2(saldos.productoStock) : "—"} subValue="aserrada lista" icon={PackageCheck} emphasis="neutral" />
-        <StatCard label="Despachado en el período" value={saldos ? n2(saldos.despachado) : "—"} subValue={period.label} icon={Truck} emphasis="neutral" />
+        <StatCard density="compact" label="Zonas mapeadas" value={String(zonas.length)} subValue={areaTotal > 0 ? `${areaTotal >= 10000 ? `${(areaTotal / 10000).toFixed(2)} ha` : `${Math.round(areaTotal).toLocaleString("es-PE")} m²`} en total` : "sin dibujar"} icon={MapIcon} emphasis="neutral" />
+        <StatCard density="compact" label="Materia prima en patio" value={saldos ? `${n2(saldos.materiaPrima.saldoM3)} m³` : "—"} subValue="troza sin consumir" icon={Boxes} emphasis={saldos && saldos.materiaPrima.saldoM3 < 0 ? "error" : "success"} />
+        <StatCard density="compact" label="Producto terminado" value={saldos ? n2(saldos.productoStock) : "—"} subValue="aserrada lista" icon={PackageCheck} emphasis="neutral" />
+        <StatCard density="compact" label="Despachado en el período" value={saldos ? n2(saldos.despachado) : "—"} subValue={period.label} icon={Truck} emphasis="neutral" />
       </div>
 
       {/* Distribución de zonas por tipo (chips). */}

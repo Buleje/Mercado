@@ -742,7 +742,7 @@ export default function LothMapaView() {
   const totalPuntos = geoAll.length + censoAll.length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         {/* Columna mapa */}
         <div className="min-w-0 space-y-3">

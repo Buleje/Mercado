@@ -49,7 +49,7 @@ export default function CtpGuiasBandeja({ onIngresar }: { onIngresar: (gtfNumber
     // Tinte con alpha REAL (`bg-primary/N`): los tokens que ya traen alpha
     // (`--accent-soft`) compilan a un color opaco claro y en dark dejaban un
     // panel blanco con el título en teal, ilegible.
-    <div className="rounded-2xl border-2 border-[var(--accent)] bg-primary/5 p-4 dark:bg-primary/10">
+    <div className="rounded-2xl border-2 border-[var(--accent)] bg-primary/5 p-3 dark:bg-primary/10">
       <div className="mb-2.5 flex items-center gap-2">
         <TreePine className="h-4 w-4 text-primary" aria-hidden="true" />
         <CardTitle as="h3" className="text-sm font-bold text-primary">

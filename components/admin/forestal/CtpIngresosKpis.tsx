@@ -62,6 +62,7 @@ export default function CtpIngresosKpis({
     >
       <motion.div variants={staggerChild} className="w-[15rem] shrink-0 snap-start sm:w-auto sm:shrink">
         <StatCard
+          density="compact"
           label="Ingresos del período"
           value={stats ? nf(stats.totalCount) : "—"}
           subValue={stats ? `${nf(stats.totalPieces)} piezas` : undefined}
@@ -71,6 +72,7 @@ export default function CtpIngresosKpis({
       </motion.div>
       <motion.div variants={staggerChild} className="w-[15rem] shrink-0 snap-start sm:w-auto sm:shrink">
         <StatCard
+          density="compact"
           label="Volumen del período"
           value={stats ? `${Number(stats.totalVolumeM3).toFixed(2)} m³` : "—"}
           subValue={stats ? `${stats.speciesCount} especies · ver desglose` : undefined}
@@ -82,6 +84,7 @@ export default function CtpIngresosKpis({
       </motion.div>
       <motion.div variants={staggerChild} className="w-[15rem] shrink-0 snap-start sm:w-auto sm:shrink">
         <StatCard
+          density="compact"
           label="Pendientes validar"
           value={stats ? nf(stats.byStatus.pendiente) : "—"}
           subValue={
@@ -99,6 +102,7 @@ export default function CtpIngresosKpis({
       </motion.div>
       <motion.div variants={staggerChild} className="w-[15rem] shrink-0 snap-start sm:w-auto sm:shrink">
         <StatCard
+          density="compact"
           label="Fuera de plazo"
           value={stats ? nf(stats.lateCount) : "—"}
           subValue={
@@ -116,6 +120,7 @@ export default function CtpIngresosKpis({
       </motion.div>
       <motion.div variants={staggerChild} className="w-[15rem] shrink-0 snap-start sm:w-auto sm:shrink">
         <StatCard
+          density="compact"
           label="Especies CITES"
           value={stats ? nf(stats.citesCount) : "—"}
           subValue={stats ? `${Number(stats.citesVolumeM3).toFixed(2)} m³ protegidos` : undefined}

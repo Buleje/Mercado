@@ -73,10 +73,11 @@ export default function CtpGuiasEmitidasView({
   }, [guias, q, soloIncompletas]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <StatCard label="Guías emitidas" value={String(resumen.total)} subValue={period.label} icon={FileText} emphasis="neutral" />
+        <StatCard density="compact" label="Guías emitidas" value={String(resumen.total)} subValue={period.label} icon={FileText} emphasis="neutral" />
         <StatCard
+          density="compact"
           label="Listas para imprimir"
           value={String(resumen.completas)}
           subValue={resumen.completas === resumen.total - resumen.anuladas ? "todas completas" : "con todos sus datos"}
@@ -84,6 +85,7 @@ export default function CtpGuiasEmitidasView({
           emphasis="success"
         />
         <StatCard
+          density="compact"
           label="A medio llenar"
           value={String(resumen.incompletas)}
           subValue={resumen.incompletas > 0 ? "no se pueden imprimir así" : "ninguna pendiente"}
@@ -91,6 +93,7 @@ export default function CtpGuiasEmitidasView({
           emphasis={resumen.incompletas > 0 ? "warning" : "neutral"}
         />
         <StatCard
+          density="compact"
           label="Sin verificar en SERFOR"
           value={String(resumen.sinVerificar)}
           subValue={resumen.sinVerificar > 0 ? "lo primero que mira un control" : "todas verificadas"}
@@ -98,6 +101,7 @@ export default function CtpGuiasEmitidasView({
           emphasis={resumen.sinVerificar > 0 ? "warning" : "success"}
         />
         <StatCard
+          density="compact"
           label="Amparan madera sin origen"
           value={String(resumen.sinOrigen)}
           subValue={resumen.sinOrigen > 0 ? "el documento ya salió" : "todas con origen declarado"}

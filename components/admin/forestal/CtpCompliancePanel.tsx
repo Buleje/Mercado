@@ -36,6 +36,8 @@ import {
 } from "@buleje/design-system/icons";
 import { CardTitle, WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
 import { BulejeGaugeChart } from "@/components/ui-system/charts";
+import CtpDescuadresPanel from "./CtpDescuadresPanel";
+import CtpSobreTopePanel from "./CtpSobreTopePanel";
 import { Btn, VistaHeader } from "./ctp-shared";
 import { useCtpCompliance } from "@/hooks/use-ctp-compliance";
 import { ctpComplianceTone, ctpComplianceBreakdown, type CtpComplianceTone } from "@/lib/forestal/ctp-compliance";
@@ -298,7 +300,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <VistaHeader
         titulo="Chequeo del período"
         meta={`${ctpPeriodShortLabel(period)} · ${data.totalIngresos.toLocaleString("es-PE")} ingresos`}
@@ -354,6 +356,15 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
         <TriageChip icon={AlertTriangle} count={advertencias} label={plural(advertencias, "advertencia", "advertencias")} tone="warning" />
         <TriageChip icon={CheckCircle2} count={enOrden.length} label="en orden" tone="success" />
       </div>
+
+      {/* El cruce de entrada del fiscalizador (ADR-353): declarado vs lista de
+          piezas, sobre todo el libro. Va acá y no en una pestaña nueva porque
+          una guía que no cuadra ES un hallazgo de fiscalización. */}
+      <CtpDescuadresPanel />
+
+      {/* El espejo del anterior, del otro lado del libro (ADR-358): corridas que
+          declaran más de lo que sale de su materia prima. */}
+      <CtpSobreTopePanel onNavigate={() => onNavigate("produccion")} />
 
       {problemas.length > 0 && (
         <section className="space-y-3">

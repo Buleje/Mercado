@@ -60,9 +60,10 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
+          density="compact"
           label="Gasto del CTP"
           value={soles(resumen.gastoCtp)}
           subValue={`${resumen.viajesCtp} de ${resumen.viajes} viaje${resumen.viajes === 1 ? "" : "s"} salen de su caja`}
@@ -70,6 +71,7 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
           emphasis="neutral"
         />
         <StatCard
+          density="compact"
           label="Pendiente de pago"
           value={soles(resumen.pendiente)}
           subValue={resumen.pendiente > 0 ? "Deuda con transportistas" : "Todo saldado"}
@@ -77,6 +79,7 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
           emphasis={resumen.pendiente > 0 ? "warning" : "success"}
         />
         <StatCard
+          density="compact"
           label="Costo por m³"
           value={resumen.costoPorM3 == null ? "—" : soles(resumen.costoPorM3)}
           subValue={
@@ -88,6 +91,7 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
           emphasis="success"
         />
         <StatCard
+          density="compact"
           label="Sin monto"
           value={String(resumen.sinMonto)}
           subValue={resumen.sinMonto > 0 ? "No entran en los promedios" : "Todos con precio cerrado"}

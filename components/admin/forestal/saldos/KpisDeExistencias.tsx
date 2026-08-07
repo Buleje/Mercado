@@ -77,6 +77,7 @@ export default function KpisDeExistencias({
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
+          density="compact"
           label="Saldo de materia prima"
           value={`${n2(mp.saldoM3)} m³`}
           subValue={
@@ -90,6 +91,7 @@ export default function KpisDeExistencias({
           emphasis={mp.saldoM3 < 0 ? "error" : "success"}
         />
         <StatCard
+          density="compact"
           label="Ingresado (validado)"
           value={`${n2(mp.ingresoM3)} m³`}
           subValue={`${mp.ingresosCount} ${mp.ingresosCount === 1 ? "ingreso" : "ingresos"}`}
@@ -97,6 +99,7 @@ export default function KpisDeExistencias({
           emphasis="neutral"
         />
         <StatCard
+          density="compact"
           label="Consumido en producción"
           value={`${n2(mp.consumidoM3)} m³`}
           subValue={kpis.rotacionPct != null ? `${n2(kpis.rotacionPct)} % de lo ingresado` : "sin ingresos que rotar"}
@@ -108,6 +111,7 @@ export default function KpisDeExistencias({
             hay dónde ver por qué —no se aserró, se vendió en rollo—. */}
         {(mp.despachadoDirectoM3 ?? 0) > 0 && (
           <StatCard
+            density="compact"
             label="Salió sin aserrar"
             value={`${n2(mp.despachadoDirectoM3 ?? 0)} m³`}
             subValue="madera vendida en rollo"
@@ -116,6 +120,7 @@ export default function KpisDeExistencias({
           />
         )}
         <StatCard
+          density="compact"
           label="Pendiente de validar"
           value={`${n2(mp.pendienteM3)} m³`}
           subValue={

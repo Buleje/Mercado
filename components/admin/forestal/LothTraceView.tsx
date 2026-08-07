@@ -89,10 +89,11 @@ export default function LothTraceView({ entries, caratula }: { entries: LothEntr
     <div className="space-y-5">
       {/* Resumen del aprovechamiento */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Árboles trazados" value={summary.totalTrees.toString()} subValue={`${summary.conGps} con GPS`} icon={TreePine} emphasis="neutral" />
-        <StatCard label="Volumen talado" value={`${summary.talaVolM3.toFixed(2)} m³`} subValue={`trozado ${summary.trozadoVolM3.toFixed(2)} m³`} icon={TreePine} emphasis="success" />
-        <StatCard label="Rendimiento global" value={`${summary.rendimientoGlobalPct}%`} subValue="trozado / talado" icon={TrendingUp} emphasis={summary.rendimientoGlobalPct >= 60 ? "success" : "warning"} />
+        <StatCard density="compact" label="Árboles trazados" value={summary.totalTrees.toString()} subValue={`${summary.conGps} con GPS`} icon={TreePine} emphasis="neutral" />
+        <StatCard density="compact" label="Volumen talado" value={`${summary.talaVolM3.toFixed(2)} m³`} subValue={`trozado ${summary.trozadoVolM3.toFixed(2)} m³`} icon={TreePine} emphasis="success" />
+        <StatCard density="compact" label="Rendimiento global" value={`${summary.rendimientoGlobalPct}%`} subValue="trozado / talado" icon={TrendingUp} emphasis={summary.rendimientoGlobalPct >= 60 ? "success" : "warning"} />
         <StatCard
+          density="compact"
           label="Cadenas completas"
           value={`${summary.completas}/${summary.totalTrees}`}
           subValue={summary.conAlertas > 0 ? `${summary.conAlertas} con alertas` : "sin alertas"}

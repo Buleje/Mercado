@@ -261,11 +261,11 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
 
           {/* KPIs — StatCards del DS (consistencia visual con la vista Trazabilidad) */}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            <StatCard label="Vol. autorizado" value={`${autorizadoTotal.toFixed(0)} m³`} subValue={`${species.length} especie${species.length === 1 ? "" : "s"}`} icon={FileText} emphasis="neutral" />
-            <StatCard label="Aprovechamiento POA" value={`${aprovechamientoPct.toFixed(0)}%`} subValue={`${movilizadoTotal.toFixed(1)} m³ movilizados`} icon={TrendingUp} emphasis={aprovechamientoPct > 100 ? "error" : aprovechamientoPct >= 85 ? "warning" : "success"} />
-            <StatCard label="Saldo disponible" value={`${saldoTotal.toFixed(1)} m³`} subValue={`${Math.max(0, 100 - aprovechamientoPct).toFixed(0)}% del POA`} icon={Scale} emphasis="success" />
-            <StatCard label="Árboles censados" value={trees.length.toString()} subValue={`${georrefPct}% con GPS`} icon={TreePine} emphasis="neutral" />
-            <StatCard label="Control de especies" value={`${okCount}/${controlRows.length}`} subValue={noAutorizadas.length > 0 ? `${noAutorizadas.length} fuera del plan` : "todo autorizado"} icon={noAutorizadas.length > 0 ? ShieldAlert : ShieldCheck} emphasis={noAutorizadas.length > 0 ? "error" : "success"} />
+            <StatCard density="compact" label="Vol. autorizado" value={`${autorizadoTotal.toFixed(0)} m³`} subValue={`${species.length} especie${species.length === 1 ? "" : "s"}`} icon={FileText} emphasis="neutral" />
+            <StatCard density="compact" label="Aprovechamiento POA" value={`${aprovechamientoPct.toFixed(0)}%`} subValue={`${movilizadoTotal.toFixed(1)} m³ movilizados`} icon={TrendingUp} emphasis={aprovechamientoPct > 100 ? "error" : aprovechamientoPct >= 85 ? "warning" : "success"} />
+            <StatCard density="compact" label="Saldo disponible" value={`${saldoTotal.toFixed(1)} m³`} subValue={`${Math.max(0, 100 - aprovechamientoPct).toFixed(0)}% del POA`} icon={Scale} emphasis="success" />
+            <StatCard density="compact" label="Árboles censados" value={trees.length.toString()} subValue={`${georrefPct}% con GPS`} icon={TreePine} emphasis="neutral" />
+            <StatCard density="compact" label="Control de especies" value={`${okCount}/${controlRows.length}`} subValue={noAutorizadas.length > 0 ? `${noAutorizadas.length} fuera del plan` : "todo autorizado"} icon={noAutorizadas.length > 0 ? ShieldAlert : ShieldCheck} emphasis={noAutorizadas.length > 0 ? "error" : "success"} />
           </div>
 
           {/* Alertas de calidad del cruce censo ↔ autorizado (lo que el diseño viejo no atrapaba) */}

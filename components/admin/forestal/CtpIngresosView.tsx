@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, ThumbsDown, ThumbsUp } from "@buleje/design-system/icons";
+import { AlertCircle, PackageCheck, ThumbsDown, ThumbsUp } from "@buleje/design-system/icons";
 import BulkActionsBar from "@/components/admin/shared/BulkActionsBar";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useGuardarPrefs, usePrefsIniciales } from "@/hooks/use-ctp-ingresos-prefs";
@@ -36,16 +36,40 @@ import { CSS_GTF_OFICIAL, fechaGtf } from "@/lib/forestal/ctp-gtf-formato";
 import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { CSS_LISTA_TROZAS, htmlListaTrozas } from "@/lib/forestal/ctp-lista-trozas";
 import { CSS_LEGAJO, portadaLegajo } from "@/lib/forestal/ctp-legajo";
-import { metaArchivado, papelesDeIngreso } from "@/lib/forestal/ctp-documentos-ingreso";
+import { metaArchivado, papelesDeGuia, papelesDeIngreso } from "@/lib/forestal/ctp-documentos-ingreso";
 import { useLogosTitulares } from "@/hooks/use-logos-titulares";
 import CtpArchivadorAuto, { type GuiaParaArchivar } from "./CtpArchivadorAuto";
 import { hayNovedades } from "@/lib/forestal/ctp-cola-archivado";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
+import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
+import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import { logger } from "@/lib/logger";
+
+/** Lo que el endpoint de trozas devuelve: lo usan el papel y la ficha. */
+interface TrozaDeGuia {
+  id: string;
+  codificacion?: string | null;
+  codigoPlanta?: string | null;
+  especieComun?: string | null;
+  especieCientifica?: string | null;
+  producto?: string | null;
+  d1Cm?: number | null;
+  d2Cm?: number | null;
+  largoM?: number | null;
+  volumenM3?: number | string | null;
+  fechaRecepcion?: string | null;
+  noRecepcionada?: boolean | null;
+  consumidaEnId?: string | null;
+}
 import CtpIngresoCadenaModal from "./CtpIngresoCadenaModal";
 import CtpIngresoEditModal from "./CtpIngresoEditModal";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
-import CtpIngresosTable from "./CtpIngresosTable";
+import CtpGuiasTable from "./CtpGuiasTable";
+import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
+import CtpGuiaFichaModal from "./CtpGuiaFichaModal";
+import CtpTrozasIndividuales from "./CtpTrozasIndividuales";
 import CtpIngresosKpis from "./CtpIngresosKpis";
+import CtpGtfIngresadasKpis from "./CtpGtfIngresadasKpis";
 import CtpIngresosFiltros, { type CtpFacetasActivas } from "./CtpIngresosFiltros";
 import CtpGuiasBandeja from "./CtpGuiasBandeja";
 import CtpIngresosPaginacion from "./CtpIngresosPaginacion";
@@ -72,6 +96,7 @@ export default function CtpIngresosView({
   openGtf,
   onOpenConsumed,
   filtroRapido,
+  recepcion,
 }: {
   period: CtpPeriod;
   /** Puente inverso: GTF que el shell mandó a ingresar (abre el form pre-llenado). */
@@ -79,20 +104,57 @@ export default function CtpIngresosView({
   onOpenConsumed?: () => void;
   /** Filtro pedido desde otra pestaña (tira de pendientes / Cumplimiento). */
   filtroRapido?: CtpFiltroRapido | null;
+  /**
+   * Con qué mitad del libro abre la vista (ADR-339): `pendiente` es la **bandeja
+   * del patio** —lo que falta recibir— y `cerrada` el archivo de **GTF
+   * ingresadas**. Sin valor, el listado completo de siempre.
+   */
+  recepcion?: "pendiente" | "cerrada";
 }) {
   // Cómo dejó la pestaña la última vez (orden + filtros; la búsqueda no).
-  const prefs = usePrefsIniciales();
+  const prefs = usePrefsIniciales(recepcion ?? "todas");
   const [searchInput, setSearchInput] = useState("");
   const search = useDebounce(searchInput, 350);
   const [statusFilter, setStatusFilter] = useState<string>(prefs.statusFilter);
   const [facetas, setFacetas] = useState<CtpFacetasActivas>(prefs.facetas);
+  /**
+   * El ARCHIVO se ordena por lo último RECIBIDO (ADR-351).
+   *
+   * Con el orden por fecha de la operación, una guía vieja recepcionada hoy caía
+   * al fondo de la lista: el operador acababa de recibirla, entraba a «GTF
+   * ingresadas» y no la veía. En la bandeja manda la fecha del asiento, que es
+   * como se prioriza lo que falta recibir.
+   */
   const [sort, setSort] = useState<CtpSort>(prefs.sort);
   const [page, setPage] = useState(0);
+  /**
+   * Por guía o por troza. Se recuerda por tenant: el que trabaja con inventario
+   * de patio mira SIEMPRE por pieza, y volver a elegirlo cada vez es fricción.
+   * Se lee en el inicializador y no en un efecto (un efecto que guarda corre
+   * antes que uno que carga y pisa lo guardado).
+   */
+  const [modo, setModoState] = useState<"guia" | "troza">(() => {
+    if (typeof window === "undefined") return "guia";
+    try { return localStorage.getItem("ctp-ingresos-modo") === "troza" ? "troza" : "guia"; } catch { return "guia"; }
+  });
+  const setModo = useCallback((v: "guia" | "troza") => {
+    setModoState(v);
+    try { localStorage.setItem("ctp-ingresos-modo", v); } catch { /* quota */ }
+  }, []);
   const [detail, setDetail] = useState<WoodEntry | null>(null);
   const [chainEntry, setChainEntry] = useState<WoodEntry | null>(null);
   const [editEntry, setEditEntry] = useState<WoodEntry | null>(null);
   /** Ingreso cuya GUÍA se está mirando como documento. */
   const [guiaEntry, setGuiaEntry] = useState<WoodEntry | null>(null);
+  /** El papel de una GUÍA entera (ADR-348): su GTF y su lista de trozas. */
+  const [docGuia, setDocGuia] = useState<GuiaIngreso<WoodEntry> | null>(null);
+  const [docTrozas, setDocTrozas] = useState<TrozaDeGuia[] | null>(null);
+  /** La FICHA de la guía (ADR-350): se revisa y se recibe en el mismo lugar. */
+  const [fichaGuia, setFichaGuia] = useState<GuiaIngreso<WoodEntry> | null>(null);
+  const [fichaTrozas, setFichaTrozas] = useState<TrozaDeGuia[] | null>(null);
+  const [fichaError, setFichaError] = useState<string | null>(null);
+  /** La guía que se está CUADRANDO: declara un volumen y sus piezas suman otro (ADR-353). */
+  const [cuadreGuia, setCuadreGuia] = useState<GuiaIngreso<WoodEntry> | null>(null);
   const [guiaHoja, setGuiaHoja] = useState(0);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -120,15 +182,31 @@ export default function CtpIngresosView({
   /** Guías esperando irse al expediente (se archivan solas al validar). */
   const [colaArchivo, setColaArchivo] = useState<GuiaParaArchivar[]>([]);
 
+  /* La bandeja arranca en lo que pidió la pestaña, pero se puede abrir a todo:
+     un salto desde Cumplimiento («3 fuera de plazo») puede apuntar a guías ya
+     recepcionadas, y llevar a una lista vacía sería peor que no saltar. */
+  const [recepcionSel, setRecepcionSel] = useState<"pendiente" | "cerrada" | "">(recepcion ?? "");
+  /**
+   * El ARCHIVO («GTF ingresadas») no es la bandeja (ADR-357).
+   *
+   * Mostraba los mismos KPI y el mismo aviso de «guías del monte sin ingresar»
+   * que Ingresos, fila por fila. Acá todo está recepcionado: lo que se pregunta
+   * es cuánta madera bajó y cuántas piezas quedaron, no qué falta recibir.
+   */
+  const esArchivo = recepcion === "cerrada";
+  useEffect(() => { setRecepcionSel(recepcion ?? ""); }, [recepcion]);
+
   const filtros = useMemo(
-    () => ({ status: statusFilter, search, ...facetas }),
-    [statusFilter, search, facetas],
+    () => ({ status: statusFilter, search, recepcion: recepcionSel, ...facetas }),
+    [statusFilter, search, recepcionSel, facetas],
   );
 
-  useGuardarPrefs(useMemo(() => ({ statusFilter, facetas, sort }), [statusFilter, facetas, sort]));
+  useGuardarPrefs(useMemo(() => ({ statusFilter, facetas, sort }), [statusFilter, facetas, sort]), recepcion ?? "todas");
 
   const {
     entries,
+    guias,
+    lineas,
     stats,
     total,
     loading,
@@ -137,6 +215,7 @@ export default function CtpIngresosView({
     reload,
     runAction,
     validateMany,
+    recepcionarMany,
     rejectMany,
     fetchAllFiltered,
   } = useCtpIngresos({ period, filtros, sort, page });
@@ -145,7 +224,7 @@ export default function CtpIngresosView({
   useEffect(() => {
     setPage(0);
     setSelectedIds([]);
-  }, [search, statusFilter, facetas, period, sort]);
+  }, [search, statusFilter, facetas, period, sort, recepcionSel]);
 
   // Llegó desde un aviso ("2 fuera de plazo", "1 CITES sin permiso"): la lista
   // se abre mostrando ESOS casos. El filtro pedido reemplaza al que hubiera —
@@ -153,6 +232,9 @@ export default function CtpIngresosView({
   useEffect(() => {
     if (!filtroRapido) return;
     setSearchInput("");
+    /* El salto manda: si la guía buscada ya se recepcionó, la bandeja la
+       escondería y el click terminaría en una lista vacía. */
+    setRecepcionSel("");
     if (filtroRapido.tipo === "pendiente") {
       setStatusFilter("pendiente");
       setFacetas({});
@@ -384,6 +466,88 @@ export default function CtpIngresosView({
     if (e) encolarArchivado([e]);
   }
 
+  /**
+   * Las dos acciones que valen para el PAPEL entero (ADR-346).
+   *
+   * Una GTF de dos especies son dos asientos en el libro, pero el operador
+   * recibió un documento: recepcionarlo dos veces era pedirle que tratara como
+   * dos cosas lo que en el patio bajó de un solo camión.
+   */
+  async function validarGuia(guia: GuiaIngreso<WoodEntry>) {
+    const ids = guia.lineas.filter((l) => l.status === "pendiente").map((l) => l.id);
+    if (ids.length === 0) return;
+    setBusy(`${guia.clave}:validate`);
+    const fallaron = await validateMany(ids);
+    setBusy(null);
+    if (fallaron === 0) {
+      pushToast({
+        tono: "success",
+        msg: `Guía ${guia.gtfNumber} validada`,
+        detail: `${ids.length} asiento${ids.length === 1 ? "" : "s"} del libro`,
+      });
+      encolarArchivado(guia.lineas);
+    }
+  }
+
+  async function recepcionarGuia(guia: GuiaIngreso<WoodEntry>): Promise<boolean> {
+    const ids = guia.lineas.map((l) => l.id);
+    setBusy(`${guia.clave}:recepcion`);
+    const fallaron = await recepcionarMany(ids);
+    setBusy(null);
+    if (fallaron > 0) return false;
+    pushToast({
+      tono: "success",
+      msg: `Guía ${guia.gtfNumber} recepcionada`,
+      detail:
+        "Está arriba de todo en «GTF ingresadas», y sus piezas ya se pueden llevar a la sierra desde Consumos.",
+    });
+    encolarArchivado(guia.lineas);
+    return true;
+  }
+
+  /**
+   * Las piezas de todos los asientos de la guía — las usan la ficha (ADR-350) y
+   * el papel (ADR-348). Se piden al abrir y no en el listado: son de la lista de
+   * trozas y sólo hacen falta ahí.
+   */
+  const piezasDeGuia = useCallback(async (guia: GuiaIngreso<WoodEntry>): Promise<TrozaDeGuia[]> => {
+    const listas = await Promise.all(
+      guia.lineas.map((l) =>
+        ctpGet<{ trozas?: TrozaDeGuia[] }>(
+          `/api/admin/forestal/trozas?woodEntryId=${encodeURIComponent(l.id)}`,
+        ).then((r) => r.trozas ?? []),
+      ),
+    );
+    return listas.flat();
+  }, []);
+
+  /** Abre la ficha y pide sus piezas. La ficha se ve aunque las piezas fallen. */
+  const verFicha = useCallback(async (guia: GuiaIngreso<WoodEntry>) => {
+    setFichaGuia(guia);
+    setFichaTrozas(null);
+    setFichaError(null);
+    try {
+      setFichaTrozas(await piezasDeGuia(guia));
+    } catch (err) {
+      logger.warn("[ingresos] no se pudieron leer las piezas de la ficha", { error: String(err) });
+      setFichaTrozas([]);
+    }
+  }, [piezasDeGuia]);
+
+  const verDocumento = useCallback(async (guia: GuiaIngreso<WoodEntry>) => {
+    setDocGuia(guia);
+    setDocTrozas(null);
+    setGuiaHoja(0);
+    try {
+      setDocTrozas(await piezasDeGuia(guia));
+    } catch (err) {
+      /* Sin piezas el papel sale igual: la GTF no depende de la lista, y decir
+         «no pude leer las trozas» es mejor que no abrir nada. */
+      logger.warn("[ingresos] no se pudieron leer las piezas de la guía", { error: String(err) });
+      setDocTrozas([]);
+    }
+  }, [piezasDeGuia]);
+
   /** Duplicar: abre el form con lo que se repite; GTF y volumen quedan vacíos. */
   const duplicar = useCallback((e: WoodEntry) => {
     setFormGtf(null);
@@ -438,9 +602,62 @@ export default function CtpIngresosView({
   }
 
   const hayFiltro = Boolean(statusFilter || search || facetas.species || facetas.provider || facetas.product || facetas.cites !== undefined || facetas.late || facetas.sinOrigen);
+  /** Qué está filtrando, con nombre: el vacío tiene que poder explicarse. */
+  const filtrosActivos = useMemo(
+    () =>
+      [
+        statusFilter ? `estado «${STATUS_META[statusFilter as keyof typeof STATUS_META]?.label ?? statusFilter}»` : "",
+        search ? `búsqueda «${search}»` : "",
+        facetas.species ? `especie ${facetas.species}` : "",
+        facetas.provider ? `proveedor ${facetas.provider}` : "",
+        facetas.product ? `producto ${productLabel(facetas.product)}` : "",
+        facetas.cites !== undefined ? (facetas.cites ? "sólo CITES" : "sin CITES") : "",
+        facetas.late ? "fuera de plazo" : "",
+        facetas.sinOrigen ? "sin código de origen" : "",
+      ].filter(Boolean),
+    [statusFilter, search, facetas],
+  );
+  /** Saca TODO lo que filtra. El período no: ése se ve arriba y es otra decisión. */
+  const limpiarFiltros = useCallback(() => {
+    setStatusFilter("");
+    setSearchInput("");
+    setFacetas({});
+  }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
+      {/* La bandeja se puede abrir a todo el libro sin cambiar de pestaña: el
+          operador que busca «esa guía que ya recibí» no tiene por qué saber en
+          cuál de las dos vistas quedó (ADR-339). */}
+      {recepcion === "pendiente" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <ChipRecepcion activo={recepcionSel === "pendiente"} onClick={() => setRecepcionSel("pendiente")}>
+            Por recepcionar
+          </ChipRecepcion>
+          <ChipRecepcion activo={recepcionSel === ""} onClick={() => setRecepcionSel("")}>
+            Todas las del período
+          </ChipRecepcion>
+          {/* El detalle va como tooltip: explicaba en un renglón entero lo que
+              el propio chip ya dice, y ese renglón se paga en TODAS las cargas. */}
+          <span
+            className="text-sm text-[var(--text-tertiary)]"
+            title={
+              recepcionSel === "pendiente"
+                ? "Al recepcionarlas pasan a «GTF ingresadas» y sus piezas quedan disponibles para la sierra."
+                : "Incluye las ya recepcionadas."
+            }
+          >
+            {recepcionSel === "pendiente" ? "Llegaron y falta recibirlas." : "También las ya recepcionadas."}
+          </span>
+        </div>
+      )}
+
+      {/* El ARCHIVO tiene sus propios números (ADR-357): «Pendientes validar» y
+          «Fuera de plazo» son siempre 0 acá —todo está recepcionado— y una fila
+          de KPI que nunca dice nada enseña a no mirarla. */}
+      {esArchivo ? (
+        <CtpGtfIngresadasKpis guias={guias} />
+      ) : (
       <CtpIngresosKpis
         stats={stats}
         statusFilter={statusFilter}
@@ -452,10 +669,36 @@ export default function CtpIngresosView({
         onVolumen={() => setShowDashboard((v) => !v)}
         dashboardOn={showDashboard}
       />
+      )}
 
       {showDashboard && <SpeciesAggregateChart period={period} />}
 
       <CtpIngresosFiltros
+        /* Dos lecturas del MISMO registro: por guía (lo que declara el papel) o
+           por troza (una fila por pieza). Viaja con los chips de estado — antes
+           tenía su propia fila con un texto que repetía el nombre del botón. */
+        modoLista={
+          <div role="radiogroup" aria-label="Cómo listar los ingresos" className="inline-flex items-center gap-0.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-0.5">
+            {([
+              { v: "guia", label: "Por guía", hint: "Una fila por documento de ingreso" },
+              { v: "troza", label: "Por troza", hint: "Una fila por pieza, con su código y sus tres dimensiones" },
+            ] as const).map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                role="radio"
+                aria-checked={modo === o.v}
+                title={o.hint}
+                onClick={() => setModo(o.v)}
+                className={`inline-flex h-8 items-center rounded-full px-3 text-sm font-bold transition-colors ${modo === o.v
+                  ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        }
         searchInput={searchInput}
         onSearch={setSearchInput}
         statusFilter={statusFilter}
@@ -478,7 +721,9 @@ export default function CtpIngresosView({
       />
 
       {/* Puente monte→planta: guías emitidas en Títulos Habilitantes sin ingresar. */}
+      {!esArchivo && (
       <CtpGuiasBandeja key={bandejaKey} onIngresar={(n) => { setFormPreset(undefined); setFormGtf(n); setShowForm(true); }} />
+      )}
 
       {error && (
         <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
@@ -502,6 +747,35 @@ export default function CtpIngresosView({
         onSelectAll={() => setSelectedIds(pendingIds)}
         onClearSelection={() => { setSelectedIds([]); setBulkRejecting(false); }}
         actions={[
+          /* En la bandeja, la acción del patio es RECEPCIONAR (ADR-339): fecha
+             las piezas que bajaron, fecha la guía y la valida — un paso, y la
+             guía se va sola a «GTF ingresadas». Validar sigue existiendo para
+             quien sólo quiere aceptar el papel. */
+          ...(recepcion === "pendiente"
+            ? [
+                {
+                  id: "recepcionar",
+                  label: "Recepcionar seleccionadas",
+                  icon: PackageCheck,
+                  onClick: async (ids: string[]) => {
+                    setBusy("bulk");
+                    const marcados = entries.filter((e) => ids.includes(e.id));
+                    const fallaron = await recepcionarMany(ids);
+                    setSelectedIds([]);
+                    setBusy(null);
+                    if (fallaron === 0) {
+                      pushToast({
+                        tono: "success",
+                        msg: `${ids.length} guía${ids.length === 1 ? "" : "s"} recepcionada${ids.length === 1 ? "" : "s"}`,
+                        detail:
+                          "Están arriba de todo en «GTF ingresadas», y sus piezas ya se pueden llevar a la sierra desde Consumos.",
+                      });
+                    }
+                    encolarArchivado(marcados);
+                  },
+                },
+              ]
+            : []),
           {
             id: "validate",
             label: "Validar seleccionados",
@@ -566,16 +840,21 @@ export default function CtpIngresosView({
         </div>
       )}
 
-      <CtpIngresosTable
-        entries={entries}
+      {modo === "troza" ? (
+        <CtpTrozasIndividuales period={period} />
+      ) : (
+      <CtpGuiasTable
+        guias={guias}
         loading={loading}
         period={period}
         filtered={hayFiltro}
+        filtrosActivos={filtrosActivos}
+        onLimpiarFiltros={limpiarFiltros}
         pendingIds={pendingIds}
         selectedIds={selectedIds}
-        selectedPending={selectedPending}
         setSelectedIds={setSelectedIds}
         busy={busy}
+        modoBandeja={recepcionSel === "pendiente"}
         rejectingId={rejectingId}
         rejectReason={rejectReason}
         setRejectReason={setRejectReason}
@@ -589,14 +868,20 @@ export default function CtpIngresosView({
         }}
         onConfirmReject={reject}
         onValidate={validate}
+        onValidarGuia={(g) => void validarGuia(g)}
+        onRecepcionarGuia={(g) => void recepcionarGuia(g)}
         onDetail={setDetail}
         onChain={setChainEntry}
         onDuplicate={duplicar}
         onEdit={setEditEntry}
         onVerGuia={setGuiaEntry}
+        onVerDocumento={(g) => void verDocumento(g)}
+        onVerFicha={(g) => void verFicha(g)}
+        onCuadrar={setCuadreGuia}
         sort={sort}
         onSort={ordenar}
       />
+      )}
 
       <CtpIngresosPaginacion
         total={total}
@@ -604,6 +889,8 @@ export default function CtpIngresosView({
         pageSize={CTP_PAGE_SIZE}
         loading={loading}
         onPage={setPage}
+        sustantivo={total === 1 ? "guía" : "guías"}
+        detalle={lineas > total ? `${lineas} asientos del libro` : undefined}
       />
 
       {showForm && (
@@ -647,6 +934,69 @@ export default function CtpIngresosView({
             // tres datos con los que después se busca el papel en el Drive.
             onArchivar={(d) => metaArchivado(guiaEntry, d.nombre)}
             onClose={() => { setGuiaEntry(null); setGuiaHoja(0); }}
+          />
+        );
+      })()}
+
+      {fichaGuia && (
+        <CtpGuiaFichaModal
+          guia={fichaGuia}
+          trozas={fichaTrozas}
+          cargandoTrozas={fichaTrozas == null}
+          recepcionando={busy === `${fichaGuia.clave}:recepcion`}
+          error={fichaError}
+          onRecepcionar={() => void (async () => {
+            setFichaError(null);
+            const ok = await recepcionarGuia(fichaGuia);
+            if (ok) {
+              /* Cerrar al recibir: la guía deja la bandeja y se va al archivo.
+                 Dejar la ficha abierta mostraría un estado que ya cambió. */
+              setFichaGuia(null);
+              setFichaTrozas(null);
+            } else {
+              setFichaError("No se pudo recepcionar la guía. Probá de nuevo o revisá sus piezas.");
+            }
+          })()}
+          onVerDocumento={() => {
+            /* Del papel se vuelve a la ficha: son dos vistas de lo mismo y
+               apilar dos modales obliga a cerrar dos veces. */
+            const g = fichaGuia;
+            setFichaGuia(null);
+            void verDocumento(g);
+          }}
+          onCuadrar={() => {
+            /* Misma regla que el documento: el cuadre REEMPLAZA la ficha. */
+            const g = fichaGuia;
+            setFichaGuia(null);
+            setFichaTrozas(null);
+            setCuadreGuia(g);
+          }}
+          onClose={() => { setFichaGuia(null); setFichaTrozas(null); setFichaError(null); }}
+        />
+      )}
+
+      {cuadreGuia && (
+        <CtpCuadrarGuiaModal
+          gtfNumber={cuadreGuia.gtfNumber}
+          subtitulo={cuadreGuia.providerName}
+          entryIds={cuadreGuia.lineas.map((l) => l.id)}
+          onCuadrada={() => { void reload(); }}
+          onClose={() => setCuadreGuia(null)}
+        />
+      )}
+
+      {docGuia && docTrozas != null && (() => {
+        const papeles = papelesDeGuia(docGuia, docTrozas, {
+          impresoEl: hoyPE(),
+          logo: logoDe(docGuia.providerName, docGuia.lineas[0].providerDocument),
+        });
+        return (
+          <CtpDocumentoVisor
+            documentos={[papeles.gtf, ...(papeles.lista ? [papeles.lista] : [])]}
+            activo={guiaHoja}
+            onActivo={setGuiaHoja}
+            onArchivar={(d) => metaArchivado(docGuia.lineas[0], d.nombre)}
+            onClose={() => { setDocGuia(null); setDocTrozas(null); setGuiaHoja(0); }}
           />
         );
       })()}
@@ -742,5 +1092,34 @@ export default function CtpIngresosView({
       )}
       <ActionToasts toasts={toasts} onDismiss={dismissToast} />
     </div>
+  );
+}
+
+/**
+ * Chip de la bandeja: «por recepcionar» vs «todas». Mismo lenguaje visual que
+ * los chips de estado de las otras vistas del libro (ADR-339).
+ */
+function ChipRecepcion({
+  activo,
+  onClick,
+  children,
+}: {
+  activo: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={activo}
+      className={`inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-sm font-bold transition ${
+        activo
+          ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+      }`}
+    >
+      {children}
+    </button>
   );
 }

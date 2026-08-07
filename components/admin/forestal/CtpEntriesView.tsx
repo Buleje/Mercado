@@ -299,9 +299,10 @@ export function CtpEntriesView({
   const declararMenu = useMemo(() => accionesPorDeclarar(enProceso, setDeclarando), [enProceso]);
   const Icon = meta.icon;
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <StatCard
+          density="compact"
           label="Líneas registradas"
           value={String(kpis.count)}
           subValue={statusFilter === "registrado" ? "Filtrando por estas" : "Ver solo las vigentes"}
@@ -310,10 +311,10 @@ export function CtpEntriesView({
           onClick={() => setStatusFilter((f) => (f === "registrado" ? "" : "registrado"))}
           className={statusFilter === "registrado" ? ANILLO_ACTIVO : undefined}
         />
-        <StatCard label={section === "produccion" ? "Producido total" : "Despachado total"} value={n2(kpis.totalQty)} subValue="suma de cantidades" icon={PackageCheck} emphasis="success" />
+        <StatCard density="compact" label={section === "produccion" ? "Producido total" : "Despachado total"} value={n2(kpis.totalQty)} subValue="suma de cantidades" icon={PackageCheck} emphasis="success" />
         {section === "produccion"
-          ? <StatCard label="Rendimiento prom." value={`${kpis.avgRend.toFixed(1)}%`} subValue={`ponderado · ${n2(kpis.consumido)} m³ consumidos`} icon={Scale} emphasis={kpis.avgRend > 0 ? "success" : "neutral"} />
-          : <StatCard label="Materia prima ref." value={String(new Set(entries.map((e) => e.gtfNumber).filter(Boolean)).size)} subValue="GTF de salida distintos" icon={Truck} emphasis="neutral" />}
+          ? <StatCard density="compact" label="Rendimiento prom." value={`${kpis.avgRend.toFixed(1)}%`} subValue={`ponderado · ${n2(kpis.consumido)} m³ consumidos`} icon={Scale} emphasis={kpis.avgRend > 0 ? "success" : "neutral"} />
+          : <StatCard density="compact" label="Materia prima ref." value={String(new Set(entries.map((e) => e.gtfNumber).filter(Boolean)).size)} subValue="GTF de salida distintos" icon={Truck} emphasis="neutral" />}
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -538,14 +539,12 @@ export function CtpEntriesView({
         <Anexo04Modal
           rows={[]}
           especieGlobal={anexoEntry.speciesCommon ?? undefined}
-          gtfInicial={anexoEntry.gtfNumber ?? ""}
           ctpEntryId={anexoEntry.id}
           declarado={{ cantidad: Number(anexoEntry.quantity ?? 0), unidad: anexoEntry.unit, piezas: anexoEntry.pieces }}
           // El anexo y la guía son los dos papeles del mismo camión: se miran
           // en el mismo modal en vez de en dos pantallas.
           despacho={anexoEntry.section === "despacho" ? anexoEntry : undefined}
           onAviso={(msg, tono) => pushToast({ tono, msg })}
-          observacionesIniciales={[anexoEntry.productType, anexoEntry.destino ? `Destino: ${anexoEntry.destino}` : ""].filter(Boolean).join(" · ")}
           onCerrar={() => { setAnexoEntry(null); cargarAnexos(); }}
         />
       )}

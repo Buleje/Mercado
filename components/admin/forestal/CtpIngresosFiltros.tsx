@@ -11,6 +11,7 @@
  */
 
 import { BarChart3, Download, FileStack, Plus, RefreshCw, Search, X } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import CtpFiltrosPanel, { BotonFiltros, BTN_FILTRO, usePanelFiltros } from "./ctp-filtros-panel";
 import { STATUS_META, productLabel, type WoodEntryStats, type WoodEntryStatus } from "./ctp-shared";
 
@@ -62,6 +63,8 @@ export interface CtpIngresosFiltrosProps {
   /** true = no hay filas marcadas y el legajo saldría de todo el filtro. */
   legajoDeTodo: boolean;
   armandoLegajo: boolean;
+  /** Cómo se lista (por guía / por troza): va con los chips, no en su propia fila. */
+  modoLista?: React.ReactNode;
 }
 
 export default function CtpIngresosFiltros({
@@ -84,6 +87,7 @@ export default function CtpIngresosFiltros({
   legajoCount,
   legajoDeTodo,
   armandoLegajo,
+  modoLista,
 }: CtpIngresosFiltrosProps) {
   const activos =
     (facetas.species ? 1 : 0) +
@@ -95,6 +99,51 @@ export default function CtpIngresosFiltros({
   const { panelId, abierto, alternar } = usePanelFiltros(activos);
 
   const set = (patch: CtpFacetasActivas) => onFacetas({ ...facetas, ...patch });
+
+  /** Lo que se hace de vez en cuando, plegado. Ver el comentario de la barra. */
+  const opciones: MenuAccion[] = [
+    {
+      id: "especies",
+      label: dashboardOn ? "Cerrar el desglose por especie" : "Desglose por especie",
+      hint: "Cuánto entró de cada especie en el período, en un gráfico",
+      icon: BarChart3,
+      activo: dashboardOn,
+      onSelect: onDashboard,
+    },
+    {
+      id: "descargar",
+      label: "Descargar en Excel",
+      hint: `${totalFiltrado === 1 ? "El ingreso" : `Los ${totalFiltrado} ingresos`} de este filtro, con las columnas ya separadas`,
+      icon: Download,
+      busy: descargando,
+      disabled: totalFiltrado === 0,
+      onSelect: onDescargar,
+    },
+    /* Sin nada que meter adentro no se ofrece: un legajo "de nada" enseña que
+       la función no sirve. */
+    ...(legajoCount > 0
+      ? [
+          {
+            id: "legajo",
+            label: legajoDeTodo
+              ? `Legajo del filtro (${legajoCount} guía${legajoCount === 1 ? "" : "s"})`
+              : `Legajo de lo marcado (${legajoCount} guía${legajoCount === 1 ? "" : "s"})`,
+            hint: "Un solo documento con las guías y su índice. Marcá filas para elegir cuáles.",
+            icon: FileStack,
+            busy: armandoLegajo,
+            onSelect: onLegajo,
+          } satisfies MenuAccion,
+        ]
+      : []),
+    {
+      id: "recargar",
+      label: "Recargar",
+      hint: "Volver a pedir el período al servidor (atajo: R)",
+      icon: RefreshCw,
+      busy: loading,
+      onSelect: onReload,
+    },
+  ];
 
   return (
     <div className="space-y-3">
@@ -127,55 +176,30 @@ export default function CtpIngresosFiltros({
             completo se veían como cajas vacías. */}
         <div className="flex items-center gap-2">
           <BotonFiltros activos={activos} abierto={abierto} panelId={panelId} onToggle={alternar} />
-          <button
-            type="button"
-            onClick={onDashboard}
-            aria-pressed={dashboardOn}
-            title={dashboardOn ? "Cerrar el desglose por especie" : "Desglose por especie"}
-            className={`${BTN_ICONO} ${dashboardOn ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}`}
-          >
-            <BarChart3 className="h-4 w-4" />
-            <span className="max-sm:sr-only">{dashboardOn ? "Cerrar" : "Especies"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={onDescargar}
-            disabled={descargando || totalFiltrado === 0}
-            title={`Descargar en Excel/CSV los ${totalFiltrado} ingresos de este filtro`}
-            className={BTN_ICONO}
-          >
-            <Download className={`h-4 w-4 ${descargando ? "animate-pulse" : ""}`} />
-            <span className="max-sm:sr-only">{descargando ? "Bajando…" : "Descargar"}</span>
-          </button>
-          {/* Sin nada que meter adentro no se dibuja: un botón que arma "el
-              legajo de nada" enseña que la función no sirve. */}
-          {legajoCount > 0 && (
+          {/* Cinco botones-icono (especies, descargar, legajo, recargar) más el
+              CTA envolvían a dos filas en un portátil. Se pliegan acá adentro,
+              donde además cada uno gana la línea que explica qué hace (ADR-360). */}
+          <ActionMenu
+            label="Opciones"
+            title="Desglose por especie, descargar, legajo y recargar"
+            actions={opciones}
+            size="md"
+            compactoEnMovil
+          />
+          {/* La excepción: con filas marcadas, armar el legajo de ESAS guías es
+              la acción del momento y sale del menú a la barra. */}
+          {legajoCount > 0 && !legajoDeTodo && (
             <button
               type="button"
               onClick={onLegajo}
               disabled={armandoLegajo}
-              title={
-                legajoDeTodo
-                  ? `Armar un solo documento con las guías de este filtro (${legajoCount}) y su índice. Marcá filas para elegir cuáles.`
-                  : `Armar un solo documento con las ${legajoCount} guías marcadas y su índice`
-              }
+              title={`Armar un solo documento con las ${legajoCount} guías marcadas y su índice`}
               className={`${BTN_ICONO} border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]`}
             >
               <FileStack className={`h-4 w-4 ${armandoLegajo ? "animate-pulse" : ""}`} />
               <span>{armandoLegajo ? "Armando…" : `Legajo (${legajoCount})`}</span>
             </button>
           )}
-          <button
-            type="button"
-            onClick={onReload}
-            disabled={loading}
-            aria-label="Recargar"
-            title="Recargar"
-            className={BTN_ICONO}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            <span className="sr-only">Recargar</span>
-          </button>
           <button
             type="button"
             onClick={onNuevo}
@@ -187,7 +211,9 @@ export default function CtpIngresosFiltros({
         </div>
       </div>
 
-      {/* Chips de estado: distribución del período de un vistazo + filtro de 1 clic. */}
+      {/* Chips de estado + cómo se lista, en la MISMA fila: los dos son
+          controles de la tabla de abajo y separados costaban dos renglones en
+          cada carga de la vista. */}
       <div className="flex flex-wrap items-center gap-2">
         <StatusChip label="Todos" count={stats?.totalCount} active={statusFilter === ""} tone="accent" onClick={() => onStatus("")} />
         {STATUS_ORDER.map((s) => (
@@ -200,6 +226,7 @@ export default function CtpIngresosFiltros({
             onClick={() => onStatus(statusFilter === s ? "" : s)}
           />
         ))}
+        {modoLista && <div className="ml-auto">{modoLista}</div>}
       </div>
 
       {abierto && (

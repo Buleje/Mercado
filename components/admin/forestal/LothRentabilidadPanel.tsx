@@ -128,9 +128,10 @@ export default function LothRentabilidadPanel({ reloadSignal }: { reloadSignal?:
 
       {/* P&L del aprovechamiento */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatCard label="Ingreso (movilizado)" value={soles(costeo.ingresoTotal)} subValue="ventas estimadas" icon={Wallet} emphasis="neutral" />
-        <StatCard label="Costo total" value={soles(costeo.costoTotal)} subValue={`operativo ${soles(costeo.costoOperativoM3)}/m³`} icon={Calculator} emphasis="neutral" />
+        <StatCard density="compact" label="Ingreso (movilizado)" value={soles(costeo.ingresoTotal)} subValue="ventas estimadas" icon={Wallet} emphasis="neutral" />
+        <StatCard density="compact" label="Costo total" value={soles(costeo.costoTotal)} subValue={`operativo ${soles(costeo.costoOperativoM3)}/m³`} icon={Calculator} emphasis="neutral" />
         <StatCard
+          density="compact"
           label="Margen"
           value={soles(costeo.margenTotal)}
           subValue={pct(costeo.margenPctTotal)}

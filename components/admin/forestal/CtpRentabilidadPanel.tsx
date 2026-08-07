@@ -136,10 +136,10 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
 
       {/* Resumen — StatCard del DS (mismo patrón que Ingresos/Producción/Saldos) */}
       <div className="grid gap-3 sm:grid-cols-4">
-        <StatCard icon={Coins} label="Ventas" value={money(pnl.ventasTotal, pnl.moneda)} subValue={`${pnl.completos} despachos costeados`} emphasis="neutral" />
-        <StatCard icon={Wallet} label="COGS" value={money(pnl.cogsTotal, pnl.moneda)} subValue="costo de lo vendido" emphasis="neutral" />
-        <StatCard icon={TrendingUp} label="Margen" value={money(pnl.margenTotal, pnl.moneda)} subValue={pct(pnl.margenPct)} emphasis={pnl.margenTotal < 0 ? "error" : "success"} />
-        <StatCard icon={AlertCircle} label="Incompletos" value={`${pnl.sinVenta + pnl.sinCosto}`} subValue={`${pnl.sinVenta} sin venta · ${pnl.sinCosto} sin costo`} emphasis={pnl.sinVenta + pnl.sinCosto > 0 ? "warning" : "neutral"} />
+        <StatCard density="compact" icon={Coins} label="Ventas" value={money(pnl.ventasTotal, pnl.moneda)} subValue={`${pnl.completos} despachos costeados`} emphasis="neutral" />
+        <StatCard density="compact" icon={Wallet} label="COGS" value={money(pnl.cogsTotal, pnl.moneda)} subValue="costo de lo vendido" emphasis="neutral" />
+        <StatCard density="compact" icon={TrendingUp} label="Margen" value={money(pnl.margenTotal, pnl.moneda)} subValue={pct(pnl.margenPct)} emphasis={pnl.margenTotal < 0 ? "error" : "success"} />
+        <StatCard density="compact" icon={AlertCircle} label="Incompletos" value={`${pnl.sinVenta + pnl.sinCosto}`} subValue={`${pnl.sinVenta} sin venta · ${pnl.sinCosto} sin costo`} emphasis={pnl.sinVenta + pnl.sinCosto > 0 ? "warning" : "neutral"} />
       </div>
 
       {(pnl.sinVenta > 0 || pnl.sinCosto > 0) && (

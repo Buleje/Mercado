@@ -204,7 +204,7 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
   const margenPct = data.costeo?.margenPctTotal ?? null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-[var(--text-tertiary)]">
           {data.hasPlan

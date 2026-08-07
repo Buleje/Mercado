@@ -588,15 +588,15 @@ export default function LothLibroOperaciones() {
       {/* KPIs — adaptados a la sección (evita mostrar métricas que no aplican:
           volumen en tala/trozado/consumo · cantidad en producto/despacho PT). */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <StatCard label={`Líneas · ${SECTION_META[section].short}`} value={(cur?.count ?? 0).toString()} subValue={`${totalLines} en el libro`} icon={Boxes} emphasis="neutral" />
+        <StatCard density="compact" label={`Líneas · ${SECTION_META[section].short}`} value={(cur?.count ?? 0).toString()} subValue={`${totalLines} en el libro`} icon={Boxes} emphasis="neutral" />
         {usaVolumen ? (
-          <StatCard label="Volumen registrado" value={`${(cur?.totalVolumeM3 ?? 0).toFixed(2)} m³`} subValue={SECTION_META[section].short} icon={TreePine} emphasis="success" />
+          <StatCard density="compact" label="Volumen registrado" value={`${(cur?.totalVolumeM3 ?? 0).toFixed(2)} m³`} subValue={SECTION_META[section].short} icon={TreePine} emphasis="success" />
         ) : usaCantidad ? (
-          <StatCard label="Cantidad registrada" value={(cur?.totalQuantity ?? 0).toFixed(2)} subValue={SECTION_META[section].short} icon={FileText} emphasis="success" />
+          <StatCard density="compact" label="Cantidad registrada" value={(cur?.totalQuantity ?? 0).toFixed(2)} subValue={SECTION_META[section].short} icon={FileText} emphasis="success" />
         ) : (
-          <StatCard label="Trozas despachadas" value={(cur?.count ?? 0).toString()} subValue="con N° de GTF" icon={Truck} emphasis="success" />
+          <StatCard density="compact" label="Trozas despachadas" value={(cur?.count ?? 0).toString()} subValue="con N° de GTF" icon={Truck} emphasis="success" />
         )}
-        <StatCard label="Especies CITES" value={citesCount.toString()} subValue="en esta sección" icon={ShieldAlert} emphasis={citesCount > 0 ? "error" : "neutral"} />
+        <StatCard density="compact" label="Especies CITES" value={citesCount.toString()} subValue="en esta sección" icon={ShieldAlert} emphasis={citesCount > 0 ? "error" : "neutral"} />
       </div>
 
       {/* Búsqueda + etiquetas */}
