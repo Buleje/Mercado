@@ -372,10 +372,11 @@ export function CtpEntriesView({
       </div>
       {showSim && section === "produccion" && <CtpSimuladorModal onClose={() => setShowSim(false)} />}
 
-      {/* Los lotes, a la vista y no dentro de un menú: el que entra a Producción
-          viene a registrar una jornada y lo primero que necesita es ver qué hay
-          apartado. Tocar uno abre abajo sus trozas para elegir cuáles van. */}
-      {section === "produccion" && (
+      {/* El bloque de Producción con la forma del LO-CTP: la barra (lote, fecha
+          de consumo, registrar) y debajo la lista de trozas de ESE lote para
+          elegir cuáles entran a la sierra. Se muestra apenas hay un lote
+          abierto — sin él no hay nada que producir. */}
+      {section === "produccion" && !loteElegido && lotesConMadera.length > 0 && (
         <CtpLotesParaProducir
           lotes={lotesConMadera}
           cargando={lotes.cargando}
@@ -384,10 +385,21 @@ export function CtpEntriesView({
           onIrALotes={onIr ? () => onIr("lotes") : undefined}
         />
       )}
+      {section === "produccion" && !loteElegido && lotesConMadera.length === 0 && (
+        <CtpLotesParaProducir
+          lotes={[]}
+          cargando={lotes.cargando}
+          elegido=""
+          onElegir={() => {}}
+          onIrALotes={onIr ? () => onIr("lotes") : undefined}
+        />
+      )}
 
       {section === "produccion" && loteElegido && (
         <CtpProduccionDeLote
           lote={loteElegido}
+          lotes={lotesConMadera.map((x) => x.lote)}
+          onLote={setLoteProd}
           estado={lotes}
           onCerrar={() => setLoteProd("")}
           onListo={(msg, detalle) => {

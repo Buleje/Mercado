@@ -78,6 +78,19 @@ export interface UnifiedProductCardProps {
   href?: string;
   /** Índice en la lista, para escalonar la animación de entrada */
   index?: number;
+  /**
+   * La sección que contiene este card está SOBRE EL PLIEGUE.
+   *
+   * Sólo entonces las primeras imágenes se piden con `priority` (eager +
+   * fetchpriority high). Antes iba `priority={index < 4}` a secas: cada carrusel
+   * de la página se llevaba cuatro imágenes eager, incluidas las de secciones a
+   * 5.000px de scroll. En la home eso eran 15 imágenes descargándose antes de lo
+   * que el usuario sí ve, compitiendo con el render — y medido, el LCP de la
+   * home ni siquiera es una imagen, es texto.
+   *
+   * El card no puede saber dónde está; la sección sí. Por eso es opt-in.
+   */
+  aboveFold?: boolean;
   /** Si true, oculta el nombre de la tienda (util en storefront /marketplace/[slug]
       donde el contexto de tienda ya es obvio y repetirlo es ruido visual). */
   hideStore?: boolean;
@@ -134,6 +147,7 @@ export default function UnifiedProductCard({
   index = 0,
   hideStore = false,
   layout = "list",
+  aboveFold = false,
 }: UnifiedProductCardProps) {
   const isCompact = layout === "compact";
   // Brandon 2026-05-18 v6: importamos `addItem` directo (sin drawer) para
@@ -444,9 +458,9 @@ export default function UnifiedProductCard({
                 src={product.image}
                 alt={product.name}
                 fill
-                // perf audit P1: la imagen de las primeras ~4 cards es candidata
-                // a LCP — priority (eager + fetchpriority high) en vez de lazy.
-                priority={index < 4}
+                // Las primeras ~4 imágenes son candidatas a LCP, pero SÓLO si
+                // la sección está sobre el pliegue (ver `aboveFold`).
+                priority={aboveFold && index < 4}
                 className="object-contain p-2 transition-transform duration-500 group-hover:scale-[1.04]"
                 sizes={
                   isCompact

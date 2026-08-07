@@ -147,7 +147,26 @@ export default function CatalogCategorySections() {
   return (
     <div className="space-y-6 sm:space-y-7">
       {sections.map((sec) => (
-        <section key={sec.id} id={`cat-${sec.id}`} aria-labelledby={`${sec.id}-h`}>
+        /**
+         * `content-visibility: auto` — el navegador NO renderiza (layout ni
+         * pintado) las secciones que están fuera de pantalla, y las renderiza
+         * apenas se acercan.
+         *
+         * La home montaba SIETE carruseles de categoría de entrada, con más de
+         * cien imágenes, todos por debajo del pliegue. El contenido no se toca:
+         * sigue en el DOM, sigue siendo indexable y Ctrl+F lo sigue encontrando
+         * — sólo se deja de pagar el layout de lo que nadie está mirando.
+         *
+         * `contain-intrinsic-size` reserva el alto medido (~380px) para que la
+         * barra de scroll no salte al renderizarse: sin eso, esto ARREGLA el
+         * render y ROMPE el CLS.
+         */
+        <section
+          key={sec.id}
+          id={`cat-${sec.id}`}
+          aria-labelledby={`${sec.id}-h`}
+          className="[content-visibility:auto] [contain-intrinsic-size:auto_380px]"
+        >
           <div className="mb-2.5 flex items-end justify-between gap-3 sm:mb-3">
             <div className="min-w-0">
               <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">

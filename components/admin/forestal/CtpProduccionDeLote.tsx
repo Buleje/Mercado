@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Boxes, Layers, X } from "@buleje/design-system/icons";
+import { Boxes, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { origenesDeTrozas } from "@/lib/forestal/produccion-paquetes";
@@ -28,20 +28,24 @@ import CtpRegistrarProduccionModal, {
   type MaterialAConsumir,
   type ProduccionRegistrada,
 } from "./CtpRegistrarProduccionModal";
-import CtpTrozasIngresadas from "./CtpTrozasIngresadas";
-import CtpPatioFiltros from "./CtpPatioFiltros";
-import { Btn } from "./ctp-shared";
-import { useFiltroPatio } from "./hooks/use-filtro-patio";
+import CtpTrozasDelLote from "./CtpTrozasDelLote";
+import { Btn, I } from "./ctp-shared";
 import type { EstadoLotesAserrio } from "./hooks/use-lotes-aserrio";
 
 export default function CtpProduccionDeLote({
   lote,
+  lotes,
+  onLote,
   estado,
   onListo,
   onError,
   onCerrar,
 }: {
   lote: LoteAserrio;
+  /** Los lotes abiertos: alimentan el selector de la barra (formato SNIFFS). */
+  lotes?: LoteAserrio[];
+  /** Cambiar de lote sin salir del panel. */
+  onLote?: (id: string) => void;
   estado: EstadoLotesAserrio;
   /** Salir del lote sin producir: el panel se abre desde el CTA y tiene que
    *  tener puerta de salida además de volver a elegirlo en el menú. */
@@ -56,6 +60,9 @@ export default function CtpProduccionDeLote({
   onError: (mensaje: string) => void;
 }) {
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  /** (2) Fecha de consumo del formato: se elige ANTES de registrar y viaja al
+   *  modal como el día de la corrida. */
+  const [fechaConsumo, setFechaConsumo] = useState(() => new Date().toISOString().slice(0, 10));
   const [abierto, setAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +83,6 @@ export default function CtpProduccionDeLote({
     () => estado.trozas.filter((t) => t.loteAserrioId === lote.id && !t.consumidaEnId),
     [estado.trozas, lote.id],
   );
-  const patio = useFiltroPatio(yaEnElLote, { loteId: lote.id });
 
   /* Las apartadas llegan TILDADAS: es lo que el operador armó en el patio y lo
      que espera producir. Se preseleccionan una sola vez por lote —si se
@@ -120,8 +126,8 @@ export default function CtpProduccionDeLote({
    * para la corrida siguiente.
    */
   const alConsumo = useMemo(
-    () => patio.visibles.filter((t) => seleccion.has(t.id)),
-    [patio.visibles, seleccion],
+    () => yaEnElLote.filter((t) => seleccion.has(t.id)),
+    [yaEnElLote, seleccion],
   );
   const elegidas = alConsumo;
 
@@ -225,56 +231,68 @@ export default function CtpProduccionDeLote({
 
   return (
     <section ref={panelRef} className="scroll-mt-4 space-y-3 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--surface-raised)] p-4">
-      <header className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-          <Layers className="h-4 w-4 text-[var(--accent)]" aria-hidden />
-          Produciendo del lote <b className="font-mono text-[var(--text-primary)]">{lote.code}</b> ·{" "}
-          <b className="text-[var(--text-primary)]">{lote.speciesCommon}</b>
-        </p>
-        <span className="flex items-center gap-3">
-          <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
-            {material.piezas} pza · {material.volumenM3.toFixed(4)} m³ a consumir
+      {/* La barra del formato: Lote · Fecha de consumo · Registrar Producción.
+          Un selector y no un menú: el operador cambia de lote sin salir de la
+          pantalla, y la lista de trozas de abajo lo sigue. */}
+      <header className="flex flex-wrap items-end gap-3 rounded-xl bg-[var(--surface-sunken)] px-3 py-2.5">
+        <label className="min-w-0 flex-1 sm:max-w-md">
+          <span className="mb-1 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            Lote
           </span>
+          <select
+            value={lote.id}
+            onChange={(e) => onLote?.(e.target.value)}
+            disabled={!onLote || (lotes ?? []).length === 0}
+            className={`${I} font-medium disabled:cursor-not-allowed`}
+          >
+            {(lotes ?? [lote]).map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.code} — {l.speciesScientific ? `${l.speciesScientific} ( ${l.speciesCommon.toUpperCase()} )` : l.speciesCommon}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="w-full sm:w-56">
+          <span className="mb-1 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            Fecha de consumo
+          </span>
+          <input type="date" value={fechaConsumo} onChange={(e) => setFechaConsumo(e.target.value)} className={I} />
+        </label>
+        <div className="flex flex-1 items-center justify-end gap-2">
+          <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
+            {material.piezas} pza · {material.volumenM3.toFixed(4)} m³
+          </span>
+          <Btn
+            variant="primary"
+            disabled={alConsumo.length === 0 || excesos.length > 0}
+            title={alConsumo.length === 0 ? "Elegí las trozas que entran a la sierra" : undefined}
+            onClick={() => { setError(null); setAbierto(true); }}
+          >
+            <Boxes className="h-4 w-4" />
+            Registrar producción
+          </Btn>
           {onCerrar && (
             <button
               type="button"
               onClick={onCerrar}
               aria-label="Cerrar el panel del lote"
               title="Cerrar el panel del lote"
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
             >
               <X className="h-4 w-4" aria-hidden />
             </button>
           )}
-        </span>
+        </div>
       </header>
 
-      <CtpPatioFiltros filtro={patio} />
-
-      <CtpTrozasIngresadas
-        filas={patio.visibles}
-        libres={patio.libres}
-        totalPatio={patio.delPatio.length}
-        filtrando={patio.hayFiltro}
-        cargando={estado.cargando}
+      {/* La lista del formato: las trozas de ESTE lote, para tildar cuáles van. */}
+      <CtpTrozasDelLote
+        trozas={yaEnElLote}
         seleccion={seleccion}
         onSeleccion={setSeleccion}
-        seleccionable
-        loteId={lote.id}
-        onSacarDelLote={(trozaId) => {
-          /* Recuperación: apartar no es consumir. Mientras el lote no entre a
-             la sierra, la madera sigue siendo del patio y tiene que poder
-             salir para armar otro lote. */
-          setSeleccion((prev) => {
-            const next = new Set(prev);
-            next.delete(trozaId);
-            return next;
-          });
-          void estado.quitarTroza(lote.id, trozaId).catch((e) => setError(e instanceof Error ? e.message : String(e)));
-        }}
-        titulo={`Trozas del lote ${lote.code}`}
-        vacio="Este lote no tiene piezas apartadas. Agregale trozas del patio en «Lotes de aserrío»."
-        acotadaA={lote.speciesCommon}
+        fechaConsumo={fechaConsumo}
+        cargando={estado.cargando}
+        vacio="Este lote no tiene trozas apartadas. Agregale piezas del patio en «Lotes de aserrío»."
       />
 
       {/* Sin nada tildado, el botón apagado dice qué falta hacer. Con selección
@@ -344,7 +362,7 @@ export default function CtpProduccionDeLote({
         <CtpRegistrarProduccionModal
           lote={lote}
           material={material}
-          fecha={new Date().toISOString().slice(0, 10)}
+          fecha={fechaConsumo}
           guardando={guardando}
           error={error}
           onConfirmar={(datos) => void registrar(datos)}
