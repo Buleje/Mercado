@@ -84,6 +84,12 @@ export async function documentoGtfSalida(
   ficha: Partial<CtpFicha>,
   cadena: GtfCadena | null,
   datos: GtfDatos = gtfDatosVacio(),
+  /**
+   * El detalle (37) cuando la guía ampara VARIOS productos (ADR-362). Sin esto
+   * se arma un único renglón con lo que declara el despacho — que es correcto
+   * para una guía de un solo producto y una mentira para una de cinco.
+   */
+  lineasDeLaGuia?: readonly LineaProducto[],
 ): Promise<DocumentoGtfSalida> {
   if (!despacho.gtfNumber) {
     throw new Error("El despacho todavía no tiene GTF emitida. Emití la GTF antes de imprimirla.");
@@ -146,7 +152,7 @@ export async function documentoGtfSalida(
 
   // El cuerpo va con los casilleros numerados del formato de SERFOR: en un
   // puesto de control se pide "el (22)" y "el (31)", no "el destinatario".
-  const lineasProducto: LineaProducto[] = [{
+  const lineasProducto: LineaProducto[] = lineasDeLaGuia?.length ? [...lineasDeLaGuia] : [{
     cientifico: despacho.speciesScientific ?? "",
     comun: despacho.speciesCommon ?? "",
     tipoProducto: despacho.productType ?? "",

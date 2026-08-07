@@ -38,6 +38,7 @@ import {
 import type { ValorParte } from "./CtpParteBarra";
 import { UNIT_LABELS } from "./ctp-section-shared";
 import CtpGuiaDatosTab from "./CtpGuiaDatosTab";
+import CtpGuiaRegistrada from "./CtpGuiaRegistrada";
 import CtpListaProductosTab from "./CtpListaProductosTab";
 import CtpProductosStockModal from "./CtpProductosStockModal";
 import CtpVerificarGtfSerfor, { type SelloSerfor } from "./CtpVerificarGtfSerfor";
@@ -68,6 +69,12 @@ export default function CtpDespachoGuiaModal({
   const [docType, setDocType] = useState("GTF");
   const [sello, setSello] = useState<SelloSerfor | null>(null);
   const [stockAbierto, setStockAbierto] = useState(Boolean(presetProducto));
+  /** Guía ya registrada: el modal se queda para imprimirla, no se cierra solo. */
+  const [registrado, setRegistrado] = useState<{
+    lineas: number;
+    filas: FilaDespacho[];
+    cabecera: { id: string; lineNo: number } | null;
+  } | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [avance, setAvance] = useState<{ hechas: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -195,6 +202,8 @@ export default function CtpDespachoGuiaModal({
     }
 
     const hechas: string[] = [];
+    /** La primera línea creada: es la que ancla el QR de verificación del papel. */
+    let primera: { id: string; lineNo: number } | null = null;
     let fallo: { rotulo: string; motivo: string } | null = null;
     for (let i = 0; i < payloads.length; i++) {
       setAvance({ hechas: i, total: payloads.length });
@@ -205,8 +214,10 @@ export default function CtpDespachoGuiaModal({
           credentials: "include",
           body: JSON.stringify(payloads[i]),
         });
-        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+        const creada: { entry?: { id?: string; lineNo?: number }; message?: string } = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(creada.message ?? `HTTP ${r.status}`);
         hechas.push(filas[i]!.uid);
+        if (!primera && creada.entry?.id) primera = { id: creada.entry.id, lineNo: creada.entry.lineNo ?? 0 };
       } catch (e) {
         fallo = { rotulo: rotuloDeFila(filas[i]!), motivo: e instanceof Error ? e.message : String(e) };
         break;
@@ -219,7 +230,10 @@ export default function CtpDespachoGuiaModal({
       directorio.marcarUso({ partes: [...usados.current.partes], vehiculos: [...usados.current.vehiculos] });
     }
     if (!fallo) {
-      onSaved({ lineas: hechas.length });
+      /* No se cierra de una: la guía recién registrada es la que hay que
+         imprimir, y mandar al operador a buscarla en la tabla para eso era el
+         paso de más. Al cerrar se avisa al libro. */
+      setRegistrado({ lineas: hechas.length, filas: [...filas], cabecera: primera });
       return;
     }
     // Lo que entró se saca de la lista: reintentar no puede duplicarlo.
@@ -232,17 +246,35 @@ export default function CtpDespachoGuiaModal({
 
   const yaElegidos = useMemo(() => new Set(filas.map((f) => f.uid)), [filas]);
 
+  /** Cerrar avisa al libro sólo si algo se registró: si no, es cancelar. */
+  function cerrar() {
+    if (registrado) onSaved({ lineas: registrado.lineas });
+    else onClose();
+  }
+
   return (
     <>
       <AdminModal
         open
-        onClose={onClose}
+        onClose={cerrar}
         variant="wide"
         title="Registro de guía de transporte forestal"
         description="Salida de producto del CTP · una guía, los productos que van en el camión"
         icon={Truck}
         className="sm:w-[min(96vw,100rem)] sm:max-w-none sm:max-h-[95vh]"
         footer={
+          registrado ? (
+            <ModalFooter
+              nota={
+                <span>
+                  <b className="text-[var(--text-primary)]">{registrado.lineas}</b> {registrado.lineas === 1 ? "línea" : "líneas"} en el libro ·{" "}
+                  <span className="font-mono tabular-nums">{total.toFixed(4)} {unidadLista}</span>
+                </span>
+              }
+            >
+              <Btn variant="primary" onClick={cerrar}>Cerrar y volver al libro</Btn>
+            </ModalFooter>
+          ) : (
           <ModalFooter
             error={error}
             aviso={aviso}
@@ -265,7 +297,7 @@ export default function CtpDespachoGuiaModal({
               </span>
             }
           >
-            <Btn variant="ghost" onClick={onClose} disabled={enviando}>Cerrar</Btn>
+            <Btn variant="ghost" onClick={cerrar} disabled={enviando}>Cerrar</Btn>
             <Btn variant="primary" onClick={() => void registrar()} disabled={!puedeRegistrar}>
               {enviando ? (
                 <>
@@ -277,6 +309,7 @@ export default function CtpDespachoGuiaModal({
               )}
             </Btn>
           </ModalFooter>
+          )
         }
       >
         <div className="space-y-3 px-5 py-4 sm:px-6">
@@ -292,6 +325,21 @@ export default function CtpDespachoGuiaModal({
             <DatoFranja label="Volumen a movilizar" valor={`${total.toFixed(4)} ${unidadLista}`} mono />
           </div>
 
+          {/* Registrada: lo único que queda por hacer es el papel. Las pestañas
+              se van —lo cargado ya está en el libro y editarlo acá sería
+              editar algo que ya no vive en este formulario. */}
+          {registrado ? (
+            <CtpGuiaRegistrada
+              lineas={registrado.lineas}
+              filas={registrado.filas}
+              cabecera={registrado.cabecera}
+              gtfNumber={gtfNumber}
+              emision={emision}
+              datos={datos}
+              ficha={ficha}
+            />
+          ) : (
+          <>
           <div className="flex gap-1.5">
             <Pestana activa={tab === "guia"} onClick={() => setTab("guia")} label="Datos de la guía de transporte forestal" pendiente={faltanGuia.length} />
             <Pestana activa={tab === "productos"} onClick={() => setTab("productos")} label="Creación de lista de productos" contador={filas.length} />
@@ -352,10 +400,12 @@ export default function CtpDespachoGuiaModal({
               problemas={problemas}
             />
           )}
+          </>
+          )}
         </div>
       </AdminModal>
 
-      {stockAbierto && (
+      {stockAbierto && !registrado && (
         <CtpProductosStockModal
           yaElegidos={yaElegidos}
           presetProducto={presetProducto}

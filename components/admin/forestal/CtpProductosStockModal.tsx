@@ -40,6 +40,7 @@ interface CorridaAPI {
   fecha: string;
   especie: string | null;
   especieCientifica: string | null;
+  cites?: boolean;
   producto: string | null;
   presentacion: string | null;
   unidad: string | null;
@@ -70,6 +71,7 @@ function filasDeCorridas(corridas: CorridaAPI[]): FilaDespacho[] {
       lineNo: c.lineNo,
       especie: c.especie,
       especieCientifica: c.especieCientifica,
+      cites: c.cites ?? false,
       unidad: c.unidad ?? "m3",
       disponibleCorrida: c.disponible,
       gtfOrigen: c.gtfOrigen ?? [],

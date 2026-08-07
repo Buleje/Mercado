@@ -39,6 +39,8 @@ export interface FilaDespacho {
   paqueteId: string | null;
   especie: string | null;
   especieCientifica: string | null;
+  /** Especie CITES: la guía la marca (es legal CON permiso, no una infracción). */
+  cites: boolean;
   producto: string | null;
   /** Código del paquete: es por el que pregunta el comprador y el que viaja en la guía. */
   codigo: string | null;

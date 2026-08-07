@@ -982,6 +982,8 @@ export class ForestCtpDB {
           fecha: c.entryDate.toISOString(),
           especie: c.speciesCommon,
           especieCientifica: c.speciesScientific,
+          /** La guía de salida marca la especie protegida: es legal CON permiso. */
+          cites: c.cites,
           producto: c.productType,
           presentacion: c.presentacion,
           unidad: c.unit,

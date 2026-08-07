@@ -10,6 +10,7 @@ import {
   volumenTotal,
   type FilaDespacho,
 } from "@/lib/forestal/despacho-lista";
+import { cadenaDeGuia, despachoDeGuia, lineasDeGuia } from "@/lib/forestal/guia-desde-lista";
 
 /**
  * La lista de productos de una GTF de salida.
@@ -27,6 +28,7 @@ const fila = (over: Partial<FilaDespacho> = {}): FilaDespacho => ({
   paqueteId: "p1",
   especie: "Sapotillo",
   especieCientifica: "Matisia bicolor",
+  cites: false,
   producto: "MADERA ASERRADA (TABLA DE PULGADA)",
   codigo: "SAP-TAB-1",
   presentacion: "PIEZAS",
@@ -133,6 +135,55 @@ describe("traducción a la línea del libro", () => {
   });
 
   it("adjunta la guía cuando se le pasa, para que la línea nazca con ella", () => {
+    const p = payloadDeFila(fila(), { entryDate: "2026-08-07", docType: "GTF", gtfNumber: "001-1", destino: null, observations: null }, { propietario: {} });
+    expect(p.gtfDatos).toEqual({ propietario: {} });
+  });
+});
+
+describe("de la lista al papel de la guía", () => {
+  const dos = [
+    fila(),
+    fila({ uid: "c2:p3", corridaId: "c2", lineNo: 13, paqueteId: "p3", especie: "Lupuna", especieCientifica: "Ceiba pentandra", cantidad: 60, volumen: 0.44, gtfOrigen: ["001-0000202"] }),
+  ];
+
+  it("el detalle (37) lleva un renglón por producto, con su volumen", () => {
+    const lineas = lineasDeGuia(dos);
+    expect(lineas).toHaveLength(2);
+    expect(lineas[0]).toMatchObject({ comun: "Sapotillo", presentacion: "PIEZAS", cantidad: 123, unidad: "m³", total: 2.035 });
+    expect(lineas[1]!.comun).toBe("Lupuna");
+  });
+
+  it("la cadena junta los renglones de la MISMA corrida en una fila", () => {
+    const mismaCorrida = [fila({ volumen: 1 }), fila({ uid: "c1:p2", paqueteId: "p2", volumen: 2, gtfOrigen: ["OTRA-GTF"] })];
+    const cadena = cadenaDeGuia(mismaCorrida);
+    expect(cadena.corridas).toHaveLength(1);
+    expect(cadena.corridas[0]).toMatchObject({ lineNo: 12, quantity: 3 });
+    expect(cadena.corridas[0]!.guias.sort()).toEqual(["3-19-0235806", "OTRA-GTF"]);
+  });
+
+  it("con varias especies la cabecera NO declara la primera", () => {
+    const d = despachoDeGuia(dos, { id: "e1", lineNo: 54, entryDate: "2026-08-07", gtfNumber: "001-25", destino: "Cliente SAC" });
+    expect(d.speciesCommon).toBe("Varias especies (2)");
+    expect(d.speciesScientific).toBeNull();
+    expect(d.quantity).toBe("2.475");
+    expect(d.pieces).toBe(183);
+  });
+
+  it("con una sola especie la cabecera la dice, con su científico", () => {
+    const d = despachoDeGuia([fila()], { id: "e1", lineNo: 54, entryDate: "2026-08-07", gtfNumber: "001-25", destino: null });
+    expect(d.speciesCommon).toBe("Sapotillo");
+    expect(d.speciesScientific).toBe("Matisia bicolor");
+    expect(d.cites).toBe(false);
+  });
+
+  it("marca CITES si alguno de los productos lo es", () => {
+    const d = despachoDeGuia([fila({ cites: true }), fila({ uid: "x", paqueteId: "x" })], { id: "e1", lineNo: 1, entryDate: "2026-08-07", gtfNumber: "g", destino: null });
+    expect(d.cites).toBe(true);
+  });
+});
+
+describe("payload extra", () => {
+  it("la guía viaja tal cual", () => {
     const p = payloadDeFila(fila(), { entryDate: "2026-08-07", docType: "GTF", gtfNumber: "001-1", destino: null, observations: null }, { propietario: {} });
     expect(p.gtfDatos).toEqual({ propietario: {} });
   });

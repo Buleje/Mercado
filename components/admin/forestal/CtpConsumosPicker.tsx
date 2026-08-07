@@ -5,7 +5,8 @@
  * del Libro CTP (ADR-134). Una corrida de aserradero real mezcla varias guías;
  * cada fila es un consumo (ingreso elegido + m³ atribuidos) que el backend
  * valida contra I1 (Σ atribuido ≤ declarado) e I2 (nada consume más de lo
- * disponible) al guardar. Extraído de CtpEntryForm para no pasar ~300 LOC.
+ * disponible) al guardar. Hoy lo usa el editor de atribución
+ * (`CtpAtribucionEditor`); nació dentro del alta vieja, que ya no existe.
  */
 
 import { AlertTriangle, Trash2 } from "@buleje/design-system/icons";
