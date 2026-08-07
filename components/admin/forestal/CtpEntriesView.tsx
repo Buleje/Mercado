@@ -44,7 +44,7 @@ const SECTION_META: Record<CtpSection, { label: string; icon: typeof Boxes; cta:
   /* El CTA de Producción ya no abre un formulario en blanco (ADR-349): la
      producción se registra DESDE UN LOTE, con sus trozas a la vista. Ver
      `accionesDeLotes` en `ctp-entries-acciones`. */
-  produccion: { label: "Producción", icon: Boxes, cta: "Registrar producción", empty: "Sin transformaciones registradas. Elegí un lote en «Registrar producción» para convertir materia prima en producto." },
+  produccion: { label: "Producción", icon: Boxes, cta: "Declarar producción", empty: "Sin transformaciones registradas. Elegí un lote en «Declarar producción»: salen sus trozas para elegir cuáles entran a la sierra." },
   despacho: { label: "Despacho", icon: Truck, cta: "Nuevo despacho", empty: "Sin despachos registrados. Registrá la salida de producto con su GTF." },
 };
 
@@ -341,8 +341,8 @@ export function CtpEntriesView({
           />
           {section === "produccion" && declararMenu.length > 0 && (
             <ActionMenu
-              label="Declarar producción"
-              title="Corridas abiertas en el patio: consumieron madera y falta declarar qué salió"
+              label="Corridas sin declarar"
+              title="Corridas que ya consumieron su madera y todavía no dijeron qué salió de la sierra (ADR-340). No es por acá que se produce un lote."
               actions={declararMenu}
               badge={declararMenu.length}
               variant="accent"
@@ -354,7 +354,7 @@ export function CtpEntriesView({
           {section === "produccion" ? (
             <ActionMenu
               label={meta.cta}
-              title="Elegí el lote: abajo aparecen sus trozas para elegir cuáles entran a la sierra (atajo: N)"
+              title="Elegí el lote: abajo salen sus trozas para tildar cuáles entran a la sierra (atajo: N)"
               actions={lotesMenu}
               icon={Boxes}
               variant="primary"
