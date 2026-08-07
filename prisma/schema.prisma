@@ -4946,17 +4946,73 @@ model AdelantoBeneficiario {
   notas              String?
   limiteCredito      Decimal?             @db.Decimal(12, 2) // ADR-118: tope de adelanto por persona
   ultimoRecordatorio DateTime? // ADR-118: último recordatorio de cobranza (server-side)
+  /// (330) Identidad oficial, traída de RENIEC/SUNAT al tipear el documento.
+  /// "DNI" | "RUC" | "CE" | "OTRO" — decide contra qué padrón se consulta.
+  tipoDocumento      String?
+  /// Razón social de SUNAT cuando es RUC. `nombre` queda como el nombre con el
+  /// que se lo conoce en el mostrador, que casi nunca es el legal.
+  razonSocial        String?
+  direccion          String?
+  /// El ubigeo en columnas propias (331): SUNAT los manda separados y pegarlos
+  /// dentro de `direccion` obliga a adivinar dónde termina la calle.
+  departamento       String?
+  provincia          String?
+  distrito           String?
+  email              String?
+  /// "ACTIVO" | "BAJA DE OFICIO" | … y "HABIDO" | "NO HABIDO": un RUC no habido
+  /// no sirve para deducir la factura, y eso hay que saberlo ANTES de pagar.
+  estadoSunat        String?
+  condicionSunat     String?
+  /// Cuándo se contrastó contra el padrón oficial. Sin esto no se sabe si el
+  /// dato es de hoy o de hace dos años.
+  verificadoEn       DateTime?
+  /// Para transferirle el adelanto sin salir a buscar el número a un WhatsApp.
+  banco              String?
+  cuentaBancaria     String?
+  cci                String?
+  /// Baja lógica: el DELETE se bloquea (bien) si la persona tiene adelantos,
+  /// así que sin esto la libreta sólo podía crecer.
+  activo             Boolean              @default(true)
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   adelantos          Adelanto[]
   recurrentes        AdelantoRecurrente[]
+  gestiones          AdelantoGestion[]
 
   @@index([tenantId])
   @@index([tenantId, nombre])
+  @@index([tenantId, documento])
+  @@index([tenantId, activo])
 }
 
 // ADR-118: plantilla de adelantos recurrentes (materializados por cron diario)
+/// (333) La bitácora de cobranza: QUÉ pasó en cada gestión, no sólo cuándo.
+///
+/// `ultimoRecordatorio` alcanzaba para no escribir dos veces el mismo día y para
+/// nada más. Una promesa de pago —el compromiso más fácil de reclamar— se perdía
+/// en la memoria de quien atendió.
+model AdelantoGestion {
+  id             String               @id @default(cuid())
+  tenantId       String
+  beneficiarioId String
+  fecha          DateTime             @default(now())
+  /// RECORDATORIO | PROMESA | NO_CONTESTA | REFINANCIAR | VISITA | PAGO | OTRO
+  tipo           String               @default("RECORDATORIO")
+  nota           String?
+  /// Sólo tipo PROMESA. Vive en la PERSONA y no en un adelanto porque se
+  /// promete «te pago todo el viernes», que puede abarcar varios suyos.
+  fechaPrometida DateTime?
+  montoPrometido Decimal?             @db.Decimal(12, 2)
+  /// Quién la anotó: una gestión sin autor no se le puede preguntar a nadie.
+  usuario        String?
+  createdAt      DateTime             @default(now())
+  beneficiario   AdelantoBeneficiario @relation(fields: [beneficiarioId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, beneficiarioId, fecha])
+  @@index([tenantId, fechaPrometida])
+}
+
 model AdelantoRecurrente {
   id               String               @id @default(cuid())
   tenantId         String
@@ -4996,6 +5052,10 @@ model Adelanto {
   montoAdelantado  Decimal                  @db.Decimal(12, 2)
   moneda           String                   @default("PEN")
   fechaAdelanto    DateTime                 @default(now())
+  /// (332) Cuándo se acordó devolverlo. Sin esto, la cobranza sólo podía medir
+  /// ANTIGÜEDAD para los adelantos sin plan de cuotas — y la antigüedad no es
+  /// un incumplimiento.
+  fechaVencimiento DateTime?
   status           AdelantoStatus           @default(ABIERTO)
   // Mantenido por backend: montoAdelantado - SUM(entregas.valor). Negativo => EXCEDIDO.
   saldoPendiente   Decimal                  @db.Decimal(12, 2)
@@ -5012,6 +5072,7 @@ model Adelanto {
   @@index([tenantId, status])
   @@index([tenantId, fechaAdelanto])
   @@index([tenantId, reciboManual])
+  @@index([tenantId, fechaVencimiento])
   @@index([beneficiarioId])
 }
 
@@ -5134,7 +5195,26 @@ model WoodEntry {
   serforGtf            Json?
   gtfNumber            String // (4) "N° de documento" — Número de Guía de Transporte Forestal
   gtfDate              DateTime?
+  /// Cuándo la madera LLEGÓ físicamente a la planta (ADR-335).
+  ///
+  /// No es `entryDate` —la fecha del asiento en el libro— ni `gtfDate` —la del
+  /// documento—: el camión puede salir el lunes, la guía tener fecha del viernes
+  /// anterior y descargarse el martes. El plazo de registro y la recepción se
+  /// cuentan desde ESTA, y es lo primero que pregunta una fiscalización cuando
+  /// las otras dos no coinciden.
+  fechaRecepcion       DateTime?
   gtfSeries            String? // Serie de la GTF (si aplica)
+
+  /// El cuerpo del documento que ampara ESTE ingreso: propietario del producto
+  /// (casilleros 13-21 del formato), destinatario (22-28), transportista y
+  /// vehículo (29-34), comprobante de compra y los casilleros sueltos.
+  ///
+  /// Misma forma que `ForestCtpEntry.gtfDatos` —la guía de salida— y se lee con
+  /// el MISMO `leerGtfDatos()`: dos esquemas para el mismo formato oficial
+  /// terminan divergiendo, y un fiscalizador compara los dos lados del libro.
+  /// JSON y no columnas porque son declaraciones de un documento ajeno: se
+  /// guardan enteras y no se consultan campo por campo.
+  gtfDatos             Json?
 
   // ── Proveedor / Titular Habilitante ──────────────────
   /// SE QUEDA aunque exista `supplierId`: es el acta de la guía, no un mirror
@@ -5284,10 +5364,29 @@ model WoodEntryTroza {
   /// documento dice que existe, y esconderla sería alterar el acta. El volumen
   /// que sí llegó se deriva sumando las recepcionadas.
   noRecepcionada Boolean @default(false)
+  /// Cuándo bajó ESTA pieza del camión (ADR-336).
+  ///
+  /// El ingreso ya tiene la suya (`WoodEntry.fechaRecepcion`, ADR-335), pero una
+  /// guía de sesenta trozas se descarga en dos viajes: el saldo del patio del
+  /// lunes no puede incluir la madera que recién llegó el miércoles. NULL = la
+  /// del ingreso.
+  fechaRecepcion DateTime?
   /// Qué se observó al recibirla (o por qué no llegó).
   recepcionObs   String?
 
   // ── Consumo por pieza (ADR-326) ──────────────────────────────────────
+  /// El LOTE DE ASERRÍO en el que se guardó esta pieza (ADR-334).
+  ///
+  /// El operador arma el lote en el patio —trozas de UNA especie que van juntas
+  /// a la sierra— y recién después lo consume. Es el «Lote» que el LO-CTP usa
+  /// como hilo entre Consumos, Producción y Salidas: sin él, esa columna era
+  /// texto libre y nada garantizaba que las tres secciones hablaran del mismo.
+  ///
+  /// `SetNull` y no cascada: borrar un lote NO puede borrar las piezas — la
+  /// madera existe aunque el lote se deshaga.
+  loteAserrioId String?
+  loteAserrio   ForestLoteAserrio? @relation("TrozasDelLote", fields: [loteAserrioId], references: [id], onDelete: SetNull)
+
   /// La corrida que se comió ESTA troza. NULL = sigue en el patio.
   ///
   /// El consumo del libro sigue siendo `ForestCtpConsumo` (ingreso → corrida en
@@ -5301,6 +5400,20 @@ model WoodEntryTroza {
   consumidaEn   ForestCtpEntry? @relation("TrozasConsumidas", fields: [consumidaEnId], references: [id], onDelete: SetNull)
   /// Cuándo entró a la sierra.
   fechaConsumo  DateTime?
+
+  // ── Salida sin aserrar (ADR-363) ─────────────────────────────────────
+  /// El DESPACHO que se llevó esta pieza ENTERA, sin pasar por la sierra.
+  /// NULL = sigue en el patio.
+  ///
+  /// Espejo exacto de `consumidaEnId`, y por la misma razón: una troza sale en
+  /// UN despacho, así que es una referencia y no una tabla puente. Las dos
+  /// columnas son excluyentes en la práctica (T2) pero se guardan aparte porque
+  /// son dos hechos distintos: una dice que se aserró, la otra que se vendió en
+  /// rollo — y el libro tiene que poder decir cuál de las dos pasó.
+  despachadaEnId String?
+  despachadaEn   ForestCtpEntry? @relation("TrozasDespachadas", fields: [despachadaEnId], references: [id], onDelete: SetNull)
+  /// Cuándo salió del patio.
+  fechaDespacho  DateTime?
 
   // ── Retrozado (ADR-313 · Apartado 2 del formato LO-CTP) ──────────────
   /// De qué troza se cortó ésta. NULL = troza tal como llegó en la guía.
@@ -5323,8 +5436,16 @@ model WoodEntryTroza {
 
   @@index([tenantId, woodEntryId])
   @@index([tenantId, codificacion])
+  @@index([tenantId, loteAserrioId])
+  /// ⚠️ En la BASE hay además un índice ÚNICO PARCIAL sobre
+  /// (`tenantId`, `codigoPlanta`) WHERE codigoPlanta IS NOT NULL (migración 336).
+  /// Prisma no sabe expresar índices parciales, así que vive sólo en el SQL —
+  /// no lo borres creyendo que es drift. El guard app-level está en
+  /// `WoodEntriesDB.create` y `actualizarRecepcion`.
   @@index([tenantId, codigoPlanta])
+  @@index([tenantId, fechaRecepcion])
   @@index([tenantId, consumidaEnId])
+  @@index([tenantId, despachadaEnId])
   @@index([tenantId, trozaOrigenId])
 }
 
@@ -5602,6 +5723,8 @@ model ForestCtpEntry {
   /// Descuentan stock igual que un despacho: el producto original deja de existir.
   reprocesosSalida  ForestCtpReproceso[] @relation("ReprocesoOrigen")
   reprocesosEntrada ForestCtpReproceso[] @relation("ReprocesoDestino")
+  /// Los paquetes de producto que salieron de esta corrida (ADR-349).
+  paquetes          ForestCtpPaquete[]   @relation("PaqueteDeCorrida")
   /// El código del paquete RAÍZ: sobrevive a los reprocesos encadenados, así que
   /// un tablón hecho tablillas sigue apuntando a la corrida de la que nació.
   codigoRaiz        String?
@@ -5668,6 +5791,11 @@ model ForestCtpEntry {
   /// viviendo en `consumos`; esto dice cuáles fueron, que es lo que se cuenta.
   trozasConsumidas WoodEntryTroza[] @relation("TrozasConsumidas")
 
+  /// Las piezas que salieron SIN ASERRAR en esta línea de despacho (ADR-363).
+  /// Es la cadena de custodia de una venta en rollo: el origen es el ingreso de
+  /// cada troza, no una corrida de producción.
+  trozasDespachadas WoodEntryTroza[] @relation("TrozasDespachadas")
+
   /// Dos back-relations porque la misma tabla es despacho en una punta de
   /// ForestCtpDespachoOrigen y corrida de producción en la otra (ADR-135).
   /// `origenes`  → si esta línea es un DESPACHO: de qué corridas salió.
@@ -5723,6 +5851,54 @@ model ForestCtpReproceso {
   @@unique([destinoEntryId, origenEntryId]) // una corrida 1 vez por reproceso: se suma, no se duplica
   @@index([destinoEntryId])
   @@index([tenantId, origenEntryId])
+}
+
+/// Un PAQUETE de producto terminado (ADR-349).
+///
+/// El formato de producción del SNIFFS no declara "3.5 m³ de tablones": declara
+/// paquetes, cada uno con su código, su producto, su presentación y —cuando se
+/// dimensiona— espesor, ancho y largo. Ese código es el que después viaja en la
+/// GTF de salida y el que un fiscalizador busca en la pila.
+///
+/// El volumen de la corrida (`ForestCtpEntry.quantity`) sigue siendo la única
+/// cantidad que cuentan las invariantes: estos paquetes son su DETALLE, y su
+/// suma tiene que dar ese total. Lo disponible se sigue leyendo del saldo de la
+/// corrida (ADR-316) — no hay una segunda contabilidad por paquete.
+model ForestCtpPaquete {
+  id       String @id @default(cuid())
+  tenantId String // denormalizado — regla 3 + detección de fuga (ADR-134 D3)
+
+  /// La corrida de producción que lo produjo.
+  ctpEntryId String
+  entry      ForestCtpEntry @relation("PaqueteDeCorrida", fields: [ctpEntryId], references: [id], onDelete: Cascade)
+
+  /// "Código Paquete" del formato: lo escribe el aserradero y va en la etiqueta.
+  codigo       String
+  productType  String? // producto terminado (madera aserrada, tablillas…)
+  presentacion String? // PAQUETES | PIEZAS | TABLILLAS…
+  /// Piezas del paquete. NOT NULL: un paquete sin piezas no es un paquete.
+  cantidad     Int
+  unit         String  @default("m3")
+  /// Volumen del paquete. La suma de los paquetes es la cantidad de la corrida.
+  volumenM3    Decimal @db.Decimal(14, 4)
+
+  /// Dimensiones de la pieza tipo del paquete, cuando se dimensiona. Van en
+  /// cm/m como las canta el aserradero y como las imprime la lista.
+  espesorCm Decimal? @db.Decimal(8, 2)
+  anchoCm   Decimal? @db.Decimal(8, 2)
+  largoM    Decimal? @db.Decimal(8, 2)
+
+  observations String?
+
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  /// El código de paquete no se repite en la planta: es lo que se busca en la
+  /// pila y lo que se cita en la guía de salida.
+  @@unique([tenantId, codigo])
+  @@index([tenantId, ctpEntryId])
 }
 
 model ForestCtpDespachoOrigen {
@@ -5799,6 +5975,66 @@ model ForestCtpConsumo {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Lote comercial de producto forestal terminado.
+/// Lote de ASERRÍO (ADR-334): las trozas de una misma especie que van juntas a
+/// la sierra.
+///
+/// No confundir con `ForestProdLote`, que es el lote COMERCIAL: ése agrupa
+/// producción ya terminada para venderla. Éste es el de materia prima y vive
+/// antes: se arma en el patio eligiendo piezas, se consume entero y de él salen
+/// las corridas. Es el «Lote» de las columnas del LO-CTP.
+model ForestLoteAserrio {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Correlativo legible: LA-2026-001. Único por tenant.
+  code String
+
+  /// UNA especie por lote: es la regla del aserradero (la sierra se calibra por
+  /// especie) y lo que permite que la corrida declare su especie sin ambigüedad.
+  speciesCommon     String
+  speciesScientific String?
+
+  /// abierto = se le pueden agregar o sacar piezas
+  /// consumido = ya entró a la sierra (sus trozas están marcadas consumidas)
+  /// cerrado = no se toca más (se produjo y despachó)
+  status String @default("abierto")
+
+  notes String?
+
+  /// Los campos con los que el SNIFFS programa una producción (ADR-342): el
+  /// lote se DECLARA antes de cargarlo, y las piezas se eligen después en
+  /// Consumos filtradas por esta especie y este tipo de producto.
+  ///
+  /// N° de orden de producción del centro (texto libre: cada planta numera a su
+  /// manera y el formulario oficial lo acepta así).
+  ordenProduccion      String?
+  /// Qué materia prima se va a consumir: rolliza, aserrada, tablones…
+  tipoProductoConsumir String?
+  /// La ventana del proceso — distinta de `fechaApertura` (cuándo se creó el
+  /// registro) y de `fechaConsumo` (cuándo entró de verdad a la sierra).
+  inicioProceso        DateTime?
+  finProceso           DateTime?
+
+  fechaApertura DateTime  @default(now())
+  /// Cuándo entró a la sierra. NULL mientras está abierto.
+  fechaConsumo  DateTime?
+
+  /// La corrida que se hizo con este lote, cuando ya se produjo.
+  produccionEntryId String?
+
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  trozas WoodEntryTroza[] @relation("TrozasDelLote")
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@index([tenantId, speciesCommon])
+  @@index([tenantId, ordenProduccion])
+}
+
 model ForestProdLote {
   id       String @id @default(cuid())
   tenantId String

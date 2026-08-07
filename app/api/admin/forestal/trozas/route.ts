@@ -26,9 +26,20 @@ import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 const Query = z.object({
   codificacion: z.string().trim().max(120).optional(),
   woodEntryId: z.string().trim().max(60).optional(),
-  limite: z.coerce.number().int().min(1).max(200).optional(),
+  /* El tope alto es para el LISTADO por pieza —un inventario de patio son miles
+     de trozas—; la búsqueda por código aplica el suyo (200) adentro. */
+  limite: z.coerce.number().int().min(1).max(5000).optional(),
   /** `?retrozos=1` → el Apartado 2 del período (ADR-313). */
   retrozos: z.string().trim().max(4).optional(),
+  /** `?listado=1` → TODAS las trozas del período, una por fila (tabla de Ingresos). */
+  listado: z.string().trim().max(4).optional(),
+  /** `?siguienteCodigo=1` → el próximo correlativo de planta libre. */
+  siguienteCodigo: z.string().trim().max(4).optional(),
+  /** `?codigosEnUso=1,2,3` → cuáles de esos códigos de planta ya están tomados. */
+  codigosEnUso: z.string().trim().max(4000).optional(),
+  /** `?duplicados=1` → los códigos de planta puestos en más de una pieza. */
+  duplicados: z.string().trim().max(4).optional(),
+  offset: z.coerce.number().int().min(0).max(100_000).optional(),
   from: z.string().trim().max(40).optional(),
   to: z.string().trim().max(40).optional(),
 });
@@ -48,6 +59,15 @@ const patchSchema = z.object({
         id: z.string().trim().min(1).max(60),
         codigoPlanta: z.string().trim().max(80).nullish(),
         parcela: z.string().trim().max(80).nullish(),
+        /**
+         * Cuándo bajó ESTA pieza del camión (ADR-336). `null` la borra.
+         *
+         * Se valida como fecha SIN hora (`YYYY-MM-DD`) y viaja como texto hasta
+         * el `::timestamp` del UPDATE: convertirla a `Date` acá la interpretaría
+         * en la zona del servidor y correría un día en Lima (UTC-5), el mismo
+         * off-by-one que ya muerde a `entryDate`.
+         */
+        fechaRecepcion: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD").nullish(),
         noRecepcionada: z.boolean().optional(),
         recepcionObs: z.string().trim().max(300).nullish(),
       }),
@@ -145,6 +165,58 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    if (parsed.data.siguienteCodigo === "1") {
+      const siguiente = await WoodEntriesDB.siguienteCodigoPlanta(auth.tenantId);
+      return NextResponse.json({ siguiente });
+    }
+
+    /* Qué códigos de planta ya están tomados (ADR-336). El código se pinta sobre
+       la troza: avisarlo mientras se tipea evita descubrir la colisión al
+       guardar, con la lista de sesenta piezas ya llena. Tope 200 por consulta. */
+    /* Los códigos repetidos que quedaron de antes del guard (ADR-336), con lo
+       que hace falta para decidir cuál pieza conserva su número. `candado` dice
+       si el índice único de Postgres ya está puesto. */
+    if (parsed.data.duplicados === "1") {
+      const [grupos, candado] = await Promise.all([
+        WoodEntriesDB.codigosPlantaDuplicados(auth.tenantId),
+        WoodEntriesDB.intentarCandadoCodigoPlanta(),
+      ]);
+      return NextResponse.json({ grupos, candado });
+    }
+
+    if (parsed.data.codigosEnUso) {
+      const pedidos = parsed.data.codigosEnUso.split(",").map((c) => c.trim()).filter(Boolean).slice(0, 200);
+      const enUso = await WoodEntriesDB.codigosPlantaEnUso(auth.tenantId, pedidos);
+      return NextResponse.json({ enUso });
+    }
+
+    /* El listado por PIEZA: la misma madera que la tabla de guías, pero una fila
+       por troza. Es lo que contesta «subí 60 trozas y veo 9 filas». */
+    if (parsed.data.listado === "1") {
+      const r = await WoodEntriesDB.trozasDelPeriodo(auth.tenantId, {
+        from: fecha(parsed.data.from),
+        to: fecha(parsed.data.to),
+        limite: parsed.data.limite ?? 500,
+        offset: parsed.data.offset,
+      });
+      return NextResponse.json({
+        trozas: r.trozas.map((t) => ({
+          ...serializar(t),
+          consumidaEnId: t.consumidaEn && t.consumidaEn.deletedAt == null && t.consumidaEn.status !== "anulado" ? t.consumidaEn.id : null,
+          despachadaEnId: t.despachadaEn && t.despachadaEn.deletedAt == null && t.despachadaEn.status !== "anulado" ? t.despachadaEn.id : null,
+          retrozos: t._count?.retrozos ?? 0,
+          ingreso: {
+            id: t.entry.id,
+            gtfNumber: t.entry.gtfNumber,
+            providerName: t.entry.providerName,
+            entryDate: t.entry.entryDate,
+          },
+        })),
+        total: r.total,
+        volumenM3: r.volumenM3,
+      });
+    }
+
     if (parsed.data.woodEntryId) {
       const trozas = await WoodEntriesDB.trozasDe(auth.tenantId, parsed.data.woodEntryId);
       return NextResponse.json({
@@ -197,10 +269,16 @@ function serializar(t: {
   cantidad: number | null; volumenM3: unknown;
   parcela?: string | null; codigoPlanta?: string | null;
   noRecepcionada?: boolean; recepcionObs?: string | null;
+  fechaRecepcion?: Date | string | null;
   trozaOrigenId?: string | null;
   descarte?: boolean;
   consumidaEnId?: string | null;
   consumidaEn?: { id: string; status: string; deletedAt: Date | null } | null;
+  despachadaEnId?: string | null;
+  despachadaEn?: { id: string; status: string; deletedAt: Date | null } | null;
+  fechaDespacho?: Date | string | null;
+  loteAserrioId?: string | null;
+  loteAserrio?: { id: string; code: string; status: string } | null;
   fechaConsumo?: Date | string | null;
   _count?: { retrozos: number };
   retrozos?: unknown[];
@@ -224,6 +302,12 @@ function serializar(t: {
     codigoPlanta: t.codigoPlanta ?? null,
     noRecepcionada: Boolean(t.noRecepcionada),
     recepcionObs: t.recepcionObs ?? null,
+    /* Cuándo bajó ESTA pieza (ADR-336). Va en la whitelist o la pantalla muestra
+       "sin fecha" sobre una pieza que sí la tiene.
+       Se recorta a `YYYY-MM-DD`: es una fecha SIN hora y un `<input type="date">`
+       no acepta el ISO completo — con la hora puesta, el campo se veía vacío
+       sobre una troza que sí tenía fecha. */
+    fechaRecepcion: t.fechaRecepcion ? new Date(t.fechaRecepcion).toISOString().slice(0, 10) : null,
     trozaOrigenId: t.trozaOrigenId ?? null,
     // Consumo por pieza (ADR-326). Faltaba: esta whitelist quedó de antes y el
     // buscador declaraba libre CUALQUIER troza, incluida una ya aserrada.
@@ -235,6 +319,19 @@ function serializar(t: {
         ? (t.consumidaEnId ?? null)
         : null,
     fechaConsumo: t.fechaConsumo ?? null,
+    /* Salida SIN aserrar (ADR-363). Mismo criterio que el consumo: un despacho
+       anulado devuelve la pieza al patio. Sin esto, el buscador declara libre
+       una troza que ya se fue en un camión. */
+    despachadaEnId:
+      t.despachadaEn && t.despachadaEn.status === "registrado" && !t.despachadaEn.deletedAt
+        ? (t.despachadaEnId ?? null)
+        : null,
+    fechaDespacho: t.fechaDespacho ?? null,
+    // El lote de aserrío donde está apartada (ADR-334): la pregunta del patio
+    // «¿dónde está la 118?» se contesta con el lote, no sólo con la guía.
+    loteAserrioId: t.loteAserrioId ?? null,
+    loteAserrioCode: t.loteAserrio?.code ?? null,
+    loteAserrioStatus: t.loteAserrio?.status ?? null,
     descarte: Boolean(t.descarte),
     retrozos: t._count?.retrozos ?? t.retrozos?.length ?? 0,
   };

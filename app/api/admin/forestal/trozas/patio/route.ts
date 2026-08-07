@@ -34,6 +34,12 @@ export async function GET(req: NextRequest) {
 
   try {
     const filas = await WoodEntriesDB.trozasDelPatio(auth.tenantId);
+    /* Cuánto se consumió ya de cada guía: con eso el picker avisa ANTES de armar
+       el acta en vez de que el servidor la rechace al final (ADR-353). */
+    const consumido = await WoodEntriesDB.consumidoPorIngreso(
+      auth.tenantId,
+      filas.map((t) => t.woodEntryId),
+    );
     const num = (v: unknown) => (v == null ? null : Number(v));
     return NextResponse.json({
       trozas: filas.map((t) => ({
@@ -45,10 +51,38 @@ export async function GET(req: NextRequest) {
         especieComun: t.especieComun,
         especieCientifica: t.especieCientifica,
         dimensiones: t.dimensiones,
+        /* Las tres medidas sueltas, no sólo el texto: la tabla del patio las
+           muestra en columnas y `dimensiones` viene libre («0.95 x 0.92 x 3.60»
+           o vacío según cómo entró la guía). */
+        d1Cm: num(t.d1Cm),
+        d2Cm: num(t.d2Cm),
+        largoM: num(t.largoM),
         volumenM3: num(t.volumenM3),
         gtfNumber: t.entry.gtfNumber,
         proveedor: t.entry.providerName,
-        fechaRecepcion: t.entry.entryDate,
+        /** Fecha del ASIENTO de la guía en el libro (no es la recepción). */
+        fechaIngreso: t.entry.entryDate,
+        /** Cuándo bajó ESTA pieza del camión (ADR-336). */
+        fechaRecepcion: t.fechaRecepcion,
+        /**
+         * ¿La guía de esta pieza ya se recibió? (ADR-339)
+         *
+         * Versión por-pieza del mismo criterio: la valida el operador, la fecha
+         * el ingreso, o la fecha la propia pieza. Es lo que decide qué madera se
+         * puede llevar a la sierra desde Consumos.
+         */
+        guiaRecepcionada:
+          t.entry.status === "validado" || Boolean(t.entry.fechaRecepcion) || Boolean(t.fechaRecepcion),
+        /* El título habilitante y la resolución que amparan la madera: es por
+           donde el patio agrupa cuando llega la carga de un permiso entero
+           (casilleros 6 y 8 de la GTF). */
+        permiso: t.entry.originCode,
+        resolucion: t.entry.originSourceNumber,
+        /* Lo que el ASIENTO declara y lo que ya se le consumió: el tope de I2.
+           Van por troza porque es como las lee el picker; son el mismo par para
+           todas las piezas de un mismo asiento. */
+        guiaVolumenM3: num(t.entry.volumeM3),
+        guiaConsumidoM3: consumido.get(t.woodEntryId) ?? 0,
         // Defensa en profundidad: además de soltarlas al anular, se LEE como
         // libre la que apunta a una corrida muerta. Los datos que ya quedaron
         // mal antes del arreglo se corrigen solos al mirarlos.
@@ -56,10 +90,23 @@ export async function GET(req: NextRequest) {
           t.consumidaEn && t.consumidaEn.status === "registrado" && !t.consumidaEn.deletedAt
             ? t.consumidaEnId
             : null,
+        /* La que ya salió SIN ASERRAR (ADR-363). Mismo criterio que el consumo:
+           si el despacho está anulado, la madera volvió al patio. Sin este campo
+           en la whitelist, el JSON lo omite y la pantalla declara libre una
+           pieza que ya viajó. */
+        despachadaEnId:
+          t.despachadaEn && t.despachadaEn.status === "registrado" && !t.despachadaEn.deletedAt
+            ? t.despachadaEnId
+            : null,
         noRecepcionada: t.noRecepcionada,
         trozaOrigenId: t.trozaOrigenId,
         descarte: t.descarte,
         retrozos: t._count.retrozos,
+        // Dónde está apartada (ADR-334). El picker la muestra igual —la pieza
+        // existe y el operador la ve en la pila— pero con su lote a la vista:
+        // sin esto se elegía para una corrida madera ya reservada para otra.
+        loteAserrioId: t.loteAserrioId,
+        loteAserrioCode: t.loteAserrio?.code ?? null,
       })),
       total: filas.length,
     });

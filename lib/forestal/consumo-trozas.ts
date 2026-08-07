@@ -25,11 +25,31 @@ export interface TrozaConsumible {
   especieComun: string | null;
   especieCientifica?: string | null;
   dimensiones?: string | null;
+  /** Los dos extremos y el largo — como los publica SERFOR y como se cubica. */
+  d1Cm?: number | null;
+  d2Cm?: number | null;
+  largoM?: number | null;
   volumenM3: number | null;
   /** La guía por la que entró — para agrupar y para el filtro. */
   gtfNumber?: string | null;
   proveedor?: string | null;
+  /** Cuándo bajó la pieza del camión (ADR-336). */
   fechaRecepcion?: string | null;
+  /** Fecha del asiento de la guía en el libro — NO es la recepción. */
+  fechaIngreso?: string | null;
+  /** La guía ya se recibió (ADR-339): sólo esas piezas van a la sierra. */
+  guiaRecepcionada?: boolean;
+  /** (6) N° del título habilitante que ampara la madera — «el permiso». */
+  permiso?: string | null;
+  /** (8) N° de resolución que aprueba el plan de manejo. */
+  resolucion?: string | null;
+  /**
+   * El tope que impone I2: lo que el ASIENTO declara y lo que ya se le consumió
+   * (ADR-353). El consumo de una guía no puede pasar de `declarado − consumido`,
+   * y con estos dos números el acta lo puede decir **antes** de firmarse.
+   */
+  guiaVolumenM3?: number | null;
+  guiaConsumidoM3?: number | null;
   /**
    * Ya consumida en otra corrida: no se puede volver a elegir.
    *
@@ -39,8 +59,23 @@ export interface TrozaConsumible {
    * rechaza, que es peor que no mostrarla.
    */
   consumidaEnId?: string | null;
+  /**
+   * Ya salió del patio SIN ASERRAR (ADR-363): la madera se vendió en rollo y ya
+   * no está para la sierra. El endpoint lo manda en `null` cuando el despacho
+   * que se la llevó está anulado — esa troza volvió al patio.
+   */
+  despachadaEnId?: string | null;
   /** Declarada en la guía pero nunca llegó (ADR-325): no se puede consumir. */
   noRecepcionada?: boolean | null;
+  /**
+   * El lote de aserrío donde está apartada (ADR-334).
+   *
+   * NO bloquea —la pieza está en la pila y se puede consumir a mano— pero se
+   * muestra: elegir para una corrida madera que otro apartó para otra es la
+   * clase de error que después aparece como un lote que rinde de menos.
+   */
+  loteAserrioId?: string | null;
+  loteAserrioCode?: string | null;
   /** Es un pedazo de otra troza (ADR-313). */
   trozaOrigenId?: string | null;
   /** Cuántos pedazos tiene: una madre partida ya no entra entera a la sierra. */
@@ -52,6 +87,7 @@ export interface TrozaConsumible {
 /** Por qué una troza no se puede elegir. `null` = está disponible. */
 export type MotivoBloqueo =
   | "ya_consumida"
+  | "ya_despachada"
   | "no_recepcionada"
   | "descarte"
   | "madre_retrozada"
@@ -66,6 +102,7 @@ export type MotivoBloqueo =
  */
 export function motivoBloqueo(t: TrozaConsumible): MotivoBloqueo | null {
   if (t.consumidaEnId) return "ya_consumida";
+  if (t.despachadaEnId) return "ya_despachada";
   if (t.noRecepcionada) return "no_recepcionada";
   if (t.descarte) return "descarte";
   if ((t.retrozos ?? 0) > 0) return "madre_retrozada";
@@ -75,6 +112,7 @@ export function motivoBloqueo(t: TrozaConsumible): MotivoBloqueo | null {
 
 export const LABEL_BLOQUEO: Record<MotivoBloqueo, string> = {
   ya_consumida: "Ya entró a otra corrida",
+  ya_despachada: "Ya salió despachada sin aserrar",
   no_recepcionada: "No llegó al patio",
   descarte: "Descarte del retrozado: no es producto",
   madre_retrozada: "Se cortó en pedazos: consumí los pedazos",
@@ -210,4 +248,109 @@ export function avisosSeleccion(trozas: readonly TrozaConsumible[]): string[] {
     avisos.push(`Sale de ${t.guias} guías distintas: el consumo se va a repartir entre ellas.`);
   }
   return avisos;
+}
+
+/** Lo que una guía puede aportar todavía, contra lo que la selección le pide. */
+export interface CupoDeGuia {
+  woodEntryId: string;
+  gtfNumber: string | null;
+  especie: string | null;
+  /** m³ que el asiento del libro declara. */
+  declarado: number | null;
+  /** m³ ya consumidos por corridas vivas. */
+  consumido: number;
+  /** `declarado − consumido`. `null` si el asiento no declara volumen. */
+  disponible: number | null;
+  /** m³ que suman las piezas elegidas de esa guía. */
+  pedido: number;
+  /** Cuánto se pasa. 0 = entra. */
+  exceso: number;
+  /**
+   * El asiento declara MENOS de lo que suman sus propias piezas cargadas.
+   *
+   * No es que falte cupo: es que el ingreso está mal declarado y ninguna
+   * combinación de piezas va a entrar. Se distingue porque el arreglo es otro —
+   * corregir el ingreso, no elegir menos madera.
+   */
+  descuadrado: boolean;
+}
+
+/**
+ * Cuánto le pide la selección a cada guía y cuánto puede dar (ADR-353).
+ *
+ * La invariante I2 —«no se consume más de lo que la guía declara»— se validaba
+ * sólo al guardar: el operador elegía seis trozas, abría el acta, firmaba y
+ * recién ahí el servidor le decía que no, con un mensaje de m³ que no explicaba
+ * la causa. Esta función deja decirlo antes.
+ */
+export function cuposDeGuia(trozas: readonly TrozaConsumible[]): CupoDeGuia[] {
+  const porGuia = new Map<string, CupoDeGuia & { piezasCargadas: number }>();
+  for (const t of trozas) {
+    const previa = porGuia.get(t.woodEntryId);
+    const declarado = t.guiaVolumenM3 ?? null;
+    const consumido = Number(t.guiaConsumidoM3 ?? 0);
+    const fila =
+      previa ??
+      {
+        woodEntryId: t.woodEntryId,
+        gtfNumber: t.gtfNumber ?? null,
+        especie: t.especieComun ?? null,
+        declarado,
+        consumido,
+        disponible: declarado == null ? null : r4(declarado - consumido),
+        pedido: 0,
+        exceso: 0,
+        descuadrado: false,
+        piezasCargadas: 0,
+      };
+    if (!previa) porGuia.set(t.woodEntryId, fila);
+    fila.pedido = r4(fila.pedido + Number(t.volumenM3 ?? 0));
+    fila.piezasCargadas += 1;
+  }
+
+  return [...porGuia.values()].map((f) => {
+    /* Tolerancia de un LITRO: el aserradero mide con cinta y tres decimales de
+       redondeo no son un exceso (misma regla que el resto del libro). */
+    const exceso = f.disponible == null ? 0 : Math.max(0, r4(f.pedido - f.disponible));
+    return {
+      woodEntryId: f.woodEntryId,
+      gtfNumber: f.gtfNumber,
+      especie: f.especie,
+      declarado: f.declarado,
+      consumido: f.consumido,
+      disponible: f.disponible,
+      pedido: f.pedido,
+      exceso: exceso > 0.001 ? exceso : 0,
+      /* Si NADA está consumido y aun así se pasa, el problema no es el cupo: es
+         que el asiento declara menos de lo que miden sus piezas. */
+      descuadrado: exceso > 0.001 && f.consumido === 0,
+    };
+  });
+}
+
+/** Las guías que no entran, con la frase que explica por qué. */
+export function motivosDeCupo(cupos: readonly CupoDeGuia[]): string[] {
+  return cupos.filter((c) => c.exceso > 0).map(motivoDeCupo);
+}
+
+/**
+ * Por qué esta guía no deja consumir, en una frase.
+ *
+ * Separado del plural porque la pantalla necesita el cupo AL LADO del texto:
+ * cuando el problema es que el documento no cuadra, el aviso lleva su propio
+ * botón de cuadre y mandar al operador a otra pestaña sobra (ADR-353).
+ */
+export function motivoDeCupo(c: CupoDeGuia): string {
+  if (c.descuadrado) {
+    return (
+      `La guía ${c.gtfNumber ?? "—"} declara ${(c.declarado ?? 0).toFixed(4)} m³ de ${c.especie ?? "esa especie"} ` +
+      `en su cabecera, pero su lista de trozas suma ${c.pedido.toFixed(4)} m³. La guía no cuadra consigo misma: ` +
+      `hay que cuadrarla antes de llevar estas piezas a la sierra.`
+    );
+  }
+  return (
+    `De la guía ${c.gtfNumber ?? "—"} quedan ${(c.disponible ?? 0).toFixed(4)} m³ sin consumir ` +
+    `(declara ${(c.declarado ?? 0).toFixed(4)} y ya se consumieron ${c.consumido.toFixed(4)}), ` +
+    `y estás pidiendo ${c.pedido.toFixed(4)} m³. Sacá ${c.exceso.toFixed(4)} m³ de esa guía.`
+  );
 }

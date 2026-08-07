@@ -69,7 +69,13 @@ export interface SpeciesBalance {
   pendienteM3: number;
   /** m³ consumidos en líneas de producción. */
   consumidoM3: number;
-  /** ingresoM3 − consumidoM3. Negativo = se transformó más de lo que entró. */
+  /**
+   * m³ que salieron SIN ASERRAR (ADR-363): madera vendida en rollo. Dejó el
+   * patio igual que la consumida, pero no pasó por ninguna corrida — por eso es
+   * una columna propia y no se suma a `consumidoM3`, que significa "se aserró".
+   */
+  despachadoDirectoM3: number;
+  /** ingresoM3 − consumidoM3 − despachadoDirectoM3. Negativo = salió más de lo que entró. */
   saldoM3: number;
   ingresosCount: number;
 }
@@ -119,6 +125,14 @@ export interface CtpEntryInput {
   /** Aserrío / secado / mano de obra (ADR-134). Sin esto no hay margen. */
   costoProceso?: number | string | null;
   moneda?: string | null;
+  /**
+   * La línea es una salida de TROZAS SIN ASERRAR (ADR-363).
+   *
+   * No se persiste: sólo apaga el chequeo de stock por producto (I3), que no
+   * aplica cuando lo que sale es materia prima. El stock de esa línea son las
+   * piezas, y lo valida T2 (`assertTrozasDespachables`) antes de crearla.
+   */
+  desdeTrozas?: boolean;
   /**
    * Qué ingresos alimentaron esta corrida y con cuántos m³ (ADR-134 D5).
    * Se escriben con `ForestCtpConsumoDB.setConsumos`, que valida I1/I2 y tenant.
@@ -300,7 +314,11 @@ export class ForestCtpDB {
     // La validación de stock y el INSERT van en UNA transacción: si se valida
     // fuera, entre el chequeo y el insert entra otro despacho y el guard no sirve.
     const entry = await prisma.$transaction(async (tx) => {
-      if (input.section === "despacho") {
+      /* Una salida de trozas SIN ASERRAR no se mide contra `producido −
+         despachado` (ADR-363): su stock son las PIEZAS, y T2 ya validó que cada
+         una esté libre. Medirla con I3 daría stock 0 —nadie produjo madera en
+         rollo— y rechazaría una venta legítima. */
+      if (input.section === "despacho" && !input.desdeTrozas) {
         await ForestCtpDB.assertStockDisponible(tx, tenantId, input);
       }
 
@@ -839,6 +857,13 @@ export class ForestCtpDB {
       where: { tenantId, consumidaEnId: id },
       data: { consumidaEnId: null, fechaConsumo: null },
     });
+    /* Y las que salieron SIN ASERRAR (ADR-363): anular el despacho es decir que
+       ese camión no salió, así que la madera sigue en el patio. Sin esto la
+       pieza quedaba marcada "ya despachada" para siempre. */
+    await prisma.woodEntryTroza.updateMany({
+      where: { tenantId, despachadaEnId: id },
+      data: { despachadaEnId: null, fechaDespacho: null },
+    });
     // Anular saca la línea del balance: quién y por qué es dato de fiscalización.
     auditCtp({
       tenantId,
@@ -872,6 +897,13 @@ export class ForestCtpDB {
     await prisma.woodEntryTroza.updateMany({
       where: { tenantId, consumidaEnId: id },
       data: { consumidaEnId: null, fechaConsumo: null },
+    });
+    /* Y las que salieron SIN ASERRAR (ADR-363): anular el despacho es decir que
+       ese camión no salió, así que la madera sigue en el patio. Sin esto la
+       pieza quedaba marcada "ya despachada" para siempre. */
+    await prisma.woodEntryTroza.updateMany({
+      where: { tenantId, despachadaEnId: id },
+      data: { despachadaEnId: null, fechaDespacho: null },
     });
     auditCtp({
       tenantId,
@@ -1039,7 +1071,7 @@ export class ForestCtpDB {
       ctpWhere.entryDate = range;
     }
 
-    const [ingresos, ctp] = await Promise.all([
+    const [ingresos, ctp, trozasFuera] = await Promise.all([
       prisma.woodEntry.findMany({
         where: woodWhere,
         select: {
@@ -1053,6 +1085,18 @@ export class ForestCtpDB {
       prisma.forestCtpEntry.findMany({
         where: ctpWhere,
         select: { section: true, productType: true, speciesCommon: true, volumeInputM3: true, quantity: true, unit: true },
+      }),
+      /* La madera que salió SIN ASERRAR (ADR-363) también dejó el patio, pero no
+         pasó por ninguna corrida: si no se resta acá, el saldo de materia prima
+         declara madera que ya se fue en un camión. Se filtra por el DESPACHO
+         vivo y por su fecha, no por la del ingreso: es cuando salió. */
+      prisma.woodEntryTroza.findMany({
+        where: {
+          tenantId,
+          despachadaEnId: { not: null },
+          despachadaEn: { deletedAt: null, status: "registrado", ...(range ? { entryDate: range } : {}) },
+        },
+        select: { volumenM3: true, especieComun: true, entry: { select: { speciesCommonName: true } } },
       }),
     ]);
 
@@ -1068,6 +1112,7 @@ export class ForestCtpDB {
           ingresoM3: 0,
           pendienteM3: 0,
           consumidoM3: 0,
+          despachadoDirectoM3: 0,
           saldoM3: 0,
           ingresosCount: 0,
         };
@@ -1114,13 +1159,25 @@ export class ForestCtpDB {
       }
     }
 
+    /* Lo que se fue en rollo, por especie. La especie viaja EN LA TROZA (una
+       guía puede mezclar), con el ingreso como respaldo cuando la pieza no la
+       declara. */
+    let despachadoDirectoM3 = 0;
+    for (const t of trozasFuera) {
+      const vol = Number(t.volumenM3 ?? 0);
+      if (!(vol > 0)) continue;
+      bucket(t.especieComun ?? t.entry.speciesCommonName).despachadoDirectoM3 += vol;
+      despachadoDirectoM3 += vol;
+    }
+
     const porEspecie = [...bySpecies.values()]
       .map((b) => ({
         ...b,
         ingresoM3: r4(b.ingresoM3),
         pendienteM3: r4(b.pendienteM3),
         consumidoM3: r4(b.consumidoM3),
-        saldoM3: r4(b.ingresoM3 - b.consumidoM3),
+        despachadoDirectoM3: r4(b.despachadoDirectoM3),
+        saldoM3: r4(b.ingresoM3 - b.consumidoM3 - b.despachadoDirectoM3),
       }))
       // Los sobreconsumos primero: es el hallazgo que hay que ver sin buscar.
       .sort((a, b) => {
@@ -1135,7 +1192,8 @@ export class ForestCtpDB {
         ingresoM3: r4(ingresoM3),
         ingresosCount,
         consumidoM3: r4(consumidoM3),
-        saldoM3: r4(ingresoM3 - consumidoM3),
+        despachadoDirectoM3: r4(despachadoDirectoM3),
+        saldoM3: r4(ingresoM3 - consumidoM3 - despachadoDirectoM3),
         pendienteM3: r4(pendienteM3),
         especiesEnNegativo: porEspecie.filter((e) => e.saldoM3 < 0).length,
       },

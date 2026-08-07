@@ -31,8 +31,14 @@ export const r4 = (n: number) => Math.round(n * 10000) / 10000;
 export interface FilaDespacho {
   /** Clave estable de la fila (corrida + paquete). No viaja al servidor. */
   uid: string;
-  /** Corrida de producción de la que sale — es la atribución del despacho (I4). */
+  /**
+   * Corrida de producción de la que sale — es la atribución del despacho (I4).
+   * Vacío en las filas que son una TROZA que sale sin aserrar (ADR-363): esas
+   * no vienen de ninguna corrida, su origen es el ingreso.
+   */
   corridaId: string;
+  /** La pieza que sale entera, cuando la fila es una troza sin aserrar. */
+  trozaId?: string | null;
   /** N° de línea de esa corrida en el libro, para poder nombrarla. */
   lineNo: number | null;
   /** Paquete concreto, si la corrida los tiene cargados (ADR-349). */
@@ -129,16 +135,25 @@ export interface ExcesoCorrida {
  * chequeo, la primera línea entra y la segunda falla — media guía registrada.
  */
 export function excesosDeCorrida(filas: readonly FilaDespacho[]): ExcesoCorrida[] {
-  const pedidos = volumenPorCorrida(filas);
+  /* Las trozas no entran: no vienen de una corrida y su techo es la pieza
+     misma. Agruparlas por `corridaId: ""` compararía la suma de todas contra el
+     volumen de la primera — un rojo falso en cuanto se eligen dos. */
+  const deCorridas = filas.filter((f) => !f.trozaId && f.corridaId);
+  const pedidos = volumenPorCorrida(deCorridas);
   const excesos: ExcesoCorrida[] = [];
   for (const [corridaId, pedido] of pedidos) {
-    const fila = filas.find((f) => f.corridaId === corridaId);
+    const fila = deCorridas.find((f) => f.corridaId === corridaId);
     if (!fila) continue;
     if (pedido - fila.disponibleCorrida > TOLERANCIA_M3) {
       excesos.push({ corridaId, lineNo: fila.lineNo, pedido, disponible: fila.disponibleCorrida });
     }
   }
   return excesos;
+}
+
+/** Una troza a la que se le declara más volumen del que mide. */
+export function trozasSobreDeclaradas(filas: readonly FilaDespacho[]): FilaDespacho[] {
+  return filas.filter((f) => f.trozaId && f.volumen - f.disponibleCorrida > TOLERANCIA_M3);
 }
 
 /**
@@ -159,6 +174,12 @@ export function problemasDeLista(filas: readonly FilaDespacho[]): string[] {
   for (const e of excesosDeCorrida(filas)) {
     problemas.push(
       `La corrida ${e.lineNo != null ? `#${e.lineNo}` : ""} tiene ${e.disponible.toFixed(4)} disponibles y la lista le pide ${e.pedido.toFixed(4)}.`.replace("  ", " "),
+    );
+  }
+
+  for (const t of trozasSobreDeclaradas(filas)) {
+    problemas.push(
+      `La troza ${rotuloDeFila(t)} mide ${t.disponibleCorrida.toFixed(4)} m³ y la lista declara ${t.volumen.toFixed(4)}.`,
     );
   }
 
@@ -216,3 +237,78 @@ export function payloadDeFila(fila: FilaDespacho, comun: ComunDeGuia, gtfDatos?:
 /** Etiqueta corta de una fila para los avisos («SAP-TAB-1 · Sapotillo»). */
 export const rotuloDeFila = (f: FilaDespacho) =>
   [f.codigo, f.especie].filter(Boolean).join(" · ") || `Corrida #${f.lineNo ?? "?"}`;
+
+/**
+ * Las trozas de UNA especie, en una sola línea del libro (ADR-363).
+ *
+ * En la lista de la guía cada troza es un renglón —es lo que el operador eligió
+ * y lo que la lista de trozas declara pieza por pieza—, pero el libro registra
+ * la SALIDA: veinte líneas de una troza cada una para un solo camión sería un
+ * libro ilegible. Las piezas quedan igual de identificadas: viajan en `trozas[]`
+ * y cada una queda marcada con el despacho que se la llevó.
+ */
+function payloadDeTrozas(filas: readonly FilaDespacho[], comun: ComunDeGuia, gtfDatos?: unknown) {
+  const primera = filas[0]!;
+  return {
+    section: "despacho" as const,
+    entryDate: comun.entryDate,
+    speciesCommon: (primera.especie ?? "").trim() || null,
+    speciesScientific: (primera.especieCientifica ?? "").trim() || null,
+    productType: (primera.producto ?? "").trim() || null,
+    presentacion: (primera.presentacion ?? "").trim() || null,
+    /* El código de UNA pieza no representa a veinte: con más de una, el
+       casillero (9) queda vacío y las piezas se identifican en la lista. */
+    codigoProducto: filas.length === 1 ? (primera.codigo ?? "").trim() || null : null,
+    quantity: r4(filas.reduce((a, f) => a + f.volumen, 0)),
+    unit: primera.unidad,
+    pieces: filas.length,
+    docType: comun.docType || null,
+    gtfNumber: comun.gtfNumber.trim() || null,
+    destino: comun.destino?.trim() || null,
+    observations: comun.observations?.trim() || null,
+    ...(comun.serforNumeroRegistro ? { serforNumeroRegistro: comun.serforNumeroRegistro } : {}),
+    ...(comun.serforVerificadoEn ? { serforVerificadoEn: comun.serforVerificadoEn } : {}),
+    // La cadena: las PIEZAS que se van enteras. El servidor valida T2 con lock.
+    trozas: filas.map((f) => f.trozaId!).filter(Boolean),
+    ...(gtfDatos ? { gtfDatos } : {}),
+  };
+}
+
+/** Un envío: el cuerpo que va al servidor + qué filas de la lista representa. */
+export interface EnvioDeLinea {
+  payload: ReturnType<typeof payloadDeFila> | ReturnType<typeof payloadDeTrozas>;
+  /** uids de las filas que entran en esta línea — para saber cuáles quedaron. */
+  uids: string[];
+  /** Cómo nombrarla en un aviso si falla. */
+  rotulo: string;
+}
+
+/**
+ * La lista, convertida en las líneas que van al libro.
+ *
+ * Producto transformado: una línea por renglón (cada uno tiene su corrida y su
+ * atribución). Trozas sin aserrar: una línea por ESPECIE, con sus piezas.
+ */
+export function enviosDeLista(
+  filas: readonly FilaDespacho[],
+  comun: ComunDeGuia,
+  gtfDatos?: unknown,
+): EnvioDeLinea[] {
+  const envios: EnvioDeLinea[] = filas
+    .filter((f) => !f.trozaId)
+    .map((f) => ({ payload: payloadDeFila(f, comun, gtfDatos), uids: [f.uid], rotulo: rotuloDeFila(f) }));
+
+  const porEspecie = new Map<string, FilaDespacho[]>();
+  for (const f of filas.filter((x) => x.trozaId)) {
+    const clave = (f.especie ?? "").trim().toLowerCase() || "sin-especie";
+    porEspecie.set(clave, [...(porEspecie.get(clave) ?? []), f]);
+  }
+  for (const grupo of porEspecie.values()) {
+    envios.push({
+      payload: payloadDeTrozas(grupo, comun, gtfDatos),
+      uids: grupo.map((f) => f.uid),
+      rotulo: `${grupo.length} troza${grupo.length === 1 ? "" : "s"} de ${grupo[0]!.especie ?? "sin especie"}`,
+    });
+  }
+  return envios;
+}

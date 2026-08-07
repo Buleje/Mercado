@@ -39,15 +39,23 @@ export function lineasDeGuia(filas: readonly FilaDespacho[]): LineaProducto[] {
  * suman — en el papel la corrida aparece una vez.
  */
 export function cadenaDeGuia(filas: readonly FilaDespacho[]): GtfCadena {
-  const porCorrida = new Map<string, { lineNo: number; quantity: number; guias: Set<string> }>();
-  for (const f of filas) {
-    const previa = porCorrida.get(f.corridaId);
+  const porCorrida = new Map<string, { lineNo: number | null; quantity: number; guias: Set<string> }>();
+  const sumar = (clave: string, lineNo: number | null, f: FilaDespacho) => {
+    const previa = porCorrida.get(clave);
     if (previa) {
       previa.quantity = Math.round((previa.quantity + f.volumen) * 10000) / 10000;
       for (const g of f.gtfOrigen) previa.guias.add(g);
     } else {
-      porCorrida.set(f.corridaId, { lineNo: f.lineNo ?? 0, quantity: f.volumen, guias: new Set(f.gtfOrigen) });
+      porCorrida.set(clave, { lineNo, quantity: f.volumen, guias: new Set(f.gtfOrigen) });
     }
+  };
+  for (const f of filas) {
+    /* Una troza NO viene de una corrida: agruparla con `corridaId: ""` la
+       imprimiría como «Corrida #0» —un eslabón que no existe— en el papel que
+       se muestra en un puesto de control. Se agrupa por su GUÍA DE INGRESO, que
+       es su origen de verdad, y va sin número de corrida. */
+    if (f.trozaId) sumar(`troza:${f.gtfOrigen[0] ?? "sin-guia"}`, null, f);
+    else sumar(f.corridaId, f.lineNo ?? 0, f);
   }
   return {
     corridas: [...porCorrida.values()].map((c) => ({ lineNo: c.lineNo, quantity: c.quantity, guias: [...c.guias] })),

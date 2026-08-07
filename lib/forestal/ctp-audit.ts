@@ -24,12 +24,16 @@ import { logger } from "@/lib/logger";
  * `PlatformSetting` (key `ctp-ficha:{tenantId}`), pero se audita igual porque es
  * la identidad legal que encabeza cada certificado, GTF y export ante SERFOR. */
 export type CtpAuditEntity =
+  /** El libro entero, cuando la acción no es sobre una fila sino sobre todo. */
+  | "ForestCtpLibro"
   /** Una troza de la lista de la GTF, o un pedazo suyo tras retrozar (ADR-313). */
   | "WoodEntryTroza"
   | "WoodEntry"
   | "ForestCtpEntry"
   | "ForestCtpConsumo"
   | "ForestProdLote"
+  /** Lote de ASERRÍO (ADR-334): la materia prima agrupada antes de la sierra. */
+  | "ForestLoteAserrio"
   | "ForestCtpFicha"
   // KV (como ForestCtpFicha): la foto de referencia de una especie. No es una
   // prueba documental, pero orienta a quien recibe la troza — y quien la pone
@@ -68,6 +72,17 @@ export type CtpAuditEntity =
  * (que es compartido por todo el ERP) y poder greppear el libro entero.
  */
 export type CtpAuditAction =
+  // Vaciado total del libro. Va primero porque es el asiento que un fiscalizador
+  // busca antes que ninguno: un libro que aparece vacío sin este registro es un
+  // libro que alguien borró sin dejar rastro.
+  | "ctp_libro_purga"
+  // ── Lote de aserrío (ADR-334): armar la materia prima antes de la corrida ──
+  | "ctp_lote_aserrio_create"
+  | "ctp_lote_aserrio_update"
+  | "ctp_lote_aserrio_delete"
+  | "ctp_lote_aserrio_trozas_add"
+  | "ctp_lote_aserrio_trozas_remove"
+  | "ctp_lote_aserrio_consumir"
   // Ingresos de materia prima
   | "ctp_ingreso_create"
   // Corrección de un ingreso pendiente (typo de GTF, volumen mal tipeado): el
@@ -78,7 +93,14 @@ export type CtpAuditAction =
   // Va aparte de `update` porque no corrige un campo: suma madera al detalle que
   // ampara el ingreso, y el fiscalizador pregunta cuándo apareció cada pieza.
   | "ctp_ingreso_trozas_add"
+  /* Cuadre de una guía que se contradice a sí misma (ADR-353): la cabecera por
+     especie (37) y la lista de trozas (35) declaran volúmenes distintos y el
+     operador dijo cuál vale. Va aparte de `update` porque no es corregir un
+     tipeo: es dejar asentado qué parte del documento se tomó por buena. */
+  | "ctp_ingreso_cuadre"
   | "ctp_ingreso_validate"
+  /** Recepción de la guía en el patio: fecha + piezas + validación (ADR-339). */
+  | "ctp_ingreso_recepcion"
   | "ctp_ingreso_reject"
   | "ctp_ingreso_annul"
   | "ctp_ingreso_delete"
@@ -86,12 +108,16 @@ export type CtpAuditAction =
   | "ctp_troza_recepcion"
   // Líneas de producción / despacho
   | "ctp_linea_create"
+  /** Cerró una corrida abierta en el patio declarando qué salió (ADR-340). */
+  | "ctp_linea_produccion_declarada"
   | "ctp_linea_annul"
   | "ctp_linea_delete"
   // Atribución de origen y costeo — lo más sensible del módulo
   | "ctp_consumos_set"
   /** Qué PIEZAS entraron a la sierra en una corrida (ADR-326). */
   | "ctp_trozas_consumidas"
+  /** Qué PIEZAS salieron sin aserrar en un despacho (ADR-363). */
+  | "ctp_trozas_despachadas"
   | "ctp_origenes_set"
   /** Qué corridas alimentan un reproceso (ADR-316). Espeja `ctp_origenes_set`:
    *  también descuenta stock, así que también deja rastro. */

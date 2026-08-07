@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  enviosDeLista,
   excesosDeCorrida,
   payloadDeFila,
   piezasTotales,
@@ -179,6 +180,81 @@ describe("de la lista al papel de la guía", () => {
   it("marca CITES si alguno de los productos lo es", () => {
     const d = despachoDeGuia([fila({ cites: true }), fila({ uid: "x", paqueteId: "x" })], { id: "e1", lineNo: 1, entryDate: "2026-08-07", gtfNumber: "g", destino: null });
     expect(d.cites).toBe(true);
+  });
+});
+
+describe("trozas que salen sin aserrar (ADR-363)", () => {
+  const troza = (over: Partial<FilaDespacho> = {}): FilaDespacho =>
+    fila({
+      uid: `troza:${over.trozaId ?? "t1"}:corrida`,
+      corridaId: "",
+      trozaId: "t1",
+      lineNo: null,
+      paqueteId: null,
+      producto: "MADERA EN ROLLO",
+      presentacion: "TROZAS",
+      codigo: "29/A",
+      cantidad: 1,
+      volumen: 1.2,
+      disponibleCorrida: 1.2,
+      ...over,
+    });
+
+  it("dos trozas NO se leen como una corrida sobre-atribuida", () => {
+    const dos = [troza(), troza({ trozaId: "t2", uid: "troza:t2:corrida", volumen: 0.9, disponibleCorrida: 0.9 })];
+    expect(excesosDeCorrida(dos)).toEqual([]);
+    expect(problemasDeLista(dos)).toEqual([]);
+  });
+
+  it("avisa si se declara más volumen del que la troza mide", () => {
+    const p = problemasDeLista([troza({ volumen: 2, disponibleCorrida: 1.2 })]);
+    expect(p).toHaveLength(1);
+    expect(p[0]).toContain("1.2000");
+  });
+
+  it("las trozas de una especie van en UNA línea del libro, con sus piezas", () => {
+    const comun = { entryDate: "2026-08-07", docType: "GTF", gtfNumber: "001-9", destino: null, observations: null };
+    const envios = enviosDeLista(
+      [
+        troza(),
+        troza({ trozaId: "t2", uid: "troza:t2:corrida", volumen: 0.9, disponibleCorrida: 0.9 }),
+        troza({ trozaId: "t3", uid: "troza:t3:corrida", especie: "Lupuna", volumen: 2, disponibleCorrida: 2 }),
+      ],
+      comun,
+    );
+    expect(envios).toHaveLength(2);
+    const sapotillo = envios.find((e) => e.payload.speciesCommon === "Sapotillo")!;
+    expect(sapotillo.payload).toMatchObject({ quantity: 2.1, pieces: 2, productType: "MADERA EN ROLLO" });
+    expect("trozas" in sapotillo.payload && sapotillo.payload.trozas).toEqual(["t1", "t2"]);
+    // Sin corridas: la atribución de una salida en rollo son las piezas.
+    expect("origenes" in sapotillo.payload).toBe(false);
+    expect(sapotillo.uids).toHaveLength(2);
+  });
+
+  it("la cadena del papel NO inventa una «corrida #0» para las trozas", () => {
+    const cadena = cadenaDeGuia([
+      troza(),
+      troza({ trozaId: "t2", uid: "troza:t2:corrida", volumen: 0.9 }),
+      fila(),
+    ]);
+    const sinCorrida = cadena.corridas.filter((c) => c.lineNo === null);
+    expect(sinCorrida).toHaveLength(1);
+    expect(sinCorrida[0]).toMatchObject({ quantity: 2.1 });
+    expect(cadena.corridas.some((c) => c.lineNo === 0)).toBe(false);
+    // Y la corrida real sigue con su número.
+    expect(cadena.corridas.some((c) => c.lineNo === 12)).toBe(true);
+  });
+
+  it("con una sola pieza el código del producto sí viaja", () => {
+    const envios = enviosDeLista([troza()], { entryDate: "2026-08-07", docType: "GTF", gtfNumber: "g", destino: null, observations: null });
+    expect(envios[0]!.payload.codigoProducto).toBe("29/A");
+  });
+
+  it("mezcla: el producto transformado sigue yendo línea por línea", () => {
+    const envios = enviosDeLista([fila(), troza()], { entryDate: "2026-08-07", docType: "GTF", gtfNumber: "g", destino: null, observations: null });
+    expect(envios).toHaveLength(2);
+    expect("origenes" in envios[0]!.payload).toBe(true);
+    expect("trozas" in envios[1]!.payload).toBe(true);
   });
 });
 

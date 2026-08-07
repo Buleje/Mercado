@@ -100,6 +100,24 @@ export class CtpInvariantError extends Error {
       /** El agregado de piezas pasaría el tope por ingreso. Casi siempre es un
        *  pegado accidental, no una guía de mil trozas. */
       | "TOPE_TROZAS"
+      // ── Paquetes de producción (ADR-349) ──
+      /** Los paquetes no suman lo que declara la corrida: la misma cantidad
+       *  contada de dos maneras da distinto y no se puede saber cuál vale. */
+      | "PAQUETES_NO_CUADRAN"
+      /** Dos paquetes con el mismo código: es lo que se busca en la pila y lo
+       *  que se cita en la guía de salida — no puede repetirse. */
+      | "PAQUETE_DUPLICADO"
+      // ── Código de planta (ADR-336) ──
+      /** Dos piezas con la misma marca pintada: el patio no las distingue y el
+       *  inventario deja de probar nada. Se rechaza antes de escribir. */
+      | "CODIGO_PLANTA_DUPLICADO"
+      // ── Lote de aserrío (ADR-334) ──
+      /** El lote necesita una especie: la sierra se calibra por especie. */
+      | "LOTE_SIN_ESPECIE"
+      /** Se pidió un lote que no existe (o ya se deshizo). */
+      | "LOTE_NO_ENCONTRADO"
+      /** El lote ya se consumió: sus piezas entraron a la sierra y no se mueven. */
+      | "LOTE_NO_EDITABLE"
       // ── Retrozado (ADR-313) ──
       /** De una troza no salen pedazos más grandes que ella, ni más volumen del
        *  que tiene. Es física, no una preferencia de negocio. */
@@ -111,7 +129,36 @@ export class CtpInvariantError extends Error {
       // ── Consumo por troza (ADR-326) ──
       /** La pieza no puede entrar a la sierra: ya la comió otra corrida, no
        *  llegó al patio, es descarte, o se partió en pedazos (van los pedazos). */
-      | "T1_TROZA_NO_CONSUMIBLE",
+      | "T1_TROZA_NO_CONSUMIBLE"
+      // ── Salida de trozas sin aserrar (ADR-363) ──
+      /** La pieza no puede subir al camión entera: ya la comió una corrida, ya
+       *  salió en otro despacho, no llegó al patio, es descarte o es la madre
+       *  de un retrozado (van los pedazos, no ella). */
+      | "T2_TROZA_NO_DESPACHABLE"
+      // ── Corrida abierta en el patio (ADR-340) ──
+      /** Se quiso declarar producción sobre una línea que no es una corrida, o
+       *  sobre una que ya la declaró (para corregir se anula y se rehace). */
+      | "LINEA_NO_EDITABLE"
+      /** La sección de la línea no admite la operación pedida. */
+      | "SECCION_INVALIDA"
+      /** Una producción sin cantidad no es una producción. */
+      | "CANTIDAD_INVALIDA"
+      // ── Cuadre de una guía que se contradice a sí misma (ADR-353) ──
+      /** La pieza a corregir ya entró a la sierra: cambiarle el volumen
+       *  reescribiría una corrida cerrada. Primero se corrige la corrida. */
+      | "TROZA_CONSUMIDA"
+      /** La pieza está partida en pedazos: cuadrar su volumen sin cuadrar el
+       *  retrozado dejaría a los hijos sumando más que la madre (R1). */
+      | "TROZA_RETROZADA"
+      /** La pieza que se quiere corregir es de OTRO ingreso. Es un error de
+       *  negocio con nombre, no un 500: la pantalla tiene que poder decirlo. */
+      | "TROZA_AJENA"
+      /** No hay contra qué cuadrar: el ingreso no tiene lista de piezas, o sus
+       *  piezas no declaran volumen. */
+      | "CUADRE_SIN_LISTA"
+      // ── Tope de rendimiento (ADR-358) ──
+      /** Se declaró más producto del que sale físicamente de lo que entró. */
+      | "RENDIMIENTO_SOBRE_TOPE",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);
@@ -272,8 +319,28 @@ export class ForestCtpConsumoDB {
         const ingreso = ingresos.find((i) => i.id === c.woodEntryId)!;
         const disponible = Number(ingreso.volumeM3) - (yaConsumido.get(c.woodEntryId) ?? 0);
         if (r4(Number(c.volumeM3)) > r4(disponible)) {
+          /**
+           * DOS causas distintas, dos mensajes distintos (ADR-359).
+           *
+           * I2 se aplica **por guía**, no sobre el total del lote: un lote de
+           * 12.928 m³ puede rendir 7.105 sin problema y aun así una de sus guías
+           * estar mal declarada. El mensaje viejo —«sólo tiene 4.161 sin
+           * consumir; estás pidiendo 8.247»— mandaba a buscar un cupo que no
+           * existe, cuando lo que pasa es que el documento se contradice.
+           *
+           * Si NADA de esa guía se consumió todavía y aun así se pasa, no falta
+           * cupo: la guía declara menos de lo que miden sus propias piezas.
+           */
+          const nadaConsumido = (yaConsumido.get(c.woodEntryId) ?? 0) === 0;
           throw new CtpInvariantError(
-            `La guía ${ingreso.gtfNumber} solo tiene ${r4(disponible)} m³ sin consumir; estás pidiendo ${r4(Number(c.volumeM3))} m³.`,
+            nadaConsumido
+              ? `La guía ${ingreso.gtfNumber} declara ${r4(Number(ingreso.volumeM3))} m³ en su cabecera, ` +
+                `pero las piezas que estás llevando a la sierra suman ${r4(Number(c.volumeM3))} m³. ` +
+                `La guía no cuadra consigo misma — el total del lote no es el problema, es esa guía. ` +
+                `Cuadrala en Ingresos: tocá el aviso naranja de su fila.`
+              : `De la guía ${ingreso.gtfNumber} quedan ${r4(disponible)} m³ sin consumir ` +
+                `(declara ${r4(Number(ingreso.volumeM3))} y ya se consumieron ` +
+                `${r4(yaConsumido.get(c.woodEntryId) ?? 0)}), y estás pidiendo ${r4(Number(c.volumeM3))} m³.`,
             "I2_SOBRE_CONSUMO",
             {
               gtfNumber: ingreso.gtfNumber,

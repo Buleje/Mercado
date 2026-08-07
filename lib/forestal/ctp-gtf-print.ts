@@ -66,7 +66,9 @@ export interface GtfDespacho {
 }
 
 export interface GtfCadena {
-  corridas: { lineNo: number; quantity: number; guias: string[] }[];
+  /** `lineNo: null` = el tramo no viene de una corrida: son trozas que salieron
+   *  sin aserrar (ADR-363) y su origen es la guía de ingreso. */
+  corridas: { lineNo: number | null; quantity: number; guias: string[] }[];
 }
 
 /** Las tres hojas de la guía de salida, listas para el visor. */
@@ -118,7 +120,7 @@ export async function documentoGtfSalida(
   const filas = (cadena?.corridas ?? [])
     .map(
       (c) => `<tr>
-        <td class="cod">#${c.lineNo}</td>
+        <td class="cod">${c.lineNo != null ? `#${c.lineNo}` : "Sin transformar"}</td>
         <td class="r vol">${n4(c.quantity)} ${esc(despacho.unitLabel)}</td>
         <td>${c.guias.length ? c.guias.map(esc).join(" · ") : "—"}</td>
       </tr>`,

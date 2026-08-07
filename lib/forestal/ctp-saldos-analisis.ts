@@ -42,6 +42,13 @@ export interface EspecieSaldo {
 export interface MateriaPrimaTotales {
   ingresoM3: number;
   consumidoM3: number;
+  /**
+   * m³ que salieron SIN ASERRAR (ADR-363): madera vendida en rollo. Bajó del
+   * patio igual que la consumida, pero no pasó por ninguna corrida — por eso no
+   * se suma a `consumidoM3`, que significa "se aserró". Opcional: los saldos
+   * cacheados de antes de ADR-363 no lo traen.
+   */
+  despachadoDirectoM3?: number;
   saldoM3: number;
   pendienteM3: number;
 }

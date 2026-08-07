@@ -29,10 +29,9 @@ import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
 import { faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import {
-  payloadDeFila,
+  enviosDeLista,
   problemasDeLista,
   volumenTotal,
-  rotuloDeFila,
   type FilaDespacho,
 } from "@/lib/forestal/despacho-lista";
 import type { ValorParte } from "./CtpParteBarra";
@@ -41,6 +40,7 @@ import CtpGuiaDatosTab from "./CtpGuiaDatosTab";
 import CtpGuiaRegistrada from "./CtpGuiaRegistrada";
 import CtpListaProductosTab from "./CtpListaProductosTab";
 import CtpProductosStockModal from "./CtpProductosStockModal";
+import CtpTrozasDespachoModal from "./CtpTrozasDespachoModal";
 import CtpVerificarGtfSerfor, { type SelloSerfor } from "./CtpVerificarGtfSerfor";
 import { Btn, ModalFooter } from "./ctp-shared";
 
@@ -69,6 +69,8 @@ export default function CtpDespachoGuiaModal({
   const [docType, setDocType] = useState("GTF");
   const [sello, setSello] = useState<SelloSerfor | null>(null);
   const [stockAbierto, setStockAbierto] = useState(Boolean(presetProducto));
+  /** El otro origen de la lista: las trozas que salen sin aserrar (ADR-363). */
+  const [trozasAbierto, setTrozasAbierto] = useState(false);
   /** Guía ya registrada: el modal se queda para imprimirla, no se cierra solo. */
   const [registrado, setRegistrado] = useState<{
     lineas: number;
@@ -189,15 +191,17 @@ export default function CtpDespachoGuiaModal({
       serforVerificadoEn: sello?.verificadoEn ?? null,
     };
     const conGuia = { ...datos, traslado: { ...datos.traslado, fechaInicio: datos.traslado.fechaInicio || emision } };
-    const payloads = filas.map((f) => payloadDeFila(f, comun, conGuia));
+    /* Producto transformado: una línea por renglón. Trozas sin aserrar: una
+       línea por especie con sus piezas (ADR-363). */
+    const envios = enviosDeLista(filas, comun, conGuia);
 
     /* Sin señal en el patio: queda anotado en el equipo y sube solo. El dato NO
        se pierde y NO se dice que quedó en el libro (no quedó). */
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       const { anotar, URL_CTP } = await import("@/lib/forestal/patio-cola");
-      for (const p of payloads) await anotar("despacho", p, URL_CTP);
+      for (const e of envios) await anotar("despacho", e.payload, URL_CTP);
       setEnviando(false);
-      onSaved({ lineas: payloads.length, offline: true });
+      onSaved({ lineas: envios.length, offline: true });
       return;
     }
 
@@ -205,21 +209,21 @@ export default function CtpDespachoGuiaModal({
     /** La primera línea creada: es la que ancla el QR de verificación del papel. */
     let primera: { id: string; lineNo: number } | null = null;
     let fallo: { rotulo: string; motivo: string } | null = null;
-    for (let i = 0; i < payloads.length; i++) {
-      setAvance({ hechas: i, total: payloads.length });
+    for (let i = 0; i < envios.length; i++) {
+      setAvance({ hechas: i, total: envios.length });
       try {
         const r = await fetch("/api/admin/forestal/ctp", {
           method: "POST",
           headers: csrfHeaders({ "Content-Type": "application/json" }),
           credentials: "include",
-          body: JSON.stringify(payloads[i]),
+          body: JSON.stringify(envios[i]!.payload),
         });
         const creada: { entry?: { id?: string; lineNo?: number }; message?: string } = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(creada.message ?? `HTTP ${r.status}`);
-        hechas.push(filas[i]!.uid);
+        hechas.push(...envios[i]!.uids);
         if (!primera && creada.entry?.id) primera = { id: creada.entry.id, lineNo: creada.entry.lineNo ?? 0 };
       } catch (e) {
-        fallo = { rotulo: rotuloDeFila(filas[i]!), motivo: e instanceof Error ? e.message : String(e) };
+        fallo = { rotulo: envios[i]!.rotulo, motivo: e instanceof Error ? e.message : String(e) };
         break;
       }
     }
@@ -239,12 +243,17 @@ export default function CtpDespachoGuiaModal({
     // Lo que entró se saca de la lista: reintentar no puede duplicarlo.
     setFilas((prev) => prev.filter((f) => !hechas.includes(f.uid)));
     setError(
-      `Se registraron ${hechas.length} de ${payloads.length} productos. «${fallo.rotulo}» no entró: ${fallo.motivo}. Lo que falta quedó en la lista para reintentar.`,
+      `Se registraron ${hechas.length} de ${filas.length} productos. «${fallo.rotulo}» no entró: ${fallo.motivo}. Lo que falta quedó en la lista para reintentar.`,
     );
     setTab("productos");
   }
 
   const yaElegidos = useMemo(() => new Set(filas.map((f) => f.uid)), [filas]);
+  /** Las piezas ya en la lista: el patio no las vuelve a ofrecer. */
+  const trozasElegidas = useMemo(
+    () => new Set(filas.map((f) => f.trozaId).filter((id): id is string => Boolean(id))),
+    [filas],
+  );
 
   /** Cerrar avisa al libro sólo si algo se registró: si no, es cancelar. */
   function cerrar() {
@@ -397,6 +406,7 @@ export default function CtpDespachoGuiaModal({
               observaciones={datos.observaciones}
               onObservaciones={(v) => setDatos((p) => ({ ...p, observaciones: v }))}
               onAbrirStock={() => setStockAbierto(true)}
+              onAbrirTrozas={() => setTrozasAbierto(true)}
               problemas={problemas}
             />
           )}
@@ -412,6 +422,14 @@ export default function CtpDespachoGuiaModal({
           presetEspecie={presetEspecie}
           onAgregar={agregarFilas}
           onCerrar={() => setStockAbierto(false)}
+        />
+      )}
+
+      {trozasAbierto && !registrado && (
+        <CtpTrozasDespachoModal
+          yaElegidas={trozasElegidas}
+          onAgregar={agregarFilas}
+          onCerrar={() => setTrozasAbierto(false)}
         />
       )}
     </>

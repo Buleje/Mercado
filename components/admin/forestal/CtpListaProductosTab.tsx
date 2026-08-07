@@ -37,6 +37,7 @@ export default function CtpListaProductosTab({
   observaciones,
   onObservaciones,
   onAbrirStock,
+  onAbrirTrozas,
   problemas,
 }: {
   filas: FilaDespacho[];
@@ -48,6 +49,8 @@ export default function CtpListaProductosTab({
   observaciones: string;
   onObservaciones: (v: string) => void;
   onAbrirStock: () => void;
+  /** El otro origen: las trozas que salen sin aserrar (ADR-363). */
+  onAbrirTrozas: () => void;
   problemas: string[];
 }) {
   const total = volumenTotal(filas);
@@ -65,16 +68,15 @@ export default function CtpListaProductosTab({
           <Btn variant="primary" onClick={onAbrirStock}>
             <Boxes className="h-4 w-4" /> Producción
           </Btn>
-          {/* El libro despacha lo que salió de una corrida: es lo que permite
-              decir de dónde vino cada tabla. Mover trozas SIN aserrar es otra
-              operación (el saldo sale del patio, no de producción) y todavía no
-              está habilitada — un botón que falla al guardar sería peor. */}
-          <Btn variant="secondary" disabled title="Sólo producto transformado: la salida de trozas sin aserrar todavía no está habilitada en el libro">
+          {/* El otro origen (ADR-363): la madera que sale como entró. Su saldo
+              vive en el patio, no en producción, y su cadena termina en el
+              ingreso — más corta, igual de completa. */}
+          <Btn variant="secondary" onClick={onAbrirTrozas}>
             <TreePine className="h-4 w-4" /> Trozas / productos ingresados
           </Btn>
           <p className="flex items-start gap-1.5 text-xs text-[var(--text-tertiary)]">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Cada renglón guarda de qué corrida salió: eso es lo que después permite emitir el certificado.
+            Cada renglón guarda de dónde salió —la corrida o la guía de ingreso—: eso es lo que después permite emitir el certificado.
           </p>
         </div>
       </Bloque>
@@ -111,17 +113,23 @@ export default function CtpListaProductosTab({
               </td>
               <td className="px-3 py-2 text-xs text-[var(--text-secondary)]">
                 {productLabel(f.producto ?? "")}
+                {/* De dónde salió: la corrida (producto transformado) o la guía
+                    con la que entró (troza que sale sin aserrar, ADR-363). */}
                 <div className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                  corrida #{f.lineNo ?? "—"}{f.lote ? ` · lote ${f.lote}` : ""}
+                  {f.trozaId
+                    ? `troza · GTF ${f.gtfOrigen[0] ?? "—"}`
+                    : `corrida #${f.lineNo ?? "—"}${f.lote ? ` · lote ${f.lote}` : ""}`}
                 </div>
               </td>
               <td className="px-3 py-2 font-mono text-sm font-bold text-[var(--text-primary)]">{f.codigo ?? "—"}</td>
               <td className="px-3 py-2 text-right">
+                {/* Una troza es UNA pieza: su cantidad no se tipea. */}
                 <input
                   type="number" min="0" step="1" value={f.cantidad}
+                  disabled={Boolean(f.trozaId)}
                   onChange={(e) => onCambiarFila(f.uid, "cantidad", Number(e.target.value))}
                   aria-label={`Cantidad del ítem ${i + 1}`}
-                  className={CELDA_NUM}
+                  className={`${CELDA_NUM} disabled:cursor-not-allowed disabled:opacity-60`}
                 />
               </td>
               <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{f.presentacion ?? "—"}</td>
@@ -136,7 +144,7 @@ export default function CtpListaProductosTab({
                   className={CELDA_NUM}
                 />
                 <div className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                  saldo {f.disponibleCorrida.toFixed(4)}
+                  {f.trozaId ? "mide" : "saldo"} {f.disponibleCorrida.toFixed(4)}
                 </div>
               </td>
               <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{MEDIDA[f.unidad] ?? f.unidad}</td>

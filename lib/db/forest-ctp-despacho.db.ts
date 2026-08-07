@@ -110,6 +110,12 @@ export interface TrazabilidadDespacho {
   sinAtribuir: number;
   /** Por qué NO está completa, para que la UI lo explique en vez de sólo negar. */
   motivo: "ok" | "sin_atribucion" | "atribucion_parcial" | "corrida_sin_origen";
+  /**
+   * Las PIEZAS que salieron sin aserrar (ADR-363). Su cadena es más corta —el
+   * origen es el ingreso, no una corrida— pero está igual de completa: la troza
+   * se puede señalar en la guía con la que entró.
+   */
+  trozas: { id: string; codificacion: string | null; volumenM3: number; gtfIngreso: string }[];
   corridas: {
     produccionEntryId: string;
     lineNo: number;
@@ -118,6 +124,14 @@ export interface TrazabilidadDespacho {
     guias: string[];
     /** La corrida no tiene su propia materia prima atribuida ⇒ la cadena se corta ahí. */
     sinOrigen: boolean;
+    /**
+     * El lote de aserrío que se comió esa corrida (ADR-334/337), si salió de uno.
+     *
+     * Es el eslabón entre la guía y la sierra: con él, «¿de qué pila salió este
+     * paquete?» se contesta con un código y no reconstruyendo consumos. `null`
+     * en las corridas cargadas a mano — el libro admite huecos.
+     */
+    loteAserrio: { code: string; piezas: number } | null;
   }[];
 }
 
@@ -575,8 +589,24 @@ export class ForestCtpDespachoDB {
     if (!despacho) throw new Error("Línea de despacho no encontrada");
 
     const origenes = await ForestCtpDespachoDB.listByDespacho(tenantId, despachoEntryId);
+    /* Las piezas que se fueron enteras (ADR-363): atribuyen igual que una
+       corrida, sólo que su origen es el ingreso. Sin contarlas, una venta en
+       rollo figuraba como 100 % sin atribuir y no podía certificar nunca. */
+    const trozasCrudas = await prisma.woodEntryTroza.findMany({
+      where: { tenantId, despachadaEnId: despachoEntryId },
+      select: { id: true, codificacion: true, volumenM3: true, entry: { select: { gtfNumber: true } } },
+      orderBy: { orden: "asc" },
+    });
+    const trozas = trozasCrudas.map((t) => ({
+      id: t.id,
+      codificacion: t.codificacion,
+      volumenM3: Number(t.volumenM3 ?? 0),
+      gtfIngreso: t.entry.gtfNumber,
+    }));
     const declarado = despacho.quantity ? Number(despacho.quantity) : 0;
-    const atribuido = r4(origenes.reduce((a, o) => a + Number(o.quantity), 0));
+    const atribuido = r4(
+      origenes.reduce((a, o) => a + Number(o.quantity), 0) + trozas.reduce((a, t) => a + t.volumenM3, 0),
+    );
     const sinAtribuir = r4(Math.max(0, declarado - atribuido));
 
     // Un eslabón más atrás: ¿cada corrida sabe de qué ingresos salió?
@@ -596,16 +626,36 @@ export class ForestCtpDespachoDB {
         })
       : [];
 
+    /* Y un eslabón más: de qué LOTE DE ASERRÍO salió cada corrida (ADR-337).
+       Es la pregunta del patio —«¿de qué pila es este paquete?»— y hasta acá la
+       cadena llegaba sólo hasta la corrida. */
+    const lotes = origenes.length
+      ? await prisma.forestLoteAserrio.findMany({
+          where: {
+            tenantId,
+            deletedAt: null,
+            produccionEntryId: { in: origenes.map((o) => o.produccionEntryId) },
+          },
+          select: { code: true, produccionEntryId: true, _count: { select: { trozas: true } } },
+        })
+      : [];
+    const lotePorCorrida = new Map(
+      lotes
+        .filter((l): l is typeof l & { produccionEntryId: string } => Boolean(l.produccionEntryId))
+        .map((l) => [l.produccionEntryId, { code: l.code, piezas: l._count.trozas }]),
+    );
+
     const corridas = origenes.map((o) => ({
       produccionEntryId: o.produccionEntryId,
       lineNo: o.produccion.lineNo,
       quantity: Number(o.quantity),
       guias: guiasPorCorrida.filter((g) => g.ctpEntryId === o.produccionEntryId).map((g) => g.woodEntry.gtfNumber),
       sinOrigen: !conOrigen.has(o.produccionEntryId),
+      loteAserrio: lotePorCorrida.get(o.produccionEntryId) ?? null,
     }));
 
     const motivo: TrazabilidadDespacho["motivo"] =
-      origenes.length === 0
+      origenes.length === 0 && trozas.length === 0
         ? "sin_atribucion"
         : sinAtribuir > 0
           ? "atribucion_parcial"
@@ -613,7 +663,7 @@ export class ForestCtpDespachoDB {
             ? "corrida_sin_origen"
             : "ok";
 
-    return { completa: motivo === "ok", declarado, atribuido, sinAtribuir, motivo, corridas };
+    return { completa: motivo === "ok", declarado, atribuido, sinAtribuir, motivo, corridas, trozas };
   }
 
   /**

@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { ForestCtpDB, CTP_SECTIONS } from "@/lib/db/forest-ctp.db";
 import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
+import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { ctpErrorResponse, ctpValidationResponse } from "@/lib/forestal/ctp-api-errors";
 import { isSpecializationEnabled } from "@/lib/specializations";
@@ -98,6 +99,13 @@ const createSchema = z.object({
    * una línea que ya existe sigue siendo del PATCH (admin/owner).
    */
   gtfDatos: gtfDatosSchema.optional(),
+  /**
+   * Las PIEZAS que salen SIN ASERRAR en esta línea (ADR-363). Sólo despacho.
+   *
+   * Con esto la línea NO se mide contra el stock de producto (I3): lo que sale
+   * es materia prima, y su stock son las trozas — cada una validada por T2.
+   */
+  trozas: z.array(z.string().trim().min(1).max(60)).max(500).optional(),
 });
 const patchSchema = z.discriminatedUnion("action", [
   z.object({ id: z.string().trim().min(1), action: z.literal("annul"), reason: z.string().trim().min(3).max(500) }),
@@ -314,8 +322,36 @@ export const POST = withApiHandler("forestal-ctp-post", async (req: NextRequest)
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return ctpValidationResponse(parsed.error);
   try {
-    const { loteAserrioId, gtfDatos, ...linea } = parsed.data;
-    const entry = await ForestCtpDB.create(auth.tenantId, { ...linea, createdBy: auth.username ?? "unknown" });
+    const { loteAserrioId, gtfDatos, trozas, ...linea } = parsed.data;
+    const conTrozas = Boolean(trozas?.length) && parsed.data.section === "despacho";
+
+    /* T2 ANTES de crear (ADR-363): si una pieza ya se aserró o ya salió, el
+       error llega sin haber dejado un despacho fantasma en el libro. El marcado
+       vuelve a validar con LOCK — esto no reemplaza al lock, lo adelanta. */
+    if (conTrozas) await WoodEntriesDB.assertTrozasDespachables(auth.tenantId, trozas!);
+
+    const entry = await ForestCtpDB.create(auth.tenantId, {
+      ...linea,
+      desdeTrozas: conTrozas,
+      createdBy: auth.username ?? "unknown",
+    });
+
+    /* Las piezas se marcan DESPUÉS: hace falta el id de la línea. Si esto falla
+       —una carrera con otro camión— la línea se deshace: una salida declarada
+       sin madera atrás es peor que no haberla registrado. */
+    if (conTrozas && entry?.id) {
+      try {
+        await WoodEntriesDB.marcarDespachoTrozas(auth.tenantId, entry.id, trozas!, {
+          fecha: parsed.data.entryDate,
+          usuario: auth.username ?? "unknown",
+        });
+      } catch (e) {
+        await ForestCtpDB.softDelete(auth.tenantId, entry.id, auth.username ?? "unknown").catch((err) =>
+          logger.error("[ctp.POST] no se pudo deshacer la línea sin trozas", { entryId: entry.id, error: String(err) }),
+        );
+        throw e;
+      }
+    }
 
     /* La guía se escribe DESPUÉS de que la línea existe (hace falta su id) y
        sobre la misma vía que el PATCH: así valida período cerrado y audita
