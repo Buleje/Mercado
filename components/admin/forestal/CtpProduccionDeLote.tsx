@@ -89,6 +89,30 @@ export default function CtpProduccionDeLote({
   }, [lote.id, yaEnElLote]);
 
   /**
+   * Elegir el lote TRAE la vista acá.
+   *
+   * El panel se dibuja debajo de los KPIs, la barra, los chips y la tarjeta del
+   * lote: medido en un portátil, a 1164 px por debajo del borde de la pantalla.
+   * Se apretaba el botón, se elegía el lote y no pasaba nada visible — la tabla
+   * estaba, pero había que buscarla scrolleando a ciegas.
+   *
+   * `block: "start"` con el scroll suave del sistema, y salto seco si el
+   * usuario pidió menos movimiento.
+   */
+  const panelRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = panelRef.current;
+    if (!el) return;
+    const quieto = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    /* En el frame siguiente: al montar, el panel todavía no tiene su alto y el
+       navegador scrollea a una posición que después se corre. */
+    const id = requestAnimationFrame(() =>
+      el.scrollIntoView({ behavior: quieto ? "auto" : "smooth", block: "start" }),
+    );
+    return () => cancelAnimationFrame(id);
+  }, [lote.id]);
+
+  /**
    * Lo que entra a la sierra es **lo tildado**, y nada más.
    *
    * Antes era `yaEnElLote + elegidas`: el lote entero iba sí o sí y no se podía
@@ -200,7 +224,7 @@ export default function CtpProduccionDeLote({
   }
 
   return (
-    <section className="space-y-3 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--surface-raised)] p-4">
+    <section ref={panelRef} className="scroll-mt-4 space-y-3 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--surface-raised)] p-4">
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
           <Layers className="h-4 w-4 text-[var(--accent)]" aria-hidden />
