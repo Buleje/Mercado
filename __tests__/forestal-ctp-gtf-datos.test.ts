@@ -21,10 +21,10 @@ import {
 function completa(): GtfDatos {
   return {
     ...gtfDatosVacio(),
-    propietario: { nombre: "Maderera San Martín SAC", docTipo: "RUC", docNumero: "20512345678", direccion: "Av. Industrial 123, Pucallpa", departamento: "Ucayali", provincia: "Coronel Portillo", distrito: "Callería", esElCtp: true },
-    destinatario: { nombre: "Distribuidora Lima SAC", docTipo: "RUC", docNumero: "20487654321", direccion: "Av. Argentina 456, Lima", departamento: "Lima", provincia: "Lima", distrito: "Cercado de Lima" },
-    transportista: { nombre: "Transportes Ucayali EIRL", docTipo: "RUC", docNumero: "20411111111", direccion: "Jr. Tacna 89", departamento: "Ucayali", provincia: "Coronel Portillo", distrito: "Callería", registroMtc: "MTC-0099" },
-    vehiculo: { modo: "terrestre", placa: "ABC-123", marca: "Volvo", tipo: "Tráiler", embarcacion: "", conductor: "Juan Pérez", conductorDni: "44556677", licencia: "Q44556677" },
+    propietario: { nombre: "Maderera San Martín SAC", docTipo: "RUC", docNumero: "20512345678", direccion: "Av. Industrial 123, Pucallpa", departamento: "Ucayali", provincia: "Coronel Portillo", distrito: "Callería", zona: "", esElCtp: true },
+    destinatario: { nombre: "Distribuidora Lima SAC", docTipo: "RUC", docNumero: "20487654321", direccion: "Av. Argentina 456, Lima", departamento: "Lima", provincia: "Lima", distrito: "Cercado de Lima", zona: "Zona industrial" },
+    transportista: { nombre: "Transportes Ucayali EIRL", docTipo: "RUC", docNumero: "20411111111", direccion: "Jr. Tacna 89", departamento: "Ucayali", provincia: "Coronel Portillo", distrito: "Callería", zona: "", registroMtc: "MTC-0099" },
+    vehiculo: { modo: "terrestre", placa: "ABC-123", placaRemolque: "XYZ-987", marca: "Volvo", tipo: "Tráiler", embarcacion: "", conductor: "Juan Pérez", conductorDni: "44556677", licencia: "Q44556677", tipoTransporte: "publico" },
     traslado: { puntoPartida: "Pucallpa", puntoLlegada: "Lima", ruta: "Pucallpa – Tingo María – Lima", fechaInicio: "2026-07-20", fechaFin: "2026-07-30" },
     titulos: ["CON-25-TAH-001"],
   };

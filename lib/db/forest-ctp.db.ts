@@ -10,6 +10,9 @@ import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { ForestCtpConsumoDB, CtpInvariantError, CONSUMO_VIGENTE, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 import { ORIGEN_VIGENTE, ForestCtpDespachoDB } from "./forest-ctp-despacho.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import { saldosDeCorridas } from "./forest-ctp-saldo-corrida";
+import { agruparMovimiento, pasoParaBarras, type MovimientoDelLibro } from "@/lib/forestal/movimiento-libro";
+import { RENDIMIENTO_TOPE_PCT, topeDeclarableM3 } from "@/lib/forestal/produccion-paquetes";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
 export type CtpSection = (typeof CTP_SECTIONS)[number];
@@ -135,10 +138,41 @@ export interface CtpEntryInput {
  * fecha date-only + producto + especie + cantidad(4 dec). La usan la DB class y
  * el endpoint de import — misma fórmula a ambos lados o el dedup no matchea.
  */
-export function produccionKey(entryDate: Date | string, productType: string | null, speciesCommon: string | null, quantity: unknown): string {
+/**
+ * La clave VIEJA, sin paquete ni lote.
+ *
+ * Existe sólo por compatibilidad: las corridas que se importaron antes de que la
+ * clave incluyera el paquete no tienen con qué distinguirse. Si al re-importar
+ * el mismo libro se las midiera con la clave nueva, no matchearían y la
+ * producción entraría DOS VECES — declarar de más es exactamente lo que el
+ * libro no puede hacer.
+ */
+export function produccionKeyBase(entryDate: Date | string, productType: string | null, speciesCommon: string | null, quantity: unknown): string {
   const d = entryDate instanceof Date ? entryDate.toISOString().slice(0, 10) : String(entryDate ?? "").slice(0, 10);
   const q = quantity == null || quantity === "" ? "" : Number(quantity).toFixed(4);
   return [d, (productType ?? "").trim().toLowerCase(), (speciesCommon ?? "").trim().toLowerCase(), q].join("|");
+}
+
+export function produccionKey(
+  entryDate: Date | string,
+  productType: string | null,
+  speciesCommon: string | null,
+  quantity: unknown,
+  /**
+   * El código del PAQUETE y el LOTE, cuando el archivo los trae.
+   *
+   * Sin ellos, dos paquetes distintos de la misma especie, el mismo producto y
+   * el mismo volumen —lo NORMAL en un inventario de aserrada: los paquetes se
+   * arman iguales— tenían la misma clave y el importador descartaba el segundo
+   * como «duplicado en el archivo». Se perdía madera que existe en el depósito.
+   */
+  codigoProducto?: string | null,
+  materiaPrimaRef?: string | null,
+): string {
+  const d = entryDate instanceof Date ? entryDate.toISOString().slice(0, 10) : String(entryDate ?? "").slice(0, 10);
+  const q = quantity == null || quantity === "" ? "" : Number(quantity).toFixed(4);
+  const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
+  return [d, norm(productType), norm(speciesCommon), q, norm(codigoProducto), norm(materiaPrimaRef)].join("|");
 }
 
 /**
@@ -454,6 +488,333 @@ export class ForestCtpDB {
     return prisma.forestCtpEntry.findFirst({ where: { tenantId, id, deletedAt: null } });
   }
 
+  /**
+   * DECLARAR LA PRODUCCIÓN de una corrida abierta en el patio (ADR-340).
+   *
+   * La corrida nació al consumir —con su materia prima y sin `quantity`— y esto
+   * la cierra: qué producto salió, cuánto y en qué unidad. Es la Sección 3 del
+   * LO-CTP, que tiene su propia fecha y su propio acto.
+   *
+   * Sólo completa corridas **en proceso**: si ya declaró producción, corregirla
+   * es otra cosa (y hoy se hace anulando y rehaciendo, que deja rastro). El
+   * rendimiento se calcula con la misma fórmula del alta — una sola regla.
+   */
+  /**
+   * AMPLIAR una corrida que ya declaró producción (ADR-361).
+   *
+   * El lote no sale de la sierra en un solo acto: se asierra una parte del turno,
+   * salen los paquetes, y al día siguiente sale el resto de la MISMA materia
+   * prima —tablillas, recuperación, lo que quedó del bloque—. Hasta acá había que
+   * declarar todo junto o no declarar nada: `declararProduccion` rechaza la
+   * corrida que ya declaró, y volver a consumir habría exigido trozas nuevas que
+   * no existen porque la madera ya entró.
+   *
+   * Ampliar NO es corregir. Los paquetes anteriores quedan intactos y se suman
+   * los nuevos: el libro gana filas, no las reescribe. Para corregir sigue
+   * estando anular y rehacer, que es lo que deja rastro.
+   *
+   * El tope del 56 % se aplica sobre el **total acumulado** (ADR-358), no sobre
+   * lo que se agrega ahora: si no, dos tandas del 40 % darían 80 % entre las dos.
+   */
+  static async ampliarProduccion(
+    tenantId: string,
+    id: string,
+    campos: {
+      paquetes: {
+        codigo: string;
+        productType?: string | null;
+        presentacion?: string | null;
+        cantidad: number;
+        volumenM3: number;
+        espesorCm?: number | null;
+        anchoCm?: number | null;
+        largoM?: number | null;
+        observations?: string | null;
+      }[];
+      observations?: string | null;
+    },
+    user: string,
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const actual = await prisma.forestCtpEntry.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      select: {
+        id: true, section: true, status: true, lineNo: true, entryDate: true,
+        quantity: true, unit: true, volumeInputM3: true, productType: true,
+        presentacion: true, observations: true,
+        paquetes: { select: { codigo: true } },
+      },
+    });
+    if (!actual) throw new CtpInvariantError("Esa corrida no existe.", "LINEA_NO_EDITABLE");
+    if (actual.section !== "produccion") {
+      throw new CtpInvariantError("Sólo una corrida de producción declara producción.", "SECCION_INVALIDA");
+    }
+    if (actual.status !== "registrado") {
+      throw new CtpInvariantError(`Esa corrida está ${actual.status}.`, "LINEA_NO_EDITABLE");
+    }
+    if (actual.quantity == null) {
+      throw new CtpInvariantError(
+        `La corrida #${actual.lineNo} todavía no declaró producción: declarala primero.`,
+        "LINEA_NO_EDITABLE",
+      );
+    }
+    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, actual.entryDate);
+    if (cerrado) {
+      throw new CtpInvariantError(
+        `El período ${cerrado.label} está cerrado: no se puede ampliar una corrida de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+
+    const nuevos = campos.paquetes ?? [];
+    if (nuevos.length === 0) {
+      throw new CtpInvariantError("No hay paquetes que agregar.", "CANTIDAD_INVALIDA");
+    }
+    const suma = r4(nuevos.reduce((a, p) => a + (Number(p.volumenM3) || 0), 0));
+    if (!(suma > 0)) {
+      throw new CtpInvariantError("Los paquetes que se agregan no suman volumen.", "CANTIDAD_INVALIDA");
+    }
+
+    /* El código de paquete es lo que se busca en la pila y lo que se cita en la
+       guía de salida: no puede repetirse ni contra los que ya están. */
+    const yaEstan = new Set(actual.paquetes.map((p) => p.codigo.trim().toLowerCase()));
+    const choque = nuevos.find((p) => yaEstan.has(p.codigo.trim().toLowerCase()));
+    if (choque) {
+      throw new CtpInvariantError(
+        `El código de paquete «${choque.codigo}» ya está en esta corrida.`,
+        "PAQUETE_DUPLICADO",
+      );
+    }
+    const repetido = nuevos.find((p, i) => nuevos.findIndex((q) => q.codigo.trim() === p.codigo.trim()) !== i);
+    if (repetido) {
+      throw new CtpInvariantError(
+        `El código de paquete «${repetido.codigo}» viene dos veces.`,
+        "PAQUETE_DUPLICADO",
+      );
+    }
+
+    const total = r4(Number(actual.quantity) + suma);
+
+    /* El tope, sobre el TOTAL: dos tandas del 40 % son 80 % entre las dos, y el
+       techo existe justo para que eso no pase (ADR-358). */
+    const entrada = Number(actual.volumeInputM3 ?? 0);
+    if (entrada > 0 && (actual.unit ?? "m3") === "m3") {
+      const tope = topeDeclarableM3(entrada);
+      if (total > tope + 0.001) {
+        throw new CtpInvariantError(
+          `Con ${entrada.toFixed(4)} m³ de materia prima el tope (${RENDIMIENTO_TOPE_PCT} %) permite ` +
+            `${tope.toFixed(4)} m³ en total. Esta corrida ya declaró ${r4(Number(actual.quantity))} y estás ` +
+            `agregando ${suma}: quedan ${r4(Math.max(0, tope - Number(actual.quantity)))} m³.`,
+          "RENDIMIENTO_SOBRE_TOPE",
+        );
+      }
+    }
+
+    const rendimiento =
+      entrada > 0 && (actual.unit ?? "m3") === "m3"
+        ? Math.round((total / entrada) * 10000) / 100
+        : null;
+
+    const entry = await prisma.forestCtpEntry.update({
+      where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
+      data: {
+        quantity: total,
+        rendimientoPct: rendimiento,
+        ...(campos.observations?.trim() ? { observations: campos.observations.trim() } : {}),
+        paquetes: {
+          create: nuevos.map((p) => ({
+            tenantId,
+            codigo: p.codigo.trim(),
+            productType: p.productType?.trim() || actual.productType || null,
+            presentacion: p.presentacion?.trim() || actual.presentacion || null,
+            cantidad: Math.max(0, Math.round(p.cantidad)),
+            unit: actual.unit ?? "m3",
+            volumenM3: p.volumenM3,
+            espesorCm: p.espesorCm ?? null,
+            anchoCm: p.anchoCm ?? null,
+            largoM: p.largoM ?? null,
+            observations: p.observations?.trim() || null,
+            createdBy: user,
+          })),
+        },
+      },
+    });
+    auditCtp({
+      tenantId,
+      action: "ctp_linea_produccion_declarada",
+      entity: "ForestCtpEntry",
+      entityId: id,
+      detail:
+        `Amplió la corrida #${actual.lineNo}: +${nuevos.length} paquete(s) · +${suma} ` +
+        `(total ${total}${rendimiento != null ? ` · rendimiento ${rendimiento}%` : ""})`,
+      user,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* best-effort */ }
+    return entry;
+  }
+
+  static async declararProduccion(
+    tenantId: string,
+    id: string,
+    campos: {
+      productType?: string | null;
+      presentacion?: string | null;
+      quantity: number;
+      unit: string;
+      pieces?: number | null;
+      codigoProducto?: string | null;
+      lineaProduccion?: string | null;
+      observations?: string | null;
+      /**
+       * Los PAQUETES que salieron (ADR-349). El formato del SNIFFS declara
+       * paquetes, no un volumen suelto: cada uno con su código, su producto y
+       * —si se dimensionó— espesor, ancho y largo.
+       *
+       * Son el detalle de `quantity`, no otra cantidad: se valida que sumen lo
+       * declarado. Sin paquetes, la corrida se declara como antes.
+       */
+      paquetes?: {
+        codigo: string;
+        productType?: string | null;
+        presentacion?: string | null;
+        cantidad: number;
+        volumenM3: number;
+        espesorCm?: number | null;
+        anchoCm?: number | null;
+        largoM?: number | null;
+        observations?: string | null;
+      }[];
+    },
+    user = "unknown",
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const actual = await prisma.forestCtpEntry.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      select: { id: true, section: true, status: true, lineNo: true, entryDate: true, quantity: true, volumeInputM3: true, observations: true },
+    });
+    if (!actual) return null;
+    if (actual.section !== "produccion") {
+      throw new CtpInvariantError("Sólo una corrida de producción declara producción.", "SECCION_INVALIDA");
+    }
+    if (actual.status !== "registrado") {
+      throw new CtpInvariantError(`Esa corrida está ${actual.status}.`, "LINEA_NO_EDITABLE");
+    }
+    if (actual.quantity != null) {
+      throw new CtpInvariantError(
+        `La corrida #${actual.lineNo} ya declaró producción. Para corregirla, anulala y volvé a registrarla.`,
+        "LINEA_NO_EDITABLE",
+      );
+    }
+    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, actual.entryDate);
+    if (cerrado) {
+      throw new CtpInvariantError(
+        `El período ${cerrado.label} está cerrado: no se puede declarar producción de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+    if (!(campos.quantity > 0)) {
+      throw new CtpInvariantError("La cantidad producida debe ser mayor a 0.", "CANTIDAD_INVALIDA");
+    }
+
+    /* El techo del 56 % (ADR-358), también acá y no sólo en el formulario.
+       Una regla que vive únicamente en la pantalla la saltea cualquier POST, y
+       ésta existe justamente para que el libro no declare más producto del que
+       sale físicamente de una troza. Sólo aplica cuando la corrida declara en
+       m³: dividir pies tablares por m³ no es un rendimiento. */
+    const entrada = Number(actual.volumeInputM3 ?? 0);
+    if (entrada > 0 && (campos.unit ?? "m3") === "m3") {
+      const tope = topeDeclarableM3(entrada);
+      if (campos.quantity > tope + 0.001) {
+        throw new CtpInvariantError(
+          `Con ${entrada.toFixed(4)} m³ de materia prima el tope de rendimiento (${RENDIMIENTO_TOPE_PCT} %) ` +
+            `permite ${tope.toFixed(4)} m³; estás declarando ${campos.quantity}.`,
+          "RENDIMIENTO_SOBRE_TOPE",
+        );
+      }
+    }
+
+    /* Los paquetes son el DETALLE de lo declarado: si suman otra cosa, uno de
+       los dos números está mal y no se puede saber cuál. `≤` no alcanza acá —no
+       es una atribución parcial, es la misma cantidad contada de dos maneras—,
+       pero la tolerancia es la del negocio (un litro), no la del float. */
+    const paquetes = campos.paquetes ?? [];
+    if (paquetes.length > 0) {
+      const suma = Math.round(paquetes.reduce((a, p) => a + (Number(p.volumenM3) || 0), 0) * 10000) / 10000;
+      if (Math.abs(suma - campos.quantity) > 0.001) {
+        throw new CtpInvariantError(
+          `Los paquetes suman ${suma} y la producción declara ${campos.quantity}: tienen que ser lo mismo.`,
+          "PAQUETES_NO_CUADRAN",
+        );
+      }
+      const repetido = paquetes.find((p, i) => paquetes.findIndex((q) => q.codigo.trim() === p.codigo.trim()) !== i);
+      if (repetido) {
+        throw new CtpInvariantError(
+          `El código de paquete «${repetido.codigo}» está dos veces: es lo que se busca en la pila, no puede repetirse.`,
+          "PAQUETE_DUPLICADO",
+        );
+      }
+    }
+
+    const inVol = actual.volumeInputM3 != null ? Number(actual.volumeInputM3) : 0;
+    const rendimiento =
+      inVol > 0 && campos.unit === "m3" ? Math.round((campos.quantity / inVol) * 10000) / 100 : null;
+
+    const entry = await prisma.forestCtpEntry.update({
+      where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
+      data: {
+        productType: campos.productType?.trim() || null,
+        presentacion: campos.presentacion?.trim() || null,
+        quantity: campos.quantity,
+        unit: campos.unit,
+        pieces: campos.pieces ?? null,
+        codigoProducto: campos.codigoProducto?.trim() || null,
+        lineaProduccion: campos.lineaProduccion?.trim() || "LP",
+        rendimientoPct: rendimiento,
+        /* La nota del consumo («producción por declarar») deja de ser cierta: se
+           reemplaza si el operador escribió una, y si no se limpia el aviso. */
+        observations: campos.observations?.trim() || null,
+        ...(paquetes.length > 0
+          ? {
+              /* `create` y no `set`: la corrida se declara una sola vez (más
+                 arriba se rechaza la que ya declaró), así que no hay paquetes
+                 viejos que reemplazar. */
+              paquetes: {
+                create: paquetes.map((p) => ({
+                  tenantId,
+                  codigo: p.codigo.trim(),
+                  productType: p.productType?.trim() || campos.productType?.trim() || null,
+                  presentacion: p.presentacion?.trim() || campos.presentacion?.trim() || null,
+                  cantidad: Math.max(0, Math.round(p.cantidad)),
+                  unit: campos.unit,
+                  volumenM3: p.volumenM3,
+                  espesorCm: p.espesorCm ?? null,
+                  anchoCm: p.anchoCm ?? null,
+                  largoM: p.largoM ?? null,
+                  observations: p.observations?.trim() || null,
+                  createdBy: user,
+                })),
+              },
+            }
+          : {}),
+      },
+    });
+    auditCtp({
+      tenantId,
+      action: "ctp_linea_produccion_declarada",
+      entity: "ForestCtpEntry",
+      entityId: id,
+      detail:
+        `Declaró la producción de la corrida #${entry.lineNo}: ${campos.quantity} ${campos.unit}` +
+        (paquetes.length > 0 ? ` en ${paquetes.length} paquete(s)` : "") +
+        (rendimiento != null ? ` · rendimiento ${rendimiento}%` : ""),
+      user,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    return entry;
+  }
+
   static async annul(tenantId: string, id: string, reason: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("reason is required");
@@ -537,6 +898,130 @@ export class ForestCtpDB {
    * (criterio alineado con `WoodEntriesDB.aggregateBySpecies`); se reporta
    * aparte en `pendienteM3` para que el número siga siendo visible.
    */
+  /**
+   * PRODUCTOS DISPONIBLES: lo aserrado que todavía está en la planta (ADR-349).
+   *
+   * Una corrida de producción con saldo es producto que existe: se puede
+   * despachar, reprocesar o mostrar en la pila. El saldo NO se recalcula acá —lo
+   * da `saldosDeCorridas`, la única fuente (ADR-316)— y los **paquetes** son su
+   * detalle: código, presentación y dimensiones para encontrarlo.
+   *
+   * Se listan sólo las corridas con `disponible > 0`: un producto agotado no es
+   * un producto disponible con cero, es uno que ya no está.
+   */
+  static async productosDisponibles(
+    tenantId: string,
+    opts: { fromDate?: Date; toDate?: Date; especie?: string; producto?: string } = {},
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const where: Prisma.ForestCtpEntryWhereInput = {
+      tenantId,
+      section: "produccion",
+      deletedAt: null,
+      status: "registrado",
+      /* Sin cantidad declarada no hay producto: es una corrida que consumió y
+         todavía no dijo qué salió (ADR-340). */
+      quantity: { not: null },
+    };
+    if (opts.fromDate || opts.toDate) {
+      where.entryDate = {
+        ...(opts.fromDate ? { gte: opts.fromDate } : {}),
+        ...(opts.toDate ? { lte: opts.toDate } : {}),
+      };
+    }
+    if (opts.especie?.trim()) where.speciesCommon = { contains: opts.especie.trim(), mode: "insensitive" };
+    if (opts.producto?.trim()) where.productType = { contains: opts.producto.trim(), mode: "insensitive" };
+
+    const corridas = await prisma.forestCtpEntry.findMany({
+      where,
+      orderBy: [{ entryDate: "desc" }, { lineNo: "desc" }],
+      take: 500,
+      include: {
+        paquetes: {
+          where: { deletedAt: null },
+          orderBy: { codigo: "asc" },
+        },
+        /* De qué guía y de qué título habilitante viene la madera de la corrida.
+           Es lo que la GTF de salida declara como origen del recurso: sin esto,
+           el picker de la guía puede decir "qué producto" pero no "de dónde
+           salió", que es justo lo que compara un puesto de control. Se leen dos
+           columnas del ingreso, no el ingreso entero. */
+        consumos: {
+          select: { woodEntry: { select: { gtfNumber: true, originCode: true } } },
+        },
+      },
+    });
+    if (corridas.length === 0) return { corridas: [], totales: { volumen: 0, paquetes: 0, corridas: 0 } };
+
+    const saldos = await saldosDeCorridas(prisma, tenantId, corridas.map((c) => c.id));
+
+    const conSaldo = corridas
+      .map((c) => {
+        const s = saldos.get(c.id);
+        const disponible = s?.disponible ?? 0;
+        /* Únicos y en orden de aparición: una corrida mezcla guías (ADR-134) y
+           repetir "1-19-0313629" cinco veces no agrega información. Si la
+           corrida se cargó a mano, queda el resumen de texto `gtfIngreso`. */
+        const gtfOrigen = [
+          ...new Set(
+            c.consumos
+              .map((x) => (x.woodEntry?.gtfNumber ?? "").trim())
+              .filter(Boolean),
+          ),
+        ];
+        const titularOrigen = [
+          ...new Set(
+            c.consumos
+              .map((x) => (x.woodEntry?.originCode ?? "").trim())
+              .filter(Boolean),
+          ),
+        ];
+        return {
+          id: c.id,
+          lineNo: c.lineNo,
+          fecha: c.entryDate.toISOString(),
+          especie: c.speciesCommon,
+          especieCientifica: c.speciesScientific,
+          producto: c.productType,
+          presentacion: c.presentacion,
+          unidad: c.unit,
+          lote: c.materiaPrimaRef,
+          lineaProduccion: c.lineaProduccion,
+          /** GTF de ingreso de la materia prima que alimentó la corrida. */
+          gtfOrigen: gtfOrigen.length > 0 ? gtfOrigen : (c.gtfIngreso ? [c.gtfIngreso] : []),
+          /** Título habilitante / plan de manejo del que salió esa madera. */
+          titularOrigen,
+          rendimientoPct: c.rendimientoPct != null ? Number(c.rendimientoPct) : null,
+          producido: s?.producido ?? 0,
+          despachado: s?.despachado ?? 0,
+          reprocesado: s?.reprocesado ?? 0,
+          disponible,
+          paquetes: c.paquetes.map((p) => ({
+            id: p.id,
+            codigo: p.codigo,
+            producto: p.productType,
+            presentacion: p.presentacion,
+            cantidad: p.cantidad,
+            volumenM3: Number(p.volumenM3),
+            espesorCm: p.espesorCm != null ? Number(p.espesorCm) : null,
+            anchoCm: p.anchoCm != null ? Number(p.anchoCm) : null,
+            largoM: p.largoM != null ? Number(p.largoM) : null,
+            observations: p.observations,
+          })),
+        };
+      })
+      .filter((c) => c.disponible > 0);
+
+    return {
+      corridas: conSaldo,
+      totales: {
+        volumen: Math.round(conSaldo.reduce((a, c) => a + c.disponible, 0) * 10000) / 10000,
+        paquetes: conSaldo.reduce((a, c) => a + c.paquetes.length, 0),
+        corridas: conSaldo.length,
+      },
+    };
+  }
+
   static async saldos(tenantId: string, opts: { fromDate?: Date; toDate?: Date } = {}) {
     if (!tenantId) throw new Error("tenantId is required");
 
@@ -665,6 +1150,48 @@ export class ForestCtpDB {
   }
 
   /**
+   * Existencia heredada al INICIO del período — el punto de partida de todo
+   * rollforward (ADR-139).
+   *
+   * Sale del cierre inmediatamente anterior (snapshot congelado, que es el dato
+   * declarado) o, si no hay cierre previo, del acumulado hasta el instante antes
+   * del inicio. Sin `fromDate` no hay apertura: el período abarca todo.
+   *
+   * Vive acá y no dentro de `conciliacionPeriodo` porque la conciliación y la
+   * curva de saldo tienen que arrancar EXACTAMENTE del mismo número: dos
+   * aperturas calculadas por separado se desincronizan en cuanto una cambia, y
+   * la pantalla mostraría dos gráficos que se contradicen.
+   */
+  private static async aperturaDePeriodo(
+    tenantId: string,
+    fromDate?: Date,
+  ): Promise<{
+    fuenteApertura: ConciliacionPeriodo["fuenteApertura"];
+    aperturaLabel: string | null;
+    materiaPrima: { especie: string; cites: boolean; existencia: number }[];
+    productos: { producto: string; existencia: number }[];
+  }> {
+    const materiaPrima: { especie: string; cites: boolean; existencia: number }[] = [];
+    const productos: { producto: string; existencia: number }[] = [];
+    if (!fromDate) return { fuenteApertura: "sin_apertura", aperturaLabel: null, materiaPrima, productos };
+
+    const cierres = await ForestCtpCierreDB.list(tenantId);
+    const prev = cierres
+      .filter((c) => !c.reabierto && new Date(c.to).getTime() < fromDate.getTime())
+      .sort((a, b) => new Date(b.to).getTime() - new Date(a.to).getTime())[0];
+    if (prev) {
+      for (const m of prev.saldoCierre.materiaPrima) materiaPrima.push({ especie: m.especie, cites: m.cites, existencia: m.existenciaM3 });
+      for (const p of prev.saldoCierre.productos) productos.push({ producto: p.producto, existencia: p.existencia });
+      return { fuenteApertura: "cierre", aperturaLabel: prev.label, materiaPrima, productos };
+    }
+
+    const acum = await ForestCtpDB.saldos(tenantId, { toDate: new Date(fromDate.getTime() - 1) });
+    for (const e of acum.porEspecie) materiaPrima.push({ especie: e.especie, cites: e.cites, existencia: e.saldoM3 });
+    for (const p of acum.productos) productos.push({ producto: p.producto, existencia: p.stock });
+    return { fuenteApertura: "calculada", aperturaLabel: null, materiaPrima, productos };
+  }
+
+  /**
    * Conciliación del período (ADR-139 rollforward): existencia de APERTURA + movimientos =
    * existencia FINAL, por especie y por producto. La apertura sale del cierre
    * inmediatamente anterior (snapshot congelado) o, si no hay cierre previo, se
@@ -677,28 +1204,8 @@ export class ForestCtpDB {
     const mov = await ForestCtpDB.saldos(tenantId, opts);
 
     // ── Apertura ──────────────────────────────────────────────────────────
-    let fuenteApertura: ConciliacionPeriodo["fuenteApertura"] = "sin_apertura";
-    let aperturaLabel: string | null = null;
-    const aperturaMP: { especie: string; cites: boolean; existencia: number }[] = [];
-    const aperturaProd: { producto: string; existencia: number }[] = [];
-
-    if (opts.fromDate) {
-      const cierres = await ForestCtpCierreDB.list(tenantId);
-      const prev = cierres
-        .filter((c) => !c.reabierto && new Date(c.to).getTime() < opts.fromDate!.getTime())
-        .sort((a, b) => new Date(b.to).getTime() - new Date(a.to).getTime())[0];
-      if (prev) {
-        fuenteApertura = "cierre";
-        aperturaLabel = prev.label;
-        for (const m of prev.saldoCierre.materiaPrima) aperturaMP.push({ especie: m.especie, cites: m.cites, existencia: m.existenciaM3 });
-        for (const p of prev.saldoCierre.productos) aperturaProd.push({ producto: p.producto, existencia: p.existencia });
-      } else {
-        fuenteApertura = "calculada";
-        const acum = await ForestCtpDB.saldos(tenantId, { toDate: new Date(opts.fromDate.getTime() - 1) });
-        for (const e of acum.porEspecie) aperturaMP.push({ especie: e.especie, cites: e.cites, existencia: e.saldoM3 });
-        for (const p of acum.productos) aperturaProd.push({ producto: p.producto, existencia: p.stock });
-      }
-    }
+    const { fuenteApertura, aperturaLabel, materiaPrima: aperturaMP, productos: aperturaProd } =
+      await ForestCtpDB.aperturaDePeriodo(tenantId, opts.fromDate);
 
     // ── Combinar apertura + movimientos → final (materia prima) ───────────
     const mp = new Map<string, { label: string; cites: boolean; apertura: number; ingreso: number; consumido: number }>();
@@ -732,6 +1239,112 @@ export class ForestCtpDB {
       .sort((a, b) => b.final - a.final);
 
     return { fuenteApertura, aperturaLabel, materiaPrima, productos };
+  }
+
+  /**
+   * Curva del saldo de materia prima a lo largo del período.
+   *
+   * Los KPIs y la cascada dan una FOTO: cuánto hay hoy y de dónde salió. Lo que
+   * no contestaban es la pregunta de planificación —«¿el patio se está llenando
+   * o vaciando?»—, que sólo se ve con el saldo dibujado en el tiempo. Un patio
+   * que baja 3 m³ por semana y uno que sube 3 muestran el mismo total de hoy.
+   *
+   * Arranca en la apertura del período (misma fuente que la conciliación) y
+   * acumula ingresos validados − consumo de producción, con los mismos filtros
+   * que `saldos()`: el último punto DEBE dar `apertura + saldoM3` del período.
+   * Si no cuadra, uno de los dos está mal.
+   *
+   * La granularidad la elige la longitud del período: 90 puntos diarios se leen,
+   * 900 son una mancha. Sin snapshots ni tabla nueva — derivado de las fechas.
+   */
+  static async curvaSaldo(tenantId: string, opts: { fromDate?: Date; toDate?: Date } = {}): Promise<CurvaSaldo> {
+    if (!tenantId) throw new Error("tenantId is required");
+
+    const range = dateRange(opts);
+    // Mismos predicados que `saldos()`: la madera `pendiente` NO es saldo (está
+    // en el patio pero no validada), así que tampoco mueve la curva.
+    const woodWhere: Prisma.WoodEntryWhereInput = { tenantId, deletedAt: null, status: { in: ["validado", "procesado"] } };
+    const prodWhere: Prisma.ForestCtpEntryWhereInput = { tenantId, deletedAt: null, status: "registrado", section: "produccion" };
+    if (range) { woodWhere.entryDate = range; prodWhere.entryDate = range; }
+
+    const [ap, ingresos, corridas] = await Promise.all([
+      ForestCtpDB.aperturaDePeriodo(tenantId, opts.fromDate),
+      prisma.woodEntry.findMany({ where: woodWhere, select: { entryDate: true, volumeM3: true } }),
+      prisma.forestCtpEntry.findMany({ where: prodWhere, select: { entryDate: true, volumeInputM3: true } }),
+    ]);
+
+    const apertura = r4(ap.materiaPrima.reduce((a, m) => a + m.existencia, 0));
+    const vacia: CurvaSaldo = {
+      apertura, fuenteApertura: ap.fuenteApertura, aperturaLabel: ap.aperturaLabel,
+      paso: "dia", puntos: [], final: apertura, pico: null, valle: null,
+    };
+
+    const marcas = [...ingresos.map((i) => i.entryDate), ...corridas.map((c) => c.entryDate)];
+    if (!marcas.length && !opts.fromDate) return vacia;
+    const msMin = marcas.length ? Math.min(...marcas.map((d) => d.getTime())) : Number.POSITIVE_INFINITY;
+    const msMax = marcas.length ? Math.max(...marcas.map((d) => d.getTime())) : Number.NEGATIVE_INFINITY;
+    // El eje arranca en el inicio del período aunque los primeros días estén
+    // vacíos: si empezara en el primer movimiento, la curva escondería una
+    // semana sin ingresos, que es justo lo que hay que ver.
+    const desde = opts.fromDate ?? new Date(msMin);
+    // El eje no dibuja el futuro: un patio no tiene existencia mañana. Sin este
+    // recorte, "mes actual" mostraba 27 días de línea plana y el trimestre
+    // cerraba en un 1-de-septiembre vacío (el `to` local en UTC cae al día
+    // siguiente). Si hay un movimiento cargado con fecha futura sí se dibuja
+    // —está en el libro—, pero no se inventa una meseta hasta fin de mes.
+    const finPeriodo = opts.toDate?.getTime() ?? (marcas.length ? msMax : Date.now());
+    const tope = Math.min(finPeriodo, Date.now());
+    const hasta = new Date(marcas.length ? Math.max(tope, msMax) : tope);
+    if (hasta.getTime() < desde.getTime()) return vacia;
+
+    const span = Math.floor((hasta.getTime() - desde.getTime()) / 86_400_000) + 1;
+    const paso: CurvaSaldo["paso"] = span <= 120 ? "dia" : span <= 730 ? "semana" : "mes";
+    const inicioDe = (d: Date): Date => {
+      const u = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+      if (paso === "mes") return new Date(Date.UTC(u.getUTCFullYear(), u.getUTCMonth(), 1));
+      if (paso === "semana") { u.setUTCDate(u.getUTCDate() - ((u.getUTCDay() + 6) % 7)); return u; } // lunes
+      return u;
+    };
+    const avanzar = (d: Date): Date => {
+      const n = new Date(d.getTime());
+      if (paso === "mes") n.setUTCMonth(n.getUTCMonth() + 1);
+      else n.setUTCDate(n.getUTCDate() + (paso === "semana" ? 7 : 1));
+      return n;
+    };
+    const clave = (d: Date) => inicioDe(d).toISOString().slice(0, 10);
+
+    const cubos = new Map<string, { ingreso: number; consumo: number }>();
+    const orden: string[] = [];
+    // Tope duro: con "mes" un período de 30 años da 360 puntos. Más que eso es
+    // data corrupta, no un libro — se corta en vez de colgar la pantalla.
+    for (let c = inicioDe(desde), fin = inicioDe(hasta); c.getTime() <= fin.getTime() && orden.length < 400; c = avanzar(c)) {
+      const k = c.toISOString().slice(0, 10);
+      cubos.set(k, { ingreso: 0, consumo: 0 });
+      orden.push(k);
+    }
+    if (!orden.length) return vacia;
+
+    // Un movimiento fuera de la ventana dibujada (o pasado el tope) se imputa al
+    // extremo más cercano: descartarlo dejaría la curva sin cerrar en el saldo real.
+    const dentro = (k: string) => (cubos.has(k) ? k : k < orden[0] ? orden[0] : orden[orden.length - 1]);
+    for (const i of ingresos) cubos.get(dentro(clave(i.entryDate)))!.ingreso += Number(i.volumeM3 ?? 0);
+    for (const c of corridas) cubos.get(dentro(clave(c.entryDate)))!.consumo += Number(c.volumeInputM3 ?? 0);
+
+    let saldo = apertura;
+    const puntos = orden.map((fecha) => {
+      const b = cubos.get(fecha)!;
+      saldo = r4(saldo + b.ingreso - b.consumo);
+      return { fecha, ingreso: r4(b.ingreso), consumo: r4(b.consumo), saldo };
+    });
+
+    const pico = puntos.reduce((m, p) => (m == null || p.saldo > m.saldo ? p : m), null as (typeof puntos)[number] | null);
+    const valle = puntos.reduce((m, p) => (m == null || p.saldo < m.saldo ? p : m), null as (typeof puntos)[number] | null);
+    return {
+      apertura, fuenteApertura: ap.fuenteApertura, aperturaLabel: ap.aperturaLabel, paso, puntos,
+      final: saldo,
+      pico: pico ? { fecha: pico.fecha, saldo: pico.saldo } : null,
+      valle: valle ? { fecha: valle.fecha, saldo: valle.saldo } : null,
+    };
   }
 
   /**
@@ -884,12 +1497,21 @@ export class ForestCtpDB {
     const [ing, ctp] = await Promise.all([
       prisma.woodEntry.findMany({
         where: woodWhere,
-        select: { id: true, gtfNumber: true, speciesCommonName: true, volumeM3: true, speciesCites: true, entryDate: true },
+        /* Los casilleros que la Sección 2 pinta por ingreso viajan ACÁ (ADR-347).
+           Antes la vista pedía `wood-entries?limit=5000` sólo para completarlos:
+           traía el ingreso entero —notas, fotos, GTF de SERFOR— de miles de
+           filas para leerle seis campos. */
+        select: {
+          id: true, gtfNumber: true, speciesCommonName: true, volumeM3: true,
+          speciesCites: true, entryDate: true,
+          productType: true, speciesScientificName: true, originCode: true,
+          ctpProductCode: true, originSourceNumber: true, unit: true,
+        },
         orderBy: { entryDate: "asc" }, take: 300,
       }),
       prisma.forestCtpEntry.findMany({
         where: ctpWhere,
-        select: { id: true, section: true, lineNo: true, productType: true, speciesCommon: true, quantity: true, unit: true, destino: true, gtfNumber: true, cites: true, entryDate: true },
+        select: { id: true, section: true, lineNo: true, productType: true, speciesCommon: true, quantity: true, unit: true, destino: true, gtfNumber: true, cites: true, entryDate: true, observations: true },
         orderBy: { lineNo: "asc" }, take: 300,
       }),
     ]);
@@ -910,8 +1532,14 @@ export class ForestCtpDB {
     const corridaIdSet = new Set(corridaIds);
 
     return {
-      ingresos: ing.map((w) => ({ id: w.id, gtf: w.gtfNumber, species: w.speciesCommonName, volumeM3: Number(w.volumeM3 ?? 0), cites: w.speciesCites, fecha: w.entryDate.toISOString() })),
-      corridas: corridas.map((c) => ({ id: c.id, lineNo: c.lineNo, label: `${c.productType ?? "—"} · ${c.speciesCommon ?? "—"}`, quantity: Number(c.quantity ?? 0), unit: c.unit, cites: c.cites, productType: c.productType, species: c.speciesCommon, fecha: c.entryDate.toISOString() })),
+      ingresos: ing.map((w) => ({
+        id: w.id, gtf: w.gtfNumber, species: w.speciesCommonName,
+        volumeM3: Number(w.volumeM3 ?? 0), cites: w.speciesCites, fecha: w.entryDate.toISOString(),
+        productType: w.productType, speciesScientificName: w.speciesScientificName,
+        originCode: w.originCode, ctpProductCode: w.ctpProductCode,
+        originSourceNumber: w.originSourceNumber, unit: w.unit,
+      })),
+      corridas: corridas.map((c) => ({ id: c.id, lineNo: c.lineNo, label: `${c.productType ?? "—"} · ${c.speciesCommon ?? "—"}`, quantity: Number(c.quantity ?? 0), unit: c.unit, cites: c.cites, productType: c.productType, species: c.speciesCommon, fecha: c.entryDate.toISOString(), observations: c.observations })),
       despachos: despachos.map((d) => ({ id: d.id, lineNo: d.lineNo, label: `${d.productType ?? "—"} · ${d.speciesCommon ?? "—"}`, quantity: Number(d.quantity ?? 0), unit: d.unit, destino: d.destino, gtf: d.gtfNumber, fecha: d.entryDate.toISOString() })),
       // Edge sólo si ambos extremos siguen en el grafo (endpoint vivo).
       consumos: consumos
@@ -1006,6 +1634,92 @@ export class ForestCtpDB {
    * registros existentes — sin snapshots ni tabla nueva. Meses sin datos van
    * en 0 para que la serie no tenga huecos.
    */
+  /**
+   * TODO lo que se movió en el libro, por cubo de tiempo (tablero de Control).
+   *
+   * Las cuatro secciones del LO-CTP en una sola serie: lo que entró, lo que se
+   * gastó en la sierra, lo que salió de producto y lo que se despachó. Hasta
+   * acá cada una vivía en su pestaña y nadie podía ver si la planta traga más
+   * de lo que saca.
+   *
+   * Mismos predicados que `saldos()` y `curvaSaldo()` —la madera `pendiente` no
+   * es saldo, la corrida anulada no produjo— para que el tablero no discuta con
+   * el balance de la pestaña de al lado.
+   *
+   * El reparto en cubos es puro y vive en `movimiento-libro.ts`: lo comparte con
+   * la curva de saldo, así las dos series de la misma pantalla empiezan la
+   * semana el mismo lunes.
+   */
+  static async movimientoDelLibro(
+    tenantId: string,
+    opts: { fromDate?: Date; toDate?: Date; hoy?: Date } = {},
+  ): Promise<MovimientoDelLibro> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const range = dateRange(opts);
+
+    const woodWhere: Prisma.WoodEntryWhereInput = {
+      tenantId, deletedAt: null, status: { in: ["validado", "procesado"] },
+      ...(range ? { entryDate: range } : {}),
+    };
+    const linea = (section: "produccion" | "despacho"): Prisma.ForestCtpEntryWhereInput => ({
+      tenantId, deletedAt: null, status: "registrado", section,
+      ...(range ? { entryDate: range } : {}),
+    });
+
+    const [apertura, ingresos, corridas, despachos] = await Promise.all([
+      /* Lo que YA había en el patio: sin esto, «días de materia prima» se
+         proyectaría sobre la variación del período y no sobre el stock. */
+      ForestCtpDB.aperturaDePeriodo(tenantId, opts.fromDate),
+      prisma.woodEntry.findMany({
+        where: woodWhere,
+        select: { entryDate: true, volumeM3: true, speciesCommonName: true, pieces: true },
+      }),
+      prisma.forestCtpEntry.findMany({
+        where: linea("produccion"),
+        select: { entryDate: true, volumeInputM3: true, quantity: true, unit: true, speciesCommon: true },
+      }),
+      prisma.forestCtpEntry.findMany({
+        where: linea("despacho"),
+        select: { entryDate: true, quantity: true, speciesCommon: true },
+      }),
+    ]);
+
+    /* El eje arranca en el inicio del período aunque los primeros días estén
+       vacíos, y NO dibuja el futuro: un patio no tiene movimiento mañana. Sin
+       período, se abre desde el primer movimiento del libro. */
+    const hoy = opts.hoy ?? new Date();
+    const marcas = [
+      ...ingresos.map((i) => i.entryDate.getTime()),
+      ...corridas.map((c) => c.entryDate.getTime()),
+      ...despachos.map((d) => d.entryDate.getTime()),
+    ];
+    const desde = opts.fromDate ?? (marcas.length ? new Date(Math.min(...marcas)) : hoy);
+    const topeSuperior = Math.min(opts.toDate?.getTime() ?? hoy.getTime(), hoy.getTime());
+    const hasta = new Date(marcas.length ? Math.max(topeSuperior, Math.max(...marcas)) : topeSuperior);
+
+    return agruparMovimiento({
+      ingresos: ingresos.map((i) => ({
+        fecha: i.entryDate, volumenM3: Number(i.volumeM3 ?? 0),
+        especie: i.speciesCommonName, piezas: i.pieces,
+      })),
+      corridas: corridas.map((c) => ({
+        fecha: c.entryDate, consumidoM3: Number(c.volumeInputM3 ?? 0),
+        producido: Number(c.quantity ?? 0), unidad: c.unit, especie: c.speciesCommon,
+      })),
+      despachos: despachos.map((d) => ({
+        fecha: d.entryDate, cantidad: Number(d.quantity ?? 0), especie: d.speciesCommon,
+      })),
+      desde: desde <= hasta ? desde : hasta,
+      hasta,
+      aperturaM3: apertura.materiaPrima.reduce((a, m) => a + m.existencia, 0),
+      /* Este endpoint alimenta BARRAS: el trimestre en días daba 67 barras
+         apretadas y casi todas en cero. */
+      paso: pasoParaBarras(
+        Math.max(1, Math.floor((hasta.getTime() - Math.min(desde.getTime(), hasta.getTime())) / 86_400_000) + 1),
+      ),
+    });
+  }
+
   static async tendenciasMensuales(tenantId: string, meses = 6): Promise<TendenciaMes[]> {
     if (!tenantId) throw new Error("tenantId is required");
     const n = Math.min(Math.max(meses, 1), 24);
@@ -1051,9 +1765,19 @@ export class ForestCtpDB {
     if (!tenantId) throw new Error("tenantId is required");
     const rows = await prisma.forestCtpEntry.findMany({
       where: { tenantId, section: "produccion", deletedAt: null, status: "registrado" },
-      select: { entryDate: true, productType: true, speciesCommon: true, quantity: true },
+      select: { entryDate: true, productType: true, speciesCommon: true, quantity: true, codigoProducto: true, materiaPrimaRef: true },
     });
-    return new Set(rows.map((r) => produccionKey(r.entryDate, r.productType, r.speciesCommon, r.quantity)));
+    const claves = new Set<string>();
+    for (const r of rows) {
+      claves.add(produccionKey(r.entryDate, r.productType, r.speciesCommon, r.quantity, r.codigoProducto, r.materiaPrimaRef));
+      /* Sólo las corridas SIN paquete ni lote aportan además su clave vieja: son
+         las que se importaron antes y no se pueden distinguir de otra igual. Una
+         corrida que sí tiene código no bloquea a un paquete distinto. */
+      if (!r.codigoProducto && !r.materiaPrimaRef) {
+        claves.add(produccionKeyBase(r.entryDate, r.productType, r.speciesCommon, r.quantity));
+      }
+    }
+    return claves;
   }
 
   /** Claves de los despachos vivos — dedup idempotente del import (ADR-138 2b). */
@@ -1208,6 +1932,22 @@ export interface TendenciaMes {
   ingresoM3: number; producido: number; despachado: number; consumidoM3: number; rendimiento: number;
 }
 
+/** Serie del saldo de materia prima en el tiempo. Ver `curvaSaldo`. */
+export interface CurvaSaldo {
+  /** Existencia heredada al inicio del período; 0 si el período no tiene inicio. */
+  apertura: number;
+  fuenteApertura: ConciliacionPeriodo["fuenteApertura"];
+  aperturaLabel: string | null;
+  /** Granularidad del eje, elegida por la longitud del período. */
+  paso: "dia" | "semana" | "mes";
+  /** `fecha` = inicio del cubo (YYYY-MM-DD). `saldo` = acumulado hasta ese cubo. */
+  puntos: { fecha: string; ingreso: number; consumo: number; saldo: number }[];
+  /** Saldo al cierre de la serie. Cuadra con `apertura + saldoM3` del período. */
+  final: number;
+  pico: { fecha: string; saldo: number } | null;
+  valle: { fecha: string; saldo: number } | null;
+}
+
 /** Trazabilidad hacia adelante de un ingreso: corridas que lo consumieron y
  *  los despachos que salieron de esas corridas. Ver `trazaForwardIngreso`. */
 export interface TrazaForwardIngreso {
@@ -1249,8 +1989,14 @@ export interface KardexEspecie {
 }
 
 export interface TrazaGrafo {
-  ingresos: { id: string; gtf: string; species: string | null; volumeM3: number; cites: boolean; fecha: string }[];
-  corridas: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; cites: boolean; productType: string | null; species: string | null; fecha: string }[];
+  ingresos: {
+    id: string; gtf: string; species: string | null; volumeM3: number; cites: boolean; fecha: string;
+    /** Los casilleros por ingreso que pinta la Sección 2 (ADR-347). Opcionales
+     *  en el tipo: el endpoint siempre los manda, los fixtures no los declaran. */
+    productType?: string | null; speciesScientificName?: string | null; originCode?: string | null;
+    ctpProductCode?: string | null; originSourceNumber?: string | null; unit?: string | null;
+  }[];
+  corridas: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; cites: boolean; productType: string | null; species: string | null; fecha: string; observations?: string | null }[];
   despachos: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; destino: string | null; gtf: string | null; fecha: string }[];
   /** woodEntryId → corridaId (m³ consumido). */
   consumos: { from: string; to: string; volumeM3: number }[];

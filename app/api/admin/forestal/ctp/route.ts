@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { ForestCtpDB, CTP_SECTIONS } from "@/lib/db/forest-ctp.db";
 import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
 import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
@@ -31,6 +32,14 @@ const createSchema = z.object({
   // La VERDAD de la trazabilidad vive en ForestCtpConsumo; esto es el acta legible.
   gtfIngreso: z.string().trim().max(1000).nullable().optional(),
   materiaPrimaRef: z.string().trim().max(120).nullable().optional(),
+  /**
+   * El LOTE DE ASERRÍO que produjo esta corrida (ADR-334).
+   *
+   * Con él la corrida no se declara suelta: se consumen las piezas del lote y el
+   * lote queda apuntando a la corrida. Es el hilo Consumos → Producción que el
+   * LO-CTP pide y que hasta ahora era texto libre en la columna «Lote».
+   */
+  loteAserrioId: z.string().trim().max(60).nullable().optional(),
   speciesCommon: z.string().trim().max(120).nullable().optional(),
   speciesScientific: z.string().trim().max(150).nullable().optional(),
   cites: z.boolean().optional(),
@@ -78,6 +87,17 @@ const createSchema = z.object({
     )
     .max(50)
     .optional(),
+  /**
+   * El cuerpo de la GTF de salida, en el MISMO acto que la línea.
+   *
+   * Una guía ampara varias líneas de producto (una por especie/paquete): con el
+   * `PATCH gtf_datos` como única vía, registrar una guía de cinco productos eran
+   * cinco altas + cinco parches, y el almacenero —que puede registrar el
+   * despacho pero no editar guías ya emitidas— se comía un 403 en el segundo
+   * paso. Escribirlo al crear es parte de registrar la salida; EDITAR la guía de
+   * una línea que ya existe sigue siendo del PATCH (admin/owner).
+   */
+  gtfDatos: gtfDatosSchema.optional(),
 });
 const patchSchema = z.discriminatedUnion("action", [
   z.object({ id: z.string().trim().min(1), action: z.literal("annul"), reason: z.string().trim().min(3).max(500) }),
@@ -88,6 +108,70 @@ const patchSchema = z.discriminatedUnion("action", [
   // Cuerpo de la guía de transporte: propietario, destinatario, transportista,
   // vehículo, traslado y títulos. La forma la valida `gtfDatosSchema`.
   z.object({ id: z.string().trim().min(1), action: z.literal("gtf_datos"), datos: gtfDatosSchema }),
+  /**
+   * AMPLIAR una corrida que ya declaró (ADR-361): el lote no sale de la sierra
+   * en un solo acto. Suma paquetes a los que ya están —no los reemplaza— y el
+   * tope del 56 % se mide sobre el TOTAL acumulado.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("ampliar_produccion"),
+    observations: z.string().trim().max(1000).nullable().optional(),
+    paquetes: z
+      .array(
+        z.object({
+          codigo: z.string().trim().min(1).max(60),
+          productType: z.string().trim().max(80).nullable().optional(),
+          presentacion: z.string().trim().max(80).nullable().optional(),
+          cantidad: z.coerce.number().int().nonnegative().max(99999),
+          volumenM3: z.coerce.number().positive().max(999999),
+          espesorCm: z.coerce.number().positive().max(9999).nullable().optional(),
+          anchoCm: z.coerce.number().positive().max(9999).nullable().optional(),
+          largoM: z.coerce.number().positive().max(999).nullable().optional(),
+          observations: z.string().trim().max(300).nullable().optional(),
+        }),
+      )
+      .min(1)
+      .max(200),
+  }),
+  /**
+   * Cerrar una corrida que se abrió al consumir en el patio (ADR-340): qué
+   * producto salió y cuánto. Es la Sección 3 del LO-CTP declarada aparte del
+   * consumo, que es como pasa en la planta.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("declarar_produccion"),
+    productType: z.string().trim().max(80).nullable().optional(),
+    presentacion: z.string().trim().max(80).nullable().optional(),
+    quantity: z.coerce.number().positive().max(9999999),
+    unit: z.enum(["m3", "kg", "unidad", "pt"]),
+    pieces: z.coerce.number().int().nonnegative().max(999999).nullable().optional(),
+    codigoProducto: z.string().trim().max(80).nullable().optional(),
+    lineaProduccion: z.string().trim().max(10).nullable().optional(),
+    observations: z.string().trim().max(1000).nullable().optional(),
+    /**
+     * Los paquetes que salieron (ADR-349). El detalle de `quantity`: la DB
+     * rechaza la declaración si no suman lo mismo. Tope de 200 por corrida —
+     * más que eso es un pegado accidental, no una jornada.
+     */
+    paquetes: z
+      .array(
+        z.object({
+          codigo: z.string().trim().min(1).max(60),
+          productType: z.string().trim().max(80).nullable().optional(),
+          presentacion: z.string().trim().max(80).nullable().optional(),
+          cantidad: z.coerce.number().int().nonnegative().max(99999),
+          volumenM3: z.coerce.number().positive().max(999999),
+          espesorCm: z.coerce.number().positive().max(9999).nullable().optional(),
+          anchoCm: z.coerce.number().positive().max(9999).nullable().optional(),
+          largoM: z.coerce.number().positive().max(999).nullable().optional(),
+          observations: z.string().trim().max(300).nullable().optional(),
+        }),
+      )
+      .max(200)
+      .optional(),
+  }),
 ]);
 
 /** `?from`/`?to` = instantes ISO del período (lib/forestal/ctp-period.ts). Inválido → sin límite. */
@@ -121,6 +205,17 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
     if (url.searchParams.get("saldos") === "1") {
       return NextResponse.json({ saldos: await ForestCtpDB.saldos(auth.tenantId, period) });
     }
+    /* Productos disponibles (ADR-349): lo aserrado que sigue en la planta, con
+       sus paquetes. El saldo sale de la única fuente (ADR-316). */
+    if (url.searchParams.get("disponibles") === "1") {
+      return NextResponse.json(
+        await ForestCtpDB.productosDisponibles(auth.tenantId, {
+          ...period,
+          especie: url.searchParams.get("especie") ?? undefined,
+          producto: url.searchParams.get("producto") ?? undefined,
+        }),
+      );
+    }
     // P&L del período: venta − COGS agregado (ADR-141).
     if (url.searchParams.get("pnl") === "1") {
       return NextResponse.json({ pnl: await ForestCtpDespachoDB.pnlDelPeriodo(auth.tenantId, period) });
@@ -128,6 +223,10 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
     // Conciliación: apertura + movimientos = existencia final (ADR-139 rollforward).
     if (url.searchParams.get("conciliacion") === "1") {
       return NextResponse.json({ conciliacion: await ForestCtpDB.conciliacionPeriodo(auth.tenantId, period) });
+    }
+    // Curva del saldo de materia prima en el tiempo (¿el patio sube o baja?).
+    if (url.searchParams.get("curva") === "1") {
+      return NextResponse.json({ curva: await ForestCtpDB.curvaSaldo(auth.tenantId, period) });
     }
     // ADR-135 D3: despachos del período que no podrían emitir certificado.
     if (url.searchParams.get("traza") === "1") {
@@ -215,8 +314,49 @@ export const POST = withApiHandler("forestal-ctp-post", async (req: NextRequest)
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return ctpValidationResponse(parsed.error);
   try {
-    const entry = await ForestCtpDB.create(auth.tenantId, { ...parsed.data, createdBy: auth.username ?? "unknown" });
-    return NextResponse.json({ entry }, { status: 201 });
+    const { loteAserrioId, gtfDatos, ...linea } = parsed.data;
+    const entry = await ForestCtpDB.create(auth.tenantId, { ...linea, createdBy: auth.username ?? "unknown" });
+
+    /* La guía se escribe DESPUÉS de que la línea existe (hace falta su id) y
+       sobre la misma vía que el PATCH: así valida período cerrado y audita
+       igual. Si falla, la línea ya está —no se pierde el despacho— y se avisa
+       para completarla desde la ficha. */
+    let gtfDatosError: string | null = null;
+    if (gtfDatos && entry?.id && parsed.data.section === "despacho") {
+      try {
+        const r = await ForestCtpDespachoDB.guardarGtfDatos(auth.tenantId, entry.id, gtfDatos, auth.username ?? "unknown");
+        if (!r.ok) gtfDatosError = r.reason;
+        else {
+          void sincronizarPartesDeGuia(auth.tenantId, gtfDatos, auth.username ?? "unknown").catch((err) =>
+            logger.warn("[ctp.POST] sincronización de partes falló", { error: String(err) }),
+          );
+        }
+      } catch (e) {
+        gtfDatosError = e instanceof Error ? e.message : String(e);
+        logger.error("[ctp.POST] la línea se creó pero la guía no se guardó", { entryId: entry.id, error: gtfDatosError });
+      }
+    }
+
+    /* El lote entra a la sierra DESPUÉS de que la corrida existe: hasta que no
+       hay corrida no hay a qué apuntar las piezas. Si esto falla, la corrida ya
+       está —no se pierde el trabajo— y se avisa para completarlo a mano. */
+    let lote: { piezas: number; volumenM3: number } | null = null;
+    let loteError: string | null = null;
+    if (loteAserrioId && entry?.id && parsed.data.section === "produccion") {
+      try {
+        lote = await ForestLoteAserrioDB.consumir(
+          auth.tenantId,
+          loteAserrioId,
+          entry.id,
+          parsed.data.entryDate,
+          auth.username ?? "unknown",
+        );
+      } catch (e) {
+        loteError = e instanceof Error ? e.message : String(e);
+        logger.error("[ctp.POST] la corrida se creó pero el lote no se consumió", { loteAserrioId, error: loteError });
+      }
+    }
+    return NextResponse.json({ entry, lote, loteError, gtfDatosError }, { status: 201 });
   } catch (err) {
     // Puede traer `consumos` ⇒ puede violar I1/I2 ⇒ 422 con el motivo, no 500.
     return ctpErrorResponse(err, "ctp.POST", auth.tenantId);
@@ -235,6 +375,17 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return ctpValidationResponse(parsed.error);
   try {
+    if (parsed.data.action === "ampliar_produccion") {
+      const { id, action: _amp, ...campos } = parsed.data;
+      const entry = await ForestCtpDB.ampliarProduccion(auth.tenantId, id, campos, auth.username ?? "unknown");
+      return NextResponse.json({ entry });
+    }
+    if (parsed.data.action === "declarar_produccion") {
+      const { id, action: _a, ...campos } = parsed.data;
+      const entry = await ForestCtpDB.declararProduccion(auth.tenantId, id, campos, auth.username ?? "unknown");
+      if (!entry) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ entry });
+    }
     if (parsed.data.action === "gtf_datos") {
       const r = await ForestCtpDespachoDB.guardarGtfDatos(
         auth.tenantId,

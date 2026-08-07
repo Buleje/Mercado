@@ -6,18 +6,24 @@
  * Saldos (balance de planta) vive en CtpSaldosView, componente hermano.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Plus, RefreshCw, Search, Boxes, Truck, AlertCircle, Scale, PackageCheck, PackagePlus, Calculator, FileText, Download, ClipboardList } from "@buleje/design-system/icons";
+import { Plus, Search, Boxes, Truck, AlertCircle, Scale, PackageCheck, PackagePlus } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { accionesDeLotes, accionesDeSeccion, accionesPorDeclarar } from "./ctp-entries-acciones";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useDebounce } from "@/hooks/use-debounce";
 import { type CtpPeriod } from "@/lib/forestal/ctp-period";
-import CtpEntryForm from "./CtpEntryForm";
+import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
 import CtpProduccionImportModal from "./CtpProduccionImportModal";
 import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
+import CtpDeclararProduccionModal from "./CtpDeclararProduccionModal";
+import CtpProduccionDeLote from "./CtpProduccionDeLote";
+import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
+import { trozasDelLote } from "@/lib/forestal/lote-programacion";
 import { useCtpSeccion } from "@/hooks/use-ctp-secciones";
 import CtpSimuladorModal from "./CtpSimuladorModal";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
@@ -27,14 +33,18 @@ import { nombreArchivoSeccion, seccionACsv } from "@/lib/forestal/ctp-secciones-
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
 import { type CtpEntry, type CtpSection, n2 } from "./ctp-section-shared";
-import { Btn, TablaSkeleton } from "./ctp-shared";
+import { TablaSkeleton } from "./ctp-shared";
+import { CtpPaginacion, usePaginacion } from "./ctp-tabla";
 
 /** Una tarjeta que filtra se ve hundida: si no, nadie sabe por qué la tabla
  *  de abajo tiene menos filas. */
 const ANILLO_ACTIVO = "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]";
 
 const SECTION_META: Record<CtpSection, { label: string; icon: typeof Boxes; cta: string; empty: string }> = {
-  produccion: { label: "Producción", icon: Boxes, cta: "Nueva producción", empty: "Sin transformaciones registradas. Registrá la primera para convertir materia prima en producto." },
+  /* El CTA de Producción ya no abre un formulario en blanco (ADR-349): la
+     producción se registra DESDE UN LOTE, con sus trozas a la vista. Ver
+     `accionesDeLotes` en `ctp-entries-acciones`. */
+  produccion: { label: "Producción", icon: Boxes, cta: "Registrar producción", empty: "Sin transformaciones registradas. Elegí un lote en «Registrar producción» para convertir materia prima en producto." },
   despacho: { label: "Despacho", icon: Truck, cta: "Nuevo despacho", empty: "Sin despachos registrados. Registrá la salida de producto con su GTF." },
 };
 
@@ -45,14 +55,21 @@ export function CtpEntriesView({
   period,
   presetProducto,
   presetEspecie,
+  presetLoteAserrioId,
   onPresetUsado,
+  onIr,
 }: {
   section: CtpSection;
   period: CtpPeriod;
   /** Producto que llega desde el stock de Saldos: abre el formulario ya cargado. */
   presetProducto?: string | null;
   presetEspecie?: string | null;
+  /** Lote de aserrío elegido en la pestaña Lotes (ADR-334): abre la corrida con él. */
+  presetLoteAserrioId?: string | null;
+  /** Aviso al shell de que ya se consumió el preset (producto o lote). */
   onPresetUsado?: () => void;
+  /** Saltar a otra vista del libro (hoy: a Lotes, cuando no hay ninguno abierto). */
+  onIr?: (vista: string) => void;
 }) {
   const meta = SECTION_META[section];
   /** Bandeja de anexos emitidos abierta desde la barra (consulta, sin despacho). */
@@ -85,12 +102,65 @@ export function CtpEntriesView({
   // avisa al padre para que lo limpie y volver a Saldos → Despacho no reabra
   // el modal con lo de la vez pasada.
   useEffect(() => {
-    if (!presetProducto) return;
+    /* Sólo Despacho: en Producción no queda formulario que abrir y `showForm`
+       en true apagaría los atajos de la vista sin dibujar nada. */
+    if (!presetProducto || section !== "despacho") return;
     setProductoDelStock({ producto: presetProducto, especie: presetEspecie ?? null });
     setShowForm(true);
     onPresetUsado?.();
-  }, [presetProducto, presetEspecie, onPresetUsado]);
+  }, [presetProducto, presetEspecie, onPresetUsado, section]);
+
+  /** Corrida abierta en el patio a la que se le va a declarar la producción. */
+  const [declarando, setDeclarando] = useState<CtpEntry | null>(null);
+  /** El lote que se está produciendo (ADR-349): su tabla de trozas se abre debajo. */
+  const [loteProd, setLoteProd] = useState("");
+  const lotes = useLotesAserrio();
+  /** Los lotes que se pueden aserrar hoy, con lo que tienen esperando: se elige
+   *  por peso (piezas y m³), no por nombre — el código del lote no dice nada. */
+  const lotesConMadera = useMemo(
+    () =>
+      lotes.lotes
+        .filter((l) => l.status === "abierto")
+        .map((l) => {
+          const suyas = trozasDelLote(lotes.trozas, l);
+          return {
+            lote: l,
+            piezas: suyas.length,
+            volumenM3: Math.round(suyas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
+          };
+        })
+        .filter((x) => x.piezas > 0 || x.lote.piezas > 0),
+    [lotes.lotes, lotes.trozas],
+  );
+  /* Se busca en TODOS los lotes y no sólo en los que tienen madera: el que llega
+     desde la pestaña Lotes puede estar vacío todavía, y el panel sabe decir «no
+     hay piezas» mucho mejor que una pantalla que no abre nada. */
+  const loteElegido = useMemo(
+    () => lotes.lotes.find((l) => l.id === loteProd) ?? null,
+    [lotes.lotes, loteProd],
+  );
+  /**
+   * Las corridas que consumieron y todavía no dijeron qué salió (ADR-340).
+   * `quantity == null` es exactamente eso: materia prima adentro, producto sin
+   * declarar. No es lo mismo que producir cero.
+   */
+  /* La sección se pagina del lado del cliente sobre el set del período, con la
+     MISMA barra que el resto de las tablas del libro (ADR-344). */
+  const { visibles: filasEnPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(visible);
+  const enProceso = useMemo(
+    () => (section === "produccion" ? entries.filter((e) => e.status === "registrado" && e.quantity == null) : []),
+    [entries, section],
+  );
+  /* «Producir este lote» abre el panel del lote, no un formulario en blanco: es
+     el mismo camino que elegirlo desde el CTA (ADR-349). */
+  useEffect(() => {
+    if (!presetLoteAserrioId) return;
+    setLoteProd(presetLoteAserrioId);
+    onPresetUsado?.();
+  }, [presetLoteAserrioId, onPresetUsado]);
   const [showSim, setShowSim] = useState(false);
+  /** Cada incremento abre el menú de lotes (lo dispara la tecla `N`). */
+  const [abrirLotes, setAbrirLotes] = useState(0);
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
   const [pending, setPending] = useState(false);
@@ -148,7 +218,10 @@ export function CtpEntriesView({
 
       if (ev.key === "n" || ev.key === "N") {
         ev.preventDefault();
-        setShowForm(true);
+        /* En Producción `N` abre el MISMO menú de lotes que el CTA: si abriera
+           otra cosa, serían dos caminos para el mismo acto. */
+        if (section === "produccion") setAbrirLotes((n) => n + 1);
+        else setShowForm(true);
       } else if (ev.key === "/") {
         ev.preventDefault();
         document.getElementById(`ctp-search-${section}`)?.focus();
@@ -182,6 +255,48 @@ export function CtpEntriesView({
   const toggleSort = (by: SortKey) =>
     setSort((s) => (s.by === by ? { by, dir: s.dir === "asc" ? "desc" : "asc" } : { by, dir: "desc" }));
 
+  /**
+   * Los tres menús de la barra (ADR-360). Su contenido vive en
+   * `ctp-entries-acciones`: son configuración —qué se ofrece, con qué
+   * explicación y con qué cifra— y acá sólo se les atan los estados.
+   *
+   * La barra llegó a tener nueve controles en un renglón —buscar, filtros,
+   * descargar, recargar, simular, parte de turno, dos selectores y el CTA— y a
+   * 1280px envolvía a tres filas.
+   */
+  const opcionesMenu = useMemo(
+    () =>
+      accionesDeSeccion({
+        section,
+        visibles: visible.length,
+        cargando: loading,
+        totalAnexos,
+        onDescargar: descargarCsv,
+        onRecargar: () => void load(),
+        onSimular: () => setShowSim(true),
+        onParteDeTurno: () => setImportarParte(true),
+        onAnexos: () => setVerBandeja(true),
+      }),
+    // `descargarCsv` se redefine en cada render (cierra sobre `visible`): lo que
+    // realmente cambia el menú es la sección, lo filtrado y lo que está en curso.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [section, visible.length, loading, totalAnexos, load],
+  );
+
+  const lotesMenu = useMemo(
+    () =>
+      accionesDeLotes({
+        lotes: lotesConMadera,
+        loteAbierto: loteProd,
+        /* Volver a elegir el lote abierto cierra su panel: el mismo gesto que
+           lo abrió, que es lo que se espera de una opción marcada. */
+        onElegir: (id) => setLoteProd((actual) => (actual === id ? "" : id)),
+        onIr,
+      }),
+    [lotesConMadera, loteProd, onIr],
+  );
+
+  const declararMenu = useMemo(() => accionesPorDeclarar(enProceso, setDeclarando), [enProceso]);
   const Icon = meta.icon;
   return (
     <div className="space-y-4">
@@ -207,52 +322,70 @@ export function CtpEntriesView({
           <label htmlFor={`ctp-search-${section}`} className="sr-only">Buscar en {meta.label}</label>
           <input id={`ctp-search-${section}`} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Buscar por especie, producto o GTF..." className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
         </div>
-        {/* Una sola fila en móvil: los secundarios como cuadrados con tooltip,
-            el CTA se estira. Antes cada uno era una caja de ancho completo. */}
+        {/* Tres controles y no nueve (ADR-360): filtrar, el resto plegado en
+            «Opciones», y el CTA. Lo pendiente —declarar una corrida abierta—
+            tiene su propio botón porque es deuda del libro, no una opción. */}
         <div className="flex items-center gap-2">
           <BotonFiltros activos={activos} abierto={abierto} panelId={panelId} onToggle={alternar} />
-          <button
-            type="button"
-            onClick={descargarCsv}
-            disabled={visible.length === 0}
-            title={`Descargar en Excel/CSV las ${visible.length} líneas de este filtro`}
-            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60 max-sm:w-12 max-sm:px-0"
-          >
-            <Download className="h-4 w-4" /> <span className="max-sm:sr-only">Descargar</span>
-          </button>
-          <button type="button" onClick={load} disabled={loading} aria-label="Recargar" title="Recargar" className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60 max-sm:w-12 max-sm:px-0">
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> <span className="max-sm:sr-only">Recargar</span>
-          </button>
-          {section === "despacho" && (
-            <button
-              type="button"
-              onClick={() => setVerBandeja(true)}
-              title="Los ANEXOS N° 04 ya emitidos: re-imprimir, buscar o bajar el libro en Excel"
-              className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] max-sm:px-3"
-            >
-              <FileText className="h-5 w-5" /> <span className="max-sm:sr-only">Anexos emitidos</span>
-              {totalAnexos > 0 && (
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">{totalAnexos}</span>
-              )}
+          <ActionMenu
+            label="Opciones"
+            title="Descargar, recargar y las tareas del período"
+            actions={opcionesMenu}
+            size="md"
+            compactoEnMovil
+          />
+          {section === "produccion" && declararMenu.length > 0 && (
+            <ActionMenu
+              label="Declarar producción"
+              title="Corridas abiertas en el patio: consumieron madera y falta declarar qué salió"
+              actions={declararMenu}
+              badge={declararMenu.length}
+              variant="accent"
+              icon={Boxes}
+              size="md"
+              compactoEnMovil
+            />
+          )}
+          {section === "produccion" ? (
+            <ActionMenu
+              label={meta.cta}
+              title="Elegí el lote: abajo aparecen sus trozas para elegir cuáles entran a la sierra (atajo: N)"
+              actions={lotesMenu}
+              icon={Boxes}
+              variant="primary"
+              size="md"
+              className="max-sm:flex-1"
+              abrirSignal={abrirLotes}
+              vacio="No hay lotes abiertos con madera. Armá uno en la pestaña Lotes."
+            />
+          ) : (
+            <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white shadow-sm transition hover:brightness-110 sm:flex-none">
+              <Plus className="h-5 w-5" /> {meta.cta}
             </button>
           )}
-          {section === "produccion" && (
-            <button type="button" onClick={() => setShowSim(true)} title="Previsualizá producido, costo y margen antes de registrar una corrida" className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] max-sm:w-12 max-sm:px-0">
-              <Calculator className="h-5 w-5" /> <span className="max-sm:sr-only">Simular</span>
-            </button>
-          )}
-          {section === "produccion" && (
-            <Btn size="md" variant="secondary" onClick={() => setImportarParte(true)}>
-              <ClipboardList className="h-4 w-4" />
-              Parte de turno
-            </Btn>
-          )}
-          <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white shadow-sm transition hover:brightness-110 sm:flex-none">
-            <Plus className="h-5 w-5" /> {meta.cta}
-          </button>
         </div>
       </div>
       {showSim && section === "produccion" && <CtpSimuladorModal onClose={() => setShowSim(false)} />}
+
+      {section === "produccion" && loteElegido && (
+        <CtpProduccionDeLote
+          lote={loteElegido}
+          estado={lotes}
+          onCerrar={() => setLoteProd("")}
+          onListo={(msg, detalle) => {
+            pushToast({ tono: "success", msg, detail: detalle });
+            setLoteProd("");
+            void load();
+          }}
+          onError={(msg) => {
+            /* Toast y no cartel: si el consumo salió y la declaración no, este
+               bloque se desmonta —el lote ya no está abierto— y el aviso se iría
+               con él. */
+            pushToast({ tono: "warning", msg: "La producción no se pudo declarar", detail: msg });
+            void load();
+          }}
+        />
+      )}
 
       {/* Filtro por estado (chips, consistente con Ingresos): oculta anulados de un clic. */}
       {statusCounts.total > 0 && (
@@ -304,7 +437,7 @@ export function CtpEntriesView({
           KPIs, los filtros y los modales. */}
       <CtpEntriesTabla
         section={section}
-        visible={visible}
+        visible={filasEnPagina}
         sort={sort}
         onSort={toggleSort}
         conAnexo={conAnexo}
@@ -315,6 +448,17 @@ export function CtpEntriesView({
         onAnnul={(id) => { setAnnulId(id); setAnnulReason(""); }}
         totalesVista={totalesVista}
       />
+
+      {visible.length > 0 && (
+        <CtpPaginacion
+          rango={rango}
+          porPagina={porPagina}
+          onPorPagina={setPorPagina}
+          onIr={ir}
+          sustantivo={section === "produccion" ? "corrida" : "despacho"}
+          plural={section === "produccion" ? "corridas" : "despachos"}
+        />
+      )}
 
       {/* Filtro activo sin resultados (pero sí hay datos): distinto de "sin datos". */}
       {!loading && entries.length > 0 && visible.length === 0 && (
@@ -335,13 +479,52 @@ export function CtpEntriesView({
       )}
       {loading && <TablaSkeleton filas={4} columnas={section === "produccion" ? 8 : 9} />}
 
+      {declarando && (
+        <CtpDeclararProduccionModal
+          corrida={declarando}
+          onClose={() => setDeclarando(null)}
+          onListo={(msg) => {
+            pushToast({ tono: "success", msg, detail: "Ya se puede despachar de esta corrida." });
+            void load();
+          }}
+        />
+      )}
+
       {importarParte && (
         <CtpProduccionImportModal
           onListo={() => { void load(); }}
           onClose={() => setImportarParte(false)}
         />
       )}
-      {showForm && <CtpEntryForm section={section} presetProducto={productoDelStock?.producto ?? null} presetEspecie={productoDelStock?.especie ?? null} onClose={() => { setShowForm(false); setProductoDelStock(null); }} onSaved={(o) => { if (!o?.keepOpen) { setShowForm(false); setProductoDelStock(null); } load(); if (o?.offline) pushToast({ tono: "warning", msg: "Sin señal: quedó anotado en el patio", detail: "Todavía NO está en el libro. Sube solo cuando vuelva la conexión." }); }} />}
+      {/* Sólo Despacho: la producción se registra desde el lote (ADR-349) y el
+          formulario en blanco pedía a mano lo que el lote ya sabe.
+          El alta es la GUÍA completa (ADR-362): sus datos y su lista de
+          productos, que se convierte en una línea del libro por producto. */}
+      {showForm && section === "despacho" && (
+        <CtpDespachoGuiaModal
+          presetProducto={productoDelStock?.producto ?? null}
+          presetEspecie={productoDelStock?.especie ?? null}
+          onClose={() => { setShowForm(false); setProductoDelStock(null); }}
+          onSaved={({ lineas, offline }) => {
+            setShowForm(false);
+            setProductoDelStock(null);
+            void load();
+            if (offline) {
+              pushToast({
+                tono: "warning",
+                msg: "Sin señal: quedó anotado en el patio",
+                detail: `${lineas} producto${lineas === 1 ? "" : "s"} todavía NO están en el libro. Suben solos cuando vuelva la conexión.`,
+              });
+            } else {
+              pushToast({
+                tono: "success",
+                msg: `Guía registrada · ${lineas} ${lineas === 1 ? "línea" : "líneas"}`,
+                detail: "Ya se puede emitir el anexo 04 y el certificado desde la ficha del despacho.",
+              });
+            }
+          }}
+        />
+      )}
       {verBandeja && (
         <Anexo04Modal
           rows={[]}

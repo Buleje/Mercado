@@ -59,13 +59,20 @@ const parteSchema = z.object({
   departamento: texto(80).default(""),
   provincia: texto(80).default(""),
   distrito: texto(80).default(""),
+  /**
+   * "Zona" del formato del SNIFFS (casillero del destinatario): el sector, el
+   * caserío o el kilómetro cuando la dirección no alcanza para encontrar el
+   * lugar. En la selva es habitual que el domicilio sea "Km 12 carretera
+   * Federico Basadre" y la zona la que ubica de verdad al aserradero.
+   */
+  zona: texto(120).default(""),
 });
 
 /** Parte en blanco. Centralizado: repetir el literal en cada `.default()` hizo
  *  que agregar la ubicación rompiera el tipo en tres lugares a la vez. */
 const PARTE_VACIA = {
   nombre: "", docTipo: "RUC" as const, docNumero: "", direccion: "",
-  departamento: "", provincia: "", distrito: "",
+  departamento: "", provincia: "", distrito: "", zona: "",
 };
 
 export const gtfDatosSchema = z.object({
@@ -97,6 +104,12 @@ export const gtfDatosSchema = z.object({
     modo: z.enum(["terrestre", "fluvial", "multimodal"]).default("terrestre"),
     /** Placa del camión o MATRÍCULA de la embarcación, según el modo. */
     placa: texto(15).default(""),
+    /**
+     * Placa del REMOLQUE / semirremolque. Es un casillero propio del formato:
+     * en un tráiler la carga viaja en la carreta, y el control compara esa
+     * placa —no la del tracto— contra lo que declara la guía.
+     */
+    placaRemolque: texto(15).default(""),
     marca: texto(40).default(""),
     tipo: texto(40).default(""),
     /** Nombre de la embarcación / chata. Sólo aplica cuando viaja por río. */
@@ -105,7 +118,13 @@ export const gtfDatosSchema = z.object({
     conductor: texto(120).default(""),
     conductorDni: texto(15).default(""),
     licencia: texto(30).default(""),
-  }).default({ modo: "terrestre", placa: "", marca: "", tipo: "", embarcacion: "", conductor: "", conductorDni: "", licencia: "" }),
+    /**
+     * "Tipo de transporte" del formato: quién mueve la carga. Público = empresa
+     * de transporte inscrita en el MTC (por eso el registro MTC va con ella);
+     * privado = el vehículo del propio titular.
+     */
+    tipoTransporte: z.enum(["privado", "publico"]).default("privado"),
+  }).default({ modo: "terrestre", placa: "", placaRemolque: "", marca: "", tipo: "", embarcacion: "", conductor: "", conductorDni: "", licencia: "", tipoTransporte: "privado" }),
 
   traslado: z.object({
     /** De dónde sale (la planta, normalmente) y a dónde va. */
@@ -137,6 +156,27 @@ export const gtfDatosSchema = z.object({
     tipo: z.enum(["ninguno", "factura", "boleta", "guia_remision", "otro"]).default("ninguno"),
     numero: texto(40).default(""),
   }).default({ tipo: "ninguno", numero: "" }),
+
+  /**
+   * Casilleros del formato que no pertenecen a ninguna de las partes y que
+   * hasta ahora no tenían dónde vivir (ADR-336). Los tienen las dos guías —la
+   * que trae la madera y la que la saca— así que van en el esquema compartido.
+   */
+  guia: z.object({
+    /** (2) Autoridad Regional Forestal y de Fauna Silvestre que la ampara. */
+    autoridad: texto(120).default(""),
+    /** (9) Tipo de plan de manejo: DEMA, PMFI, PGMF… */
+    planManejoTipo: texto(80).default(""),
+    /**
+     * (29) N° de guía de remisión del transportista. NO es el comprobante de
+     * compra/venta (20)(21): son dos papeles distintos y el control pide los dos.
+     */
+    guiaRemisionNro: texto(40).default(""),
+    /** (35) N° de la lista de trozas o cuartones que acompaña la guía. */
+    listaTrozasNro: texto(40).default(""),
+    /** (36) N° de la GTF de origen, cuando la madera viene amparada por otra. */
+    gtfOrigenNro: texto(40).default(""),
+  }).default({ autoridad: "", planManejoTipo: "", guiaRemisionNro: "", listaTrozasNro: "", gtfOrigenNro: "" }),
 
   observaciones: texto(600).default(""),
 });
