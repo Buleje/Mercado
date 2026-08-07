@@ -12,10 +12,15 @@
  * bloquea— y ésta muestra lo que un fiscalizador lee de una corrida. Acá el
  * operador no elige de dónde saca la madera: elige cuáles de SUS trozas entran
  * hoy a la sierra.
+ *
+ * En `soloLectura` la misma tabla sirve para MIRAR una corrida que ya consumió:
+ * esas piezas son un hecho registrado y no se destildan. Es la misma lista, con
+ * las mismas columnas del formato — cambiarla por otra tabla haría que la madera
+ * se lea distinto según desde dónde se la mire.
  */
 
 import { useMemo, useState } from "react";
-import { Search } from "@buleje/design-system/icons";
+import { CheckCircle2, Search } from "@buleje/design-system/icons";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
@@ -30,6 +35,9 @@ const fmtDia = (v: string | null | undefined) => {
 };
 const num = (v: number | null | undefined, dec: number) => (v == null ? "—" : Number(v).toFixed(dec));
 
+/** Sin selección (modo lectura): una constante, no un `new Set()` por render. */
+const SIN_SELECCION: ReadonlySet<string> = new Set<string>();
+
 export default function CtpTrozasDelLote({
   trozas,
   seleccion,
@@ -38,16 +46,24 @@ export default function CtpTrozasDelLote({
   fechaConsumo,
   cargando,
   vacio,
+  /** La franja del formato. En una corrida ya consumida no son «del lote». */
+  titulo = "Lista de trozas del lote",
+  /** Ya entraron a la sierra: se miran, no se eligen. */
+  soloLectura = false,
 }: {
   trozas: TrozaConsumible[];
-  seleccion: Set<string>;
-  onSeleccion: (s: Set<string>) => void;
+  /** Opcionales en `soloLectura`: ahí no hay nada que tildar. */
+  seleccion?: ReadonlySet<string>;
+  onSeleccion?: (s: Set<string>) => void;
   fechaConsumo: string;
   cargando?: boolean;
   vacio?: string;
+  titulo?: string;
+  soloLectura?: boolean;
 }) {
   /** Buscador de la cabecera «Cod. Planta», igual que el formato. */
   const [busca, setBusca] = useState("");
+  const marcadas = seleccion ?? SIN_SELECCION;
 
   const filas = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -57,17 +73,19 @@ export default function CtpTrozasDelLote({
     );
   }, [trozas, busca]);
 
-  const todas = filas.length > 0 && filas.every((t) => seleccion.has(t.id));
-  const elegidas = trozas.filter((t) => seleccion.has(t.id));
+  const todas = filas.length > 0 && filas.every((t) => marcadas.has(t.id));
+  /* En lectura la cuenta es la de TODA la corrida: no hay elegidas y decir
+     «0 de 12» sobre madera que ya entró a la sierra sería mentir. */
+  const elegidas = soloLectura ? trozas : trozas.filter((t) => marcadas.has(t.id));
   const volumen = Math.round(elegidas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000;
 
   const alternarTodas = (checked: boolean) => {
-    const s = new Set(seleccion);
+    const s = new Set(marcadas);
     for (const t of filas) {
       if (checked) s.add(t.id);
       else s.delete(t.id);
     }
-    onSeleccion(s);
+    onSeleccion?.(s);
   };
 
   return (
@@ -75,12 +93,21 @@ export default function CtpTrozasDelLote({
       {/* La franja de título del formato. */}
       <header className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] bg-[var(--data-success-50)] px-4 py-2 dark:bg-[var(--data-success-500)]/10">
         <p className="text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-          Lista de trozas del lote
+          {titulo}
         </p>
         <p className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
-          <b className="text-[var(--text-primary)]">{elegidas.length}</b> de {trozas.length} elegida
-          {elegidas.length === 1 ? "" : "s"} · {volumen.toFixed(4)} m³ ·{" "}
-          {pieTablarDe(volumen).toLocaleString("es-PE")} pt
+          {soloLectura ? (
+            <>
+              <b className="text-[var(--text-primary)]">{trozas.length}</b> troza
+              {trozas.length === 1 ? "" : "s"}
+            </>
+          ) : (
+            <>
+              <b className="text-[var(--text-primary)]">{elegidas.length}</b> de {trozas.length} elegida
+              {elegidas.length === 1 ? "" : "s"}
+            </>
+          )}{" "}
+          · {volumen.toFixed(4)} m³ · {pieTablarDe(volumen).toLocaleString("es-PE")} pt
         </p>
       </header>
 
@@ -110,14 +137,20 @@ export default function CtpTrozasDelLote({
             <th className="px-3 py-2 text-right font-bold">Long. (m)</th>
             <th className="px-3 py-2 text-right font-bold">Volumen (m³)</th>
             <th className="px-3 py-2 text-center font-bold">
-              <span className="block">Seleccionar</span>
-              <input
-                type="checkbox"
-                checked={todas}
-                onChange={(e) => alternarTodas(e.target.checked)}
-                aria-label="Elegir todas las trozas de la lista"
-                className="mt-1 h-4 w-4 accent-[var(--accent)]"
-              />
+              {soloLectura ? (
+                <span className="block">Estado</span>
+              ) : (
+                <>
+                  <span className="block">Seleccionar</span>
+                  <input
+                    type="checkbox"
+                    checked={todas}
+                    onChange={(e) => alternarTodas(e.target.checked)}
+                    aria-label="Elegir todas las trozas de la lista"
+                    className="mt-1 h-4 w-4 accent-[var(--accent)]"
+                  />
+                </>
+              )}
             </th>
           </tr>
         </TheadCtp>
@@ -132,7 +165,8 @@ export default function CtpTrozasDelLote({
             </FilaVacia>
           )}
           {filas.map((t) => {
-            const elegida = seleccion.has(t.id);
+            /* En lectura la fila va marcada siempre: esa madera YA entró. */
+            const elegida = soloLectura || marcadas.has(t.id);
             return (
               <tr
                 key={t.id}
@@ -158,18 +192,28 @@ export default function CtpTrozasDelLote({
                   {num(t.volumenM3, 4)}
                 </td>
                 <td className="px-3 py-2 text-center">
-                  <input
-                    type="checkbox"
-                    checked={elegida}
-                    onChange={() => {
-                      const s = new Set(seleccion);
-                      if (s.has(t.id)) s.delete(t.id);
-                      else s.add(t.id);
-                      onSeleccion(s);
-                    }}
-                    aria-label={`Elegir la troza ${t.codigoPlanta || t.codificacion || t.id}`}
-                    className="h-4 w-4 accent-[var(--accent)]"
-                  />
+                  {soloLectura ? (
+                    <span
+                      className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                      title="Esta pieza ya entró a la sierra en esta corrida: es un hecho registrado."
+                    >
+                      <CheckCircle2 className="h-4 w-4" aria-hidden />
+                      En la sierra
+                    </span>
+                  ) : (
+                    <input
+                      type="checkbox"
+                      checked={elegida}
+                      onChange={() => {
+                        const s = new Set(marcadas);
+                        if (s.has(t.id)) s.delete(t.id);
+                        else s.add(t.id);
+                        onSeleccion?.(s);
+                      }}
+                      aria-label={`Elegir la troza ${t.codigoPlanta || t.codificacion || t.id}`}
+                      className="h-4 w-4 accent-[var(--accent)]"
+                    />
+                  )}
                 </td>
               </tr>
             );

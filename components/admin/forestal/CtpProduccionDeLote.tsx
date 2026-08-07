@@ -230,7 +230,9 @@ export default function CtpProduccionDeLote({
   }
 
   return (
-    <section ref={panelRef} className="scroll-mt-4 space-y-3 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--surface-raised)] p-4">
+    /* `scroll-mt-20`: la cabecera sticky del admin mide 61 px y con `-4` el
+       título del lote quedaba tapado justo después del salto. */
+    <section ref={panelRef} className="scroll-mt-20 space-y-3 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--surface-raised)] p-4">
       {/* La barra del formato: Lote · Fecha de consumo · Registrar Producción.
           Un selector y no un menú: el operador cambia de lote sin salir de la
           pantalla, y la lista de trozas de abajo lo sigue. */}

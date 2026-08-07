@@ -22,6 +22,7 @@ import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
 import CtpDeclararProduccionModal from "./CtpDeclararProduccionModal";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
+import CtpCorridaSinDeclarar from "./CtpCorridaSinDeclarar";
 import CtpLotesParaProducir from "./CtpLotesParaProducir";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useCtpSeccion } from "@/hooks/use-ctp-secciones";
@@ -112,6 +113,14 @@ export function CtpEntriesView({
 
   /** Corrida abierta en el patio a la que se le va a declarar la producción. */
   const [declarando, setDeclarando] = useState<CtpEntry | null>(null);
+  /**
+   * La corrida sin declarar cuyo panel está abierto arriba de la tabla.
+   *
+   * Se guarda el ID y no la fila: así el panel se cierra solo cuando esa corrida
+   * deja de estar pendiente (se declaró, se anuló) en vez de quedar mostrando
+   * una copia vieja de algo que ya no existe.
+   */
+  const [corridaAbiertaId, setCorridaAbiertaId] = useState<string | null>(null);
   /** El lote que se está produciendo (ADR-349): su tabla de trozas se abre debajo. */
   const [loteProd, setLoteProd] = useState("");
   const lotes = useLotesAserrio();
@@ -155,11 +164,36 @@ export function CtpEntriesView({
     () => (section === "produccion" ? entries.filter((e) => e.status === "registrado" && e.quantity == null) : []),
     [entries, section],
   );
+  /** La corrida del panel, releída de la lista: si ya se declaró, desaparece. */
+  const corridaAbierta = useMemo(
+    () => enProceso.find((e) => e.id === corridaAbiertaId) ?? null,
+    [enProceso, corridaAbiertaId],
+  );
+  /**
+   * Las piezas que ESA corrida se comió (ADR-326). Salen del mismo patio que
+   * alimenta los lotes —`trozasDelPatio` trae también las consumidas— así que no
+   * hay una segunda lectura de la misma madera que pueda decir otra cosa.
+   */
+  const trozasDeLaCorrida = useMemo(
+    () => (corridaAbiertaId ? lotes.trozas.filter((t) => t.consumidaEnId === corridaAbiertaId) : []),
+    [lotes.trozas, corridaAbiertaId],
+  );
+  /** Lo que le quedó al lote de esa corrida: es lo único que todavía se elige. */
+  const restoDelLote = useMemo(() => {
+    if (!corridaAbierta?.materiaPrimaRef) return null;
+    const x = lotesConMadera.find((l) => l.lote.code === corridaAbierta.materiaPrimaRef);
+    return x && x.piezas > 0
+      ? { loteId: x.lote.id, code: x.lote.code, piezas: x.piezas, volumenM3: x.volumenM3 }
+      : null;
+  }, [corridaAbierta, lotesConMadera]);
   /* «Producir este lote» abre el panel del lote, no un formulario en blanco: es
      el mismo camino que elegirlo desde el CTA (ADR-349). */
   useEffect(() => {
     if (!presetLoteAserrioId) return;
     setLoteProd(presetLoteAserrioId);
+    /* Y se cierra el panel de la corrida: los dos se dibujan en el mismo lugar
+       y llegar desde Lotes con uno abierto apilaba dos tablas de trozas. */
+    setCorridaAbiertaId(null);
     onPresetUsado?.();
   }, [presetLoteAserrioId, onPresetUsado]);
   const [showSim, setShowSim] = useState(false);
@@ -294,13 +328,31 @@ export function CtpEntriesView({
         loteAbierto: loteProd,
         /* Volver a elegir el lote abierto cierra su panel: el mismo gesto que
            lo abrió, que es lo que se espera de una opción marcada. */
-        onElegir: (id) => setLoteProd((actual) => (actual === id ? "" : id)),
+        onElegir: (id) =>
+          setLoteProd((actual) => {
+            /* Dos paneles distintos sobre la misma tabla se pisarían: abrir uno
+               cierra el otro. */
+            if (actual !== id) setCorridaAbiertaId(null);
+            return actual === id ? "" : id;
+          }),
         onIr,
       }),
     [lotesConMadera, loteProd, onIr],
   );
 
-  const declararMenu = useMemo(() => accionesPorDeclarar(enProceso, setDeclarando), [enProceso]);
+  const declararMenu = useMemo(
+    () =>
+      accionesPorDeclarar(
+        enProceso,
+        (c) =>
+          setCorridaAbiertaId((actual) => {
+            if (actual !== c.id) setLoteProd("");
+            return actual === c.id ? null : c.id;
+          }),
+        corridaAbiertaId,
+      ),
+    [enProceso, corridaAbiertaId],
+  );
   const Icon = meta.icon;
   return (
     <div className="space-y-3">
@@ -372,11 +424,28 @@ export function CtpEntriesView({
       </div>
       {showSim && section === "produccion" && <CtpSimuladorModal onClose={() => setShowSim(false)} />}
 
+      {/* La corrida que ya consumió, con SUS TROZAS arriba de la tabla del
+          libro: se elige en «Corridas sin declarar» y hasta ahora abría un
+          formulario en blanco, sin mostrar la madera contra la que se declara. */}
+      {section === "produccion" && corridaAbierta && (
+        <CtpCorridaSinDeclarar
+          corrida={corridaAbierta}
+          trozas={trozasDeLaCorrida}
+          resto={restoDelLote}
+          cargando={lotes.cargando}
+          onDeclarar={() => setDeclarando(corridaAbierta)}
+          /* Lo que todavía se ELIGE es lo que le queda al lote: el atajo cierra
+             esta corrida y abre el panel donde se tildan sus trozas. */
+          onProducirResto={(loteId) => { setCorridaAbiertaId(null); setLoteProd(loteId); }}
+          onCerrar={() => setCorridaAbiertaId(null)}
+        />
+      )}
+
       {/* El bloque de Producción con la forma del LO-CTP: la barra (lote, fecha
           de consumo, registrar) y debajo la lista de trozas de ESE lote para
           elegir cuáles entran a la sierra. Se muestra apenas hay un lote
           abierto — sin él no hay nada que producir. */}
-      {section === "produccion" && !loteElegido && lotesConMadera.length > 0 && (
+      {section === "produccion" && !loteElegido && !corridaAbierta && lotesConMadera.length > 0 && (
         <CtpLotesParaProducir
           lotes={lotesConMadera}
           cargando={lotes.cargando}
@@ -385,7 +454,7 @@ export function CtpEntriesView({
           onIrALotes={onIr ? () => onIr("lotes") : undefined}
         />
       )}
-      {section === "produccion" && !loteElegido && lotesConMadera.length === 0 && (
+      {section === "produccion" && !loteElegido && !corridaAbierta && lotesConMadera.length === 0 && (
         <CtpLotesParaProducir
           lotes={[]}
           cargando={lotes.cargando}
@@ -515,6 +584,9 @@ export function CtpEntriesView({
           onClose={() => setDeclarando(null)}
           onListo={(msg) => {
             pushToast({ tono: "success", msg, detail: "Ya se puede despachar de esta corrida." });
+            /* La corrida dejó de ser deuda: su panel se va con ella (además de
+               cerrarse solo cuando `load()` la saca de la lista de pendientes). */
+            setCorridaAbiertaId(null);
             void load();
           }}
         />

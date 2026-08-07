@@ -156,7 +156,10 @@ export function accionesDeLotes({
  *  libro, no una opción más: van en su propio botón, con el número. */
 export function accionesPorDeclarar(
   enProceso: CtpEntry[],
-  onDeclarar: (corrida: CtpEntry) => void,
+  /** Elegir una ABRE SU PANEL arriba de la tabla, con sus trozas a la vista. */
+  onAbrir: (corrida: CtpEntry) => void,
+  /** La que ya está abierta: se marca, y volver a elegirla cierra el panel. */
+  abiertaId?: string | null,
 ): MenuAccion[] {
   return enProceso.map((c) => ({
     id: c.id,
@@ -165,9 +168,10 @@ export function accionesPorDeclarar(
        elegir salía el modal de cerrar una corrida ya consumida. Son dos actos
        distintos y el rótulo tiene que decir cuál es cuál. */
     label: `Corrida N° ${c.lineNo}${c.materiaPrimaRef ? ` · del lote ${c.materiaPrimaRef}` : ""}`,
-    hint: "Ya consumió su madera: falta declarar qué salió de la sierra",
+    hint: "Ya consumió su madera: abre sus trozas para declarar qué salió de la sierra",
     meta: `${Number(c.volumeInputM3 ?? 0).toFixed(4)} m³`,
     icon: Boxes,
-    onSelect: () => onDeclarar(c),
+    activo: abiertaId === c.id,
+    onSelect: () => onAbrir(c),
   }));
 }
