@@ -292,6 +292,7 @@ export function Field({
   hint,
   casillero,
   span,
+  noAplica,
   children,
 }: {
   label: string;
@@ -299,11 +300,28 @@ export function Field({
   hint?: string;
   casillero?: number;
   span?: CampoSpan;
+  /**
+   * Por qué este casillero NO corresponde llenarlo en ESTA guía.
+   *
+   * Un casillero que no aplica y uno que falta se ven igual —los dos vacíos— y
+   * eso hace leer el formulario como si estuviera a medias. Peor: empuja a
+   * llenarlo con cualquier cosa para que «no quede nada vacío», y un dato
+   * inventado en una guía que pasa por un puesto de control se lee como
+   * declaración falsa. Con el motivo a la vista, el vacío es una respuesta.
+   *
+   * Sólo para lo que de verdad no corresponde (el DNI de quien declara RUC, el
+   * permiso CITES de una especie que no es protegida). Lo que falta cargar va
+   * como faltante, no como esto.
+   *
+   * Marca, no bloquea: el casillero sigue siendo editable.
+   */
+  noAplica?: string;
   children: React.ReactNode;
 }) {
   const base = useId();
   const idCampo = `${base}-campo`;
   const idAyuda = hint ? `${base}-ayuda` : undefined;
+  const idNoAplica = `${base}-noaplica`;
 
   /**
    * El control se ASOCIA por `htmlFor`, no se envuelve.
@@ -337,10 +355,16 @@ export function Field({
       ? cloneElement(unico as ReactElement<Record<string, unknown>>, {
           id: (unico.props as { id?: string }).id ?? idCampo,
           "aria-describedby":
-            [(unico.props as { "aria-describedby"?: string })["aria-describedby"], idAyuda]
+            [(unico.props as { "aria-describedby"?: string })["aria-describedby"], idAyuda, noAplica ? idNoAplica : undefined]
               .filter(Boolean)
               .join(" ") || undefined,
           ...(required ? { "aria-required": true } : {}),
+          /* Se marca, NO se bloquea. Tipear en la casilla de DNI es lo que
+             cambia el tipo de documento declarado, así que deshabilitarla
+             sacaría esa vía; y en un formulario de cumplimiento el operador
+             tiene que poder corregir cualquier casillero si la realidad no
+             coincide con lo que el sistema dedujo. */
+          ...(noAplica ? { placeholder: "no aplica" } : {}),
         })
       : children;
 
@@ -374,10 +398,20 @@ export function Field({
         )}
       </label>
       {control}
-      {hint && (
-        <span id={idAyuda} className="mt-1 block text-xs leading-snug text-[var(--text-tertiary)]">
-          {hint}
+      {noAplica ? (
+        /* El motivo ocupa el lugar de la ayuda: quien mira el formulario no
+           necesita las dos cosas, necesita saber por qué ese casillero se
+           queda así. */
+        <span id={idNoAplica} className="mt-1 flex items-start gap-1 text-xs leading-snug text-[var(--text-tertiary)]">
+          <Check className="mt-px h-3 w-3 shrink-0 text-[var(--data-success-600)]" aria-hidden />
+          <span>No aplica: {noAplica}</span>
         </span>
+      ) : (
+        hint && (
+          <span id={idAyuda} className="mt-1 block text-xs leading-snug text-[var(--text-tertiary)]">
+            {hint}
+          </span>
+        )
       )}
     </div>
   );

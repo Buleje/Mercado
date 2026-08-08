@@ -536,6 +536,7 @@ export default function CtpDespachoGuiaModal({
               onAnotarParte={anotarParte}
               onAnotarVehiculo={anotarVehiculo}
               onGuardarEnLibreta={guardarEnLibreta}
+              llevaCites={especiesCites.length > 0}
               slotVerificacion={
                 <CtpVerificarGtfSerfor
                   gtfNumber={gtfNumber}

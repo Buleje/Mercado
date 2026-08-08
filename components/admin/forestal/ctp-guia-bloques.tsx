@@ -13,7 +13,11 @@
  * el tab no las re-escriba tres veces con tres criterios distintos.
  */
 
+import { useEffect, useRef } from "react";
 import { CardTitle } from "@buleje/design-system";
+import { AlertCircle, Check, Loader2 } from "@buleje/design-system/icons";
+import { useDocumentoLookup } from "@/hooks/use-documento-lookup";
+import { avisoDeSunat, normalizarNumero, type DocumentoEncontrado } from "@/lib/documento/tipos";
 import { Field, I } from "./ctp-shared";
 
 /** Identidad de una parte tal como la guarda `gtfDatosSchema`. */
@@ -50,14 +54,15 @@ export function Bloque({
 }) {
   return (
     <section className={`overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] ${className}`}>
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-2.5">
-        <div className="min-w-0">
-          <CardTitle as="h3" className="truncate text-sm font-bold text-[var(--text-primary)]">{titulo}</CardTitle>
-          {hint && <p className="truncate text-xs text-[var(--text-tertiary)]">{hint}</p>}
-        </div>
-        {acciones}
+      {/* Título y ayuda en la MISMA línea: son sesenta casilleros repartidos en
+          seis bloques, y dos renglones de cabecera por bloque son media pantalla
+          de encabezados antes de llegar al primer campo. */}
+      <header className="flex flex-wrap items-baseline gap-x-2 gap-y-1 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{titulo}</CardTitle>
+        {hint && <p className="min-w-0 flex-1 truncate text-xs text-[var(--text-tertiary)]">{hint}</p>}
+        {acciones && <div className="ml-auto">{acciones}</div>}
       </header>
-      <div className="grid grid-cols-1 gap-x-4 gap-y-3 p-4 sm:grid-cols-12">{children}</div>
+      <div className="grid grid-cols-1 gap-x-3 gap-y-2 p-3 sm:grid-cols-12">{children}</div>
     </section>
   );
 }
@@ -83,26 +88,119 @@ export function DocsDeParte({
 }) {
   const esRuc = parte.docTipo === "RUC";
   const etiquetaIzq = parte.docTipo === "CE" ? "Nro CE" : parte.docTipo === "PASAPORTE" ? "Nro pasaporte" : "Nro DNI";
+  /* Sin documento cargado todavía, NINGUNA de las dos casillas «no aplica»:
+     las dos siguen siendo el camino para declarar de qué tipo es. */
+  const tieneDoc = Boolean(parte.docNumero?.trim());
+
+  /**
+   * El número trae los datos (ADR-367).
+   *
+   * Se tipea el RUC en su casilla y SUNAT devuelve razón social, domicilio y
+   * ubigeo; se tipea el DNI y RENIEC devuelve el nombre. Va acá y no en una barra
+   * aparte porque **acá es donde el operador escribe el número**: tenerlo en otro
+   * lado obligaba a tipearlo dos veces.
+   *
+   * Sólo se rellena lo que está vacío —lo que alguien escribió no se pisa— y sólo
+   * se consulta lo que se TIPEA: el documento que ya venía cargado no gasta una
+   * consulta al abrir la guía.
+   */
+  /* `tocado` se prende en el `onChange` de los casilleros: es la única señal de
+     que el número lo escribió alguien. Mirar «cambió respecto del primer render»
+     no alcanza — el propietario se auto-completa con la Ficha después de montar,
+     y eso disparaba una consulta (y un rojo) sobre un dato que nadie tipeó. */
+  const tocado = useRef(false);
+  const { consultando, resultado, numeroConsultado } = useDocumentoLookup(parte.docNumero, {
+    auto: tocado.current,
+  });
+  const numero = normalizarNumero(parte.docNumero);
+  const hallado =
+    resultado?.encontrado && numeroConsultado === numero ? (resultado as DocumentoEncontrado) : null;
+  const noHallado = resultado && !resultado.encontrado && numeroConsultado === numero ? resultado.motivo : null;
+
+  const aplicado = useRef("");
+  useEffect(() => {
+    if (!hallado || aplicado.current === hallado.numero) return;
+    aplicado.current = hallado.numero;
+    const vacio = (v: string | undefined) => !v?.trim();
+    onChange({
+      docTipo: hallado.tipo,
+      ...(vacio(parte.nombre) && hallado.nombre ? { nombre: hallado.nombre } : {}),
+      ...(vacio(parte.direccion) && hallado.direccion ? { direccion: hallado.direccion } : {}),
+      ...(vacio(parte.departamento) && hallado.departamento ? { departamento: hallado.departamento } : {}),
+      ...(vacio(parte.provincia) && hallado.provincia ? { provincia: hallado.provincia } : {}),
+      ...(vacio(parte.distrito) && hallado.distrito ? { distrito: hallado.distrito } : {}),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hallado]);
+
   return (
     <>
-      <Field span={span} label={etiquetaIzq}>
+      {/* Una parte declara UN documento: la casilla del otro tipo no es un
+          pendiente, es la que no corresponde. Se dice, y así el formulario deja
+          de leerse a medias por dos casilleros que nunca se van a llenar. */}
+      <Field
+        span={span}
+        label={etiquetaIzq}
+        noAplica={esRuc && tieneDoc ? "esta parte declara RUC" : undefined}
+      >
         <input
           type="text"
           inputMode="numeric"
           className={`${I} font-mono`}
           value={esRuc ? "" : parte.docNumero}
-          onChange={(e) => onChange({ docTipo: esRuc ? "DNI" : parte.docTipo, docNumero: e.target.value })}
+          onChange={(e) => { tocado.current = true; onChange({ docTipo: esRuc ? "DNI" : parte.docTipo, docNumero: e.target.value }); }}
         />
       </Field>
-      <Field span={span} label="Nro RUC">
-        <input
-          type="text"
-          inputMode="numeric"
-          className={`${I} font-mono`}
-          value={esRuc ? parte.docNumero : ""}
-          onChange={(e) => onChange({ docTipo: "RUC", docNumero: e.target.value })}
-        />
+      <Field
+        span={span}
+        label="Nro RUC"
+        noAplica={!esRuc && tieneDoc ? `esta parte declara ${etiquetaIzq.replace(/^Nro /, "")}` : undefined}
+      >
+        <div className="relative">
+          <input
+            type="text"
+            inputMode="numeric"
+            className={`${I} font-mono ${consultando ? "pr-10" : ""}`}
+            value={esRuc ? parte.docNumero : ""}
+            onChange={(e) => { tocado.current = true; onChange({ docTipo: "RUC", docNumero: e.target.value }); }}
+          />
+          {consultando && (
+            <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[var(--text-tertiary)]" aria-hidden />
+          )}
+        </div>
       </Field>
+      {/* Lo que contestó el padrón: una línea que ocupa el ancho del bloque. */}
+      {(hallado || noHallado) && (
+        <p
+          className={`flex flex-wrap items-center gap-x-2 rounded-lg px-2.5 py-1 text-sm sm:col-span-12 ${
+            hallado
+              ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+              : "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+          }`}
+        >
+          {hallado ? (
+            <>
+              <Check className="h-4 w-4 shrink-0 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" aria-hidden />
+              <b className="text-[var(--text-primary)]">{hallado.nombre}</b>
+              <span className="text-[var(--text-tertiary)]">
+                {hallado.fuente}
+                {hallado.estado ? ` · ${hallado.estado}` : ""}
+                {hallado.condicion ? ` · ${hallado.condicion}` : ""}
+              </span>
+              {avisoDeSunat(hallado) && (
+                <span className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                  {avisoDeSunat(hallado)}
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
+              {noHallado}
+            </>
+          )}
+        </p>
+      )}
     </>
   );
 }
@@ -125,17 +223,24 @@ export function UbicacionDeParte({
   return (
     <>
       {conZona && (
-        <Field span={4} label="Zona" hint="Sector, caserío o kilómetro">
+        <Field
+          span={2}
+          label="Zona"
+          hint="Sector o caserío"
+          noAplica={parte.zona?.trim() ? undefined : "sólo si la dirección usa sector o caserío"}
+        >
           <input type="text" className={I} value={parte.zona ?? ""} onChange={(e) => onChange({ zona: e.target.value })} />
         </Field>
       )}
-      <Field span={conZona ? 4 : 4} label="Departamento">
+      {/* Los tres casilleros entran en la MISMA fila que el domicilio (6 + 2+2+2):
+          sueltos abajo, cada parte se llevaba un renglón entero de más. */}
+      <Field span={2} label="Departamento">
         <input type="text" className={I} value={parte.departamento ?? ""} onChange={(e) => onChange({ departamento: e.target.value })} />
       </Field>
-      <Field span={4} label="Provincia">
+      <Field span={2} label="Provincia">
         <input type="text" className={I} value={parte.provincia ?? ""} onChange={(e) => onChange({ provincia: e.target.value })} />
       </Field>
-      <Field span={4} label="Distrito">
+      <Field span={2} label="Distrito">
         <input type="text" className={I} value={parte.distrito ?? ""} onChange={(e) => onChange({ distrito: e.target.value })} />
       </Field>
     </>

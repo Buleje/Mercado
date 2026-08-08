@@ -47,7 +47,10 @@ export default function CtpGuiaDatosTab({
   onAnotarVehiculo,
   onGuardarEnLibreta,
   slotVerificacion,
+  llevaCites = false,
 }: {
+  /** Si lo que sale incluye especie protegida: sin eso, el permiso no aplica. */
+  llevaCites?: boolean;
   datos: GtfDatos;
   setDatos: Dispatch<SetStateAction<GtfDatos>>;
   ficha: FichaCtp | null;
@@ -103,36 +106,47 @@ export default function CtpGuiaDatosTab({
     <div className="space-y-3">
       <div className="grid gap-3 xl:grid-cols-2 xl:items-start">
         <Bloque titulo="Datos de la guía de transporte" hint="Vigencia y número del documento con el que sale el producto">
-          <Field span={4} label="Fe. de emisión" required>
+          <Field span={3} label="Fe. de emisión" required>
             <input type="date" className={I} value={emision} onChange={(e) => onEmision(e.target.value)} />
           </Field>
-          <Field span={4} label="Fe. de vencimiento" hint="La fija la ARFFS por ruta y distancia">
+          <Field span={3} label="Fe. de vencimiento" hint="La fija la ARFFS">
             <input type="date" className={I} value={datos.traslado.fechaFin} onChange={(e) => set("traslado", { fechaFin: e.target.value })} />
           </Field>
-          <Field span={4} label="Tipo de documento" casillero={3}>
+          <Field span={3} label="Tipo de documento" casillero={3}>
             <select className={I} value={docType} onChange={(e) => onDocType(e.target.value)}>
               {TIPOS_DOCUMENTO_LOCTP.map((t) => (
                 <option key={t.valor} value={t.valor}>{t.label}</option>
               ))}
             </select>
           </Field>
-          <Field span={6} label="Número de GTF" required casillero={4}>
+          <Field span={3} label="Número de GTF" required casillero={4}>
             <input type="text" className={`${I} font-mono`} placeholder="001-00000025" value={gtfNumber} onChange={(e) => onGtfNumber(e.target.value)} />
           </Field>
           <Field span={6} label="Autoridad que la ampara" casillero={2} hint="ARFFS competente">
             <input type="text" className={I} value={datos.guia.autoridad} onChange={(e) => setGuia({ autoridad: e.target.value })} placeholder={ficha?.arffs || "GORE · DRSAFFS"} />
           </Field>
-          {slotVerificacion && <div className="sm:col-span-12">{slotVerificacion}</div>}
+          {/* La verificación en SERFOR comparte fila con la autoridad: es del
+              mismo acto (de qué papel estamos hablando), no un bloque aparte. */}
+          {slotVerificacion && <div className="sm:col-span-6">{slotVerificacion}</div>}
         </Bloque>
 
         <Bloque titulo="Datos de la instancia que hace el registro" hint="Sale de la Ficha del CTP: no se tipea en cada guía">
-          <CampoSoloLectura span={4} label="Número de RUC" valor={ficha?.ruc ?? ""} falta="Cargalo en la pestaña Ficha CTP" />
-          <CampoSoloLectura span={8} label="Razón social" valor={ficha?.razonSocial || ficha?.nombreCtp || ""} falta="Cargala en la pestaña Ficha CTP" />
-          <CampoSoloLectura span={4} label="Código de CTP" valor={ficha?.codigoCtp ?? ""} falta="Lo asigna la ARFFS" />
-          <CampoSoloLectura span={8} label="Domicilio de la planta" valor={direccionDe(ficha)} falta="Cargalo en la pestaña Ficha CTP" />
+          <CampoSoloLectura span={3} label="Número de RUC" valor={ficha?.ruc ?? ""} falta="Cargalo en la pestaña Ficha CTP" />
+          <CampoSoloLectura span={3} label="Razón social" valor={ficha?.razonSocial || ficha?.nombreCtp || ""} falta="Cargala en la pestaña Ficha CTP" />
+          <CampoSoloLectura span={3} label="Código de CTP" valor={ficha?.codigoCtp ?? ""} falta="Lo asigna la ARFFS" />
+          <CampoSoloLectura span={3} label="Domicilio de la planta" valor={direccionDe(ficha)} falta="Cargalo en la pestaña Ficha CTP" />
         </Bloque>
       </div>
 
+      {/**
+       * De a dos por fila.
+       *
+       * Los seis bloques iban apilados y el modal medía 2.4 pantallas de scroll:
+       * el formato tiene sesenta casilleros y ninguno cabe con los otros a la
+       * vista. Emparejados —propietario con destinatario, transportista con
+       * traslado— el alto lo fija el más alto de cada par, no la suma.
+       */}
+      <div className="grid gap-3 xl:grid-cols-2 xl:items-start">
       <Bloque
         titulo="Propietario del producto"
         hint="Puede no ser el CTP: la norma distingue al dueño de la madera del titular del centro"
@@ -149,7 +163,7 @@ export default function CtpGuiaDatosTab({
           ) : undefined
         }
       >
-        <label className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)] sm:col-span-12">
+        <label className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)] sm:col-span-12 sm:-mb-1">
           <input
             type="checkbox"
             checked={datos.propietario.esElCtp}
@@ -162,7 +176,7 @@ export default function CtpGuiaDatosTab({
           <input type="text" className={I} value={datos.propietario.nombre} onChange={(e) => set("propietario", { nombre: e.target.value })} />
         </Field>
         <DocsDeParte parte={datos.propietario} onChange={(v) => set("propietario", v)} />
-        <Field span={12} label="Domicilio">
+        <Field span={6} label="Domicilio">
           <input type="text" className={I} value={datos.propietario.direccion} onChange={(e) => set("propietario", { direccion: e.target.value })} />
         </Field>
         <UbicacionDeParte parte={datos.propietario} onChange={(v) => set("propietario", v)} />
@@ -192,7 +206,6 @@ export default function CtpGuiaDatosTab({
         </Field>
       </Bloque>
 
-      <div className="grid gap-3 xl:grid-cols-2 xl:items-start">
         <Bloque
           titulo="Destinatario · aserradero de destino"
           hint="A quién se le entrega el producto"
@@ -207,16 +220,18 @@ export default function CtpGuiaDatosTab({
             />
           }
         >
-          <Field span={12} label="Nombre o razón social" required>
+          <Field span={6} label="Nombre o razón social" required>
             <input type="text" className={I} value={datos.destinatario.nombre} onChange={(e) => set("destinatario", { nombre: e.target.value })} />
           </Field>
           <DocsDeParte parte={datos.destinatario} onChange={(v) => set("destinatario", v)} span={6} />
-          <Field span={12} label="Domicilio" required hint="Es el punto de llegada que cotejan los controles">
+          <Field span={6} label="Domicilio" required hint="Punto de llegada que cotejan los controles">
             <input type="text" className={I} value={datos.destinatario.direccion} onChange={(e) => set("destinatario", { direccion: e.target.value })} />
           </Field>
           <UbicacionDeParte parte={datos.destinatario} onChange={(v) => set("destinatario", v)} conZona />
         </Bloque>
+      </div>
 
+      <div className="grid gap-3 xl:grid-cols-2 xl:items-start">
         <Bloque
           titulo="Transportista"
           hint="Quién mueve la carga y con qué vehículo"
@@ -231,10 +246,10 @@ export default function CtpGuiaDatosTab({
             />
           }
         >
-          <Field span={6} label="Transportista" required hint="Empresa o persona responsable del traslado">
+          <Field span={6} label="Transportista" required hint="Empresa o persona del traslado">
             <input type="text" className={I} value={datos.transportista.nombre} onChange={(e) => set("transportista", { nombre: e.target.value })} />
           </Field>
-          <Field span={6} label="Tipo de transporte">
+          <Field span={3} label="Tipo de transporte">
             <select
               className={I}
               value={datos.vehiculo.tipoTransporte ?? "privado"}
@@ -244,15 +259,15 @@ export default function CtpGuiaDatosTab({
               <option value="publico">Público — empresa de transporte</option>
             </select>
           </Field>
-          <DocsDeParte parte={datos.transportista} onChange={(v) => set("transportista", v)} span={4} />
-          <Field span={4} label="Registro MTC" hint="Si es empresa de transporte">
+          <DocsDeParte parte={datos.transportista} onChange={(v) => set("transportista", v)} span={3} />
+          <Field span={3} label="Registro MTC" hint="Si es empresa">
             <input type="text" className={I} value={datos.transportista.registroMtc} onChange={(e) => set("transportista", { registroMtc: e.target.value })} />
           </Field>
 
           {/* El chofer se elige aparte: en la selva es común que la empresa
               ponga el camión y el chofer sea otro. De la libreta viene con su
               licencia, que es lo que pide el puesto de control. */}
-          <div className="sm:col-span-12">
+          <div className="sm:col-span-6">
             <CtpParteBarra
               rol="conductor"
               valor={{ nombre: datos.vehiculo.conductor, docTipo: "DNI", docNumero: datos.vehiculo.conductorDni, direccion: "" }}
@@ -280,7 +295,7 @@ export default function CtpGuiaDatosTab({
             <input type="text" className={`${I} font-mono`} value={datos.vehiculo.licencia} onChange={(e) => set("vehiculo", { licencia: e.target.value })} />
           </Field>
 
-          <Field span={6} label="Modo de transporte" hint="Por río, por carretera o combinado">
+          <Field span={3} label="Modo de transporte" hint="Río, carretera o mixto">
             <select
               className={I}
               value={datos.vehiculo.modo}
@@ -292,21 +307,25 @@ export default function CtpGuiaDatosTab({
             </select>
           </Field>
           {esFluvial ? (
-            <Field span={6} label="Nombre de la embarcación" required>
+            <Field span={3} label="Nombre de la embarcación" required>
               <input type="text" className={I} value={datos.vehiculo.embarcacion} onChange={(e) => set("vehiculo", { embarcacion: e.target.value })} placeholder="Chata Doña Rosa" />
             </Field>
           ) : (
-            <Field span={6} label="Tipo vehículo" hint="Camión, tráiler…">
+            <Field span={3} label="Tipo vehículo" hint="Camión, tráiler…">
               <input type="text" className={I} value={datos.vehiculo.tipo} onChange={(e) => set("vehiculo", { tipo: e.target.value })} />
             </Field>
           )}
-          <div className="sm:col-span-12">
+          <div className="sm:col-span-6">
             <CtpVehiculoBarra vehiculos={directorio.vehiculosActivos} onAplicar={(v) => set("vehiculo", v)} onElegir={onAnotarVehiculo} />
           </div>
           <Field span={4} label={esFluvial ? "Matrícula" : "Nro placa"} required>
             <input type="text" className={`${I} font-mono uppercase`} value={datos.vehiculo.placa} onChange={(e) => set("vehiculo", { placa: e.target.value.toUpperCase() })} />
           </Field>
-          <Field span={4} label="Nro placa remolque">
+          <Field
+            span={4}
+            label="Nro placa remolque"
+            noAplica={datos.vehiculo.placaRemolque?.trim() ? undefined : "sólo si el camión lleva remolque"}
+          >
             <input
               type="text"
               className={`${I} font-mono uppercase`}
@@ -314,13 +333,18 @@ export default function CtpGuiaDatosTab({
               onChange={(e) => set("vehiculo", { placaRemolque: e.target.value.toUpperCase() })}
             />
           </Field>
-          <Field span={4} label="Nro guía de remisión" casillero={29} hint="La del transportista — no es el comprobante">
+          <Field
+            span={4}
+            label="Nro guía de remisión"
+            casillero={29}
+            hint="La del transportista — no es el comprobante"
+            noAplica={datos.guia.guiaRemisionNro?.trim() ? undefined : "sólo si el transportista la emitió"}
+          >
             <input type="text" className={`${I} font-mono`} value={datos.guia.guiaRemisionNro} onChange={(e) => setGuia({ guiaRemisionNro: e.target.value })} />
           </Field>
         </Bloque>
-      </div>
 
-      <Bloque titulo="Traslado y títulos habilitantes" hint="La ruta que se autoriza y con qué título sale la madera">
+        <Bloque titulo="Traslado y títulos habilitantes" hint="La ruta que se autoriza y con qué título sale la madera">
         <Field span={6} label="Punto de partida" required>
           <input type="text" className={I} value={datos.traslado.puntoPartida} onChange={(e) => set("traslado", { puntoPartida: e.target.value })} />
         </Field>
@@ -351,7 +375,12 @@ export default function CtpGuiaDatosTab({
             />
           )}
         </Field>
-        <Field span={6} label="N° de permiso CITES" hint="Si la especie es protegida — es legal CON permiso">
+        <Field
+          span={6}
+          label="N° de permiso CITES"
+          hint="Si la especie es protegida — es legal CON permiso"
+          noAplica={llevaCites ? undefined : "ninguna especie de esta guía es protegida"}
+        >
           <input type="text" className={I} value={datos.citesPermiso} onChange={(e) => setDatos((p) => ({ ...p, citesPermiso: e.target.value }))} />
         </Field>
         <div className="sm:col-span-12">
@@ -360,6 +389,7 @@ export default function CtpGuiaDatosTab({
           </CardTitle>
         </div>
       </Bloque>
+      </div>
     </div>
   );
 }
