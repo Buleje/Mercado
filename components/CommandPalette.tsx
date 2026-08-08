@@ -297,10 +297,10 @@ export default function CommandPalette() {
             const config = CATEGORY_CONFIG[category];
             return (
               <div key={category} className="py-1">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-5 py-2 flex items-center gap-2">
+                <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-5 py-2 flex items-center gap-2">
                   {config?.icon}
                   {config?.label ?? category}
-                </p>
+                </div>
                 {items.map((item) => {
                   const currentFlatIdx = flatIdx++;
                   return (

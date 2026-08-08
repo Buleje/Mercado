@@ -511,9 +511,9 @@ export default function RepartidorPage() {
                             <v.Icon className="h-5 w-5" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
+                            <div className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
                               {v.label}
-                            </p>
+                            </div>
                             <p className="text-xs font-semibold text-[var(--text-secondary)] leading-tight mt-0.5">
                               {v.desc}
                             </p>
@@ -712,9 +712,9 @@ export default function RepartidorPage() {
                                     : "bg-[var(--surface-raised)] border-[var(--rule-base)] hover:border-[var(--text-tertiary)]"
                                 }`}
                               >
-                                <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
+                                <div className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
                                   {opt.label}
-                                </p>
+                                </div>
                                 <p className="text-xs font-semibold text-[var(--text-secondary)] mt-0.5 leading-tight">
                                   {opt.hint}
                                 </p>
@@ -1062,13 +1062,13 @@ function Stepper({
                   <p className="text-[10px] lg:text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] tabular-nums leading-none">
                     Paso {s.id}
                   </p>
-                  <p
+                  <div
                     className={`mt-1 text-sm lg:text-base font-extrabold leading-tight truncate ${
                       active || done ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
                     }`}
                   >
                     {s.label}
-                  </p>
+                  </div>
                 </div>
               </div>
             </button>

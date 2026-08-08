@@ -123,12 +123,12 @@ export function KPIHeroCard({
       </div>
 
       {/* Value */}
-      <p className="mt-3 font-display text-3xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)] leading-none">
+      <div className="mt-3 font-display text-3xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)] leading-none">
         {value}
-      </p>
+      </div>
 
       {subValue !== undefined && (
-        <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">{subValue}</p>
+        <div className="mt-1.5 text-xs text-[var(--text-tertiary)]">{subValue}</div>
       )}
 
       {/* Delta pill canónico (semántico, no decorativo) */}

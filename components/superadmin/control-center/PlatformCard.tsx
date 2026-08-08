@@ -71,10 +71,10 @@ const STATUS_META: Record<
 const TONE_GRADIENT: Record<NonNullable<PlatformCardProps["tone"]>, string> = {
   teal: "from-teal-500/15 to-cyan-500/5 text-teal-600 dark:text-teal-300 ring-teal-500/30",
   violet:
-    "from-violet-500/15 to-purple-500/5 text-violet-600 dark:text-violet-300 ring-violet-500/30",
+    "from-[var(--data-5)]/15 to-[var(--data-6)]/5 text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] ring-[var(--data-5)]/30",
   amber: "from-teal-500/15 to-teal-500/5 text-teal-600 dark:text-teal-300 ring-teal-500/30",
   sky: "from-sky-500/15 to-blue-500/5 text-sky-600 dark:text-sky-300 ring-sky-500/30",
-  rose: "from-rose-500/15 to-pink-500/5 text-rose-600 dark:text-rose-300 ring-rose-500/30",
+  rose: "from-[var(--data-error-500)]/15 to-[var(--data-error-500)]/5 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] ring-[var(--data-error-500)]/30",
   emerald:
     "from-emerald-500/15 to-green-500/5 text-emerald-600 dark:text-emerald-300 ring-emerald-500/30",
   slate: "from-slate-500/15 to-zinc-500/5 text-slate-600 dark:text-slate-300 ring-slate-500/30",
@@ -106,16 +106,17 @@ export function PlatformCard({
   };
 
   return (
-    <a
-      href={href}
-      target={external ? "_blank" : undefined}
-      rel={external ? "noopener noreferrer" : undefined}
+    // La tarjeta entera lleva al destino, pero el contenedor NO puede ser el
+    // `<a>`: adentro vive el botón de copiar, y un botón dentro de un enlace es
+    // anidado inválido. El enlace va sobre el nombre y se estira por toda la
+    // tarjeta con `after:inset-0`; el botón se le pone encima con `z-10`.
+    <div
       className={cn(
         "group relative flex flex-col gap-3 rounded-2xl border border-[var(--rule-base)]",
         "bg-[var(--surface-raised)] p-5",
         "transition-all duration-200",
         "hover:border-[var(--rule-strong)] hover:shadow-lg hover:-translate-y-0.5",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
+        "focus-within:outline-none focus-within:ring-2 focus-within:ring-[var(--accent)]",
       )}
     >
       {/* Header — icono coloreado a la izquierda + status dot a la derecha */}
@@ -123,7 +124,7 @@ export function PlatformCard({
         <div
           className={cn(
             "inline-flex h-12 w-12 items-center justify-center rounded-xl shrink-0",
-            "bg-gradient-to-br ring-1",
+            "bg-linear-to-br ring-1",
             TONE_GRADIENT[tone],
           )}
         >
@@ -152,8 +153,17 @@ export function PlatformCard({
             {category}
           </p>
         )}
-        <h3 className="text-[15px] font-bold text-[var(--text-primary)] leading-tight">{name}</h3>
-        <p className="mt-1 text-[13px] text-[var(--text-secondary)] leading-snug line-clamp-2">
+        <h3 className="text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] leading-tight">
+          <a
+            href={href}
+            target={external ? "_blank" : undefined}
+            rel={external ? "noopener noreferrer" : undefined}
+            className="after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline-none"
+          >
+            {name}
+          </a>
+        </h3>
+        <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug line-clamp-2">
           {description}
         </p>
       </div>
@@ -163,7 +173,7 @@ export function PlatformCard({
         <code className="truncate font-mono text-xs font-semibold text-[var(--text-tertiary)]">
           {href}
         </code>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="relative z-10 flex items-center gap-1 shrink-0">
           <button
             type="button"
             onClick={handleCopy}
@@ -191,6 +201,6 @@ export function PlatformCard({
           </span>
         </div>
       </div>
-    </a>
+    </div>
   );
 }

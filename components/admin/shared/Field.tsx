@@ -96,18 +96,18 @@ export function Field({
       </label>
       {control}
       {hint && !error && (
-        <p id={descId} className="mt-1 text-xs text-[var(--text-tertiary)]">
+        <div id={descId} className="mt-1 text-xs text-[var(--text-tertiary)]">
           {hint}
-        </p>
+        </div>
       )}
       {error && (
-        <p
+        <div
           id={descId}
           role="alert"
           className="mt-1 text-xs text-[var(--data-error)]"
         >
           {error}
-        </p>
+        </div>
       )}
     </div>
   );

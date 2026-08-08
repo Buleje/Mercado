@@ -375,10 +375,10 @@ function Block({
       {extras
         .filter((e): e is { icon: React.ReactNode | null; text: string } => Boolean(e))
         .map((e, i) => (
-          <p key={i} className="mt-1 text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
+          <div key={i} className="mt-1 text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
             {e.icon && <span className="text-[var(--text-tertiary)]">{e.icon}</span>}
             {e.text}
-          </p>
+          </div>
         ))}
     </div>
   );

@@ -32,7 +32,7 @@ export function SAKpiCard({ label, value, sub, icon: Icon, tone = "default", cla
         {Icon && <Icon className="h-3.5 w-3.5" aria-hidden />}
         <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">{label}</span>
       </div>
-      <p className={`font-display text-2xl font-extrabold tabular-nums ${TONE[tone]}`}>{value}</p>
+      <div className={`font-display text-2xl font-extrabold tabular-nums ${TONE[tone]}`}>{value}</div>
       {sub && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>}
     </div>
   );

@@ -125,12 +125,12 @@ export function CtpPaginacion({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-1">
-      <p className="min-w-0 text-sm text-[var(--text-tertiary)]">
+      <div className="min-w-0 text-sm text-[var(--text-tertiary)]">
         <span className="font-mono tabular-nums text-[var(--text-secondary)]">
           {rotuloRango(rango, sustantivo, plural)}
         </span>
         {extra && <span className="ml-2">{extra}</span>}
-      </p>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">

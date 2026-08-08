@@ -191,7 +191,7 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
             </div>
             <div>
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[#0d9488] mb-0.5">Acción recomendada</p>
-              <p className="text-sm text-[var(--text-secondary)]">{ai.action}</p>
+              <div className="text-sm text-[var(--text-secondary)]">{ai.action}</div>
             </div>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">Mensaje sugerido para el dueño</p>

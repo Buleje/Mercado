@@ -382,9 +382,9 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
                 const hoy = notifs.filter((n) => isToday(n.timeAgo));
                 const antes = notifs.filter((n) => !isToday(n.timeAgo));
                 const GroupLabel = ({ children }: { children: ReactNode }) => (
-                  <p className="sticky top-0 z-10 bg-[var(--surface-raised)]/95 backdrop-blur px-5 pt-3 pb-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  <div className="sticky top-0 z-10 bg-[var(--surface-raised)]/95 backdrop-blur px-5 pt-3 pb-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                     {children}
-                  </p>
+                  </div>
                 );
                 return (
                   <div className="max-h-[440px] overflow-y-auto">

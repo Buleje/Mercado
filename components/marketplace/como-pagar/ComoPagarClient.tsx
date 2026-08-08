@@ -118,10 +118,10 @@ const FAQ = [
 // Mismo kicker que /negocios: text-xs font-bold + dash teal.
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
+    <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
       <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
       {children}
-    </p>
+    </div>
   );
 }
 

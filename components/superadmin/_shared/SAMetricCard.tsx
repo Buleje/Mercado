@@ -17,7 +17,7 @@ const ICON_BG: Record<SAMetricTone, string> = {
   accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
   success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
   warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
-  danger: "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+  danger: "bg-[var(--data-error-500)]/10 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
   neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
 };
 
@@ -25,7 +25,7 @@ const VALUE_TONE: Record<SAMetricTone, string> = {
   accent: "text-[var(--accent)]",
   success: "text-[var(--data-success-600,#059669)]",
   warning: "text-teal-700 dark:text-teal-300",
-  danger: "text-rose-700 dark:text-rose-300",
+  danger: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
   neutral: "text-[var(--text-primary)]",
 };
 
@@ -53,7 +53,7 @@ export function SAMetricCard({ icon: Icon, label, value, sub, tone = "neutral", 
         )}
       </div>
       <p className="mt-4 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</p>
-      <p className={`mt-1 font-display text-3xl font-extrabold tabular-nums tracking-tight ${colorValue ? VALUE_TONE[tone] : "text-[var(--text-primary)]"}`}>{value}</p>
+      <div className={`mt-1 font-display text-3xl font-extrabold tabular-nums tracking-tight ${colorValue ? VALUE_TONE[tone] : "text-[var(--text-primary)]"}`}>{value}</div>
       {sub && <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">{sub}</p>}
     </div>
   );

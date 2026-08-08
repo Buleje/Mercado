@@ -220,9 +220,9 @@ function SectionBox({
               {kicker}
             </p>
             {collapsed && summary != null ? (
-              <p className="text-base font-semibold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight truncate">
+              <div className="text-base font-semibold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight truncate">
                 {summary}
-              </p>
+              </div>
             ) : (
               <h2 className="text-base sm:text-lg font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
                 {title}

@@ -154,13 +154,23 @@ function MessageBubble({
 
       {/* Columna de la burbuja */}
       <div className={cn("flex max-w-[70%] flex-col", isSeller ? "items-end" : "items-start")}>
-        {/* Burbuja — click abre la barra de acciones (reaccionar/responder) */}
-        <button
-          type="button"
+        {/* Burbuja — click abre la barra de acciones (reaccionar/responder).
+            Va como `div role="button"` porque adentro puede haber enlaces
+            (comprobante, ubicación en Maps) y un `<a>` dentro de un `<button>`
+            es anidado inválido: el navegador lo desarma al parsear. */}
+        <div
+          role="button"
+          tabIndex={0}
           onClick={onToggle}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onToggle();
+            }
+          }}
           aria-label="Reaccionar o responder"
           className={cn(
- "rounded-xl px-4 py-2 text-left text-sm leading-relaxed outline-none transition-shadow",
+ "cursor-pointer rounded-xl px-4 py-2 text-left text-sm leading-relaxed outline-none transition-shadow",
             active && "ring-2 ring-primary/40",
             isSeller
               ? "rounded-br-sm bg-primary text-white"
@@ -366,7 +376,7 @@ function MessageBubble({
           {!order && !payment && !location && !reviewReq && !voice && message.messageType !== "image" && (
             <div className="whitespace-pre-wrap break-words">{message.body}</div>
           )}
-        </button>
+        </div>
 
         {/* Barra de acciones — emojis + responder */}
         {active && (

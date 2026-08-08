@@ -120,9 +120,9 @@ export default function AdminModuleHeader({
                 `sr-only` gana por orden en el CSS generado y el texto quedaba
                 oculto SIEMPRE, también en escritorio (verificado en navegador). */}
             {description && (
-              <p className="hidden @min-[32rem]:block mt-1.5 text-sm text-[var(--text-secondary)] dark:text-zinc-400 max-w-2xl leading-relaxed">
+              <div className="hidden @min-[32rem]:block mt-1.5 text-sm text-[var(--text-secondary)] dark:text-zinc-400 max-w-2xl leading-relaxed">
                 {description}
-              </p>
+              </div>
             )}
           </div>
         </div>

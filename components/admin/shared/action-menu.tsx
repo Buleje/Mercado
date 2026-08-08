@@ -206,7 +206,7 @@ export default function ActionMenu({
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
         >
           {actions.length === 0 && vacio && (
-            <p className="px-4 py-3 text-sm text-[var(--text-tertiary)]">{vacio}</p>
+            <div className="px-4 py-3 text-sm text-[var(--text-tertiary)]">{vacio}</div>
           )}
           {actions.map((a, i) => {
             const AIcon = a.icon;

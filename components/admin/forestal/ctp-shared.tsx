@@ -56,6 +56,15 @@ export type WoodEntryStatus =
   | "procesado"
   | "anulado";
 
+/** Cómo se lee el casillero (20) del formato en pantalla. */
+export const COMPROBANTE_LABEL: Record<string, string> = {
+  ninguno: "No aplica",
+  factura: "Factura",
+  boleta: "Boleta de venta",
+  guia_remision: "Guía de remisión",
+  otro: "Otro",
+};
+
 /** Espejo del `WoodEntry` de Prisma tal como lo serializa la API. */
 export interface WoodEntry {
   /**
@@ -64,6 +73,12 @@ export interface WoodEntry {
    * `ctp-gtf-desde-serfor.ts`). Sin ella no hay guía que reimprimir.
    */
   serforGtf?: unknown;
+  /**
+   * El cuerpo del documento: propietario del producto (13-21), destinatario
+   * (22-28) y transportista (29-34) — ADR-336. `unknown` porque llega como JSON;
+   * se lee con `leerGtfDatos()`, que nunca tira.
+   */
+  gtfDatos?: unknown;
   id: string;
   /** (1) N° de registro del libro de operaciones — el folio (ADR-311). */
   libroNro: number | null;
@@ -200,7 +215,12 @@ const PRODUCT_LABELS: Record<string, string> = {
 export const originLabel = (type: string): string => ORIGIN_LABELS[type] ?? type;
 export const productLabel = (type: string): string => PRODUCT_LABELS[type] ?? type;
 
-export function formatDate(iso: string | null): string {
+/**
+ * `Date` además de string: el listado agrupado por guía (ADR-346) arma su
+ * resumen con lo que devuelve Prisma, y en el servidor eso es un `Date`. La
+ * misma función para los dos lados o la fecha se formatea de dos maneras.
+ */
+export function formatDate(iso: string | Date | null): string {
   if (!iso) return "—";
   try {
     return new Date(iso).toLocaleDateString("es-PE", {
@@ -214,7 +234,7 @@ export function formatDate(iso: string | null): string {
       timeZone: "UTC",
     });
   } catch {
-    return iso;
+    return String(iso);
   }
 }
 
@@ -422,28 +442,33 @@ export function ModalFooter({
 }: {
   error?: string | null;
   /** Confirmación efímera (verde), p. ej. "Datos traídos de SUNAT". */
-  aviso?: string | null;
+  aviso?: React.ReactNode;
   /** Contexto neutro a la izquierda (conteos, totales, qué falta). */
   nota?: React.ReactNode;
   /** Muestra "Ctrl + Enter guarda" cuando no hay nada más que decir. */
   atajo?: boolean;
   children: React.ReactNode;
 }) {
+  // `div`, no `p`: el aviso y la nota reciben ReactNode de quien llama, y ya
+  // hubo quien mandó un `<details>` con su `<ul>` adentro. Un `<p>` no admite
+  // contenido de bloque — el HTML se auto-cierra al parsear y React tira error
+  // de hidratación. El `div` acepta cualquier cosa y `role="alert"` sigue
+  // anunciando el error igual.
   const mensaje = error ? (
-    <p role="alert" className="min-w-0 flex-1 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+    <div role="alert" className="min-w-0 flex-1 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
       {error}
-    </p>
+    </div>
   ) : aviso ? (
-    <p className="min-w-0 flex-1 text-sm font-medium text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">{aviso}</p>
+    <div className="min-w-0 flex-1 text-sm font-medium text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">{aviso}</div>
   ) : nota ? (
     <div className="min-w-0 flex-1 text-sm text-[var(--text-tertiary)]">{nota}</div>
   ) : atajo ? (
-    <p className="hidden min-w-0 flex-1 text-xs text-[var(--text-tertiary)] sm:block">
+    <div className="hidden min-w-0 flex-1 text-xs text-[var(--text-tertiary)] sm:block">
       <kbd className="rounded border border-[var(--rule-base)] px-1 py-0.5 font-mono text-[length:var(--ts-2xs,11px)]">Ctrl</kbd>
       {" + "}
       <kbd className="rounded border border-[var(--rule-base)] px-1 py-0.5 font-mono text-[length:var(--ts-2xs,11px)]">Enter</kbd>
       {" guarda"}
-    </p>
+    </div>
   ) : null;
 
   return (

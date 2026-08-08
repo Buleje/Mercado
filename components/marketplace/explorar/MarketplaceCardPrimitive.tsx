@@ -141,14 +141,14 @@ export function MarketplaceCardKicker({
   className?: string;
 }) {
   return (
-    <p
+    <div
       className={cn(
         "text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)] leading-none",
         className,
       )}
     >
       {children}
-    </p>
+    </div>
   );
 }
 
