@@ -240,6 +240,12 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
     if (url.searchParams.get("traza") === "1") {
       return NextResponse.json({ traza: await ForestCtpDespachoDB.trazabilidadDelPeriodo(auth.tenantId, period) });
     }
+    /* Las medidas que este aserradero más declara: alimentan las plantillas del
+       formulario de producción. Sin período — «el de siempre» es histórico, no
+       de este mes. */
+    if (url.searchParams.get("medidas") === "1") {
+      return NextResponse.json({ medidas: await ForestCtpDB.medidasFrecuentes(auth.tenantId) });
+    }
     // Grafo de cadena de custodia del período (Radar de trazabilidad).
     if (url.searchParams.get("grafo") === "1") {
       return NextResponse.json({ grafo: await ForestCtpDB.grafoTrazabilidad(auth.tenantId, period) });

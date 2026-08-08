@@ -833,6 +833,57 @@ export class ForestCtpDB {
     return entry;
   }
 
+  /**
+   * LAS MEDIDAS DE SIEMPRE: los paquetes que este aserradero más declara.
+   *
+   * Cada turno se retipean las mismas dimensiones —2.5 × 20 cm × 3 m, otra vez—
+   * y tipear cuatro números con guantes es donde se pierde el tiempo y donde
+   * entran los errores. En vez de inventar un catálogo que alguien tendría que
+   * mantener, se leen del propio libro: lo que más se produjo ES la plantilla.
+   *
+   * Sólo combinaciones DIMENSIONADAS y de corridas vivas: un paquete sin medidas
+   * no ahorra tipeo, y uno de una corrida anulada no representa lo que la planta
+   * hace hoy.
+   */
+  static async medidasFrecuentes(
+    tenantId: string,
+    opts: { limite?: number } = {},
+  ): Promise<
+    {
+      productType: string | null;
+      presentacion: string | null;
+      espesorCm: number;
+      anchoCm: number;
+      largoM: number;
+      veces: number;
+    }[]
+  > {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.forestCtpPaquete.groupBy({
+      by: ["productType", "presentacion", "espesorCm", "anchoCm", "largoM"],
+      where: {
+        tenantId,
+        espesorCm: { not: null },
+        anchoCm: { not: null },
+        largoM: { not: null },
+        entry: { deletedAt: null, status: "registrado" },
+      },
+      _count: { _all: true },
+      orderBy: { _count: { id: "desc" } },
+      take: Math.min(Math.max(opts.limite ?? 6, 1), 20),
+    });
+    return filas
+      .filter((f) => f.espesorCm != null && f.anchoCm != null && f.largoM != null)
+      .map((f) => ({
+        productType: f.productType,
+        presentacion: f.presentacion,
+        espesorCm: Number(f.espesorCm),
+        anchoCm: Number(f.anchoCm),
+        largoM: Number(f.largoM),
+        veces: f._count._all,
+      }));
+  }
+
   static async annul(tenantId: string, id: string, reason: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("reason is required");

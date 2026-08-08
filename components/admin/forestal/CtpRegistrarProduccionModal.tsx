@@ -13,7 +13,7 @@
  * que decide si la corrida salió bien, y para eso hay que verlo a tiempo.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Boxes, Gauge, Loader2, Plus, Trash2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { PRESENTACIONES_LOCTP, TIPOS_PRODUCTO_SALIDA } from "@/lib/forestal/loctp-catalogos";
@@ -145,6 +145,26 @@ export default function CtpRegistrarProduccionModal({
   const [linea, setLinea] = useState("LP");
   const [observaciones, setObservaciones] = useState("");
   const [paquetes, setPaquetes] = useState<PaqueteBorrador[]>([]);
+
+  /**
+   * «El de siempre»: las medidas que este aserradero más declaró.
+   *
+   * Salen del propio libro, no de un catálogo que alguien tendría que mantener:
+   * lo más producido ES la plantilla. Un clic llena espesor, ancho, largo,
+   * producto y presentación — los cuatro números que se retipean cada turno.
+   */
+  const [medidas, setMedidas] = useState<
+    { productType: string | null; presentacion: string | null; espesorCm: number; anchoCm: number; largoM: number; veces: number }[]
+  >([]);
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/admin/forestal/ctp?medidas=1", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : { medidas: [] }))
+      .then((j: { medidas?: typeof medidas }) => { if (vivo) setMedidas(j.medidas ?? []); })
+      /* Sin plantillas se tipea como siempre: es un atajo, no un requisito. */
+      .catch(() => { if (vivo) setMedidas([]); });
+    return () => { vivo = false; };
+  }, []);
 
   // ── El formulario de «Agregar producción» ──
   const [codigo, setCodigo] = useState("");
@@ -417,6 +437,35 @@ export default function CtpRegistrarProduccionModal({
 
         {/* ── El paquete: se repite por cada atado que sale de la sierra ── */}
         <Bloque titulo="Agregar paquete">
+          {/* Las medidas de siempre, antes del formulario: se elige una y los
+              cuatro campos quedan puestos. */}
+          {medidas.length > 0 && (
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Las de siempre
+              </span>
+              {medidas.map((m) => (
+                <button
+                  key={`${m.productType}-${m.presentacion}-${m.espesorCm}-${m.anchoCm}-${m.largoM}`}
+                  type="button"
+                  title={`Usada ${m.veces} ${m.veces === 1 ? "vez" : "veces"}${m.productType ? ` · ${m.productType}` : ""}`}
+                  onClick={() => {
+                    /* Se dimensiona sí o sí: el volumen sale de las medidas, y
+                       dejarlo en manual daría dos verdades para el mismo bulto. */
+                    setDimensionar(true);
+                    setEspesor(String(m.espesorCm));
+                    setAncho(String(m.anchoCm));
+                    setLargo(String(m.largoM));
+                    if (m.productType) setProducto(m.productType);
+                    if (m.presentacion) setPresentacion(m.presentacion);
+                  }}
+                  className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm tabular-nums text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] sm:h-9"
+                >
+                  {m.espesorCm} × {m.anchoCm} cm × {m.largoM} m
+                </button>
+              ))}
+            </div>
+          )}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Campo label="Código de paquete">
               <input
