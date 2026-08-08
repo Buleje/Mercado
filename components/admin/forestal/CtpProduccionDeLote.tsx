@@ -34,6 +34,7 @@ import type { EstadoLotesAserrio } from "./hooks/use-lotes-aserrio";
 
 export default function CtpProduccionDeLote({
   lote,
+  preseleccion,
   lotes,
   onLote,
   estado,
@@ -43,6 +44,12 @@ export default function CtpProduccionDeLote({
   onCerrarLote,
 }: {
   lote: LoteAserrio;
+  /**
+   * Piezas que ya vienen elegidas (llegan desde otra pantalla). Sin esto, el
+   * panel tilda TODO el lote y el operador que eligió tres perdía su elección al
+   * llegar acá.
+   */
+  preseleccion?: readonly string[];
   /** Los lotes abiertos: alimentan el selector de la barra (formato SNIFFS). */
   lotes?: LoteAserrio[];
   /** Cambiar de lote sin salir del panel. */
@@ -99,10 +106,18 @@ export default function CtpProduccionDeLote({
      re-aplicara en cada render, destildar una sería imposible: volvería sola. */
   const preseleccionado = useRef<string | null>(null);
   useEffect(() => {
-    if (preseleccionado.current === lote.id) return;
-    preseleccionado.current = lote.id;
-    setSeleccion(new Set(yaEnElLote.map((t) => t.id)));
-  }, [lote.id, yaEnElLote]);
+    /* La clave incluye la preselección: entrar dos veces al MISMO lote con
+       elecciones distintas tiene que re-aplicarlas, y sólo comparar el id las
+       ignoraba la segunda vez. */
+    const clave = `${lote.id}|${(preseleccion ?? []).join(",")}`;
+    if (preseleccionado.current === clave) return;
+    preseleccionado.current = clave;
+    /* Con piezas elegidas desde otra pantalla se respetan (acotadas a las que
+       de verdad están libres en el lote); sin ellas, entra el lote entero. */
+    const vivas = new Set(yaEnElLote.map((t) => t.id));
+    const pedidas = (preseleccion ?? []).filter((id) => vivas.has(id));
+    setSeleccion(new Set(pedidas.length > 0 ? pedidas : yaEnElLote.map((t) => t.id)));
+  }, [lote.id, yaEnElLote, preseleccion]);
 
   /**
    * Elegir el lote TRAE la vista acá.
@@ -325,7 +340,7 @@ export default function CtpProduccionDeLote({
             onClick={() => { setError(null); setAbierto(true); }}
           >
             <Boxes className="h-4 w-4" />
-            Registrar producción
+            Declarar producción
           </Btn>
           {/* Cerrar el LOTE (no el panel): lo que queda no va a entrar a la
               sierra y vuelve al patio. Sólo tiene sentido con madera libre. */}
@@ -431,7 +446,7 @@ export default function CtpProduccionDeLote({
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Btn variant="primary" disabled>
             <Boxes className="h-4 w-4" />
-            Registrar producción
+            Declarar producción
           </Btn>
         </div>
       )}
@@ -444,7 +459,7 @@ export default function CtpProduccionDeLote({
             { label: "Pie tablar", valor: `${pieTablarDe(material.volumenM3).toLocaleString("es-PE")} pt` },
           ]}
           onLimpiar={() => setSeleccion(new Set())}
-          accionLabel="Registrar producción"
+          accionLabel="Declarar producción"
           accionIcon={Boxes}
           accionDisabled={excesos.length > 0}
           /* El botón apagado sin decir por qué se lee como que la pantalla está

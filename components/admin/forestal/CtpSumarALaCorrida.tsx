@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Layers, Loader2, PlusCircle } from "@buleje/design-system/icons";
+import { Boxes, Layers, Loader2, PlusCircle } from "@buleje/design-system/icons";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
@@ -30,7 +30,7 @@ export default function CtpSumarALaCorrida({
   fechaConsumo,
   guardando,
   onSumar,
-  onCorridaNueva,
+  onProducirEstas,
 }: {
   /** N° de la corrida abierta: el botón dice a cuál se suma, no «a esta». */
   lineNo: number;
@@ -40,7 +40,8 @@ export default function CtpSumarALaCorrida({
   fechaConsumo: string;
   guardando: boolean;
   onSumar: (trozaIds: string[]) => void;
-  onCorridaNueva: () => void;
+  /** Producir ESTAS piezas en una corrida nueva, con la selección ya hecha. */
+  onProducirEstas: (trozaIds: string[]) => void;
 }) {
   /* Arranca en blanco, al revés que el panel del lote: sumar a una corrida en
      curso es la excepción, y una preselección invita a apretar sin mirar. */
@@ -71,12 +72,9 @@ export default function CtpSumarALaCorrida({
         <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
           Al lote <b className="font-mono text-[var(--text-primary)]">{loteCode}</b> le quedan{" "}
           <b className="font-mono tabular-nums text-[var(--text-primary)]">{trozas.length}</b> troza
-          {trozas.length === 1 ? "" : "s"} sin aserrar. Tildá las que entran ahora a{" "}
-          <b>esta misma corrida</b>, o abrí una nueva si es otra jornada.
+          {trozas.length === 1 ? "" : "s"} sin aserrar. Tildá las que entran ahora y elegí abajo si van a{" "}
+          <b>esta misma corrida</b> (la misma jornada) o a una nueva.
         </p>
-        <Btn size="sm" variant="secondary" onClick={onCorridaNueva} disabled={guardando}>
-          Producir en una corrida nueva
-        </Btn>
       </header>
 
       <CtpTrozasDelLote
@@ -94,10 +92,35 @@ export default function CtpSumarALaCorrida({
             {pieTablarDe(volumen).toLocaleString("es-PE")} pt
           </span>
         )}
+        {/**
+         * Dos destinos para las MISMAS piezas tildadas, y cada botón dice cuál.
+         *
+         * Antes «Producir en una corrida nueva» vivía arriba, antes de tildar
+         * nada, y saltaba al panel del lote **perdiendo la selección**: el
+         * operador elegía tres trozas, apretaba, y se encontraba con las seis
+         * tildadas de nuevo. Ahora las elegidas viajan.
+         */}
+        <Btn
+          variant="secondary"
+          disabled={elegidas.length === 0 || guardando}
+          title={
+            elegidas.length === 0
+              ? "Tildá las trozas que entran a la sierra"
+              : "Otra jornada: abre una corrida nueva con estas piezas ya elegidas"
+          }
+          onClick={() => onProducirEstas(elegidas.map((t) => t.id))}
+        >
+          <Boxes className="h-4 w-4" />
+          Declarar producción de {elegidas.length === 1 ? "esta" : `estas ${elegidas.length}`}
+        </Btn>
         <Btn
           variant="primary"
           disabled={elegidas.length === 0 || guardando}
-          title={elegidas.length === 0 ? "Tildá las trozas que entran a la sierra" : undefined}
+          title={
+            elegidas.length === 0
+              ? "Tildá las trozas que entran a la sierra"
+              : "La misma jornada: entran a la corrida que ya está abierta"
+          }
           onClick={() => onSumar(elegidas.map((t) => t.id))}
         >
           {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}

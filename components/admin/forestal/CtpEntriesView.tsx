@@ -117,6 +117,8 @@ export function CtpEntriesView({
   const [corridaAbiertaId, setCorridaAbiertaId] = useState<string | null>(null);
   /** El lote que se está produciendo (ADR-349): su tabla de trozas se abre debajo. */
   const [loteProd, setLoteProd] = useState("");
+  /** Piezas ya elegidas en otra pantalla que el panel del lote debe respetar. */
+  const [preseleccion, setPreseleccion] = useState<string[] | undefined>(undefined);
   const lotes = useLotesAserrio();
   /** Los lotes que se pueden aserrar hoy, con lo que tienen esperando: se elige
    *  por peso (piezas y m³), no por nombre — el código del lote no dice nada. */
@@ -205,6 +207,7 @@ export function CtpEntriesView({
   useEffect(() => {
     if (!presetLoteAserrioId) return;
     setLoteProd(presetLoteAserrioId);
+    setPreseleccion(undefined);
     /* Y se cierra el panel de la corrida: los dos se dibujan en el mismo lugar
        y llegar desde Lotes con uno abierto apilaba dos tablas de trozas. */
     setCorridaAbiertaId(null);
@@ -344,13 +347,17 @@ export function CtpEntriesView({
         loteAbierto: loteProd,
         /* Volver a elegir el lote abierto cierra su panel: el mismo gesto que
            lo abrió, que es lo que se espera de una opción marcada. */
-        onElegir: (id) =>
-          setLoteProd((actual) => {
+        onElegir: (id) => {
+          /* Elegir a mano parte de cero: arrastrar una preselección de otra
+             pantalla haría que el lote se abra con tres tildadas sin motivo. */
+          setPreseleccion(undefined);
+          return setLoteProd((actual) => {
             /* Dos paneles distintos sobre la misma tabla se pisarían: abrir uno
                cierra el otro. */
             if (actual !== id) setCorridaAbiertaId(null);
             return actual === id ? "" : id;
-          }),
+          });
+        },
         onIr,
       }),
     [lotesConMadera, loteProd, onIr],
@@ -451,7 +458,11 @@ export function CtpEntriesView({
           cargando={lotes.cargando}
           /* Lo que todavía se ELIGE es lo que le queda al lote: el atajo cierra
              esta corrida y abre el panel donde se tildan sus trozas. */
-          onProducirResto={(loteId) => { setCorridaAbiertaId(null); setLoteProd(loteId); }}
+          onProducirResto={(loteId, trozaIds) => {
+            setCorridaAbiertaId(null);
+            setPreseleccion(trozaIds);
+            setLoteProd(loteId);
+          }}
           onCerrar={() => setCorridaAbiertaId(null)}
           /* Sumar piezas engorda la corrida pero NO la cierra: se recarga la
              tabla (su volumen consumido cambió) y el panel se queda abierto
@@ -487,7 +498,9 @@ export function CtpEntriesView({
           lotes={lotesConMadera}
           cargando={lotes.cargando}
           elegido={loteProd}
-          onElegir={(id) => setLoteProd((actual) => (actual === id ? "" : id))}
+          /* Elegir desde la tira parte de cero: una preselección heredada de
+             otra pantalla abriría el lote con piezas tildadas sin motivo. */
+          onElegir={(id) => { setPreseleccion(undefined); setLoteProd((actual) => (actual === id ? "" : id)); }}
           onIrALotes={onIr ? () => onIr("lotes") : undefined}
         />
       )}
@@ -504,6 +517,7 @@ export function CtpEntriesView({
       {section === "produccion" && loteElegido && (
         <CtpProduccionDeLote
           lote={loteElegido}
+          preseleccion={preseleccion}
           lotes={lotesConMadera.map((x) => x.lote)}
           onLote={setLoteProd}
           estado={lotes}

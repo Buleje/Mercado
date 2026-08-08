@@ -92,7 +92,9 @@ export default function CtpCorridaSinDeclarar({
     volumenTotalM3: number;
     lotesReabiertos: string[];
   }>;
-  onProducirResto?: (loteId: string) => void;
+  /** Abrir el panel del lote para producir en una corrida NUEVA, con estas
+   *  piezas ya tildadas. */
+  onProducirResto?: (loteId: string, trozaIds?: string[]) => void;
   onCerrar: () => void;
 }) {
   const [abierto, setAbierto] = useState(false);
@@ -255,8 +257,8 @@ export default function CtpCorridaSinDeclarar({
    * La corrida sigue viva —es una corrección de carga, no un asiento muerto—
    * así que el panel se queda y el aviso va por `onAviso`.
    */
-  async function quitar() {
-    if (!onQuitarPiezas || fuera.length === 0) return;
+  async function quitar(): Promise<boolean> {
+    if (!onQuitarPiezas || fuera.length === 0) return false;
     setSumando(true);
     setError(null);
     try {
@@ -268,13 +270,35 @@ export default function CtpCorridaSinDeclarar({
             ? `. Volvió a abrirse ${r.lotesReabiertos.join(", ")} con esa madera.`
             : "."),
       );
+      return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setError(msg);
       onError(msg);
+      return false;
     } finally {
       setSumando(false);
     }
+  }
+
+  /**
+   * Declarar lo que salió de **las trozas tildadas**.
+   *
+   * Antes el botón se apagaba con piezas destildadas y mandaba a resolverlas
+   * primero: dos pasos para una sola intención —«produzco esta madera»— y el
+   * operador quedaba mirando un botón gris. Ahora el destildado se aplica como
+   * parte del acto: las que quedaron fuera salen de la corrida (con su aviso) y
+   * recién entonces se abre el formulario, ya con el volumen correcto.
+   */
+  async function declararLoTildado() {
+    setError(null);
+    if (fuera.length > 0) {
+      const ok = await quitar();
+      /* Si sacarlas falló, el volumen de la corrida seguiría incluyéndolas y el
+         rendimiento saldría sobre madera que el operador dice que no entró. */
+      if (!ok) return;
+    }
+    setAbierto(true);
   }
 
   /* Elegir la corrida trae la vista acá: el panel se dibuja debajo de los KPIs y
@@ -321,20 +345,23 @@ export default function CtpCorridaSinDeclarar({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Con piezas destildadas sin confirmar, declarar usaría un volumen
-              que el operador acaba de decir que no es: primero se resuelve eso. */}
+          {/* Declara lo TILDADO. Con piezas destildadas las saca primero (y lo
+              dice), en vez de apagarse y mandar a resolverlo aparte. */}
           <Btn
             variant="primary"
-            disabled={fuera.length > 0 || sumando}
+            disabled={sumando || enProduccion.size === 0}
             title={
-              fuera.length > 0
-                ? "Sacá o volvé a tildar las piezas que destildaste: el rendimiento sale del volumen de la corrida"
-                : undefined
+              enProduccion.size === 0
+                ? "Tildá al menos una troza: una corrida sin materia prima se anula, no se declara"
+                : fuera.length > 0
+                  ? `Saca ${fuera.length === 1 ? "la destildada" : `las ${fuera.length} destildadas`} de la corrida y declara la producción de ${enProduccion.size === 1 ? "la que queda" : `las ${enProduccion.size} que quedan`}`
+                  : undefined
             }
-            onClick={() => { setError(null); setAbierto(true); }}
+            onClick={() => void declararLoTildado()}
           >
-            <Boxes className="h-4 w-4" />
+            {sumando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Boxes className="h-4 w-4" />}
             Declarar producción
+            {fuera.length > 0 && ` (${enProduccion.size})`}
           </Btn>
           <button
             type="button"
@@ -385,11 +412,12 @@ export default function CtpCorridaSinDeclarar({
           />
           <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
             Destildaste <b className="tabular-nums text-[var(--text-primary)]">{fuera.length}</b> troza
-            {fuera.length === 1 ? "" : "s"} ({volumenFuera.toFixed(4)} m³). Sacarlas de la corrida la deja en{" "}
+            {fuera.length === 1 ? "" : "s"} ({volumenFuera.toFixed(4)} m³): la corrida queda en{" "}
             <b className="font-mono tabular-nums text-[var(--text-primary)]">
               {(entrada - volumenFuera).toFixed(4)} m³
             </b>{" "}
-            y esa madera vuelve a estar libre.
+            y esa madera vuelve a estar libre.{" "}
+            <b>«Declarar producción» las saca y sigue</b>; acá las sacás sin declarar todavía.
           </p>
           <Btn size="sm" variant="secondary" disabled={sumando} onClick={() => setEnProduccion(new Set(trozas.map((t) => t.id)))}>
             Deshacer
@@ -422,7 +450,9 @@ export default function CtpCorridaSinDeclarar({
           fechaConsumo={corrida.entryDate}
           guardando={sumando}
           onSumar={(ids) => void sumar(ids)}
-          onCorridaNueva={() => onProducirResto?.(resto.loteId)}
+          /* Las tildadas viajan al panel del lote ya elegidas: sin esto, el
+             operador que eligió tres se encontraba con las seis tildadas. */
+          onProducirEstas={(ids) => onProducirResto?.(resto.loteId, ids)}
         />
       )}
 

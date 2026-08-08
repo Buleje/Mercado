@@ -168,7 +168,7 @@ export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) 
               )}
             </div>
 
-            <p className="text-xs text-[var(--text-tertiary)]">Es una simulación — no registra nada. Cuando decidas, cargá la corrida real en «{"Nueva producción"}» con estas guías.</p>
+            <p className="text-xs text-[var(--text-tertiary)]">Es una simulación — no registra nada. Cuando decidas, cargá la corrida real en «{"Declarar producción"}», eligiendo el lote con estas guías.</p>
             </div>
             </div>
           </>
