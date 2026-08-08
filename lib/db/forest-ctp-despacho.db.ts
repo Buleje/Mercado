@@ -678,7 +678,29 @@ export class ForestCtpDespachoDB {
   static async trazabilidadDelPeriodo(
     tenantId: string,
     period?: { fromDate?: Date; toDate?: Date },
-  ): Promise<{ total: number; incompletos: number; lineas: number[] }> {
+  ): Promise<{
+    total: number;
+    incompletos: number;
+    lineas: number[];
+    /**
+     * Y CUÁLES, con su motivo. `lineas` sólo daba números: el panel podía decir
+     * «3 despachos no certifican» y el operador no tenía dónde ir ni qué
+     * arreglar. El motivo usa las mismas tres causas que `trazabilidadCompleta`,
+     * o la lista y la ficha dirían cosas distintas de la misma guía.
+     */
+    detalle: {
+      id: string;
+      lineNo: number;
+      entryDate: string;
+      producto: string | null;
+      gtfSalida: string | null;
+      declarado: number;
+      sinAtribuir: number;
+      motivo: "sin_atribucion" | "atribucion_parcial" | "corrida_sin_origen";
+      /** Las corridas citadas que no declaran de qué madera salieron. */
+      corridasSinOrigen: number[];
+    }[];
+  }> {
     if (!tenantId) throw new Error("tenantId is required");
 
     const despachos = await prisma.forestCtpEntry.findMany({
@@ -696,9 +718,9 @@ export class ForestCtpDespachoDB {
             }
           : {}),
       },
-      select: { id: true, lineNo: true, quantity: true },
+      select: { id: true, lineNo: true, quantity: true, entryDate: true, productType: true, gtfNumber: true },
     });
-    if (despachos.length === 0) return { total: 0, incompletos: 0, lineas: [] };
+    if (despachos.length === 0) return { total: 0, incompletos: 0, lineas: [], detalle: [] };
 
     const ids = despachos.map((d) => d.id);
     const [sumas, vinculos] = await Promise.all([
@@ -732,17 +754,48 @@ export class ForestCtpDespachoDB {
       corridasPor.set(v.despachoEntryId, arr);
     }
 
-    const lineas: number[] = [];
+    /* Para poder nombrar la corrida que falla hace falta su N° de línea, no su
+       id: es lo que el operador ve en la tabla. */
+    const lineNoDeCorrida = new Map(
+      (corridaIds.length
+        ? await prisma.forestCtpEntry.findMany({
+            where: { id: { in: corridaIds }, tenantId },
+            select: { id: true, lineNo: true },
+          })
+        : []
+      ).map((c) => [c.id, c.lineNo]),
+    );
+
+    const detalle: Awaited<ReturnType<typeof ForestCtpDespachoDB.trazabilidadDelPeriodo>>["detalle"] = [];
     for (const d of despachos) {
       const corridas = corridasPor.get(d.id) ?? [];
       const declarado = d.quantity ? Number(d.quantity) : 0;
       const sinAtribuir = r4(Math.max(0, declarado - (atribuidoPor.get(d.id) ?? 0)));
-      const incompleto =
-        corridas.length === 0 || sinAtribuir > 0 || corridas.some((c) => !corridasConOrigen.has(c));
-      if (incompleto) lineas.push(d.lineNo);
+      const sinOrigen = corridas.filter((c) => !corridasConOrigen.has(c));
+      /* El MISMO orden de causas que `trazabilidadCompleta`: primero la ausencia
+         total, después el hueco parcial, y al final el eslabón de más atrás. */
+      const motivo =
+        corridas.length === 0 ? "sin_atribucion" : sinAtribuir > 0 ? "atribucion_parcial" : sinOrigen.length > 0 ? "corrida_sin_origen" : null;
+      if (!motivo) continue;
+      detalle.push({
+        id: d.id,
+        lineNo: d.lineNo,
+        entryDate: d.entryDate.toISOString(),
+        producto: d.productType,
+        gtfSalida: d.gtfNumber,
+        declarado,
+        sinAtribuir,
+        motivo,
+        corridasSinOrigen: sinOrigen.map((c) => lineNoDeCorrida.get(c) ?? 0).filter(Boolean).sort((a, b) => a - b),
+      });
     }
-    lineas.sort((a, b) => a - b);
-    return { total: despachos.length, incompletos: lineas.length, lineas };
+    detalle.sort((a, b) => a.lineNo - b.lineNo);
+    return {
+      total: despachos.length,
+      incompletos: detalle.length,
+      lineas: detalle.map((d) => d.lineNo),
+      detalle,
+    };
   }
 
   /**

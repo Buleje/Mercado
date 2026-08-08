@@ -33,7 +33,13 @@ export async function GET(req: NextRequest) {
   if (denegado) return denegado;
 
   try {
-    const filas = await WoodEntriesDB.trozasDelPatio(auth.tenantId);
+    /* `loteId` acota al lote (decenas de piezas): esa lista viene SIEMPRE
+       completa y no depende del tope del patio. */
+    const loteId = new URL(req.url).searchParams.get("loteId")?.trim() || undefined;
+    const [filas, total] = await Promise.all([
+      WoodEntriesDB.trozasDelPatio(auth.tenantId, { loteId }),
+      WoodEntriesDB.contarTrozasDelPatio(auth.tenantId, { loteId }),
+    ]);
     /* Cuánto se consumió ya de cada guía: con eso el picker avisa ANTES de armar
        el acta en vez de que el servidor la rechace al final (ADR-353). */
     const consumido = await WoodEntriesDB.consumidoPorIngreso(
@@ -108,7 +114,15 @@ export async function GET(req: NextRequest) {
         loteAserrioId: t.loteAserrioId,
         loteAserrioCode: t.loteAserrio?.code ?? null,
       })),
-      total: filas.length,
+      /**
+       * `total` es el patio DE VERDAD y `devueltas` lo que entró en esta
+       * respuesta. Antes `total` era `filas.length` —el mismo número acotado— así
+       * que un patio de 6.000 piezas informaba 5.000 como si fueran todas: la
+       * pantalla no tenía forma de saber que le faltaba madera.
+       */
+      total,
+      devueltas: filas.length,
+      truncado: filas.length < total,
     });
   } catch (e) {
     return ctpErrorResponse(e, "forestal.trozas.patio.GET", auth.tenantId);

@@ -464,6 +464,19 @@ export default function CtpProduccionDeLote({
         </div>
       )}
 
+      {/**
+       * El patio no entró entero en la lectura: puede faltar madera de este
+       * lote en la lista de abajo. Se dice — una lista incompleta que se ve
+       * completa es peor que un error, porque nadie la sospecha.
+       */}
+      {estado.patioTruncado && (
+        <p className="rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          El patio tiene <b className="font-mono tabular-nums">{estado.patioTruncado.hay}</b> piezas y se
+          leyeron <b className="font-mono tabular-nums">{estado.patioTruncado.leidas}</b>: puede faltar
+          alguna de este lote en la lista. Buscá por código para encontrarla.
+        </p>
+      )}
+
       {/* La regla, dicha antes de la tabla y no descubierta por accidente: el
           lote NO tiene que entrar entero. */}
       {yaEnElLote.length > 1 && (

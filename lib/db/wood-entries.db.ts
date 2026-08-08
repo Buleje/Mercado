@@ -1126,15 +1126,30 @@ export class WoodEntriesDB {
     return mapa;
   }
 
-  static async trozasDelPatio(tenantId: string, opts: { limite?: number } = {}) {
+  /**
+   * El patio, pieza por pieza.
+   *
+   * ⚠️ Viene ACOTADO, y eso importa: un aserradero que pasa el tope veía menos
+   * madera de la que tiene **sin ningún aviso** — el panel del lote listaba las
+   * piezas que entraron en el corte y las otras simplemente no existían para la
+   * pantalla. Quien llame tiene que poder decir «hay N y estás viendo M», por eso
+   * el conteo real va aparte (`contarTrozasDelPatio`).
+   *
+   * `loteId` acota al lote: un lote tiene decenas de piezas, así que pedirlo
+   * scopeado devuelve SIEMPRE la lista completa, sin depender del tope.
+   */
+  static async trozasDelPatio(tenantId: string, opts: { limite?: number; loteId?: string } = {}) {
     if (!tenantId) throw new Error("tenantId is required");
     return prisma.woodEntryTroza.findMany({
       where: {
         tenantId,
+        ...(opts.loteId ? { loteAserrioId: opts.loteId } : {}),
         entry: { deletedAt: null, status: { notIn: ["anulado", "rechazado"] } },
       },
       orderBy: [{ createdAt: "desc" }, { orden: "asc" }],
-      take: Math.min(Math.max(opts.limite ?? 1000, 1), 5000),
+      /* 5000 y no 1000: es el máximo que la consulta ya admitía, y el default
+         viejo dejaba fuera cuatro quintos de lo que el sistema podía traer. */
+      take: Math.min(Math.max(opts.limite ?? 5000, 1), 5000),
       include: {
         /* Del ingreso hace falta también su ESTADO de recepción (ADR-339): en
            Consumos se ofrecen las piezas de guías ya recibidas, y sin esto había
@@ -1165,6 +1180,18 @@ export class WoodEntriesDB {
         // de Trozas no puede decir dónde está la que se busca.
         loteAserrio: { select: { id: true, code: true, status: true } },
         _count: { select: { retrozos: true } },
+      },
+    });
+  }
+
+  /** Cuántas piezas tiene el patio DE VERDAD: el tope de arriba no puede mentir. */
+  static async contarTrozasDelPatio(tenantId: string, opts: { loteId?: string } = {}) {
+    if (!tenantId) throw new Error("tenantId is required");
+    return prisma.woodEntryTroza.count({
+      where: {
+        tenantId,
+        ...(opts.loteId ? { loteAserrioId: opts.loteId } : {}),
+        entry: { deletedAt: null, status: { notIn: ["anulado", "rechazado"] } },
       },
     });
   }

@@ -52,6 +52,12 @@ export interface EstadoLotesAserrio {
   lotes: LoteAserrio[];
   /** El patio entero, incluidas las bloqueadas: el picker muestra el porqué. */
   trozas: TrozaConsumible[];
+  /**
+   * El patio NO entró entero en la lectura (pasa el tope del endpoint).
+   * Quien dibuje una lista de piezas tiene que decirlo: mostrar de menos en
+   * silencio hace que el operador crea que su madera desapareció.
+   */
+  patioTruncado: { hay: number; leidas: number } | null;
   cargando: boolean;
   error: string | null;
   recargar: () => Promise<void>;
@@ -125,6 +131,7 @@ export interface EstadoLotesAserrio {
 export function useLotesAserrio(): EstadoLotesAserrio {
   const [lotes, setLotes] = useState<LoteAserrio[]>([]);
   const [trozas, setTrozas] = useState<TrozaConsumible[]>([]);
+  const [patioTruncado, setPatioTruncado] = useState<{ hay: number; leidas: number } | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -135,10 +142,15 @@ export function useLotesAserrio(): EstadoLotesAserrio {
          pedía el patio y los lotes dos veces por carga. */
       const [rl, rt] = await Promise.all([
         ctpGet<{ lotes?: LoteAserrio[] }>(`${API}?limite=500`),
-        ctpGet<{ trozas?: TrozaConsumible[] }>("/api/admin/forestal/trozas/patio"),
+        ctpGet<{ trozas?: TrozaConsumible[]; total?: number; devueltas?: number; truncado?: boolean }>(
+          "/api/admin/forestal/trozas/patio",
+        ),
       ]);
       setLotes(rl.lotes ?? []);
       setTrozas(rt.trozas ?? []);
+      setPatioTruncado(
+        rt.truncado ? { hay: rt.total ?? 0, leidas: rt.devueltas ?? (rt.trozas ?? []).length } : null,
+      );
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -285,7 +297,7 @@ export function useLotesAserrio(): EstadoLotesAserrio {
   );
 
   return {
-    lotes, trozas, cargando, error, recargar,
+    lotes, trozas, patioTruncado, cargando, error, recargar,
     crearConTrozas, agregarTrozas, consumirEnPatio, sumarACorrida, quitarDeCorrida,
     cerrarLote, quitarTroza, editarNota, deshacer,
   };

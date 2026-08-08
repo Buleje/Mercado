@@ -23,6 +23,7 @@ import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
 import CtpCorridaSinDeclarar from "./CtpCorridaSinDeclarar";
 import CtpSeccionKpis from "./CtpSeccionKpis";
+import CtpSinCertificar, { type DespachoSinCertificar } from "./CtpSinCertificar";
 import CtpLotesParaProducir from "./CtpLotesParaProducir";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useCtpSeccion } from "@/hooks/use-ctp-secciones";
@@ -119,6 +120,28 @@ export function CtpEntriesView({
   const [loteProd, setLoteProd] = useState("");
   /** Piezas ya elegidas en otra pantalla que el panel del lote debe respetar. */
   const [preseleccion, setPreseleccion] = useState<string[] | undefined>(undefined);
+  /**
+   * Los despachos del período que HOY no podrían certificar, con su motivo.
+   * Se pide con la misma ventana que la tabla: un hueco de otro mes no es
+   * deuda de esta pantalla.
+   */
+  const [sinCertificar, setSinCertificar] = useState<DespachoSinCertificar[] | null>(null);
+  useEffect(() => {
+    if (section !== "despacho") return;
+    const qs = new URLSearchParams({ traza: "1" });
+    if (period.from) qs.set("from", period.from);
+    if (period.to) qs.set("to", period.to);
+    let vivo = true;
+    fetch(`/api/admin/forestal/ctp?${qs}`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : { traza: null }))
+      .then((j: { traza?: { detalle?: DespachoSinCertificar[] } }) => {
+        if (vivo) setSinCertificar(j.traza?.detalle ?? []);
+      })
+      /* Es un aviso, no un bloqueo: sin la traza la pantalla sigue sirviendo
+         para despachar, sólo que sin el resumen de lo que falta. */
+      .catch(() => { if (vivo) setSinCertificar(null); });
+    return () => { vivo = false; };
+  }, [section, period.from, period.to, entries.length]);
   const lotes = useLotesAserrio();
   /** Los lotes que se pueden aserrar hoy, con lo que tienen esperando: se elige
    *  por peso (piezas y m³), no por nombre — el código del lote no dice nada. */
@@ -551,6 +574,15 @@ export function CtpEntriesView({
             void load();
           }}
         />
+      )}
+
+      {/* Lo que impide certificar, arriba de la tabla y no escondido en otra
+          pestaña: es deuda que se paga antes de que salga el próximo camión. */}
+      {section === "despacho" && sinCertificar !== null && (
+        <CtpSinCertificar despachos={sinCertificar} onAbrir={(id) => {
+          const d = entries.find((e) => e.id === id);
+          if (d) setChainEntry(d);
+        }} />
       )}
 
       {/* Filtro por estado (chips, consistente con Ingresos): oculta anulados de un clic. */}
