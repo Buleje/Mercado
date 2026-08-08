@@ -15,42 +15,82 @@
  * todavía se puede elegir es lo que le QUEDA al lote, y para eso está el atajo
  * del pie, que lleva al panel donde se tildan las trozas de la corrida
  * siguiente (ADR-349).
+ *
+ * Y se declara **en paquetes**, con el mismo formulario del SNIFFS que usa la
+ * producción desde el lote: código, presentación, piezas y medidas, con el
+ * volumen calculado y el tope del 56 % vivo mientras se carga (ADR-358). Antes
+ * esta puerta pedía una cantidad suelta — dos formas de declarar lo mismo, y la
+ * de acá se saltaba el techo.
  */
 
-import { useEffect, useMemo, useRef } from "react";
-import { Boxes, Layers, X } from "@buleje/design-system/icons";
-import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Boxes, X } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
+import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import { origenesDeTrozas } from "@/lib/forestal/produccion-paquetes";
+import { pieTablarDe, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import CtpRegistrarProduccionModal, {
+  type MaterialAConsumir,
+  type ProduccionRegistrada,
+} from "./CtpRegistrarProduccionModal";
+import CtpSumarALaCorrida from "./CtpSumarALaCorrida";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { Btn, formatDate } from "./ctp-shared";
 import type { CtpEntry } from "./ctp-section-shared";
 
-/** Lo que le queda al lote de esta corrida para la jornada siguiente. */
+/** Lo que le queda al lote de esta corrida sin aserrar. */
 export interface RestoDelLote {
   loteId: string;
   code: string;
-  piezas: number;
+  /** Las piezas mismas, no sólo cuántas: acá se eligen una por una (ADR-364). */
+  trozas: TrozaConsumible[];
   volumenM3: number;
 }
 
 export default function CtpCorridaSinDeclarar({
   corrida,
   trozas,
+  lote,
   resto,
   cargando,
-  onDeclarar,
+  onListo,
+  onError,
+  onAviso,
+  onSumarPiezas,
   onProducirResto,
   onCerrar,
 }: {
   corrida: CtpEntry;
   /** Las piezas que ESTA corrida se comió (`consumidaEnId === corrida.id`). */
   trozas: TrozaConsumible[];
+  /** El lote del que salió, si todavía existe: sólo aporta sus fechas al modal. */
+  lote?: LoteAserrio | null;
   resto?: RestoDelLote | null;
   cargando?: boolean;
-  onDeclarar: () => void;
+  /** Declaró: recargar la tabla del libro y contar qué pasó. */
+  onListo: (mensaje: string, detalle: string) => void;
+  /**
+   * El error sube. Al declarar, la corrida deja de estar pendiente y este panel
+   * se desmonta: un aviso adentro se iría con él (misma lección que ADR-343).
+   */
+  onError: (mensaje: string) => void;
+  /** Pasó algo digno de contar pero la corrida sigue abierta: el panel se queda. */
+  onAviso?: (mensaje: string, detalle: string) => void;
+  /** Sumar piezas del lote a ESTA corrida (ADR-364): el turno que entra en
+   *  tandas es una sola corrida. Devuelve cuánto entró. */
+  onSumarPiezas?: (input: { loteId: string; trozaIds: string[] }) => Promise<{
+    piezas: number;
+    volumenM3: number;
+    volumenTotalM3: number;
+  }>;
   onProducirResto?: (loteId: string) => void;
   onCerrar: () => void;
 }) {
+  const [abierto, setAbierto] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [sumando, setSumando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const entrada = Number(corrida.volumeInputM3 ?? 0);
   /**
    * Los m³ de las piezas marcadas vs. los que declaró la corrida.
@@ -64,6 +104,111 @@ export default function CtpCorridaSinDeclarar({
     () => Math.round(trozas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
     [trozas],
   );
+
+  /**
+   * El material de la declaración es **el que dice el libro**, no el que suman
+   * las piezas.
+   *
+   * `volumeInputM3` es el denominador del rendimiento y del tope del 56 % que ya
+   * quedó escrito al consumir: recalcularlo desde la tabla daría un segundo
+   * número para el mismo hecho, y el que manda es el asentado. Las piezas sí
+   * aportan lo que el asiento no tiene: cuántas son y qué títulos las amparan.
+   */
+  const material: MaterialAConsumir = useMemo(
+    () => ({
+      especie: corrida.speciesCommon ?? "Sin especie",
+      especieCientifica: corrida.speciesScientific ?? trozas[0]?.especieCientifica ?? null,
+      piezas: trozas.length,
+      volumenM3: entrada,
+      permisos: [...new Set(trozas.map((t) => (t.permiso ?? "").trim()).filter(Boolean))],
+      origenes: origenesDeTrozas(trozas),
+    }),
+    [corrida.speciesCommon, corrida.speciesScientific, trozas, entrada],
+  );
+
+  /**
+   * Declarar lo que salió. Acá NO se consume: eso ya pasó cuando se cargó la
+   * sierra, y esta corrida existe justamente porque quedó a medias (ADR-340).
+   */
+  async function declarar(datos: ProduccionRegistrada) {
+    setGuardando(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/admin/forestal/ctp", {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({
+          action: "declarar_produccion",
+          id: corrida.id,
+          quantity: datos.volumen,
+          unit: "m3",
+          lineaProduccion: datos.lineaProduccion,
+          observations: datos.observaciones,
+          pieces: datos.paquetes.reduce((a, p) => a + p.cantidad, 0),
+          productType: datos.paquetes[0]?.productType ?? null,
+          presentacion: datos.paquetes[0]?.presentacion ?? null,
+          codigoProducto: datos.paquetes[0]?.codigo ?? null,
+          paquetes: datos.paquetes.map((p) => ({
+            codigo: p.codigo,
+            productType: p.productType,
+            presentacion: p.presentacion,
+            cantidad: p.cantidad,
+            volumenM3: p.volumenM3,
+            espesorCm: p.espesorCm,
+            anchoCm: p.anchoCm,
+            largoM: p.largoM,
+            observations: p.observations || null,
+          })),
+        }),
+      });
+      const json = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(json?.message ?? json?.error ?? `El servidor respondió ${r.status}`);
+
+      invalidarCtp("/forestal/");
+      setAbierto(false);
+      const rend = entrada > 0 ? ` · rendimiento ${Math.round((datos.volumen / entrada) * 1000) / 10} %` : "";
+      onListo(
+        `Corrida N° ${corrida.lineNo} cerrada`,
+        `Declaró ${datos.volumen.toFixed(4)} m³ en ${datos.paquetes.length} paquete(s)${rend}. ` +
+          "Ya se puede despachar de esta corrida.",
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      onError(msg);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  /**
+   * Sumar la tanda que entra ahora (ADR-364). El aviso va como toast del padre
+   * y no acá: el panel se re-arma con la corrida ya engordada y un cartel
+   * interno se perdería en ese re-render.
+   */
+  async function sumar(trozaIds: string[]) {
+    if (!onSumarPiezas || !resto) return;
+    setSumando(true);
+    setError(null);
+    try {
+      const r = await onSumarPiezas({ loteId: resto.loteId, trozaIds });
+      /* `onAviso` y no `onListo`: la corrida sigue abierta y el panel tiene que
+         quedarse — cerrarlo acá obligaría a volver a buscarla en el menú para
+         declarar lo que salga. */
+      onAviso?.(
+        `Corrida N° ${corrida.lineNo}: ${r.piezas} troza${r.piezas === 1 ? "" : "s"} más a la sierra`,
+        `Entraron ${r.volumenM3.toFixed(4)} m³ más — la corrida va por ${r.volumenTotalM3.toFixed(4)} m³ ` +
+          "y sigue abierta para declarar lo que salga.",
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      onError(msg);
+    } finally {
+      setSumando(false);
+    }
+  }
 
   /* Elegir la corrida trae la vista acá: el panel se dibuja debajo de los KPIs y
      la barra, y sin esto se apretaba el botón y no pasaba nada visible. Mismo
@@ -109,7 +254,7 @@ export default function CtpCorridaSinDeclarar({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Btn variant="primary" onClick={onDeclarar}>
+          <Btn variant="primary" onClick={() => { setError(null); setAbierto(true); }}>
             <Boxes className="h-4 w-4" />
             Declarar producción
           </Btn>
@@ -150,22 +295,46 @@ export default function CtpCorridaSinDeclarar({
         </p>
       )}
 
-      {/* Lo que SÍ se elige: la madera que le queda al lote. El acto es otro
-          —abrir una corrida nueva— y por eso es un atajo al panel del lote, no
-          una casilla más en esta tabla. */}
-      {resto && resto.piezas > 0 && onProducirResto && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border-2 border-dashed border-[var(--rule-base)] px-3 py-2.5">
-          <Layers className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-          <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
-            Al lote <b className="font-mono text-[var(--text-primary)]">{resto.code}</b> le quedan{" "}
-            <b className="font-mono tabular-nums text-[var(--text-primary)]">{resto.piezas}</b> troza
-            {resto.piezas === 1 ? "" : "s"} sin aserrar ({resto.volumenM3.toFixed(4)} m³): elegí cuáles entran
-            en la corrida siguiente.
-          </p>
-          <Btn size="sm" variant="secondary" onClick={() => onProducirResto(resto.loteId)}>
-            Elegir sus trozas
-          </Btn>
-        </div>
+      {/* Lo que SÍ se elige: la madera que le queda al lote, con las DOS salidas
+          nombradas (ADR-364) — sumarla a esta corrida (la misma jornada) o abrir
+          una nueva. Antes había un solo camino y era siempre el segundo. */}
+      {resto && resto.trozas.length > 0 && (
+        <CtpSumarALaCorrida
+          lineNo={corrida.lineNo}
+          loteCode={resto.code}
+          trozas={resto.trozas}
+          fechaConsumo={corrida.entryDate}
+          guardando={sumando}
+          onSumar={(ids) => void sumar(ids)}
+          onCorridaNueva={() => onProducirResto?.(resto.loteId)}
+        />
+      )}
+
+      {/* Con el modal cerrado el error se muestra acá; con el modal abierto lo
+          muestra él, y repetirlo en los dos lugares lo hace parecer dos fallas. */}
+      {!abierto && error && (
+        <p className="rounded-xl bg-[var(--data-error-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+          {error}
+        </p>
+      )}
+
+      {/* El MISMO formulario del SNIFFS que usa la producción desde el lote: se
+          declara en paquetes, con el tope del 56 % a la vista (ADR-349/358). */}
+      {abierto && (
+        <CtpRegistrarProduccionModal
+          lote={lote ?? null}
+          material={material}
+          fecha={corrida.entryDate.slice(0, 10)}
+          guardando={guardando}
+          error={error}
+          titulo={`Declarar la producción de la corrida N° ${corrida.lineNo}`}
+          descripcion={
+            `${material.especie} · entró ${entrada.toFixed(4)} m³` +
+            (corrida.materiaPrimaRef ? ` · lote ${corrida.materiaPrimaRef}` : "")
+          }
+          onConfirmar={(datos) => void declarar(datos)}
+          onClose={() => setAbierto(false)}
+        />
       )}
     </section>
   );

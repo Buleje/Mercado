@@ -20,7 +20,6 @@ import CtpProduccionImportModal from "./CtpProduccionImportModal";
 import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
-import CtpDeclararProduccionModal from "./CtpDeclararProduccionModal";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
 import CtpCorridaSinDeclarar from "./CtpCorridaSinDeclarar";
 import CtpLotesParaProducir from "./CtpLotesParaProducir";
@@ -111,8 +110,6 @@ export function CtpEntriesView({
     onPresetUsado?.();
   }, [presetProducto, presetEspecie, onPresetUsado, section]);
 
-  /** Corrida abierta en el patio a la que se le va a declarar la producción. */
-  const [declarando, setDeclarando] = useState<CtpEntry | null>(null);
   /**
    * La corrida sin declarar cuyo panel está abierto arriba de la tabla.
    *
@@ -178,14 +175,29 @@ export function CtpEntriesView({
     () => (corridaAbiertaId ? lotes.trozas.filter((t) => t.consumidaEnId === corridaAbiertaId) : []),
     [lotes.trozas, corridaAbiertaId],
   );
-  /** Lo que le quedó al lote de esa corrida: es lo único que todavía se elige. */
+  /** El lote del que salió, si todavía existe: le da sus fechas al formulario. */
+  const loteDeLaCorrida = useMemo(
+    () =>
+      corridaAbierta?.materiaPrimaRef
+        ? (lotes.lotes.find((l) => l.code === corridaAbierta.materiaPrimaRef) ?? null)
+        : null,
+    [corridaAbierta, lotes.lotes],
+  );
+  /**
+   * Lo que le quedó al lote de esa corrida: es lo único que todavía se elige.
+   * Van las PIEZAS y no su cuenta — el panel las tilda una por una (ADR-364).
+   */
   const restoDelLote = useMemo(() => {
-    if (!corridaAbierta?.materiaPrimaRef) return null;
-    const x = lotesConMadera.find((l) => l.lote.code === corridaAbierta.materiaPrimaRef);
-    return x && x.piezas > 0
-      ? { loteId: x.lote.id, code: x.lote.code, piezas: x.piezas, volumenM3: x.volumenM3 }
-      : null;
-  }, [corridaAbierta, lotesConMadera]);
+    if (!loteDeLaCorrida || loteDeLaCorrida.status !== "abierto") return null;
+    const libres = lotes.trozas.filter((t) => t.loteAserrioId === loteDeLaCorrida.id && !t.consumidaEnId);
+    if (libres.length === 0) return null;
+    return {
+      loteId: loteDeLaCorrida.id,
+      code: loteDeLaCorrida.code,
+      trozas: libres,
+      volumenM3: Math.round(libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
+    };
+  }, [loteDeLaCorrida, lotes.trozas]);
   /* «Producir este lote» abre el panel del lote, no un formulario en blanco: es
      el mismo camino que elegirlo desde el CTA (ADR-349). */
   useEffect(() => {
@@ -431,13 +443,32 @@ export function CtpEntriesView({
         <CtpCorridaSinDeclarar
           corrida={corridaAbierta}
           trozas={trozasDeLaCorrida}
+          lote={loteDeLaCorrida}
           resto={restoDelLote}
           cargando={lotes.cargando}
-          onDeclarar={() => setDeclarando(corridaAbierta)}
           /* Lo que todavía se ELIGE es lo que le queda al lote: el atajo cierra
              esta corrida y abre el panel donde se tildan sus trozas. */
           onProducirResto={(loteId) => { setCorridaAbiertaId(null); setLoteProd(loteId); }}
           onCerrar={() => setCorridaAbiertaId(null)}
+          /* Sumar piezas engorda la corrida pero NO la cierra: se recarga la
+             tabla (su volumen consumido cambió) y el panel se queda abierto
+             para declarar lo que salga (ADR-364). */
+          onSumarPiezas={({ loteId, trozaIds }) =>
+            lotes.sumarACorrida({ loteId, corridaId: corridaAbierta.id, trozaIds })
+          }
+          onAviso={(msg, detalle) => {
+            pushToast({ tono: "success", msg, detail: detalle });
+            void load();
+          }}
+          onListo={(msg, detalle) => {
+            pushToast({ tono: "success", msg, detail: detalle });
+            setCorridaAbiertaId(null);
+            void load();
+          }}
+          onError={(msg) => {
+            pushToast({ tono: "warning", msg: "La producción no se pudo declarar", detail: msg });
+            void load();
+          }}
         />
       )}
 
@@ -577,20 +608,6 @@ export function CtpEntriesView({
         </div>
       )}
       {loading && <TablaSkeleton filas={4} columnas={section === "produccion" ? 8 : 9} />}
-
-      {declarando && (
-        <CtpDeclararProduccionModal
-          corrida={declarando}
-          onClose={() => setDeclarando(null)}
-          onListo={(msg) => {
-            pushToast({ tono: "success", msg, detail: "Ya se puede despachar de esta corrida." });
-            /* La corrida dejó de ser deuda: su panel se va con ella (además de
-               cerrarse solo cuando `load()` la saca de la lista de pendientes). */
-            setCorridaAbiertaId(null);
-            void load();
-          }}
-        />
-      )}
 
       {importarParte && (
         <CtpProduccionImportModal

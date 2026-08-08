@@ -2055,6 +2055,45 @@ export class WoodEntriesDB {
   /**
    * Lista entries con filtros. Excluye soft-deleted por default.
    */
+  /**
+   * Las PIEZAS que se comió una corrida (ADR-326).
+   *
+   * La ficha de una corrida sabía decir de qué guías salió y cuánto costó, pero
+   * no qué trozas entraron: un fiscalizador no cuenta metros cúbicos abstractos,
+   * cuenta piezas en la pila. Es la misma pregunta que responde el panel de las
+   * corridas sin declarar, y por eso se lee una sola vez, acá.
+   *
+   * Se filtra por el ESTADO de la corrida como el resto del módulo: una anulada
+   * ya devolvió su madera al patio y no tiene piezas que mostrar. El campo
+   * `fechaConsumo` viaja: es cuándo entró ESA pieza, que puede no ser el día del
+   * asiento.
+   */
+  static async trozasDeCorrida(tenantId: string, ctpEntryId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const viva = await prisma.forestCtpEntry.count({
+      where: { id: ctpEntryId, tenantId, deletedAt: null, status: { not: "anulado" } },
+    });
+    if (viva === 0) return [];
+    return prisma.woodEntryTroza.findMany({
+      where: { tenantId, consumidaEnId: ctpEntryId },
+      orderBy: [{ woodEntryId: "asc" }, { orden: "asc" }],
+      select: {
+        id: true,
+        woodEntryId: true,
+        codificacion: true,
+        codigoPlanta: true,
+        especieComun: true,
+        especieCientifica: true,
+        d1Cm: true,
+        d2Cm: true,
+        largoM: true,
+        volumenM3: true,
+        fechaConsumo: true,
+        entry: { select: { gtfNumber: true, originCode: true } },
+      },
+    });
+  }
+
   static async list(
     tenantId: string,
     filters: WoodEntryListFilters = {},

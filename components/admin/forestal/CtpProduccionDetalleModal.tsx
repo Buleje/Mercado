@@ -29,7 +29,9 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import CtpAtribucionEditor from "./CtpAtribucionEditor";
 import CtpHistorial from "./CtpHistorial";
+import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { Btn, MODAL_BODY } from "./ctp-shared";
+import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 
 export interface ProduccionResumen {
   id: string;
@@ -94,6 +96,8 @@ const fmtDate = (iso: string | null) => {
 export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: ProduccionResumen; onClose: () => void }) {
   const [consumos, setConsumos] = useState<ConsumoDTO[] | null>(null);
   const [costo, setCosto] = useState<CostoDTO | null>(null);
+  /** Las piezas de la corrida: vienen en el MISMO GET que los consumos. */
+  const [trozas, setTrozas] = useState<TrozaConsumible[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -113,6 +117,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
       const json = await r.json();
       setConsumos(json.consumos ?? []);
       setCosto(json.costo ?? null);
+      setTrozas(json.trozas ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -360,6 +365,24 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
 
             </div>
             </div>
+
+            {/**
+             * Las PIEZAS que entraron, no sólo los m³ por guía.
+             *
+             * La ficha respondía «de qué guías salió» y «cuánto costó»; un
+             * fiscalizador pregunta además «cuáles». Es la misma tabla del
+             * LO-CTP que se ve al declarar la corrida — misma madera, misma
+             * lectura — y en `soloLectura` porque acá ya es historia.
+             */}
+            {trozas.length > 0 && (
+              <CtpTrozasDelLote
+                trozas={trozas}
+                soloLectura
+                titulo="Trozas que entraron a esta corrida"
+                fechaConsumo={entry.entryDate}
+              />
+            )}
+
             {/* Rec #10 QA: historial de cambios de esta corrida (audit trail). */}
             <CtpHistorial entityId={entry.id} />
           </>

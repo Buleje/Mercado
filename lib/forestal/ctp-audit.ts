@@ -83,6 +83,11 @@ export type CtpAuditAction =
   | "ctp_lote_aserrio_trozas_add"
   | "ctp_lote_aserrio_trozas_remove"
   | "ctp_lote_aserrio_consumir"
+  // Piezas sumadas a una corrida que todavía no declaró (ADR-364). Va aparte de
+  // `consumir` porque no abre un asiento: le CAMBIA la materia prima a uno que
+  // ya existe, y eso mueve su rendimiento — es justo lo que un fiscalizador
+  // querría poder reconstruir.
+  | "ctp_corrida_sumar_piezas"
   // Ingresos de materia prima
   | "ctp_ingreso_create"
   // Corrección de un ingreso pendiente (typo de GTF, volumen mal tipeado): el

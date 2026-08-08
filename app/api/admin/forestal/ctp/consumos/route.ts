@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestCtpConsumoDB } from "@/lib/db/forest-ctp-consumo.db";
+import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { withApiHandler } from "@/lib/api-handler";
 import { ctpErrorResponse, ctpValidationResponse } from "@/lib/forestal/ctp-api-errors";
@@ -59,11 +60,36 @@ export const GET = withApiHandler("forestal-ctp-consumos-get", async (req: NextR
   if (!ctpEntryId) return NextResponse.json({ error: "ctpEntryId_required" }, { status: 400 });
 
   try {
-    const [consumos, costo] = await Promise.all([
+    const [consumos, costo, piezas] = await Promise.all([
       ForestCtpConsumoDB.listByEntry(auth.tenantId, ctpEntryId),
       ForestCtpConsumoDB.costoDeLinea(auth.tenantId, ctpEntryId),
+      /* Las PIEZAS, además de los m³ por guía: son las dos caras del mismo
+         consumo (ADR-326) y se piden juntas para que la ficha no tenga que
+         hacer un segundo viaje ni traerse el patio entero para filtrarlo. */
+      WoodEntriesDB.trozasDeCorrida(auth.tenantId, ctpEntryId),
     ]);
-    return NextResponse.json({ consumos, costo });
+    const num = (v: unknown) => (v == null ? null : Number(v));
+    return NextResponse.json({
+      consumos,
+      costo,
+      /* Whitelist explícita, con TODO lo que la tabla del LO-CTP dibuja: si acá
+         falta una columna, la pantalla la muestra vacía sin ningún error. */
+      trozas: piezas.map((t) => ({
+        id: t.id,
+        woodEntryId: t.woodEntryId,
+        codificacion: t.codificacion,
+        codigoPlanta: t.codigoPlanta,
+        especieComun: t.especieComun,
+        especieCientifica: t.especieCientifica,
+        d1Cm: num(t.d1Cm),
+        d2Cm: num(t.d2Cm),
+        largoM: num(t.largoM),
+        volumenM3: num(t.volumenM3),
+        gtfNumber: t.entry.gtfNumber,
+        permiso: t.entry.originCode,
+        fechaConsumo: t.fechaConsumo,
+      })),
+    });
   } catch (err) {
     return ctpErrorResponse(err, "ctp-consumos.GET", auth.tenantId);
   }
