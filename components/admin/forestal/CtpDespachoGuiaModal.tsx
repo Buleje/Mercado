@@ -21,13 +21,14 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Truck } from "@buleje/design-system/icons";
+import { Loader2, Truck, Wand2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useFichaCtp } from "@/hooks/use-ficha-ctp";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
 import { faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { rellenarGuia, siguienteNumeroGtf } from "@/lib/forestal/gtf-autocompletar";
 import {
   enviosDeLista,
   problemasDeLista,
@@ -39,10 +40,12 @@ import { UNIT_LABELS } from "./ctp-section-shared";
 import CtpGuiaDatosTab from "./CtpGuiaDatosTab";
 import CtpGuiaRegistrada from "./CtpGuiaRegistrada";
 import CtpListaProductosTab from "./CtpListaProductosTab";
+import CtpCubicarProductoModal from "./CtpCubicarProductoModal";
 import CtpProductosStockModal from "./CtpProductosStockModal";
 import CtpTrozasDespachoModal from "./CtpTrozasDespachoModal";
 import CtpVerificarGtfSerfor, { type SelloSerfor } from "./CtpVerificarGtfSerfor";
-import { Btn, ModalFooter } from "./ctp-shared";
+import { logger } from "@/lib/logger";
+import { Btn, ModalFooter, parseCitesPermiso } from "./ctp-shared";
 
 const hoy = () => new Date().toISOString().slice(0, 10);
 
@@ -71,6 +74,15 @@ export default function CtpDespachoGuiaModal({
   const [stockAbierto, setStockAbierto] = useState(Boolean(presetProducto));
   /** El otro origen de la lista: las trozas que salen sin aserrar (ADR-363). */
   const [trozasAbierto, setTrozasAbierto] = useState(false);
+  /**
+   * Cubicar la lista antes de registrarla (ADR-374).
+   *
+   * La guía declara volumen y piezas por renglón. Medirlos **después** de
+   * emitirla no arregla nada: el papel ya salió con el camión. Acá se mide y se
+   * cuadra contra lo que la lista dice, con las mismas advertencias que en
+   * Productos disponibles (ADR-368/369).
+   */
+  const [cubicarAbierto, setCubicarAbierto] = useState(false);
   /** Guía ya registrada: el modal se queda para imprimirla, no se cierra solo. */
   const [registrado, setRegistrado] = useState<{
     lineas: number;
@@ -81,6 +93,14 @@ export default function CtpDespachoGuiaModal({
   const [avance, setAvance] = useState<{ hechas: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  /**
+   * Por qué quedaron casilleros en blanco.
+   *
+   * Va en un desplegable y no en la línea del aviso: son seis motivos y ocupaban
+   * tres renglones del pie en un modal que ya es largo. El que quiere saberlo lo
+   * abre; el que ya lo sabe registra y sigue.
+   */
+  const [porQueVacios, setPorQueVacios] = useState<string[]>([]);
 
   /** Uso de la libreta en ESTA guía: se cuenta recién al registrar. */
   const usados = useRef<{ partes: Set<string>; vehiculos: Set<string> }>({ partes: new Set(), vehiculos: new Set() });
@@ -124,6 +144,116 @@ export default function CtpDespachoGuiaModal({
       titulos: p.titulos.length ? p.titulos : (ficha.titulos ?? []).slice(0, 1).map((t) => t.codigo).filter(Boolean),
     }));
   }, [ficha, emision]);
+
+  /**
+   * Rellenar TODA la guía con lo guardado (ADR-371).
+   *
+   * El autollenado de arriba corre una vez y sólo trae la Ficha; esto además
+   * baja de la libreta al destinatario, al transportista, al conductor y al
+   * camión más usados, arma la ruta y propone la vigencia. No inventa nada: lo
+   * que no está guardado queda vacío y se nombra.
+   */
+  /**
+   * La última guía emitida con datos, para heredar transportista, camión y
+   * chofer. Se pide una sola vez y se guarda: es la fuente que la libreta no
+   * tiene la primera vez que alguien despacha.
+   */
+  const [ultimaGuia, setUltimaGuia] = useState<Partial<GtfDatos> | null>(null);
+  /** El último N° emitido: de ahí sale el siguiente correlativo propuesto. */
+  const [ultimaGtfNumber, setUltimaGtfNumber] = useState<string | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    /* `ultimaCompleta=1` y no el listado: la bandeja devuelve la guía RESUMIDA
+       —número, destinatario, placa— y el cuerpo con el que se rellena no viaja
+       ahí. Pedirle a esa lista los datos completos era buscar una llave en un
+       cajón donde nunca estuvo: el modal quedaba sin fuente y no heredaba nada. */
+    fetch("/api/admin/forestal/ctp/guias-emitidas?ultimaCompleta=1", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : { ultima: null }))
+      .then((j: { ultima?: unknown; gtfNumber?: string | null }) => {
+        if (!vivo) return;
+        setUltimaGuia(j.ultima && typeof j.ultima === "object" ? (j.ultima as Partial<GtfDatos>) : null);
+        setUltimaGtfNumber(j.gtfNumber ?? null);
+      })
+      /* Sin guía anterior el relleno usa la Ficha y la libreta, que es como
+         venía funcionando: es una fuente más, no un requisito. */
+      .catch(() => { if (vivo) setUltimaGuia(null); });
+    return () => { vivo = false; };
+  }, []);
+
+  /**
+   * El permiso CITES que ampara lo que sale, traído del INGRESO de origen.
+   *
+   * Antes sólo se heredaba de la guía anterior, así que la PRIMERA salida de
+   * una especie protegida dejaba el casillero vacío teniendo el papel cargado
+   * a un salto de distancia. Se precarga acá —y no al hacer click— para que el
+   * botón siga siendo instantáneo.
+   */
+  const especiesCites = useMemo(
+    () => [...new Set(filas.filter((f) => f.cites && f.especie).map((f) => f.especie as string))],
+    [filas],
+  );
+  const [citesPermiso, setCitesPermiso] = useState<string | null>(null);
+  useEffect(() => {
+    if (especiesCites.length === 0) { setCitesPermiso(null); return; }
+    let vivo = true;
+    /* La más reciente de esa especie que tenga permiso: es la que declara con
+       qué papel entró la madera que ahora sale. */
+    Promise.all(
+      especiesCites.map((esp) =>
+        fetch(`/api/admin/forestal/wood-entries?species=${encodeURIComponent(esp)}&cites=1&limit=5`, {
+          credentials: "include",
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .catch((err) => {
+            logger.warn("[ctp-guia] no se pudo leer el permiso CITES del origen", { error: String(err), especie: esp });
+            return null;
+          }),
+      ),
+    )
+      .then((rs) => {
+        if (!vivo) return;
+        for (const j of rs) {
+          const lista = (j as { data?: Array<{ notes?: string | null }> } | null)?.data ?? [];
+          for (const e of lista) {
+            const p = parseCitesPermiso(e.notes ?? null);
+            if (p) { setCitesPermiso(p); return; }
+          }
+        }
+        setCitesPermiso(null);
+      })
+      .catch(() => { if (vivo) setCitesPermiso(null); });
+    return () => { vivo = false; };
+  }, [especiesCites]);
+
+  function rellenarTodo() {
+    const r = rellenarGuia(datos, {
+      ficha,
+      destinatario: directorio.porRol("destinatario")[0] ?? null,
+      transportista: directorio.porRol("transportista")[0] ?? null,
+      conductor: directorio.porRol("conductor")[0] ?? null,
+      vehiculo: directorio.vehiculosActivos[0] ?? null,
+      destino: datos.destinatario.nombre || null,
+      ultimaGuia,
+      emision,
+      citesPermiso,
+      llevaCites: especiesCites.length > 0,
+    });
+    setDatos(r.datos);
+    /* El N° de guía también: sigue la serie de la última emitida. Es el mismo
+       correlativo que asigna «Emitir GTF», propuesto antes de guardar. */
+    if (!gtfNumber.trim() && ultimaGtfNumber) {
+      const siguiente = siguienteNumeroGtf(ultimaGtfNumber);
+      if (siguiente) setGtfNumber(siguiente);
+    }
+    setAviso(
+      `Se completó ${r.completados.join(", ") || "nada"}.` +
+        (r.faltantes.length > 0 ? ` Falta cargar: ${r.faltantes.join("; ")}.` : " La guía quedó completa."),
+    );
+    /* Lo que queda en blanco a propósito se nombra: si no, alguien lo llena con
+       cualquier cosa para que «no quede nada vacío», y eso es lo que un control
+       lee como declaración falsa. */
+    setPorQueVacios(r.aProposito);
+  }
 
   /** La fecha de emisión es también el arranque del traslado. */
   function cambiarEmision(v: string) {
@@ -286,7 +416,25 @@ export default function CtpDespachoGuiaModal({
           ) : (
           <ModalFooter
             error={error}
-            aviso={aviso}
+            aviso={
+              aviso ? (
+                <span className="min-w-0 flex-1">
+                  {aviso}
+                  {porQueVacios.length > 0 && (
+                    <details className="mt-0.5 inline-block align-top">
+                      <summary className="cursor-pointer text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                        ¿por qué quedaron casilleros vacíos?
+                      </summary>
+                      <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs font-normal text-[var(--text-secondary)]">
+                        {porQueVacios.map((m) => (
+                          <li key={m}>{m}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </span>
+              ) : null
+            }
             nota={
               <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span>
@@ -307,6 +455,25 @@ export default function CtpDespachoGuiaModal({
             }
           >
             <Btn variant="ghost" onClick={cerrar} disabled={enviando}>Cerrar</Btn>
+            {/* Rellenar la guía con lo guardado: la Ficha del CTP y la libreta
+                ya tienen el 90 % de estos casilleros (ADR-371). No toca la lista
+                de productos — esa es la otra pestaña y otro acto. */}
+            {/* Apretarlo antes de que llegue la Ficha del CTP contestaba «se
+                completó nada» y hacía creer que no hay datos guardados. Mientras
+                carga lo dice y no deja: la fuente todavía no está. */}
+            <Btn
+              variant="secondary"
+              onClick={rellenarTodo}
+              disabled={enviando || !ficha}
+              title={
+                ficha
+                  ? "Completa propietario, destinatario, transportista, vehículo, traslado y títulos con lo que ya está guardado"
+                  : "Todavía estoy trayendo la Ficha del CTP, de donde salen el propietario y el punto de partida"
+              }
+            >
+              <Wand2 className="h-4 w-4" />
+              {ficha ? "Rellenar datos de la guía" : "Trayendo la Ficha del CTP…"}
+            </Btn>
             <Btn variant="primary" onClick={() => void registrar()} disabled={!puedeRegistrar}>
               {enviando ? (
                 <>
@@ -407,6 +574,7 @@ export default function CtpDespachoGuiaModal({
               onObservaciones={(v) => setDatos((p) => ({ ...p, observaciones: v }))}
               onAbrirStock={() => setStockAbierto(true)}
               onAbrirTrozas={() => setTrozasAbierto(true)}
+              onCubicar={() => setCubicarAbierto(true)}
               problemas={problemas}
             />
           )}
@@ -414,6 +582,28 @@ export default function CtpDespachoGuiaModal({
           )}
         </div>
       </AdminModal>
+
+      {cubicarAbierto && !registrado && (
+        <CtpCubicarProductoModal
+          filas={filas.map((f) => ({
+            id: f.uid,
+            etiqueta: f.codigo ?? (f.lineNo != null ? `Corrida N° ${f.lineNo}` : "Renglón"),
+            especie: f.especie,
+            producto: f.producto,
+            piezas: f.cantidad,
+            volumenM3: f.volumen,
+          }))}
+          /* El hilo al libro: la cubicación queda ligada a las CORRIDAS que
+             ampara esta guía — la guía todavía no existe cuando se mide. */
+          ctpEntryIds={[...new Set(filas.map((f) => f.corridaId).filter(Boolean))]}
+          titulo={`Guía ${gtfNumber || "sin número"} · ${filas.length} producto${filas.length === 1 ? "" : "s"}`}
+          onClose={() => setCubicarAbierto(false)}
+          onGuardada={(msg) => {
+            setCubicarAbierto(false);
+            setAviso(msg);
+          }}
+        />
+      )}
 
       {stockAbierto && !registrado && (
         <CtpProductosStockModal
