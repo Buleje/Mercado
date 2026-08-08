@@ -29,6 +29,8 @@ export interface ParteGuardada {
   departamento?: string | null;
   provincia?: string | null;
   distrito?: string | null;
+  /** Sector o caserío guardado en la libreta (ADR-373). */
+  zona?: string | null;
   registroMtc?: string | null;
   licencia?: string | null;
 }
@@ -175,6 +177,7 @@ export function rellenarGuia(datos: GtfDatos, f: FuentesDeRelleno): ResultadoRel
     destinatario.departamento = tomar(destinatario.departamento, f.destinatario.departamento);
     destinatario.provincia = tomar(destinatario.provincia, f.destinatario.provincia);
     destinatario.distrito = tomar(destinatario.distrito, f.destinatario.distrito);
+    destinatario.zona = tomar(destinatario.zona, f.destinatario.zona);
   }
   const dPrevio = f.ultimaGuia?.destinatario;
   destinatario.nombre = tomar(tomar(destinatario.nombre, f.destino), dPrevio?.nombre);

@@ -131,6 +131,16 @@ export default function CtpVehiculoModal({
               onChange={(e) => set({ placa: e.target.value.toUpperCase() })}
             />
           </Field>
+          {/* Son DOS unidades y la guía declara las dos: guardarla acá evita
+              re-tipearla en cada guía del mismo camión. */}
+          <Field label="Placa remolque" span={4} hint="Sólo si el camión lleva acoplado">
+            <input
+              type="text"
+              className={`${I} font-mono uppercase`}
+              value={b.placaRemolque ?? ""}
+              onChange={(e) => set({ placaRemolque: e.target.value.toUpperCase() })}
+            />
+          </Field>
           <Field label="Marca" span={4}>
             <input type="text" className={I} value={b.marca ?? ""} onChange={(e) => set({ marca: e.target.value })} />
           </Field>

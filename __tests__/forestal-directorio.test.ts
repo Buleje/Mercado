@@ -33,6 +33,7 @@ const parte = (over: Partial<Parte> = {}): Parte => ({
   nombre: "Maderera del Oriente SAC",
   docTipo: "RUC",
   docNumero: "20512345678",
+  zona: null,
   direccion: "Av. Los Cedros 123",
   region: "Ucayali",
   provincia: "Coronel Portillo",
@@ -59,6 +60,7 @@ const parte = (over: Partial<Parte> = {}): Parte => ({
 const vehiculo = (over: Partial<Vehiculo> = {}): Vehiculo => ({
   id: "v1",
   placa: "A2C123",
+  placaRemolque: null,
   marca: "Volvo",
   tipo: "Camión",
   configuracion: null,

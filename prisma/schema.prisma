@@ -6141,6 +6141,10 @@ model ForestParty {
   region    String?
   provincia String?
   distrito  String?
+  /// Sector o caserío del formato oficial (ADR-373). En la selva identifica el
+  /// punto de llegada cuando la dirección no tiene numeración, y es lo que
+  /// cotejan los puestos de control.
+  zona      String?
   ubigeo    String?
   telefono  String?
   email     String?
@@ -6208,6 +6212,10 @@ model ForestVehiculo {
   tenantId String
 
   placa         String
+  /// Chapa del acoplado (ADR-373). Va aparte de `placa` porque son dos
+  /// unidades y la guía declara las dos: un camión que siempre lleva el mismo
+  /// remolque obligaba a re-tipearlo en cada guía.
+  placaRemolque String?
   marca         String?
   tipo          String? // camión, tráiler, camioneta…
   /// Configuración vehicular del MTC (T3S3, C2…). Va en la guía cuando se declara.

@@ -93,6 +93,7 @@ function aParte(r: ParteRow): Parte {
     region: r.region,
     provincia: r.provincia,
     distrito: r.distrito,
+    zona: r.zona,
     ubigeo: r.ubigeo,
     telefono: r.telefono,
     email: r.email,
@@ -118,6 +119,7 @@ function aVehiculo(r: VehiculoRow): Vehiculo {
   return {
     id: r.id,
     placa: r.placa,
+    placaRemolque: r.placaRemolque,
     marca: r.marca,
     tipo: r.tipo,
     configuracion: r.configuracion,
@@ -208,6 +210,7 @@ export const ForestDirectorioDB = {
       region: vacioANull(input.region),
       provincia: vacioANull(input.provincia),
       distrito: vacioANull(input.distrito),
+      zona: vacioANull(input.zona),
       ubigeo: vacioANull(input.ubigeo),
       telefono: vacioANull(input.telefono),
       email: vacioANull(input.email),
@@ -249,9 +252,20 @@ export const ForestDirectorioDB = {
 
     let row: ParteRow;
     if (existente) {
-      // Unión de roles: nunca se le quita a alguien un papel que ya cumplió, salvo
-      // que se edite explícitamente desde el directorio (ahí llegan todos los roles).
-      const roles = Array.from(new Set([...(existente.roles as RolParte[]), ...input.roles]));
+      /**
+       * Unión de roles **sólo en el alta rápida** (match por documento): ahí la
+       * pantalla manda el papel de ESE momento —«lo estoy usando como
+       * destinatario»— y quitarle los otros borraría historia.
+       *
+       * Con `id` la llamada viene de la edición del directorio, donde el
+       * formulario muestra todos los roles: ahí lo que llega ES la lista. Sin
+       * esta distinción un rol puesto por error no se podía sacar nunca, y una
+       * empresa marcada «transportista» por accidente se ofrecía para siempre
+       * como transportista al rellenar una guía.
+       */
+      const roles = input.id
+        ? input.roles
+        : Array.from(new Set([...(existente.roles as RolParte[]), ...input.roles]));
       // Sin `id` el match fue POR DOCUMENTO: la llamada viene de un alta rápida
       // (la barra de la guía) que sólo manda los campos de esa pantalla. Pisar con
       // `null` lo que no vino borraría la dirección que se cargó desde otra —
@@ -361,6 +375,7 @@ export const ForestDirectorioDB = {
 
     const campos = {
       placa,
+      placaRemolque: vacioANull(input.placaRemolque ? normalizarPlaca(input.placaRemolque) : null),
       marca: vacioANull(input.marca),
       tipo: vacioANull(input.tipo),
       configuracion: vacioANull(input.configuracion),

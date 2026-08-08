@@ -184,6 +184,8 @@ export const parteInputSchema = z.object({
   region: texto(80).optional(),
   provincia: texto(80).optional(),
   distrito: texto(80).optional(),
+  /** Sector o caserío del formato oficial (ADR-373). */
+  zona: texto(80).optional(),
   ubigeo: texto(10).optional(),
   telefono: texto(40).optional(),
   email: texto(160).optional(),
@@ -215,6 +217,8 @@ export const vehiculoInputSchema = z.object({
   marca: texto(40).optional(),
   tipo: texto(40).optional(),
   configuracion: texto(20).optional(),
+  /** Chapa del acoplado, si el camión lleva (ADR-373). */
+  placaRemolque: texto(15).optional(),
   capacidadM3: z.number().nonnegative().max(999).optional().nullable(),
   transportistaId: texto(40).optional().nullable(),
   notas: texto(500).optional(),
@@ -234,6 +238,8 @@ export interface Parte {
   region: string | null;
   provincia: string | null;
   distrito: string | null;
+  /** Sector o caserío del formato oficial (ADR-373). */
+  zona: string | null;
   ubigeo: string | null;
   telefono: string | null;
   email: string | null;
@@ -256,6 +262,8 @@ export interface Parte {
 export interface Vehiculo {
   id: string;
   placa: string;
+  /** Chapa del acoplado: la guía declara las dos unidades (ADR-373). */
+  placaRemolque: string | null;
   marca: string | null;
   tipo: string | null;
   configuracion: string | null;
