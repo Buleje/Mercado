@@ -419,13 +419,18 @@ export default function CtpCorridaSinDeclarar({
             y esa madera vuelve a estar libre.{" "}
             <b>«Declarar producción» las saca y sigue</b>; acá las sacás sin declarar todavía.
           </p>
-          <Btn size="sm" variant="secondary" disabled={sumando} onClick={() => setEnProduccion(new Set(trozas.map((t) => t.id)))}>
-            Deshacer
-          </Btn>
-          <Btn size="sm" variant="danger" disabled={sumando || !onQuitarPiezas} onClick={() => void quitar()}>
-            {sumando ? <Loader2 className="h-4 w-4 animate-spin" /> : <MinusCircle className="h-4 w-4" />}
-            Sacar de la corrida
-          </Btn>
+          {/* Los dos juntos y a tamaño táctil: en el celular quedaban de 36 px y
+              uno en cada renglón — el destructivo suelto, que es el peor de
+              tocar por error. */}
+          <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+            <Btn variant="secondary" disabled={sumando} onClick={() => setEnProduccion(new Set(trozas.map((t) => t.id)))}>
+              Deshacer
+            </Btn>
+            <Btn variant="danger" disabled={sumando || !onQuitarPiezas} onClick={() => void quitar()}>
+              {sumando ? <Loader2 className="h-4 w-4 animate-spin" /> : <MinusCircle className="h-4 w-4" />}
+              Sacar de la corrida
+            </Btn>
+          </div>
         </div>
       )}
 

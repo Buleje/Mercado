@@ -32,6 +32,42 @@ import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { Btn, I } from "./ctp-shared";
 import type { EstadoLotesAserrio } from "./hooks/use-lotes-aserrio";
 
+/**
+ * El turno a medio cargar, guardado por lote.
+ *
+ * El operador tilda veinte trozas, lo llaman, cierra el panel — y al volver
+ * tenía que empezar de nuevo. La selección es trabajo, no un estado efímero.
+ *
+ * ⚠️ Se guarda **a mano** en cada cambio, NO con un `useEffect([seleccion])`:
+ * la carga vive en un efecto (necesita las trozas ya traídas del servidor) y un
+ * efecto que persista correría antes, escribiendo vacío encima de lo guardado.
+ * Es exactamente el bug que borró los precios por especie del cubicador.
+ */
+const CLAVE_SELECCION = "buleje-ctp-produccion-seleccion";
+
+function leerSeleccionGuardada(loteId: string): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const crudo = window.localStorage.getItem(`${CLAVE_SELECCION}:${loteId}`);
+    const ids: unknown = crudo ? JSON.parse(crudo) : null;
+    return Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    /* Storage lleno, JSON corrupto o modo privado: se arranca con el lote entero,
+       que es el default de siempre. Nunca vale romper la pantalla por una caché. */
+    return [];
+  }
+}
+
+function guardarSeleccion(loteId: string, ids: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    if (ids.length === 0) window.localStorage.removeItem(`${CLAVE_SELECCION}:${loteId}`);
+    else window.localStorage.setItem(`${CLAVE_SELECCION}:${loteId}`, JSON.stringify(ids));
+  } catch {
+    /* Sin persistencia se sigue trabajando igual: es una comodidad, no un dato. */
+  }
+}
+
 export default function CtpProduccionDeLote({
   lote,
   preseleccion,
@@ -105,6 +141,8 @@ export default function CtpProduccionDeLote({
      que espera producir. Se preseleccionan una sola vez por lote —si se
      re-aplicara en cada render, destildar una sería imposible: volvería sola. */
   const preseleccionado = useRef<string | null>(null);
+  /** Ya se restauró la selección de este lote: recién ahí se puede persistir. */
+  const restaurado = useRef(false);
   useEffect(() => {
     /* La clave incluye la preselección: entrar dos veces al MISMO lote con
        elecciones distintas tiene que re-aplicarlas, y sólo comparar el id las
@@ -112,12 +150,28 @@ export default function CtpProduccionDeLote({
     const clave = `${lote.id}|${(preseleccion ?? []).join(",")}`;
     if (preseleccionado.current === clave) return;
     preseleccionado.current = clave;
-    /* Con piezas elegidas desde otra pantalla se respetan (acotadas a las que
-       de verdad están libres en el lote); sin ellas, entra el lote entero. */
+    /* Tres orígenes, en este orden: lo que otra pantalla eligió (explícito y
+       reciente), lo que quedó a medio tildar la vez pasada, y el lote entero.
+       Los tres se acotan a las piezas que de verdad siguen libres: una guardada
+       que ya entró a otra corrida no puede volver tildada. */
     const vivas = new Set(yaEnElLote.map((t) => t.id));
-    const pedidas = (preseleccion ?? []).filter((id) => vivas.has(id));
-    setSeleccion(new Set(pedidas.length > 0 ? pedidas : yaEnElLote.map((t) => t.id)));
+    const dePantalla = (preseleccion ?? []).filter((id) => vivas.has(id));
+    const guardadas = dePantalla.length > 0 ? [] : leerSeleccionGuardada(lote.id).filter((id) => vivas.has(id));
+    const inicial =
+      dePantalla.length > 0 ? dePantalla : guardadas.length > 0 ? guardadas : yaEnElLote.map((t) => t.id);
+    setSeleccion(new Set(inicial));
+    restaurado.current = true;
   }, [lote.id, yaEnElLote, preseleccion]);
+
+  /**
+   * Todo cambio de selección se guarda acá, en el mismo gesto que lo produce.
+   * `restaurado` evita escribir antes de la restauración —el orden que rompió el
+   * cubicador— y `lote.id` va en la clave para no mezclar turnos.
+   */
+  const elegir = (s: Set<string>) => {
+    setSeleccion(s);
+    if (restaurado.current) guardarSeleccion(lote.id, [...s]);
+  };
 
   /**
    * Elegir el lote TRAE la vista acá.
@@ -276,6 +330,11 @@ export default function CtpProduccionDeLote({
 
       invalidarCtp("/forestal/");
       await estado.recargar();
+      /* El turno se cerró: lo guardado dejó de valer y lo que quede en el lote
+         se ofrece entero en la corrida siguiente. */
+      guardarSeleccion(lote.id, []);
+      restaurado.current = false;
+      preseleccionado.current = null;
       setSeleccion(new Set());
       setAbierto(false);
       onListo(
@@ -419,7 +478,7 @@ export default function CtpProduccionDeLote({
       <CtpTrozasDelLote
         trozas={yaEnElLote}
         seleccion={seleccion}
-        onSeleccion={setSeleccion}
+        onSeleccion={elegir}
         fechaConsumo={fechaConsumo}
         cargando={estado.cargando}
         vacio="Este lote no tiene trozas apartadas. Agregale piezas del patio en «Lotes de aserrío»."
@@ -458,7 +517,7 @@ export default function CtpProduccionDeLote({
             { label: "Volumen", valor: `${material.volumenM3.toFixed(4)} m³`, fuerte: true },
             { label: "Pie tablar", valor: `${pieTablarDe(material.volumenM3).toLocaleString("es-PE")} pt` },
           ]}
-          onLimpiar={() => setSeleccion(new Set())}
+          onLimpiar={() => elegir(new Set())}
           accionLabel="Declarar producción"
           accionIcon={Boxes}
           accionDisabled={excesos.length > 0}
