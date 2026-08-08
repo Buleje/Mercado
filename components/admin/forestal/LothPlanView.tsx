@@ -20,6 +20,7 @@ import LothCensoImportModal from "./LothCensoImportModal";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import LothZafraPanel from "./LothZafraPanel";
+import LothEspecieFichas, { type FichaEspecie } from "./LothEspecieFichas";
 import { analizarZafra } from "@/lib/forestal/loth-zafra";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
@@ -105,6 +106,45 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
 
   // Cruce censo ↔ autorizado ↔ movilizado por especie (compliance SERFOR/OSINFOR).
   const controlRows = useMemo(() => buildControlRows(species, trees, balance), [species, trees, balance]);
+
+  /**
+   * Una ficha por especie: fusiona lo que antes vivía en TRES tablas.
+   *
+   * `ControlRow` ya cruzaba plan + censo + balance; lo que faltaba era traer
+   * los m³ talados y la plata (valor movilizado, pago por derecho, precio) que
+   * sólo estaban en el balance y en la lista de especies autorizadas. Con eso,
+   * la especie se cuenta entera en una fila.
+   */
+  const fichasEspecie = useMemo<FichaEspecie[]>(() => {
+    const bal = new Map((balance?.rows ?? []).map((r) => [normSp(r.species), r]));
+    const sp = new Map(species.map((e) => [normSp(e.speciesCommon), e]));
+    return controlRows.map((r) => {
+      const b = bal.get(normSp(r.species));
+      const e = sp.get(normSp(r.species));
+      const num = (v: string | null | undefined) => (v == null || v === "" ? null : Number(v));
+      return {
+        species: r.species,
+        cites: r.cites,
+        autorizada: r.autorizada,
+        autorizadoM3: r.autorizadoM3,
+        autorizadoArboles: r.autorizadoArboles,
+        censadoCount: r.censadoCount,
+        censadoVolM3: r.censadoVolM3,
+        taladoCount: r.taladoCount,
+        taladoM3: b?.talado ?? 0,
+        movilizado: r.movilizado,
+        saldo: r.saldo,
+        pctEjecutado: r.pctEjecutado,
+        valorSoles: b?.valorMovilizado ?? null,
+        pagoDerechoSoles: b?.pagoDerecho ?? null,
+        precioM3: num(e?.precioVentaSoles),
+        venM3: num(e?.valorEstadoNaturalSoles),
+        motivos: r.flags.map((f) => FLAG_LABEL[f]),
+        tone: r.tone,
+        speciesId: e?.id ?? null,
+      };
+    });
+  }, [controlRows, balance, species]);
   const movilizadoTotal = useMemo(() => (balance?.rows ?? []).reduce((a, r) => a + r.movilizado, 0), [balance]);
   const aprovechamientoPct = autorizadoTotal > 0 ? (movilizadoTotal / autorizadoTotal) * 100 : 0;
   const saldoTotal = Math.max(0, autorizadoTotal - movilizadoTotal);
@@ -295,20 +335,20 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
           {/* Zafra: ¿llego con los tiempos de la vigencia? */}
           <LothZafraPanel zafra={zafra} />
 
-          {/* Control por especie y Balance van a ANCHO COMPLETO, uno debajo del
-              otro. Se probó emparejarlos en dos columnas para ganar scroll y
-              salió peor: con 8 columnas de números cada tabla se parte —«Misa
-              NO EN PLAN» y «Azúcar huayo» en dos renglones, y el balance
-              cortando «% mov»—. Un cuadro de compliance que se lee mal cuesta
-              más que el scroll que ahorra. */}
+          {/* UNA ficha por especie: reemplaza «Control por especie» y «Balance de
+              extracción», que eran dos cuadros de ocho columnas repitiendo la
+              misma especie y el mismo «autorizado». */}
+          <LothEspecieFichas
+            fichas={fichasEspecie}
+            pagoArea={balance?.pagoArea ?? null}
+            pagoDerechoTotal={balance?.pagoDerechoTotal ?? null}
+            valorTotal={balance?.valorTotal ?? null}
+          />
 
-          {/* Control por especie — ¿estoy dentro de lo autorizado? (compliance OSINFOR) */}
-          <EspecieControlPanel rows={controlRows} loading={detailLoading} />
-
-          {/* Balance de extracción / saldos — lente de dinero (pago derecho) */}
-          <BalancePanel balance={balance} loading={detailLoading} vigenciaHasta={plan.vigenciaHasta} />
-
-          {/* Especies autorizadas (editor) */}
+          {/* El EDITOR de especies autorizadas. Su tabla repite lo que la ficha
+              de arriba ya muestra —volumen, árboles, precio—, pero es el único
+              lugar para dar de alta y corregir, así que se queda con el título
+              diciendo qué es: acá se edita, arriba se lee. */}
           <SpeciesPanel planId={plan.id} species={species} onChange={() => loadDetail(plan.id)} />
 
           {/* Censo */}
@@ -474,7 +514,7 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
   }
 
   return (
-    <Panel title="Especies autorizadas" action={<AddBtn onClick={() => setOpen(true)} />}>
+    <Panel title="Editar especies autorizadas" action={<AddBtn onClick={() => setOpen(true)} />}>
       <AdminModal
         open={open}
         onClose={() => setOpen(false)}
