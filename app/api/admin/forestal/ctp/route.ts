@@ -244,7 +244,25 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
        formulario de producción. Sin período — «el de siempre» es histórico, no
        de este mes. */
     if (url.searchParams.get("medidas") === "1") {
-      return NextResponse.json({ medidas: await ForestCtpDB.medidasFrecuentes(auth.tenantId) });
+      return NextResponse.json({
+        medidas: await ForestCtpDB.medidasFrecuentes(auth.tenantId, {
+          /* `?producto=` acota «las de siempre» al producto que se está
+             declarando: las de la paquetería no sirven para listones. */
+          producto: url.searchParams.get("producto") ?? undefined,
+        }),
+      });
+    }
+    /* Los códigos de paquete ya usados en la planta: con ellos la pantalla
+       propone el siguiente LIBRE (el índice es único por tenant, no por
+       corrida — proponer el de al lado es un 422 asegurado). */
+    if (url.searchParams.get("codigosPaquete") === "1") {
+      return NextResponse.json({ codigos: await ForestCtpDB.codigosDePaquete(auth.tenantId) });
+    }
+    /* «Tengo este atado delante: ¿de dónde salió?» (ADR-366). Sin período: el
+       que lee un cartel en la pila no sabe de qué mes es la corrida. */
+    const paquete = url.searchParams.get("paquete");
+    if (paquete != null) {
+      return NextResponse.json(await ForestCtpDB.buscarPaquetes(auth.tenantId, paquete));
     }
     // Grafo de cadena de custodia del período (Radar de trazabilidad).
     if (url.searchParams.get("grafo") === "1") {
@@ -450,9 +468,11 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
             message:
               r.reason === "anulado"
                 ? "El despacho está anulado: su guía no se puede editar."
-                : "No se encontró ese despacho.",
+                : r.reason === "emitida"
+                  ? `La guía ${r.gtf} ya está emitida: identifica un traslado ante la autoridad y no se puede modificar.`
+                  : "No se encontró ese despacho.",
           },
-          { status: r.reason === "anulado" ? 422 : 404 },
+          { status: r.reason === "no_despacho" ? 404 : 422 },
         );
       }
       // Se devuelve lo NORMALIZADO por Zod: la UI se queda con lo que quedó

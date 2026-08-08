@@ -119,8 +119,25 @@ export default function CtpGuiaDatosTab({
               ))}
             </select>
           </Field>
-          <Field span={3} label="Número de GTF" required casillero={4}>
-            <input type="text" className={`${I} font-mono`} placeholder="001-00000025" value={gtfNumber} onChange={(e) => onGtfNumber(e.target.value)} />
+          {/* El N° NO se tipea (ADR-374): lo asigna el servidor al emitir, con un
+              lock sobre los despachos del tenant. Es lo único que garantiza una
+              serie sin huecos ni repetidos cuando dos tablets emiten a la vez.
+              Se muestra igual —vacío mientras es borrador— porque es el
+              casillero (4) del formato y quien cotea contra el papel lo busca. */}
+          <Field
+            span={3}
+            label="Número de GTF"
+            casillero={4}
+            hint={gtfNumber ? undefined : "Se asigna solo al emitir la guía"}
+          >
+            <input
+              type="text"
+              className={`${I} font-mono`}
+              placeholder="se asigna al emitir"
+              value={gtfNumber}
+              readOnly
+              aria-readonly
+            />
           </Field>
           <Field span={6} label="Autoridad que la ampara" casillero={2} hint="ARFFS competente">
             <input type="text" className={I} value={datos.guia.autoridad} onChange={(e) => setGuia({ autoridad: e.target.value })} placeholder={ficha?.arffs || "GORE · DRSAFFS"} />

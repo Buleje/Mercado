@@ -16,11 +16,14 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { useDebounce } from "@/hooks/use-debounce";
 import { type CtpPeriod } from "@/lib/forestal/ctp-period";
 import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
+import CtpGuiaDeLineaModal from "./CtpGuiaDeLineaModal";
 import CtpProduccionImportModal from "./CtpProduccionImportModal";
 import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
+import CtpProduccionPendiente from "./CtpProduccionPendiente";
+import CtpPapelesDespachoModal from "./CtpPapelesDespachoModal";
 import CtpCorridaSinDeclarar from "./CtpCorridaSinDeclarar";
 import CtpSeccionKpis from "./CtpSeccionKpis";
 import CtpSinCertificar, { type DespachoSinCertificar } from "./CtpSinCertificar";
@@ -31,6 +34,7 @@ import CtpSimuladorModal from "./CtpSimuladorModal";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import CtpFiltrosPanel, { BotonFiltros } from "./ctp-filtros-panel";
 import { nombreArchivoSeccion, seccionACsv } from "@/lib/forestal/ctp-secciones-csv";
+import { corridasAMedioDeclarar } from "@/lib/forestal/produccion-paquetes";
 
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
@@ -192,6 +196,30 @@ export function CtpEntriesView({
   const corridaAbierta = useMemo(
     () => enProceso.find((e) => e.id === corridaAbiertaId) ?? null,
     [enProceso, corridaAbiertaId],
+  );
+  /**
+   * Las corridas que ya declararon y todavía admiten producción de la MISMA
+   * materia prima (ADR-365).
+   *
+   * No se listan todas juntas a propósito: casi toda corrida rinde menos del
+   * tope y una lista de «les falta» leería el techo como una meta, que es
+   * exactamente lo que ADR-358 no quiere. Se ofrece como atajo en la fila —el
+   * operador ya sabe cuál es su corrida— y en el panel del lote.
+   */
+  const ampliables = useMemo(
+    () => (section === "produccion" ? corridasAMedioDeclarar(entries) : []),
+    [entries, section],
+  );
+  const idsAmpliables = useMemo(() => new Set(ampliables.map((c) => c.id)), [ampliables]);
+  /** La corrida cuyo panel de ampliación está abierto arriba de la tabla. */
+  const [ampliarId, setAmpliarId] = useState<string | null>(null);
+  /** Despacho al que se le están adjuntando papeles (ADR-371). */
+  const [papelesEntry, setPapelesEntry] = useState<CtpEntry | null>(null);
+  /** La línea cuya guía se está mirando/editando (ADR-374). */
+  const [guiaEntry, setGuiaEntry] = useState<CtpEntry | null>(null);
+  const ampliando = useMemo(
+    () => ampliables.filter((c) => c.id === ampliarId),
+    [ampliables, ampliarId],
   );
   /**
    * Las piezas que ESA corrida se comió (ADR-326). Salen del mismo patio que
@@ -374,6 +402,7 @@ export function CtpEntriesView({
           /* Elegir a mano parte de cero: arrastrar una preselección de otra
              pantalla haría que el lote se abra con tres tildadas sin motivo. */
           setPreseleccion(undefined);
+          setAmpliarId(null);
           return setLoteProd((actual) => {
             /* Dos paneles distintos sobre la misma tabla se pisarían: abrir uno
                cierra el otro. */
@@ -390,11 +419,13 @@ export function CtpEntriesView({
     () =>
       accionesPorDeclarar(
         enProceso,
-        (c) =>
+        (c) => {
+          setAmpliarId(null);
           setCorridaAbiertaId((actual) => {
             if (actual !== c.id) setLoteProd("");
             return actual === c.id ? null : c.id;
-          }),
+          });
+        },
         corridaAbiertaId,
       ),
     [enProceso, corridaAbiertaId],
@@ -512,6 +543,28 @@ export function CtpEntriesView({
         />
       )}
 
+      {/**
+       * Agregar producción a una corrida ya declarada (ADR-365), desde la fila
+       * del libro: es la puerta para la corrida cuyo lote ya se consumió entero
+       * —ésa no aparece en el menú de lotes— y para la que nunca tuvo lote.
+       */}
+      {section === "produccion" && ampliando.length > 0 && (
+        <CtpProduccionPendiente
+          corridas={ampliando}
+          trozas={lotes.trozas}
+          titulo="Agregar producción a esta corrida"
+          onListo={(msg, detalle) => {
+            pushToast({ tono: "success", msg, detail: detalle });
+            setAmpliarId(null);
+            void load();
+            void lotes.recargar();
+          }}
+          onError={(msg) =>
+            pushToast({ tono: "warning", msg: "No se pudo ampliar la corrida", detail: msg })
+          }
+        />
+      )}
+
       {/* El bloque de Producción con la forma del LO-CTP: la barra (lote, fecha
           de consumo, registrar) y debajo la lista de trozas de ESE lote para
           elegir cuáles entran a la sierra. Se muestra apenas hay un lote
@@ -523,7 +576,7 @@ export function CtpEntriesView({
           elegido={loteProd}
           /* Elegir desde la tira parte de cero: una preselección heredada de
              otra pantalla abriría el lote con piezas tildadas sin motivo. */
-          onElegir={(id) => { setPreseleccion(undefined); setLoteProd((actual) => (actual === id ? "" : id)); }}
+          onElegir={(id) => { setPreseleccion(undefined); setAmpliarId(null); setLoteProd((actual) => (actual === id ? "" : id)); }}
           onIrALotes={onIr ? () => onIr("lotes") : undefined}
         />
       )}
@@ -564,6 +617,13 @@ export function CtpEntriesView({
           onListo={(msg, detalle) => {
             pushToast({ tono: "success", msg, detail: detalle });
             setLoteProd("");
+            void load();
+          }}
+          /* Ampliar una corrida del lote NO cierra el panel: el lote sigue
+             abierto con sus trozas esperando, y cerrarlo obligaría a volver a
+             elegirlo para seguir (ADR-365). */
+          onAviso={(msg, detalle) => {
+            pushToast({ tono: "success", msg, detail: detalle });
             void load();
           }}
           onError={(msg) => {
@@ -644,6 +704,16 @@ export function CtpEntriesView({
         onAnexo={setAnexoEntry}
         onSendInventory={sendToInventory}
         onAnnul={(id) => { setAnnulId(id); setAnnulReason(""); }}
+        ampliables={idsAmpliables}
+        onPapeles={setPapelesEntry}
+        onGuia={setGuiaEntry}
+        onAmpliar={(id) => {
+          /* Un solo panel arriba de la tabla: abrir éste cierra el del lote y el
+             de la corrida sin declarar, como entre ellos dos. */
+          setLoteProd("");
+          setCorridaAbiertaId(null);
+          setAmpliarId((actual) => (actual === id ? null : id));
+        }}
         totalesVista={totalesVista}
       />
 
@@ -742,6 +812,34 @@ export function CtpEntriesView({
       {chainEntry && section === "despacho" && (
         <CtpDespachoDetalleModal entry={chainEntry} onClose={() => { setChainEntry(null); void load(); }} />
       )}
+      {/* Los papeles que viajan con el camión, archivados y etiquetados. */}
+      {guiaEntry && (
+        <CtpGuiaDeLineaModal
+          linea={{
+            id: guiaEntry.id,
+            lineNo: guiaEntry.lineNo,
+            entryDate: guiaEntry.entryDate,
+            gtfNumber: guiaEntry.gtfNumber,
+            gtfDatos: guiaEntry.gtfDatos,
+            speciesCommon: guiaEntry.speciesCommon,
+            productType: guiaEntry.productType,
+          }}
+          onClose={() => setGuiaEntry(null)}
+          onCambio={() => void load()}
+        />
+      )}
+      {papelesEntry && (
+        <CtpPapelesDespachoModal
+          gtfNumber={papelesEntry.gtfNumber}
+          despachoId={papelesEntry.id}
+          onClose={() => setPapelesEntry(null)}
+          onListo={(msg) => {
+            setPapelesEntry(null);
+            pushToast({ tono: "success", msg, detail: "Están en el Drive, en «Papeles de despacho (CTP)»." });
+          }}
+        />
+      )}
+
       {chainEntry && section === "produccion" && <CtpProduccionDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
 
       {annulId && (

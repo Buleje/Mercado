@@ -16,12 +16,13 @@
  * decidir nada por su cuenta es una fila que no se desincroniza de los KPIs.
  */
 
-import { AlertTriangle, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, FileText, Link2, PackagePlus, Scale, X as XIcon } from "@buleje/design-system/icons";
+import { AlertTriangle, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, Boxes, FileText, Link2, PackagePlus, Paperclip, Scale, Truck, X as XIcon } from "@buleje/design-system/icons";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
 import { type CtpEntry, type CtpSection, Th, Td, estadoSalida, UNIT_LABELS } from "./ctp-section-shared";
 import { IconAction } from "./ctp-shared";
+import { estadoDeGuia } from "@/lib/forestal/gtf-estado";
 import type { totalesDeSeccion } from "@/lib/forestal/ctp-secciones-filtro";
 
 /** Por qué columna se puede ordenar. Lo resuelve la vista; acá sólo se dibuja. */
@@ -47,6 +48,17 @@ export interface CtpEntriesTablaProps {
   onAnexo: (e: CtpEntry) => void;
   onSendInventory: (id: string) => void;
   onAnnul: (id: string) => void;
+  /**
+   * Corridas que todavía admiten producción sobre la misma materia prima
+   * (ADR-365). Lo decide la vista con `corridasAMedioDeclarar`: la fila no
+   * calcula topes, sólo dibuja el atajo cuando lo hay.
+   */
+  ampliables?: Set<string>;
+  onAmpliar?: (id: string) => void;
+  /** Adjuntar los papeles que viajan con el despacho (ADR-371). */
+  onPapeles?: (e: CtpEntry) => void;
+  /** Abrir la guía de transporte de esa línea (borrador editable o emitida). */
+  onGuia?: (e: CtpEntry) => void;
   /** Totales de lo que se está viendo — los calcula la vista, para que el pie de
    *  la tabla y los KPIs de arriba no puedan decir números distintos. */
   totalesVista: ReturnType<typeof totalesDeSeccion>;
@@ -179,6 +191,10 @@ export default function CtpEntriesTabla({
   onAnexo,
   onSendInventory,
   onAnnul,
+  ampliables,
+  onAmpliar,
+  onPapeles,
+  onGuia,
   totalesVista,
 }: CtpEntriesTablaProps) {
   return (
@@ -254,6 +270,17 @@ export default function CtpEntriesTabla({
                           ? "Cadena de custodia: origen, costo y certificado"
                           : "Corrida: materia prima consumida, costo y congelado"}
                       />
+                      {/* Agregar producción a ESTA corrida (ADR-365): lo que
+                          salió después de la misma madera no abre una corrida
+                          nueva — se suma acá, sin volver a elegir trozas. */}
+                      {onAmpliar && ampliables?.has(e.id) && (
+                        <IconAction
+                          icon={Boxes}
+                          tone="accent"
+                          onClick={() => onAmpliar(e.id)}
+                          label="Agregar producción a esta corrida (salió más de la misma materia prima)"
+                        />
+                      )}
                       <IconAction
                         icon={PackagePlus}
                         tone="info"
@@ -262,6 +289,27 @@ export default function CtpEntriesTabla({
                         onClick={() => onSendInventory(e.id)}
                         label={toProductId === e.id ? "Creando el producto…" : "Enviar a inventario (borrador inactivo)"}
                       />
+                      {section === "despacho" && onGuia && (
+                        <IconAction
+                          icon={Truck}
+                          tone={estadoDeGuia(e.gtfNumber) === "emitida" ? "accent" : "muted"}
+                          done={estadoDeGuia(e.gtfNumber) === "emitida"}
+                          onClick={() => onGuia(e)}
+                          label={
+                            estadoDeGuia(e.gtfNumber) === "emitida"
+                              ? `Guía ${e.gtfNumber} emitida — abrir para verla o imprimirla`
+                              : "Guía de transporte: borrador — abrir para completarla y emitirla"
+                          }
+                        />
+                      )}
+                      {section === "despacho" && onPapeles && (
+                        <IconAction
+                          icon={Paperclip}
+                          tone="muted"
+                          onClick={() => onPapeles(e)}
+                          label="Papeles del despacho: subir GTF, factura, guías de origen… y archivarlos etiquetados"
+                        />
+                      )}
                       {section === "despacho" && (
                         <IconAction
                           icon={FileText}
@@ -326,6 +374,8 @@ export default function CtpEntriesTabla({
               anexoEmitido={conAnexo.has(e.id)}
               onSendInventory={onSendInventory}
               onAnnul={onAnnul}
+              ampliable={ampliables?.has(e.id)}
+              onAmpliar={onAmpliar}
             />
           ))}
         </div>

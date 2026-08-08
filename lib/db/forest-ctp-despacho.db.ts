@@ -34,6 +34,7 @@ import { CtpInvariantError, ForestCtpConsumoDB, CTP_TX_OPTS } from "./forest-ctp
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ForestAnexosDB } from "./forest-anexos.db";
 import { decidirMargen, type MargenMotivo } from "@/lib/forestal/ctp-pnl";
+import { guiaEditable } from "@/lib/forestal/gtf-estado";
 
 const CACHE_PREFIX = "forest-ctp";
 /** 4 decimales — precisión forestal (volúmenes/cantidades). */
@@ -881,7 +882,7 @@ export class ForestCtpDespachoDB {
     despachoEntryId: string,
     datos: unknown,
     user = "unknown",
-  ): Promise<{ ok: true } | { ok: false; reason: "no_despacho" | "anulado" }> {
+  ): Promise<{ ok: true } | { ok: false; reason: "no_despacho" | "anulado" | "emitida"; gtf?: string }> {
     if (!tenantId) throw new Error("tenantId is required");
 
     const desp = await prisma.forestCtpEntry.findFirst({
@@ -890,6 +891,22 @@ export class ForestCtpDespachoDB {
     });
     if (!desp || desp.section !== "despacho") return { ok: false, reason: "no_despacho" };
     if (desp.status !== "registrado") return { ok: false, reason: "anulado" };
+
+    /**
+     * Una guía EMITIDA no se edita (ADR-374).
+     *
+     * Mientras no tiene número es un borrador: se corrige las veces que haga
+     * falta porque todavía no es un documento. Con número ya identifica un
+     * traslado ante la autoridad —y puede estar impresa y viajando en la
+     * cabina—, así que cambiarle el destinatario o el volumen por detrás sería
+     * dejar el libro diciendo una cosa y el papel otra.
+     *
+     * El guard va acá, en la DB class, y no sólo en el botón de la pantalla:
+     * el endpoint es la única puerta que de verdad hay que cerrar.
+     */
+    if (!guiaEditable(desp.gtfNumber)) {
+      return { ok: false, reason: "emitida", gtf: String(desp.gtfNumber).trim() };
+    }
 
     const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, desp.entryDate);
     if (cerrado) {

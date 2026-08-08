@@ -266,7 +266,10 @@ export default function CtpDespachoGuiaModal({
   const unidadLista = UNIT_LABELS[filas[0]?.unidad ?? "m3"] ?? filas[0]?.unidad ?? "m³";
   const problemas = useMemo(() => (filas.length === 0 ? [] : problemasDeLista(filas)), [filas]);
   const faltanGuia = useMemo(() => faltantesGtf(datos), [datos]);
-  const puedeRegistrar = filas.length > 0 && problemas.length === 0 && gtfNumber.trim().length > 0 && !enviando;
+  /* Registrar ya NO exige el N° de guía (ADR-374): la línea entra al libro
+     como BORRADOR y el número se asigna al emitir. Pedirlo antes obligaba a
+     inventar uno para poder registrar un despacho que ya había salido. */
+  const puedeRegistrar = filas.length > 0 && problemas.length === 0 && !enviando;
   /** Lo que falta para poder registrar (lo demás se puede completar después). */
   const bloqueoRegistro = enviando
     ? null
