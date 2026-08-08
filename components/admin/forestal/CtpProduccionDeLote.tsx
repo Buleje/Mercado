@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Boxes, X } from "@buleje/design-system/icons";
+import { Boxes, Layers, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { origenesDeTrozas } from "@/lib/forestal/produccion-paquetes";
@@ -132,6 +132,23 @@ export default function CtpProduccionDeLote({
   const elegidas = alConsumo;
 
   /**
+   * Lo que NO entra hoy y se queda en el lote (ADR-356).
+   *
+   * La capacidad existía desde siempre —un lote de 4 puede aserrarse 3 hoy y 1
+   * mañana— pero la pantalla no lo decía en ningún lado: las cuatro venían
+   * tildadas y nada sugería que se podían dejar. El operador que quería partir
+   * el turno no tenía cómo enterarse de que ya podía.
+   */
+  const quedan = useMemo(
+    () => yaEnElLote.filter((t) => !seleccion.has(t.id)),
+    [yaEnElLote, seleccion],
+  );
+  const volumenQueda = useMemo(
+    () => Math.round(quedan.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
+    [quedan],
+  );
+
+  /**
    * El tope de I2, ANTES de mandar (ADR-359).
    *
    * El acta de Consumos ya avisaba; acá se iba directo al servidor y el operador
@@ -218,7 +235,13 @@ export default function CtpProduccionDeLote({
       onListo(
         `Producción del lote ${lote.code} registrada`,
         `Corrida N° ${consumo.corrida.lineNo}: consumió ${consumo.volumenM3.toFixed(4)} m³ y produjo ` +
-          `${datos.volumen.toFixed(4)} m³ en ${datos.paquetes.length} paquete(s).`,
+          `${datos.volumen.toFixed(4)} m³ en ${datos.paquetes.length} paquete(s).` +
+          /* Lo que sobró se NOMBRA: sin esto, el operador que aserró 3 de 4 no
+             tenía forma de saber que la cuarta seguía esperándolo. */
+          (quedan.length > 0
+            ? ` Quedan ${quedan.length} troza${quedan.length === 1 ? "" : "s"} (${volumenQueda.toFixed(4)} m³) ` +
+              `en el lote para la corrida siguiente.`
+            : ` El lote quedó consumido.`),
       );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -287,6 +310,16 @@ export default function CtpProduccionDeLote({
         </div>
       </header>
 
+      {/* La regla, dicha antes de la tabla y no descubierta por accidente: el
+          lote NO tiene que entrar entero. */}
+      {yaEnElLote.length > 1 && (
+        <p className="px-1 text-sm text-[var(--text-tertiary)]">
+          No hace falta que entre el lote entero:{" "}
+          <b className="text-[var(--text-secondary)]">destildá las que no van hoy</b> y se quedan apartadas
+          para la corrida siguiente.
+        </p>
+      )}
+
       {/* La lista del formato: las trozas de ESTE lote, para tildar cuáles van. */}
       <CtpTrozasDelLote
         trozas={yaEnElLote}
@@ -296,6 +329,19 @@ export default function CtpProduccionDeLote({
         cargando={estado.cargando}
         vacio="Este lote no tiene trozas apartadas. Agregale piezas del patio en «Lotes de aserrío»."
       />
+
+      {/* Y el contador vivo de lo que va a quedar: mientras se tilda, el
+          operador ve las dos mitades — la que entra y la que espera. */}
+      {quedan.length > 0 && (
+        <p className="flex flex-wrap items-center gap-x-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
+          <Layers className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+          Entran <b className="font-mono tabular-nums text-[var(--text-primary)]">{alConsumo.length}</b> a la
+          sierra y <b className="font-mono tabular-nums text-[var(--text-primary)]">{quedan.length}</b> troza
+          {quedan.length === 1 ? "" : "s"} ({volumenQueda.toFixed(4)} m³) se qued
+          {quedan.length === 1 ? "a" : "an"} en{" "}
+          <b className="font-mono text-[var(--text-primary)]">{lote.code}</b> para la corrida siguiente.
+        </p>
+      )}
 
       {/* Sin nada tildado, el botón apagado dice qué falta hacer. Con selección
           manda la barra del pie, que lleva la cuenta acumulada —piezas, m³, pie

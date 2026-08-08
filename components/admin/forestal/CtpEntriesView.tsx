@@ -129,11 +129,16 @@ export function CtpEntriesView({
              tarjeta promete lo que se va a ver al abrirla. Con `trozasDelLote`
              un lote de 6 anunciaba «26 pza» —las 26 Tornillo del patio— y la
              tabla de abajo mostraba otra cosa. */
-          const suyas = lotes.trozas.filter((t) => t.loteAserrioId === l.id && !t.consumidaEnId);
+          const delLote = lotes.trozas.filter((t) => t.loteAserrioId === l.id);
+          const suyas = delLote.filter((t) => !t.consumidaEnId);
           return {
             lote: l,
             piezas: suyas.length,
             volumenM3: Math.round(suyas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
+            /* Las que YA se aserraron (ADR-356): con esto la tarjeta puede
+               decir que lo que se ve es el RESTO de un lote a medias, y no un
+               lote nuevo esperando su primera corrida. */
+            consumidas: delLote.length - suyas.length,
           };
         })
         .filter((x) => x.piezas > 0 || x.lote.piezas > 0),

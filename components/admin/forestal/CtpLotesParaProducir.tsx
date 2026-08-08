@@ -22,6 +22,14 @@ export interface LoteParaProducir {
   /** Piezas del patio apartadas en este lote y todavía sin consumir. */
   piezas: number;
   volumenM3: number;
+  /**
+   * Cuántas de sus piezas YA entraron a una corrida (ADR-356).
+   *
+   * Con esto la tarjeta distingue un lote nuevo de **el resto de uno que se
+   * aserró a medias**: son la misma tarjeta y la misma cifra, pero uno es
+   * trabajo por empezar y el otro es trabajo por terminar.
+   */
+  consumidas?: number;
 }
 
 export default function CtpLotesParaProducir({
@@ -83,15 +91,18 @@ export default function CtpLotesParaProducir({
       </div>
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {lotes.map(({ lote, piezas, volumenM3 }) => {
+        {lotes.map(({ lote, piezas, volumenM3, consumidas = 0 }) => {
           const activo = lote.id === elegido;
+          /* Lo que quedó de una corrida anterior se dice: es trabajo por
+             terminar, no un lote nuevo esperando. */
+          const parcial = consumidas > 0;
           return (
             <button
               key={lote.id}
               type="button"
               aria-pressed={activo}
               onClick={() => onElegir(lote.id)}
-              title={activo ? "Cerrar este lote" : `Abrir ${lote.code} y elegir sus trozas`}
+              title={activo ? "Cerrar este lote" : `Abrir ${lote.code} y elegir sus trozas${parcial ? " (lo que quedó de una corrida anterior)" : ""}`}
               className={`flex items-center gap-3 rounded-2xl border-2 px-3 py-2.5 text-left transition-colors ${
                 activo
                   ? "border-[var(--accent)] bg-primary/10"
@@ -112,11 +123,20 @@ export default function CtpLotesParaProducir({
                 <span className="flex items-baseline gap-2">
                   <b className="truncate font-mono text-sm font-bold text-[var(--text-primary)]">{lote.code}</b>
                   <span className="truncate text-sm text-[var(--text-secondary)]">{lote.speciesCommon}</span>
+                  {parcial && (
+                    <span
+                      title={`Ya entraron ${consumidas} pieza(s) de este lote a la sierra: esto es lo que quedó`}
+                      className="shrink-0 rounded-full bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                    >
+                      Resto
+                    </span>
+                  )}
                 </span>
                 {/* Lo que de verdad se puede meter hoy: piezas libres del lote,
                     su volumen y el pie tablar, que es como se habla en la sierra. */}
                 <span className="mt-0.5 block font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
                   {piezas} pza · {volumenM3.toFixed(4)} m³ · {pieTablarDe(volumenM3).toLocaleString("es-PE")} pt
+                  {parcial && ` · ${consumidas} ya aserrada${consumidas === 1 ? "" : "s"}`}
                 </span>
               </span>
               <ChevronRight
