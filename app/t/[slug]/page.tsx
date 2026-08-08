@@ -365,17 +365,31 @@ export async function generateMetadata({
   // Tienda individual: el título es solo el nombre del comercio.
   // `absolute` evita que el template `%s | Buleje` del root layout añada
   // el sufijo del marketplace a la página propia del negocio.
-  const title = customization.metaTitle ?? displayName;
+  //
+  // `??` NO servía acá: el editor del storefront guarda "" cuando el dueño
+  // deja el campo en blanco, y `"" ?? displayName` devuelve "". El resultado
+  // era `<title></title>` y ningún og:title en TODA landing white-label —
+  // compartida por WhatsApp mostraba la URL pelada. Un campo vacío es un
+  // campo sin llenar, así que se trata como ausente (mismo criterio que el
+  // `||` + trim de `displayName` acá arriba).
+  const primero = (...valores: Array<string | null | undefined>): string | undefined =>
+    valores.find((v) => typeof v === "string" && v.trim() !== "")?.trim();
+
+  const title = primero(customization.metaTitle, displayName) ?? displayName;
   const description =
-    customization.metaDescription ??
-    customization.heroSubtitle ??
-    `Compra en ${displayName} con delivery rápido. Paga con Yape o efectivo.`;
+    primero(
+      customization.metaDescription,
+      customization.heroSubtitle,
+      `Compra en ${displayName} con delivery rápido. Paga con Yape o efectivo.`,
+    ) ?? `Compra en ${displayName} con delivery rápido. Paga con Yape o efectivo.`;
   // Audit 2026-05-17 02-P2-4: fallback a /api/og?title=...&subtitle=...
   // cuando el tenant no tiene OG personalizada. Antes, sin ogImage ni
   // heroImage, el share en WhatsApp/FB no mostraba preview visual —
   // muy mala UX en discovery. Ahora siempre hay una OG con 1200×630.
   const ogFallback = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe"}/api/og?title=${encodeURIComponent(displayName)}&subtitle=${encodeURIComponent("Compra con delivery rápido en Ciudad Constitución")}`;
-  const ogImage = customization.ogImageUrl ?? customization.heroImageUrl ?? ogFallback;
+  // Mismo criterio que el título: una URL vacía no es una imagen, y con `??`
+  // ganaba sobre el fallback y emitía `images:[{url:""}]` — un preview roto.
+  const ogImage = primero(customization.ogImageUrl, customization.heroImageUrl, ogFallback) ?? ogFallback;
 
   return {
     title: { absolute: title },
