@@ -812,6 +812,83 @@ export class ForestLoteAserrioDB {
     return { piezas: salen.length, volumenM3: delta, volumenTotalM3: volumenTotal, lotesReabiertos: reabiertos };
   }
 
+  /**
+   * CERRAR un lote que no va a terminar de aserrarse.
+   *
+   * Un lote parcial queda abierto esperando su corrida siguiente, y eso está
+   * bien mientras la haya. Pero a veces no la hay: el resto se pudrió, se vendió
+   * en rollo, o el pedido cambió y esas piezas van a otra especie de lote. Sin
+   * esta puerta el lote quedaba abierto para siempre, ensuciando la lista de «lo
+   * que espera la sierra» con trabajo que nadie va a hacer.
+   *
+   * Las piezas que quedan **vuelven al patio libres** —la madera no desaparece
+   * con el lote— y el motivo queda en la auditoría: cerrar sin decir por qué es
+   * exactamente lo que un fiscalizador no puede reconstruir.
+   *
+   * Distinto de `softDelete`, que BORRA el lote: éste lo conserva con sus
+   * corridas y su historia. Un lote que ya produjo es parte del libro.
+   */
+  static async cerrar(
+    tenantId: string,
+    input: { loteId: string; motivo: string; user: string },
+  ): Promise<{ code: string; liberadas: number; volumenM3: number; teniaCorridas: boolean }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const { loteId, motivo, user } = input;
+    if (motivo.trim().length < 3) {
+      throw new CtpInvariantError("Poné el motivo por el que se cierra el lote.", "LOTE_NO_EDITABLE");
+    }
+
+    const lote = await prisma.forestLoteAserrio.findFirst({
+      where: { id: loteId, tenantId, deletedAt: null },
+      include: { trozas: { select: { id: true, volumenM3: true, consumidaEnId: true } } },
+    });
+    if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
+    if (lote.status !== "abierto") {
+      throw new CtpInvariantError(
+        `El lote ${lote.code} ya está ${lote.status}: no hay nada que cerrar.`,
+        "LOTE_NO_EDITABLE",
+        { status: lote.status },
+      );
+    }
+
+    const libres = lote.trozas.filter((t) => !t.consumidaEnId);
+    const consumidas = lote.trozas.length - libres.length;
+    const volumenM3 = Math.round(libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000;
+
+    await prisma.$transaction(async (tx) => {
+      /* Sólo las libres: las que ya entraron a una corrida siguen atadas a ella
+         —son un hecho del libro— y soltarlas negaría que se aserraron. */
+      if (libres.length > 0) {
+        await tx.woodEntryTroza.updateMany({
+          where: { id: { in: libres.map((t) => t.id) }, tenantId, consumidaEnId: null },
+          data: { loteAserrioId: null },
+        });
+      }
+      await tx.forestLoteAserrio.update({
+        where: { id: loteId },
+        data: {
+          status: "cerrado",
+          fechaConsumo: consumidas > 0 ? (lote.fechaConsumo ?? new Date()) : lote.fechaConsumo,
+          notes: [lote.notes?.trim(), `Cerrado: ${motivo.trim()}`].filter(Boolean).join(" · ").slice(0, 500),
+        },
+      });
+    });
+
+    auditCtp({
+      tenantId,
+      action: "ctp_lote_aserrio_cerrar",
+      entity: "ForestLoteAserrio",
+      entityId: loteId,
+      detail:
+        `Cerró el lote ${lote.code} con ${consumidas} pieza${consumidas === 1 ? "" : "s"} ya aserrada${consumidas === 1 ? "" : "s"}: ` +
+        `${libres.length} troza${libres.length === 1 ? "" : "s"} (${volumenM3} m³) volvieron al patio · motivo: ${motivo.trim()}`,
+      user,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+
+    return { code: lote.code, liberadas: libres.length, volumenM3, teniaCorridas: consumidas > 0 };
+  }
+
   /** Saca una pieza del lote (mientras esté abierto). */
   static async quitarTroza(tenantId: string, loteId: string, trozaId: string, user: string) {
     if (!tenantId) throw new Error("tenantId is required");

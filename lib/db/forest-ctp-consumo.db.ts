@@ -375,6 +375,46 @@ export class ForestCtpConsumoDB {
         });
       }
 
+      /**
+       * La corrida que NUNCA declaró su materia prima la completa acá.
+       *
+       * Hay líneas viejas —importadas o cargadas antes de que el lote existiera—
+       * con `volumeInputM3` en null: declararon producto y no de qué madera
+       * salió. Su rendimiento queda en blanco y ningún despacho que las cite se
+       * puede certificar. Decir de qué guías salió es decir cuánto entró: es el
+       * MISMO número por construcción, no una estimación.
+       *
+       * Sólo cuando está vacío. Un acta que ya declaró su volumen no se toca por
+       * este camino —eso lo prohíbe ADR-364— y bajar el consumo de una corrida
+       * declarada le cambiaría el rendimiento a espaldas del operador.
+       */
+      if (declarado == null && totalAtribuido > 0) {
+        /**
+         * Y el rendimiento sale solo, con la misma fórmula del resto del libro.
+         *
+         * Sin esto la corrida quedaba con entrada y salida y la columna «Rend.»
+         * en blanco: los dos números estaban ahí y nadie los dividía. El
+         * rendimiento es DERIVADO, no un dato aparte — si se puede calcular, se
+         * calcula.
+         */
+        const linea = await tx.forestCtpEntry.findUnique({
+          where: { id: ctpEntryId },
+          select: { section: true, quantity: true, unit: true },
+        });
+        const salida = linea?.quantity == null ? 0 : Number(linea.quantity);
+        const rendimiento =
+          linea?.section === "produccion" && linea.unit === "m3" && salida > 0
+            ? Math.round((salida / r4(totalAtribuido)) * 10000) / 100
+            : undefined;
+        await tx.forestCtpEntry.update({
+          where: { id: ctpEntryId },
+          data: {
+            volumeInputM3: new Prisma.Decimal(r4(totalAtribuido)),
+            ...(rendimiento != null ? { rendimientoPct: new Prisma.Decimal(rendimiento) } : {}),
+          },
+        });
+      }
+
       const result = await tx.forestCtpConsumo.findMany({
         where: { ctpEntryId, tenantId },
         include: { woodEntry: { select: { gtfNumber: true, speciesCommonName: true } } },
@@ -387,7 +427,13 @@ export class ForestCtpConsumoDB {
         action: "ctp_consumos_set",
         entity: "ForestCtpEntry",
         entityId: ctpEntryId,
-        detail: `Origen de la materia prima: ${fmt(antes)} → ${fmt(result)}`,
+        detail:
+          `Origen de la materia prima: ${fmt(antes)} → ${fmt(result)}` +
+          /* Que el acta pasó de no tener volumen a tenerlo es un cambio del
+             libro, no un detalle del formulario: se narra. */
+          (declarado == null && totalAtribuido > 0
+            ? ` · la corrida no declaraba materia prima y quedó en ${m3(r4(totalAtribuido))}`
+            : ""),
         user: createdBy,
       });
 

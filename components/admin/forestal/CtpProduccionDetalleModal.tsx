@@ -192,7 +192,18 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
               <WarningAlert
                 icon={AlertCircle}
                 title="Corrida sin materia prima atribuida"
-                description="La cadena de custodia se corta acá: todo despacho que cite esta corrida queda sin certificado."
+                /* El aviso decía el problema y no la salida. Estas líneas son
+                   viejas —importadas o cargadas antes de que existiera el lote—
+                   y nadie sabía que se arreglan desde acá mismo. Cuando además
+                   no declaran volumen, atribuirles sus guías lo completa: decir
+                   de qué guías salió es decir cuánto entró. */
+                description={
+                  declarado > 0
+                    ? "La cadena de custodia se corta acá: todo despacho que cite esta corrida queda sin certificado. Usá «Editar atribución» para decir de qué guías salieron sus " +
+                      `${n4(declarado)} m³.`
+                    : "Esta corrida declaró producto y no de qué madera salió: su rendimiento queda en blanco y ningún despacho que la cite se puede certificar. " +
+                      "Con «Editar atribución» le declarás sus guías, y el volumen que sumen queda como su materia prima."
+                }
               />
             ) : costo.sinAtribuirM3 > 0 ? (
               <WarningAlert

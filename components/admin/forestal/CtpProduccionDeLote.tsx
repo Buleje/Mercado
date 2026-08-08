@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Boxes, Layers, X } from "@buleje/design-system/icons";
+import { Archive, Boxes, Layers, Loader2, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { origenesDeTrozas } from "@/lib/forestal/produccion-paquetes";
@@ -40,6 +40,7 @@ export default function CtpProduccionDeLote({
   onListo,
   onError,
   onCerrar,
+  onCerrarLote,
 }: {
   lote: LoteAserrio;
   /** Los lotes abiertos: alimentan el selector de la barra (formato SNIFFS). */
@@ -50,6 +51,11 @@ export default function CtpProduccionDeLote({
   /** Salir del lote sin producir: el panel se abre desde el CTA y tiene que
    *  tener puerta de salida además de volver a elegirlo en el menú. */
   onCerrar?: () => void;
+  /**
+   * Cerrar el LOTE (no el panel): lo que quedó no va a aserrarse y vuelve al
+   * patio. Distinto de deshacerlo — el lote y sus corridas siguen en el libro.
+   */
+  onCerrarLote?: (motivo: string) => Promise<{ liberadas: number; volumenM3: number }>;
   /** Avisa a la vista: recargar la tabla del libro y contar lo que pasó. */
   onListo: (mensaje: string, detalle: string) => void;
   /**
@@ -66,6 +72,10 @@ export default function CtpProduccionDeLote({
   const [abierto, setAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Confirmación de cierre del lote: motivo obligatorio, inline y no modal. */
+  const [cerrandoLote, setCerrandoLote] = useState(false);
+  const [motivoCierre, setMotivoCierre] = useState("");
+  const [cerrando, setCerrando] = useState(false);
 
   /**
    * Las trozas DE ESTE LOTE, y nada más (Brandon, 2026-08).
@@ -173,6 +183,27 @@ export default function CtpProduccionDeLote({
     }),
     [alConsumo, lote.speciesCommon, lote.speciesScientific],
   );
+
+  /**
+   * El lote se cierra y su madera libre vuelve al patio. El aviso sube al padre
+   * (toast): cerrar desmonta este panel, y un cartel adentro se iría con él.
+   */
+  async function cerrarElLote() {
+    if (!onCerrarLote || motivoCierre.trim().length < 3) return;
+    setCerrando(true);
+    setError(null);
+    try {
+      await onCerrarLote(motivoCierre.trim());
+      setCerrandoLote(false);
+      setMotivoCierre("");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      onError(msg);
+    } finally {
+      setCerrando(false);
+    }
+  }
 
   /**
    * Consumir y declarar, en ese orden.
@@ -296,6 +327,19 @@ export default function CtpProduccionDeLote({
             <Boxes className="h-4 w-4" />
             Registrar producción
           </Btn>
+          {/* Cerrar el LOTE (no el panel): lo que queda no va a entrar a la
+              sierra y vuelve al patio. Sólo tiene sentido con madera libre. */}
+          {onCerrarLote && yaEnElLote.length > 0 && (
+            <Btn
+              variant="secondary"
+              disabled={cerrando}
+              title="El resto no va a aserrarse: vuelve al patio y el lote deja de figurar como pendiente"
+              onClick={() => setCerrandoLote(true)}
+            >
+              <Archive className="h-4 w-4" />
+              Cerrar el lote
+            </Btn>
+          )}
           {onCerrar && (
             <button
               type="button"
@@ -309,6 +353,42 @@ export default function CtpProduccionDeLote({
           )}
         </div>
       </header>
+
+      {/**
+       * Cerrar el lote es irreversible en la práctica (hay que rearmarlo) y
+       * mueve madera al patio: se confirma con el motivo a la vista, inline y no
+       * en un modal sobre otro modal.
+       */}
+      {cerrandoLote && (
+        <div className="space-y-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 p-3">
+          <p className="text-sm text-[var(--text-primary)]">
+            <b>Cerrar {lote.code}:</b> sus{" "}
+            <b className="font-mono tabular-nums">{yaEnElLote.length}</b> troza
+            {yaEnElLote.length === 1 ? "" : "s"} sin aserrar vuelven al patio y el lote deja de figurar como
+            pendiente. Lo que ya se aserró queda en el libro.
+          </p>
+          <input
+            autoFocus
+            value={motivoCierre}
+            onChange={(e) => setMotivoCierre(e.target.value)}
+            placeholder="Motivo (se guarda en el historial): se vendió en rollo, cambió el pedido…"
+            className={I}
+          />
+          <div className="flex flex-wrap justify-end gap-2">
+            <Btn variant="secondary" disabled={cerrando} onClick={() => { setCerrandoLote(false); setMotivoCierre(""); }}>
+              Cancelar
+            </Btn>
+            <Btn
+              variant="danger"
+              disabled={motivoCierre.trim().length < 3 || cerrando}
+              onClick={() => void cerrarElLote()}
+            >
+              {cerrando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
+              Cerrar el lote
+            </Btn>
+          </div>
+        </div>
+      )}
 
       {/* La regla, dicha antes de la tabla y no descubierta por accidente: el
           lote NO tiene que entrar entero. */}

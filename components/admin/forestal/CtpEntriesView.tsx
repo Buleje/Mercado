@@ -508,6 +508,22 @@ export function CtpEntriesView({
           onLote={setLoteProd}
           estado={lotes}
           onCerrar={() => setLoteProd("")}
+          /* Cerrar el LOTE: su madera vuelve al patio y el panel se va con él
+             —ya no hay lote abierto que mostrar—, así que el aviso es un toast. */
+          onCerrarLote={async (motivo) => {
+            const r = await lotes.cerrarLote({ loteId: loteElegido.id, motivo });
+            pushToast({
+              tono: "success",
+              msg: `Lote ${r.code} cerrado`,
+              detail:
+                r.liberadas > 0
+                  ? `${r.liberadas} troza${r.liberadas === 1 ? "" : "s"} (${r.volumenM3.toFixed(4)} m³) volvieron al patio` +
+                    (r.teniaCorridas ? ". Lo que ya se aserró queda en el libro." : ".")
+                  : "No le quedaba madera libre.",
+            });
+            setLoteProd("");
+            return r;
+          }}
           onListo={(msg, detalle) => {
             pushToast({ tono: "success", msg, detail: detalle });
             setLoteProd("");

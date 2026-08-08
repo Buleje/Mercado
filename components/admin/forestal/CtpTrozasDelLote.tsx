@@ -19,7 +19,7 @@
  * se lea distinto según desde dónde se la mire.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { CheckCircle2, Search } from "@buleje/design-system/icons";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
@@ -95,6 +95,70 @@ export default function CtpTrozasDelLote({
     onSeleccion?.(s);
   };
 
+  /**
+   * SHIFT + clic tilda el rango, como cualquier tabla.
+   *
+   * Con sesenta piezas, ir de a una es el cuello de botella real del turno: el
+   * operador sabe que entran «de la 3037752 a la 3037790» y tenía que dar
+   * treinta y nueve clics. El ancla es la última fila tocada, y el rango se
+   * cuenta sobre lo que se VE (filas filtradas), no sobre el array entero —
+   * si no, un rango visual tildaría piezas escondidas por el buscador.
+   */
+  const ancla = useRef<number | null>(null);
+  const alTocarFila = (indice: number, shift: boolean) => {
+    const fila = filas[indice];
+    if (!fila) return;
+    const s = new Set(marcadas);
+    const destino = !marcadas.has(fila.id);
+    if (shift && ancla.current != null && ancla.current !== indice) {
+      const desde = Math.min(ancla.current, indice);
+      const hasta = Math.max(ancla.current, indice);
+      for (let i = desde; i <= hasta; i++) {
+        if (destino) s.add(filas[i].id);
+        else s.delete(filas[i].id);
+      }
+    } else if (destino) {
+      s.add(fila.id);
+    } else {
+      s.delete(fila.id);
+    }
+    ancla.current = indice;
+    onSeleccion?.(s);
+  };
+
+  /**
+   * Y el rango POR CÓDIGO, que es como se habla en el patio: «de la 752 a la
+   * 790». Los códigos de planta son un correlativo numérico, así que se comparan
+   * como números cuando lo son; si alguien numeró a mano (29/A), cae a texto.
+   * Se aplica sobre las filas visibles, por lo mismo que el shift.
+   */
+  const [desde, setDesde] = useState("");
+  const [hasta, setHasta] = useState("");
+  const codigoDe = (t: TrozaConsumible) => (t.codigoPlanta || t.codificacion || "").trim();
+  const enRango = (codigo: string, a: string, b: string) => {
+    const [na, nb, nc] = [Number(a), Number(b), Number(codigo)];
+    if (Number.isFinite(na) && Number.isFinite(nb) && Number.isFinite(nc) && codigo !== "") {
+      return nc >= Math.min(na, nb) && nc <= Math.max(na, nb);
+    }
+    const [x, y] = a.localeCompare(b) <= 0 ? [a, b] : [b, a];
+    return codigo.localeCompare(x) >= 0 && codigo.localeCompare(y) <= 0;
+  };
+  const enElRango = useMemo(() => {
+    if (!desde.trim() || !hasta.trim()) return [];
+    return filas.filter((t) => {
+      const c = codigoDe(t);
+      return c !== "" && enRango(c, desde.trim(), hasta.trim());
+    });
+  }, [filas, desde, hasta]);
+  const aplicarRango = (sumar: boolean) => {
+    const s = new Set(marcadas);
+    for (const t of enElRango) {
+      if (sumar) s.add(t.id);
+      else s.delete(t.id);
+    }
+    onSeleccion?.(s);
+  };
+
   return (
     <section className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
       {/* La franja de título del formato. */}
@@ -117,6 +181,57 @@ export default function CtpTrozasDelLote({
           · {volumen.toFixed(4)} m³ · {pieTablarDe(volumen).toLocaleString("es-PE")} pt
         </p>
       </header>
+
+      {/**
+       * Elegir por CÓDIGO y no fila por fila. Aparece sólo con suficientes
+       * piezas: con cuatro trozas, dos inputs de rango son más ruido que ayuda.
+       */}
+      {!soloLectura && trozas.length > 5 && (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-2">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            Elegir por código
+          </span>
+          <input
+            value={desde}
+            onChange={(e) => setDesde(e.target.value)}
+            placeholder="desde"
+            aria-label="Código de planta desde"
+            className="h-9 w-28 rounded-lg border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          />
+          <span className="text-sm text-[var(--text-tertiary)]">a</span>
+          <input
+            value={hasta}
+            onChange={(e) => setHasta(e.target.value)}
+            placeholder="hasta"
+            aria-label="Código de planta hasta"
+            className="h-9 w-28 rounded-lg border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          />
+          {/* Cuántas caen en el rango, ANTES de aplicarlo: un botón que dice
+              «tildar» sin decir cuántas invita a probar y deshacer. */}
+          <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
+            {desde.trim() && hasta.trim() ? `${enElRango.length} en el rango` : "—"}
+          </span>
+          <button
+            type="button"
+            disabled={enElRango.length === 0}
+            onClick={() => aplicarRango(true)}
+            className="h-9 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40"
+          >
+            Tildar
+          </button>
+          <button
+            type="button"
+            disabled={enElRango.length === 0}
+            onClick={() => aplicarRango(false)}
+            className="h-9 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40"
+          >
+            Destildar
+          </button>
+          <span className="ml-auto text-sm text-[var(--text-tertiary)]">
+            o <b className="text-[var(--text-secondary)]">Shift + clic</b> para tildar de una fila a otra
+          </span>
+        </div>
+      )}
 
       <TablaCtp className="rounded-none border-0" altoMax="max-h-[52vh]">
         <TheadCtp>
@@ -171,7 +286,7 @@ export default function CtpTrozasDelLote({
                   : "Ninguna troza coincide con la búsqueda."}
             </FilaVacia>
           )}
-          {filas.map((t) => {
+          {filas.map((t, indice) => {
             /* En lectura la fila va marcada siempre: esa madera YA entró. */
             const elegida = soloLectura || marcadas.has(t.id);
             return (
@@ -211,12 +326,15 @@ export default function CtpTrozasDelLote({
                     <input
                       type="checkbox"
                       checked={elegida}
-                      onChange={() => {
-                        const s = new Set(marcadas);
-                        if (s.has(t.id)) s.delete(t.id);
-                        else s.add(t.id);
-                        onSeleccion?.(s);
+                      /* En `onClick` y no en `onChange`: es el único que trae el
+                         `shiftKey`, que es lo que convierte un clic en un rango.
+                         `preventDefault` deja que el estado mande — si no, el
+                         navegador tilda por su cuenta y parpadea. */
+                      onClick={(ev) => {
+                        ev.preventDefault();
+                        alTocarFila(indice, ev.shiftKey);
                       }}
+                      onChange={() => {}}
                       aria-label={`Elegir la troza ${t.codigoPlanta || t.codificacion || t.id}`}
                       className="h-4 w-4 accent-[var(--accent)]"
                     />

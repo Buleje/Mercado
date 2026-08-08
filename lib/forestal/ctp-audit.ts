@@ -92,6 +92,10 @@ export type CtpAuditAction =
   // aparte de `annul` porque la corrida sobrevive — es una corrección, no un
   // asiento muerto.
   | "ctp_corrida_quitar_piezas"
+  // Un lote parcial que no va a terminar de aserrarse: se cierra con motivo y su
+  // madera libre vuelve al patio. No es `delete` — el lote y sus corridas siguen
+  // siendo parte del libro.
+  | "ctp_lote_aserrio_cerrar"
   // Ingresos de materia prima
   | "ctp_ingreso_create"
   // Corrección de un ingreso pendiente (typo de GTF, volumen mal tipeado): el

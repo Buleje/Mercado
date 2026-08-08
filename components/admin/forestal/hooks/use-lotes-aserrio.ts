@@ -107,6 +107,16 @@ export interface EstadoLotesAserrio {
     volumenTotalM3: number;
     lotesReabiertos: string[];
   }>;
+  /**
+   * Cerrar un lote parcial que no va a terminar de aserrarse: su madera libre
+   * vuelve al patio y deja de figurar como trabajo pendiente. Motivo obligatorio.
+   */
+  cerrarLote: (input: { loteId: string; motivo: string }) => Promise<{
+    code: string;
+    liberadas: number;
+    volumenM3: number;
+    teniaCorridas: boolean;
+  }>;
   quitarTroza: (loteId: string, trozaId: string) => Promise<void>;
   editarNota: (loteId: string, notes: string | null) => Promise<void>;
   deshacer: (loteId: string) => Promise<void>;
@@ -215,6 +225,18 @@ export function useLotesAserrio(): EstadoLotesAserrio {
     [recargar],
   );
 
+  const cerrarLote = useCallback<EstadoLotesAserrio["cerrarLote"]>(
+    async ({ loteId, motivo }) => {
+      const r = await mutar<{ code: string; liberadas: number; volumenM3: number; teniaCorridas: boolean }>(
+        { accion: "cerrar", loteId, motivo },
+        "PATCH",
+      );
+      await recargar();
+      return r;
+    },
+    [recargar],
+  );
+
   const quitarDeCorrida = useCallback<EstadoLotesAserrio["quitarDeCorrida"]>(
     async ({ corridaId, trozaIds }) => {
       const r = await mutar<{
@@ -265,6 +287,6 @@ export function useLotesAserrio(): EstadoLotesAserrio {
   return {
     lotes, trozas, cargando, error, recargar,
     crearConTrozas, agregarTrozas, consumirEnPatio, sumarACorrida, quitarDeCorrida,
-    quitarTroza, editarNota, deshacer,
+    cerrarLote, quitarTroza, editarNota, deshacer,
   };
 }

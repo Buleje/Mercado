@@ -95,6 +95,16 @@ const patchSchema = z.discriminatedUnion("accion", [
     corridaId: z.string().trim().min(1).max(60),
     trozaIds: z.array(z.string().trim().min(1).max(60)).min(1).max(500),
   }),
+  /**
+   * CERRAR un lote parcial que no va a terminar de aserrarse: su madera libre
+   * vuelve al patio y el lote deja de figurar como trabajo pendiente. El motivo
+   * es obligatorio — cerrar sin decir por qué no se puede reconstruir después.
+   */
+  z.object({
+    accion: z.literal("cerrar"),
+    loteId: z.string().trim().min(1).max(60),
+    motivo: z.string().trim().min(3).max(300),
+  }),
 ]);
 
 async function guard(req: NextRequest, roles: AdminRole[] = ["admin", "almacenero", "owner"]) {
@@ -189,6 +199,14 @@ export async function PATCH(req: NextRequest) {
         corridaId: d.corridaId,
         trozaIds: d.trozaIds,
         fecha: d.fecha ? new Date(`${d.fecha}T12:00:00.000Z`) : undefined,
+        user,
+      });
+      return NextResponse.json(r);
+    }
+    if (d.accion === "cerrar") {
+      const r = await ForestLoteAserrioDB.cerrar(g.auth.tenantId, {
+        loteId: d.loteId,
+        motivo: d.motivo,
         user,
       });
       return NextResponse.json(r);
