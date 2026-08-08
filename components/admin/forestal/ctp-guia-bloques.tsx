@@ -19,6 +19,7 @@ import { AlertCircle, Check, Loader2 } from "@buleje/design-system/icons";
 import { useDocumentoLookup } from "@/hooks/use-documento-lookup";
 import { avisoDeSunat, normalizarNumero, type DocumentoEncontrado } from "@/lib/documento/tipos";
 import { Field, I } from "./ctp-shared";
+import CtpUbigeoSelects from "./CtpUbigeoSelects";
 
 /** Identidad de una parte tal como la guarda `gtfDatosSchema`. */
 export interface ParteEditable {
@@ -234,15 +235,11 @@ export function UbicacionDeParte({
       )}
       {/* Los tres casilleros entran en la MISMA fila que el domicilio (6 + 2+2+2):
           sueltos abajo, cada parte se llevaba un renglón entero de más. */}
-      <Field span={2} label="Departamento">
-        <input type="text" className={I} value={parte.departamento ?? ""} onChange={(e) => onChange({ departamento: e.target.value })} />
-      </Field>
-      <Field span={2} label="Provincia">
-        <input type="text" className={I} value={parte.provincia ?? ""} onChange={(e) => onChange({ provincia: e.target.value })} />
-      </Field>
-      <Field span={2} label="Distrito">
-        <input type="text" className={I} value={parte.distrito ?? ""} onChange={(e) => onChange({ distrito: e.target.value })} />
-      </Field>
+      <CtpUbigeoSelects
+        span={2}
+        valor={{ departamento: parte.departamento, provincia: parte.provincia, distrito: parte.distrito }}
+        onChange={onChange}
+      />
     </>
   );
 }
