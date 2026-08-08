@@ -19,7 +19,10 @@ import { verifyRuc, isInvoiceable } from "@/lib/integrations/sunat-ruc";
 
 describe("verifyRuc — formato peruano", () => {
   beforeEach(() => {
-    delete process.env.SUNAT_RUC_PROVIDER;
+    // Mock EXPLÍCITO, no ausencia de variable: sin variable el default es
+    // `auto`, que sale a la API pública de verdad — y contesta «no existe» a
+    // un RUC inventado, además de meter red en un test unitario.
+    process.env.SUNAT_RUC_PROVIDER = "mock";
   });
 
   it("rechaza RUC con menos de 11 dígitos", async () => {

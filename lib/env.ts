@@ -144,7 +144,10 @@ const REQUIRED: EnvSpec[] = [
 //
 // RENIEC + SUNAT vendor identity verification (audit 2026-05-17 TD-058):
 //   RENIEC_PROVIDER       — "mock" (default) | "apisperu" | "decolecta"
-//   SUNAT_RUC_PROVIDER    — "mock" (default) | "apisperu" | "decolecta"
+//   SUNAT_RUC_PROVIDER    — "auto" (default) | "apisperu" | "decolecta" | "mock"
+//                          "auto" = v1 pública de apis.net.pe, sin token, datos
+//                          REALES; cae al mock sólo si no contesta. "mock" pasó
+//                          a ser opt-in explícito y no sale a la red.
 //   RENIEC_API_TOKEN      — Token del provider RENIEC (apis.net.pe o decolecta.com)
 //   SUNAT_RUC_API_TOKEN   — Token del provider SUNAT (fallback al RENIEC token si falta)
 //   En "mock" no hay hits externos — útil para dev. Para activar verificación

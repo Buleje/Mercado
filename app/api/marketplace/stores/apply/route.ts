@@ -68,9 +68,11 @@ export async function POST(req: NextRequest) {
     const { ownerName, ownerPhone, ownerEmail, ownerDni, ownerRuc, storeName, description, category, zone, address: _address } = parsed.data;
 
     // Audit 2026-05-17 TD-058: verificación RENIEC/SUNAT online.
-    // Si RENIEC_PROVIDER/SUNAT_RUC_PROVIDER están en "mock" (default dev),
-    // verifyDni/verifyRuc retornan ok=true sin hits externos. En prod,
-    // setear el env var activa la verificación real. Si el provider cae,
+    // `SUNAT_RUC_PROVIDER` sin setear ya NO es "mock": el default es "auto" y
+    // consulta la v1 pública de apis.net.pe, que no pide token y trae datos
+    // REALES (cierra el P1-8 del audit de marketplace, donde un prod sin la
+    // variable dejaba entrar vendors sin verificar nada). Para dev sin red,
+    // "mock" sigue disponible como opt-in explícito. Si el provider cae,
     // hacen soft-pass para no bloquear onboarding (admin verifica manual).
     let identityVerified: "verified" | "soft-pass" | "rejected" = "soft-pass";
     let identityNote = "";
