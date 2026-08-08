@@ -8,8 +8,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Plus, Search, Boxes, Truck, AlertCircle, Scale, PackageCheck, PackagePlus } from "@buleje/design-system/icons";
-import { StatCard, CardTitle } from "@buleje/design-system";
+import { Plus, Search, Boxes, Truck, AlertCircle, PackagePlus } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { accionesDeLotes, accionesDeSeccion, accionesPorDeclarar } from "./ctp-entries-acciones";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -22,6 +22,7 @@ import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
 import CtpCorridaSinDeclarar from "./CtpCorridaSinDeclarar";
+import CtpSeccionKpis from "./CtpSeccionKpis";
 import CtpLotesParaProducir from "./CtpLotesParaProducir";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useCtpSeccion } from "@/hooks/use-ctp-secciones";
@@ -32,13 +33,9 @@ import { nombreArchivoSeccion, seccionACsv } from "@/lib/forestal/ctp-secciones-
 
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
-import { type CtpEntry, type CtpSection, n2 } from "./ctp-section-shared";
+import { type CtpEntry, type CtpSection } from "./ctp-section-shared";
 import { TablaSkeleton } from "./ctp-shared";
 import { CtpPaginacion, usePaginacion } from "./ctp-tabla";
-
-/** Una tarjeta que filtra se ve hundida: si no, nadie sabe por qué la tabla
- *  de abajo tiene menos filas. */
-const ANILLO_ACTIVO = "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]";
 
 const SECTION_META: Record<CtpSection, { label: string; icon: typeof Boxes; cta: string; empty: string }> = {
   /* El CTA de Producción ya no abre un formulario en blanco (ADR-349): la
@@ -211,6 +208,8 @@ export function CtpEntriesView({
   const [showSim, setShowSim] = useState(false);
   /** Cada incremento abre el menú de lotes (lo dispara la tecla `N`). */
   const [abrirLotes, setAbrirLotes] = useState(0);
+  /** Ídem para el de corridas sin declarar: lo dispara su KPI. */
+  const [abrirDeclarar, setAbrirDeclarar] = useState(0);
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
   const [pending, setPending] = useState(false);
@@ -368,22 +367,20 @@ export function CtpEntriesView({
   const Icon = meta.icon;
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <StatCard
-          density="compact"
-          label="Líneas registradas"
-          value={String(kpis.count)}
-          subValue={statusFilter === "registrado" ? "Filtrando por estas" : "Ver solo las vigentes"}
-          icon={Icon}
-          emphasis="neutral"
-          onClick={() => setStatusFilter((f) => (f === "registrado" ? "" : "registrado"))}
-          className={statusFilter === "registrado" ? ANILLO_ACTIVO : undefined}
-        />
-        <StatCard density="compact" label={section === "produccion" ? "Producido total" : "Despachado total"} value={n2(kpis.totalQty)} subValue="suma de cantidades" icon={PackageCheck} emphasis="success" />
-        {section === "produccion"
-          ? <StatCard density="compact" label="Rendimiento prom." value={`${kpis.avgRend.toFixed(1)}%`} subValue={`ponderado · ${n2(kpis.consumido)} m³ consumidos`} icon={Scale} emphasis={kpis.avgRend > 0 ? "success" : "neutral"} />
-          : <StatCard density="compact" label="Materia prima ref." value={String(new Set(entries.map((e) => e.gtfNumber).filter(Boolean)).size)} subValue="GTF de salida distintos" icon={Truck} emphasis="neutral" />}
-      </div>
+      {/* Ocho KPIs y no tres (`CtpSeccionKpis`): los m³ de materia prima eran el
+          subtítulo de otra tarjeta, y merma, stock en planta, corridas sin
+          declarar y materia prima sin origen no estaban en ningún lado. */}
+      <CtpSeccionKpis
+        section={section}
+        kpis={kpis}
+        soloVigentes={statusFilter === "registrado"}
+        onSoloVigentes={() => setStatusFilter((f) => (f === "registrado" ? "" : "registrado"))}
+        sinAnexo={sinAnexo}
+        soloSinAnexo={soloSinAnexo}
+        onSoloSinAnexo={() => setSoloSinAnexo((v) => !v)}
+        /* La deuda lleva a resolverla: la tarjeta abre el mismo menú del botón. */
+        onVerPendientes={() => setAbrirDeclarar((n) => n + 1)}
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
@@ -413,6 +410,7 @@ export function CtpEntriesView({
               icon={Boxes}
               size="md"
               compactoEnMovil
+              abrirSignal={abrirDeclarar}
             />
           )}
           {section === "produccion" ? (
@@ -455,6 +453,9 @@ export function CtpEntriesView({
              para declarar lo que salga (ADR-364). */
           onSumarPiezas={({ loteId, trozaIds }) =>
             lotes.sumarACorrida({ loteId, corridaId: corridaAbierta.id, trozaIds })
+          }
+          onQuitarPiezas={({ trozaIds }) =>
+            lotes.quitarDeCorrida({ corridaId: corridaAbierta.id, trozaIds })
           }
           onAviso={(msg, detalle) => {
             pushToast({ tono: "success", msg, detail: detalle });

@@ -85,6 +85,16 @@ const patchSchema = z.discriminatedUnion("accion", [
     trozaIds: z.array(z.string().trim().min(1).max(60)).min(1).max(500),
     fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD").optional(),
   }),
+  /**
+   * Y el reverso (ADR-364): piezas mal tildadas que salen de una corrida que
+   * todavía no declaró, sin tener que anular la línea entera. Sin `loteId`: las
+   * piezas dicen solas de qué lote venían.
+   */
+  z.object({
+    accion: z.literal("quitar-corrida"),
+    corridaId: z.string().trim().min(1).max(60),
+    trozaIds: z.array(z.string().trim().min(1).max(60)).min(1).max(500),
+  }),
 ]);
 
 async function guard(req: NextRequest, roles: AdminRole[] = ["admin", "almacenero", "owner"]) {
@@ -179,6 +189,14 @@ export async function PATCH(req: NextRequest) {
         corridaId: d.corridaId,
         trozaIds: d.trozaIds,
         fecha: d.fecha ? new Date(`${d.fecha}T12:00:00.000Z`) : undefined,
+        user,
+      });
+      return NextResponse.json(r);
+    }
+    if (d.accion === "quitar-corrida") {
+      const r = await ForestLoteAserrioDB.quitarDeCorrida(g.auth.tenantId, {
+        corridaId: d.corridaId,
+        trozaIds: d.trozaIds,
         user,
       });
       return NextResponse.json(r);

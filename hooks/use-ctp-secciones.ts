@@ -94,8 +94,84 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
       }
     }
     const avgRend = pesoTotal > 0 ? sumaPonderada / pesoTotal : 0;
-    return { count: reg.length, totalQty, consumido, avgRend };
-  }, [entries]);
+
+    /**
+     * Las corridas ABIERTAS (ADR-340): consumieron y no dijeron qué salió.
+     * Es deuda del libro y también la explicación de por qué el rendimiento del
+     * período puede verse bajo: esos m³ ya cuentan como entrada.
+     */
+    const abiertas = reg.filter((e) => e.quantity == null);
+    const consumidoAbierto = abiertas.reduce((a, e) => a + Number(e.volumeInputM3 ?? 0), 0);
+
+    /**
+     * La MERMA sólo sobre corridas COMPARABLES: declaradas, en m³ y **con
+     * materia prima registrada**.
+     *
+     * Los tres filtros se ganaron con datos reales:
+     *  - `pt`/`kg` restados a m³ sería restar peras a manzanas;
+     *  - una corrida abierta daría merma del 100 % por madera que sigue en la
+     *    sierra;
+     *  - y una corrida que declara producción **sin entrada** (las viejas
+     *    importadas) empuja la resta a negativo. Con `Math.max(0, …)` eso salía
+     *    como «merma 0.00 · 0.0 %», que es exactamente el número que un
+     *    fiscalizador querría creer y que acá era mentira: no hay merma cero,
+     *    hay corridas que no dicen de qué madera salieron.
+     */
+    const cerradasM3 = reg.filter(
+      (e) => e.quantity != null && (e.unit ?? "m3") === "m3" && Number(e.volumeInputM3 ?? 0) > 0,
+    );
+    const entradaCerrada = cerradasM3.reduce((a, e) => a + Number(e.volumeInputM3 ?? 0), 0);
+    const salidaCerrada = cerradasM3.reduce((a, e) => a + Number(e.quantity ?? 0), 0);
+    const merma = Math.max(0, entradaCerrada - salidaCerrada);
+    /** Declararon producto y no declararon de qué madera salió: rompe el certificado. */
+    const sinMateriaPrima = reg.filter(
+      (e) => e.quantity != null && !(Number(e.volumeInputM3 ?? 0) > 0),
+    ).length;
+
+    /**
+     * Lo producido que TODAVÍA está en planta: producido − despachado −
+     * reprocesado. Es el stock real de la sección, no la suma histórica.
+     */
+    const enPatio = reg.reduce(
+      (a, e) =>
+        a +
+        Math.max(0, Number(e.quantity ?? 0) - Number(e.despachadoQty ?? 0) - Number(e.reprocesadoQty ?? 0)),
+      0,
+    );
+
+    /**
+     * Materia prima SIN GUÍA de origen (producción) o producto sin corrida que
+     * lo ampare (despacho): el agujero de la cadena de custodia. Es lo primero
+     * que rompe un certificado, así que va como número, no escondido en la fila.
+     */
+    const sinOrigen =
+      section === "produccion"
+        ? reg.reduce((a, e) => a + Math.max(0, Number(e.volumeInputM3 ?? 0) - Number(e.mpAtribuidaM3 ?? 0)), 0)
+        : reg.reduce((a, e) => a + Math.max(0, Number(e.quantity ?? 0) - Number(e.atribuidoQty ?? 0)), 0);
+
+    /** Despacho: cuántas guías y cuántos destinos distintos movió el período. */
+    const guias = new Set(reg.map((e) => e.gtfNumber).filter(Boolean)).size;
+    const destinos = new Set(reg.map((e) => (e.destino ?? "").trim()).filter(Boolean)).size;
+    const piezas = reg.reduce((a, e) => a + Number(e.pieces ?? 0), 0);
+
+    return {
+      count: reg.length,
+      totalQty,
+      consumido,
+      avgRend,
+      abiertas: abiertas.length,
+      consumidoAbierto,
+      merma,
+      mermaSobre: cerradasM3.length,
+      mermaPct: entradaCerrada > 0 ? (merma / entradaCerrada) * 100 : 0,
+      sinMateriaPrima,
+      enPatio,
+      sinOrigen,
+      guias,
+      destinos,
+      piezas,
+    };
+  }, [entries, section]);
 
   const statusCounts = useMemo(() => ({
     total: entries.length,

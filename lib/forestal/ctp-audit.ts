@@ -88,6 +88,10 @@ export type CtpAuditAction =
   // ya existe, y eso mueve su rendimiento — es justo lo que un fiscalizador
   // querría poder reconstruir.
   | "ctp_corrida_sumar_piezas"
+  // Y el reverso: piezas mal tildadas que salen de una corrida abierta. Va
+  // aparte de `annul` porque la corrida sobrevive — es una corrección, no un
+  // asiento muerto.
+  | "ctp_corrida_quitar_piezas"
   // Ingresos de materia prima
   | "ctp_ingreso_create"
   // Corrección de un ingreso pendiente (typo de GTF, volumen mal tipeado): el

@@ -24,7 +24,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Boxes, X } from "@buleje/design-system/icons";
+import { AlertTriangle, Boxes, Loader2, MinusCircle, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { origenesDeTrozas } from "@/lib/forestal/produccion-paquetes";
@@ -58,6 +58,7 @@ export default function CtpCorridaSinDeclarar({
   onError,
   onAviso,
   onSumarPiezas,
+  onQuitarPiezas,
   onProducirResto,
   onCerrar,
 }: {
@@ -84,6 +85,13 @@ export default function CtpCorridaSinDeclarar({
     volumenM3: number;
     volumenTotalM3: number;
   }>;
+  /** El reverso: las destildadas salen de la corrida y vuelven a estar libres. */
+  onQuitarPiezas?: (input: { trozaIds: string[] }) => Promise<{
+    piezas: number;
+    volumenM3: number;
+    volumenTotalM3: number;
+    lotesReabiertos: string[];
+  }>;
   onProducirResto?: (loteId: string) => void;
   onCerrar: () => void;
 }) {
@@ -103,6 +111,37 @@ export default function CtpCorridaSinDeclarar({
   const volumenPiezas = useMemo(
     () => Math.round(trozas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
     [trozas],
+  );
+
+  /**
+   * Qué piezas quedan en la producción de esta corrida.
+   *
+   * Arrancan TODAS tildadas porque eso es lo que el libro afirma hoy: destildar
+   * es la corrección, no el estado normal. Las que llegan después (una tanda
+   * sumada) entran tildadas también; las que se van —porque otra pantalla las
+   * liberó— se caen solas. Sin esta sincronización, tildar quedaría pegado a la
+   * primera lectura y una pieza nueva aparecería en blanco sin motivo.
+   */
+  const [enProduccion, setEnProduccion] = useState<Set<string>>(new Set());
+  const conocidas = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const vivas = new Set(trozas.map((t) => t.id));
+    setEnProduccion((prev) => {
+      const s = new Set<string>();
+      for (const id of vivas) {
+        // Conocida ⇒ respetamos lo que el operador dejó; nueva ⇒ entra tildada.
+        if (!conocidas.current.has(id) || prev.has(id)) s.add(id);
+      }
+      return s;
+    });
+    conocidas.current = vivas;
+  }, [trozas]);
+
+  /** Las destildadas: lo que el operador dice que NO entró a la sierra. */
+  const fuera = useMemo(() => trozas.filter((t) => !enProduccion.has(t.id)), [trozas, enProduccion]);
+  const volumenFuera = useMemo(
+    () => Math.round(fuera.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
+    [fuera],
   );
 
   /**
@@ -210,6 +249,34 @@ export default function CtpCorridaSinDeclarar({
     }
   }
 
+  /**
+   * Sacar de la corrida lo que se destildó (ADR-364, el reverso).
+   *
+   * La corrida sigue viva —es una corrección de carga, no un asiento muerto—
+   * así que el panel se queda y el aviso va por `onAviso`.
+   */
+  async function quitar() {
+    if (!onQuitarPiezas || fuera.length === 0) return;
+    setSumando(true);
+    setError(null);
+    try {
+      const r = await onQuitarPiezas({ trozaIds: fuera.map((t) => t.id) });
+      onAviso?.(
+        `Corrida N° ${corrida.lineNo}: ${r.piezas} troza${r.piezas === 1 ? "" : "s"} fuera de la sierra`,
+        `Salieron ${r.volumenM3.toFixed(4)} m³ — la corrida queda en ${r.volumenTotalM3.toFixed(4)} m³` +
+          (r.lotesReabiertos.length > 0
+            ? `. Volvió a abrirse ${r.lotesReabiertos.join(", ")} con esa madera.`
+            : "."),
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      onError(msg);
+    } finally {
+      setSumando(false);
+    }
+  }
+
   /* Elegir la corrida trae la vista acá: el panel se dibuja debajo de los KPIs y
      la barra, y sin esto se apretaba el botón y no pasaba nada visible. Mismo
      gesto que el panel del lote. */
@@ -254,7 +321,18 @@ export default function CtpCorridaSinDeclarar({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Btn variant="primary" onClick={() => { setError(null); setAbierto(true); }}>
+          {/* Con piezas destildadas sin confirmar, declarar usaría un volumen
+              que el operador acaba de decir que no es: primero se resuelve eso. */}
+          <Btn
+            variant="primary"
+            disabled={fuera.length > 0 || sumando}
+            title={
+              fuera.length > 0
+                ? "Sacá o volvé a tildar las piezas que destildaste: el rendimiento sale del volumen de la corrida"
+                : undefined
+            }
+            onClick={() => { setError(null); setAbierto(true); }}
+          >
             <Boxes className="h-4 w-4" />
             Declarar producción
           </Btn>
@@ -270,11 +348,20 @@ export default function CtpCorridaSinDeclarar({
         </div>
       </header>
 
-      {/* La misma lista del formato, en modo lectura: es la madera que hay que
-          mirar mientras se declara lo que salió. */}
+      {/**
+       * La misma lista del formato, con su columna para tildar.
+       *
+       * Tildada = **entra a la producción que se va a declarar**. Vienen todas
+       * tildadas porque eso es lo que dice el libro hoy; destildar una y apretar
+       * «Sacar de la corrida» corrige la carga —se marcaron seis y entraron
+       * cuatro— sin tener que anular la línea entera y perder su número
+       * (ADR-364, el reverso de sumar).
+       */}
       <CtpTrozasDelLote
         trozas={trozas}
-        soloLectura
+        seleccion={enProduccion}
+        onSeleccion={setEnProduccion}
+        etiquetaSeleccion="A producción"
         titulo="Trozas que entraron a esta corrida"
         fechaConsumo={corrida.entryDate}
         cargando={cargando}
@@ -284,6 +371,35 @@ export default function CtpCorridaSinDeclarar({
            el operador saca la conclusión con el dato, no con una suposición. */
         vacio={`Esta corrida no tiene piezas marcadas a la vista. En el libro figura con ${entrada.toFixed(4)} m³ de materia prima.`}
       />
+
+      {/**
+       * Destildar no escribe solo: el libro no se toca por un clic al pasar.
+       * Acá se dice exactamente qué va a pasar —cuántas piezas, cuántos m³ y en
+       * cuánto queda la corrida— y recién ahí se confirma.
+       */}
+      {fuera.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2.5">
+          <AlertTriangle
+            className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+            aria-hidden
+          />
+          <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
+            Destildaste <b className="tabular-nums text-[var(--text-primary)]">{fuera.length}</b> troza
+            {fuera.length === 1 ? "" : "s"} ({volumenFuera.toFixed(4)} m³). Sacarlas de la corrida la deja en{" "}
+            <b className="font-mono tabular-nums text-[var(--text-primary)]">
+              {(entrada - volumenFuera).toFixed(4)} m³
+            </b>{" "}
+            y esa madera vuelve a estar libre.
+          </p>
+          <Btn size="sm" variant="secondary" disabled={sumando} onClick={() => setEnProduccion(new Set(trozas.map((t) => t.id)))}>
+            Deshacer
+          </Btn>
+          <Btn size="sm" variant="danger" disabled={sumando || !onQuitarPiezas} onClick={() => void quitar()}>
+            {sumando ? <Loader2 className="h-4 w-4 animate-spin" /> : <MinusCircle className="h-4 w-4" />}
+            Sacar de la corrida
+          </Btn>
+        </div>
+      )}
 
       {/* Cuando las piezas no suman lo que la corrida declaró, se dice: el
           rendimiento se calcula sobre el volumen del libro, no sobre la tabla. */}

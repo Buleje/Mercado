@@ -96,6 +96,17 @@ export interface EstadoLotesAserrio {
     trozaIds: string[];
     fecha?: string;
   }) => Promise<{ piezas: number; volumenM3: number; volumenTotalM3: number; loteCerrado: boolean }>;
+  /**
+   * El reverso (ADR-364): piezas mal tildadas que salen de una corrida abierta.
+   * No las puede sacar todas — una corrida sin materia prima se anula, no se
+   * vacía.
+   */
+  quitarDeCorrida: (input: { corridaId: string; trozaIds: string[] }) => Promise<{
+    piezas: number;
+    volumenM3: number;
+    volumenTotalM3: number;
+    lotesReabiertos: string[];
+  }>;
   quitarTroza: (loteId: string, trozaId: string) => Promise<void>;
   editarNota: (loteId: string, notes: string | null) => Promise<void>;
   deshacer: (loteId: string) => Promise<void>;
@@ -204,6 +215,20 @@ export function useLotesAserrio(): EstadoLotesAserrio {
     [recargar],
   );
 
+  const quitarDeCorrida = useCallback<EstadoLotesAserrio["quitarDeCorrida"]>(
+    async ({ corridaId, trozaIds }) => {
+      const r = await mutar<{
+        piezas: number;
+        volumenM3: number;
+        volumenTotalM3: number;
+        lotesReabiertos: string[];
+      }>({ accion: "quitar-corrida", corridaId, trozaIds }, "PATCH");
+      await recargar();
+      return r;
+    },
+    [recargar],
+  );
+
   const quitarTroza = useCallback(
     async (loteId: string, trozaId: string) => {
       await mutar({ accion: "quitar", loteId, trozaId }, "PATCH");
@@ -239,6 +264,7 @@ export function useLotesAserrio(): EstadoLotesAserrio {
 
   return {
     lotes, trozas, cargando, error, recargar,
-    crearConTrozas, agregarTrozas, consumirEnPatio, sumarACorrida, quitarTroza, editarNota, deshacer,
+    crearConTrozas, agregarTrozas, consumirEnPatio, sumarACorrida, quitarDeCorrida,
+    quitarTroza, editarNota, deshacer,
   };
 }

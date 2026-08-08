@@ -50,6 +50,12 @@ export default function CtpTrozasDelLote({
   titulo = "Lista de trozas del lote",
   /** Ya entraron a la sierra: se miran, no se eligen. */
   soloLectura = false,
+  /**
+   * Qué significa tildar en ESTA tabla. Armando el lote es «Seleccionar» (cuáles
+   * entran); mirando una corrida es «A producción» (cuáles quedan adentro).
+   * Misma columna, dos preguntas — y el encabezado tiene que decir cuál.
+   */
+  etiquetaSeleccion = "Seleccionar",
 }: {
   trozas: TrozaConsumible[];
   /** Opcionales en `soloLectura`: ahí no hay nada que tildar. */
@@ -60,6 +66,7 @@ export default function CtpTrozasDelLote({
   vacio?: string;
   titulo?: string;
   soloLectura?: boolean;
+  etiquetaSeleccion?: string;
 }) {
   /** Buscador de la cabecera «Cod. Planta», igual que el formato. */
   const [busca, setBusca] = useState("");
@@ -141,12 +148,12 @@ export default function CtpTrozasDelLote({
                 <span className="block">Estado</span>
               ) : (
                 <>
-                  <span className="block">Seleccionar</span>
+                  <span className="block whitespace-nowrap">{etiquetaSeleccion}</span>
                   <input
                     type="checkbox"
                     checked={todas}
                     onChange={(e) => alternarTodas(e.target.checked)}
-                    aria-label="Elegir todas las trozas de la lista"
+                    aria-label={`${etiquetaSeleccion}: todas las trozas de la lista`}
                     className="mt-1 h-4 w-4 accent-[var(--accent)]"
                   />
                 </>
