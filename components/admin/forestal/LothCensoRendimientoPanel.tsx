@@ -42,8 +42,20 @@ type Filtro = "todos" | "banderas" | "talados" | "en_pie";
 export default function LothCensoRendimientoPanel({
   censo,
   entries,
+  sinKpis = false,
   dmcOverrides,
 }: {
+  /**
+   * Ocultar la fila de KPIs propia.
+   *
+   * En la vista de Trazabilidad este panel convive con el resumen por árbol, y
+   * los dos publicaban su propio rendimiento: «Rendimiento de trozado 97.7%» y
+   * «Rendimiento global 98%» son el MISMO número redondeado distinto. Dos
+   * cifras que parecen dos hechos y son uno solo es peor que no mostrar
+   * ninguna. Acá la precisión por árbol sigue estando —como columna de la
+   * tabla, que es donde se compara— y el encabezado global queda uno.
+   */
+  sinKpis?: boolean;
   censo: ArbolCensoInput[];
   entries: LothEntryDTO[];
   dmcOverrides?: Record<string, number>;
@@ -100,6 +112,7 @@ export default function LothCensoRendimientoPanel({
         </button>
       </header>
 
+      {!sinKpis && (
       <div className="grid gap-2 border-b-2 border-[var(--rule-base)] p-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi
           label="Precisión del censo"
@@ -129,8 +142,11 @@ export default function LothCensoRendimientoPanel({
         <Kpi label="Árboles con bandera" valor={String(resumen.conBandera)} sub={`de ${resumen.arboles} en el cuadro`} tone={resumen.conBandera > 0 ? "warning" : "success"} />
         <Kpi label="Movilizado" valor={`${resumen.volumenMovilizadoM3.toFixed(3)} m³`} sub={`${resumen.talados} talado(s) · ${resumen.enPie} en pie`} />
       </div>
+      )}
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-subtle)] p-3">
+      {/* Buscador y filtro en UNA fila compacta: eran dos renglones altos
+          para una tabla que casi siempre entra entera en pantalla. */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-subtle)] px-3 py-2">
         <div className="relative min-w-[180px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input

@@ -80,7 +80,12 @@ export default function LothTraceCard({ op, caratula, matchHint }: { op: TraceOp
                 <span className="text-[var(--text-tertiary)]">
                   Talado <b className="font-mono tabular-nums text-[var(--text-secondary)]">{op.talaVolM3.toFixed(2)}</b> → Trozado <b className="font-mono tabular-nums text-[var(--text-secondary)]">{op.trozadoVolM3.toFixed(2)}</b> m³
                 </span>
-                <span className={`font-mono font-bold tabular-nums ${rendColor}`}>{op.rendimientoPct}%</span>
+                <span className={`font-mono font-bold tabular-nums ${rendColor}`}>
+                  {/* Un decimal, del volumen y no del entero: el KPI de arriba
+                      y la tabla de abajo dicen 97.7% para este mismo árbol, y
+                      acá salía 98%. Tres cifras para un solo hecho. */}
+                  {Number(op.talaVolM3) > 0 ? ((Number(op.trozadoVolM3) / Number(op.talaVolM3)) * 100).toFixed(1) : "0.0"}%
+                </span>
               </div>
               <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
                 <div className="h-full rounded-full bg-[var(--data-success-500)] transition-all" style={{ width: `${rendBar}%` }} />

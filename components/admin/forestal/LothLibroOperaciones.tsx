@@ -540,10 +540,16 @@ export default function LothLibroOperaciones() {
             </div>
           ) : (
             <>
-              <div className="mb-4">
-                <LothCensoRendimientoPanel censo={censoArboles} entries={allEntries} />
+              {/* La CADENA por árbol primero —es lo que se lee de un vistazo— y
+                  el detalle censo-vs-realidad después, como respaldo. Antes iba
+                  al revés y la pantalla abría con una tabla de comparación
+                  antes de decir de qué árboles habla. El panel de censo va
+                  `sinKpis`: sus cuatro cifras globales las publica el resumen
+                  de arriba, y una de ellas era literalmente la misma. */}
+              <div className="space-y-4">
+                <LothTraceView entries={allEntries} caratula={caratula} />
+                <LothCensoRendimientoPanel censo={censoArboles} entries={allEntries} sinKpis />
               </div>
-              <LothTraceView entries={allEntries} caratula={caratula} />
             </>
           )}
         </>

@@ -91,7 +91,17 @@ export default function LothTraceView({ entries, caratula }: { entries: LothEntr
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard density="compact" label="Árboles trazados" value={summary.totalTrees.toString()} subValue={`${summary.conGps} con GPS`} icon={TreePine} emphasis="neutral" />
         <StatCard density="compact" label="Volumen talado" value={`${summary.talaVolM3.toFixed(2)} m³`} subValue={`trozado ${summary.trozadoVolM3.toFixed(2)} m³`} icon={TreePine} emphasis="success" />
-        <StatCard density="compact" label="Rendimiento global" value={`${summary.rendimientoGlobalPct}%`} subValue="trozado / talado" icon={TrendingUp} emphasis={summary.rendimientoGlobalPct >= 60 ? "success" : "warning"} />
+        {/* Un decimal, calculado de los m³ y no del entero del resumen: la tabla
+            de abajo dice 97.7% y este KPI decía 98%. Es el MISMO hecho con dos
+            cifras, que es justo lo que hace desconfiar de un tablero. */}
+        <StatCard
+          density="compact"
+          label="Rendimiento global"
+          value={`${Number(summary.talaVolM3) > 0 ? ((Number(summary.trozadoVolM3) / Number(summary.talaVolM3)) * 100).toFixed(1) : "0.0"}%`}
+          subValue="trozado / talado"
+          icon={TrendingUp}
+          emphasis={summary.rendimientoGlobalPct >= 60 ? "success" : "warning"}
+        />
         <StatCard
           density="compact"
           label="Cadenas completas"
