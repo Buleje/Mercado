@@ -9,6 +9,7 @@
  * cargar ni tabla que mantener.
  */
 
+import { useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, CheckCircle2, TrendingUp } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { ZAFRA_ESTADO_LABEL, ZAFRA_ESTADO_TONE, type ZafraAnalisis } from "@/lib/forestal/loth-zafra";
@@ -29,6 +30,26 @@ const TONE_BG = {
 export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
   const tone = ZAFRA_ESTADO_TONE[zafra.estado];
   const Icono = zafra.estado === "vencida" ? AlertTriangle : zafra.estado === "atrasado" ? TrendingUp : CheckCircle2;
+
+  /**
+   * El cronograma se abre en el mes en curso, no entero.
+   *
+   * Son trece filas de las que casi siempre importa UNA —dónde estoy hoy— y el
+   * bloque se llevaba un cuarto de pantalla para que alguien leyera un renglón.
+   * Se muestran el mes actual y sus vecinos; el resto sigue estando a un click,
+   * porque para planificar la zafra sí hace falta el cuadro completo.
+   */
+  const [todos, setTodos] = useState(false);
+  const iActual = zafra.meses.findIndex((m) => m.actual);
+  const mesesVisibles = useMemo(() => {
+    if (todos || zafra.meses.length <= 5) return zafra.meses;
+    /* Sin mes en curso (vigencia vencida o por empezar) se muestran los
+       primeros: es el arranque del plan, que es lo que se estará mirando. */
+    const centro = iActual >= 0 ? iActual : 0;
+    const desde = Math.max(0, centro - 1);
+    return zafra.meses.slice(desde, desde + 4);
+  }, [todos, zafra.meses, iActual]);
+  const hayOcultos = mesesVisibles.length < zafra.meses.length;
 
   return (
     <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
@@ -78,6 +99,7 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
 
         {/* Cronograma mensual */}
         {zafra.meses.length > 0 && (
+          <>
           <div className="overflow-x-auto rounded-xl border-2 border-[var(--rule-base)]">
             <table className="w-full border-collapse text-sm">
               <thead className="bg-[var(--surface-canvas)]">
@@ -89,7 +111,7 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
                 </tr>
               </thead>
               <tbody>
-                {zafra.meses.map((m) => (
+                {mesesVisibles.map((m) => (
                   <tr
                     key={m.periodo}
                     className={`border-t border-[var(--rule-subtle)] ${m.actual ? "bg-[var(--brand-ink)]/8 font-bold" : ""}`}
@@ -105,6 +127,18 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
               </tbody>
             </table>
           </div>
+          {hayOcultos && (
+            <button
+              type="button"
+              onClick={() => setTodos((v) => !v)}
+              className="mt-1 text-xs font-bold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]"
+            >
+              {todos
+                ? "Mostrar solo los meses cercanos"
+                : `Ver los ${zafra.meses.length} meses del cronograma`}
+            </button>
+          )}
+          </>
         )}
         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
           La meta mensual es un reparto lineal del volumen autorizado sobre la vigencia — sirve de referencia, no reemplaza el

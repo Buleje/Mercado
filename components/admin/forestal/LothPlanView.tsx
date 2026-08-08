@@ -295,6 +295,13 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
           {/* Zafra: ¿llego con los tiempos de la vigencia? */}
           <LothZafraPanel zafra={zafra} />
 
+          {/* Control por especie y Balance van a ANCHO COMPLETO, uno debajo del
+              otro. Se probó emparejarlos en dos columnas para ganar scroll y
+              salió peor: con 8 columnas de números cada tabla se parte —«Misa
+              NO EN PLAN» y «Azúcar huayo» en dos renglones, y el balance
+              cortando «% mov»—. Un cuadro de compliance que se lee mal cuesta
+              más que el scroll que ahorra. */}
+
           {/* Control por especie — ¿estoy dentro de lo autorizado? (compliance OSINFOR) */}
           <EspecieControlPanel rows={controlRows} loading={detailLoading} />
 
