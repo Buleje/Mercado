@@ -26,5 +26,15 @@ export const ORDENES: { key: RadarOrden; label: string; hint: string }[] = [
   { key: "volumen", label: "Por volumen", hint: "De mayor a menor cantidad" },
 ];
 
-export const ZOOM_MIN = 0.5;
-export const ZOOM_MAX = 1.5;
+/**
+ * Rango de zoom. Antes iba de 0.5 a 1.5 y con veinte líneas no alcanzaba para
+ * ver la cadena entera de un vistazo (ni para leerla de lejos al proyectarla).
+ */
+export const ZOOM_MIN = 0.25;
+export const ZOOM_MAX = 3;
+
+/** El paso es multiplicativo: a 25% un −15% absoluto no se nota, y a 300% salta. */
+export function pasoZoom(z: number, dir: 1 | -1): number {
+  const v = dir === 1 ? z * 1.2 : z / 1.2;
+  return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Number(v.toFixed(3))));
+}

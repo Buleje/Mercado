@@ -41,7 +41,6 @@ import { VistaHeader } from "@/components/admin/shared/module-primitives";
 import { printCadenaCustodia } from "@/lib/forestal/ctp-traza-print";
 import {
   analizarRadar,
-  grosorArista,
   ordenarNodos,
   radarToCsv,
   type RadarBalance,
@@ -65,17 +64,19 @@ import CtpRadarCronologia from "./CtpRadarCronologia";
 import CtpRadarRendimiento from "./CtpRadarRendimiento";
 import CtpRadarResumen from "./CtpRadarResumen";
 import CtpRadarControles from "./CtpRadarControles";
-import { ZOOM_MAX, ZOOM_MIN, type Foco, type Vista } from "./ctp-radar-tipos";
+import CtpRadarLienzo from "./CtpRadarLienzo";
+import {
+  APARIENCIA_DEFAULT,
+  colorDe,
+  guardarApariencia,
+  leerApariencia,
+  type RadarApariencia,
+} from "./ctp-radar-apariencia";
+import { pasoZoom, ZOOM_MAX, ZOOM_MIN, type Foco, type Vista } from "./ctp-radar-tipos";
 import {
   BalanceLinea,
-  COL_GAP,
-  Edge,
   fmtNum,
-  GAP_Y,
   Legend,
-  Node,
-  NODE_H,
-  NODE_W,
   PAD,
   type NodeKind,
   type Placed,
@@ -105,6 +106,21 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   const lienzoRef = useRef<HTMLDivElement>(null);
   /** Por dónde va el recorrido de eslabones sin cerrar. */
   const [huecoIdx, setHuecoIdx] = useState(0);
+  /**
+   * Tamaño de los bloques y color de cada columna. Arranca en el default (el
+   * mismo que dibuja el servidor) y en el montaje se reemplaza por lo guardado:
+   * la preferencia NO se persiste por efecto, se guarda en el mismo acto en que
+   * se cambia — un efecto de guardado corre antes que el de carga y deja el
+   * storage en blanco (pasó con los precios del cubicador).
+   */
+  const [apariencia, setApariencia] = useState<RadarApariencia>(APARIENCIA_DEFAULT);
+  const [panelApariencia, setPanelApariencia] = useState(false);
+  const [pantallaCompleta, setPantallaCompleta] = useState(false);
+  useEffect(() => { setApariencia(leerApariencia()); }, []);
+  const aplicarApariencia = useCallback((a: RadarApariencia) => {
+    setApariencia(a);
+    guardarApariencia(a);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -172,6 +188,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
 
   const layout = useMemo(() => {
     if (!g || !a) return null;
+    const { w: NODE_W, h: NODE_H, gapY: GAP_Y, gapX: COL_GAP } = apariencia.dims;
     const cols: [Placed[], Placed[], Placed[]] = [[], [], []];
 
     // Estado y saldo de un grupo = la suma de sus miembros, con el PEOR estado
@@ -276,7 +293,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
     const pos = new Map<string, Placed>();
     for (const c of cols) for (const n of c) pos.set(n.id, n);
     return { cols, pos, W: colX[2] + NODE_W + PAD, H };
-  }, [g, a, orden, agrupacion, expandidos]);
+  }, [g, a, orden, agrupacion, expandidos, apariencia.dims]);
 
   /**
    * Aristas en el espacio dibujado: cuando un extremo está colapsado, las N
@@ -426,10 +443,13 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   const ajustarAlAncho = useCallback(() => {
     const cont = lienzoRef.current;
     if (!cont || !layout) return;
-    const disponible = cont.clientWidth - 24; // p-3 a cada lado
-    const z = Number((disponible / layout.W).toFixed(2));
+    const anchoLibre = cont.clientWidth - 24; // p-3 a cada lado
+    // El alto sale de la pantalla, no del contenedor: el contenedor ya está
+    // achicado al contenido y medirlo daría siempre "ya entra".
+    const altoLibre = window.innerHeight * (pantallaCompleta ? 0.76 : 0.66);
+    const z = Number(Math.min(anchoLibre / layout.W, altoLibre / layout.H).toFixed(2));
     setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z)));
-  }, [layout]);
+  }, [layout, pantallaCompleta]);
 
   /** Los eslabones sin cerrar, en el orden en que conviene resolverlos. */
   const idsConProblema = useMemo(
@@ -457,6 +477,28 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
     }
     setHuecoIdx(i + 1);
   }, [idsConProblema, huecoIdx, layout, zoom]);
+
+  /**
+   * Atajos del lienzo: + / − / 0 para el zoom y Escape para salir de pantalla
+   * completa. Se ignoran mientras se escribe (el buscador se come el «+»).
+   */
+  useEffect(() => {
+    if (vista !== "cadena") return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // Con el panel de apariencia abierto, Escape es suyo: cerrar las dos cosas
+      // de un golpe deja al usuario preguntándose qué pasó.
+      if (e.key === "Escape" && pantallaCompleta && !panelApariencia) { setPantallaCompleta(false); return; }
+      if (e.key === "+" || e.key === "=") { setZoom((z) => pasoZoom(z, 1)); e.preventDefault(); }
+      else if (e.key === "-") { setZoom((z) => pasoZoom(z, -1)); e.preventDefault(); }
+      else if (e.key === "0") { setZoom(1); e.preventDefault(); }
+      else if (e.key === "f") { ajustarAlAncho(); e.preventDefault(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [vista, pantallaCompleta, panelApariencia, ajustarAlAncho]);
 
   return (
     <div className="space-y-4">
@@ -507,7 +549,9 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
           />
 
           {vista === "cadena" && (
-            <>
+            <div className={pantallaCompleta
+              ? "fixed inset-0 z-40 space-y-3 overflow-y-auto bg-[var(--surface-canvas)] p-4"
+              : "space-y-4"}>
             <CtpRadarControles
               query={query}
               onQuery={setQuery}
@@ -528,12 +572,18 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
               onExpandidos={setExpandidos}
               foco={foco}
               onFoco={setFoco}
+              apariencia={apariencia}
+              onApariencia={aplicarApariencia}
+              panelApariencia={panelApariencia}
+              onPanelApariencia={setPanelApariencia}
+              pantallaCompleta={pantallaCompleta}
+              onPantallaCompleta={setPantallaCompleta}
             />
-            {/* Leyenda */}
+            {/* Leyenda — los tres primeros swatches siguen el color elegido. */}
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
-              <Legend swatch="var(--accent)" icon={PackageOpen} text="Ingreso (GTF)" />
-              <Legend swatch="var(--data-info-500)" icon={Boxes} text="Producción" />
-              <Legend swatch="var(--data-success-600)" icon={Truck} text="Despacho" />
+              <Legend swatch={colorDe(apariencia, "ingreso")} icon={PackageOpen} text="Ingreso (GTF)" />
+              <Legend swatch={colorDe(apariencia, "corrida")} icon={Boxes} text="Producción" />
+              <Legend swatch={colorDe(apariencia, "despacho")} icon={Truck} text="Despacho" />
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-50)] px-2.5 py-1 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]"><AlertTriangle className="h-3.5 w-3.5" /> Hueco en la cadena</span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-info-50)] px-2.5 py-1 text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]"><span className="font-bold">½</span> Atribución incompleta</span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error-50)] px-2.5 py-1 text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]"><ShieldAlert className="h-3.5 w-3.5" /> CITES</span>
@@ -573,53 +623,30 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
               </div>
             )}
 
-            {/* Mobile: la cadena es más ancha que la pantalla → se desliza. Sin este
-                aviso, en el celu solo se veía media cadena y parecía cortada. */}
-            <p className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] sm:hidden">
-              Deslizá para ver toda la cadena <span aria-hidden>→</span> · tocá un nodo para el detalle
+            {/* Cómo se maneja el lienzo. En el celu la cadena no entra a lo ancho;
+                en desktop el zoom y el arrastre no se descubren solos. */}
+            <p className="flex flex-wrap items-center gap-x-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
+              <span className="sm:hidden">Deslizá para ver toda la cadena <span aria-hidden>→</span> · tocá un nodo para el detalle</span>
+              <span className="hidden sm:inline">Arrastrá para moverte · Ctrl + rueda para acercar · <kbd className="font-mono">+</kbd> <kbd className="font-mono">−</kbd> <kbd className="font-mono">0</kbd> <kbd className="font-mono">F</kbd> (ajustar)</span>
             </p>
-            <div className="relative">
-            <div ref={lienzoRef} className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-3 shadow-[var(--shadow-sm)]">
-              {/* Click en el fondo = soltar el pin. */}
-              <svg
-                viewBox={`0 0 ${layout.W} ${layout.H}`} width={layout.W * zoom} className="max-w-none" style={{ minWidth: zoom >= 1 ? "100%" : undefined }}
-                role="img" aria-label="Grafo de cadena de custodia"
-                onClick={() => setPinned(null)}
-              >
-                <defs>
-                  {/* Sombra suave editorial para los nodos. */}
-                  <filter id="ctp-node-shadow" x="-20%" y="-20%" width="140%" height="150%">
-                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0f172a" floodOpacity="0.10" />
-                  </filter>
-                </defs>
-                {aristas.consumos.map((e) => {
-                  const k = `c:${e.from}->${e.to}`;
-                  const onE = !active || active.edges.has(k);
-                  const amberE = edgeAmber(e.to);
-                  return <Edge key={k} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={onE} dim={!!active && !active.edges.has(k)} amber={amberE} label={`${fmtNum(e.valor)} m³`} flow={!!active && active.edges.has(k) && !amberE} width={grosorArista(e.valor, maxFlujo.consumo)} />;
-                })}
-                {aristas.origenes.map((e) => {
-                  const k = `o:${e.from}->${e.to}`;
-                  const onE = !active || active.edges.has(k);
-                  const amberE = edgeAmber(e.from) || edgeAmber(e.to);
-                  return <Edge key={k} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={onE} dim={!!active && !active.edges.has(k)} amber={amberE} label={fmtNum(e.valor)} flow={!!active && active.edges.has(k) && !amberE} width={grosorArista(e.valor, maxFlujo.origen)} />;
-                })}
-                {layout.cols.flat().map((n) => (
-                  <Node
-                    key={n.id} n={n}
-                    dim={!!active && !active.nodes.has(n.id)}
-                    pinned={pinned === n.id}
-                    match={!!matchVisibles?.has(n.id)}
-                    onHover={setHover}
-                    onPin={(id) => (esGrupo(id) ? alternarGrupo(id) : setPinned((p) => (p === id ? null : id)))}
-                  />
-                ))}
-              </svg>
+            <CtpRadarLienzo
+              layout={layout}
+              aristas={aristas}
+              maxFlujo={maxFlujo}
+              active={active}
+              apariencia={apariencia}
+              zoom={zoom}
+              onZoom={setZoom}
+              pinned={pinned}
+              matchVisibles={matchVisibles}
+              edgeAmber={edgeAmber}
+              onHover={setHover}
+              onPin={(id) => (esGrupo(id) ? alternarGrupo(id) : setPinned((p) => (p === id ? null : id)))}
+              onFondo={() => setPinned(null)}
+              lienzoRef={lienzoRef}
+              pantallaCompleta={pantallaCompleta}
+            />
             </div>
-            {/* Fade en el borde derecho (mobile) — señala que hay más cadena al deslizar. */}
-            <div aria-hidden className="pointer-events-none absolute right-0.5 top-0.5 bottom-0.5 w-12 rounded-r-2xl bg-linear-to-l from-[var(--surface-sunken)] to-transparent sm:hidden" />
-            </div>
-            </>
           )}
 
           {vista === "cronologia" && tiempo && (

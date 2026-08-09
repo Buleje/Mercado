@@ -11,9 +11,11 @@
  * Extraído de CtpTrazaRadar sin cambiar comportamiento.
  */
 
-import { ArrowDownUp, Layers, Locate, Maximize2, Search, X as XIcon, ZoomIn, ZoomOut } from "@buleje/design-system/icons";
+import { ArrowDownUp, Expand, Layers, Locate, Maximize2, Minimize, Search, X as XIcon, ZoomIn, ZoomOut } from "@buleje/design-system/icons";
 import type { RadarOrden } from "@/lib/forestal/ctp-radar";
-import { ORDENES, ZOOM_MAX, ZOOM_MIN, type Foco } from "./ctp-radar-tipos";
+import CtpRadarApariencia from "./CtpRadarApariencia";
+import type { RadarApariencia } from "./ctp-radar-apariencia";
+import { ORDENES, pasoZoom, ZOOM_MAX, ZOOM_MIN, type Foco } from "./ctp-radar-tipos";
 
 export interface CtpRadarControlesProps {
   query: string;
@@ -39,6 +41,12 @@ export interface CtpRadarControlesProps {
   onExpandidos: (s: ReadonlySet<string>) => void;
   foco: Foco;
   onFoco: (f: Foco) => void;
+  apariencia: RadarApariencia;
+  onApariencia: (a: RadarApariencia) => void;
+  panelApariencia: boolean;
+  onPanelApariencia: (v: boolean) => void;
+  pantallaCompleta: boolean;
+  onPantallaCompleta: (v: boolean) => void;
 }
 
 export default function CtpRadarControles({
@@ -59,6 +67,12 @@ export default function CtpRadarControles({
   onExpandidos: setExpandidos,
   foco,
   onFoco: setFoco,
+  apariencia,
+  onApariencia,
+  panelApariencia,
+  onPanelApariencia,
+  pantallaCompleta,
+  onPantallaCompleta,
 }: CtpRadarControlesProps) {
   return (
             <div className="flex flex-wrap items-center gap-2">
@@ -117,21 +131,45 @@ export default function CtpRadarControles({
                 ))}
               </div>
 
-              {/* Zoom: con muchas líneas la cadena no entra; achicar la deja de un vistazo. */}
+              {/* Zoom: con muchas líneas la cadena no entra; achicar la deja de un vistazo.
+                  También responde a Ctrl/⌘ + rueda sobre el dibujo y a + / − / 0. */}
               <div className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-                <button type="button" title="Alejar" aria-label="Alejar" onClick={() => setZoom((z) => Math.max(ZOOM_MIN, Number((z - 0.15).toFixed(2))))} disabled={zoom <= ZOOM_MIN} className="flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
+                <button type="button" title="Alejar (tecla −)" aria-label="Alejar" onClick={() => setZoom((z) => pasoZoom(z, -1))} disabled={zoom <= ZOOM_MIN} className="flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
                   <ZoomOut className="h-4 w-4" />
                 </button>
-                <button type="button" title="Restablecer el tamaño" onClick={() => setZoom(1)} className="h-full border-x-2 border-[var(--rule-base)] px-2 font-mono text-xs font-bold tabular-nums text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+                <button type="button" title="Restablecer el tamaño (tecla 0)" onClick={() => setZoom(1)} className="h-full border-x-2 border-[var(--rule-base)] px-2 font-mono text-xs font-bold tabular-nums text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
                   {Math.round(zoom * 100)}%
                 </button>
                 <button type="button" title="Ajustar: que la cadena entre entera en la pantalla" aria-label="Ajustar al ancho" onClick={ajustarAlAncho} className="flex h-full w-9 items-center justify-center border-r-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
                   <Maximize2 className="h-4 w-4" />
                 </button>
-                <button type="button" title="Acercar" aria-label="Acercar" onClick={() => setZoom((z) => Math.min(ZOOM_MAX, Number((z + 0.15).toFixed(2))))} disabled={zoom >= ZOOM_MAX} className="flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
+                <button type="button" title="Acercar (tecla +)" aria-label="Acercar" onClick={() => setZoom((z) => pasoZoom(z, 1))} disabled={zoom >= ZOOM_MAX} className="flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
                   <ZoomIn className="h-4 w-4" />
                 </button>
               </div>
+
+              {/* Tamaño de los bloques y color de cada columna. */}
+              <CtpRadarApariencia
+                abierto={panelApariencia}
+                onAbierto={onPanelApariencia}
+                apariencia={apariencia}
+                onApariencia={onApariencia}
+              />
+
+              {/* Pantalla completa: el dibujo solo, sin el resto del panel alrededor. */}
+              <button
+                type="button"
+                onClick={() => onPantallaCompleta(!pantallaCompleta)}
+                aria-pressed={pantallaCompleta}
+                title={pantallaCompleta ? "Volver al panel (Escape)" : "Ver el dibujo a pantalla completa"}
+                className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 transition ${
+                  pantallaCompleta
+                    ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 text-[var(--accent)]"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+                }`}
+              >
+                {pantallaCompleta ? <Minimize className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
+              </button>
 
               {/* Agrupar: con muchas líneas el grafo no entra en pantalla. Se
                   activa solo, pero se puede forzar o desarmar a mano. */}
