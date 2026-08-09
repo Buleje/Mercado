@@ -89,3 +89,35 @@ export function normalizeZona(input: Partial<PlantaZona> & Record<string, unknow
     updatedAt: now,
   };
 }
+
+// ─── Lo que se UBICA dentro de las zonas ───────────────────────────────────
+
+/**
+ * Las tres cosas que ocupan lugar físico en la planta, en el orden del flujo:
+ * la troza que espera sierra, el producto terminado que espera despacho y el
+ * despacho ya armado que espera camión.
+ */
+export type ItemKind = "troza" | "producto" | "despacho";
+
+/** Un ítem ubicable: una línea del libro con cantidad y unidad propias. */
+export interface Item {
+  id: string;
+  kind: ItemKind;
+  label: string;
+  sub: string | null;
+  cantidad: number;
+  unidad: string;
+  cites: boolean;
+}
+
+/**
+ * Inventario ubicado en UNA zona. Las trozas suman m³; producto y despacho se
+ * cuentan por línea a propósito — sus unidades varían (pt, u, m³) y sumarlas
+ * daría un total que no significa nada.
+ */
+export interface ZonaInv {
+  trozas: number;
+  m3: number;
+  productos: number;
+  despachos: number;
+}

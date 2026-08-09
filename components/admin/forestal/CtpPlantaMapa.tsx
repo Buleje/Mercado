@@ -15,8 +15,13 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { BRAND_GEO } from "@/lib/geo";
 import { geodesicAreaM2, haversineM, formatDist } from "@/lib/cacao/geo-area";
-import { ZONA_TIPOS, zonaTipoMeta, type PlantaZona, type ZonaTipo } from "@/lib/forestal/planta-zona-types";
+import { pointInPolygon } from "@/lib/forestal/loth-geo";
+import { DND_ITEM } from "./CtpPlantaPanel";
+import { ZONA_TIPOS, zonaTipoMeta, type PlantaZona, type ZonaInv, type ZonaTipo } from "@/lib/forestal/planta-zona-types";
+
 import { Btn, CampoGrid, Field, I, MODAL_BODY, ModalBody, ModalFooter } from "./ctp-shared";
+
+export type { ZonaInv };
 
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 const fmtArea = (m2: number) => (m2 >= 10000 ? `${(m2 / 10000).toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : `${Math.round(m2).toLocaleString("es-PE")} m²`);
@@ -33,8 +38,6 @@ function labelHtml(z: PlantaZona, inv?: ZonaInv): string {
   const invLine = parts.length ? `<div style="color:var(--accent-glow,#5eead4);font-weight:700">${parts.join(" · ")}</div>` : "";
   return `<div style="transform:translate(-50%,-50%);display:inline-block;white-space:nowrap;border-left:3px solid ${meta.ring};background:rgba(15,23,42,.82);color:#fff;padding:3px 8px;border-radius:8px;font:600 11px/1.4 system-ui;box-shadow:0 1px 3px rgba(0,0,0,.5)">${header}${sub}${invLine}</div>`;
 }
-
-export interface ZonaInv { trozas: number; m3: number; productos: number; despachos: number }
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const STREET = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -70,7 +73,29 @@ function drawMetrics(v: [number, number][]): { area: number; perim: number } {
   return { area: v.length >= 3 ? geodesicAreaM2(v) : 0, perim };
 }
 
-export default function CtpPlantaMapa({ zonas, inventario, onChanged }: { zonas: PlantaZona[]; inventario?: Record<string, ZonaInv>; onChanged: () => void }) {
+export interface CtpPlantaMapaProps {
+  zonas: PlantaZona[];
+  inventario?: Record<string, ZonaInv>;
+  onChanged: () => void;
+  /** Ítem tomado en la barra lateral: mientras lo haya, tocar una zona lo ubica
+   *  ahí en vez de abrir su ficha. */
+  enMano?: { id: string; label: string } | null;
+  /** El ítem cayó dentro de una zona (arrastrado o tocado). */
+  onSoltarEnZona?: (zonaId: string) => void;
+  /** Cayó fuera de todo polígono: hay que decirlo, no fallar en silencio. */
+  onSoltarAfuera?: () => void;
+  /** Zona a destacar (el puntero está sobre su ítem en la lista). */
+  zonaResaltada?: string | null;
+  /** Pedido de centrar el mapa. El `n` hace que dos pedidos seguidos a la misma
+   *  zona sigan disparando el efecto. */
+  irA?: { zonaId: string; n: number } | null;
+}
+
+export default function CtpPlantaMapa({
+  zonas, inventario, onChanged, enMano = null, onSoltarEnZona, onSoltarAfuera, zonaResaltada = null, irA = null,
+}: CtpPlantaMapaProps) {
+  /** Zona bajo el puntero mientras se arrastra un ítem (previsualiza el destino). */
+  const [sobreZona, setSobreZona] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- instancias Leaflet (import dinámico)
   const LRef = useRef<any>(null);
@@ -134,6 +159,19 @@ export default function CtpPlantaMapa({ zonas, inventario, onChanged }: { zonas:
   onFichaRef.current = (z) => setFicha(z);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const selectForEditRef = useRef<(z: any) => void>(() => {});
+  /**
+   * Los handlers de Leaflet se registran una vez y viven fuera de React: leen el
+   * estado por ref o se quedarían con el primer valor para siempre.
+   */
+  const enManoRef = useRef(enMano);
+  enManoRef.current = enMano;
+  const onSoltarRef = useRef(onSoltarEnZona);
+  onSoltarRef.current = onSoltarEnZona;
+  const onAfueraRef = useRef(onSoltarAfuera);
+  onAfueraRef.current = onSoltarAfuera;
+  /** zonaId → capa dibujada, para resaltar sin volver a dibujar el mapa entero. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const polyByZonaRef = useRef<Map<string, any>>(new Map());
 
   const redrawDrawing = useCallback(() => {
     const L = LRef.current, map = mapRef.current;
@@ -152,6 +190,7 @@ export default function CtpPlantaMapa({ zonas, inventario, onChanged }: { zonas:
     if (!L || !map) return;
     if (!polysRef.current) polysRef.current = L.layerGroup().addTo(map);
     polysRef.current.clearLayers();
+    polyByZonaRef.current = new Map();
     const bounds: [number, number][] = [];
     for (const z of zonasRef.current) {
       const pts = parseCoords(z.poligono ?? null);
@@ -161,18 +200,27 @@ export default function CtpPlantaMapa({ zonas, inventario, onChanged }: { zonas:
         poly.bindTooltip(`${z.codigo} · ${meta.label}${editingRef.current ? " · tocá para mover límites" : ""}`, { sticky: true });
         poly.on("click", () => {
           if (drawingRef.current || measuringRef.current) return;
+          // Con un ítem en la mano, tocar la zona lo UBICA ahí. Abrir la ficha
+          // en ese momento sería perder el gesto que el operador venía haciendo.
+          if (enManoRef.current) { onSoltarRef.current?.(z.id); return; }
           if (editingRef.current) selectForEditRef.current(z);
           else onFichaRef.current(z);
         });
         poly.addTo(polysRef.current);
+        polyByZonaRef.current.set(z.id, poly);
         if (showLabelsRef.current) L.marker(centroid(pts), { interactive: false, icon: L.divIcon({ className: "", html: labelHtml(z, invRef.current?.[z.id]), iconSize: [0, 0] }) }).addTo(polysRef.current);
         pts.forEach((pt) => bounds.push(pt));
       } else if (z.lat != null && z.lng != null) {
         // Zona sin polígono: marcador simple.
         const mk = L.circleMarker([z.lat, z.lng], { radius: 8, color: meta.ring, fillColor: meta.ring, fillOpacity: 0.6, weight: 3 });
         mk.bindTooltip(`${z.codigo} · ${meta.label}`, { sticky: true });
-        mk.on("click", () => { if (!drawingRef.current && !measuringRef.current && !editingRef.current) onFichaRef.current(z); });
+        mk.on("click", () => {
+          if (drawingRef.current || measuringRef.current) return;
+          if (enManoRef.current) { onSoltarRef.current?.(z.id); return; }
+          if (!editingRef.current) onFichaRef.current(z);
+        });
         mk.addTo(polysRef.current);
+        polyByZonaRef.current.set(z.id, mk);
         bounds.push([z.lat, z.lng]);
       }
     }
@@ -339,14 +387,74 @@ export default function CtpPlantaMapa({ zonas, inventario, onChanged }: { zonas:
   function clearMeasure() { measureVertsRef.current = []; renderMeasure(); }
   function exitMeasure() { measuringRef.current = false; setMeasuring(false); measureVertsRef.current = []; if (measureLayerRef.current) measureLayerRef.current.clearLayers(); }
 
-  function flyTo(id: string) {
+  const flyTo = useCallback((id: string) => {
     const z = zonasRef.current.find((x) => x.id === id);
     const L = LRef.current, map = mapRef.current;
     if (!z || !L || !map) return;
     const pts = parseCoords(z.poligono ?? null);
     if (pts && pts.length) { try { map.flyToBounds(L.latLngBounds(pts), { maxZoom: 20, padding: [40, 40] }); } catch { /* noop */ } }
     else if (z.lat != null && z.lng != null) map.flyTo([z.lat, z.lng], 19);
-  }
+  }, []);
+
+  // Centrar cuando la barra lateral lo pide (chip «ir a la zona»).
+  useEffect(() => { if (irA?.zonaId) flyTo(irA.zonaId); }, [irA, flyTo]);
+
+  /**
+   * Resaltar una zona: se cambia el ESTILO de su capa, no se vuelve a dibujar el
+   * mapa. Redibujar en cada `mouseenter` de la lista hace parpadear las etiquetas
+   * y pierde el tooltip abierto.
+   */
+  useEffect(() => {
+    for (const [zid, capa] of polyByZonaRef.current) {
+      const z = zonasRef.current.find((x) => x.id === zid);
+      if (!z || !capa?.setStyle) continue;
+      const meta = zonaTipoMeta(z.tipo);
+      const on = zid === (sobreZona ?? zonaResaltada);
+      try {
+        capa.setStyle(parseCoords(z.poligono ?? null)
+          ? { color: on ? "#fff" : meta.ring, weight: on ? 4 : 2, fillOpacity: on ? 0.6 : 0.35, fillColor: meta.ring }
+          : { color: on ? "#fff" : meta.ring, weight: on ? 5 : 3, fillOpacity: on ? 0.9 : 0.6, fillColor: meta.ring });
+        if (on && capa.bringToFront) capa.bringToFront();
+      } catch { /* capa ya removida */ }
+    }
+  }, [zonaResaltada, sobreZona, zonas]);
+
+  /**
+   * Soltar un ítem arrastrado: de las coordenadas del puntero al polígono que
+   * lo contiene. Leaflet no dice «qué zona hay bajo este punto», así que se
+   * convierte a lat/lng y se resuelve con `pointInPolygon` (el mismo del LO-TH).
+   * Se recorre al REVÉS para que, con zonas superpuestas, gane la de arriba.
+   */
+  const zonaEnPunto = useCallback((clientX: number, clientY: number): string | null => {
+    const map = mapRef.current;
+    const cont = containerRef.current;
+    if (!map || !cont) return null;
+    const r = cont.getBoundingClientRect();
+    const ll = map.containerPointToLatLng([clientX - r.left, clientY - r.top]);
+    const p: [number, number] = [ll.lat, ll.lng];
+    const zs = zonasRef.current;
+    for (let i = zs.length - 1; i >= 0; i--) {
+      const pts = parseCoords(zs[i].poligono ?? null);
+      if (pts && pointInPolygon(p, pts)) return zs[i].id;
+    }
+    return null;
+  }, []);
+
+  const onDropItem = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    if (!e.dataTransfer.types.includes(DND_ITEM)) return;
+    e.preventDefault();
+    setSobreZona(null);
+    const zid = zonaEnPunto(e.clientX, e.clientY);
+    if (zid) onSoltarRef.current?.(zid);
+    else onAfueraRef.current?.();
+  }, [zonaEnPunto]);
+
+  const onDragOverItem = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    if (!e.dataTransfer.types.includes(DND_ITEM)) return;
+    e.preventDefault(); // sin esto el navegador rechaza el drop
+    e.dataTransfer.dropEffect = "move";
+    setSobreZona(zonaEnPunto(e.clientX, e.clientY));
+  }, [zonaEnPunto]);
   function locate() {
     if (typeof navigator === "undefined" || !navigator.geolocation) { setMapMsg("Tu navegador no permite ubicación."); return; }
     setLocating(true); setMapMsg(null);
@@ -454,7 +562,26 @@ export default function CtpPlantaMapa({ zonas, inventario, onChanged }: { zonas:
       </div>
 
       <div className={fullscreen ? "relative flex-1 min-h-0" : "relative"}>
-        <div ref={containerRef} style={{ height: fullscreen ? "100%" : 480, cursor: drawing || measuring ? "crosshair" : "" }} className="isolate w-full overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]" />
+        <div
+          ref={containerRef}
+          onDragOver={onDragOverItem}
+          onDragLeave={() => setSobreZona(null)}
+          onDrop={onDropItem}
+          style={{ height: fullscreen ? "100%" : 480, cursor: drawing || measuring ? "crosshair" : enMano ? "copy" : "" }}
+          className="isolate w-full overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]"
+        />
+        {/* Realce de «hay algo en la mano». Va SUPERPUESTO y no sobre el div del
+            mapa: Leaflet escribe sus propias clases ahí (un className de React
+            que cambia se las lleva puestas) y, medido, una regla de `.leaflet-
+            container` le gana incluso al `style` inline — el borde no cambiaba.
+            Un hermano absoluto no discute con nadie. */}
+        {enMano && (
+          <div aria-hidden className="pointer-events-none absolute inset-0 rounded-2xl ring-4 ring-inset ring-[var(--accent)]">
+            <span className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-bold text-white shadow-[var(--shadow-md)]">
+              Tocá la zona donde está {enMano.label}
+            </span>
+          </div>
+        )}
         {ready && !hasZonas && !drawing && !measuring && (
           <div className="absolute inset-0 flex items-center justify-center p-6">
             <div className="max-w-xs rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-center shadow-[var(--shadow-lg)]">

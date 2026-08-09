@@ -11,27 +11,21 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardTitle, StatCard } from "@buleje/design-system";
-import { AlertCircle, RefreshCw, Map as MapIcon, Layers, Boxes, PackageCheck, Truck, Printer, PieChart } from "@buleje/design-system/icons";
+import { AlertCircle, RefreshCw, Map as MapIcon, Layers, Boxes, PackageCheck, Truck, Printer, PieChart, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
-import { ZONA_TIPOS, zonaTipoMeta, type PlantaZona } from "@/lib/forestal/planta-zona-types";
+import { ZONA_TIPOS, type Item, type ItemKind, type PlantaZona, type ZonaInv } from "@/lib/forestal/planta-zona-types";
 import { printPlantaPlano } from "@/lib/forestal/planta-plano-print";
 import CtpPlantaMapa from "./CtpPlantaMapa";
+import CtpPlantaPanel from "./CtpPlantaPanel";
+
+export type { Item, ItemKind, ZonaInv };
 
 interface PlantaSaldos {
   materiaPrima: { ingresoM3: number; consumidoM3: number; saldoM3: number };
   productoStock: number;
   despachado: number;
 }
-export type ItemKind = "troza" | "producto" | "despacho";
-export interface Item { id: string; kind: ItemKind; label: string; sub: string | null; cantidad: number; unidad: string; cites: boolean }
-export interface ZonaInv { trozas: number; m3: number; productos: number; despachos: number }
-
-const KIND_META: Record<ItemKind, { label: string; icon: typeof Boxes }> = {
-  troza: { label: "Trozas · materia prima", icon: Boxes },
-  producto: { label: "Producto terminado", icon: PackageCheck },
-  despacho: { label: "Despachos · salidas", icon: Truck },
-};
 
 /** Resumen legible del inventario ubicado en una zona (por tipo, sin mezclar unidades). */
 function invSummary(inv?: ZonaInv): string | null {
@@ -53,6 +47,13 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [asignando, setAsignando] = useState<string | null>(null);
+  /** El ítem tomado de la barra lateral, esperando que se toque una zona. */
+  const [enMano, setEnMano] = useState<Item | null>(null);
+  /** Zona destacada mientras el puntero pasa por su ítem en la lista. */
+  const [resaltada, setResaltada] = useState<string | null>(null);
+  const [irA, setIrA] = useState<{ zonaId: string; n: number } | null>(null);
+  /** Aviso de operación (soltar afuera, ubicado OK) — efímero, no es un error. */
+  const [aviso, setAviso] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -119,6 +120,36 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
     finally { setAsignando(null); }
   }, [items, load]);
 
+  /**
+   * El ítem que estaba en la mano cayó en una zona. Confirma con el nombre de
+   * la zona: en un mapa con seis polígonos parecidos, «listo» no alcanza para
+   * saber si fue donde el operador quería.
+   */
+  const soltarEnZona = useCallback((zonaId: string) => {
+    const it = enMano;
+    if (!it) return;
+    setEnMano(null);
+    const z = zonas.find((x) => x.id === zonaId);
+    setAviso(`${it.label} → ${z ? `${z.codigo}${z.nombre ? ` · ${z.nombre}` : ""}` : "la zona"}`);
+    void asignar(it.id, zonaId);
+  }, [enMano, zonas, asignar]);
+
+  // Escape suelta lo que se tenga en la mano: quedarse con un ítem pegado al
+  // cursor sin saber cómo soltarlo es la forma más rápida de trabarse.
+  useEffect(() => {
+    if (!enMano) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setEnMano(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [enMano]);
+
+  // El aviso se va solo: es un acuse, no algo que haya que cerrar a mano.
+  useEffect(() => {
+    if (!aviso) return;
+    const t = setTimeout(() => setAviso(null), 4000);
+    return () => clearTimeout(t);
+  }, [aviso]);
+
   const porTipo = useMemo(() => {
     const m = new Map<string, number>();
     for (const z of zonas) m.set(z.tipo, (m.get(z.tipo) ?? 0) + 1);
@@ -157,12 +188,6 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
     })
     .filter((o) => o.area > 0)
     .sort((a, b) => b.area - a.area), [zonasByTipo, invPorZona, areaTotal]);
-  const isPlaced = useCallback((id: string) => { const z = asignaciones[id]; return !!z && zonaById.has(z); }, [asignaciones, zonaById]);
-  const sinUbicar = useMemo(() => items.filter((it) => !isPlaced(it.id)), [items, isPlaced]);
-  const itemsByKind = useMemo(
-    () => (["troza", "producto", "despacho"] as const).map((k) => ({ kind: k, list: items.filter((i) => i.kind === k) })).filter((g) => g.list.length > 0),
-    [items],
-  );
 
   return (
     <div className="space-y-3">
@@ -203,8 +228,41 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
         </div>
       )}
 
-      {/* El mapa (las etiquetas muestran el inventario ubicado en cada zona). */}
-      <CtpPlantaMapa zonas={zonas} inventario={invObj} onChanged={load} />
+      {/* Mapa + barra lateral: la lista de lo que hay para ubicar vive AL LADO
+          del mapa, no debajo — se arrastra de una a otro sin perder de vista
+          dónde está cada cosa. Debajo de `xl` la barra pasa abajo (el mapa
+          necesita ancho para ser útil). */}
+      <div className="grid gap-3 xl:grid-cols-[1fr_22rem]">
+        <CtpPlantaMapa
+          zonas={zonas}
+          inventario={invObj}
+          onChanged={load}
+          enMano={enMano}
+          onSoltarEnZona={soltarEnZona}
+          onSoltarAfuera={() => setAviso("Soltalo DENTRO de una zona dibujada; ahí afuera no hay nada mapeado.")}
+          zonaResaltada={resaltada}
+          irA={irA}
+        />
+        <CtpPlantaPanel
+          items={items}
+          zonas={zonas}
+          asignaciones={asignaciones}
+          enMano={enMano}
+          onEnMano={setEnMano}
+          onResaltar={setResaltada}
+          onUbicar={(id, zid) => void asignar(id, zid)}
+          onUbicarLote={(k, zid) => void asignarLote(k, zid)}
+          onIrAZona={(zid) => setIrA((p) => ({ zonaId: zid, n: (p?.n ?? 0) + 1 }))}
+          ocupado={asignando}
+        />
+      </div>
+
+      {aviso && (
+        <p className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-sm font-bold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+          {aviso}
+          <button type="button" onClick={() => setAviso(null)} aria-label="Cerrar aviso" className="shrink-0"><X className="h-4 w-4" /></button>
+        </p>
+      )}
 
       {/* Ocupación de la planta: reparto del área mapeada por tipo de zona. */}
       {ocupacion.length > 0 && (
@@ -231,69 +289,6 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
             ))}
           </ul>
           <p className="mt-2 text-xs text-[var(--text-tertiary)]">Área total mapeada: <strong className="text-[var(--text-secondary)]">{areaTotal >= 10000 ? `${(areaTotal / 10000).toFixed(2)} ha` : `${Math.round(areaTotal).toLocaleString("es-PE")} m²`}</strong> · el % es sobre el área dibujada, no sobre el terreno real.</p>
-        </div>
-      )}
-
-      {/* Ubicar el flujo físico: troza → producto terminado → despacho, cada uno a su zona. */}
-      {items.length > 0 && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-            <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Boxes className="h-4 w-4" /> Ubicar el flujo de la planta</CardTitle>
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${sinUbicar.length === 0 ? "bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "bg-[var(--data-warning-50)] text-[var(--data-warning-700)]"}`}>
-              {items.length - sinUbicar.length} de {items.length} ubicados
-            </span>
-          </div>
-          <p className="mb-3 text-xs text-[var(--text-tertiary)]">Troza (materia prima), producto terminado y despachos — elegí en qué zona está cada uno para que el mapa muestre dónde está todo. {zonas.length === 0 && <strong className="text-[var(--data-warning-700)]">Dibujá zonas primero para poder ubicar.</strong>}</p>
-          <div className="space-y-3">
-            {itemsByKind.map(({ kind, list }) => {
-              const KI = KIND_META[kind].icon;
-              const ordered = [...list].sort((a, b) => Number(isPlaced(a.id)) - Number(isPlaced(b.id)));
-              return (
-                <div key={kind}>
-                  <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                    <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]"><KI className="h-3.5 w-3.5" />{KIND_META[kind].label} · {list.length}</p>
-                    {zonas.length > 0 && list.length > 1 && (
-                      <select
-                        value=""
-                        disabled={asignando != null}
-                        onChange={(e) => { if (e.target.value) void asignarLote(kind, e.target.value === "__none__" ? null : e.target.value); }}
-                        title={`Ubicar los ${list.length} ítems de este tipo en una zona de un click`}
-                        className="h-8 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)] disabled:opacity-60"
-                      >
-                        <option value="">Ubicar todas en…</option>
-                        {zonas.map((z) => <option key={z.id} value={z.id}>{z.codigo} · {zonaTipoMeta(z.tipo).label}</option>)}
-                        <option value="__none__">— Quitar de todas —</option>
-                      </select>
-                    )}
-                  </div>
-                  <ul className="space-y-1.5">
-                    {ordered.map((it) => {
-                      const zid = isPlaced(it.id) ? asignaciones[it.id] : "";
-                      return (
-                        <li key={it.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
-                          <div className="flex min-w-0 items-center gap-2 text-sm">
-                            <span className="font-bold text-[var(--text-primary)]">{it.label}</span>
-                            {it.sub && <span className="truncate text-[var(--text-tertiary)]">· {it.sub}</span>}
-                            {it.cites && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
-                            <span className="font-mono text-xs font-bold text-[var(--text-secondary)]">{n2(it.cantidad)} {it.unidad}</span>
-                          </div>
-                          <select
-                            value={zid}
-                            disabled={asignando === it.id || zonas.length === 0}
-                            onChange={(e) => void asignar(it.id, e.target.value || null)}
-                            className="h-9 shrink-0 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-60"
-                          >
-                            <option value="">Sin ubicar</option>
-                            {zonas.map((z) => <option key={z.id} value={z.id}>{z.codigo} · {zonaTipoMeta(z.tipo).label}</option>)}
-                          </select>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
         </div>
       )}
 
