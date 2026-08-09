@@ -13,7 +13,8 @@
 
 import { z } from "zod";
 
-export type NodeKind = "ingreso" | "corrida" | "despacho";
+/** `titulo` es el eslabón anterior a la guía: el título habilitante de origen. */
+export type NodeKind = "titulo" | "ingreso" | "corrida" | "despacho";
 
 /** Medidas del dibujo en unidades del viewBox. El zoom multiplica encima de esto. */
 export interface RadarDims {
@@ -33,6 +34,10 @@ export interface RadarApariencia {
   colores: Partial<Record<NodeKind, string>>;
   /** Volumen escrito sobre cada línea. Con cuarenta aristas ensucia más de lo que informa. */
   etiquetasArista: boolean;
+  /** El alto del bloque crece con la cantidad de la línea (`ctp-radar-altura`). */
+  altoPorCantidad: boolean;
+  /** Dibujar la columna del título habilitante, el eslabón anterior a la guía. */
+  columnaTitulo: boolean;
 }
 
 export const DIMS_DEFAULT: RadarDims = { w: 196, h: 62, gapY: 14, gapX: 104 };
@@ -48,6 +53,7 @@ export const DIMS_DEFAULT: RadarDims = { w: 196, h: 62, gapY: 14, gapX: 104 };
  * datos y sí contrasta contra el verde azulado en los dos temas.
  */
 export const COLOR_TOKEN: Record<NodeKind, string> = {
+  titulo: "var(--data-8)",
   ingreso: "var(--accent)",
   corrida: "var(--data-6)",
   despacho: "var(--data-success-600)",
@@ -57,6 +63,11 @@ export const APARIENCIA_DEFAULT: RadarApariencia = {
   dims: DIMS_DEFAULT,
   colores: {},
   etiquetasArista: true,
+  altoPorCantidad: false,
+  // Arranca encendida: la columna se dibuja sola sólo si algún ingreso declara
+  // título, así que en un libro sin el dato no molesta, y en uno con el dato la
+  // pregunta de EUDR queda a la vista sin que nadie tenga que descubrir la opción.
+  columnaTitulo: true,
 };
 
 /**
@@ -113,12 +124,13 @@ export interface PaletaRadar {
  */
 export const PALETAS: PaletaRadar[] = [
   { key: "sistema", label: "Sistema", hint: "La del panel; sigue el tema claro/oscuro", colores: COLOR_TOKEN },
-  { key: "contraste", label: "Contraste", hint: "Tres tonos bien separados entre sí", colores: { ingreso: "var(--data-8)", corrida: "var(--data-6)", despacho: "var(--data-5)" } },
-  { key: "calida", label: "Cálida", hint: "Coral de la marca; ojo que se parece al rojo de CITES", colores: { ingreso: "var(--data-7)", corrida: "var(--data-8)", despacho: "var(--data-6)" } },
-  { key: "tinta", label: "Tinta", hint: "Escala de grises, para imprimir o proyectar", colores: { ingreso: "var(--data-1)", corrida: "var(--data-2)", despacho: "var(--data-3)" } },
+  { key: "contraste", label: "Contraste", hint: "Tonos bien separados entre sí", colores: { titulo: "var(--data-2)", ingreso: "var(--data-8)", corrida: "var(--data-6)", despacho: "var(--data-5)" } },
+  { key: "calida", label: "Cálida", hint: "Coral de la marca; ojo que se parece al rojo de CITES", colores: { titulo: "var(--data-5)", ingreso: "var(--data-7)", corrida: "var(--data-8)", despacho: "var(--data-6)" } },
+  { key: "tinta", label: "Tinta", hint: "Escala de grises, para imprimir o proyectar", colores: { titulo: "var(--data-4)", ingreso: "var(--data-1)", corrida: "var(--data-2)", despacho: "var(--data-3)" } },
 ];
 
 export const KINDS: { key: NodeKind; label: string }[] = [
+  { key: "titulo", label: "Título habilitante" },
   { key: "ingreso", label: "Ingreso (GTF)" },
   { key: "corrida", label: "Producción" },
   { key: "despacho", label: "Despacho" },
@@ -171,11 +183,16 @@ export function presetActivo(d: RadarDims): PresetTamano | null {
 const ESQUEMA = z.object({
   dims: z.object({ w: z.number(), h: z.number(), gapY: z.number(), gapX: z.number() }),
   colores: z.object({
+    titulo: z.string().max(64).optional(),
     ingreso: z.string().max(64).optional(),
     corrida: z.string().max(64).optional(),
     despacho: z.string().max(64).optional(),
   }),
   etiquetasArista: z.boolean(),
+  // Opcionales: lo guardado por una versión anterior no traía estos campos y
+  // debe seguir cargando (si no, la preferencia entera se descarta en silencio).
+  altoPorCantidad: z.boolean().optional(),
+  columnaTitulo: z.boolean().optional(),
 });
 
 export function acotar(key: MedidaKey, v: number): number {
@@ -216,6 +233,8 @@ export function leerApariencia(): RadarApariencia {
     dims: { w: acotar("w", d.w), h: acotar("h", d.h), gapY: acotar("gapY", d.gapY), gapX: acotar("gapX", d.gapX) },
     colores: p.data.colores,
     etiquetasArista: p.data.etiquetasArista,
+    altoPorCantidad: p.data.altoPorCantidad ?? APARIENCIA_DEFAULT.altoPorCantidad,
+    columnaTitulo: p.data.columnaTitulo ?? APARIENCIA_DEFAULT.columnaTitulo,
   };
 }
 

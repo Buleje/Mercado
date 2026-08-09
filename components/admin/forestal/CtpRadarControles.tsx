@@ -15,6 +15,7 @@ import { ArrowDownUp, Expand, Layers, Locate, Maximize2, Minimize, Search, X as 
 import type { RadarOrden } from "@/lib/forestal/ctp-radar";
 import CtpRadarApariencia from "./CtpRadarApariencia";
 import type { RadarApariencia } from "./ctp-radar-apariencia";
+import type { VistaRadar } from "./ctp-radar-vistas";
 import { ORDENES, pasoZoom, ZOOM_MAX, ZOOM_MIN, type Foco } from "./ctp-radar-tipos";
 
 export interface CtpRadarControlesProps {
@@ -43,6 +44,10 @@ export interface CtpRadarControlesProps {
   onFoco: (f: Foco) => void;
   apariencia: RadarApariencia;
   onApariencia: (a: RadarApariencia) => void;
+  vistas: readonly VistaRadar[];
+  onGuardarVista: (nombre: string) => void;
+  onAplicarVista: (v: VistaRadar) => void;
+  onBorrarVista: (id: string) => void;
   panelApariencia: boolean;
   onPanelApariencia: (v: boolean) => void;
   pantallaCompleta: boolean;
@@ -69,6 +74,10 @@ export default function CtpRadarControles({
   onFoco: setFoco,
   apariencia,
   onApariencia,
+  vistas,
+  onGuardarVista,
+  onAplicarVista,
+  onBorrarVista,
   panelApariencia,
   onPanelApariencia,
   pantallaCompleta,
@@ -154,6 +163,10 @@ export default function CtpRadarControles({
                 onAbierto={onPanelApariencia}
                 apariencia={apariencia}
                 onApariencia={onApariencia}
+                vistas={vistas}
+                onGuardarVista={onGuardarVista}
+                onAplicarVista={onAplicarVista}
+                onBorrarVista={onBorrarVista}
               />
 
               {/* Pantalla completa: el dibujo solo, sin el resto del panel alrededor. */}

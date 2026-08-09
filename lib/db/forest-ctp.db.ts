@@ -11,6 +11,10 @@ import { ForestCtpConsumoDB, CtpInvariantError, CONSUMO_VIGENTE, CTP_TX_OPTS } f
 import { ORIGEN_VIGENTE, ForestCtpDespachoDB } from "./forest-ctp-despacho.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { saldosDeCorridas } from "./forest-ctp-saldo-corrida";
+/* Las trozas de una corrida se leen SIEMPRE por acá (ADR-326 §6: las tres
+   lecturas dicen lo mismo). `wood-entries.db` no importa este archivo, así que
+   la dependencia va en un solo sentido. */
+import { WoodEntriesDB } from "./wood-entries.db";
 import { agruparMovimiento, pasoParaBarras, type MovimientoDelLibro } from "@/lib/forestal/movimiento-libro";
 import { RENDIMIENTO_TOPE_PCT, topeDeclarableM3 } from "@/lib/forestal/produccion-paquetes";
 
@@ -501,9 +505,28 @@ export class ForestCtpDB {
     };
   }
 
+  /**
+   * Una corrida por id, con los paquetes que declaró.
+   *
+   * Los paquetes viajan porque quien amplía la producción (ADR-361) necesita
+   * saber qué códigos ya están tomados: el código es lo que se busca en la pila
+   * y la DB rechaza el repetido — enterarse recién en el 422, con la tanda
+   * entera tipeada, es enterarse tarde.
+   */
   static async getById(tenantId: string, id: string) {
     if (!tenantId) throw new Error("tenantId is required");
-    return prisma.forestCtpEntry.findFirst({ where: { tenantId, id, deletedAt: null } });
+    return prisma.forestCtpEntry.findFirst({
+      where: { tenantId, id, deletedAt: null },
+      include: {
+        paquetes: {
+          select: {
+            id: true, codigo: true, productType: true, presentacion: true,
+            cantidad: true, volumenM3: true, espesorCm: true, anchoCm: true, largoM: true,
+          },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+    });
   }
 
   /**
@@ -517,6 +540,38 @@ export class ForestCtpDB {
    * es otra cosa (y hoy se hace anulando y rehaciendo, que deja rastro). El
    * rendimiento se calcula con la misma fórmula del alta — una sola regla.
    */
+  /**
+   * El código de paquete es único **en toda la planta**, no en la corrida
+   * (`@@unique([tenantId, codigo])`): es lo que se busca en la pila y lo que se
+   * cita en la guía de salida, y dos pilas con el mismo cartel no se distinguen.
+   *
+   * Sin este guard el choque llegaba al índice de Postgres y volvía como **500
+   * `internal_error`** — una pantalla que se rompe sin decir por qué, con la
+   * tanda entera tipeada. Verificado en el tenant real: declarar `PQ-001` una
+   * segunda vez tiraba 500.
+   *
+   * Se mira el código ocupado por CUALQUIER corrida (borrada incluida: el índice
+   * tampoco filtra `deletedAt`) y se nombra dónde está, que es lo único que
+   * permite resolverlo.
+   */
+  private static async assertCodigosLibres(tenantId: string, codigos: readonly string[]) {
+    const buscar = [...new Set(codigos.map((c) => c.trim()).filter(Boolean))];
+    if (buscar.length === 0) return;
+    const choques = await prisma.forestCtpPaquete.findMany({
+      where: { tenantId, codigo: { in: buscar } },
+      select: { codigo: true, entry: { select: { lineNo: true, deletedAt: true } } },
+      take: 5,
+    });
+    if (choques.length === 0) return;
+    const c = choques[0];
+    throw new CtpInvariantError(
+      `El código de paquete «${c.codigo}» ya está usado en la corrida N° ${c.entry.lineNo}` +
+        `${c.entry.deletedAt ? " (borrada)" : ""}. El código no se repite en la planta: es lo que se busca ` +
+        "en la pila y lo que se cita en la guía.",
+      "PAQUETE_DUPLICADO",
+    );
+  }
+
   /**
    * AMPLIAR una corrida que ya declaró producción (ADR-361).
    *
@@ -604,6 +659,8 @@ export class ForestCtpDB {
         "PAQUETE_DUPLICADO",
       );
     }
+    /* Y contra el resto de la planta, que es el alcance real del índice. */
+    await ForestCtpDB.assertCodigosLibres(tenantId, nuevos.map((p) => p.codigo));
     const repetido = nuevos.find((p, i) => nuevos.findIndex((q) => q.codigo.trim() === p.codigo.trim()) !== i);
     if (repetido) {
       throw new CtpInvariantError(
@@ -773,6 +830,9 @@ export class ForestCtpDB {
           "PAQUETE_DUPLICADO",
         );
       }
+      /* Y contra los que ya existen en la planta: el índice es por tenant, así
+         que el choque con OTRA corrida volvía como 500 sin explicación. */
+      await ForestCtpDB.assertCodigosLibres(tenantId, paquetes.map((p) => p.codigo));
     }
 
     const inVol = actual.volumeInputM3 != null ? Number(actual.volumeInputM3) : 0;
@@ -845,9 +905,144 @@ export class ForestCtpDB {
    * no ahorra tipeo, y uno de una corrida anulada no representa lo que la planta
    * hace hoy.
    */
+  /**
+   * Los códigos de paquete que la planta ya usó, los más nuevos primero.
+   *
+   * Alimenta `sugerirCodigoPaquete()`: el índice es `@@unique[tenantId, codigo]`,
+   * así que sugerir «el siguiente de esta corrida» chocaba con la corrida de al
+   * lado. Se leen los últimos —no todos— porque la serie vive en la cola: un
+   * aserradero con 40.000 paquetes numera sobre los últimos, no sobre el primero.
+   *
+   * Van los BORRADOS también: el índice tampoco los filtra, y un código
+   * propuesto que revienta contra un paquete borrado es igual de inservible.
+   */
+  static async codigosDePaquete(tenantId: string, limite = 200): Promise<string[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.forestCtpPaquete.findMany({
+      where: { tenantId },
+      select: { codigo: true },
+      orderBy: { createdAt: "desc" },
+      take: Math.min(Math.max(limite, 1), 500),
+    });
+    return filas.map((f) => f.codigo);
+  }
+
+  /**
+   * BUSCAR UN PAQUETE POR SU CÓDIGO — el círculo completo (ADR-366).
+   *
+   * Alguien tiene un atado delante y lee el cartel: `PQ-0290`. La pregunta que
+   * sigue es siempre la misma —«¿de dónde salió esto?»— y hasta ahora el libro
+   * no la podía contestar: el código vivía dentro de la corrida y no había por
+   * dónde entrar. Es la misma pregunta que `CtpBuscarGtf` ya contesta para una
+   * guía, del otro extremo de la cadena.
+   *
+   * Devuelve el paquete con **su corrida y el saldo de esa corrida** (de
+   * `saldosDeCorridas`, la única fuente — ADR-316). Y cuando la búsqueda cae en
+   * UNO solo, suma la cadena hacia atrás: las trozas que entraron a esa corrida
+   * y las guías que las ampararon. Un solo viaje para la pregunta entera.
+   *
+   * ⚠️ El saldo es de la CORRIDA, no del paquete (ADR-362): el libro no sabe
+   * cuál de los atados salió, sabe cuántos m³ salieron. Decir «este paquete está
+   * despachado» sería inventar un dato.
+   */
+  static async buscarPaquetes(tenantId: string, texto: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const q = texto.trim();
+    if (!q) return { resultados: [], trozas: [], guias: [] };
+
+    const paquetes = await prisma.forestCtpPaquete.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        /* Exacto primero, pero se acepta el parcial: en el patio se lee «290» de
+           un cartel embarrado y con eso hay que poder encontrarlo. */
+        codigo: { contains: q, mode: "insensitive" },
+        entry: { deletedAt: null },
+      },
+      orderBy: [{ createdAt: "desc" }],
+      take: 20,
+      include: {
+        entry: {
+          select: {
+            id: true, lineNo: true, entryDate: true, section: true, status: true,
+            speciesCommon: true, speciesScientific: true, productType: true, presentacion: true,
+            quantity: true, unit: true, volumeInputM3: true, rendimientoPct: true,
+            materiaPrimaRef: true, lineaProduccion: true, observations: true,
+          },
+        },
+      },
+    });
+    if (paquetes.length === 0) return { resultados: [], trozas: [], guias: [] };
+
+    /* El exacto manda: buscar «PQ-1» no puede enterrar a PQ-1 debajo de PQ-10. */
+    const exacto = (c: string) => c.trim().toLowerCase() === q.toLowerCase();
+    paquetes.sort((a, b) => Number(exacto(b.codigo)) - Number(exacto(a.codigo)));
+
+    const saldos = await saldosDeCorridas(prisma, tenantId, [...new Set(paquetes.map((p) => p.ctpEntryId))]);
+    const num = (v: unknown) => (v == null ? null : Number(v));
+    const resultados = paquetes.map((p) => {
+      const s = saldos.get(p.ctpEntryId);
+      return {
+        id: p.id,
+        codigo: p.codigo,
+        productType: p.productType,
+        presentacion: p.presentacion,
+        cantidad: p.cantidad,
+        volumenM3: num(p.volumenM3),
+        espesorCm: num(p.espesorCm),
+        anchoCm: num(p.anchoCm),
+        largoM: num(p.largoM),
+        observations: p.observations,
+        createdAt: p.createdAt,
+        corrida: {
+          id: p.entry.id,
+          lineNo: p.entry.lineNo,
+          entryDate: p.entry.entryDate,
+          status: p.entry.status,
+          speciesCommon: p.entry.speciesCommon,
+          speciesScientific: p.entry.speciesScientific,
+          productType: p.entry.productType,
+          unit: p.entry.unit,
+          quantity: num(p.entry.quantity),
+          volumeInputM3: num(p.entry.volumeInputM3),
+          rendimientoPct: num(p.entry.rendimientoPct),
+          lote: p.entry.materiaPrimaRef,
+          lineaProduccion: p.entry.lineaProduccion,
+        },
+        /* De la corrida, no del paquete: el libro no sabe cuál atado salió. */
+        saldoCorrida: {
+          producido: s?.producido ?? 0,
+          despachado: s?.despachado ?? 0,
+          reprocesado: s?.reprocesado ?? 0,
+          disponible: s?.disponible ?? 0,
+        },
+      };
+    });
+
+    /* La cadena hacia atrás sólo cuando la búsqueda cayó en uno: con veinte
+       resultados serían veinte lecturas del patio para algo que nadie mira. */
+    if (resultados.length !== 1) return { resultados, trozas: [], guias: [] };
+    const corridaId = paquetes[0].ctpEntryId;
+    const [trozas, consumos] = await Promise.all([
+      WoodEntriesDB.trozasDeCorrida(tenantId, corridaId),
+      ForestCtpConsumoDB.listByEntry(tenantId, corridaId),
+    ]);
+    return {
+      resultados,
+      trozas,
+      guias: consumos.map((c) => ({
+        woodEntryId: c.woodEntryId,
+        volumeM3: num(c.volumeM3),
+        gtfNumber: c.woodEntry?.gtfNumber ?? null,
+        especie: c.woodEntry?.speciesCommonName ?? null,
+        fechaIngreso: c.woodEntry?.entryDate ?? null,
+      })),
+    };
+  }
+
   static async medidasFrecuentes(
     tenantId: string,
-    opts: { limite?: number } = {},
+    opts: { limite?: number; producto?: string } = {},
   ): Promise<
     {
       productType: string | null;
@@ -866,6 +1061,9 @@ export class ForestCtpDB {
         espesorCm: { not: null },
         anchoCm: { not: null },
         largoM: { not: null },
+        /* Las de ESE producto cuando se pide: «las de siempre» mezcladas hacen
+           que el que declara listones vea las medidas de la paquetería. */
+        ...(opts.producto?.trim() ? { productType: opts.producto.trim() } : {}),
         entry: { deletedAt: null, status: "registrado" },
       },
       _count: { _all: true },
@@ -1617,6 +1815,10 @@ export class ForestCtpDB {
           speciesCites: true, entryDate: true,
           productType: true, speciesScientificName: true, originCode: true,
           ctpProductCode: true, originSourceNumber: true, unit: true,
+          // `originType` es lo que distingue una concesión de un permiso: el
+          // radar lo necesita para etiquetar la columna del título habilitante,
+          // que es el eslabón que va ANTES de la GTF (EUDR pide llegar al monte).
+          originType: true,
         },
         orderBy: { entryDate: "asc" }, take: 300,
       }),
@@ -1649,6 +1851,7 @@ export class ForestCtpDB {
         productType: w.productType, speciesScientificName: w.speciesScientificName,
         originCode: w.originCode, ctpProductCode: w.ctpProductCode,
         originSourceNumber: w.originSourceNumber, unit: w.unit,
+        originType: w.originType,
       })),
       corridas: corridas.map((c) => ({ id: c.id, lineNo: c.lineNo, label: `${c.productType ?? "—"} · ${c.speciesCommon ?? "—"}`, quantity: Number(c.quantity ?? 0), unit: c.unit, cites: c.cites, productType: c.productType, species: c.speciesCommon, fecha: c.entryDate.toISOString(), observations: c.observations })),
       despachos: despachos.map((d) => ({ id: d.id, lineNo: d.lineNo, label: `${d.productType ?? "—"} · ${d.speciesCommon ?? "—"}`, quantity: Number(d.quantity ?? 0), unit: d.unit, destino: d.destino, gtf: d.gtfNumber, fecha: d.entryDate.toISOString() })),
@@ -2106,6 +2309,8 @@ export interface TrazaGrafo {
      *  en el tipo: el endpoint siempre los manda, los fixtures no los declaran. */
     productType?: string | null; speciesScientificName?: string | null; originCode?: string | null;
     ctpProductCode?: string | null; originSourceNumber?: string | null; unit?: string | null;
+    /** Concesión, permiso, comunidad… — el tipo del título habilitante de origen. */
+    originType?: string | null;
   }[];
   corridas: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; cites: boolean; productType: string | null; species: string | null; fecha: string; observations?: string | null }[];
   despachos: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; destino: string | null; gtf: string | null; fecha: string }[];

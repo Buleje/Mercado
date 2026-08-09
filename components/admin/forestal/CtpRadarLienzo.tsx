@@ -26,7 +26,8 @@ export interface AristaDibujada {
 }
 
 export interface RadarLayout {
-  cols: [Placed[], Placed[], Placed[]];
+  /** Tres columnas, o cuatro con la del título habilitante adelante. */
+  cols: Placed[][];
   pos: Map<string, Placed>;
   W: number;
   H: number;
@@ -34,8 +35,8 @@ export interface RadarLayout {
 
 export interface CtpRadarLienzoProps {
   layout: RadarLayout;
-  aristas: { consumos: AristaDibujada[]; origenes: AristaDibujada[] };
-  maxFlujo: { consumo: number; origen: number };
+  aristas: { titulos: AristaDibujada[]; consumos: AristaDibujada[]; origenes: AristaDibujada[] };
+  maxFlujo: { titulo: number; consumo: number; origen: number };
   /** Subconjunto iluminado (búsqueda / pin / hover / foco). `null` = todo encendido. */
   active: { nodes: ReadonlySet<string>; edges: ReadonlySet<string> } | null;
   apariencia: RadarApariencia;
@@ -166,6 +167,13 @@ export default function CtpRadarLienzo({
               <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0f172a" floodOpacity="0.10" />
             </filter>
           </defs>
+          {/* Título habilitante → guía de ingreso: el eslabón anterior a la GTF. */}
+          {aristas.titulos.map((e) => {
+            const k = `t:${e.from}->${e.to}`;
+            const onE = !active || active.edges.has(k);
+            const amberE = edgeAmber(e.from);
+            return <Edge key={k} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={onE} dim={!!active && !active.edges.has(k)} amber={amberE} label={apariencia.etiquetasArista ? `${fmtNum(e.valor)} m³` : undefined} flow={!!active && active.edges.has(k) && !amberE} width={grosorArista(e.valor, maxFlujo.titulo)} dims={dims} />;
+          })}
           {aristas.consumos.map((e) => {
             const k = `c:${e.from}->${e.to}`;
             const onE = !active || active.edges.has(k);

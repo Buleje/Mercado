@@ -13,7 +13,8 @@
  */
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { Check, Palette, RotateCcw, SlidersHorizontal } from "@buleje/design-system/icons";
+import { Bookmark, Check, Palette, RotateCcw, SlidersHorizontal, X as XIcon } from "@buleje/design-system/icons";
+import { LARGO_NOMBRE, MAX_VISTAS, type VistaRadar } from "./ctp-radar-vistas";
 import {
   acotar,
   APARIENCIA_DEFAULT,
@@ -66,15 +67,41 @@ function hexDe(color: string, contexto: Element | null): string {
   return css ? aHex(css) : "#666666";
 }
 
+/** Casilla con su explicación debajo: cada opción cambia lo que el dibujo AFIRMA. */
+function Interruptor({ activo, onCambio, titulo, nota }: { activo: boolean; onCambio: (v: boolean) => void; titulo: string; nota: string }) {
+  return (
+    <div>
+      <label className="flex cursor-pointer items-start gap-2.5">
+        <input
+          type="checkbox"
+          checked={activo}
+          onChange={(e) => onCambio(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
+        />
+        <span className="min-w-0 text-xs font-bold text-[var(--text-primary)]">{titulo}</span>
+      </label>
+      <p className="pl-[1.625rem] text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">{nota}</p>
+    </div>
+  );
+}
+
 export interface CtpRadarAparienciaProps {
   abierto: boolean;
   onAbierto: (v: boolean) => void;
   apariencia: RadarApariencia;
   /** Guarda y aplica en el acto (no hay botón «aceptar»: se ve el cambio detrás). */
   onApariencia: (a: RadarApariencia) => void;
+  vistas: readonly VistaRadar[];
+  /** Guarda la pantalla actual completa (tamaño, color, orden, foco, zoom). */
+  onGuardarVista: (nombre: string) => void;
+  onAplicarVista: (v: VistaRadar) => void;
+  onBorrarVista: (id: string) => void;
 }
 
-export default function CtpRadarApariencia({ abierto, onAbierto, apariencia, onApariencia }: CtpRadarAparienciaProps) {
+export default function CtpRadarApariencia({
+  abierto, onAbierto, apariencia, onApariencia, vistas, onGuardarVista, onAplicarVista, onBorrarVista,
+}: CtpRadarAparienciaProps) {
+  const [nombreVista, setNombreVista] = useState("");
   const cajaRef = useRef<HTMLDivElement>(null);
   /**
    * De qué lado del botón se abre y cuánto puede medir. El panel mide unos
@@ -264,17 +291,88 @@ export default function CtpRadarApariencia({ abierto, onAbierto, apariencia, onA
             </p>
           </section>
 
-          {/* ── Detalle ──────────────────────────────────────────────── */}
-          <label className="flex cursor-pointer items-center gap-2 border-t-2 border-[var(--rule-soft)] pt-3 text-xs font-semibold text-[var(--text-secondary)]">
-            <input
-              type="checkbox"
-              checked={apariencia.etiquetasArista}
-              onChange={(e) => onApariencia({ ...apariencia, etiquetasArista: e.target.checked })}
-              className="h-4 w-4 shrink-0 accent-[var(--accent)]"
+          {/* ── Vistas guardadas ─────────────────────────────────────── */}
+          <section className="space-y-2 border-t-2 border-[var(--rule-soft)] pt-3">
+            <h4 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Vistas guardadas
+            </h4>
+            {vistas.length > 0 && (
+              <ul className="flex flex-wrap gap-1.5">
+                {vistas.map((v) => (
+                  <li key={v.id} className="inline-flex h-8 items-center overflow-hidden rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+                    <button
+                      type="button"
+                      onClick={() => onAplicarVista(v)}
+                      title="Dejar el dibujo como estaba cuando se guardó"
+                      className="h-full max-w-[11rem] truncate px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                    >
+                      {v.nombre}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onBorrarVista(v.id)}
+                      aria-label={`Borrar la vista ${v.nombre}`}
+                      className="flex h-full w-7 items-center justify-center border-l-2 border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--data-error-500)]"
+                    >
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <form
+              className="flex gap-1.5"
+              onSubmit={(e) => { e.preventDefault(); onGuardarVista(nombreVista); setNombreVista(""); }}
+            >
+              <input
+                type="text"
+                value={nombreVista}
+                onChange={(e) => setNombreVista(e.target.value)}
+                maxLength={LARGO_NOMBRE}
+                placeholder="Cierre de mes, Fiscalización…"
+                aria-label="Nombre de la vista a guardar"
+                className="h-9 min-w-0 flex-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={!nombreVista.trim() || (vistas.length >= MAX_VISTAS && !vistas.some((v) => v.id === nombreVista.trim().toLowerCase()))}
+                title="Guarda tamaño, colores, orden, foco, agrupación y zoom bajo ese nombre"
+                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)] disabled:opacity-40"
+              >
+                <Bookmark className="h-3.5 w-3.5" /> Guardar
+              </button>
+            </form>
+            <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
+              {vistas.length >= MAX_VISTAS
+                ? `Llegaste a ${MAX_VISTAS} vistas: borrá una para guardar otra nueva.`
+                : "Guarda la pantalla entera: tamaño, colores, orden, foco, agrupación y zoom."}
+            </p>
+          </section>
+
+          {/* ── Qué se dibuja ────────────────────────────────────────── */}
+          <section className="space-y-2 border-t-2 border-[var(--rule-soft)] pt-3">
+            <h4 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Qué se dibuja
+            </h4>
+            <Interruptor
+              activo={apariencia.columnaTitulo}
+              onCambio={(v) => onApariencia({ ...apariencia, columnaTitulo: v })}
+              titulo="Columna del título habilitante"
+              nota="El eslabón anterior a la guía: de qué concesión o permiso salió la madera. Aparece sólo si algún ingreso lo declara."
             />
-            Escribir el volumen sobre cada línea
-            <span className="text-[var(--text-tertiary)]">(con muchas líneas, tapa)</span>
-          </label>
+            <Interruptor
+              activo={apariencia.altoPorCantidad}
+              onCambio={(v) => onApariencia({ ...apariencia, altoPorCantidad: v })}
+              titulo="El alto del bloque crece con la cantidad"
+              nota="Cada columna se compara contra su propio máximo; si una mezcla unidades (m³ y pt) se queda pareja, porque comparar altos entre unidades distintas sería inventar."
+            />
+            <Interruptor
+              activo={apariencia.etiquetasArista}
+              onCambio={(v) => onApariencia({ ...apariencia, etiquetasArista: v })}
+              titulo="El volumen sobre cada línea"
+              nota="Con muchas líneas, las etiquetas tapan más de lo que informan."
+            />
+          </section>
         </div>
       )}
     </div>

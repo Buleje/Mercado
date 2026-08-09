@@ -26,7 +26,9 @@ import {
   AlertTriangle,
   Boxes,
   Eye,
+  Camera,
   FileDown,
+  Landmark,
   PackageOpen,
   FileSpreadsheet,
   RefreshCw,
@@ -50,6 +52,8 @@ import {
 import { analizarTiempo } from "@/lib/forestal/ctp-radar-tiempo";
 import { analizarRendimiento } from "@/lib/forestal/ctp-radar-rendimiento";
 import { cadenaDeIngreso } from "@/lib/forestal/ctp-radar-cadena";
+import { analizarTitulos, esTitulo } from "@/lib/forestal/ctp-radar-titulos";
+import { alturasDeColumna, techoDeAltura } from "@/lib/forestal/ctp-radar-altura";
 import {
   agregarAristas,
   agruparColumna,
@@ -72,6 +76,14 @@ import {
   leerApariencia,
   type RadarApariencia,
 } from "./ctp-radar-apariencia";
+import {
+  borrarDeLista,
+  escribirVistas,
+  guardarEnLista,
+  leerVistas,
+  type VistaRadar,
+} from "./ctp-radar-vistas";
+import { exportarPng, exportarSvg, nombreArchivo } from "@/lib/forestal/ctp-radar-exportar";
 import { pasoZoom, ZOOM_MAX, ZOOM_MIN, type Foco, type Vista } from "./ctp-radar-tipos";
 import {
   BalanceLinea,
@@ -121,6 +133,11 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
     setApariencia(a);
     guardarApariencia(a);
   }, []);
+
+  /** Combinaciones completas guardadas con nombre (misma regla de persistencia). */
+  const [vistas, setVistas] = useState<VistaRadar[]>([]);
+  useEffect(() => { setVistas(leerVistas()); }, []);
+  const escribir = useCallback((lista: VistaRadar[]) => { setVistas(lista); escribirVistas(lista); }, []);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -186,10 +203,20 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
     return m;
   }, [agrupacion, expandidos]);
 
+  /** Los títulos habilitantes del período: el eslabón anterior a la guía. */
+  const titulos = useMemo(() => (g ? analizarTitulos(g.ingresos) : null), [g]);
+  /** La columna se dibuja sólo si el usuario la quiere Y hay algún título cargado. */
+  const conTitulos = !!titulos?.hayDatos && apariencia.columnaTitulo;
+
   const layout = useMemo(() => {
     if (!g || !a) return null;
     const { w: NODE_W, h: NODE_H, gapY: GAP_Y, gapX: COL_GAP } = apariencia.dims;
-    const cols: [Placed[], Placed[], Placed[]] = [[], [], []];
+    // Tres columnas, o cuatro con la del título habilitante adelante. El índice
+    // de cada una se resuelve acá y no se escribe a mano en ningún otro lado.
+    const iTit = conTitulos ? 0 : -1;
+    const iIng = conTitulos ? 1 : 0;
+    const nCols = conTitulos ? 4 : 3;
+    const cols: Placed[][] = Array.from({ length: nCols }, () => []);
 
     // Estado y saldo de un grupo = la suma de sus miembros, con el PEOR estado
     // (un grupo con un hueco adentro no puede verse sano desde afuera).
@@ -215,16 +242,15 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
       };
     };
 
-    // Cuántas filas ocupa cada columna ya resuelta (grupos + miembros abiertos).
-    const filasDe = <T extends { id: string }>(nodos: T[], col: { agrupada: boolean; grupos: GrupoNodo<T>[] }): number =>
-      col.agrupada ? col.grupos.reduce((s, gr) => s + (expandidos.has(gr.id) ? gr.miembros.length : 1), 0) : nodos.length;
+    const colX = Array.from({ length: nCols }, (_, i) => PAD + i * (NODE_W + COL_GAP));
 
-    const filas = agrupacion
-      ? [filasDe(g.ingresos, agrupacion.ing), filasDe(g.corridas, agrupacion.cor), filasDe(g.despachos, agrupacion.des)]
-      : [g.ingresos.length, g.corridas.length, g.despachos.length];
-    const rows = Math.max(...filas, 1);
-    const H = rows * (NODE_H + GAP_Y) - GAP_Y + PAD * 2;
-    const colX = [PAD, PAD + NODE_W + COL_GAP, PAD + 2 * (NODE_W + COL_GAP)];
+    /**
+     * Cada columna se arma primero y se ubica después: con el alto variable, la
+     * posición de una fila depende de lo que midan todas las de arriba, y la
+     * altura total del lienzo, de la columna más alta. En dos pasadas.
+     */
+    type Item = Omit<Placed, "x" | "y" | "h"> & { unidad: string | null };
+    const armadas: { ci: number; items: Item[] }[] = [];
 
     // Cada columna se ordena por separado y las funciones reciben el ITEM (no su
     // índice): con el orden configurable, indexar el array original desalinearía
@@ -233,54 +259,80 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
       arr: T[], ci: number, kind: NodeKind,
       col: { agrupada: boolean; grupos: GrupoNodo<T>[] } | null,
       mapa: Map<string, RadarBalance>,
-      f: (n: T) => Omit<Placed, "id" | "kind" | "x" | "y" | "status">,
+      f: (n: T) => Omit<Placed, "id" | "kind" | "x" | "y" | "h" | "status">,
       etiquetaGrupo: (gr: GrupoNodo<T>) => { sub: string; vol: string },
+      unidadDeItem: (n: T) => string | null,
+      estadoDe?: (n: T) => RadarEstado,
     ) => {
-      const items: Omit<Placed, "x" | "y">[] = [];
+      const items: Item[] = [];
+      const estado = (n: T) => estadoDe?.(n) ?? a.estado.get(n.id) ?? "ok";
       if (col?.agrupada) {
         for (const gr of col.grupos) {
           if (expandidos.has(gr.id)) {
             for (const n of arr.filter((x) => gr.miembros.some((m) => m.id === x.id))) {
-              items.push({ id: n.id, kind, status: a.estado.get(n.id) ?? "ok", ...f(n) });
+              items.push({ id: n.id, kind, status: estado(n), unidad: unidadDeItem(n), ...f(n) });
             }
           } else {
-            const { bal, estado } = balanceGrupo(gr.miembros.map((m) => m.id), mapa);
+            const { bal, estado: est } = balanceGrupo(gr.miembros.map((m) => m.id), mapa);
             const et = etiquetaGrupo(gr);
+            // Un grupo con miembros de distinta unidad NO puede prestarse a
+            // comparar altos: se marca mixto y la columna entera queda pareja.
+            const us = new Set(gr.miembros.map((m) => unidadDeItem(m as T) ?? ""));
             items.push({
-              id: gr.id, kind, status: estado, top: gr.etiqueta, sub: et.sub, vol: et.vol, bal,
+              id: gr.id, kind, status: est, top: gr.etiqueta, sub: et.sub, vol: et.vol, bal,
               grupo: { cuenta: gr.miembros.length },
               cites: gr.miembros.some((m) => (m as { cites?: boolean }).cites === true),
+              unidad: us.size === 1 ? [...us][0] : "· mixta ·",
             });
           }
         }
       } else {
-        for (const n of arr) items.push({ id: n.id, kind, status: a.estado.get(n.id) ?? "ok", ...f(n) });
+        for (const n of arr) items.push({ id: n.id, kind, status: estado(n), unidad: unidadDeItem(n), ...f(n) });
       }
-
-      const colH = items.length * (NODE_H + GAP_Y) - GAP_Y;
-      const y0 = (H - colH) / 2;
-      items.forEach((n, i) => cols[ci].push({ ...n, x: colX[ci], y: y0 + i * (NODE_H + GAP_Y) }));
+      armadas.push({ ci, items });
     };
 
+    if (conTitulos && titulos) {
+      place(
+        titulos.titulos, iTit, "titulo", null, new Map(),
+        (t) => ({
+          top: t.codigo ?? "Sin título declarado",
+          sub: t.tipo ?? `${t.ingresos.length} ${t.ingresos.length === 1 ? "guía" : "guías"}`,
+          vol: `${fmtNum(t.volumeM3)} m³`,
+          cites: t.cites,
+          // La barra del título es cuánto de SU madera ya entró a producción:
+          // la misma lectura que la columna de ingresos, sumada.
+          bal: balanceGrupo(t.ingresos, a.ingresos).bal,
+        }),
+        () => ({ sub: "", vol: "" }),
+        () => "m³",
+        // El nodo de los que no declaran título es un hueco de origen legal, no
+        // un origen más: se pinta como aviso.
+        (t) => (t.codigo === null ? "warn" : "ok"),
+      );
+    }
+
     place(
-      ordenarNodos(g.ingresos, orden, a.ingresos, (w) => w.volumeM3), 0, "ingreso", agrupacion?.ing ?? null, a.ingresos,
+      ordenarNodos(g.ingresos, orden, a.ingresos, (w) => w.volumeM3), iIng, "ingreso", agrupacion?.ing ?? null, a.ingresos,
       (w) => {
         const bal = a.ingresos.get(w.id);
         const saldo = bal && bal.sinAtribuir > 0 ? ` · ${fmtNum(bal.sinAtribuir)} sin usar` : "";
         return { top: `GTF ${w.gtf || "—"}`, sub: w.species ?? "—", vol: `${fmtNum(w.volumeM3)} m³${saldo}`, cites: w.cites, bal };
       },
       (gr) => ({ sub: `${gr.miembros.length} guías de ingreso`, vol: `${fmtNum(gr.total)} m³ en total` }),
+      () => "m³",
     );
     place(
-      ordenarNodos(g.corridas, orden, a.corridas, (c) => c.quantity), 1, "corrida", agrupacion?.cor ?? null, a.corridas,
+      ordenarNodos(g.corridas, orden, a.corridas, (c) => c.quantity), iIng + 1, "corrida", agrupacion?.cor ?? null, a.corridas,
       (c) => ({
         top: `Corrida #${c.lineNo}`, sub: c.label, cites: c.cites, bal: a.corridas.get(c.id),
         vol: c.quantity ? `${fmtNum(c.quantity)} ${c.unit ?? ""}`.trim() : "",
       }),
       (gr) => ({ sub: `${gr.miembros.length} corridas`, vol: `${fmtNum(gr.total)} producidos` }),
+      (c) => c.unit,
     );
     place(
-      ordenarNodos(g.despachos, orden, a.despachos, (d) => d.quantity), 2, "despacho", agrupacion?.des ?? null, a.despachos,
+      ordenarNodos(g.despachos, orden, a.despachos, (d) => d.quantity), iIng + 2, "despacho", agrupacion?.des ?? null, a.despachos,
       (d) => {
         const bal = a.despachos.get(d.id);
         const falta = bal && bal.sinAtribuir > 0 ? ` · falta ${fmtNum(bal.sinAtribuir)}` : "";
@@ -288,12 +340,40 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
         return { top: `Despacho #${d.lineNo}`, sub: d.destino || d.label, vol: d.quantity ? `${cantidad}${falta}` : "", bal };
       },
       (gr) => ({ sub: `${gr.miembros.length} despachos`, vol: `${fmtNum(gr.total)} despachados` }),
+      (d) => d.unit,
     );
+
+    // ── Segunda pasada: el alto de cada bloque y su lugar ──────────────────
+    // El alto se resuelve POR COLUMNA (`ctp-radar-altura`): cada una contra su
+    // propio máximo, y ninguna si mezcla unidades.
+    const techo = techoDeAltura(NODE_H);
+    const altoDe = new Map<string, number>();
+    for (const { items } of armadas) {
+      if (!apariencia.altoPorCantidad) { for (const it of items) altoDe.set(it.id, NODE_H); continue; }
+      const { alturas } = alturasDeColumna(
+        items.map((it) => ({ id: it.id, valor: it.bal?.total ?? 0, unidad: it.unidad })),
+        { base: NODE_H, maximo: techo },
+      );
+      for (const [id, h] of alturas) altoDe.set(id, h);
+    }
+
+    const altoColumna = (items: Item[]) =>
+      items.reduce((s, it) => s + (altoDe.get(it.id) ?? NODE_H) + GAP_Y, 0) - GAP_Y;
+    const H = Math.max(NODE_H, ...armadas.map(({ items }) => altoColumna(items))) + PAD * 2;
+
+    for (const { ci, items } of armadas) {
+      let y = (H - altoColumna(items)) / 2;
+      for (const it of items) {
+        const h = altoDe.get(it.id) ?? NODE_H;
+        cols[ci].push({ ...it, x: colX[ci], y, h });
+        y += h + GAP_Y;
+      }
+    }
 
     const pos = new Map<string, Placed>();
     for (const c of cols) for (const n of c) pos.set(n.id, n);
-    return { cols, pos, W: colX[2] + NODE_W + PAD, H };
-  }, [g, a, orden, agrupacion, expandidos, apariencia.dims]);
+    return { cols, pos, W: colX[nCols - 1] + NODE_W + PAD, H };
+  }, [g, a, orden, agrupacion, expandidos, apariencia.dims, apariencia.altoPorCantidad, conTitulos, titulos]);
 
   /**
    * Aristas en el espacio dibujado: cuando un extremo está colapsado, las N
@@ -301,15 +381,21 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
    * de 40 dibujaría 40 líneas encima de la misma).
    */
   const aristas = useMemo(() => {
-    if (!g) return { consumos: [], origenes: [] };
+    if (!g) return { titulos: [], consumos: [], origenes: [] };
     return {
+      // El título nunca se agrupa, pero el ingreso del otro extremo sí: sin
+      // pasar por `agregarAristas` la línea apuntaría a un nodo que no se dibuja.
+      titulos: conTitulos && titulos
+        ? agregarAristas(titulos.aristas, (e) => e.valor, resolver)
+        : [],
       consumos: agregarAristas(g.consumos, (e) => e.volumeM3, resolver),
       origenes: agregarAristas(g.origenes, (e) => e.quantity, resolver),
     };
-  }, [g, resolver]);
+  }, [g, resolver, conTitulos, titulos]);
 
   /** Volumen máximo de cada tipo de arista, para escalar el grosor. */
   const maxFlujo = useMemo(() => ({
+    titulo: Math.max(0, ...aristas.titulos.map((e) => e.valor)),
     consumo: Math.max(0, ...aristas.consumos.map((e) => e.valor)),
     origen: Math.max(0, ...aristas.origenes.map((e) => e.valor)),
   }), [aristas]);
@@ -357,6 +443,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
           }
         }
       };
+      walk(aristas.titulos, "t");
       walk(aristas.consumos, "c");
       walk(aristas.origenes, "o");
     }
@@ -384,7 +471,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   const pinnedNode = pinned && layout ? layout.pos.get(pinned) : null;
   /** Unidad de la línea fijada: los ingresos son m³; producción/despacho, la suya. */
   const unidadDe = (id: string): string =>
-    g?.ingresos.some((w) => w.id === id) ? "m³"
+    esTitulo(id) || g?.ingresos.some((w) => w.id === id) ? "m³"
       : g?.corridas.find((c) => c.id === id)?.unit
       ?? g?.despachos.find((d) => d.id === id)?.unit
       ?? "";
@@ -402,6 +489,29 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
     const t = targetFor(id);
     if (t) setDetail(t);
   };
+
+  /**
+   * El dibujo, en un archivo. SVG para el informe (vectorial, se agranda sin
+   * pixelarse) y PNG para pegarlo en un WhatsApp o un Word.
+   */
+  const [exportando, setExportando] = useState<null | "svg" | "png">(null);
+  const exportarImagen = useCallback(async (formato: "svg" | "png") => {
+    const svg = lienzoRef.current?.querySelector("svg");
+    if (!svg) return;
+    setExportando(formato);
+    try {
+      // El fondo sale del lienzo REAL: en oscuro un PNG con fondo blanco
+      // dejaría el texto claro sobre claro, ilegible.
+      const fondo = getComputedStyle(document.body).backgroundColor || "#ffffff";
+      const nombre = nombreArchivo("cadena-custodia", period.label, formato);
+      if (formato === "svg") exportarSvg(svg, nombre, { fondo });
+      else await exportarPng(svg, nombre, { fondo, escala: 2 });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setExportando(null);
+    }
+  }, [period.label]);
 
   /** CSV del grafo con los saldos — para cruzar en Excel o adjuntar al informe. */
   const exportarCsv = () => {
@@ -450,6 +560,24 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
     const z = Number(Math.min(anchoLibre / layout.W, altoLibre / layout.H).toFixed(2));
     setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z)));
   }, [layout, pantallaCompleta]);
+
+  /**
+   * Guardar y aplicar una vista. Guardar toma la pantalla entera; aplicar la
+   * devuelve completa, apariencia incluida — que también se persiste como la
+   * preferencia vigente, para que al recargar siga siendo la que se eligió.
+   */
+  const guardarVista = useCallback((nombre: string) => {
+    escribir(guardarEnLista(vistas, nombre, { apariencia, orden, foco, agruparManual, zoom }));
+  }, [escribir, vistas, apariencia, orden, foco, agruparManual, zoom]);
+
+  const aplicarVista = useCallback((v: VistaRadar) => {
+    aplicarApariencia(v.apariencia);
+    setOrden(v.orden);
+    setFoco(v.foco);
+    setAgruparManual(v.agruparManual);
+    setZoom(v.zoom);
+    setPanelApariencia(false);
+  }, [aplicarApariencia]);
 
   /** Los eslabones sin cerrar, en el orden en que conviene resolverlos. */
   const idsConProblema = useMemo(
@@ -515,6 +643,21 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
               <button type="button" onClick={() => printCadenaCustodia(g, period.label)} title="Documento imprimible de la cadena de custodia (para adjuntar a un informe ARFFS)" className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
                 <FileDown className="h-4 w-4" /> Imprimir
               </button>
+              {/* El DIBUJO como archivo: lo que se entiende de un vistazo, para
+                  el informe. Sólo tiene sentido con la cadena en pantalla. */}
+              {vista === "cadena" && (
+                <div className="inline-flex h-10 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+                  <span className="flex h-full items-center gap-1.5 border-r-2 border-[var(--rule-base)] px-2.5 text-sm font-bold text-[var(--text-tertiary)]">
+                    <Camera className="h-4 w-4" aria-hidden="true" /> Imagen
+                  </span>
+                  <button type="button" onClick={() => void exportarImagen("png")} disabled={!!exportando} title="PNG del dibujo, al doble de resolución — para pegarlo en un WhatsApp o un Word" className="h-full px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">
+                    {exportando === "png" ? "…" : "PNG"}
+                  </button>
+                  <button type="button" onClick={() => void exportarImagen("svg")} disabled={!!exportando} title="SVG vectorial: se agranda sin pixelarse, para el informe impreso" className="h-full border-l-2 border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">
+                    {exportando === "svg" ? "…" : "SVG"}
+                  </button>
+                </div>
+              )}
             </>
           )}
           <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
@@ -574,13 +717,18 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
               onFoco={setFoco}
               apariencia={apariencia}
               onApariencia={aplicarApariencia}
+              vistas={vistas}
+              onGuardarVista={guardarVista}
+              onAplicarVista={aplicarVista}
+              onBorrarVista={(id) => escribir(borrarDeLista(vistas, id))}
               panelApariencia={panelApariencia}
               onPanelApariencia={setPanelApariencia}
               pantallaCompleta={pantallaCompleta}
               onPantallaCompleta={setPantallaCompleta}
             />
-            {/* Leyenda — los tres primeros swatches siguen el color elegido. */}
+            {/* Leyenda — los swatches de columna siguen el color elegido. */}
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
+              {conTitulos && <Legend swatch={colorDe(apariencia, "titulo")} icon={Landmark} text="Título habilitante" />}
               <Legend swatch={colorDe(apariencia, "ingreso")} icon={PackageOpen} text="Ingreso (GTF)" />
               <Legend swatch={colorDe(apariencia, "corrida")} icon={Boxes} text="Producción" />
               <Legend swatch={colorDe(apariencia, "despacho")} icon={Truck} text="Despacho" />
@@ -590,11 +738,30 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
               <span className="text-[var(--text-tertiary)]">El grosor de cada línea es el volumen que pasó por ese eslabón.</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            <div className={`grid gap-2 text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] ${conTitulos ? "grid-cols-4" : "grid-cols-3"}`}>
+              {conTitulos && titulos && (
+                <span className="rounded-lg bg-[var(--surface-sunken)] py-1.5">
+                  Título · {titulos.titulos.filter((t) => t.codigo).length}
+                </span>
+              )}
               <span className="rounded-lg bg-[var(--surface-sunken)] py-1.5">Ingreso · {g.ingresos.length}</span>
               <span className="rounded-lg bg-[var(--surface-sunken)] py-1.5">Producción · {g.corridas.length}</span>
               <span className="rounded-lg bg-[var(--surface-sunken)] py-1.5">Despacho · {g.despachos.length}</span>
             </div>
+
+            {/* Cobertura de origen: la pregunta de EUDR («¿de qué predio salió?»)
+                respondida en un número. Se muestra sólo si hay algo que medir. */}
+            {conTitulos && titulos && titulos.ingresosSinTitulo > 0 && (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-sm dark:bg-[var(--data-warning-500)]/12">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />
+                <span className="font-bold text-[var(--text-primary)]">
+                  {titulos.ingresosSinTitulo} {titulos.ingresosSinTitulo === 1 ? "guía no declara" : "guías no declaran"} su título habilitante
+                </span>
+                <span className="text-[var(--text-secondary)]">
+                  · {fmtNum(titulos.sinTituloM3)} m³ sin origen legal · la cadena traza al monte en el {titulos.cobertura}% del volumen
+                </span>
+              </div>
+            )}
 
             {/* Barra del nodo fijado: su balance + la ficha completa (drill-in). */}
             {pinnedNode && (
@@ -613,9 +780,13 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
                       <Route className="h-3.5 w-3.5" /> Seguir esta GTF
                     </button>
                   )}
-                  <button type="button" onClick={() => { const t = targetFor(pinnedNode.id); if (t) setDetail(t); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)]">
-                    <Eye className="h-3.5 w-3.5" /> Ver ficha completa
-                  </button>
+                  {/* Un título habilitante no tiene ficha propia en el libro:
+                      es un dato del ingreso, no una línea. */}
+                  {pinnedNode.kind !== "titulo" && (
+                    <button type="button" onClick={() => { const t = targetFor(pinnedNode.id); if (t) setDetail(t); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)]">
+                      <Eye className="h-3.5 w-3.5" /> Ver ficha completa
+                    </button>
+                  )}
                   <button type="button" onClick={() => setPinned(null)} title="Soltar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
                     <XIcon className="h-4 w-4" />
                   </button>

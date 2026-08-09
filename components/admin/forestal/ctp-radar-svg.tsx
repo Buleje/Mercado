@@ -38,6 +38,8 @@ export interface Placed {
   kind: NodeKind;
   x: number;
   y: number;
+  /** Alto de ESTE bloque: con «alto por cantidad» cada uno tiene el suyo. */
+  h: number;
   top: string;
   sub: string;
   vol: string;
@@ -83,9 +85,23 @@ export function Edge({
 }) {
   if (!a || !b) return null;
   const k = escalaTexto(dims);
-  const x1 = a.x + dims.w, y1 = a.y + dims.h / 2, x2 = b.x, y2 = b.y + dims.h / 2;
+  // La línea sale del medio de SU bloque: con alturas distintas, usar el alto
+  // general dejaría la flecha flotando fuera del nodo alto.
+  const x1 = a.x + dims.w, y1 = a.y + (a.h || dims.h) / 2, x2 = b.x, y2 = b.y + (b.h || dims.h) / 2;
   const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-  const color = amber ? "var(--data-warning-500)" : on ? "var(--brand-ink)" : "var(--rule-base)";
+  /**
+   * Colores medidos contra el fondo del panel, no elegidos a ojo:
+   *
+   * - La línea encendida va en `--text-secondary` y NO en `--brand-ink`: la
+   *   tinta de marca es `#060a0d` en los DOS temas y en oscuro daba **1.05:1**
+   *   — la cadena se dibujaba y no se veía.
+   * - La línea del hueco va en `--data-warning-700` y a opacidad plena. El
+   *   `-500` al 70% da 1.64:1 en claro: el eslabón roto, que es lo que hay que
+   *   mirar, era el menos visible del dibujo. Ningún ámbar del sistema llega a
+   *   3:1 en los dos temas al 70%; el `-700` opaco da 4.13 en claro y 4.58 en
+   *   oscuro.
+   */
+  const color = amber ? "var(--data-warning-700)" : on ? "var(--text-secondary)" : "var(--rule-base)";
   // El path termina antes del nodo para dejar lugar a la punta de flecha.
   const punta = 7 * k;
   const d = `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2 - punta} ${y2}`;
@@ -93,7 +109,7 @@ export function Edge({
   const fs = 8 * k;
   const etW = 46 * k, etH = 15 * k;
   return (
-    <g opacity={dim ? 0.12 : on ? 0.7 : 0.32}>
+    <g opacity={dim ? 0.12 : amber ? 1 : on ? 0.7 : 0.32}>
       <path d={d} fill="none" stroke={color} strokeWidth={w} strokeDasharray={amber ? `${5 * k} ${4 * k}` : undefined} strokeLinecap="round" />
       {/* Flujo animado: puntos que corren por la cadena activa (marca la dirección). */}
       {flow && <path d={d} fill="none" stroke={color} strokeWidth={w + 0.5} strokeDasharray="0.5 9" strokeLinecap="round" className="ctp-edge-flow" />}
@@ -103,7 +119,7 @@ export function Edge({
       {label && !dim && (
         <g transform={`translate(${mx} ${my})`}>
           <rect x={-etW / 2} y={-etH / 2 - 0.5 * k} width={etW} height={etH} rx={etH / 2} fill="var(--surface-raised)" stroke={color} strokeWidth={0.75} />
-          <text x={0} y={2.5 * k} fontSize={fs} fontWeight={700} textAnchor="middle" fill={amber ? "var(--data-warning-700)" : on ? "var(--text-primary)" : "var(--text-tertiary)"}>{label}</text>
+          <text x={0} y={2.5 * k} fontSize={fs} fontWeight={700} textAnchor="middle" fill={amber ? color : on ? "var(--text-primary)" : "var(--text-tertiary)"}>{label}</text>
         </g>
       )}
     </g>
@@ -132,8 +148,12 @@ export function Node({
   // Todo lo de adentro escala junto: la letra, los márgenes y las chapitas. Si
   // sólo creciera la caja, un bloque «Grande» sería una caja vacía con texto
   // diminuto arriba a la izquierda.
-  const { w: W, h: H } = dims;
-  const k = escalaTexto(dims);
+  const W = dims.w;
+  const H = n.h || dims.h;
+  // La escala del texto se calcula con el alto REAL del bloque: si no, en un
+  // bloque que creció por su volumen la letra quedaría chica arriba a la
+  // izquierda, y en uno que se achicó se saldría por abajo.
+  const k = escalaTexto({ ...dims, h: H });
   const padL = 20 * k;
   const rx = Math.min(14 * k, H / 3);
   // Las tres líneas de texto van en proporción al alto, no a una distancia fija:
