@@ -17,7 +17,9 @@ import { BRAND_GEO } from "@/lib/geo";
 import { geodesicAreaM2, haversineM, formatDist } from "@/lib/cacao/geo-area";
 import { pointInPolygon } from "@/lib/forestal/loth-geo";
 import { DND_ITEM } from "./CtpPlantaPanel";
-import { ZONA_TIPOS, zonaTipoMeta, type PlantaZona, type ZonaInv, type ZonaTipo } from "@/lib/forestal/planta-zona-types";
+import { ZONA_TIPOS, zonaTipoMeta, type ItemKind, type PlantaZona, type ZonaInv, type ZonaTipo } from "@/lib/forestal/planta-zona-types";
+import { marcasDeZona } from "@/lib/forestal/planta-marcadores";
+import { etiquetaCorta, MARCA_CSS, marcaHtml, marcaSobranteHtml } from "@/lib/forestal/planta-iconos";
 
 import { Btn, CampoGrid, Field, I, MODAL_BODY, ModalBody, ModalFooter } from "./ctp-shared";
 
@@ -27,7 +29,7 @@ const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "
 const fmtArea = (m2: number) => (m2 >= 10000 ? `${(m2 / 10000).toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : `${Math.round(m2).toLocaleString("es-PE")} m²`);
 
 /** HTML de la etiqueta sobre cada zona: código + tipo + área + inventario ubicado. */
-function labelHtml(z: PlantaZona, inv?: ZonaInv): string {
+function labelHtml(z: PlantaZona, inv?: ZonaInv, arriba = false): string {
   const meta = zonaTipoMeta(z.tipo);
   const header = `<div style="font-weight:800;font-size:12px">${escapeHtml(z.codigo)}${z.areaM2 != null ? ` · ${fmtArea(z.areaM2)}` : ""}</div><div style="font-weight:700;color:${meta.ring}">${escapeHtml(meta.label)}</div>`;
   const sub = z.nombre ? `<div style="opacity:.85">${escapeHtml(z.nombre)}</div>` : "";
@@ -36,7 +38,7 @@ function labelHtml(z: PlantaZona, inv?: ZonaInv): string {
   if (inv?.productos) parts.push(`${inv.productos} ${inv.productos === 1 ? "producto" : "productos"}`);
   if (inv?.despachos) parts.push(`${inv.despachos} ${inv.despachos === 1 ? "despacho" : "despachos"}`);
   const invLine = parts.length ? `<div style="color:var(--accent-glow,#5eead4);font-weight:700">${parts.join(" · ")}</div>` : "";
-  return `<div style="transform:translate(-50%,-50%);display:inline-block;white-space:nowrap;border-left:3px solid ${meta.ring};background:rgba(15,23,42,.82);color:#fff;padding:3px 8px;border-radius:8px;font:600 11px/1.4 system-ui;box-shadow:0 1px 3px rgba(0,0,0,.5)">${header}${sub}${invLine}</div>`;
+  return `<div class="${arriba ? "ctp-zona-ficha-arriba" : ""}" style="transform:translate(-50%,-50%);display:inline-block;white-space:nowrap;border-left:3px solid ${meta.ring};background:rgba(15,23,42,.82);color:#fff;padding:3px 8px;border-radius:8px;font:600 11px/1.4 system-ui;box-shadow:0 1px 3px rgba(0,0,0,.5)">${header}${sub}${invLine}</div>`;
 }
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
@@ -89,10 +91,18 @@ export interface CtpPlantaMapaProps {
   /** Pedido de centrar el mapa. El `n` hace que dos pedidos seguidos a la misma
    *  zona sigan disparando el efecto. */
   irA?: { zonaId: string; n: number } | null;
+  /** Qué hay ubicado en cada zona: se dibuja como chapitas con icono adentro. */
+  ubicados?: Record<string, MarcaItem[]>;
+  /** El último que se soltó — entra con la animación de caída. */
+  recienUbicado?: string | null;
 }
+
+/** Lo mínimo que necesita el mapa de un ítem para ponerle su chapita. */
+export interface MarcaItem { id: string; kind: ItemKind; label: string; cites: boolean }
 
 export default function CtpPlantaMapa({
   zonas, inventario, onChanged, enMano = null, onSoltarEnZona, onSoltarAfuera, zonaResaltada = null, irA = null,
+  ubicados, recienUbicado = null,
 }: CtpPlantaMapaProps) {
   /** Zona bajo el puntero mientras se arrastra un ítem (previsualiza el destino). */
   const [sobreZona, setSobreZona] = useState<string | null>(null);
@@ -169,6 +179,10 @@ export default function CtpPlantaMapa({
   onSoltarRef.current = onSoltarEnZona;
   const onAfueraRef = useRef(onSoltarAfuera);
   onAfueraRef.current = onSoltarAfuera;
+  const ubicadosRef = useRef(ubicados);
+  ubicadosRef.current = ubicados;
+  const recienRef = useRef(recienUbicado);
+  recienRef.current = recienUbicado;
   /** zonaId → capa dibujada, para resaltar sin volver a dibujar el mapa entero. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const polyByZonaRef = useRef<Map<string, any>>(new Map());
@@ -183,6 +197,44 @@ export default function CtpPlantaMapa({
     if (v.length >= 2) L.polygon(v, { color: "#facc15", weight: 2, dashArray: "5,5", fillOpacity: 0.15 }).addTo(drawRef.current);
     v.forEach((p, i) => L.circleMarker(p, { radius: 5, color: "#facc15", fillColor: "#fff", fillOpacity: 1, weight: 2 }).bindTooltip(String(i + 1)).addTo(drawRef.current));
     if (v.length >= 3) L.marker(centroid(v), { interactive: false, icon: L.divIcon({ className: "", html: `<div style="transform:translate(-50%,-50%);white-space:nowrap;background:rgba(15,23,42,.82);color:#fff;padding:2px 7px;border-radius:7px;font:700 11px system-ui;box-shadow:0 1px 3px rgba(0,0,0,.5)">${fmtArea(geodesicAreaM2(v))}</div>`, iconSize: [0, 0] }) }).addTo(drawRef.current);
+  }, []);
+
+  /**
+   * Las chapitas de lo que está ubicado en la zona. Se dibujan como marcadores
+   * NO interactivos: el click tiene que llegar al polígono de abajo (soltar un
+   * ítem sobre una pila ya existente es lo más natural del mundo).
+   */
+  const dibujarMarcas = useCallback((z: PlantaZona, pts: [number, number][] | null, color: string) => {
+    const L = LRef.current;
+    const items = ubicadosRef.current?.[z.id] ?? [];
+    if (!L || items.length === 0 || !polysRef.current) return;
+    const centro: [number, number] | null = z.lat != null && z.lng != null ? [z.lat, z.lng] : null;
+    const { marcas, sobran } = marcasDeZona(pts, centro, items);
+    for (const m of marcas) {
+      L.marker(m.pos, {
+        interactive: false,
+        zIndexOffset: 400,
+        icon: L.divIcon({
+          className: "",
+          html: marcaHtml({
+            kind: m.item.kind,
+            texto: etiquetaCorta(m.item.label),
+            color,
+            cites: m.item.cites,
+            entrando: recienRef.current === m.item.id,
+          }),
+          iconSize: [0, 0],
+        }),
+      }).addTo(polysRef.current);
+    }
+    if (sobran > 0 && marcas.length) {
+      // El «+N» va sobre la última posición repartida, no en el centro: ahí ya
+      // hay chapitas y se lee como parte de la pila.
+      L.marker(marcas[marcas.length - 1].pos, {
+        interactive: false, zIndexOffset: 401,
+        icon: L.divIcon({ className: "", html: marcaSobranteHtml(sobran, color), iconSize: [0, 0] }),
+      }).addTo(polysRef.current);
+    }
   }, []);
 
   const renderPolys = useCallback((fit = true) => {
@@ -208,7 +260,21 @@ export default function CtpPlantaMapa({
         });
         poly.addTo(polysRef.current);
         polyByZonaRef.current.set(z.id, poly);
-        if (showLabelsRef.current) L.marker(centroid(pts), { interactive: false, icon: L.divIcon({ className: "", html: labelHtml(z, invRef.current?.[z.id]), iconSize: [0, 0] }) }).addTo(polysRef.current);
+        // La ficha de la zona va al centro cuando está vacía, y al BORDE DE
+        // ARRIBA cuando tiene madera adentro: en el centro se montaba encima de
+        // las chapitas y no se leía ni una cosa ni la otra.
+        if (showLabelsRef.current) {
+          const conMarcas = (ubicadosRef.current?.[z.id]?.length ?? 0) > 0;
+          const c = centroid(pts);
+          const anclaFicha: [number, number] = conMarcas
+            ? [Math.max(...pts.map((p) => p[0])), c[1]]
+            : c;
+          L.marker(anclaFicha, {
+            interactive: false,
+            icon: L.divIcon({ className: "", html: labelHtml(z, invRef.current?.[z.id], conMarcas), iconSize: [0, 0] }),
+          }).addTo(polysRef.current);
+        }
+        dibujarMarcas(z, pts, meta.ring);
         pts.forEach((pt) => bounds.push(pt));
       } else if (z.lat != null && z.lng != null) {
         // Zona sin polígono: marcador simple.
@@ -221,11 +287,12 @@ export default function CtpPlantaMapa({
         });
         mk.addTo(polysRef.current);
         polyByZonaRef.current.set(z.id, mk);
+        dibujarMarcas(z, null, meta.ring);
         bounds.push([z.lat, z.lng]);
       }
     }
     if (fit && bounds.length) { try { map.fitBounds(L.latLngBounds(bounds), { padding: [30, 30], maxZoom: 19 }); } catch { /* noop */ } }
-  }, []);
+  }, [dibujarMarcas]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -270,6 +337,7 @@ export default function CtpPlantaMapa({
   useEffect(() => { if (ready) renderPolys(); }, [zonas, ready, renderPolys]);
   // Re-pintar etiquetas cuando cambia el inventario ubicado (sin re-encuadrar).
   useEffect(() => { if (ready) renderPolys(false); }, [inventario, ready, renderPolys]);
+  useEffect(() => { if (ready) renderPolys(false); }, [ubicados, ready, renderPolys]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -410,6 +478,10 @@ export default function CtpPlantaMapa({
       if (!z || !capa?.setStyle) continue;
       const meta = zonaTipoMeta(z.tipo);
       const on = zid === (sobreZona ?? zonaResaltada);
+      // La zona bajo el puntero mientras se arrastra late; la resaltada por
+      // hover sólo se marca. Son dos cosas distintas y se leen distinto.
+      const el = capa.getElement?.();
+      if (el) el.classList.toggle("ctp-zona-objetivo", zid === sobreZona);
       try {
         capa.setStyle(parseCoords(z.poligono ?? null)
           ? { color: on ? "#fff" : meta.ring, weight: on ? 4 : 2, fillOpacity: on ? 0.6 : 0.35, fillColor: meta.ring }
@@ -613,6 +685,11 @@ export default function CtpPlantaMapa({
       {editErr && <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-xs font-bold text-[var(--data-error-700)]">{editErr}</p>}
       {mapMsg && <p className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-xs font-bold text-[var(--data-warning-700)]">{mapMsg}<button type="button" onClick={() => setMapMsg(null)} className="shrink-0 text-[var(--data-warning-700)]"><X className="h-4 w-4" /></button></p>}
       {!fullscreen && !editing && !measuring && <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Tocá una zona para ver/editar su ficha. Dibujá el contorno con al menos 3 puntos.</p>}
+
+      {/* Estilos de las chapitas del mapa. Van acá y no en el módulo de iconos
+          porque Leaflet inserta ese HTML fuera del árbol de React: un CSS module
+          o un `style` de componente no lo alcanzaría. */}
+      <style jsx global>{MARCA_CSS}</style>
 
       {pending && <AsignarZonaModal poligono={pending} suggest={suggestCodigo} onClose={() => setPending(null)} onSaved={() => { setPending(null); cancelDraw(); onChanged(); }} />}
       {coordModal && <CoordenadasModal onClose={() => setCoordModal(false)} onCreate={(pts) => { setCoordModal(false); setPending(pts); }} onGoTo={(lat, lng) => { setCoordModal(false); goToCoord(lat, lng); }} />}

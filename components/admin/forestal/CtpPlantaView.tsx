@@ -54,6 +54,8 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   const [irA, setIrA] = useState<{ zonaId: string; n: number } | null>(null);
   /** Aviso de operación (soltar afuera, ubicado OK) — efímero, no es un error. */
   const [aviso, setAviso] = useState<string | null>(null);
+  /** El último ubicado: su chapita entra al mapa con la animación de caída. */
+  const [recien, setRecien] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -131,6 +133,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
     setEnMano(null);
     const z = zonas.find((x) => x.id === zonaId);
     setAviso(`${it.label} → ${z ? `${z.codigo}${z.nombre ? ` · ${z.nombre}` : ""}` : "la zona"}`);
+    setRecien(it.id);
     void asignar(it.id, zonaId);
   }, [enMano, zonas, asignar]);
 
@@ -162,6 +165,16 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   );
 
   const zonaById = useMemo(() => new Map(zonas.map((z) => [z.id, z])), [zonas]);
+  /** zonaId → qué hay ahí, para que el mapa le ponga su chapita a cada uno. */
+  const ubicadosPorZona = useMemo(() => {
+    const m: Record<string, { id: string; kind: ItemKind; label: string; cites: boolean }[]> = {};
+    for (const it of items) {
+      const zid = asignaciones[it.id];
+      if (!zid || !zonaById.has(zid)) continue;
+      (m[zid] ??= []).push({ id: it.id, kind: it.kind, label: it.label, cites: it.cites });
+    }
+    return m;
+  }, [items, asignaciones, zonaById]);
   // Inventario ubicado por zona, por tipo (trozas m³ + conteo de productos/despachos).
   const invPorZona = useMemo(() => {
     const m = new Map<string, ZonaInv>();
@@ -242,6 +255,8 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
           onSoltarAfuera={() => setAviso("Soltalo DENTRO de una zona dibujada; ahí afuera no hay nada mapeado.")}
           zonaResaltada={resaltada}
           irA={irA}
+          ubicados={ubicadosPorZona}
+          recienUbicado={recien}
         />
         <CtpPlantaPanel
           items={items}
