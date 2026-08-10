@@ -768,19 +768,23 @@ export default function CtpPlantaMapa({
             </div>
           </div>
         )}
+        {/* z-10 y no z-[500]: estos carteles están FUERA del contenedor de
+            Leaflet (no compiten con sus panes internos) y con 500 quedaban por
+            encima de cualquier modal —el `AdminModal` es z-50—, tapando el
+            registro de la guía de transporte. */}
         {ready && tiposPresentes.length > 0 && (
-          <div className="pointer-events-none absolute right-3 top-3 z-[500] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-md)]">
+          <div className="pointer-events-none absolute right-3 top-3 z-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-md)]">
             <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Tipo de zona</p>
             <div className="space-y-0.5">
               {tiposPresentes.map((t) => <span key={t.tipo} className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]"><span className="h-3 w-3 shrink-0 rounded-full" style={{ background: t.ring }} />{t.label}</span>)}
             </div>
           </div>
         )}
-        {cursor && <div className="pointer-events-none absolute bottom-3 right-3 z-[500] rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">{Number(cursor.lat).toFixed(5)}, {Number(cursor.lng).toFixed(5)}</div>}
+        {cursor && <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">{Number(cursor.lat).toFixed(5)}, {Number(cursor.lng).toFixed(5)}</div>}
         {/* Aviso de zoom digital: el satélite no tiene más detalle a este zoom en
             zonas remotas — la imagen se ve borrosa (upscale), NO está rota. */}
         {ready && layer === "sat" && zoom > SAT_MAX_NATIVE && (
-          <div className="pointer-events-none absolute bottom-3 left-3 z-[500] inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--data-warning-500)]/40 bg-[var(--surface-raised)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] shadow-[var(--shadow-md)]">
+          <div className="pointer-events-none absolute bottom-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--data-warning-500)]/40 bg-[var(--surface-raised)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] shadow-[var(--shadow-md)]">
             <Layers className="h-3.5 w-3.5 text-[var(--data-warning-600,var(--data-warning-500))]" />
             Zoom digital · máximo detalle satelital
           </div>

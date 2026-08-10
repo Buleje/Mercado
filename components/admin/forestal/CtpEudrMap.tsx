@@ -156,7 +156,7 @@ export default function CtpEudrMap({ origins, geoByCode }: { origins: OrigenRow[
             clases que Leaflet agrega al contenedor. */}
         <div ref={containerRef} className="h-[420px] w-full bg-[var(--surface-sunken)]" />
         {ready && total === 0 && (
-          <div className="pointer-events-none absolute inset-0 z-[500] flex items-center justify-center p-6">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-6">
             <div className="pointer-events-auto max-w-sm rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 p-5 text-center shadow-lg backdrop-blur">
               <Warehouse className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" />
               <p className="text-sm font-bold text-[var(--text-primary)]">Ningún origen tiene coordenadas todavía</p>
