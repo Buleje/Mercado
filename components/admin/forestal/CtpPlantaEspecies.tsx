@@ -65,8 +65,8 @@ export default function CtpPlantaEspecies({ items, ubicados }: { items: Item[]; 
   const porKind = new Map(resumen.porKind.map((k) => [k.kind, k]));
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <TreePine className="h-4 w-4 text-[var(--accent)]" /> Qué madera hay, por especie
         </CardTitle>
@@ -74,29 +74,25 @@ export default function CtpPlantaEspecies({ items, ubicados }: { items: Item[]; 
           {ubicados} de {items.length} con lugar en el mapa
         </span>
       </div>
-      {/* La cifra NO es la del KPI de arriba y hay que decirlo: aquel es el saldo
-          del período elegido; esta es la existencia disponible del libro entero,
-          que es lo que se puede ubicar en el mapa. */}
-      <div className="mb-3">
-        <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-          Es la existencia <strong className="text-[var(--text-secondary)]">disponible en el libro</strong> —lo que se puede ubicar en el mapa—, no el saldo del período que muestran los indicadores de arriba.
-        </p>
-      </div>
 
-      {/* Dos cifras grandes: la troza que espera sierra y la aserrada que espera camión. */}
-      <div className="mb-3 grid grid-cols-2 gap-2">
+      {/* Las dos cifras que importan, en una fila: la troza que espera sierra y
+          la aserrada que espera camión. */}
+      <div className="mb-2 grid grid-cols-2 gap-2">
         {(["troza", "producto"] as const).map((k) => {
           const d = porKind.get(k);
           return (
-            <div key={k} className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
-              <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                {k === "troza" ? <Boxes className="h-3.5 w-3.5" /> : <PackageCheck className="h-3.5 w-3.5" />}
-                {KIND_LABEL[k]}
-              </p>
-              <p className="font-mono text-lg font-bold tabular-nums leading-tight text-[var(--text-primary)]">
-                {d ? fmtSubtotales(d.subtotales) : "—"}
-              </p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{d?.lineas ?? 0} líneas del libro</p>
+            <div key={k} className="flex items-center gap-2 rounded-lg bg-[var(--surface-sunken)] px-2.5 py-1.5">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--accent)]/12 text-[var(--accent)]">
+                {k === "troza" ? <Boxes className="h-4 w-4" /> : <PackageCheck className="h-4 w-4" />}
+              </span>
+              <span className="min-w-0">
+                <span className="block font-mono text-base font-bold tabular-nums leading-none text-[var(--text-primary)]">
+                  {d ? fmtSubtotales(d.subtotales) : "—"}
+                </span>
+                <span className="block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                  {KIND_LABEL[k]} · {d?.lineas ?? 0} líneas
+                </span>
+              </span>
             </div>
           );
         })}
@@ -116,12 +112,12 @@ export default function CtpPlantaEspecies({ items, ubicados }: { items: Item[]; 
           </div>
 
           {/* La tabla: el número exacto por especie. */}
-          <ul className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
+          <ul className="mt-2 space-y-0.5">
             {resumen.porEspecie.map((e, i) => {
               const m3 = e.subtotales.find((s) => s.unidad === "m³")?.cantidad ?? 0;
               const p = enM3.total > 0 ? (m3 / enM3.total) * 100 : 0;
               return (
-                <li key={e.especie} className="flex items-center justify-between gap-2 rounded-lg bg-[var(--surface-sunken)] px-2.5 py-1.5 text-sm">
+                <li key={e.especie} className="flex items-center justify-between gap-2 rounded-lg bg-[var(--surface-sunken)] px-2.5 py-1 text-sm">
                   <span className="flex min-w-0 items-center gap-1.5">
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: SERIE[i % SERIE.length] }} />
                     <span className="truncate font-bold text-[var(--text-primary)]">{e.especie}</span>
@@ -135,8 +131,8 @@ export default function CtpPlantaEspecies({ items, ubicados }: { items: Item[]; 
               );
             })}
           </ul>
-          <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            El porcentaje es sobre <strong className="text-[var(--text-secondary)]">{enM3.total.toLocaleString("es-PE", { maximumFractionDigits: 2 })} m³</strong> en total
+          <p className="mt-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
+            % sobre <strong className="text-[var(--text-secondary)]">{enM3.total.toLocaleString("es-PE", { maximumFractionDigits: 2 })} m³</strong> · es la existencia <strong className="text-[var(--text-secondary)]">disponible en el libro</strong>, no el saldo del período de arriba
             {otrasUnidades.length > 0 && (
               <> · aparte hay {otrasUnidades.map((u) => `${u.cantidad.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ${u.unidad}`).join(" y ")}, que no se suman a los m³ porque son otra unidad</>
             )}

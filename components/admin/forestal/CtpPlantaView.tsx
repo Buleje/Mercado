@@ -10,17 +10,18 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CardTitle, StatCard } from "@buleje/design-system";
-import { AlertCircle, RefreshCw, Map as MapIcon, Layers, Boxes, PackageCheck, Truck, Printer, PieChart, X } from "@buleje/design-system/icons";
+import { StatCard } from "@buleje/design-system";
+import { AlertCircle, RefreshCw, Map as MapIcon, Boxes, PackageCheck, Truck, Printer, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
-import { ZONA_TIPOS, zonaTipoMeta, type Item, type ItemKind, type PlantaZona, type ZonaInv } from "@/lib/forestal/planta-zona-types";
+import { zonaTipoMeta, type Item, type ItemKind, type PlantaZona, type ZonaInv } from "@/lib/forestal/planta-zona-types";
 import { fichaItemHtml, fichaZonaHtml } from "@/lib/forestal/planta-iconos";
 import { fmtSubtotal, fmtSubtotales, normalizarUnidad, resumirItems } from "@/lib/forestal/planta-resumen";
 import { printPlantaPlano } from "@/lib/forestal/planta-plano-print";
 import CtpPlantaMapa from "./CtpPlantaMapa";
 import CtpPlantaPanel from "./CtpPlantaPanel";
 import CtpPlantaEspecies from "./CtpPlantaEspecies";
+import CtpPlantaZonas from "./CtpPlantaZonas";
 
 export type { Item, ItemKind, ZonaInv };
 
@@ -28,16 +29,6 @@ interface PlantaSaldos {
   materiaPrima: { ingresoM3: number; consumidoM3: number; saldoM3: number };
   productoStock: number;
   despachado: number;
-}
-
-/** Resumen legible del inventario ubicado en una zona (por tipo, sin mezclar unidades). */
-function invSummary(inv?: ZonaInv): string | null {
-  if (!inv) return null;
-  const p: string[] = [];
-  if (inv.trozas) p.push(`${inv.trozas} troza${inv.trozas === 1 ? "" : "s"} · ${inv.m3.toFixed(2)} m³`);
-  if (inv.productos) p.push(`${inv.productos} producto${inv.productos === 1 ? "" : "s"}`);
-  if (inv.despachos) p.push(`${inv.despachos} despacho${inv.despachos === 1 ? "" : "s"}`);
-  return p.length ? p.join(" · ") : null;
 }
 
 const n2 = (v: number) => v.toFixed(2);
@@ -173,16 +164,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
     return () => clearTimeout(t);
   }, [aviso]);
 
-  const porTipo = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const z of zonas) m.set(z.tipo, (m.get(z.tipo) ?? 0) + 1);
-    return ZONA_TIPOS.filter((t) => m.has(t.tipo)).map((t) => ({ ...t, count: m.get(t.tipo) ?? 0 }));
-  }, [zonas]);
   const areaTotal = useMemo(() => zonas.reduce((a, z) => a + (z.areaM2 ?? 0), 0), [zonas]);
-  const zonasByTipo = useMemo(
-    () => ZONA_TIPOS.map((t) => ({ tipo: t, list: zonas.filter((z) => z.tipo === t.tipo) })).filter((g) => g.list.length > 0),
-    [zonas],
-  );
 
   const zonaById = useMemo(() => new Map(zonas.map((z) => [z.id, z])), [zonas]);
   /** zonaId → qué hay ahí, para que el mapa le ponga su chapita a cada uno. */
@@ -271,20 +253,12 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   const invObj = useMemo(() => Object.fromEntries([...invPorZona].map(([k, v]) => [k, { ...v, m3: Math.round(v.m3 * 100) / 100 }])), [invPorZona]);
   // Ocupación de la planta: cómo se reparte el área mapeada por tipo de zona
   // (+ m³ ubicados por tipo). Ordenado por área desc. Solo tipos con área.
-  const ocupacion = useMemo(() => zonasByTipo
-    .map(({ tipo, list }) => {
-      const area = list.reduce((a, z) => a + (z.areaM2 ?? 0), 0);
-      const m3 = list.reduce((a, z) => a + (invPorZona.get(z.id)?.m3 ?? 0), 0);
-      return { tipo, count: list.length, area, m3, pct: areaTotal > 0 ? (area / areaTotal) * 100 : 0 };
-    })
-    .filter((o) => o.area > 0)
-    .sort((a, b) => b.area - a.area), [zonasByTipo, invPorZona, areaTotal]);
 
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
-        <p className="max-w-2xl text-sm text-[var(--text-tertiary)]">
-          <strong className="text-[var(--text-secondary)]">Mapa de tu aserradero.</strong> Dibujá las zonas de la planta (entrada, patio de trozas, aserrado, despacho…) sobre el satélite: el mapa muestra <em>dónde</em> está la madera y el Libro, <em>cuánta</em> se mueve.
+        <p className="min-w-0 flex-1 truncate text-sm text-[var(--text-tertiary)]" title="Dibujá las zonas de la planta (entrada, patio de trozas, aserrado, despacho…) sobre el satélite: el mapa muestra dónde está la madera y el Libro, cuánta se mueve.">
+          <strong className="text-[var(--text-secondary)]">Mapa de tu aserradero.</strong> El mapa dice <em>dónde</em> está la madera; el Libro, <em>cuánta</em>.
         </p>
         <div className="flex shrink-0 items-center gap-2">
           <button
@@ -306,18 +280,6 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
         <StatCard density="compact" label="Producto terminado" value={saldos ? n2(saldos.productoStock) : "—"} subValue="aserrada lista" icon={PackageCheck} emphasis="neutral" />
         <StatCard density="compact" label="Despachado en el período" value={saldos ? n2(saldos.despachado) : "—"} subValue={period.label} icon={Truck} emphasis="neutral" />
       </div>
-
-      {/* Distribución de zonas por tipo (chips). */}
-      {porTipo.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          {porTipo.map((t) => (
-            <span key={t.tipo} className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1 text-sm font-bold text-[var(--text-secondary)]">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: t.ring }} />{t.label}
-              <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] tabular-nums">{t.count}</span>
-            </span>
-          ))}
-        </div>
-      )}
 
       {/* Mapa + barra lateral: la lista de lo que hay para ubicar vive AL LADO
           del mapa, no debajo — se arrastra de una a otro sin perder de vista
@@ -362,71 +324,17 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
         </p>
       )}
 
-      {/* Qué madera hay, por especie — la pregunta que el mapa no responde. */}
-      <CtpPlantaEspecies items={items} ubicados={Object.keys(asignaciones).filter((id) => zonaById.has(asignaciones[id])).length} />
+      {/* Las dos lecturas del terreno, lado a lado: qué madera hay (por especie)
+          y dónde entra (por zona). Apiladas ocupaban 1.100 px de scroll. */}
+      <div className="grid gap-3 xl:grid-cols-2">
+        <CtpPlantaEspecies items={items} ubicados={Object.keys(asignaciones).filter((id) => zonaById.has(asignaciones[id])).length} />
+        <CtpPlantaZonas
+          zonas={zonas}
+          itemsPorZona={itemsPorZona}
+          onIrAZona={(zid) => setIrA((p) => ({ zonaId: zid, n: (p?.n ?? 0) + 1 }))}
+        />
+      </div>
 
-      {/* Ocupación de la planta: reparto del área mapeada por tipo de zona. */}
-      {ocupacion.length > 0 && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><PieChart className="h-4 w-4" /> Ocupación de la planta</CardTitle>
-          <div className="flex h-4 w-full overflow-hidden rounded-full border border-[var(--rule-base)]">
-            {ocupacion.map((o) => (
-              <div key={o.tipo.tipo} style={{ width: `${o.pct}%`, background: o.tipo.ring }} title={`${o.tipo.label} · ${o.pct.toFixed(0)}%`} />
-            ))}
-          </div>
-          <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {ocupacion.map((o) => (
-              <li key={o.tipo.tipo} className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm">
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: o.tipo.ring }} />
-                  <span className="truncate font-bold text-[var(--text-primary)]">{o.tipo.label}</span>
-                  <span className="shrink-0 text-[var(--text-tertiary)]">· {o.count}</span>
-                </span>
-                <span className="shrink-0 text-right">
-                  <span className="font-mono font-bold text-[var(--text-secondary)]">{o.pct.toFixed(0)}%</span>
-                  {o.m3 > 0 && <span className="ml-2 text-xs text-[var(--text-tertiary)]">{o.m3.toFixed(1)} m³</span>}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-xs text-[var(--text-tertiary)]">Área total mapeada: <strong className="text-[var(--text-secondary)]">{areaTotal >= 10000 ? `${(areaTotal / 10000).toFixed(2)} ha` : `${Math.round(areaTotal).toLocaleString("es-PE")} m²`}</strong> · el % es sobre el área dibujada, no sobre el terreno real.</p>
-        </div>
-      )}
-
-      {/* Lista de zonas por tipo (overview no-mapa). */}
-      {zonasByTipo.length > 0 && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Layers className="h-4 w-4" /> Zonas de la planta</CardTitle>
-          <div className="space-y-4">
-            {zonasByTipo.map(({ tipo, list }) => (
-              <div key={tipo.tipo}>
-                <p className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]"><span className="h-2.5 w-2.5 rounded-full" style={{ background: tipo.ring }} />{tipo.label} · {list.length}</p>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {list.map((z) => {
-                    const inv = invPorZona.get(z.id);
-                    return (
-                      <div key={z.id} className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-bold text-[var(--text-primary)]">{z.codigo}</span>
-                          {z.areaM2 != null && <span className="font-mono text-xs text-[var(--text-tertiary)]">{z.areaM2 >= 10000 ? `${(z.areaM2 / 10000).toFixed(2)} ha` : `${Math.round(z.areaM2).toLocaleString("es-PE")} m²`}</span>}
-                        </div>
-                        {z.nombre && <p className="truncate text-sm text-[var(--text-secondary)]">{z.nombre}</p>}
-                        {invSummary(inv) ? (
-                          <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"><Boxes className="h-3 w-3" />{invSummary(inv)}</p>
-                        ) : (
-                          <p className="mt-1 text-xs text-[var(--text-tertiary)]">sin madera ubicada</p>
-                        )}
-                        {z.notas && <p className="mt-0.5 line-clamp-2 text-xs text-[var(--text-tertiary)]">{z.notas}</p>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="mt-3 text-xs text-[var(--text-tertiary)]">Tocá una zona en el mapa para editar su ficha o borrarla.</p>
-        </div>
-      )}
     </div>
   );
 }
