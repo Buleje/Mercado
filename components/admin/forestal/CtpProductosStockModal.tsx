@@ -18,39 +18,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Boxes, Loader2, PackageOpen, Search } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
-import { TOLERANCIA_M3, r4, uidDeFila, type FilaDespacho } from "@/lib/forestal/despacho-lista";
+import { filasDeCorridas, r4, TOLERANCIA_M3, type CorridaDisponible, type FilaDespacho } from "@/lib/forestal/despacho-lista";
 import { Btn, ModalFooter, productLabel } from "./ctp-shared";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
-
-interface PaqueteAPI {
-  id: string;
-  codigo: string;
-  producto: string | null;
-  presentacion: string | null;
-  cantidad: number;
-  volumenM3: number;
-  espesorCm: number | null;
-  anchoCm: number | null;
-  largoM: number | null;
-}
-
-interface CorridaAPI {
-  id: string;
-  lineNo: number | null;
-  fecha: string;
-  especie: string | null;
-  especieCientifica: string | null;
-  cites?: boolean;
-  producto: string | null;
-  presentacion: string | null;
-  unidad: string | null;
-  lote: string | null;
-  lineaProduccion: string | null;
-  gtfOrigen?: string[];
-  titularOrigen?: string[];
-  disponible: number;
-  paquetes: PaqueteAPI[];
-}
 
 const CAMPO =
   "h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
@@ -62,54 +32,6 @@ const dia = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 const fmtDia = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }) : "—";
 const MEDIDA: Record<string, string> = { m3: "Metros cúbicos", pt: "Pies tablares", kg: "Kilogramos", unidad: "Unidades" };
-
-/** Una fila candidata: el paquete con su corrida al lado. */
-function filasDeCorridas(corridas: CorridaAPI[]): FilaDespacho[] {
-  return corridas.flatMap((c): FilaDespacho[] => {
-    const base = {
-      corridaId: c.id,
-      lineNo: c.lineNo,
-      especie: c.especie,
-      especieCientifica: c.especieCientifica,
-      cites: c.cites ?? false,
-      unidad: c.unidad ?? "m3",
-      disponibleCorrida: c.disponible,
-      gtfOrigen: c.gtfOrigen ?? [],
-      titularOrigen: c.titularOrigen ?? [],
-      lote: c.lote,
-      linea: c.lineaProduccion,
-      fechaProduccion: c.fecha,
-    };
-    /* Las corridas viejas no tienen paquetes cargados: entran como una fila con
-       su saldo. Ocultarlas escondería producto que existe en la pila. */
-    if (c.paquetes.length === 0) {
-      return [{
-        ...base,
-        uid: uidDeFila(c.id, null),
-        paqueteId: null,
-        producto: c.producto,
-        codigo: null,
-        presentacion: c.presentacion,
-        cantidad: 0,
-        espesorCm: null, anchoCm: null, largoM: null,
-        volumen: r4(c.disponible),
-      }];
-    }
-    return c.paquetes.map((p) => ({
-      ...base,
-      uid: uidDeFila(c.id, p.id),
-      paqueteId: p.id,
-      producto: p.producto ?? c.producto,
-      codigo: p.codigo,
-      presentacion: p.presentacion ?? c.presentacion,
-      cantidad: p.cantidad,
-      espesorCm: p.espesorCm, anchoCm: p.anchoCm, largoM: p.largoM,
-      /* Un paquete no puede sacar más de lo que le queda a su corrida: si ya
-         salió parte, el tope es el saldo, no lo que el paquete pesó al nacer. */
-      volumen: r4(Math.min(p.volumenM3, c.disponible)),
-    }));
-  });
-}
 
 export default function CtpProductosStockModal({
   yaElegidos,
@@ -152,7 +74,7 @@ export default function CtpProductosStockModal({
     setCargando(true);
     /* Sin período: el stock es lo que HAY hoy en la planta, no lo que se
        produjo en el mes que se está mirando en el libro. */
-    ctpGet<{ corridas?: CorridaAPI[] }>("/api/admin/forestal/ctp?disponibles=1")
+    ctpGet<{ corridas?: CorridaDisponible[] }>("/api/admin/forestal/ctp?disponibles=1")
       .then((r) => {
         if (!vivo) return;
         const nuevas = filasDeCorridas(r.corridas ?? []);

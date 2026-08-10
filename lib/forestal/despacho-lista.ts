@@ -312,3 +312,91 @@ export function enviosDeLista(
   }
   return envios;
 }
+
+/** Un paquete tal como lo devuelve `?disponibles=1`. */
+export interface PaqueteDisponible {
+  id: string;
+  codigo: string;
+  producto: string | null;
+  presentacion: string | null;
+  cantidad: number;
+  volumenM3: number;
+  espesorCm: number | null;
+  anchoCm: number | null;
+  largoM: number | null;
+}
+
+/** Una corrida con saldo, tal como la devuelve `?disponibles=1`. */
+export interface CorridaDisponible {
+  id: string;
+  lineNo: number | null;
+  fecha: string;
+  especie: string | null;
+  especieCientifica: string | null;
+  cites?: boolean;
+  producto: string | null;
+  presentacion: string | null;
+  unidad: string | null;
+  lote: string | null;
+  lineaProduccion: string | null;
+  gtfOrigen?: string[];
+  titularOrigen?: string[];
+  disponible: number;
+  paquetes: PaqueteDisponible[];
+}
+
+/**
+ * De lo que devuelve `?disponibles=1` a las filas de una guía: una por paquete,
+ * con su corrida al lado.
+ *
+ * Vive acá y no en el modal de stock porque tiene DOS consumidores: ese modal y
+ * el despacho directo desde una cancha de reserva del mapa de planta. Es lo
+ * único que sabe de paquetes, medidas y del techo de saldo — armar una fila a
+ * mano deja una guía con las medidas en blanco y sin tope.
+ */
+export function filasDeCorridas(corridas: readonly CorridaDisponible[]): FilaDespacho[] {
+  return corridas.flatMap((c): FilaDespacho[] => {
+    const base = {
+      corridaId: c.id,
+      lineNo: c.lineNo,
+      especie: c.especie,
+      especieCientifica: c.especieCientifica,
+      cites: c.cites ?? false,
+      unidad: c.unidad ?? "m3",
+      disponibleCorrida: c.disponible,
+      gtfOrigen: c.gtfOrigen ?? [],
+      titularOrigen: c.titularOrigen ?? [],
+      lote: c.lote,
+      linea: c.lineaProduccion,
+      fechaProduccion: c.fecha,
+    };
+    /* Las corridas viejas no tienen paquetes cargados: entran como una fila con
+       su saldo. Ocultarlas escondería producto que existe en la pila. */
+    if (c.paquetes.length === 0) {
+      return [{
+        ...base,
+        uid: uidDeFila(c.id, null),
+        paqueteId: null,
+        producto: c.producto,
+        codigo: null,
+        presentacion: c.presentacion,
+        cantidad: 0,
+        espesorCm: null, anchoCm: null, largoM: null,
+        volumen: r4(c.disponible),
+      }];
+    }
+    return c.paquetes.map((p) => ({
+      ...base,
+      uid: uidDeFila(c.id, p.id),
+      paqueteId: p.id,
+      producto: p.producto ?? c.producto,
+      codigo: p.codigo,
+      presentacion: p.presentacion ?? c.presentacion,
+      cantidad: p.cantidad,
+      espesorCm: p.espesorCm, anchoCm: p.anchoCm, largoM: p.largoM,
+      /* Un paquete no puede sacar más de lo que le queda a su corrida: si ya
+         salió parte, el tope es el saldo, no lo que el paquete pesó al nacer. */
+      volumen: r4(Math.min(p.volumenM3, c.disponible)),
+    }));
+  });
+}

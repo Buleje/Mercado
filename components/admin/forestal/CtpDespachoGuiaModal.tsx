@@ -29,10 +29,13 @@ import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
 import { faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { rellenarGuia, siguienteNumeroGtf } from "@/lib/forestal/gtf-autocompletar";
+import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import {
   enviosDeLista,
+  filasDeCorridas,
   problemasDeLista,
   volumenTotal,
+  type CorridaDisponible,
   type FilaDespacho,
 } from "@/lib/forestal/despacho-lista";
 import type { ValorParte } from "./CtpParteBarra";
@@ -52,7 +55,7 @@ const hoy = () => new Date().toISOString().slice(0, 10);
 export default function CtpDespachoGuiaModal({
   presetProducto,
   presetEspecie,
-  presetCorridas,
+  presetUids,
   presetDestino,
   onClose,
   onSaved,
@@ -61,11 +64,12 @@ export default function CtpDespachoGuiaModal({
   presetProducto?: string | null;
   presetEspecie?: string | null;
   /**
-   * Corridas de una cancha de RESERVA del mapa de planta: el stock se abre
-   * filtrado a ellas y ya tildadas. Lo que se apartó para ese cliente entra a
-   * la guía sin buscarlo de nuevo en una lista de cien líneas.
+   * Paquetes elegidos en una cancha de RESERVA del mapa de planta, por `uid`
+   * (`corridaId:paqueteId`). Entran DIRECTO a la lista de la guía: el operador
+   * ya eligió qué sale cuando lo tildó en el bloque, y volver a mostrarle el
+   * selector de stock sería pedirle la misma decisión dos veces.
    */
-  presetCorridas?: readonly string[] | null;
+  presetUids?: readonly string[] | null;
   /** Nombre de la cancha («Lote 1 · Juan»): arranca como destinatario. */
   presetDestino?: string | null;
   onClose: () => void;
@@ -88,7 +92,7 @@ export default function CtpDespachoGuiaModal({
   const [gtfNumber, setGtfNumber] = useState("");
   const [docType, setDocType] = useState("GTF");
   const [sello, setSello] = useState<SelloSerfor | null>(null);
-  const [stockAbierto, setStockAbierto] = useState(Boolean(presetProducto) || Boolean(presetCorridas?.length));
+  const [stockAbierto, setStockAbierto] = useState(Boolean(presetProducto));
   /** El otro origen de la lista: las trozas que salen sin aserrar (ADR-363). */
   const [trozasAbierto, setTrozasAbierto] = useState(false);
   /**
@@ -118,6 +122,34 @@ export default function CtpDespachoGuiaModal({
    * abre; el que ya lo sabe registra y sigue.
    */
   const [porQueVacios, setPorQueVacios] = useState<string[]>([]);
+
+  /**
+   * Precarga desde una cancha de reserva: se piden los disponibles y se arman
+   * las filas de esos `uid` con `filasDeCorridas` —la única fuente que trae
+   * paquetes, medidas y el techo de saldo—. Si alguno ya no está (se despachó
+   * desde otra pantalla mientras tanto), se avisa en vez de registrarlo igual.
+   */
+  const [precargando, setPrecargando] = useState(Boolean(presetUids?.length));
+  useEffect(() => {
+    if (!presetUids?.length) return;
+    let vivo = true;
+    setPrecargando(true);
+    ctpGet<{ corridas?: CorridaDisponible[] }>("/api/admin/forestal/ctp?disponibles=1")
+      .then((r) => {
+        if (!vivo) return;
+        const todas = filasDeCorridas(r.corridas ?? []);
+        const quiero = new Set(presetUids);
+        const elegidas = todas.filter((f) => quiero.has(f.uid));
+        setFilas(elegidas);
+        if (elegidas.length < quiero.size) {
+          setAviso(`${quiero.size - elegidas.length} de los paquetes apartados ya no están disponibles: se despacharon o cambiaron de saldo.`);
+        }
+        setTab("productos");
+      })
+      .catch((e) => { if (vivo) setError(e instanceof Error ? e.message : String(e)); })
+      .finally(() => { if (vivo) setPrecargando(false); });
+    return () => { vivo = false; };
+  }, [presetUids]);
 
   /** Uso de la libreta en ESTA guía: se cuenta recién al registrar. */
   const usados = useRef<{ partes: Set<string>; vehiculos: Set<string> }>({ partes: new Set(), vehiculos: new Set() });
@@ -494,8 +526,14 @@ export default function CtpDespachoGuiaModal({
               <Wand2 className="h-4 w-4" />
               {ficha ? "Rellenar datos de la guía" : "Trayendo la Ficha del CTP…"}
             </Btn>
-            <Btn variant="primary" onClick={() => void registrar()} disabled={!puedeRegistrar}>
-              {enviando ? (
+            {/* Con precarga desde una cancha, registrar antes de que lleguen los
+                paquetes emitiría una guía sin productos. */}
+            <Btn variant="primary" onClick={() => void registrar()} disabled={!puedeRegistrar || precargando}>
+              {precargando ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Trayendo lo apartado…
+                </>
+              ) : enviando ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   {avance ? `Registrando ${avance.hechas + 1} de ${avance.total}…` : "Registrando…"}
@@ -631,7 +669,6 @@ export default function CtpDespachoGuiaModal({
           yaElegidos={yaElegidos}
           presetProducto={presetProducto}
           presetEspecie={presetEspecie}
-          presetCorridas={presetCorridas}
           onAgregar={agregarFilas}
           onCerrar={() => setStockAbierto(false)}
         />

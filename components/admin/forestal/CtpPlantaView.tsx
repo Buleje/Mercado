@@ -23,6 +23,7 @@ import CtpPlantaPanel from "./CtpPlantaPanel";
 import CtpPlantaEspecies from "./CtpPlantaEspecies";
 import CtpPlantaZonas from "./CtpPlantaZonas";
 import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
+import CtpPlantaReservaModal from "./CtpPlantaReservaModal";
 
 export type { Item, ItemKind, ZonaInv };
 
@@ -211,7 +212,8 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
    * apiladas ahí ya tildadas y el nombre de la cancha como destinatario. Lo que
    * el operador decidió al apartar la madera no se vuelve a decidir.
    */
-  const [despachando, setDespachando] = useState<{ zonaId: string; corridas: string[]; destino: string } | null>(null);
+  const [bloque, setBloque] = useState<{ corridas: string[]; titulo: string } | null>(null);
+  const [despachando, setDespachando] = useState<{ uids: string[]; destino: string } | null>(null);
   const abrirDespacho = useCallback((zonaId: string) => {
     const z = zonaById.get(zonaId);
     const corridas = (itemsPorZona[zonaId] ?? []).filter((it) => it.kind === "producto").map((it) => it.id);
@@ -219,7 +221,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
       setAviso("Esa cancha no tiene madera aserrada para despachar.");
       return;
     }
-    setDespachando({ zonaId, corridas, destino: z.nombre || z.codigo });
+    setBloque({ corridas, titulo: `${z.codigo}${z.nombre ? ` · ${z.nombre}` : ""}` });
   }, [zonaById, itemsPorZona]);
 
   /** Ficha emergente de una zona: el terreno + qué hay parado, por especie. */
@@ -337,9 +339,23 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
         />
       </div>
 
+      {/* Primero se elige QUÉ sale del bloque; después se llena la guía. */}
+      {bloque && (
+        <CtpPlantaReservaModal
+          titulo={bloque.titulo}
+          corridas={bloque.corridas}
+          onClose={() => setBloque(null)}
+          onDespachar={(uids) => {
+            const destino = bloque.titulo.split(" · ").slice(1).join(" · ") || bloque.titulo;
+            setBloque(null);
+            setDespachando({ uids, destino });
+          }}
+        />
+      )}
+
       {despachando && (
         <CtpDespachoGuiaModal
-          presetCorridas={despachando.corridas}
+          presetUids={despachando.uids}
           presetDestino={despachando.destino}
           onClose={() => setDespachando(null)}
           onSaved={(r) => {
