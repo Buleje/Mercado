@@ -20,6 +20,7 @@ import LothCensoImportModal from "./LothCensoImportModal";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import LothZafraPanel from "./LothZafraPanel";
+import LothPlanTalaPanel from "./LothPlanTalaPanel";
 import LothEspecieFichas, { type FichaEspecie } from "./LothEspecieFichas";
 import LothEspecieFueraModal from "./LothEspecieFueraModal";
 import { analizarZafra } from "@/lib/forestal/loth-zafra";
@@ -210,6 +211,29 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   /** Categoría POA por árbol — la muestra el censo como badge. */
   const categoriaPorArbol = useMemo(() => new Map(poa.arboles.map((a) => [a.id, a.categoria])), [poa.arboles]);
 
+  /* Lo que necesita el plan de tala: el árbol con su categoría del POA (que es
+     la que decide si se puede tumbar) y el saldo VIVO por especie, que sale del
+     balance —autorizado menos movilizado— y no del volumen autorizado a secas. */
+  const arbolesParaTalar = useMemo(
+    () =>
+      trees.map((t) => ({
+        id: t.id,
+        treeCode: t.treeCode,
+        especie: t.speciesCommon,
+        volumenM3: Number(t.volumenEstimadoM3 ?? 0),
+        categoria: categoriaPorArbol.get(t.id) ?? "sin_dap",
+        estado: t.estado,
+        utmX: t.utmX != null && t.utmX !== "" ? Number(t.utmX) : null,
+        utmY: t.utmY != null && t.utmY !== "" ? Number(t.utmY) : null,
+        parcela: t.parcelaCorta,
+      })),
+    [trees, categoriaPorArbol],
+  );
+  const saldosPorEspecie = useMemo(
+    () => fichasEspecie.filter((f) => f.autorizada && f.autorizadoM3 > 0).map((f) => ({ especie: f.species, saldoM3: f.saldo })),
+    [fichasEspecie],
+  );
+
   /**
    * Zafra: el saldo autorizado NO se acumula al período siguiente, así que el
    * avance se mide contra la vigencia del plan. `hoy` entra por parámetro para
@@ -376,6 +400,15 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
 
           {/* Zafra: ¿llego con los tiempos de la vigencia? */}
           <LothZafraPanel zafra={zafra} />
+
+          {/* Y el paso que faltaba: con qué árboles se llega a ese ritmo. */}
+          <LothPlanTalaPanel
+            arboles={arbolesParaTalar}
+            saldos={saldosPorEspecie}
+            ritmoRequeridoM3Dia={zafra.ritmoRequeridoM3Dia}
+            diasRestantes={zafra.diasRestantes}
+            saldoTotalM3={zafra.saldoM3}
+          />
 
           {/* UNA ficha por especie: reemplaza «Control por especie» y «Balance de
               extracción», que eran dos cuadros de ocho columnas repitiendo la
