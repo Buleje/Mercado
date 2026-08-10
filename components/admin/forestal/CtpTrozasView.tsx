@@ -1,217 +1,110 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search, Loader2, PackageOpen, AlertTriangle } from "@buleje/design-system/icons";
-import { CardTitle, EmptyState } from "@buleje/design-system";
-import EspecieFoto from "./EspecieFoto";
-import { useEspeciesFotos } from "./hooks/use-especies-fotos";
-
 /**
- * Buscador de trozas por codificación (ADR-312).
+ * CtpTrozasView — el patio del aserradero, pieza por pieza.
  *
- * Es la consulta de un fiscalizador de OSINFOR, hecha al revés: él llega con un
- * código de troza del POA del título habilitante y pregunta "¿esta pieza entró
- * acá?". Antes había que abrir guía por guía; ahora se escribe el código y sale
- * el ingreso, su GTF y su origen.
+ * La diferencia con Consumos, que es la confusión que esta pantalla existía para
+ * causar: **Consumos cuenta metros cúbicos por guía** (cuánto de qué GTF entró a
+ * qué corrida, con sus invariantes I1–I6) y mira un período. Acá la unidad es
+ * **el tronco** y no hay período: es lo que hay parado HOY, con el estado de
+ * cada pieza y hace cuánto está ahí. Nadie en el patio señala un porcentaje de
+ * una guía; señala una troza.
  *
- * Sólo lee. Las trozas se crean con su guía y no se editan: una lista de trozas
- * retocable dejaría de ser prueba de nada.
+ * Tres lecturas, una sola carga de datos (`use-trozas-patio`) para que el
+ * resumen de arriba y las filas de abajo nunca cuenten cosas distintas:
+ *   1. el panorama — cuánto hay, qué se puede aserrar hoy, qué está envejeciendo;
+ *   2. la lista filtrable — la pieza concreta, con sus medidas y su guía;
+ *   3. el buscador del fiscalizador — pregunta al servidor, sin el tope de 5.000.
  */
 
-type Troza = {
-  id: string;
-  orden: number;
-  codificacion: string | null;
-  especieComun: string | null;
-  especieCientifica: string | null;
-  dimensiones: string | null;
-  largoM: number | null;
-  diametroCm: number | null;
-  cantidad: number | null;
-  volumenM3: number | null;
-  ingreso: {
-    id: string;
-    libroNro: number | null;
-    gtfNumber: string;
-    serforNumeroRegistro: string | null;
-    entryDate: string;
-    providerName: string;
-    especie: string;
-    status: string;
-    originCode: string | null;
-    origen: string | null;
-  };
-};
+import { useState } from "react";
+import { CardTitle } from "@buleje/design-system";
+import { AlertTriangle, Search } from "@buleje/design-system/icons";
+import type { EstadoTroza } from "@/lib/forestal/trozas-patio";
+import CtpCodigosDuplicados from "./CtpCodigosDuplicados";
+import CtpTrozasBuscador from "./CtpTrozasBuscador";
+import CtpTrozasLista from "./CtpTrozasLista";
+import CtpTrozasPatio from "./CtpTrozasPatio";
+import { useTrozasPatio } from "./hooks/use-trozas-patio";
 
 export default function CtpTrozasView() {
-  const [q, setQ] = useState("");
-  const [trozas, setTrozas] = useState<Troza[] | null>(null);
-  const [cargando, setCargando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  /** Fotos de referencia por especie: una sola carga para toda la vista. */
-  const { indice: fotosEspecie } = useEspeciesFotos();
-
-  const buscar = useCallback(async (texto: string) => {
-    const t = texto.trim();
-    if (!t) { setTrozas(null); setError(null); return; }
-    setCargando(true); setError(null);
-    try {
-      const r = await fetch(`/api/admin/forestal/trozas?codificacion=${encodeURIComponent(t)}`, { credentials: "include" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      setTrozas(((await r.json()).trozas ?? []) as Troza[]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setTrozas(null);
-    } finally {
-      setCargando(false);
-    }
-  }, []);
-
-  // Debounce: el operador tipea el código completo, no una letra por consulta.
-  useEffect(() => {
-    const id = setTimeout(() => void buscar(q), 350);
-    return () => clearTimeout(id);
-  }, [q, buscar]);
-
-  useEffect(() => { inputRef.current?.focus(); }, []);
-
-  /** Una misma codificación puede repetirse entre guías: se agrupa por ingreso. */
-  const porIngreso = useMemo(() => {
-    if (!trozas) return [];
-    const m = new Map<string, { ingreso: Troza["ingreso"]; trozas: Troza[] }>();
-    for (const t of trozas) {
-      const g = m.get(t.ingreso.id) ?? { ingreso: t.ingreso, trozas: [] };
-      g.trozas.push(t);
-      m.set(t.ingreso.id, g);
-    }
-    return [...m.values()];
-  }, [trozas]);
+  const { trozas, meta, cargando, error, recargar } = useTrozasPatio();
+  /* Los filtros viven acá porque los tocan las dos pantallas: se elige un estado
+     en el panel de arriba y la lista de abajo tiene que obedecer. */
+  const [estadoFiltro, setEstadoFiltro] = useState<EstadoTroza | null>(null);
+  const [tramoFiltro, setTramoFiltro] = useState<string | null>(null);
+  const [buscadorAbierto, setBuscadorAbierto] = useState(false);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div>
-        <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Trozas ingresadas</CardTitle>
+        <CardTitle className="text-lg font-bold text-[var(--text-primary)]">El patio, troza por troza</CardTitle>
         <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-          Buscá por la codificación que trae la guía y mirá con qué GTF entró esa pieza.
+          Qué hay parado hoy, qué se puede llevar a la sierra y qué lleva demasiado tiempo esperando.
+          Consumos cuenta m³ por guía; acá la unidad es la pieza.
         </p>
-      </div>
-
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-        <input
-          ref={inputRef}
-          type="text"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="106/C, 13/A, 52…"
-          aria-label="Codificación de la troza"
-          className="h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-10 text-base font-mono text-[var(--text-primary)] transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
-        />
-        {cargando && <Loader2 className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[var(--text-tertiary)]" />}
       </div>
 
       {error && (
-        <p className="flex items-center gap-2 rounded-lg bg-[var(--data-error-500)]/10 px-3 py-2.5 text-sm font-medium text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-          <AlertTriangle className="h-4 w-4 shrink-0" /> No se pudo buscar: {error}
+        <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> No se pudo leer el patio: {error}
         </p>
       )}
 
-      {!q.trim() && !cargando && (
-        <EmptyState
-          icon={PackageOpen}
-          title="Escribí un código de troza"
-          description="Las trozas se guardan cuando la guía se registra desde SERFOR. Cada una conserva su codificación, sus dimensiones y el volumen que declara el documento."
-        />
-      )}
+      {/* Va arriba de todo y no en una pestaña aparte: dos piezas con el mismo
+          código rompen justamente lo que esta pantalla promete —pedir una troza
+          por su código—. Se esconde solo cuando no queda ninguno (ADR-336). */}
+      <CtpCodigosDuplicados />
 
-      {q.trim() && trozas?.length === 0 && !cargando && (
-        <EmptyState
-          icon={Search}
-          title={`Ninguna troza con «${q.trim()}»`}
-          description="Puede ser de una guía cargada a mano: las listas de trozas sólo llegan con el alta desde SERFOR."
-        />
-      )}
+      <CtpTrozasPatio
+        trozas={trozas}
+        meta={meta}
+        cargando={cargando}
+        onRecargar={() => void recargar()}
+        estadoFiltro={estadoFiltro}
+        onEstadoFiltro={setEstadoFiltro}
+        tramoFiltro={tramoFiltro}
+        onTramoFiltro={setTramoFiltro}
+      />
 
-      {porIngreso.map((g) => (
-        <div key={g.ingreso.id} className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-3">
-            <span className="font-mono text-sm font-bold text-[var(--text-primary)]">
-              {g.ingreso.libroNro != null && <span className="mr-2 text-[var(--text-tertiary)]">N° {g.ingreso.libroNro}</span>}
-              GTF {g.ingreso.gtfNumber}
+      <CtpTrozasLista
+        trozas={trozas}
+        cargando={cargando}
+        estadoFiltro={estadoFiltro}
+        onEstadoFiltro={setEstadoFiltro}
+        tramoFiltro={tramoFiltro}
+        onTramoFiltro={setTramoFiltro}
+      />
+
+      {/* El buscador del fiscalizador va plegado: la lista de arriba ya busca en
+          lo que está cargado. Este pregunta al servidor, así que es el que vale
+          cuando el patio pasa el tope y también encuentra piezas de guías ya
+          consumidas hace meses. */}
+      <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <button
+          type="button"
+          onClick={() => setBuscadorAbierto((v) => !v)}
+          aria-expanded={buscadorAbierto}
+          className="flex w-full items-center gap-2 px-3.5 py-3 text-left transition-colors hover:bg-[var(--surface-sunken)]"
+        >
+          <Search className="h-4 w-4 shrink-0 text-[var(--accent)]" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold text-[var(--text-primary)]">Buscar una pieza en todo el libro</span>
+            <span className="block text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+              La consulta del fiscalizador: llega con un código del POA y pregunta con qué guía entró esa troza.
+              {meta.truncado && " Acá no rige el tope de 5.000 piezas."}
             </span>
-            <span className="text-xs text-[var(--text-secondary)]">{g.ingreso.providerName}</span>
-            {g.ingreso.origen && <span className="text-xs text-[var(--text-tertiary)]">{g.ingreso.origen}</span>}
-            {g.ingreso.originCode && (
-              <span className="font-mono text-xs text-[var(--text-tertiary)]">Título {g.ingreso.originCode}</span>
-            )}
-            <span className="ml-auto text-xs text-[var(--text-tertiary)]">
-              {new Date(g.ingreso.entryDate).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })}
-            </span>
+          </span>
+          <span className="shrink-0 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+            {buscadorAbierto ? "Cerrar" : "Abrir"}
+          </span>
+        </button>
+        {buscadorAbierto && (
+          <div className="border-t-2 border-[var(--rule-base)] p-3.5">
+            <CtpTrozasBuscador />
           </div>
-
-          {/* Desktop: tabla. Mobile: tarjetas — la grilla de 6 columnas es
-              ilegible en un teléfono, que es donde se usa en el patio. */}
-          <div className="hidden overflow-x-auto sm:block">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  <th className="px-4 py-2 font-bold">Codificación</th>
-                  <th className="px-4 py-2 font-bold">Especie</th>
-                  <th className="px-4 py-2 font-bold">Dimensiones (guía)</th>
-                  <th className="px-4 py-2 text-right font-bold">Largo</th>
-                  <th className="px-4 py-2 text-right font-bold">Diám.</th>
-                  <th className="px-4 py-2 text-right font-bold">Volumen</th>
-                </tr>
-              </thead>
-              <tbody>
-                {g.trozas.map((t) => (
-                  <tr key={t.id} className="border-b border-[var(--rule-soft)] last:border-0">
-                    <td className="px-4 py-2.5 font-mono font-bold text-[var(--text-primary)]">{t.codificacion ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-[var(--text-secondary)]">
-                      <span className="flex items-center gap-2">
-                        <EspecieFoto especie={t.especieComun} indice={fotosEspecie} size={24} />
-                        {t.especieComun ?? "—"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-[var(--text-tertiary)]">{t.dimensiones ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                      {t.largoM != null ? `${t.largoM.toFixed(2)} m` : "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                      {t.diametroCm != null ? `${t.diametroCm.toFixed(1)} cm` : "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {t.volumenM3 != null ? `${t.volumenM3.toFixed(4)} m³` : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <ul className="divide-y divide-[var(--rule-soft)] sm:hidden">
-            {g.trozas.map((t) => (
-              <li key={t.id} className="px-4 py-3">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-mono font-bold text-[var(--text-primary)]">{t.codificacion ?? "—"}</span>
-                  <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
-                    {t.volumenM3 != null ? `${t.volumenM3.toFixed(4)} m³` : "—"}
-                  </span>
-                </div>
-                <p className="mt-0.5 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                  <EspecieFoto especie={t.especieComun} indice={fotosEspecie} size={24} />
-                  {t.especieComun ?? "—"}
-                </p>
-                <p className="mt-0.5 font-mono text-xs text-[var(--text-tertiary)]">
-                  {t.dimensiones ?? "—"}
-                  {t.largoM != null && t.diametroCm != null && ` · ${t.largoM.toFixed(2)} m × ${t.diametroCm.toFixed(1)} cm`}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+        )}
+      </div>
     </div>
   );
 }
