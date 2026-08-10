@@ -65,9 +65,18 @@ export const GET = withApiHandler("forestal-ctp-planta", async (req: NextRequest
     }),
     ...despRes.entries.map((d) => ({ id: d.id, kind: "despacho" as const, label: `Despacho #${d.lineNo}`, sub: d.destino ?? d.productType ?? null, especie: d.speciesCommon ?? null, cantidad: Number(d.quantity ?? 0), unidad: d.unit ?? "u", cites: !!d.cites })),
   ];
+  /**
+   * Se descartan las ubicaciones HUÉRFANAS: la de una línea que ya no está
+   * disponible. Al despachar una corrida, su ubicación queda apuntando a una
+   * cancha para algo que ya se fue en el camión — no se ve en el mapa (que
+   * dibuja sobre `items`) pero sí inflaba el «X de Y ubicados» y hacía crecer
+   * el KV un registro por despacho, para siempre.
+   */
+  const vivos = new Set(items.map((i) => i.id));
+  const ubicaciones = Object.fromEntries(Object.entries(asignaciones).filter(([id]) => vivos.has(id)));
   // `asignaciones` (entryId → zonaId) se mantiene por compatibilidad con lo que
   // ya lo consume; `ubicaciones` agrega el punto dentro de la zona.
-  return NextResponse.json({ zonas, items, asignaciones: soloZonas(asignaciones), ubicaciones: asignaciones });
+  return NextResponse.json({ zonas, items, asignaciones: soloZonas(ubicaciones), ubicaciones });
 });
 
 const asignarSchema = z.object({

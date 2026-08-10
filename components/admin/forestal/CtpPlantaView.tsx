@@ -361,7 +361,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
       {/* Las dos lecturas del terreno, lado a lado: qué madera hay (por especie)
           y dónde entra (por zona). Apiladas ocupaban 1.100 px de scroll. */}
       <div className="grid gap-3 xl:grid-cols-2">
-        <CtpPlantaEspecies items={items} ubicados={Object.keys(asignaciones).filter((id) => zonaById.has(asignaciones[id])).length} />
+        <CtpPlantaEspecies items={items} ubicados={items.filter((it) => zonaById.has(asignaciones[it.id] ?? "")).length} />
         <CtpPlantaZonas
           zonas={zonas}
           itemsPorZona={itemsPorZona}
