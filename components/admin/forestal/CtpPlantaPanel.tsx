@@ -76,14 +76,28 @@ export interface CtpPlantaPanelProps {
   onIrAZona: (zonaId: string) => void;
   /** id del ítem con un guardado en vuelo (o `lote:<kind>`). */
   ocupado: string | null;
+  /** Despachar la aserrada elegida en la lista (por corrida). */
+  onDespachar: (corridas: string[]) => void;
 }
 
 export default function CtpPlantaPanel({
-  items, zonas, asignaciones, enMano, onEnMano, onResaltar, onUbicar, onUbicarLote, onIrAZona, ocupado,
+  items, zonas, asignaciones, enMano, onEnMano, onResaltar, onUbicar, onUbicarLote, onIrAZona, ocupado, onDespachar,
 }: CtpPlantaPanelProps) {
   const [q, setQ] = useState("");
   const [pestana, setPestana] = useState<ItemKind | "todo">("todo");
   const [soloSinUbicar, setSoloSinUbicar] = useState(false);
+  /**
+   * Aserrada tildada para despachar. Vive acá y no en la vista porque es una
+   * selección de LISTA: se arma mirando las filas, y muere al cambiar de
+   * pestaña (lo elegido en «Trozas» no tiene sentido en «Aserrada»).
+   */
+  const [paraDespachar, setParaDespachar] = useState<Set<string>>(new Set());
+  const alternarDespacho = (id: string) =>
+    setParaDespachar((prev) => {
+      const s = new Set(prev);
+      if (s.has(id)) s.delete(id); else s.add(id);
+      return s;
+    });
 
   const zonaById = useMemo(() => new Map(zonas.map((z) => [z.id, z])), [zonas]);
   const zonaDe = useMemo(() => (id: string): PlantaZona | null => {
@@ -178,7 +192,7 @@ export default function CtpPlantaPanel({
           const KI = k === "todo" ? Layers : KIND_META[k].icon;
           return (
             <button
-              key={k} type="button" role="tab" aria-selected={activa} onClick={() => setPestana(k)}
+              key={k} type="button" role="tab" aria-selected={activa} onClick={() => { setPestana(k); setParaDespachar(new Set()); }}
               title={k === "todo" ? "Todo el inventario" : KIND_META[k].label}
               className={`-mb-0.5 flex flex-1 flex-col items-center gap-0.5 rounded-t-lg border-b-2 px-1 pb-1.5 pt-1 transition ${
                 activa
@@ -264,6 +278,8 @@ export default function CtpPlantaPanel({
                   onResaltar={onResaltar}
                   onUbicar={onUbicar}
                   onIrAZona={onIrAZona}
+                  elegido={paraDespachar.has(it.id)}
+                  onElegir={it.kind === "producto" ? alternarDespacho : undefined}
                 />
               ))}
             </ul>
@@ -271,9 +287,35 @@ export default function CtpPlantaPanel({
         ))}
       </div>
 
-      {!sinZonas && (
+      {/* Lo elegido para despachar: la acción aparece donde se eligió. */}
+      {paraDespachar.size > 0 ? (
+        <div className="flex items-center gap-2 border-t-2 border-[var(--accent)] bg-primary/10 px-2.5 py-2 dark:bg-[var(--accent)]/12">
+          <span className="min-w-0 flex-1 text-xs font-bold text-[var(--text-primary)]">
+            {paraDespachar.size} para despachar
+          </span>
+          <button
+            type="button"
+            onClick={() => setParaDespachar(new Set())}
+            className="shrink-0 rounded-md px-1.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)]"
+          >
+            Soltar
+          </button>
+          <button
+            type="button"
+            onClick={() => onDespachar([...paraDespachar])}
+            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-2.5 text-[length:var(--ts-2xs)] font-bold text-white hover:bg-[var(--accent-600)]"
+          >
+            <Truck className="h-3.5 w-3.5" /> Despachar
+          </button>
+        </div>
+      ) : (
+        /* La pista va SIEMPRE, con o sin zonas: despachar no necesita ninguna
+           dibujada, y ocultarla dejaba la casilla sin explicación justo cuando
+           el mapa está vacío. */
         <p className="border-t-2 border-[var(--rule-base)] px-3 py-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-          Arrastrá al mapa, o tocá para tomar y después tocá la zona.
+          {sinZonas
+            ? "Tildá la aserrada para despacharla. Para ubicarla en el mapa, dibujá una zona primero."
+            : "Arrastrá al mapa, o tocá para tomar y después tocá la zona · tildá la aserrada para despacharla."}
         </p>
       )}
     </aside>
@@ -305,7 +347,7 @@ function SelectLote({ kind, zonas, disabled, onUbicarLote }: {
  * cantidad y el chip dónde está. Nada más entra, y nada más hace falta para
  * decidir a qué zona va.
  */
-function FilaItem({ it, zona, enMano, ocupado, sinZonas, onEnMano, onResaltar, onUbicar, onIrAZona }: {
+function FilaItem({ it, zona, enMano, ocupado, sinZonas, onEnMano, onResaltar, onUbicar, onIrAZona, elegido, onElegir }: {
   it: Item;
   zona: PlantaZona | null;
   enMano: boolean;
@@ -315,6 +357,9 @@ function FilaItem({ it, zona, enMano, ocupado, sinZonas, onEnMano, onResaltar, o
   onResaltar: (z: string | null) => void;
   onUbicar: (id: string, z: string | null) => void;
   onIrAZona: (z: string) => void;
+  /** Sólo la aserrada se puede tildar: es lo que sube a un camión. */
+  elegido?: boolean;
+  onElegir?: (id: string) => void;
 }) {
   const KI = KIND_META[it.kind].icon;
   const meta = zona ? zonaTipoMeta(zona.tipo) : null;
@@ -338,6 +383,17 @@ function FilaItem({ it, zona, enMano, ocupado, sinZonas, onEnMano, onResaltar, o
          en el navegador, las utilidades de escala no producen transform acá. */
       style={enMano ? { transform: "scale(0.96)" } : undefined}
     >
+      {onElegir && (
+        <input
+          type="checkbox"
+          checked={!!elegido}
+          onChange={() => onElegir(it.id)}
+          onClick={(e) => e.stopPropagation()}
+          aria-label={`Elegir ${it.label} para despachar`}
+          title="Elegir para despachar"
+          className="h-3.5 w-3.5 shrink-0 accent-[var(--accent)]"
+        />
+      )}
       <button
         type="button"
         disabled={sinZonas || ocupado != null}

@@ -191,6 +191,10 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
     return m;
   }, [itemsPorZona]);
 
+  /** Toda la aserrada disponible: es lo que puede subir a un camión hoy. */
+  const corridasAserradas = useMemo(() => items.filter((it) => it.kind === "producto").map((it) => it.id), [items]);
+  const hayAserrada = corridasAserradas.length > 0;
+
   /** Ficha emergente de un ítem: qué es, cuánto queda y dónde está. */
   const fichaDeItem = useCallback((entryId: string): string | null => {
     const it = items.find((x) => x.id === entryId);
@@ -282,6 +286,17 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
           <strong className="text-[var(--text-secondary)]">Mapa de tu aserradero.</strong> El mapa dice <em>dónde</em> está la madera; el Libro, <em>cuánta</em>.
         </p>
         <div className="flex shrink-0 items-center gap-2">
+          {/* El acto que se hace todos los días va PRIMERO y siempre visible.
+              Antes sólo aparecía dentro de una cancha de reserva: si nunca
+              habías dibujado una, no existía en ninguna parte de la pantalla. */}
+          {hayAserrada && (
+            <button
+              type="button"
+              onClick={() => setBloque({ corridas: corridasAserradas, titulo: "Despachar aserrada de la planta" })}
+              title="Elegí qué paquetes suben al camión y registrá su guía sin salir de acá"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-3.5 text-sm font-bold text-white shadow-sm hover:bg-[var(--accent-600)]"
+            ><Truck className="h-4 w-4" /> Nuevo despacho</button>
+          )}
           <button
             type="button"
             onClick={() => { try { printPlantaPlano({ zonas, invByZona: invObj, areaTotalM2: areaTotal, periodLabel: period.label }); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } }}
@@ -336,6 +351,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
           onUbicarLote={(k, zid) => void asignarLote(k, zid)}
           onIrAZona={(zid) => setIrA((p) => ({ zonaId: zid, n: (p?.n ?? 0) + 1 }))}
           ocupado={asignando}
+          onDespachar={(corridas) => setBloque({ corridas, titulo: "Despachar lo elegido" })}
         />
       </div>
 
