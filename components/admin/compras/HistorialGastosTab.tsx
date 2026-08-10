@@ -8,6 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useHistorialGastos } from "@/hooks/use-historial-gastos";
 import GastosFijosPanel from "./historial/GastosFijosPanel";
+import PresupuestoPanel from "./historial/PresupuestoPanel";
 import GastoDetalleModal from "./historial/GastoDetalleModal";
 import HistorialTabla from "./historial/HistorialTabla";
 import { PERIOD_LABELS, fmt, type HistorialItem, type Period } from "./historial/shared";
@@ -84,6 +85,8 @@ export default function HistorialGastosTab() {
   return (
     <div className="space-y-4">
       <GastosFijosPanel onPagoRegistrado={h.recargar} />
+
+      <PresupuestoPanel />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kpi
