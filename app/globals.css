@@ -2182,6 +2182,25 @@ button,
   --data-error: var(--data-error-700);
   --data-info: var(--data-info-700);
 
+  /* ─── TINTA semántica: el color para TEXTO ─────────────────────────────────
+     Ningún `-500` sirve como color de texto, ni el de acá ni el que inyecta el
+     preset del tenant. Medido con axe sobre el panel admin: el warning del
+     preset (#ecaa0b, ámbar) da 1.92:1 sobre blanco, y su success (#00ac4e)
+     2.99:1 — WCAG AA pide 4.5:1 para texto normal. Los `-500` están pensados
+     para íconos, bordes y fondos, donde el umbral es 3:1.
+
+     Se derivan del `-500` VIGENTE con `color-mix`, no de un valor fijo: como
+     `var()` se resuelve en el contexto de quien lo usa, dentro del wrapper del
+     preset la tinta se recalcula sobre el color de ESE tenant. Un tenant que
+     cambie su paleta no se queda sin contraste.
+
+     Mismo criterio que `--accent-ink` (#006B6B), que ya existía para el teal.
+     Para íconos, bordes y fondos seguir usando `-500`. */
+  --data-success-ink: color-mix(in oklab, var(--data-success-500) 55%, black);
+  --data-warning-ink: color-mix(in oklab, var(--data-warning-500) 45%, black);
+  --data-error-ink:   color-mix(in oklab, var(--data-error-500) 65%, black);
+  --data-info-ink:    color-mix(in oklab, var(--data-info-500) 60%, black);
+
   /* ─── Badges semánticos para contraste visual ───────────────────────────────
      Tokens centralizados para badges/chips de descuento, novedad, urgencia,
      etc. Evitan colores hardcoded en componentes. */
@@ -2407,6 +2426,13 @@ button,
   --data-warning: var(--data-warning-500);
   --data-error: var(--data-error-500);
   --data-info: var(--data-info-500);
+
+  /* Tinta semántica en oscuro: la mezcla va hacia el BLANCO. El mismo token,
+     la dirección opuesta — sobre fondo oscuro el texto tiene que aclararse. */
+  --data-success-ink: color-mix(in oklab, var(--data-success-500) 80%, white);
+  --data-warning-ink: color-mix(in oklab, var(--data-warning-500) 80%, white);
+  --data-error-ink:   color-mix(in oklab, var(--data-error-500) 80%, white);
+  --data-info-ink:    color-mix(in oklab, var(--data-info-500) 80%, white);
 
   /* ── Badges semánticos dark — soft bg + bright text (legibilidad AA) ── */
   --badge-discount-bg: rgba(248, 113, 113, 0.16);

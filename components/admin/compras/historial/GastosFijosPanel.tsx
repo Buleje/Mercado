@@ -40,9 +40,9 @@ type Fijo = {
 };
 
 const TONO_ESTADO: Record<EstadoVencimiento, string> = {
-  vencido: "var(--data-error-500)",
-  hoy: "var(--data-error-500)",
-  pronto: "var(--data-warning-500)",
+  vencido: "var(--data-error-ink)",
+  hoy: "var(--data-error-ink)",
+  pronto: "var(--data-warning-ink)",
   lejos: "var(--text-secondary)",
   sin_fecha: "var(--text-secondary)",
 };
@@ -178,7 +178,7 @@ export default function GastosFijosPanel({ onPagoRegistrado }: { onPagoRegistrad
             <> · faltan <span className="font-bold tabular-nums text-[var(--text-primary)]">{fmt(resumen.falta)}</span></>
           )}
           {resumen.urgentes > 0 && (
-            <> · <span className="font-bold text-[var(--data-warning-500)]">{resumen.urgentes} por vencer</span></>
+            <> · <span className="font-bold text-[var(--data-warning-ink)]">{resumen.urgentes} por vencer</span></>
           )}
         </p>
         <button
@@ -237,7 +237,7 @@ export default function GastosFijosPanel({ onPagoRegistrado }: { onPagoRegistrad
             </div>
             <span className="shrink-0 text-sm font-bold tabular-nums text-[var(--text-primary)]">{fmt(f.amount)}</span>
             {f.pagado ? (
-              <span className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-[var(--data-success-500)]">
+              <span className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-[var(--data-success-ink)]">
                 <Check className="h-4 w-4" />Pagado
               </span>
             ) : (

@@ -43,9 +43,9 @@ function etiquetaMes(clave: string): string {
 /** Verde hasta el 80% del techo, ámbar hasta el 100%, rojo pasado. */
 function semaforo(gastado: number, techo: number): { tono: string; label: string } {
   const pct = techo > 0 ? (gastado / techo) * 100 : 0;
-  if (pct > 100) return { tono: "var(--data-error-500)", label: "Pasado" };
-  if (pct >= 80) return { tono: "var(--data-warning-500)", label: "Al límite" };
-  return { tono: "var(--data-success-500)", label: "En rango" };
+  if (pct > 100) return { tono: "var(--data-error-ink)", label: "Pasado" };
+  if (pct >= 80) return { tono: "var(--data-warning-ink)", label: "Al límite" };
+  return { tono: "var(--data-success-ink)", label: "En rango" };
 }
 
 function Variacion({ pct }: { pct: number | null }) {
@@ -57,7 +57,7 @@ function Variacion({ pct }: { pct: number | null }) {
   // Gastar más es malo y gastar menos es bueno: el color va al revés que en ventas.
   const tono = Math.abs(pct) < 5
     ? "var(--text-secondary)"
-    : sube ? "var(--data-error-500)" : "var(--data-success-500)";
+    : sube ? "var(--data-error-ink)" : "var(--data-success-ink)";
   return (
     <span className="inline-flex items-center gap-1 text-sm font-semibold tabular-nums" style={{ color: tono }}>
       <Icono className="h-3.5 w-3.5" aria-hidden />

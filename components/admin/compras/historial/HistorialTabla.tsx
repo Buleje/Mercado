@@ -19,9 +19,9 @@ import {
 } from "./shared";
 
 const SOURCE_META: Record<HistorialItem["source"], { label: string; icon: typeof Receipt; tone: string }> = {
-  expense: { label: "Gasto operativo", icon: Receipt, tone: "var(--data-warning-500)" },
-  purchase: { label: "Compra proveedor", icon: Truck, tone: "var(--data-info-500)" },
-  flete: { label: "Flete", icon: Truck, tone: "var(--data-info-500)" },
+  expense: { label: "Gasto operativo", icon: Receipt, tone: "var(--data-warning-ink)" },
+  purchase: { label: "Compra proveedor", icon: Truck, tone: "var(--data-info-ink)" },
+  flete: { label: "Flete", icon: Truck, tone: "var(--data-info-ink)" },
   adelanto: { label: "Adelanto", icon: HandCoins, tone: "var(--text-secondary)" },
   caja: { label: "Retiro de caja", icon: Banknote, tone: "var(--text-secondary)" },
 };

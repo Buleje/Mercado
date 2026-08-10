@@ -39,6 +39,26 @@ const VARS_DE_SUPERFICIE = [
 ] as const;
 
 /**
+ * Los colores semánticos tienen el MISMO problema que las superficies, y se
+ * había resuelto sólo para ellas.
+ *
+ * `success`, `warning`, `error` e `info` del preset se eligen mirando la
+ * interfaz clara, y `tokensToCssVars` los inyecta tal cual —inline, o sea
+ * ganándole a `:root.dark`— también en modo oscuro. El resultado se puede
+ * medir: el badge «Pagado» del Historial de Gastos daba **4.28:1** en dark con
+ * un verde `#00ac4e` que no está en `globals.css` en ninguna parte; venía del
+ * preset del tenant. `globals.css` sí trae la versión calibrada para oscuro
+ * (`#14C2C2` para success), y quedaba pisada.
+ *
+ * Se aplica el mismo criterio ya aceptado para las superficies: si el preset
+ * es claro y el usuario está en oscuro, estos tokens NO se inyectan y mandan
+ * los de `globals.css`. Se pierde el matiz de marca en los semánticos dentro
+ * del modo oscuro; se gana que el texto se lea. La identidad la sigue llevando
+ * el `--accent`, que no se toca.
+ */
+const PREFIJOS_SEMANTICOS = ["--data-success", "--data-warning", "--data-error", "--data-info"] as const;
+
+/**
  * ¿El preset ya es oscuro? Si el superadmin eligió un preset dark, sus
  * superficies mandan y no hay nada que corregir.
  *
@@ -100,6 +120,9 @@ export default function DesignTokensProvider({
     const vars = tokensToCssVars(tokens);
     if (resolved === "dark" && !presetEsOscuro(tokens.colors.surface)) {
       for (const v of VARS_DE_SUPERFICIE) delete vars[v];
+      for (const k of Object.keys(vars)) {
+        if (PREFIJOS_SEMANTICOS.some((p) => k.startsWith(p))) delete vars[k];
+      }
     }
     return vars as React.CSSProperties;
   }, [tokens, resolved]);

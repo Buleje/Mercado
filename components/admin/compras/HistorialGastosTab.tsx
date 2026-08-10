@@ -94,21 +94,21 @@ export default function HistorialGastosTab() {
           valor={h.loading ? "—" : fmt(resumen.total)}
           detalle={`${resumen.cantidad} ${resumen.cantidad === 1 ? "movimiento" : "movimientos"}${h.hayFiltroActivo ? ` de ${h.items.length}` : ""}`}
           icono={TrendingDown}
-          tono="var(--data-error-500)"
+          tono="var(--data-error-ink)"
         />
         <Kpi
           label="Ya pagado"
           valor={h.loading ? "—" : fmt(resumen.pagado)}
           detalle="Plata que salió de la caja"
           icono={Wallet}
-          tono="var(--data-success-500)"
+          tono="var(--data-success-ink)"
         />
         <Kpi
           label="Queda por pagar"
           valor={h.loading ? "—" : fmt(resumen.porPagar)}
           detalle="Mercadería recibida sin cancelar"
           icono={Clock}
-          tono={resumen.porPagar > 0 ? "var(--data-warning-500)" : undefined}
+          tono={resumen.porPagar > 0 ? "var(--data-warning-ink)" : undefined}
         />
         <Kpi
           label="Categoría top"
