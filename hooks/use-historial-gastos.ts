@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   construirCsv, mesDe, normalizar, periodoADadas, resumirItems,
-  type HistorialItem, type KpisServidor, type Orden, type Period,
+  type FuenteHistorial, type HistorialItem, type KpisServidor, type Orden, type Period,
 } from "@/components/admin/compras/historial/shared";
 
 /** Cuántas filas se dibujan de entrada. El resto entra con «Ver más». */
@@ -29,7 +29,7 @@ export function useHistorialGastos() {
   const [error, setError] = useState<string | null>(null);
 
   const [period, setPeriod] = useState<Period>("mes");
-  const [sourceFilter, setSourceFilter] = useState<"all" | "expense" | "purchase">("all");
+  const [sourceFilter, setSourceFilter] = useState<FuenteHistorial | "all">("all");
   const [estadoFilter, setEstadoFilter] = useState<FiltroEstado>("all");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -96,15 +96,19 @@ export function useHistorialGastos() {
   /** Filas visibles agrupadas por mes, con el subtotal de cada uno. */
   const grupos = useMemo(() => {
     const page = filtered.slice(0, visibles);
-    const out: Array<{ clave: string; label: string; total: number; items: HistorialItem[] }> = [];
+    const out: Array<{ clave: string; label: string; total: number; gastos: number; items: HistorialItem[] }> = [];
     for (const item of page) {
       const { clave, label } = mesDe(item.fecha);
+      // El subtotal del mes cuenta gastos. Un adelanto o un retiro de caja se
+      // listan, pero sumarlos acá contradiría el total de abajo.
+      const suma = item.clase === "gasto" ? item.amount : 0;
       const ultimo = out[out.length - 1];
       if (ultimo && ultimo.clave === clave) {
         ultimo.items.push(item);
-        ultimo.total = Math.round((ultimo.total + item.amount) * 100) / 100;
+        ultimo.total = Math.round((ultimo.total + suma) * 100) / 100;
+        if (item.clase === "gasto") ultimo.gastos++;
       } else {
-        out.push({ clave, label, total: item.amount, items: [item] });
+        out.push({ clave, label, total: suma, gastos: item.clase === "gasto" ? 1 : 0, items: [item] });
       }
     }
     return out;

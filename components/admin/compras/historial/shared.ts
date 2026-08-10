@@ -9,10 +9,21 @@ import type { ExpenseMeta } from "@/lib/expense-meta";
 
 export type EstadoPago = "pagado" | "parcial" | "pendiente" | "sin_registro";
 
+export type FuenteHistorial = "expense" | "purchase" | "flete" | "adelanto" | "caja";
+
+/**
+ * No todo lo que sale de la caja es un gasto:
+ *  · `gasto`    — se fue y no vuelve. Es lo único que suma a «Total gastado».
+ *  · `anticipo` — el adelanto al personal vuelve como trabajo o producto.
+ *  · `caja`     — retiro manual; suele ser la otra cara de un gasto ya cargado.
+ */
+export type ClaseMovimiento = "gasto" | "anticipo" | "caja";
+
 export type HistorialItem = {
   id: string;
   refId: string;
-  source: "expense" | "purchase";
+  source: FuenteHistorial;
+  clase: ClaseMovimiento;
   fecha: string;
   category: string;
   /** Ya viene decodificada del backend: sin el bloque `---META---`. */
@@ -24,6 +35,8 @@ export type HistorialItem = {
   supplierName?: string;
   descuento?: number;
   meta?: ExpenseMeta;
+  /** Código del movimiento que este ya duplica (ej. el adelanto que lo originó). */
+  duplicaDe?: string;
 };
 
 export type KpisServidor = {
@@ -50,6 +63,20 @@ export const PERIOD_LABELS: Record<Period, string> = {
   trimestre: "Trimestre",
   anio: "Este año",
   todo: "Todo",
+};
+
+export const ORIGEN_LABELS: Record<FuenteHistorial, string> = {
+  expense: "Gasto operativo",
+  purchase: "Compra a proveedor",
+  flete: "Flete",
+  adelanto: "Adelanto al personal",
+  caja: "Retiro de caja",
+};
+
+export const CLASE_LABELS: Record<ClaseMovimiento, string> = {
+  gasto: "Gasto",
+  anticipo: "Anticipo (vuelve)",
+  caja: "Retiro de caja (fuera del total)",
 };
 
 export const ESTADO_PAGO_LABELS: Record<EstadoPago, string> = {
@@ -115,17 +142,29 @@ export function periodoADadas(period: Period, hoy: Date): { from?: Date; to?: Da
   }
 }
 
-/** Suma lo que se ve, no lo que trajo el servidor: los chips filtran la tabla. */
+/**
+ * Suma lo que se ve, no lo que trajo el servidor: los chips filtran la tabla.
+ *
+ * `total` cuenta SÓLO la clase `gasto`. Los anticipos y los retiros de caja
+ * llevan su propia línea — un adelanto al personal sale de la caja pero es un
+ * derecho a cobrar, y un retiro suele ser la otra cara de un gasto ya cargado.
+ */
 export function resumirItems(items: HistorialItem[]) {
   let total = 0;
   let pagado = 0;
   let operativos = 0;
   let compras = 0;
+  let fletes = 0;
+  let anticipos = 0;
+  let retirosCaja = 0;
   const porCategoria: Record<string, number> = {};
   for (const i of items) {
+    if (i.clase === "anticipo") { anticipos += i.amount; continue; }
+    if (i.clase === "caja") { retirosCaja += i.amount; continue; }
     total += i.amount;
     pagado += i.montoPagado;
     if (i.source === "expense") operativos += i.amount;
+    else if (i.source === "flete") fletes += i.amount;
     else compras += i.amount;
     porCategoria[i.category] = (porCategoria[i.category] ?? 0) + i.amount;
   }
@@ -136,7 +175,12 @@ export function resumirItems(items: HistorialItem[]) {
     porPagar: redondear(total - pagado),
     operativos: redondear(operativos),
     compras: redondear(compras),
-    cantidad: items.length,
+    fletes: redondear(fletes),
+    anticipos: redondear(anticipos),
+    retirosCaja: redondear(retirosCaja),
+    /** Sólo los movimientos que cuentan como gasto. */
+    cantidad: items.filter((i) => i.clase === "gasto").length,
+    cantidadTotal: items.length,
     categorias: Object.entries(porCategoria)
       .map(([cat, t]) => ({ cat, total: redondear(t) }))
       .sort((a, b) => b.total - a.total),
@@ -174,12 +218,13 @@ function numero(n: number): string {
  */
 export function construirCsv(items: HistorialItem[]): string {
   const cabecera = [
-    "Fecha", "Origen", "Categoría", "Descripción", "Proveedor",
+    "Fecha", "Origen", "Cuenta como", "Categoría", "Descripción", "Proveedor",
     "Estado de pago", "Monto", "Pagado", "Por pagar", "Método de pago",
   ];
   const filas = items.map((i) => [
     celda(formatDate(i.fecha)),
-    celda(i.source === "expense" ? "Gasto operativo" : "Compra proveedor"),
+    celda(ORIGEN_LABELS[i.source]),
+    celda(CLASE_LABELS[i.clase]),
     celda(i.category),
     celda(i.description),
     celda(i.supplierName ?? ""),
@@ -190,10 +235,19 @@ export function construirCsv(items: HistorialItem[]): string {
     celda(i.meta?.paymentMethod ?? ""),
   ].join(";"));
   const totales = resumirItems(items);
+  // El total del pie es de GASTOS. Los anticipos y retiros van en su propia
+  // fila para que quien abra el archivo no los sume sin querer.
   const pie = [
-    celda("TOTAL"), celda(""), celda(""),
+    celda("TOTAL GASTOS"), celda(""), celda(""), celda(""),
     celda(`${totales.cantidad} ${totales.cantidad === 1 ? "movimiento" : "movimientos"}`), celda(""), celda(""),
     celda(numero(totales.total)), celda(numero(totales.pagado)), celda(numero(totales.porPagar)), celda(""),
   ].join(";");
-  return `\uFEFF${[cabecera.map(celda).join(";"), ...filas, pie].join("\r\n")}`;
+  const pieAparte = [
+    celda("NO CUENTAN COMO GASTO"), celda(""), celda(""), celda(""),
+    celda("Adelantos (vuelven) + retiros de caja"), celda(""), celda(""),
+    celda(numero(totales.anticipos + totales.retirosCaja)), celda(""), celda(""), celda(""),
+  ].join(";");
+  const lineas = [cabecera.map(celda).join(";"), ...filas, pie];
+  if (totales.anticipos + totales.retirosCaja > 0) lineas.push(pieAparte);
+  return `\uFEFF${lineas.join("\r\n")}`;
 }

@@ -10,7 +10,7 @@
  * contenedor scrollea de verdad, las cabeceras ordenan, y hay `table-fixed`.
  */
 
-import { ArrowDown, ArrowUp, ChevronsUpDown, Receipt, Truck } from "@buleje/design-system/icons";
+import { ArrowDown, ArrowUp, Banknote, ChevronsUpDown, HandCoins, Receipt, Truck } from "@buleje/design-system/icons";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { cn } from "@/lib/utils";
 import {
@@ -18,10 +18,13 @@ import {
   type EstadoPago, type HistorialItem, type Orden,
 } from "./shared";
 
-const SOURCE_META = {
+const SOURCE_META: Record<HistorialItem["source"], { label: string; icon: typeof Receipt; tone: string }> = {
   expense: { label: "Gasto operativo", icon: Receipt, tone: "var(--data-warning-500)" },
   purchase: { label: "Compra proveedor", icon: Truck, tone: "var(--data-info-500)" },
-} as const;
+  flete: { label: "Flete", icon: Truck, tone: "var(--data-info-500)" },
+  adelanto: { label: "Adelanto", icon: HandCoins, tone: "var(--text-secondary)" },
+  caja: { label: "Retiro de caja", icon: Banknote, tone: "var(--text-secondary)" },
+};
 
 const ESTADO_VARIANTE: Record<EstadoPago, "success" | "warning" | "error" | "neutral"> = {
   pagado: "success",
@@ -30,7 +33,7 @@ const ESTADO_VARIANTE: Record<EstadoPago, "success" | "warning" | "error" | "neu
   sin_registro: "neutral",
 };
 
-type Grupo = { clave: string; label: string; total: number; items: HistorialItem[] };
+type Grupo = { clave: string; label: string; total: number; gastos: number; items: HistorialItem[] };
 
 interface Props {
   grupos: Grupo[];
@@ -127,6 +130,10 @@ export default function HistorialTabla({
                     {grupo.label}
                     <span className="ml-2 font-semibold normal-case tracking-normal text-[var(--text-secondary)]">
                       {grupo.items.length} {grupo.items.length === 1 ? "movimiento" : "movimientos"}
+                      {/* El subtotal es de GASTOS: si el mes tiene adelantos o
+                          retiros, la cuenta de filas y el número no coinciden,
+                          y hay que decir por qué. */}
+                      {grupo.gastos !== grupo.items.length && ` · ${grupo.gastos} ${grupo.gastos === 1 ? "es gasto" : "son gasto"}`}
                     </span>
                   </th>
                   <td className="px-4 py-2 text-right text-sm font-bold tabular-nums text-[var(--text-secondary)]">
@@ -158,6 +165,13 @@ export default function HistorialTabla({
                       {item.supplierName && (
                         <span className="block truncate text-sm text-[var(--text-secondary)]">{item.supplierName}</span>
                       )}
+                      {/* El aviso de duplicado va acá y no en la columna de
+                          monto: ahí no entra y se montaba sobre el botón. */}
+                      {item.duplicaDe && (
+                        <span className="block truncate text-sm font-semibold text-[var(--text-secondary)]">
+                          Ya listado como {item.duplicaDe}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge
@@ -170,8 +184,19 @@ export default function HistorialTabla({
                         </span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums text-[var(--text-primary)]">
-                      {fmt(item.amount)}
+                    <td className="whitespace-nowrap px-4 py-3 text-right">
+                      {/* Un anticipo o un retiro de caja se listan pero no
+                          suman al total: el monto va atenuado y dicho, para
+                          que nadie lo sume mentalmente con los de arriba. */}
+                      <span className={cn(
+                        "font-bold tabular-nums",
+                        item.clase === "gasto" ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
+                      )}>
+                        {fmt(item.amount)}
+                      </span>
+                      {item.clase !== "gasto" && (
+                        <span className="block text-sm text-[var(--text-secondary)]">no suma</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button

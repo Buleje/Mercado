@@ -15,6 +15,7 @@ const item = (over: Partial<HistorialItem> = {}): HistorialItem => ({
   id: "exp-1",
   refId: "1",
   source: "expense",
+  clase: "gasto",
   fecha: "2026-08-05T12:00:00.000Z",
   category: "Transporte",
   description: "Combustible",
@@ -96,15 +97,72 @@ describe("resumirItems", () => {
     expect(r.cantidad).toBe(0);
     expect(r.categorias).toEqual([]);
   });
+
+  // Lo que sale de la caja no es todo gasto. Contar el adelanto como gasto
+  // sería el mismo error que contaba las plantillas de gastos fijos (ADR-374).
+  it("el adelanto al personal NO suma al total: vuelve", () => {
+    const r = resumirItems([
+      item({ amount: 100 }),
+      item({ id: "adl-1", source: "adelanto", clase: "anticipo", amount: 500, montoPagado: 500 }),
+    ]);
+    expect(r.total).toBe(100);
+    expect(r.anticipos).toBe(500);
+    expect(r.cantidad).toBe(1);
+    expect(r.cantidadTotal).toBe(2);
+  });
+
+  it("el retiro de caja queda fuera del total: puede ser un gasto ya contado", () => {
+    const r = resumirItems([
+      item({ amount: 100 }),
+      item({ id: "caj-1", source: "caja", clase: "caja", amount: 100, montoPagado: 100 }),
+    ]);
+    expect(r.total).toBe(100);
+    expect(r.retirosCaja).toBe(100);
+  });
+
+  it("el flete sí es gasto y va en su propia línea", () => {
+    const r = resumirItems([
+      item({ id: "flt-1", source: "flete", category: "Fletes", amount: 300, montoPagado: 0, estadoPago: "pendiente" }),
+    ]);
+    expect(r.total).toBe(300);
+    expect(r.fletes).toBe(300);
+    expect(r.porPagar).toBe(300);
+  });
+
+  it("las categorías sólo agrupan gastos", () => {
+    const r = resumirItems([
+      item({ amount: 100 }),
+      item({ id: "adl-1", source: "adelanto", clase: "anticipo", category: "Adelantos al personal", amount: 500 }),
+    ]);
+    expect(r.categorias.map((c) => c.cat)).toEqual(["Transporte"]);
+  });
 });
 
 describe("construirCsv", () => {
   it("un proveedor con coma no corre las columnas", () => {
     const csv = construirCsv([item({ supplierName: "Distribuidora Pérez, S.A.C." })]);
-    const fila = csv.split("\r\n")[1];
+    const [cabecera, fila] = csv.split("\r\n");
     expect(fila).toContain('"Distribuidora Pérez, S.A.C."');
-    // 10 columnas => 9 separadores, ninguno de más por la coma del nombre.
-    expect(fila.split(";").length).toBe(10);
+    // La fila tiene exactamente las columnas de la cabecera: ni una de más por
+    // la coma del nombre.
+    expect(fila.split(";").length).toBe(cabecera.split(";").length);
+  });
+
+  it("separa el total de gastos de lo que no cuenta como gasto", () => {
+    const csv = construirCsv([
+      item({ amount: 100 }),
+      item({ id: "adl-1", source: "adelanto", clase: "anticipo", amount: 500, montoPagado: 500 }),
+    ]);
+    const lineas = csv.split("\r\n");
+    expect(lineas.at(-2)).toContain('"TOTAL GASTOS"');
+    expect(lineas.at(-2)).toContain('"100,00"');
+    expect(lineas.at(-1)).toContain('"NO CUENTAN COMO GASTO"');
+    expect(lineas.at(-1)).toContain('"500,00"');
+  });
+
+  it("sin anticipos ni retiros no agrega la fila de aparte", () => {
+    const csv = construirCsv([item({ amount: 100 })]);
+    expect(csv).not.toContain("NO CUENTAN COMO GASTO");
   });
 
   it("escapa las comillas duplicándolas", () => {
@@ -122,7 +180,7 @@ describe("construirCsv", () => {
   it("cierra con la fila de totales", () => {
     const csv = construirCsv([item({ amount: 100, montoPagado: 40, estadoPago: "parcial" })]);
     const pie = csv.split("\r\n").at(-1) ?? "";
-    expect(pie).toContain('"TOTAL"');
+    expect(pie).toContain('"TOTAL GASTOS"');
     expect(pie).toContain('"1 movimiento"');
     expect(pie).toContain('"60,00"'); // lo que queda por pagar
   });

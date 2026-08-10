@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   DollarSign, RefreshCw, Download, TrendingDown, Wallet,
-  Clock, AlertTriangle, Search, X,
+  Clock, AlertTriangle, Search, X, Info,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useHistorialGastos } from "@/hooks/use-historial-gastos";
@@ -115,6 +115,25 @@ export default function HistorialGastosTab() {
         />
       </div>
 
+      {/* Plata que salió pero NO es gasto. Va afuera del total a propósito: un
+          adelanto vuelve como trabajo o producto, y un retiro de caja suele ser
+          la otra cara de un gasto que ya está contado más arriba. */}
+      {(resumen.anticipos > 0 || resumen.retirosCaja > 0) && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
+          <Info className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" />
+          <p className="text-sm text-[var(--text-secondary)]">
+            Salió de la caja pero <span className="font-bold text-[var(--text-primary)]">no cuenta como gasto</span>:
+            {resumen.anticipos > 0 && (
+              <> adelantos al personal <span className="font-bold tabular-nums text-[var(--text-primary)]">{fmt(resumen.anticipos)}</span> (vuelven)</>
+            )}
+            {resumen.anticipos > 0 && resumen.retirosCaja > 0 && " ·"}
+            {resumen.retirosCaja > 0 && (
+              <> retiros de caja <span className="font-bold tabular-nums text-[var(--text-primary)]">{fmt(resumen.retirosCaja)}</span> (pueden ser el mismo gasto ya contado)</>
+            )}
+          </p>
+        </div>
+      )}
+
       {/* Toolbar en dos filas: los tres segmentos juntos no entran en una sola
           y empujaban el buscador fuera de la pantalla. Arriba el período (que
           recarga del servidor), abajo lo que filtra en el cliente. */}
@@ -150,15 +169,23 @@ export default function HistorialGastosTab() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Segmento
-            opciones={[
-              { v: "all" as const, l: "Todos" },
-              { v: "expense" as const, l: "Operativos" },
-              { v: "purchase" as const, l: "Proveedores" },
-            ]}
-            valor={h.sourceFilter}
-            onChange={h.setSourceFilter}
-          />
+          {/* Seis fuentes no entran como botones. El `select` además deja claro
+              que es UNA sola elección. */}
+          <label className="flex items-center gap-2">
+            <span className="sr-only">Filtrar por origen</span>
+            <select
+              value={h.sourceFilter}
+              onChange={(e) => h.setSourceFilter(e.target.value as typeof h.sourceFilter)}
+              className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-white px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary/60 dark:bg-[var(--color-card)]"
+            >
+              <option value="all">Todos los orígenes</option>
+              <option value="expense">Gastos operativos</option>
+              <option value="purchase">Compras a proveedor</option>
+              <option value="flete">Fletes</option>
+              <option value="adelanto">Adelantos al personal</option>
+              <option value="caja">Retiros de caja</option>
+            </select>
+          </label>
           <Segmento
             opciones={[
               { v: "all" as const, l: "Pagado y no" },

@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, CalendarClock, Check, Copy, Loader2, RefreshCw } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
@@ -161,9 +162,9 @@ export default function GastosFijosPanel({ onPagoRegistrado }: { onPagoRegistrad
     <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <header className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
         <CalendarClock className="h-4 w-4 text-[var(--text-secondary)]" />
-        <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+        <CardTitle className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
           Gastos fijos de este período
-        </h3>
+        </CardTitle>
         <p className="text-sm text-[var(--text-secondary)]">
           <span className="font-bold text-[var(--text-primary)] tabular-nums">
             {resumen.pagados} de {resumen.total}

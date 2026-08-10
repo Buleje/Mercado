@@ -66,12 +66,32 @@ export type DbExpense = {
 /** Cuánto de un gasto ya salió de la caja. `sin_registro` = la OC no tiene `Payable`. */
 export type EstadoPagoGasto = "pagado" | "parcial" | "pendiente" | "sin_registro";
 
-/** Una línea del historial unificado: un gasto operativo o una compra recibida. */
+/** De dónde sale cada línea del historial. */
+export type FuenteHistorial = "expense" | "purchase" | "flete" | "adelanto" | "caja";
+
+/**
+ * Qué es la plata de esta línea. NO todo lo que sale de la caja es un gasto, y
+ * meterlo todo en el mismo total sería repetir el error que arregló el ADR-374
+ * por otro camino:
+ *
+ *  · `gasto`    — se fue y no vuelve. Suma a «Total gastado».
+ *  · `anticipo` — salió, pero es un derecho a cobrar: el adelanto al personal
+ *                 se descuenta después contra trabajo o producto. Se muestra
+ *                 en su propia línea; NO suma a «Total gastado».
+ *  · `caja`     — un retiro manual de caja. Suele ser la OTRA cara de un gasto
+ *                 ya registrado (pagaste el combustible desde la caja y además
+ *                 lo cargaste como gasto), así que contarlo sería contar dos
+ *                 veces. Se muestra aparte y avisado.
+ */
+export type ClaseMovimiento = "gasto" | "anticipo" | "caja";
+
+/** Una línea del historial unificado. */
 export type DbHistorialGasto = {
   id: string;
-  /** Id real del `Expense` o de la `PurchaseOrder`, sin el prefijo de `id`. */
+  /** Id real del registro de origen, sin el prefijo de `id`. */
   refId: string;
-  source: "expense" | "purchase";
+  source: FuenteHistorial;
+  clase: ClaseMovimiento;
   fecha: string;
   category: string;
   /** Ya decodificada: sin el bloque `---META---`. */
@@ -83,6 +103,13 @@ export type DbHistorialGasto = {
   supplierName?: string;
   descuento?: number;
   meta?: ExpenseMeta;
+  /**
+   * Este movimiento ya está listado por otra fuente. Pasa de verdad: entregar
+   * un adelanto genera el `Adelanto` Y el egreso de caja que lo pagó, así que
+   * la misma salida de S/500 aparece dos veces. Ninguna de las dos suma al
+   * total, pero decirlo evita que alguien las sume a mano.
+   */
+  duplicaDe?: string;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -398,7 +425,7 @@ export const ExpensesDB = {
    */
   async getHistorialUnificado(
     tenantId: string,
-    filters: { from?: Date; to?: Date; source?: "expense" | "purchase" | "all" },
+    filters: { from?: Date; to?: Date; source?: FuenteHistorial | "all" },
   ): Promise<DbHistorialGasto[]> {
     const source = filters.source ?? "all";
     const dateFilter: Record<string, Date> = {};
@@ -408,6 +435,9 @@ export const ExpensesDB = {
 
     const needExpenses = source === "all" || source === "expense";
     const needPurchases = source === "all" || source === "purchase";
+    const needFletes = source === "all" || source === "flete";
+    const needAdelantos = source === "all" || source === "adelanto";
+    const needCaja = source === "all" || source === "caja";
 
     const [expenses, purchases] = await Promise.all([
       needExpenses
@@ -443,6 +473,56 @@ export const ExpensesDB = {
         : Promise.resolve([]),
     ]);
 
+    const [fletes, adelantos, egresosCaja] = await Promise.all([
+      // Fletes forestales que paga el CTP. Los de `pagaQuien = proveedor` se le
+      // descuentan de su liquidación: no son costo del negocio, son de él.
+      needFletes
+        ? prisma.forestFlete.findMany({
+            where: {
+              tenantId,
+              deletedAt: null,
+              pagaQuien: "ctp",
+              monto: { not: null },
+              ...(hayFechas ? { fecha: dateFilter } : {}),
+            },
+            select: {
+              id: true, fecha: true, monto: true, estadoPago: true, tipo: true,
+              placa: true, transportistaNombre: true, gtfNumber: true, notas: true,
+            },
+            orderBy: { fecha: "desc" },
+          })
+        : Promise.resolve([]),
+      // Adelantos al personal: plata que SALE pero vuelve. Ver `ClaseMovimiento`.
+      needAdelantos
+        ? prisma.adelanto.findMany({
+            where: {
+              tenantId,
+              status: { not: "CANCELADO" },
+              ...(hayFechas ? { fechaAdelanto: dateFilter } : {}),
+            },
+            select: {
+              id: true, fechaAdelanto: true, montoAdelantado: true, saldoPendiente: true,
+              codigoOperacion: true, notas: true,
+              beneficiario: { select: { nombre: true } },
+            },
+            orderBy: { fechaAdelanto: "desc" },
+          })
+        : Promise.resolve([]),
+      // Retiros manuales de caja. `CashMovement` no lleva `tenantId`: cuelga de
+      // la caja, así que el aislamiento va por la relación.
+      needCaja
+        ? prisma.cashMovement.findMany({
+            where: {
+              type: "egreso",
+              cashRegister: { tenantId },
+              ...(hayFechas ? { createdAt: dateFilter } : {}),
+            },
+            select: { id: true, amount: true, method: true, description: true, createdAt: true },
+            orderBy: { createdAt: "desc" },
+          })
+        : Promise.resolve([]),
+    ]);
+
     // Estado de pago de cada OC. Una sola query para todas: N+1 en una pantalla
     // que lista meses de compras se nota.
     const payablesPorOc = new Map<string, { amount: number; paidAmount: number; status: string }>();
@@ -460,6 +540,21 @@ export const ExpensesDB = {
         });
       }
     }
+
+    // Los códigos de los adelantos, para reconocer el egreso de caja que pagó
+    // cada uno. Se piden aunque el filtro sea sólo «caja»: el aviso de que un
+    // retiro ya está listado en otro lado tiene que aparecer igual, y si no la
+    // advertencia se apagaba justo en la vista donde más hace falta.
+    // Query propia y mínima (una columna) en vez de reusar `adelantos`: esa
+    // lista excluye los CANCELADOS, y un retiro de caja sigue siendo el pago de
+    // su adelanto aunque después se haya anulado. Saberlo es justamente lo que
+    // evita contarlo como una salida suelta.
+    const codigosDeAdelanto = needCaja && egresosCaja.length > 0
+      ? (await prisma.adelanto.findMany({
+          where: { tenantId, codigoOperacion: { not: null } },
+          select: { codigoOperacion: true },
+        })).map((a) => a.codigoOperacion).filter((c): c is string => Boolean(c))
+      : [];
 
     const items: DbHistorialGasto[] = [
       ...expenses.map((e) => {
@@ -480,6 +575,7 @@ export const ExpensesDB = {
           id: `exp-${e.id}`,
           refId: e.id,
           source: "expense" as const,
+          clase: "gasto" as const,
           fecha: e.date.toISOString(),
           category: e.category,
           description,
@@ -510,6 +606,7 @@ export const ExpensesDB = {
           id: `oc-${p.id}`,
           refId: p.id,
           source: "purchase" as const,
+          clase: "gasto" as const,
           fecha: (p.deliveryDate ?? p.createdAt).toISOString(),
           category: "Compras a proveedor",
           description: p.notes ?? `OC ${p.id.slice(-6)}`,
@@ -521,6 +618,72 @@ export const ExpensesDB = {
           ...(p.discount != null && toNumOrZero(p.discount) > 0
             ? { descuento: toNumOrZero(p.discount) }
             : {}),
+        };
+      }),
+      ...fletes.map((f) => {
+        const amount = toNumOrZero(f.monto);
+        const pagado = f.estadoPago === "pagado";
+        const viaje = f.tipo === "despacho" ? "Despacho" : "Ingreso";
+        return {
+          id: `flt-${f.id}`,
+          refId: f.id,
+          source: "flete" as const,
+          clase: "gasto" as const,
+          fecha: f.fecha.toISOString(),
+          category: "Fletes",
+          description: [
+            `Flete de ${viaje.toLowerCase()}`,
+            f.placa ? `placa ${f.placa}` : null,
+            f.gtfNumber ? `GTF ${f.gtfNumber}` : null,
+          ].filter(Boolean).join(" · "),
+          amount,
+          recurring: false,
+          estadoPago: (pagado ? "pagado" : "pendiente") as EstadoPagoGasto,
+          montoPagado: pagado ? amount : 0,
+          ...(f.transportistaNombre ? { supplierName: f.transportistaNombre } : {}),
+        };
+      }),
+      ...adelantos.map((a) => {
+        const amount = toNumOrZero(a.montoAdelantado);
+        const saldo = toNumOrZero(a.saldoPendiente);
+        // Un adelanto SALE entero el día que se entrega. `saldoPendiente` es lo
+        // que todavía no devolvieron: no es «lo que falta pagar», es al revés.
+        return {
+          id: `adl-${a.id}`,
+          refId: a.id,
+          source: "adelanto" as const,
+          clase: "anticipo" as const,
+          fecha: a.fechaAdelanto.toISOString(),
+          category: "Adelantos al personal",
+          description: [
+            a.codigoOperacion ?? "Adelanto",
+            saldo > 0 ? `queda por devolver ${saldo.toFixed(2)}` : "devuelto",
+          ].join(" · "),
+          amount,
+          recurring: false,
+          estadoPago: "pagado" as EstadoPagoGasto,
+          montoPagado: amount,
+          ...(a.beneficiario?.nombre ? { supplierName: a.beneficiario.nombre } : {}),
+        };
+      }),
+      ...egresosCaja.map((m) => {
+        // Entregar un adelanto deja DOS rastros: el `Adelanto` y el egreso de
+        // caja que lo pagó. Se reconoce por el código de operación que el
+        // movimiento lleva en la descripción («Adelanto ADL-2026-0021 · …»).
+        const codigoQueDuplica = codigosDeAdelanto.find((c) => m.description?.includes(c));
+        return {
+          id: `caj-${m.id}`,
+          refId: m.id,
+          source: "caja" as const,
+          clase: "caja" as const,
+          fecha: m.createdAt.toISOString(),
+          category: "Retiros de caja",
+          description: m.description || "Egreso de caja",
+          amount: toNumOrZero(m.amount),
+          recurring: false,
+          estadoPago: "pagado" as EstadoPagoGasto,
+          montoPagado: toNumOrZero(m.amount),
+          ...(codigoQueDuplica ? { duplicaDe: codigoQueDuplica } : {}),
         };
       }),
     ];
