@@ -33,9 +33,25 @@ export async function GET(req: NextRequest) {
   if (denegado) return denegado;
 
   try {
+    const sp = new URL(req.url).searchParams;
+    /**
+     * `?varadas=<días>` — sólo el conteo de lo que lleva demasiado tiempo
+     * parado. Lo pide la tira de pendientes del libro, que se muestra en TODAS
+     * las pestañas: traerse cinco mil piezas para mostrar un número sería pagar
+     * el patio entero en cada pantalla.
+     */
+    const varadas = sp.get("varadas");
+    if (varadas != null) {
+      const dias = Number.parseInt(varadas, 10);
+      if (!Number.isFinite(dias) || dias < 1 || dias > 3650) {
+        return NextResponse.json({ error: "invalid_varadas" }, { status: 400 });
+      }
+      return NextResponse.json({ dias, ...(await WoodEntriesDB.contarTrozasVaradas(auth.tenantId, dias)) });
+    }
+
     /* `loteId` acota al lote (decenas de piezas): esa lista viene SIEMPRE
        completa y no depende del tope del patio. */
-    const loteId = new URL(req.url).searchParams.get("loteId")?.trim() || undefined;
+    const loteId = sp.get("loteId")?.trim() || undefined;
     const [filas, total] = await Promise.all([
       WoodEntriesDB.trozasDelPatio(auth.tenantId, { loteId }),
       WoodEntriesDB.contarTrozasDelPatio(auth.tenantId, { loteId }),

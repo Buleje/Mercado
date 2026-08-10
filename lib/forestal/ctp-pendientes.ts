@@ -35,7 +35,18 @@ export interface DatosPendientes {
   /** Despachos vivos sin ANEXO N° 04 emitido. */ despachosSinAnexo: number;
   /** Corridas de producción sin materia prima atribuida. */ corridasSinOrigen: number;
   /** Especies con saldo negativo (se despachó más de lo que entró). */ saldosNegativos: number;
+  /**
+   * Piezas que llevan `TROZAS_VARADAS_DIAS` o más paradas en el patio.
+   *
+   * No traba ningún cierre —el libro cierra igual— pero es plata perdiéndose
+   * sola: la troza tropical se mancha y se raja. Es el único pendiente que no
+   * es un papel sino madera.
+   */
+  trozasVaradas?: number;
 }
+
+/** A partir de acá una troza parada empieza a costar. Mismo corte que el patio. */
+export const TROZAS_VARADAS_DIAS = 60;
 
 /** Día calendario de una fecha *date-only* (guardada a medianoche UTC). */
 export function diaDeFechaOnly(iso: string | Date | null | undefined): string {
@@ -130,6 +141,16 @@ export function pendientesDelLibro(d: DatosPendientes): Pendiente[] {
       titulo: "Despachos sin ANEXO N° 04",
       detalle: "La guía viaja con su lista de productos transformados.",
       vista: "despacho",
+    },
+    /* El único que no es un papel: son troncos parados. No traba el cierre —por
+       eso "pendiente" y no "atrasado"— pero se pudre solo mientras espera. */
+    {
+      clave: "trozas-varadas",
+      urgencia: "pendiente",
+      cantidad: d.trozasVaradas ?? 0,
+      titulo: `Trozas paradas hace ${TROZAS_VARADAS_DIAS} días o más`,
+      detalle: "La madera en troza se mancha y se raja: conviene aserrarlas primero.",
+      vista: "trozas",
     },
   ];
 

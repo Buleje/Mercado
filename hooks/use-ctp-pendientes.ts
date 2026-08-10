@@ -8,21 +8,37 @@
  * arriba muestra pendientes. Una sola fuente, una sola verdad.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import {
-  diaDeFechaOnly, diaDeLimiteLocal, diaEnPeriodo, pendientesDelLibro,
+  diaDeFechaOnly, diaDeLimiteLocal, diaEnPeriodo, pendientesDelLibro, TROZAS_VARADAS_DIAS,
   type DatosPendientes, type Pendiente,
 } from "@/lib/forestal/ctp-pendientes";
 
 const VACIO: DatosPendientes = {
   ingresosPendientes: 0, fueraDePlazo: 0, guiasSinIngresar: 0,
   despachosSinGtf: 0, despachosSinAnexo: 0, corridasSinOrigen: 0, saldosNegativos: 0,
+  trozasVaradas: 0,
 };
 
-const json = (url: string) =>
-  fetch(url, { credentials: "include", cache: "no-store" })
-    .then((r) => (r.ok ? r.json() : null))
-    .catch(() => null);
+/* Deduplicado (ADR-347): estos mismos GET los hace la vista activa en el mismo
+   montaje. Un `null` en vez de tirar: la tira de pendientes no puede tumbar la
+   pantalla por un endpoint. */
+/* eslint-disable-next-line no-restricted-syntax -- el `null` es el contrato:
+   la tira de pendientes NO puede tumbar la pantalla porque un endpoint falle;
+   el error ya se loguea del lado del servidor. */
+const json = (url: string) => ctpGet<Respuesta>(url).catch(() => null);
+
+/** Lo que se le lee a cada respuesta. Suelto porque son seis endpoints. */
+type Respuesta = {
+  entries?: unknown;
+  gtfs?: unknown;
+  anexos?: unknown;
+  stats?: { byStatus?: Record<string, number>; lateCount?: number };
+  saldos?: { materiaPrima?: unknown; productos?: unknown };
+  /** `?varadas=`: sólo el conteo, para no traerse el patio entero. */
+  piezas?: number;
+};
 
 /** Lo que devuelve el hook. Exportado: el shell lo carga una vez y lo reparte
  *  (tira de pendientes + avisos por pestaña en la cabina). */
@@ -60,8 +76,11 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
       json(`/api/admin/forestal/ctp?section=despacho&${q}`),
       json("/api/admin/forestal/anexos"),
       json(`/api/admin/forestal/ctp?saldos=1&${q}`),
+      /* Sin período a propósito: una troza parada desde marzo sigue parada hoy,
+         y mirar sólo el mes elegido la escondería justo cuando más urge. */
+      json(`/api/admin/forestal/trozas/patio?varadas=${TROZAS_VARADAS_DIAS}`),
     ])
-      .then(([we, gtf, desp, anexos, saldos]) => {
+      .then(([we, gtf, desp, anexos, saldos, varadas]) => {
         if (miCarga !== cargaRef.current) return;   // llegó tarde: manda la más nueva
         const despachos = arr<{ status?: string; gtfNumber?: string | null; id: string }>(desp?.entries)
           .filter((e) => e.status === "registrado");
@@ -82,6 +101,7 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
           saldosNegativos:
             arr<{ negativa?: boolean }>(saldos?.saldos?.materiaPrima).filter((s) => s.negativa).length +
             arr<{ negativo?: boolean }>(saldos?.saldos?.productos).filter((s) => s.negativo).length,
+          trozasVaradas: varadas?.piezas ?? 0,
         });
       })
       .catch(() => { if (miCarga === cargaRef.current) setFalló(true); })

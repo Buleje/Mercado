@@ -1184,6 +1184,53 @@ export class WoodEntriesDB {
     });
   }
 
+  /**
+   * Cuántas piezas llevan `dias` o más paradas, y cuántos m³ son.
+   *
+   * La madera tropical en troza se mancha y se raja: es plata perdiéndose sola,
+   * pero el aviso no puede costar traerse el patio entero al navegador —esto lo
+   * cuenta en la base para que la tira de pendientes del libro lo muestre sin
+   * pagar cinco mil filas—.
+   *
+   * Va en SQL y no en Prisma por la fecha: la antigüedad se mide desde que la
+   * PIEZA bajó del camión y, si no se sabe, desde el asiento de su guía. Ese
+   * `COALESCE` entre dos tablas no se expresa en el query builder.
+   *
+   * El predicado de «sigue en el patio» es el mismo de `estadoDeTroza`
+   * (`lib/forestal/trozas-patio.ts`): sin consumo ni despacho VIGENTE, sin
+   * descartar, recibida, y sin pedazos —una madre retrozada ya no es madera
+   * disponible: van sus retrozos (ADR-313)—.
+   */
+  static async contarTrozasVaradas(
+    tenantId: string,
+    dias: number,
+  ): Promise<{ piezas: number; m3: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const corte = Math.max(1, Math.floor(dias));
+    const filas = await prisma.$queryRaw<{ piezas: bigint; m3: number | null }[]>`
+      SELECT COUNT(*)::bigint AS piezas, COALESCE(SUM(t."volumenM3"), 0)::float8 AS m3
+      FROM "WoodEntryTroza" t
+      JOIN "WoodEntry" e ON e."id" = t."woodEntryId"
+      WHERE t."tenantId" = ${tenantId}
+        AND e."deletedAt" IS NULL
+        AND e."status" NOT IN ('anulado', 'rechazado')
+        AND t."descarte" = false
+        AND t."noRecepcionada" = false
+        AND NOT EXISTS (SELECT 1 FROM "WoodEntryTroza" r WHERE r."trozaOrigenId" = t."id")
+        AND NOT EXISTS (
+          SELECT 1 FROM "ForestCtpEntry" c
+          WHERE c."id" = t."consumidaEnId" AND c."status" = 'registrado' AND c."deletedAt" IS NULL
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM "ForestCtpEntry" d
+          WHERE d."id" = t."despachadaEnId" AND d."status" = 'registrado' AND d."deletedAt" IS NULL
+        )
+        AND COALESCE(t."fechaRecepcion", e."entryDate") <= NOW() - (${corte} * INTERVAL '1 day')
+    `;
+    const f = filas[0];
+    return { piezas: Number(f?.piezas ?? 0), m3: Number(f?.m3 ?? 0) };
+  }
+
   /** Cuántas piezas tiene el patio DE VERDAD: el tope de arriba no puede mentir. */
   static async contarTrozasDelPatio(tenantId: string, opts: { loteId?: string } = {}) {
     if (!tenantId) throw new Error("tenantId is required");
@@ -2052,6 +2099,63 @@ export class WoodEntriesDB {
         trozaOrigenId: true,
         noRecepcionada: true,
         retrozos: { select: { id: true, codificacion: true } },
+      },
+    });
+  }
+
+  /**
+   * La historia entera de UNA pieza: de qué guía vino hasta dónde terminó.
+   *
+   * El libro ya sabía contar la cadena por ingreso (`trazaForwardIngreso`), por
+   * lote (`cadenaDeLote`) y por despacho (`trazabilidadCompleta`), pero no por
+   * TROZA — que es la unidad con la que pregunta el que está parado frente al
+   * tronco: «este palo, ¿de dónde salió y adónde fue?».
+   *
+   * Trae la madre y los pedazos porque una pieza retrozada no termina en sí
+   * misma: su madera siguió viaje en otras filas, y sin verlas la ficha diría
+   * que la troza «no se usó» cuando en realidad se cortó en tres (ADR-313).
+   *
+   * Los estados de corrida y despacho viajan enteros por el mismo motivo que en
+   * las otras tres lecturas: una anulada devolvió la madera al patio, y con el
+   * id pelado la ficha declararía consumida una pieza que está libre.
+   */
+  static async fichaDeTroza(tenantId: string, trozaId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const id = trozaId.trim();
+    if (!id) return null;
+    return prisma.woodEntryTroza.findFirst({
+      where: { tenantId, id, entry: { deletedAt: null } },
+      include: {
+        entry: {
+          select: {
+            id: true, libroNro: true, gtfNumber: true, providerName: true,
+            entryDate: true, fechaRecepcion: true, status: true,
+            originCode: true, originSourceNumber: true, volumeM3: true,
+          },
+        },
+        trozaOrigen: { select: { id: true, codificacion: true, codigoPlanta: true, volumenM3: true } },
+        retrozos: {
+          orderBy: { orden: "asc" },
+          select: {
+            id: true, codificacion: true, codigoPlanta: true, volumenM3: true,
+            largoM: true, d1Cm: true, d2Cm: true, descarte: true,
+            consumidaEnId: true, despachadaEnId: true,
+          },
+        },
+        loteAserrio: { select: { id: true, code: true, status: true, speciesCommon: true } },
+        consumidaEn: {
+          select: {
+            id: true, lineNo: true, entryDate: true, status: true, deletedAt: true,
+            productType: true, presentacion: true, quantity: true, unit: true,
+            rendimientoPct: true, lineaProduccion: true, volumeInputM3: true,
+          },
+        },
+        despachadaEn: {
+          select: {
+            id: true, lineNo: true, entryDate: true, status: true, deletedAt: true,
+            docType: true, gtfNumber: true, quantity: true, unit: true,
+          },
+        },
       },
     });
   }

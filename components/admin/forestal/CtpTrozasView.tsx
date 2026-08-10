@@ -21,7 +21,9 @@ import { useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, Search } from "@buleje/design-system/icons";
 import type { EstadoTroza } from "@/lib/forestal/trozas-patio";
+import CtpApartarEnLoteModal from "./CtpApartarEnLoteModal";
 import CtpCodigosDuplicados from "./CtpCodigosDuplicados";
+import CtpTrozaFichaModal from "./CtpTrozaFichaModal";
 import CtpTrozasBuscador from "./CtpTrozasBuscador";
 import CtpTrozasLista from "./CtpTrozasLista";
 import CtpTrozasPatio from "./CtpTrozasPatio";
@@ -34,6 +36,10 @@ export default function CtpTrozasView() {
   const [estadoFiltro, setEstadoFiltro] = useState<EstadoTroza | null>(null);
   const [tramoFiltro, setTramoFiltro] = useState<string | null>(null);
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);
+  /** La pieza cuya historia se está mirando. */
+  const [ficha, setFicha] = useState<string | null>(null);
+  /** Las piezas que van camino a un lote. */
+  const [apartando, setApartando] = useState<{ id: string; codigo: string | null; especie: string | null }[] | null>(null);
 
   return (
     <div className="space-y-4">
@@ -74,7 +80,22 @@ export default function CtpTrozasView() {
         onEstadoFiltro={setEstadoFiltro}
         tramoFiltro={tramoFiltro}
         onTramoFiltro={setTramoFiltro}
+        onVerFicha={setFicha}
+        onApartar={setApartando}
       />
+
+      {ficha && (
+        /* `onVerOtra` deja saltar de un pedazo a su madre sin cerrar: el
+           retrozado es justo donde uno quiere ir y volver. */
+        <CtpTrozaFichaModal trozaId={ficha} onClose={() => setFicha(null)} onVerOtra={setFicha} />
+      )}
+      {apartando && (
+        <CtpApartarEnLoteModal
+          piezas={apartando}
+          onClose={() => setApartando(null)}
+          onListo={() => void recargar()}
+        />
+      )}
 
       {/* El buscador del fiscalizador va plegado: la lista de arriba ya busca en
           lo que está cargado. Este pregunta al servidor, así que es el que vale
