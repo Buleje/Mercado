@@ -21,6 +21,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import LothZafraPanel from "./LothZafraPanel";
 import LothEspecieFichas, { type FichaEspecie } from "./LothEspecieFichas";
+import LothEspecieFueraModal from "./LothEspecieFueraModal";
 import { analizarZafra } from "@/lib/forestal/loth-zafra";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
@@ -68,6 +69,8 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   /** Cuántos árboles tiene el censo DE VERDAD, y si lo cargado se quedó corto. */
   const [censoTotal, setCensoTotal] = useState(0);
   const [censoTruncado, setCensoTruncado] = useState(false);
+  /** La especie fuera del plan que se está resolviendo. */
+  const [especieFuera, setEspecieFuera] = useState<string | null>(null);
   const [censusStat, setCensusStat] = useState<CensusStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -348,7 +351,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
           )}
 
           {/* Alertas de calidad del cruce censo ↔ autorizado (lo que el diseño viejo no atrapaba) */}
-          <QualityAlerts rows={controlRows} />
+          <QualityAlerts rows={controlRows} onResolver={setEspecieFuera} />
 
           {/* Plan Operativo: qué se puede tumbar de verdad (DMC + semilleros) */}
           <LothPoaPanel
@@ -401,6 +404,19 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
             dmcOverrides={poaConfig.dmcOverrides}
             onChange={() => loadDetail(plan.id)}
           />
+
+          {especieFuera && (
+            <LothEspecieFueraModal
+              planId={plan.id}
+              especie={especieFuera}
+              arboles={trees
+                .filter((t) => t.speciesCommon.trim().toLowerCase() === especieFuera.trim().toLowerCase())
+                .map((t) => ({ id: t.id, treeCode: t.treeCode, volumenEstimadoM3: t.volumenEstimadoM3, estado: t.estado }))}
+              resolucion={plan.resolucionNumber}
+              onClose={() => setEspecieFuera(null)}
+              onResuelto={() => loadDetail(plan.id)}
+            />
+          )}
 
           {/* Croquis de la parcela (UTM) */}
           <CensusMap trees={trees} authorizedSpecies={authorizedSet} />
@@ -994,7 +1010,7 @@ const FLAG_LABEL: Record<ControlFlag, string> = {
 
 // Banner de calidad — surfacea lo que el diseño viejo dejaba pasar: una especie
 // censada que NO figura en la resolución (ej. "Misa" en los datos demo).
-function QualityAlerts({ rows }: { rows: ControlRow[] }) {
+function QualityAlerts({ rows, onResolver }: { rows: ControlRow[]; onResolver?: (especie: string) => void }) {
   const hasCenso = rows.some((r) => r.censadoCount > 0);
   if (!hasCenso) return null;
   const noAut = rows.filter((r) => r.flags.includes("no_autorizada"));
@@ -1010,12 +1026,26 @@ function QualityAlerts({ rows }: { rows: ControlRow[] }) {
   return (
     <div className="space-y-2">
       {noAut.length > 0 && (
-        <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 px-4 py-3 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+        <div className="flex flex-wrap items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 px-4 py-3 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           <Ban className="mt-0.5 h-4 w-4 shrink-0" />
-          <div>
+          <div className="min-w-0 flex-1">
             <span className="font-bold">Especie(s) censada(s) fuera del plan aprobado: </span>
             {noAut.map((r) => r.species).join(", ")}.{" "}
             <span className="font-medium">Talar o movilizar una especie no autorizada es infracción — corregí el plan o el censo antes de emitir GTF.</span>
+            {/* El aviso trae el camino: antes decía qué estaba mal y había que
+                salir a buscar dónde se arregla. */}
+            <span className="mt-2 flex flex-wrap gap-1.5">
+              {noAut.map((r) => (
+                <button
+                  key={r.species}
+                  type="button"
+                  onClick={() => onResolver?.(r.species)}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[var(--data-error-700)] px-2.5 text-xs font-bold text-white transition-opacity hover:opacity-90"
+                >
+                  Resolver {r.species}
+                </button>
+              ))}
+            </span>
           </div>
         </div>
       )}

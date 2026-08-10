@@ -340,6 +340,27 @@ export function analizarPoa(opts: {
       detalle: "Declarala en el plan (o dibujá la parcela en el mapa) para calcular la intensidad en m³/ha.",
     });
   }
+  /**
+   * Semilleros en cero.
+   *
+   * Dejar árboles semilleros en pie es lo que permite que el bosque se
+   * regenere, y los planes de manejo lo comprometen: aprovechar el 100% de lo
+   * que supera el DMC deja el rodal sin fuente de semilla. El sistema no lo
+   * impide —el porcentaje sale del plan aprobado, no de acá— pero poner cero y
+   * que nadie diga nada convierte un olvido en una decisión silenciosa. Sólo se
+   * avisa si hay algo que reservar: sin árboles sobre el DMC, el cero es
+   * simplemente cierto.
+   */
+  if (pct === 0 && totales.aprovechables > 0) {
+    alertas.push({
+      nivel: "warning",
+      titulo: "Sin semilleros reservados",
+      detalle:
+        `El porcentaje está en 0%, así que los ${totales.aprovechables} árboles sobre el DMC figuran todos como aprovechables. ` +
+        "Revisá qué comprometió el plan aprobado y cargá ese porcentaje en Parámetros: los semilleros se eligen solos, " +
+        "los de mayor diámetro de cada especie.",
+    });
+  }
 
   return { arboles, especies, totales, intensidad, alertas, config };
 }

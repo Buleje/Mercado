@@ -184,4 +184,39 @@ describe("cuadro y alertas del POA", () => {
     expect(r.totales.censados).toBe(0);
     expect(r.totales.volumenAprovechableM3).toBe(0);
   });
+
+  it("⭐ avisa cuando NO se reserva ningún semillero", () => {
+    // Aprovechar el 100% de lo que supera el DMC deja el rodal sin fuente de
+    // semilla: el sistema no lo impide, pero no puede callárselo.
+    const r = analizarPoa({
+      trees: [arbol("T1", "Tornillo", 80), arbol("T2", "Tornillo", 75)],
+      species: [{ speciesCommon: "Tornillo", volumenAutorizadoM3: 20, arbolesAutorizados: null }],
+      areaHa: 10,
+      config: { semillerosPct: 0 },
+    });
+    const a = r.alertas.find((x) => x.titulo === "Sin semilleros reservados");
+    expect(a?.nivel).toBe("warning");
+    expect(a?.detalle).toContain("2 árboles sobre el DMC");
+  });
+
+  it("con semilleros cargados no molesta", () => {
+    const r = analizarPoa({
+      trees: [arbol("T1", "Tornillo", 80), arbol("T2", "Tornillo", 75)],
+      species: [{ speciesCommon: "Tornillo", volumenAutorizadoM3: 20, arbolesAutorizados: null }],
+      areaHa: 10,
+      config: { semillerosPct: 10 },
+    });
+    expect(r.alertas.some((x) => x.titulo === "Sin semilleros reservados")).toBe(false);
+  });
+
+  it("sin nada sobre el DMC, cero semilleros NO es un aviso: es la verdad", () => {
+    const r = analizarPoa({
+      trees: [arbol("T1", "Tornillo", 40)], // bajo el DMC de Tornillo (61)
+      species: [{ speciesCommon: "Tornillo", volumenAutorizadoM3: 20, arbolesAutorizados: null }],
+      areaHa: 10,
+      config: { semillerosPct: 0 },
+    });
+    expect(r.totales.aprovechables).toBe(0);
+    expect(r.alertas.some((x) => x.titulo === "Sin semilleros reservados")).toBe(false);
+  });
 });
