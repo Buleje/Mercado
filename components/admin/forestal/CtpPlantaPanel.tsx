@@ -124,7 +124,10 @@ export default function CtpPlantaPanel({
   const sinZonas = zonas.length === 0;
 
   return (
-    <aside className="flex min-h-0 flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    /* La altura se acota a la del mapa: sin tope, 44 filas estiran la fila del
+       grid y empujan todo lo que va debajo (el desglose por especie quedaba a
+       una pantalla y media de distancia). La lista scrollea adentro. */
+    <aside className="flex min-h-0 flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] xl:max-h-[38rem]">
       {/* ── Cabecera: cuánto falta, en una barra ─────────────────────────── */}
       <div className="border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">

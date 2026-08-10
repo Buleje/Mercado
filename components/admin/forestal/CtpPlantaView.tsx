@@ -14,10 +14,13 @@ import { CardTitle, StatCard } from "@buleje/design-system";
 import { AlertCircle, RefreshCw, Map as MapIcon, Layers, Boxes, PackageCheck, Truck, Printer, PieChart, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
-import { ZONA_TIPOS, type Item, type ItemKind, type PlantaZona, type ZonaInv } from "@/lib/forestal/planta-zona-types";
+import { ZONA_TIPOS, zonaTipoMeta, type Item, type ItemKind, type PlantaZona, type ZonaInv } from "@/lib/forestal/planta-zona-types";
+import { fichaItemHtml, fichaZonaHtml } from "@/lib/forestal/planta-iconos";
+import { fmtSubtotal, fmtSubtotales, normalizarUnidad, resumirItems } from "@/lib/forestal/planta-resumen";
 import { printPlantaPlano } from "@/lib/forestal/planta-plano-print";
 import CtpPlantaMapa from "./CtpPlantaMapa";
 import CtpPlantaPanel from "./CtpPlantaPanel";
+import CtpPlantaEspecies from "./CtpPlantaEspecies";
 
 export type { Item, ItemKind, ZonaInv };
 
@@ -39,6 +42,15 @@ function invSummary(inv?: ZonaInv): string | null {
 
 const n2 = (v: number) => v.toFixed(2);
 
+/** Área legible: el aserradero se mide en m², el terreno grande en ha. */
+const fmtArea = (m2: number) => (m2 >= 10000 ? `${(m2 / 10000).toFixed(2)} ha` : `${Math.round(m2).toLocaleString("es-PE")} m²`);
+
+const KIND_LABEL: Record<ItemKind, string> = {
+  troza: "Troza en patio",
+  producto: "Aserrada lista",
+  despacho: "Despacho armado",
+};
+
 export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   const [zonas, setZonas] = useState<PlantaZona[]>([]);
   const [items, setItems] = useState<Item[]>([]);
@@ -56,6 +68,8 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   const [aviso, setAviso] = useState<string | null>(null);
   /** El último ubicado: su chapita entra al mapa con la animación de caída. */
   const [recien, setRecien] = useState<string | null>(null);
+  /** entryId → punto exacto dentro de su zona (el operador movió el icono). */
+  const [posiciones, setPosiciones] = useState<Record<string, { lat: number; lng: number }>>({});
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -70,6 +84,12 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
       setZonas(pz.zonas ?? []);
       setItems(pz.items ?? []);
       setAsignaciones(pz.asignaciones ?? {});
+      // Las posiciones sueltas viajan aparte: el mapa reparte solo las que no tienen.
+      const pos: Record<string, { lat: number; lng: number }> = {};
+      for (const [id, u] of Object.entries((pz.ubicaciones ?? {}) as Record<string, { lat?: number; lng?: number }>)) {
+        if (typeof u?.lat === "number" && typeof u?.lng === "number") pos[id] = { lat: u.lat, lng: u.lng };
+      }
+      setPosiciones(pos);
       if (rs.ok) {
         const s = (await rs.json()).saldos;
         const mp = s?.materiaPrima ?? { ingresoM3: 0, consumidoM3: 0, saldoM3: 0 };
@@ -166,15 +186,73 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
 
   const zonaById = useMemo(() => new Map(zonas.map((z) => [z.id, z])), [zonas]);
   /** zonaId → qué hay ahí, para que el mapa le ponga su chapita a cada uno. */
-  const ubicadosPorZona = useMemo(() => {
-    const m: Record<string, { id: string; kind: ItemKind; label: string; cites: boolean }[]> = {};
+  const itemsPorZona = useMemo(() => {
+    const m: Record<string, Item[]> = {};
     for (const it of items) {
       const zid = asignaciones[it.id];
       if (!zid || !zonaById.has(zid)) continue;
-      (m[zid] ??= []).push({ id: it.id, kind: it.kind, label: it.label, cites: it.cites });
+      (m[zid] ??= []).push(it);
     }
     return m;
   }, [items, asignaciones, zonaById]);
+
+  const ubicadosPorZona = useMemo(() => {
+    const m: Record<string, { id: string; kind: ItemKind; label: string; cites: boolean; cantidad: string }[]> = {};
+    for (const [zid, list] of Object.entries(itemsPorZona)) {
+      m[zid] = list.map((it) => ({
+        id: it.id, kind: it.kind, label: it.label, cites: it.cites,
+        cantidad: fmtSubtotal({ unidad: normalizarUnidad(it.unidad), cantidad: it.cantidad, lineas: 1 }),
+      }));
+    }
+    return m;
+  }, [itemsPorZona]);
+
+  /** Ficha emergente de un ítem: qué es, cuánto queda y dónde está. */
+  const fichaDeItem = useCallback((entryId: string): string | null => {
+    const it = items.find((x) => x.id === entryId);
+    if (!it) return null;
+    const z = zonaById.get(asignaciones[entryId] ?? "");
+    return fichaItemHtml({
+      kind: it.kind,
+      titulo: it.label,
+      especie: it.especie ?? it.sub,
+      cantidad: fmtSubtotal({ unidad: normalizarUnidad(it.unidad), cantidad: it.cantidad, lineas: 1 }),
+      zona: z ? `${z.codigo}${z.nombre ? ` · ${z.nombre}` : ""}` : "—",
+      cites: it.cites,
+      entryId,
+    });
+  }, [items, asignaciones, zonaById]);
+
+  /** Ficha emergente de una zona: el terreno + qué hay parado, por especie. */
+  const fichaDeZona = useCallback((zonaId: string): string | null => {
+    const z = zonaById.get(zonaId);
+    if (!z) return null;
+    const meta = zonaTipoMeta(z.tipo);
+    const r = resumirItems(itemsPorZona[zonaId] ?? [], (it) => it.especie ?? it.sub);
+    return fichaZonaHtml({
+      codigo: z.codigo,
+      nombre: z.nombre,
+      tipoLabel: meta.label,
+      color: meta.ring,
+      area: z.areaM2 != null ? fmtArea(z.areaM2) : null,
+      notas: z.notas,
+      porKind: r.porKind.map((k) => ({ label: KIND_LABEL[k.kind], valor: fmtSubtotales(k.subtotales), lineas: k.lineas })),
+      porEspecie: r.porEspecie.map((e) => ({ especie: e.especie, valor: fmtSubtotales(e.subtotales), lineas: e.lineas })),
+      vacia: r.lineas === 0,
+    });
+  }, [zonaById, itemsPorZona]);
+
+  /** Mover el icono dentro de su zona: guarda el punto, sin cambiar de zona. */
+  const moverItem = useCallback((entryId: string, pos: { lat: number; lng: number }) => {
+    const zonaId = asignaciones[entryId];
+    if (!zonaId) return;
+    setPosiciones((p) => ({ ...p, [entryId]: pos }));
+    fetch("/api/admin/forestal/ctp/planta", {
+      method: "PUT", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
+      body: JSON.stringify({ entryId, zonaId, lat: pos.lat, lng: pos.lng }),
+    }).then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); })
+      .catch((err) => { setError(`No se pudo guardar la posición: ${String(err)}`); void load(); });
+  }, [asignaciones, load]);
   // Inventario ubicado por zona, por tipo (trozas m³ + conteo de productos/despachos).
   const invPorZona = useMemo(() => {
     const m = new Map<string, ZonaInv>();
@@ -257,6 +335,11 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
           irA={irA}
           ubicados={ubicadosPorZona}
           recienUbicado={recien}
+          posiciones={posiciones}
+          onMover={moverItem}
+          onQuitar={(id) => void asignar(id, null)}
+          fichaDeItem={fichaDeItem}
+          fichaDeZona={fichaDeZona}
         />
         <CtpPlantaPanel
           items={items}
@@ -278,6 +361,9 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
           <button type="button" onClick={() => setAviso(null)} aria-label="Cerrar aviso" className="shrink-0"><X className="h-4 w-4" /></button>
         </p>
       )}
+
+      {/* Qué madera hay, por especie — la pregunta que el mapa no responde. */}
+      <CtpPlantaEspecies items={items} ubicados={Object.keys(asignaciones).filter((id) => zonaById.has(asignaciones[id])).length} />
 
       {/* Ocupación de la planta: reparto del área mapeada por tipo de zona. */}
       {ocupacion.length > 0 && (

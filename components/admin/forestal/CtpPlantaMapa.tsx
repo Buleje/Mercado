@@ -95,14 +95,31 @@ export interface CtpPlantaMapaProps {
   ubicados?: Record<string, MarcaItem[]>;
   /** El último que se soltó — entra con la animación de caída. */
   recienUbicado?: string | null;
+  /** Punto elegido a mano para un ítem; los que no tienen, se reparten solos. */
+  posiciones?: Record<string, { lat: number; lng: number }>;
+  /** El operador arrastró un icono a otro punto DENTRO de su zona. */
+  onMover?: (entryId: string, pos: { lat: number; lng: number }) => void;
+  /** Sacar un ítem del mapa desde su ficha. */
+  onQuitar?: (entryId: string) => void;
+  /** HTML de la ficha de un ítem (lo arma la vista, que tiene los datos). */
+  fichaDeItem?: (entryId: string) => string | null;
+  /** HTML de la ficha de una zona con su resumen. */
+  fichaDeZona?: (zonaId: string) => string | null;
 }
 
 /** Lo mínimo que necesita el mapa de un ítem para ponerle su chapita. */
-export interface MarcaItem { id: string; kind: ItemKind; label: string; cites: boolean }
+export interface MarcaItem {
+  id: string;
+  kind: ItemKind;
+  label: string;
+  cites: boolean;
+  /** Cantidad ya formateada («12.5 m³»): se escribe arriba del icono. */
+  cantidad?: string;
+}
 
 export default function CtpPlantaMapa({
   zonas, inventario, onChanged, enMano = null, onSoltarEnZona, onSoltarAfuera, zonaResaltada = null, irA = null,
-  ubicados, recienUbicado = null,
+  ubicados, recienUbicado = null, posiciones, onMover, onQuitar, fichaDeItem, fichaDeZona,
 }: CtpPlantaMapaProps) {
   /** Zona bajo el puntero mientras se arrastra un ítem (previsualiza el destino). */
   const [sobreZona, setSobreZona] = useState<string | null>(null);
@@ -183,6 +200,18 @@ export default function CtpPlantaMapa({
   ubicadosRef.current = ubicados;
   const recienRef = useRef(recienUbicado);
   recienRef.current = recienUbicado;
+  const posicionesRef = useRef(posiciones);
+  posicionesRef.current = posiciones;
+  const onMoverRef = useRef(onMover);
+  onMoverRef.current = onMover;
+  const onQuitarRef = useRef(onQuitar);
+  onQuitarRef.current = onQuitar;
+  const fichaItemRef = useRef(fichaDeItem);
+  fichaItemRef.current = fichaDeItem;
+  const fichaZonaRef = useRef(fichaDeZona);
+  fichaZonaRef.current = fichaDeZona;
+  /** Zona cuya ficha emergente está abierta (el botón «ver ficha» la necesita). */
+  const zonaFichaAbiertaRef = useRef<string | null>(null);
   /** zonaId → capa dibujada, para resaltar sin volver a dibujar el mapa entero. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const polyByZonaRef = useRef<Map<string, any>>(new Map());
@@ -200,32 +229,72 @@ export default function CtpPlantaMapa({
   }, []);
 
   /**
-   * Las chapitas de lo que está ubicado en la zona. Se dibujan como marcadores
-   * NO interactivos: el click tiene que llegar al polígono de abajo (soltar un
-   * ítem sobre una pila ya existente es lo más natural del mundo).
+   * Las chapitas de lo que está ubicado en la zona.
+   *
+   * Cada una es un marcador ARRASTRABLE: el patio tiene su orden y el operador
+   * pone el icono donde está la pila de verdad. Al soltarlo se valida que el
+   * punto siga dentro del polígono — si se fue afuera, vuelve solo, porque una
+   * troza dibujada fuera de su zona dice que está en la de al lado.
+   *
+   * Tocarlas abre su ficha. Mientras se arrastra un ítem DESDE la barra lateral
+   * dejan de recibir eventos, para que el drop llegue al polígono de abajo:
+   * soltar sobre una pila que ya existe es lo más natural del mundo.
    */
   const dibujarMarcas = useCallback((z: PlantaZona, pts: [number, number][] | null, color: string) => {
     const L = LRef.current;
     const items = ubicadosRef.current?.[z.id] ?? [];
     if (!L || items.length === 0 || !polysRef.current) return;
     const centro: [number, number] | null = z.lat != null && z.lng != null ? [z.lat, z.lng] : null;
-    const { marcas, sobran } = marcasDeZona(pts, centro, items);
+    // Los que tienen punto propio se quedan donde el operador los dejó; el
+    // reparto automático es sólo para los que nunca se movieron.
+    const guardadas = posicionesRef.current ?? {};
+    const sueltos = items.filter((i) => !guardadas[i.id]);
+    const { marcas: repartidas, sobran } = marcasDeZona(pts, centro, sueltos);
+    const marcas = [
+      ...items.filter((i) => guardadas[i.id]).map((item) => ({ item, pos: [guardadas[item.id].lat, guardadas[item.id].lng] as [number, number] })),
+      ...repartidas,
+    ];
     for (const m of marcas) {
-      L.marker(m.pos, {
-        interactive: false,
+      const mk = L.marker(m.pos, {
+        draggable: true,
         zIndexOffset: 400,
         icon: L.divIcon({
           className: "",
           html: marcaHtml({
             kind: m.item.kind,
             texto: etiquetaCorta(m.item.label),
+            cantidad: m.item.cantidad,
             color,
             cites: m.item.cites,
             entrando: recienRef.current === m.item.id,
           }),
-          iconSize: [0, 0],
+          // Tamaño REAL, no [0,0]: el área que se puede agarrar para arrastrar
+          // es la del icono de Leaflet, y con tamaño cero no hay nada que
+          // agarrar (medido: el marcador no se movía ni un píxel).
+          iconSize: [26, 26],
+          iconAnchor: [13, 13],
         }),
-      }).addTo(polysRef.current);
+      });
+      mk.on("dragstart", () => { mk.getElement()?.classList.add("ctp-marca-moviendo"); });
+      mk.on("dragend", () => {
+        mk.getElement()?.classList.remove("ctp-marca-moviendo");
+        const ll = mk.getLatLng();
+        const dentro = !pts || pointInPolygon([ll.lat, ll.lng], pts);
+        if (dentro) onMoverRef.current?.(m.item.id, { lat: ll.lat, lng: ll.lng });
+        else {
+          // Fuera de su zona: vuelve a donde estaba y se avisa. Reasignar de
+          // zona arrastrando el icono sería fácil de hacer sin querer.
+          mk.setLatLng(m.pos);
+          setMapMsg("Ese punto queda fuera de la zona. Para cambiarla, arrastrá desde la lista.");
+        }
+      });
+      mk.on("click", () => {
+        if (drawingRef.current || measuringRef.current || editingRef.current) return;
+        if (enManoRef.current) { onSoltarRef.current?.(z.id); return; }
+        const html = fichaItemRef.current?.(m.item.id);
+        if (html) mk.bindPopup(html, { className: "ctp-popup", offset: [0, -14] }).openPopup();
+      });
+      mk.addTo(polysRef.current);
     }
     if (sobran > 0 && marcas.length) {
       // El «+N» va sobre la última posición repartida, no en el centro: ahí ya
@@ -255,7 +324,12 @@ export default function CtpPlantaMapa({
           // Con un ítem en la mano, tocar la zona lo UBICA ahí. Abrir la ficha
           // en ese momento sería perder el gesto que el operador venía haciendo.
           if (enManoRef.current) { onSoltarRef.current?.(z.id); return; }
-          if (editingRef.current) selectForEditRef.current(z);
+          if (editingRef.current) { selectForEditRef.current(z); return; }
+          // Tocar la zona muestra QUÉ hay adentro; editar el terreno es un paso
+          // más, desde el botón de la ficha.
+          const html = fichaZonaRef.current?.(z.id);
+          zonaFichaAbiertaRef.current = z.id;
+          if (html) poly.bindPopup(html, { className: "ctp-popup", maxWidth: 300 }).openPopup();
           else onFichaRef.current(z);
         });
         poly.addTo(polysRef.current);
@@ -325,6 +399,21 @@ export default function CtpPlantaMapa({
       });
       L.control.scale({ metric: true, imperial: false, position: "bottomleft" }).addTo(map);
       map.on("mousemove", (e: { latlng: { lat: number; lng: number } }) => setCursor({ lat: e.latlng.lat, lng: e.latlng.lng }));
+      // Los botones de las fichas viven en HTML que inserta Leaflet, fuera del
+      // árbol de React: no hay onClick que ponerles. Se delega en el contenedor.
+      containerRef.current?.addEventListener("click", (ev) => {
+        const el = (ev.target as HTMLElement)?.closest?.("[data-quitar],[data-ficha]") as HTMLElement | null;
+        if (!el) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        const quitar = el.getAttribute("data-quitar");
+        if (quitar) { onQuitarRef.current?.(quitar); map.closePopup(); return; }
+        if (el.hasAttribute("data-ficha") && zonaFichaAbiertaRef.current) {
+          const z = zonasRef.current.find((x) => x.id === zonaFichaAbiertaRef.current);
+          map.closePopup();
+          if (z) onFichaRef.current(z);
+        }
+      });
       map.on("mouseout", () => setCursor(null));
       setTimeout(() => { if (!destroyed) map.invalidateSize(); }, 200);
       setReady(true);
@@ -337,7 +426,7 @@ export default function CtpPlantaMapa({
   useEffect(() => { if (ready) renderPolys(); }, [zonas, ready, renderPolys]);
   // Re-pintar etiquetas cuando cambia el inventario ubicado (sin re-encuadrar).
   useEffect(() => { if (ready) renderPolys(false); }, [inventario, ready, renderPolys]);
-  useEffect(() => { if (ready) renderPolys(false); }, [ubicados, ready, renderPolys]);
+  useEffect(() => { if (ready) renderPolys(false); }, [ubicados, posiciones, ready, renderPolys]);
 
   useEffect(() => {
     const map = mapRef.current;

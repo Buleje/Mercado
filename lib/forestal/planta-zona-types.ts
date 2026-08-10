@@ -104,7 +104,11 @@ export interface Item {
   id: string;
   kind: ItemKind;
   label: string;
+  /** Lo que se MUESTRA debajo del código (producto, destino o especie). */
   sub: string | null;
+  /** Con lo que se AGRUPA el desglose del patio. Puede no ser lo mismo que
+   *  `sub`: un mismo producto sale de especies distintas. */
+  especie?: string | null;
   cantidad: number;
   unidad: string;
   cites: boolean;

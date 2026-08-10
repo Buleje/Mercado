@@ -7,6 +7,7 @@ import { ForestPlantaZonaDB } from "@/lib/db/forest-planta-zona.db";
 import { ForestPlantaAsignacionDB } from "@/lib/db/forest-planta-asignacion.db";
 import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 import { isZonaTipo } from "@/lib/forestal/planta-zona-types";
+import { soloZonas } from "@/lib/forestal/planta-ubicacion";
 import { withApiHandler } from "@/lib/api-handler";
 
 /**
@@ -50,24 +51,31 @@ export const GET = withApiHandler("forestal-ctp-planta", async (req: NextRequest
     ForestCtpDB.availableSource(auth.tenantId, "produccion"), // trozas (materia prima con saldo)
     ForestCtpDB.availableSource(auth.tenantId, "despacho"), // producto terminado (corridas con stock)
     ForestCtpDB.list(auth.tenantId, { section: "despacho" }), // despachos (salidas)
-    ForestPlantaAsignacionDB.getMap(auth.tenantId),
+    ForestPlantaAsignacionDB.getUbicaciones(auth.tenantId),
   ]);
   // Items ubicables del flujo físico: troza (m³) → producto (unidad) → despacho (salida).
   const items = [
-    ...trozasSrc.map((t) => ({ id: t.id, kind: "troza" as const, label: `GTF ${t.code ?? "—"}`, sub: t.species ?? null, cantidad: t.disponible, unidad: "m³", cites: !!t.cites })),
+    ...trozasSrc.map((t) => ({ id: t.id, kind: "troza" as const, label: `GTF ${t.code ?? "—"}`, sub: t.species ?? null, especie: t.species ?? null, cantidad: t.disponible, unidad: "m³", cites: !!t.cites })),
     ...prodSrc.map((c) => {
       // availableSource devuelve una unión; en la rama "despacho" son corridas.
       const d = c as { id: string; code: string; disponible: number; cites: boolean; species: string | null; productType?: string | null; unit?: string | null };
-      return { id: d.id, kind: "producto" as const, label: d.code ?? "Corrida", sub: d.productType ?? d.species ?? null, cantidad: d.disponible, unidad: d.unit ?? "u", cites: !!d.cites };
+      // `sub` es lo que se muestra (el producto); `especie` es lo que agrupa el
+      // desglose del patio — un mismo producto sale de especies distintas.
+      return { id: d.id, kind: "producto" as const, label: d.code ?? "Corrida", sub: d.productType ?? d.species ?? null, especie: d.species ?? null, cantidad: d.disponible, unidad: d.unit ?? "u", cites: !!d.cites };
     }),
-    ...despRes.entries.map((d) => ({ id: d.id, kind: "despacho" as const, label: `Despacho #${d.lineNo}`, sub: d.destino ?? d.productType ?? null, cantidad: Number(d.quantity ?? 0), unidad: d.unit ?? "u", cites: !!d.cites })),
+    ...despRes.entries.map((d) => ({ id: d.id, kind: "despacho" as const, label: `Despacho #${d.lineNo}`, sub: d.destino ?? d.productType ?? null, especie: d.speciesCommon ?? null, cantidad: Number(d.quantity ?? 0), unidad: d.unit ?? "u", cites: !!d.cites })),
   ];
-  return NextResponse.json({ zonas, items, asignaciones });
+  // `asignaciones` (entryId → zonaId) se mantiene por compatibilidad con lo que
+  // ya lo consume; `ubicaciones` agrega el punto dentro de la zona.
+  return NextResponse.json({ zonas, items, asignaciones: soloZonas(asignaciones), ubicaciones: asignaciones });
 });
 
 const asignarSchema = z.object({
   entryId: z.string().trim().min(1),
   zonaId: z.string().trim().min(1).nullable(),
+  /** Punto exacto dentro de la zona (el operador arrastró el icono). */
+  lat: z.number().min(-90).max(90).nullable().optional(),
+  lng: z.number().min(-180).max(180).nullable().optional(),
 });
 
 export const PUT = withApiHandler("forestal-ctp-planta-asignar", async (req: NextRequest) => {
@@ -81,7 +89,10 @@ export const PUT = withApiHandler("forestal-ctp-planta-asignar", async (req: Nex
   const parsed = asignarSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
 
-  await ForestPlantaAsignacionDB.set(auth.tenantId, parsed.data.entryId, parsed.data.zonaId, auth.username ?? "unknown");
+  const { entryId, zonaId, lat, lng } = parsed.data;
+  // Media coordenada no ubica nada: o van las dos, o el mapa reparte solo.
+  const pos = typeof lat === "number" && typeof lng === "number" ? { lat, lng } : null;
+  await ForestPlantaAsignacionDB.set(auth.tenantId, entryId, zonaId, auth.username ?? "unknown", pos);
   return NextResponse.json({ ok: true });
 });
 
