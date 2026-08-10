@@ -7,6 +7,7 @@ import {
   Search, X,
   type LucideIcon,
 } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
@@ -437,9 +438,9 @@ export default function SugerenciasCompraTab() {
           <Sparkles className="h-6 w-6 text-[var(--data-success-500)]" strokeWidth={2.2} />
         </span>
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-extrabold text-[var(--text-primary)]">
+          <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)]">
             Sugerencias de compra
-          </h2>
+          </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)]">
             {stats.total === 0
               ? `Nada por reponer: ningún producto llega a su punto de pedido según lo que se vendió en ${ventanaDias} días.`
@@ -480,7 +481,7 @@ export default function SugerenciasCompraTab() {
           <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-[var(--data-success-500)]/20">
             <Check className="h-8 w-8 text-[var(--data-success-ink)]" strokeWidth={2.5} />
           </span>
-          <h2 className="text-xl font-extrabold text-[var(--text-primary)]">Nada que reponer</h2>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">Nada que reponer</SectionTitle>
           <p className="mx-auto mt-2 max-w-lg text-sm text-[var(--text-secondary)]">
             Ningún producto llega a su punto de pedido: con lo que se vendió en los últimos{" "}
             {ventanaDias} días, el stock alcanza hasta la próxima entrega.
