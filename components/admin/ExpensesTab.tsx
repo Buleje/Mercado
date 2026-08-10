@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { decodeExpenseDescription } from "@/lib/expense-meta";
 
 type Expense = { id: string; category: string; description: string; amount: number; date: string; recurring: boolean };
 type Summary = { category: string; total: number; count: number };
@@ -46,6 +47,11 @@ export default function ExpensesTab() {
   const [saving, setSaving] = useState(false);
   const [tick, setTick] = useState(0);
   const [historicExpenses, setHistoricExpenses] = useState<Expense[]>([]);
+  // Los gastos fijos configurados (Expense.recurring=true) son PLANTILLAS: el
+  // acuerdo de pagar el alquiler, no el alquiler pagado. Desde que dejaron de
+  // sumar al total —contarlos inflaba el P&L con plata que nadie desembolsó—
+  // hay que decir que existen, o desaparecen sin explicación.
+  const [templates, setTemplates] = useState<Expense[]>([]);
 
   // filters
   const [from, setFrom] = useState(() => {
@@ -64,10 +70,12 @@ export default function ExpensesTab() {
     Promise.all([
       fetch(`/api/expenses?from=${from}&to=${to}`).then(r => r.ok ? r.json() : []),
       fetch("/api/expenses/summary").then(r => r.ok ? r.json() : []),
-    ]).then(([exp, sum]) => {
+      fetch("/api/expenses?recurring=true").then(r => r.ok ? r.json() : []),
+    ]).then(([exp, sum, tpl]) => {
       if (active) {
         setExpenses(exp);
         setSummary(sum);
+        setTemplates(Array.isArray(tpl) ? tpl : []);
         setLoading(false);
       }
     }).catch(() => { if (active) setLoading(false); });
@@ -152,6 +160,26 @@ export default function ExpensesTab() {
           <p className="text-xs text-[var(--text-tertiary)]">Total histórico</p>
         </div>
       </div>
+
+      {/* Los fijos configurados: existen, pero todavía no son plata gastada. */}
+      {templates.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
+          <Calendar className="h-5 w-5 shrink-0 text-[var(--text-secondary)]" />
+          <p className="flex-1 min-w-[200px] text-sm text-[var(--text-secondary)]">
+            <span className="font-bold text-[var(--text-primary)]">
+              {templates.length} gasto{templates.length === 1 ? "" : "s"} fijo{templates.length === 1 ? "" : "s"} configurado{templates.length === 1 ? "" : "s"}
+            </span>{" "}
+            por S/{templates.reduce((s, t) => s + Number(t.amount), 0).toFixed(2)} al período. No suman
+            acá hasta que registres el pago.
+          </p>
+          <a
+            href="?tab=compras&vista=punto-compra"
+            className="inline-flex h-9 items-center rounded-lg border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
+          >
+            Ver el catálogo
+          </a>
+        </div>
+      )}
 
       {/* Category summary */}
       {summary.length > 0 && (
@@ -245,7 +273,7 @@ export default function ExpensesTab() {
                 <CatIcon className="h-4 w-4" strokeWidth={1.5} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{e.description}</p>
+                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{decodeExpenseDescription(e.description).description || "—"}</p>
                 <p className="text-xs text-[var(--text-tertiary)]">{new Date(e.date).toLocaleDateString("es-PE")} · <span className="capitalize">{e.category}</span>{e.recurring && " · Recurrente"}</p>
               </div>
               <p className="font-extrabold text-[var(--data-error-500)] shrink-0">-S/{Number(e.amount).toFixed(2)}</p>

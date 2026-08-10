@@ -50,10 +50,15 @@ export async function GET(req: NextRequest) {
       source: parsed.data.source,
     });
 
-    // KPIs agregados
+    // KPIs agregados. Los totales se calculan acá, en el backend: el cliente
+    // sólo los muestra (regla #6 del proyecto).
+    const redondear = (n: number) => Math.round(n * 100) / 100;
     const totalGastado = items.reduce((s, i) => s + i.amount, 0);
+    // Cuánto de eso ya salió de la caja: una OC recibida y sin pagar es gasto
+    // devengado, no plata que se fue.
+    const totalPagado = items.reduce((s, i) => s + i.montoPagado, 0);
     const porCategoria = items.reduce<Record<string, number>>((acc, i) => {
-      acc[i.category] = (acc[i.category] ?? 0) + i.amount;
+      acc[i.category] = redondear((acc[i.category] ?? 0) + i.amount);
       return acc;
     }, {});
     const porSource = {
@@ -64,10 +69,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       items,
       kpis: {
-        totalGastado: Math.round(totalGastado * 100) / 100,
+        totalGastado: redondear(totalGastado),
+        totalPagado: redondear(totalPagado),
+        totalPorPagar: redondear(totalGastado - totalPagado),
         cantidadGastos: items.length,
         porCategoria,
-        porSource,
+        porSource: { expense: redondear(porSource.expense), purchase: redondear(porSource.purchase) },
       },
     });
   } catch (err) {

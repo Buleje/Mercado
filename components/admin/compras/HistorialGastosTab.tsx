@@ -1,322 +1,219 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState } from "react";
 import {
-  DollarSign, Receipt, Truck, RefreshCw, Download,
-  TrendingDown, Calendar, AlertTriangle, Search,
+  DollarSign, RefreshCw, Download, TrendingDown, Wallet,
+  Clock, AlertTriangle, Search, X,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import StatusBadge from "@/components/admin/shared/StatusBadge";
+import { useHistorialGastos } from "@/hooks/use-historial-gastos";
+import GastosFijosPanel from "./historial/GastosFijosPanel";
+import GastoDetalleModal from "./historial/GastoDetalleModal";
+import HistorialTabla from "./historial/HistorialTabla";
+import { PERIOD_LABELS, fmt, type HistorialItem, type Period } from "./historial/shared";
 
 /**
- * HistorialGastosTab — vista unificada de gastos del negocio.
+ * HistorialGastosTab — en qué se fue la plata del negocio.
  *
- * Audit 2026-05-17 (feature compras): agrega gastos de TODOS los módulos:
- *  - Expense table (manual: alquiler, servicios, transporte)
- *  - PurchaseOrder finalizadas (compras a proveedores)
+ * Junta los gastos operativos (`Expense`) con las compras a proveedor
+ * recibidas (`PurchaseOrder`), y distingue lo GASTADO de lo PAGADO: una orden
+ * recibida y sin cancelar es deuda, no caja que salió.
  *
- * KPIs arriba + tabla filtrable + agrupación por categoría.
+ * Los totales de arriba salen de las filas que se están viendo. Antes venían
+ * del servidor sin filtrar mientras la tabla se filtraba en el cliente, así
+ * que apretar un chip de categoría dejaba a los KPIs contando otra cosa.
  */
 
-type HistorialItem = {
-  id: string;
-  source: "expense" | "purchase";
-  fecha: string;
-  category: string;
-  description: string;
-  amount: number;
-  recurring: boolean;
-  supplierName?: string;
-};
-
-type Kpis = {
-  totalGastado: number;
-  cantidadGastos: number;
-  porCategoria: Record<string, number>;
-  porSource: { expense: number; purchase: number };
-};
-
-type Period = "hoy" | "semana" | "mes" | "trimestre" | "todo";
-
-function fmt(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function Kpi({
+  label, valor, detalle, icono: Icono, tono,
+}: {
+  label: string;
+  valor: string;
+  detalle: string;
+  icono: typeof Wallet;
+  tono?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="mb-1 flex items-center gap-2">
+        <Icono className="h-4 w-4" style={{ color: tono ?? "var(--text-primary)" }} />
+        <p className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">{label}</p>
+      </div>
+      <p className="text-2xl font-extrabold tabular-nums" style={{ color: tono ?? "var(--text-primary)" }}>{valor}</p>
+      <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{detalle}</p>
+    </div>
+  );
 }
 
-function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit", month: "short", year: "numeric",
-    });
-  } catch {
-    return iso;
-  }
+function Segmento<T extends string>({
+  opciones, valor, onChange,
+}: {
+  opciones: Array<{ v: T; l: string }>;
+  valor: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
+      {opciones.map((o) => (
+        <button
+          key={o.v}
+          type="button"
+          onClick={() => onChange(o.v)}
+          aria-pressed={valor === o.v}
+          className={cn(
+            "h-10 rounded-lg px-3 text-sm font-semibold transition-colors",
+            valor === o.v
+              ? "bg-white text-[var(--text-primary)] shadow-sm dark:bg-[var(--color-card)]"
+              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+          )}
+        >
+          {o.l}
+        </button>
+      ))}
+    </div>
+  );
 }
-
-function periodToDates(period: Period): { from?: Date; to?: Date } {
-  const now = new Date();
-  switch (period) {
-    case "hoy": {
-      const from = new Date(now);
-      from.setHours(0, 0, 0, 0);
-      return { from };
-    }
-    case "semana": {
-      const from = new Date(now);
-      from.setDate(now.getDate() - 7);
-      return { from };
-    }
-    case "mes": {
-      const from = new Date(now.getFullYear(), now.getMonth(), 1);
-      return { from };
-    }
-    case "trimestre": {
-      const from = new Date(now);
-      from.setMonth(now.getMonth() - 3);
-      return { from };
-    }
-    default:
-      return {};
-  }
-}
-
-const PERIOD_LABELS: Record<Period, string> = {
-  hoy: "Hoy",
-  semana: "7 días",
-  mes: "Este mes",
-  trimestre: "3 meses",
-  todo: "Todo",
-};
-
-const SOURCE_META: Record<"expense" | "purchase", { label: string; icon: typeof Receipt; tone: string }> = {
-  expense:  { label: "Gasto operativo", icon: Receipt, tone: "var(--data-warning-500)" },
-  purchase: { label: "Compra proveedor", icon: Truck, tone: "var(--data-info-500)" },
-};
 
 export default function HistorialGastosTab() {
-  const [items, setItems] = useState<HistorialItem[]>([]);
-  const [kpis, setKpis] = useState<Kpis | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<Period>("mes");
-  const [sourceFilter, setSourceFilter] = useState<"all" | "expense" | "purchase">("all");
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const h = useHistorialGastos();
+  const [detalle, setDetalle] = useState<HistorialItem | null>(null);
 
-  const fetchHistorial = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { from, to } = periodToDates(period);
-      const params = new URLSearchParams();
-      if (from) params.set("from", from.toISOString());
-      if (to) params.set("to", to.toISOString());
-      params.set("source", sourceFilter);
-
-      const res = await fetch(`/api/expenses/historial?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setItems(data.items ?? []);
-      setKpis(data.kpis ?? null);
-    } catch (err) {
-      console.warn("[HistorialGastosTab] fetch failed", err);
-      setError("No se pudo cargar el historial. Intentá de nuevo.");
-    } finally {
-      setLoading(false);
-    }
-  }, [period, sourceFilter]);
-
-  useEffect(() => { fetchHistorial(); }, [fetchHistorial]);
-
-  // Filtros client-side: búsqueda + categoría
-  const filtered = useMemo(() => {
-    let list = items;
-    if (search.trim()) {
-      const q = search.toLowerCase().trim();
-      list = list.filter((i) =>
-        (i.description?.toLowerCase().includes(q) ?? false) ||
-        (i.category?.toLowerCase().includes(q) ?? false) ||
-        (i.supplierName?.toLowerCase().includes(q) ?? false),
-      );
-    }
-    if (categoryFilter) {
-      list = list.filter((i) => i.category === categoryFilter);
-    }
-    return list;
-  }, [items, search, categoryFilter]);
-
-  const categories = useMemo(() => {
-    if (!kpis) return [];
-    return Object.entries(kpis.porCategoria)
-      .map(([cat, total]) => ({ cat, total }))
-      .sort((a, b) => b.total - a.total);
-  }, [kpis]);
-
-  const handleExport = () => {
-    const rows = [
-      ["Fecha", "Origen", "Categoría", "Descripción", "Proveedor", "Monto"].join(","),
-      ...filtered.map((i) => [
-        formatDate(i.fecha),
-        i.source === "expense" ? "Gasto" : "Compra",
-        i.category,
-        `"${(i.description ?? "").replace(/"/g, '""')}"`,
-        i.supplierName ?? "",
-        i.amount.toFixed(2),
-      ].join(",")),
-    ].join("\n");
-    const blob = new Blob([rows], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `historial-gastos-${period}-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const { resumen } = h;
+  const conDatos = h.items.length > 0;
 
   return (
     <div className="space-y-4">
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <TrendingDown className="h-4 w-4 text-[var(--data-error-500)]" />
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total gastado</p>
-          </div>
-          <p className="text-2xl font-extrabold text-[var(--data-error-500)] tabular-nums">
-            {kpis ? fmt(kpis.totalGastado) : "—"}
-          </p>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            {kpis ? `${kpis.cantidadGastos} ${kpis.cantidadGastos === 1 ? "transacción" : "transacciones"}` : ""}
-          </p>
-        </div>
+      <GastosFijosPanel onPagoRegistrado={h.recargar} />
 
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Receipt className="h-4 w-4 text-[var(--data-warning-500)]" />
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Gastos operativos</p>
-          </div>
-          <p className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums">
-            {kpis ? fmt(kpis.porSource.expense) : "—"}
-          </p>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">Alquiler, servicios, transporte</p>
-        </div>
-
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Truck className="h-4 w-4 text-[var(--data-info-500)]" />
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Compras proveedor</p>
-          </div>
-          <p className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums">
-            {kpis ? fmt(kpis.porSource.purchase) : "—"}
-          </p>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">Mercadería recibida</p>
-        </div>
-
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Calendar className="h-4 w-4 text-[var(--text-primary)]" />
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Categoría top</p>
-          </div>
-          <p className="text-base font-bold text-[var(--text-primary)] truncate">
-            {categories[0]?.cat ?? "—"}
-          </p>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5 tabular-nums">
-            {categories[0] ? fmt(categories[0].total) : ""}
-          </p>
-        </div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Kpi
+          label="Total gastado"
+          valor={h.loading ? "—" : fmt(resumen.total)}
+          detalle={`${resumen.cantidad} ${resumen.cantidad === 1 ? "movimiento" : "movimientos"}${h.hayFiltroActivo ? ` de ${h.items.length}` : ""}`}
+          icono={TrendingDown}
+          tono="var(--data-error-500)"
+        />
+        <Kpi
+          label="Ya pagado"
+          valor={h.loading ? "—" : fmt(resumen.pagado)}
+          detalle="Plata que salió de la caja"
+          icono={Wallet}
+          tono="var(--data-success-500)"
+        />
+        <Kpi
+          label="Queda por pagar"
+          valor={h.loading ? "—" : fmt(resumen.porPagar)}
+          detalle="Mercadería recibida sin cancelar"
+          icono={Clock}
+          tono={resumen.porPagar > 0 ? "var(--data-warning-500)" : undefined}
+        />
+        <Kpi
+          label="Categoría top"
+          valor={resumen.categorias[0] ? fmt(resumen.categorias[0].total) : "—"}
+          detalle={resumen.categorias[0]?.cat ?? "Sin movimientos"}
+          icono={DollarSign}
+        />
       </div>
 
-      {/* Toolbar: período + filtros */}
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Período */}
-        <div className="flex items-center gap-1 bg-[var(--surface-sunken)] p-1 rounded-lg">
-          {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
-                period === p
-                  ? "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-              )}
-            >
-              {PERIOD_LABELS[p]}
-            </button>
-          ))}
-        </div>
-
-        {/* Source filter */}
-        <div className="flex items-center gap-1 bg-[var(--surface-sunken)] p-1 rounded-lg">
-          {([
-            { v: "all" as const, l: "Todos" },
-            { v: "expense" as const, l: "Operativos" },
-            { v: "purchase" as const, l: "Proveedores" },
-          ]).map((opt) => (
-            <button
-              key={opt.v}
-              onClick={() => setSourceFilter(opt.v)}
-              className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
-                sourceFilter === opt.v
-                  ? "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-              )}
-            >
-              {opt.l}
-            </button>
-          ))}
-        </div>
-
-        {/* Búsqueda */}
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por descripción, categoría o proveedor"
-            className="w-full h-10 pl-10 pr-3 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] focus:border-primary/40 focus:ring-1 focus:ring-primary/30 outline-none"
+      {/* Toolbar en dos filas: los tres segmentos juntos no entran en una sola
+          y empujaban el buscador fuera de la pantalla. Arriba el período (que
+          recarga del servidor), abajo lo que filtra en el cliente. */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Segmento
+            opciones={(Object.keys(PERIOD_LABELS) as Period[]).map((p) => ({ v: p, l: PERIOD_LABELS[p] }))}
+            valor={h.period}
+            onChange={h.setPeriod}
           />
+
+          <div className="flex-1" />
+
+          <button
+            type="button"
+            onClick={h.recargar}
+            title="Recargar"
+            aria-label="Recargar el historial"
+            className="h-12 rounded-xl border-2 border-[var(--rule-base)] bg-white px-3 transition-colors hover:bg-[var(--surface-sunken)] dark:bg-[var(--color-card)]"
+          >
+            <RefreshCw className={cn("h-4 w-4 text-[var(--text-secondary)]", h.loading && "animate-spin")} />
+          </button>
+
+          <button
+            type="button"
+            onClick={h.exportarCsv}
+            disabled={h.filtered.length === 0}
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-white px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50 dark:bg-[var(--color-card)]"
+          >
+            <Download className="h-4 w-4" />
+            Exportar
+          </button>
         </div>
 
-        <div className="flex-1" />
+        <div className="flex flex-wrap items-center gap-2">
+          <Segmento
+            opciones={[
+              { v: "all" as const, l: "Todos" },
+              { v: "expense" as const, l: "Operativos" },
+              { v: "purchase" as const, l: "Proveedores" },
+            ]}
+            valor={h.sourceFilter}
+            onChange={h.setSourceFilter}
+          />
+          <Segmento
+            opciones={[
+              { v: "all" as const, l: "Pagado y no" },
+              { v: "pagado" as const, l: "Pagados" },
+              { v: "pendiente" as const, l: "Por pagar" },
+            ]}
+            valor={h.estadoFilter}
+            onChange={h.setEstadoFilter}
+          />
 
-        <button
-          onClick={fetchHistorial}
-          className="p-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-sunken)] transition-colors"
-          title="Recargar"
-        >
-          <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
-        </button>
+          <div className="relative min-w-[240px] max-w-md flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]" />
+            <input
+              type="search"
+              value={h.search}
+              onChange={(e) => h.setSearch(e.target.value)}
+              placeholder="Buscar descripción, categoría o proveedor"
+              aria-label="Buscar en el historial de gastos"
+              className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-white pl-10 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary/60 dark:bg-[var(--color-card)]"
+            />
+          </div>
 
-        <button
-          onClick={handleExport}
-          disabled={filtered.length === 0}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
-        >
-          <Download className="h-4 w-4" />
-          Exportar
-        </button>
+          {h.hayFiltroActivo && (
+            <button
+              type="button"
+              onClick={h.limpiarFiltros}
+              className="inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+            >
+              <X className="h-4 w-4" />
+              Limpiar filtros
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Distribución por categoría */}
-      {categories.length > 0 && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
+      {/* Distribución por categoría — cada chip filtra la tabla Y los totales */}
+      {resumen.categorias.length > 0 && (
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <p className="mb-3 text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
             Distribución por categoría
           </p>
           <div className="flex flex-wrap gap-2">
-            {categories.slice(0, 8).map(({ cat, total }) => {
-              const isActive = categoryFilter === cat;
+            {resumen.categorias.slice(0, 10).map(({ cat, total }) => {
+              const isActive = h.categoryFilter === cat;
               return (
                 <button
                   key={cat}
-                  onClick={() => setCategoryFilter(isActive ? "" : cat)}
+                  type="button"
+                  onClick={() => h.setCategoryFilter(isActive ? "" : cat)}
+                  aria-pressed={isActive}
                   className={cn(
-                    "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
+                    "inline-flex h-10 items-center gap-2 rounded-full border-2 px-3 text-sm font-semibold transition-colors",
                     isActive
-                      ? "bg-primary text-white border-primary"
-                      : "border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:border-primary/40 hover:text-primary",
+                      ? "border-primary bg-primary text-white"
+                      : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-primary/40 hover:text-primary dark:bg-[var(--color-card)]",
                   )}
                 >
                   <span>{cat}</span>
@@ -328,77 +225,70 @@ export default function HistorialGastosTab() {
         </div>
       )}
 
-      {/* Tabla */}
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-12 gap-2">
-            <RefreshCw className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" />
-            <span className="text-sm text-[var(--text-secondary)]">Cargando historial...</span>
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center py-12 gap-2">
-            <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
-            <p className="text-sm text-[var(--data-error-500)]">{error}</p>
-            <button onClick={fetchHistorial} className="text-xs text-primary font-bold hover:underline mt-1">
-              Reintentar
+      {h.loading ? (
+        <div className="flex items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] bg-white py-12 dark:bg-[var(--color-card)]">
+          <RefreshCw className="h-5 w-5 animate-spin text-[var(--text-secondary)]" />
+          <span className="text-sm text-[var(--text-secondary)]">Cargando historial…</span>
+        </div>
+      ) : h.error ? (
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-white py-12 dark:bg-[var(--color-card)]">
+          <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+          <p className="text-sm text-[var(--data-error-500)]">{h.error}</p>
+          <button type="button" onClick={h.recargar} className="mt-1 text-sm font-bold text-primary hover:underline">
+            Reintentar
+          </button>
+        </div>
+      ) : h.filtered.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-white py-12 dark:bg-[var(--color-card)]">
+          <DollarSign className="h-8 w-8 text-[var(--text-secondary)]" />
+          {/* «Sin gastos» puede significar dos cosas muy distintas: que no se
+              gastó, o que lo que hay quedó fuera del filtro. */}
+          <p className="text-base font-semibold text-[var(--text-primary)]">
+            {conDatos
+              ? "Ningún gasto coincide con el filtro"
+              : h.period === "todo"
+                ? "Todavía no hay gastos registrados"
+                : "Sin gastos en este período"}
+          </p>
+          <p className="text-sm text-[var(--text-secondary)]">
+            {conDatos
+              ? `Hay ${h.items.length} movimiento${h.items.length === 1 ? "" : "s"} en el período, pero ninguno coincide con la búsqueda o los filtros.`
+              : h.period === "todo"
+                ? "Cuando registres gastos o recibas compras, aparecerán acá."
+                : "Puede que los haya en otro período."}
+          </p>
+          {conDatos ? (
+            <button
+              type="button"
+              onClick={h.limpiarFiltros}
+              className="mt-1 inline-flex h-10 items-center rounded-lg border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+            >
+              Limpiar filtros
             </button>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center py-12 gap-2">
-            <DollarSign className="h-8 w-8 text-[var(--text-tertiary)]" />
-            <p className="text-sm font-semibold text-[var(--text-primary)]">
-              Sin gastos en este período
-            </p>
-            <p className="text-xs text-[var(--text-secondary)]">
-              Cuando registres gastos o recibas compras, aparecerán aquí.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            {/* ds-ignore-table — header sticky con sort indicators */}
-            <table className="w-full text-sm min-w-[700px]">
-              <thead className="sticky top-0 bg-[var(--surface-sunken)] z-10">
-                <tr className="text-left">
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Fecha</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Origen</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Categoría</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Descripción</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] text-right">Monto</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((item) => {
-                  const meta = SOURCE_META[item.source];
-                  const Icon = meta.icon;
-                  return (
-                    <tr key={item.id} className="border-t border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]/50 transition-colors">
-                      <td className="px-4 py-3 text-[var(--text-secondary)] whitespace-nowrap">{formatDate(item.fecha)}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: meta.tone }}>
-                          <Icon className="h-3.5 w-3.5" />
-                          {meta.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <StatusBadge variant="neutral" label={item.category} size="sm" />
-                      </td>
-                      <td className="px-4 py-3 text-[var(--text-primary)] max-w-md truncate">
-                        {item.description || "—"}
-                        {item.supplierName && (
-                          <span className="text-xs text-[var(--text-tertiary)] ml-1">· {item.supplierName}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right font-bold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
-                        {fmt(item.amount)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+          ) : h.period !== "todo" ? (
+            <button
+              type="button"
+              onClick={() => h.setPeriod("todo")}
+              className="mt-1 inline-flex h-10 items-center rounded-lg border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+            >
+              Ver todo el historial
+            </button>
+          ) : null}
+        </div>
+      ) : (
+        <HistorialTabla
+          grupos={h.grupos}
+          orden={h.orden}
+          alternarOrden={h.alternarOrden}
+          resumen={resumen}
+          visibles={h.visibles}
+          totalFilas={h.totalFilas}
+          verMas={h.verMas}
+          onAbrir={setDetalle}
+        />
+      )}
+
+      <GastoDetalleModal item={detalle} onClose={() => setDetalle(null)} />
     </div>
   );
 }

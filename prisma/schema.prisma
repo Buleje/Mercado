@@ -1266,13 +1266,63 @@ model Expense {
   description String   @default("")
   amount      Decimal  @db.Decimal(12, 2)
   date        DateTime @default(now())
+  /// `true` = PLANTILLA de gasto fijo (el acuerdo de pagar el alquiler), no
+  /// plata que salió. Los totales del negocio las excluyen: contarlas hacía
+  /// que el P&L declarara gastos que nadie desembolsó. Ver ADR-374.
   recurring   Boolean  @default(false)
   tenantId    String
   createdAt   DateTime @default(now())
 
+  // ─── ADR-374: la metadata deja de vivir dentro de `description` ───────────
+  // Frecuencia, método de pago y proveedor se serializaban como un bloque
+  // `\n---META---\n{…}` al final de la descripción (lib/expense-meta.ts). Eso
+  // los hacía invisibles para la base: no se podía filtrar por método de pago,
+  // ni sumar por proveedor, ni ordenar por vencimiento sin traer todo y
+  // parsear en el cliente. Y se filtraban a la vista: el CSV se exportaba con
+  // el JSON adentro. Fase EXPAND: todo nullable, el bloque sigue siendo la
+  // fuente hasta que el backfill termine.
+
+  /// mensual | quincenal | semanal | anual | unico
+  frequency      String?
+  /// Día del mes (1-31) o de la semana (0-6 si `frequency` es semanal).
+  paymentDay     Int?
+  /// efectivo | yape | plin | transferencia | tarjeta | credito
+  paymentMethod  String?
+  /// Quién cobra. Texto libre: muchos gastos fijos (el casero, el grifo de la
+  /// esquina) no son proveedores dados de alta.
+  supplierName   String?
+  /// Cuando SÍ es un proveedor del padrón. Sin FK a propósito: un gasto no
+  /// debe desaparecer porque se dio de baja al proveedor.
+  supplierId     String?
+  /// boleta | factura | recibo | ticket | sin_comprobante — para el contador.
+  documentType   String?
+  documentNumber String?
+  supplierRuc    String?
+  /// IGV discriminado. La base imponible es `amount - igvAmount`.
+  igvAmount      Decimal? @db.Decimal(12, 2)
+  afectoIgv      Boolean  @default(false)
+  /// Foto de la boleta.
+  attachmentUrl  String?
+  /// Centro de costo o etiqueta libre («delivery», «forestal»).
+  costCenter     String?
+  /// Username de quien lo registró.
+  createdBy      String?
+  /// Notas internas (antes iban dentro del bloque serializado).
+  notes          String?
+  /// De qué plantilla salió este pago. Sin esto, cruzar «¿el alquiler de agosto
+  /// ya está pagado?» dependía de comparar nombre + monto normalizados.
+  templateId     String?
+  /// Cuándo salió la plata. `null` en un gasto devengado y todavía impago.
+  paidAt         DateTime?
+
   @@index([category])
   @@index([date])
   @@index([tenantId])
+  // El historial siempre pide «los ejecutados de este período»: sin este
+  // índice compuesto la consulta filtra por tenant y descarta plantillas fila
+  // por fila.
+  @@index([tenantId, recurring, date])
+  @@index([templateId])
 }
 
 // ─── Gastos de PLATAFORMA (superadmin, Brandon 2026-06-30) ───────────────────
