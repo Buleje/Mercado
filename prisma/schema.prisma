@@ -824,6 +824,12 @@ model Supplier {
   categoria      String? // "mayorista" | "fabricante" | "distribuidor" | "importador"
   condicionPago  String? // "contado" | "credito_7" | "credito_15" | "credito_30"
   diasCredito    Int?    @default(0)
+  /// (ADR-376) Días que tarda en entregar desde que se le pasa el pedido.
+  /// Es el dato que convierte «me quedan 5 unidades» en «pedí HOY o te quedás
+  /// sin stock»: sin él, el punto de reorden no existe y la reposición se
+  /// decide contra un `stockMax` escrito a mano. Si está en `null` se deriva
+  /// del historial de órdenes de ese proveedor.
+  leadTimeDias   Int?
   cuentaBancaria String?
   banco          String?
 
