@@ -47,6 +47,16 @@ interface CensusStat { estado: string; count: number; volumenEstimadoM3: number;
 
 const n = (v: string | null, dp = 4) => (v == null || v === "" ? "—" : Number(v).toFixed(dp));
 const soles = (v: string | null) => (v == null || v === "" ? "—" : `S/ ${Number(v).toFixed(2)}`);
+/**
+ * Cuántos árboles del censo se traen para calcular el Plan Operativo.
+ *
+ * Alto a propósito: un POA de mil hectáreas censa miles de árboles, y con un
+ * tope bajo la pantalla mostraba un POA completo calculado sobre una parte
+ * —medido: con 605 árboles y tope 500 quedaban 590 m³ afuera, invisibles—.
+ * Si aun así se corta, el servidor avisa con `truncado` y la vista lo grita.
+ */
+const CENSO_LIMITE = 10_000;
+
 const censusVol = (dap: number, hc: number, ff: number) =>
   dap > 0 && hc > 0 ? Math.round(0.7854 * dap * dap * hc * ff * 10000) / 10000 : 0;
 
@@ -55,6 +65,9 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   const [planId, setPlanId] = useState<string | null>(null);
   const [species, setSpecies] = useState<Species[]>([]);
   const [trees, setTrees] = useState<Tree[]>([]);
+  /** Cuántos árboles tiene el censo DE VERDAD, y si lo cargado se quedó corto. */
+  const [censoTotal, setCensoTotal] = useState(0);
+  const [censoTruncado, setCensoTruncado] = useState(false);
   const [censusStat, setCensusStat] = useState<CensusStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,12 +95,23 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
     try {
       const [d, c, b, poa] = await Promise.all([
         fetch(`/api/admin/forestal/plan?planId=${id}`, { credentials: "include" }),
-        fetch(`/api/admin/forestal/plan/census?planId=${id}`, { credentials: "include" }),
+        /* El límite va EXPLÍCITO: el POA se calcula sobre estas filas, así que
+           cuánto se trae es una decisión de esta pantalla y no un default que
+           puede cambiar en el servidor sin que nadie se entere. */
+        fetch(`/api/admin/forestal/plan/census?planId=${id}&limit=${CENSO_LIMITE}`, { credentials: "include" }),
         fetch(`/api/admin/forestal/plan?balance=${id}`, { credentials: "include" }),
         fetch(`/api/admin/forestal/loth/poa?planId=${id}`, { credentials: "include" }),
       ]);
       if (d.ok) { const j = await d.json(); setSpecies(j.species ?? []); setCensusStat(j.censusSummary ?? []); }
-      if (c.ok) setTrees((await c.json()).trees ?? []);
+      if (c.ok) {
+        /* El `total` NO se descarta: el Plan Operativo se calcula sobre estas
+           filas y, si el censo viene cortado, la pantalla tiene que decirlo en
+           vez de mostrar un POA completo y equivocado. */
+        const j = (await c.json()) as { trees?: Tree[]; total?: number; truncado?: boolean };
+        setTrees(j.trees ?? []);
+        setCensoTotal(j.total ?? (j.trees ?? []).length);
+        setCensoTruncado(Boolean(j.truncado));
+      }
       if (b.ok) setBalance((await b.json()).balance ?? null);
       if (poa.ok) setPoaConfig((await poa.json()).config ?? defaultPoaConfig());
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
@@ -304,9 +328,24 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
             <StatCard density="compact" label="Vol. autorizado" value={`${autorizadoTotal.toFixed(0)} m³`} subValue={`${species.length} especie${species.length === 1 ? "" : "s"}`} icon={FileText} emphasis="neutral" />
             <StatCard density="compact" label="Aprovechamiento POA" value={`${aprovechamientoPct.toFixed(0)}%`} subValue={`${movilizadoTotal.toFixed(1)} m³ movilizados`} icon={TrendingUp} emphasis={aprovechamientoPct > 100 ? "error" : aprovechamientoPct >= 85 ? "warning" : "success"} />
             <StatCard density="compact" label="Saldo disponible" value={`${saldoTotal.toFixed(1)} m³`} subValue={`${Math.max(0, 100 - aprovechamientoPct).toFixed(0)}% del POA`} icon={Scale} emphasis="success" />
-            <StatCard density="compact" label="Árboles censados" value={trees.length.toString()} subValue={`${georrefPct}% con GPS`} icon={TreePine} emphasis="neutral" />
+            <StatCard density="compact" label="Árboles censados" value={censoTotal.toString()} subValue={censoTruncado ? `calculando sobre ${trees.length}` : `${georrefPct}% con GPS`} icon={TreePine} emphasis={censoTruncado ? "warning" : "neutral"} />
             <StatCard density="compact" label="Control de especies" value={`${okCount}/${controlRows.length}`} subValue={noAutorizadas.length > 0 ? `${noAutorizadas.length} fuera del plan` : "todo autorizado"} icon={noAutorizadas.length > 0 ? ShieldAlert : ShieldCheck} emphasis={noAutorizadas.length > 0 ? "error" : "success"} />
           </div>
+
+          {/* ⛔ Antes que cualquier otro número: si el censo vino cortado, TODO
+              lo que sigue —aprovechables, volumen sobre DMC, intensidad por
+              hectárea, el cuadre por especie— está calculado sobre una parte. Un
+              POA equivocado que se ve completo es peor que uno que falta. */}
+          {censoTruncado && (
+            <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                El censo tiene {censoTotal.toLocaleString("es-PE")} árboles y se cargaron {trees.length.toLocaleString("es-PE")}.
+                Todo el Plan Operativo de abajo está calculado sobre esos {trees.length.toLocaleString("es-PE")}: no lo uses para declarar
+                hasta filtrar por parcela o estado.
+              </span>
+            </p>
+          )}
 
           {/* Alertas de calidad del cruce censo ↔ autorizado (lo que el diseño viejo no atrapaba) */}
           <QualityAlerts rows={controlRows} />
@@ -355,6 +394,8 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
           <CensusPanel
             planId={plan.id}
             trees={trees}
+            total={censoTotal}
+            truncado={censoTruncado}
             authorizedSpecies={authorizedSet}
             categorias={categoriaPorArbol}
             dmcOverrides={poaConfig.dmcOverrides}
@@ -577,8 +618,8 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
 }
 
 // ─── Censo ─────────────────────────────────────────────────────────────────
-function CensusPanel({ planId, trees, authorizedSpecies, categorias, dmcOverrides, onChange }: {
-  planId: string; trees: Tree[]; authorizedSpecies: Set<string>;
+function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, categorias, dmcOverrides, onChange }: {
+  planId: string; trees: Tree[]; total: number; truncado: boolean; authorizedSpecies: Set<string>;
   /** DMC fijado por el plan — el importador avisa si una fila cae por debajo. */
   dmcOverrides: Record<string, number>;
   /** Categoría POA por árbol (aprovechable / semillero / bajo DMC…). */
@@ -592,6 +633,8 @@ function CensusPanel({ planId, trees, authorizedSpecies, categorias, dmcOverride
   const [q, setQ] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("todos");
   const [catFilter, setCatFilter] = useState("todas");
+  /** Cuántas filas se pintan. Un censo real tiene miles y el DOM no las aguanta. */
+  const [visibles, setVisibles] = useState(200);
   const [f, setF] = useState({ treeCode: "", speciesCommon: "", dapM: "", alturaComercialM: "", factorForma: "0.65", utmZona: "18L", utmX: "", utmY: "" });
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   const auto = censusVol(Number(f.dapM), Number(f.alturaComercialM), Number(f.factorForma) || 0.65);
@@ -664,7 +707,7 @@ function CensusPanel({ planId, trees, authorizedSpecies, categorias, dmcOverride
   }
 
   return (
-    <Panel title={`Censo forestal (${trees.length})`} action={
+    <Panel title={`Censo forestal (${total.toLocaleString("es-PE")})`} action={
       <div className="flex gap-2">
         <button type="button" onClick={() => setImporting(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Upload className="h-3.5 w-3.5" /> Importar censo</button>
         <AddBtn onClick={() => setOpen(true)} />
@@ -732,11 +775,17 @@ function CensusPanel({ planId, trees, authorizedSpecies, categorias, dmcOverride
             <option value="bajo_dmc">Bajo DMC</option>
             <option value="sin_dap">Sin DAP</option>
           </select>
-          <span className="text-xs tabular-nums text-[var(--text-tertiary)]">{filtered.length} de {trees.length}</span>
+          <span className="text-xs tabular-nums text-[var(--text-secondary)]">
+            {/* Tres números distintos y los tres importan: lo que se ve, lo que
+                pasa el filtro y lo que hay. Con uno solo, 200 filas de 3.000
+                parecen el censo entero. */}
+            {Math.min(visibles, filtered.length)} de {filtered.length}
+            {filtered.length !== total && <> · {total.toLocaleString("es-PE")} en el censo</>}
+          </span>
         </div>
       )}
       <Table head={["Código", "Especie", "DAP", "Hc", "Vol. est. m³", "Categoría POA", "Estado", ""]}>
-        {filtered.slice(0, 200).map((t) => {
+        {filtered.slice(0, visibles).map((t) => {
           const fuera = outOfPlan(t.speciesCommon);
           return (
           <tr key={t.id} className={`border-t border-[var(--rule-soft)] ${fuera ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/12" : ""}`}>
@@ -754,7 +803,22 @@ function CensusPanel({ planId, trees, authorizedSpecies, categorias, dmcOverride
         {trees.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]"><TreePine className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin árboles censados. Agregá o importá el censo (CSV).</td></tr>}
         {trees.length > 0 && filtered.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">Ningún árbol coincide con el filtro.</td></tr>}
       </Table>
-      {filtered.length > 200 && <p className="mt-2 text-center text-xs text-[var(--text-tertiary)]">Mostrando 200 de {filtered.length} árboles.</p>}
+      {filtered.length > visibles && (
+        <div className="mt-3 flex flex-col items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setVisibles((v) => v + 200)}
+            className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+          >
+            Ver 200 más ({(filtered.length - visibles).toLocaleString("es-PE")} restantes)
+          </button>
+          {truncado && (
+            <p className="text-center text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              Además hay {(total - trees.length).toLocaleString("es-PE")} árboles que no se cargaron: filtrá por estado para alcanzarlos.
+            </p>
+          )}
+        </div>
+      )}
     </Panel>
   );
 }
