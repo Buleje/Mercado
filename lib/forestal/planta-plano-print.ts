@@ -22,6 +22,7 @@ const TIPO_HEX: Record<ZonaTipo, string> = {
   aserrado: "#00a0a0",
   secado: "#a855f7",
   patio_producto: "#10b981",
+  reserva: "#0ea5e9",
   despacho: "#ef4444",
   oficina: "#6b7280",
   otro: "#1d4ed8",

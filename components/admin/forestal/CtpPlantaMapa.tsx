@@ -109,6 +109,8 @@ export interface CtpPlantaMapaProps {
   fichaDeItem?: (entryId: string) => string | null;
   /** HTML de la ficha de una zona con su resumen. */
   fichaDeZona?: (zonaId: string) => string | null;
+  /** Emitir la guía con lo apilado en una cancha de reserva. */
+  onDespachar?: (zonaId: string) => void;
 }
 
 /** Lo mínimo que necesita el mapa de un ítem para ponerle su chapita. */
@@ -123,7 +125,7 @@ export interface MarcaItem {
 
 export default function CtpPlantaMapa({
   zonas, inventario, onChanged, enMano = null, onSoltarEnZona, onSoltarAfuera, zonaResaltada = null, irA = null,
-  ubicados, recienUbicado = null, posiciones, onMover, onQuitar, fichaDeItem, fichaDeZona,
+  ubicados, recienUbicado = null, posiciones, onMover, onQuitar, fichaDeItem, fichaDeZona, onDespachar,
 }: CtpPlantaMapaProps) {
   /** Zona bajo el puntero mientras se arrastra un ítem (previsualiza el destino). */
   const [sobreZona, setSobreZona] = useState<string | null>(null);
@@ -214,6 +216,8 @@ export default function CtpPlantaMapa({
   fichaItemRef.current = fichaDeItem;
   const fichaZonaRef = useRef(fichaDeZona);
   fichaZonaRef.current = fichaDeZona;
+  const onDespacharRef = useRef(onDespachar);
+  onDespacharRef.current = onDespachar;
   /** Zona cuya ficha emergente está abierta (el botón «ver ficha» la necesita). */
   const zonaFichaAbiertaRef = useRef<string | null>(null);
   /** zonaId → capa dibujada, para resaltar sin volver a dibujar el mapa entero. */
@@ -406,12 +410,18 @@ export default function CtpPlantaMapa({
       // Los botones de las fichas viven en HTML que inserta Leaflet, fuera del
       // árbol de React: no hay onClick que ponerles. Se delega en el contenedor.
       containerRef.current?.addEventListener("click", (ev) => {
-        const el = (ev.target as HTMLElement)?.closest?.("[data-quitar],[data-ficha]") as HTMLElement | null;
+        const el = (ev.target as HTMLElement)?.closest?.("[data-quitar],[data-ficha],[data-despachar]") as HTMLElement | null;
         if (!el) return;
         ev.preventDefault();
         ev.stopPropagation();
         const quitar = el.getAttribute("data-quitar");
         if (quitar) { onQuitarRef.current?.(quitar); map.closePopup(); return; }
+        if (el.hasAttribute("data-despachar") && zonaFichaAbiertaRef.current) {
+          const zid = zonaFichaAbiertaRef.current;
+          map.closePopup();
+          onDespacharRef.current?.(zid);
+          return;
+        }
         if (el.hasAttribute("data-ficha") && zonaFichaAbiertaRef.current) {
           const z = zonasRef.current.find((x) => x.id === zonaFichaAbiertaRef.current);
           map.closePopup();
@@ -665,7 +675,7 @@ export default function CtpPlantaMapa({
   const hasZonas = conGeom.length > 0;
   // Sugerencia de código por tipo (PT-01, AS-01…) para la próxima zona.
   const suggestCodigo = (tipo: ZonaTipo) => {
-    const pre = { entrada: "EN", patio_trozas: "PT", aserrado: "AS", secado: "SC", patio_producto: "PP", despacho: "DS", oficina: "OF", otro: "Z" }[tipo];
+    const pre = { entrada: "EN", patio_trozas: "PT", aserrado: "AS", secado: "SC", patio_producto: "PP", reserva: "RS", despacho: "DS", oficina: "OF", otro: "Z" }[tipo];
     const nums = zonas.map((z) => new RegExp(`^${pre}-?(\\d+)`, "i").exec(z.codigo)).filter(Boolean).map((m) => parseInt(m![1], 10));
     return `${pre}-${String((nums.length ? Math.max(...nums) : 0) + 1).padStart(2, "0")}`;
   };

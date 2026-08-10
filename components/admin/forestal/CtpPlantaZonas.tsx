@@ -15,7 +15,7 @@
 
 import { useMemo } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Layers, MapPin } from "@buleje/design-system/icons";
+import { Layers, MapPin, Truck } from "@buleje/design-system/icons";
 import {
   zonaTipoMeta,
   type Item,
@@ -32,9 +32,11 @@ export interface CtpPlantaZonasProps {
   itemsPorZona: Record<string, Item[]>;
   /** Centra el mapa en esa zona. */
   onIrAZona: (zonaId: string) => void;
+  /** Emitir la guía con lo apilado en una cancha de reserva. */
+  onDespachar: (zonaId: string) => void;
 }
 
-export default function CtpPlantaZonas({ zonas, itemsPorZona, onIrAZona }: CtpPlantaZonasProps) {
+export default function CtpPlantaZonas({ zonas, itemsPorZona, onIrAZona, onDespachar }: CtpPlantaZonasProps) {
   const filas = useMemo(() => {
     const total = zonas.reduce((a, z) => a + (z.areaM2 ?? 0), 0);
     return {
@@ -50,6 +52,8 @@ export default function CtpPlantaZonas({ zonas, itemsPorZona, onIrAZona }: CtpPl
             // Un renglón por tipo, sin mezclar unidades (ver `planta-resumen`).
             dentro: r.porKind.map((k) => fmtSubtotales(k.subtotales)).join(" · "),
             lineas: r.lineas,
+            // Una cancha de reserva con aserrada adentro puede emitir su guía.
+            puedeDespachar: z.tipo === "reserva" && (itemsPorZona[z.id] ?? []).some((it) => it.kind === "producto"),
           };
         })
         .sort((a, b) => b.area - a.area),
@@ -107,6 +111,17 @@ export default function CtpPlantaZonas({ zonas, itemsPorZona, onIrAZona }: CtpPl
               </span>
               <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
             </button>
+            {/* La cancha apartada emite su guía desde acá: la madera ya tiene
+                dueño, no hace falta volver a elegirla en una lista de cien. */}
+            {f.puedeDespachar && (
+              <button
+                type="button"
+                onClick={() => onDespachar(f.z.id)}
+                className="mt-0.5 inline-flex h-7 w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] text-[length:var(--ts-2xs)] font-bold text-white hover:bg-[var(--accent-600)]"
+              >
+                <Truck className="h-3.5 w-3.5" /> Nuevo despacho con lo apartado acá
+              </button>
+            )}
           </li>
         ))}
       </ul>

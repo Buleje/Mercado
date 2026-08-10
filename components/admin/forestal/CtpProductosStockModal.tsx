@@ -115,6 +115,7 @@ export default function CtpProductosStockModal({
   yaElegidos,
   presetProducto,
   presetEspecie,
+  presetCorridas,
   onAgregar,
   onCerrar,
 }: {
@@ -122,6 +123,12 @@ export default function CtpProductosStockModal({
   yaElegidos: ReadonlySet<string>;
   presetProducto?: string | null;
   presetEspecie?: string | null;
+  /**
+   * Corridas que llegan ya elegidas — es lo apilado en una cancha de reserva
+   * del mapa de planta. Se filtran y se TILDAN solas: el operador ya decidió
+   * qué sale cuando lo puso en esa cancha, acá sólo confirma.
+   */
+  presetCorridas?: readonly string[] | null;
   onAgregar: (filas: FilaDespacho[]) => void;
   onCerrar: () => void;
 }) {
@@ -158,11 +165,24 @@ export default function CtpProductosStockModal({
            completa que una pantalla en blanco. */
         if (presetProducto) setProducto(nuevas.map((f) => f.producto ?? "").find((p) => norm(p) === norm(presetProducto)) ?? "");
         if (presetEspecie) setEspecie(nuevas.map((f) => f.especie ?? "").find((e) => norm(e) === norm(presetEspecie)) ?? "");
+        /* Reserva: se tildan las filas de esas corridas. Una corrida puede tener
+           varios paquetes y cada uno es una fila, así que se marcan TODAS las
+           suyas — el operador destilda lo que no sale en este viaje. */
+        if (presetCorridas?.length) {
+          const set = new Set(presetCorridas);
+          setElegidas(new Set(nuevas.filter((f) => set.has(f.corridaId)).map((f) => f.uid)));
+        }
       })
       .catch((e) => { if (vivo) setError(e instanceof Error ? e.message : String(e)); })
       .finally(() => { if (vivo) setCargando(false); });
     return () => { vivo = false; };
-  }, [presetProducto, presetEspecie]);
+  }, [presetProducto, presetEspecie, presetCorridas]);
+
+  /** Con reserva, la lista se acota a lo que hay en esa cancha. */
+  const soloCorridas = useMemo(
+    () => (presetCorridas?.length ? new Set(presetCorridas) : null),
+    [presetCorridas],
+  );
 
   const opciones = useMemo(() => {
     const unicos = (vals: (string | null | undefined)[]) => [...new Set(vals.map((v) => (v ?? "").trim()).filter(Boolean))].sort();
@@ -178,6 +198,7 @@ export default function CtpProductosStockModal({
     const q = norm(texto);
     return filas.filter((f) => {
       if (yaElegidos.has(f.uid)) return false;
+      if (soloCorridas && !soloCorridas.has(f.corridaId)) return false;
       if (plan && !f.titularOrigen.some((t) => norm(t) === norm(plan))) return false;
       if (lote && norm(f.lote) !== norm(lote)) return false;
       if (especie && norm(f.especie) !== norm(especie)) return false;
@@ -186,7 +207,7 @@ export default function CtpProductosStockModal({
       if (q && ![f.codigo, ...f.gtfOrigen, f.lote, f.especie].some((v) => norm(v).includes(q))) return false;
       return true;
     });
-  }, [filas, yaElegidos, plan, lote, especie, producto, fecha, texto]);
+  }, [filas, yaElegidos, soloCorridas, plan, lote, especie, producto, fecha, texto]);
 
   const { visibles: enPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(visibles, { porPaginaInicial: 25 });
 

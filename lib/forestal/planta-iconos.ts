@@ -151,6 +151,8 @@ export function fichaZonaHtml(d: {
   porKind: { label: string; valor: string; lineas: number }[];
   porEspecie: { especie: string; valor: string; lineas: number }[];
   vacia: boolean;
+  /** Cancha de reserva con producto adentro: se puede emitir su guía desde acá. */
+  puedeDespachar?: boolean;
 }): string {
   const kinds = d.porKind
     .map((k) => `<div class="ctp-pop-fila"><span>${esc(k.label)} <i>· ${k.lineas}</i></span><b>${esc(k.valor)}</b></div>`)
@@ -169,7 +171,12 @@ export function fichaZonaHtml(d: {
       : `${kinds}<div class="ctp-pop-sep">Por especie</div>${especies}`,
     `</div>`,
     d.notas ? `<p class="ctp-pop-notas">${esc(d.notas)}</p>` : "",
-    `<div class="ctp-pop-pie"><button type="button" class="ctp-pop-btn" data-ficha="1">Ver ficha de la zona</button></div>`,
+    `<div class="ctp-pop-pie">`,
+    d.puedeDespachar
+      ? `<button type="button" class="ctp-pop-btn ctp-pop-btn-cta" data-despachar="1">Nuevo despacho</button>`
+      : "",
+    `<button type="button" class="ctp-pop-btn" data-ficha="1">Ver ficha</button>`,
+    `</div>`,
     `</div>`,
   ].join("");
 }
@@ -252,6 +259,12 @@ export const MARCA_CSS = `
   font: 800 10px system-ui, sans-serif; color: inherit;
 }
 .ctp-pop-btn:hover { background: rgba(127,127,127,.18); }
+.ctp-pop-pie .ctp-pop-btn { margin-left: 0; }
+.ctp-pop-pie .ctp-pop-btn:first-of-type { margin-left: auto; }
+.ctp-pop-btn-cta {
+  background: var(--accent, #14b8a6); color: #fff; border-color: transparent;
+}
+.ctp-pop-btn-cta:hover { background: var(--accent-600, #0d9488); }
 
 /* El globo de Leaflet es blanco por defecto: acá manda el tema del panel. */
 .ctp-popup .leaflet-popup-content-wrapper {

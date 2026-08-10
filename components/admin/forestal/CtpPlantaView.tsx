@@ -22,6 +22,7 @@ import CtpPlantaMapa from "./CtpPlantaMapa";
 import CtpPlantaPanel from "./CtpPlantaPanel";
 import CtpPlantaEspecies from "./CtpPlantaEspecies";
 import CtpPlantaZonas from "./CtpPlantaZonas";
+import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
 
 export type { Item, ItemKind, ZonaInv };
 
@@ -205,6 +206,22 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
     });
   }, [items, asignaciones, zonaById]);
 
+  /**
+   * Emitir la guía de una cancha de reserva: el modal se abre con las corridas
+   * apiladas ahí ya tildadas y el nombre de la cancha como destinatario. Lo que
+   * el operador decidió al apartar la madera no se vuelve a decidir.
+   */
+  const [despachando, setDespachando] = useState<{ zonaId: string; corridas: string[]; destino: string } | null>(null);
+  const abrirDespacho = useCallback((zonaId: string) => {
+    const z = zonaById.get(zonaId);
+    const corridas = (itemsPorZona[zonaId] ?? []).filter((it) => it.kind === "producto").map((it) => it.id);
+    if (!z || corridas.length === 0) {
+      setAviso("Esa cancha no tiene madera aserrada para despachar.");
+      return;
+    }
+    setDespachando({ zonaId, corridas, destino: z.nombre || z.codigo });
+  }, [zonaById, itemsPorZona]);
+
   /** Ficha emergente de una zona: el terreno + qué hay parado, por especie. */
   const fichaDeZona = useCallback((zonaId: string): string | null => {
     const z = zonaById.get(zonaId);
@@ -221,6 +238,8 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
       porKind: r.porKind.map((k) => ({ label: KIND_LABEL[k.kind], valor: fmtSubtotales(k.subtotales), lineas: k.lineas })),
       porEspecie: r.porEspecie.map((e) => ({ especie: e.especie, valor: fmtSubtotales(e.subtotales), lineas: e.lineas })),
       vacia: r.lineas === 0,
+      // Sólo una cancha de RESERVA con aserrada adentro ofrece emitir la guía.
+      puedeDespachar: z.tipo === "reserva" && (itemsPorZona[zonaId] ?? []).some((it) => it.kind === "producto"),
     });
   }, [zonaById, itemsPorZona]);
 
@@ -302,6 +321,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
           onQuitar={(id) => void asignar(id, null)}
           fichaDeItem={fichaDeItem}
           fichaDeZona={fichaDeZona}
+          onDespachar={abrirDespacho}
         />
         <CtpPlantaPanel
           items={items}
@@ -316,6 +336,20 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
           ocupado={asignando}
         />
       </div>
+
+      {despachando && (
+        <CtpDespachoGuiaModal
+          presetCorridas={despachando.corridas}
+          presetDestino={despachando.destino}
+          onClose={() => setDespachando(null)}
+          onSaved={(r) => {
+            setDespachando(null);
+            setAviso(`Guía registrada · ${r.lineas} ${r.lineas === 1 ? "línea" : "líneas"} del libro`);
+            // Lo despachado deja de estar disponible: el mapa tiene que reflejarlo.
+            void load();
+          }}
+        />
+      )}
 
       {aviso && (
         <p className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-sm font-bold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
@@ -332,6 +366,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
           zonas={zonas}
           itemsPorZona={itemsPorZona}
           onIrAZona={(zid) => setIrA((p) => ({ zonaId: zid, n: (p?.n ?? 0) + 1 }))}
+          onDespachar={abrirDespacho}
         />
       </div>
 

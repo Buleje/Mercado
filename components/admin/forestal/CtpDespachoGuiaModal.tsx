@@ -52,12 +52,22 @@ const hoy = () => new Date().toISOString().slice(0, 10);
 export default function CtpDespachoGuiaModal({
   presetProducto,
   presetEspecie,
+  presetCorridas,
+  presetDestino,
   onClose,
   onSaved,
 }: {
   /** Producto elegido en Saldos («del patio a la guía»): abre el stock filtrado. */
   presetProducto?: string | null;
   presetEspecie?: string | null;
+  /**
+   * Corridas de una cancha de RESERVA del mapa de planta: el stock se abre
+   * filtrado a ellas y ya tildadas. Lo que se apartó para ese cliente entra a
+   * la guía sin buscarlo de nuevo en una lista de cien líneas.
+   */
+  presetCorridas?: readonly string[] | null;
+  /** Nombre de la cancha («Lote 1 · Juan»): arranca como destinatario. */
+  presetDestino?: string | null;
   onClose: () => void;
   onSaved: (r: { lineas: number; offline?: boolean }) => void;
 }) {
@@ -65,13 +75,20 @@ export default function CtpDespachoGuiaModal({
   const directorio = useDirectorioForestal();
 
   const [tab, setTab] = useState<"guia" | "productos">("guia");
-  const [datos, setDatos] = useState<GtfDatos>(() => gtfDatosVacio());
+  const [datos, setDatos] = useState<GtfDatos>(() => {
+    const base = gtfDatosVacio();
+    // El nombre de la cancha de reserva («Lote 1 · Juan») arranca como
+    // destinatario: es a quien se le apartó la madera. Se puede corregir —es un
+    // punto de partida, no un dato del libro.
+    if (presetDestino?.trim()) base.destinatario = { ...base.destinatario, nombre: presetDestino.trim() };
+    return base;
+  });
   const [filas, setFilas] = useState<FilaDespacho[]>([]);
   const [emision, setEmision] = useState(hoy);
   const [gtfNumber, setGtfNumber] = useState("");
   const [docType, setDocType] = useState("GTF");
   const [sello, setSello] = useState<SelloSerfor | null>(null);
-  const [stockAbierto, setStockAbierto] = useState(Boolean(presetProducto));
+  const [stockAbierto, setStockAbierto] = useState(Boolean(presetProducto) || Boolean(presetCorridas?.length));
   /** El otro origen de la lista: las trozas que salen sin aserrar (ADR-363). */
   const [trozasAbierto, setTrozasAbierto] = useState(false);
   /**
@@ -614,6 +631,7 @@ export default function CtpDespachoGuiaModal({
           yaElegidos={yaElegidos}
           presetProducto={presetProducto}
           presetEspecie={presetEspecie}
+          presetCorridas={presetCorridas}
           onAgregar={agregarFilas}
           onCerrar={() => setStockAbierto(false)}
         />

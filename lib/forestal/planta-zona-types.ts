@@ -16,6 +16,7 @@ export type ZonaTipo =
   | "aserrado"
   | "secado"
   | "patio_producto"
+  | "reserva"
   | "despacho"
   | "oficina"
   | "otro";
@@ -52,6 +53,10 @@ export const ZONA_TIPOS: {
   { tipo: "aserrado", label: "Zona de aserrado", ring: "var(--accent)", hint: "Sierra / línea de transformación primaria", icon: "Scissors" },
   { tipo: "secado", label: "Secado", ring: "var(--data-8)", hint: "Horno o cancha de secado de aserrada", icon: "Sun" },
   { tipo: "patio_producto", label: "Patio de producto", ring: "var(--data-success-500)", hint: "Madera aserrada terminada, lista para despacho", icon: "Package" },
+  // La reserva es una cancha APARTADA: lo que se apila ahí ya tiene dueño. Por
+  // eso es su propio tipo y no un patio más — desde ella se emite la guía con
+  // los productos que tiene adentro ya cargados.
+  { tipo: "reserva", label: "Reserva para despacho", ring: "var(--data-6)", hint: "Cancha apartada para un cliente o lote; desde acá se emite su guía", icon: "BookmarkCheck" },
   { tipo: "despacho", label: "Despacho / Salida", ring: "var(--data-error-500)", hint: "Carga y salida de producto con GTF de salida", icon: "Truck" },
   { tipo: "oficina", label: "Oficina / Administración", ring: "var(--text-tertiary)", hint: "Administración, balanza, control", icon: "Building2" },
   { tipo: "otro", label: "Otra zona", ring: "var(--data-info-700)", hint: "Cualquier otra área de la planta", icon: "MapPin" },
