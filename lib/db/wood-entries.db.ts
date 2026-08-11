@@ -517,6 +517,12 @@ export interface WoodEntryStats {
   lateCount: number;
   /** Ingresos vigentes sin código de origen — sin eso no hay EUDR posible. */
   sinOrigenCount: number;
+  /**
+   * Ingresos vigentes sin costo cargado. No traba nada del libro —el
+   * compliance no pide precios— pero es lo que deja al COGS sin base: lo que
+   * salga de esa madera no puede mostrar margen.
+   */
+  sinCostoCount: number;
   byStatus: Record<WoodEntryStatus, number>;
   /** Especies / proveedores / productos presentes en el período (top 30 por volumen). */
   species: WoodEntryFacet[];
@@ -2534,7 +2540,7 @@ export class WoodEntriesDB {
     // la tabla listar 2.
     const condFueraDePlazo = lateConditions(tenantId, periodFilters);
 
-    const [agg, byStatusRows, speciesRows, citesAgg, lateRows, providerRows, productRows, sinOrigenCount] = await Promise.all([
+    const [agg, byStatusRows, speciesRows, citesAgg, lateRows, providerRows, productRows, sinOrigenCount, sinCostoCount] = await Promise.all([
       prisma.woodEntry.aggregate({
         where: whereVigente,
         _sum: { volumeM3: true, pieces: true },
@@ -2573,6 +2579,9 @@ export class WoodEntriesDB {
       prisma.woodEntry.count({
         where: { ...whereVigente, OR: [{ originCode: null }, { originCode: "" }] },
       }),
+      // Ingresos sin valorizar: lo que deja al P&L sin COGS. Vigentes también —
+      // el costo de un rechazado no le importa a nadie.
+      prisma.woodEntry.count({ where: { ...whereVigente, costoTotal: null } }),
     ]);
 
     const byStatus: Record<WoodEntryStatus, number> = {
@@ -2610,6 +2619,7 @@ export class WoodEntriesDB {
       citesVolumeM3: r4(citesAgg._sum.volumeM3?.toNumber() ?? 0),
       lateCount: Number(lateRows[0]?.count ?? 0),
       sinOrigenCount,
+      sinCostoCount,
       byStatus,
       species: faceta(speciesRows, (r) => r.speciesCommonName),
       providers: faceta(providerRows, (r) => r.providerName),
@@ -2728,6 +2738,73 @@ export class WoodEntriesDB {
       entity: "WoodEntry",
       entityId: entry.id,
       detail: `Corrigió el ingreso ${actual.gtfNumber}${cambios ? ` · ${cambios}` : " · sin cambios"}`,
+      user,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    return entry;
+  }
+
+  /**
+   * Cuánto se pagó por esta madera.
+   *
+   * EL HUECO QUE TAPA. `costoTotal` existía en la tabla y en `create()`, pero
+   * ningún endpoint lo aceptaba: en la práctica sólo entraba por importación.
+   * Resultado medido en el tenant real: 78 de 83 ingresos sin costo, o sea el
+   * 91% del patio sin valorizar y un P&L que no podía calcular el COGS de casi
+   * nada. El libro sabía cuánta madera entró; nunca cuánto costó.
+   *
+   * Por qué es una acción aparte y no un campo más de `update()`:
+   * la corrección sólo se permite mientras el ingreso está `pendiente`, y con
+   * razón —un ingreso validado ya entró al balance—. Pero la factura del
+   * proveedor llega DESPUÉS del camión, casi siempre con el ingreso ya
+   * validado. Meter el costo en `update()` lo haría incargable justo en el
+   * momento en que se conoce.
+   *
+   * Lo que sí se respeta:
+   * · el mes cerrado manda (ADR-135: los costos se congelan al cierre),
+   * · un ingreso anulado o rechazado no recibe costo: no es del balance,
+   * · `null` es un valor legítimo —"me equivoqué de factura"— y NUNCA 0, que
+   *   fingiría madera regalada y un margen del 100%.
+   */
+  static async setCosto(
+    tenantId: string,
+    id: string,
+    input: { costoTotal: number | null; moneda?: string | null },
+    user: string,
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!id) throw new Error("id is required");
+    if (input.costoTotal != null && !(input.costoTotal >= 0)) {
+      throw new Error("costoTotal no puede ser negativo");
+    }
+
+    const actual = await prisma.woodEntry.findFirst({ where: { id, tenantId, deletedAt: null } });
+    if (!actual) throw new Error("Ingreso no encontrado");
+    if (actual.status !== "pendiente" && actual.status !== "validado") {
+      throw new CtpInvariantError(
+        `Un ingreso ${actual.status} no lleva costo: no cuenta en el balance.`,
+        "ESTADO_NO_EDITABLE",
+        { status: actual.status },
+      );
+    }
+    await WoodEntriesDB.assertPeriodoAbierto(tenantId, id, "valorizar");
+
+    const entry = await prisma.woodEntry.update({
+      where: { id },
+      data: {
+        costoTotal: input.costoTotal != null ? new Prisma.Decimal(input.costoTotal) : null,
+        ...(input.moneda !== undefined ? { moneda: input.moneda ?? "PEN" } : {}),
+      },
+    });
+
+    const antes = actual.costoTotal != null ? `S/ ${actual.costoTotal.toString()}` : "sin costo";
+    const despues = entry.costoTotal != null ? `S/ ${entry.costoTotal.toString()}` : "sin costo";
+    auditCtp({
+      tenantId,
+      action: "ctp_ingreso_costo",
+      entity: "WoodEntry",
+      entityId: entry.id,
+      detail: `Valorizó el ingreso ${actual.gtfNumber} · ${antes} → ${despues}`,
       user,
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}

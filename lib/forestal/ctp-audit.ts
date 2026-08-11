@@ -102,6 +102,10 @@ export type CtpAuditAction =
   // detalle narra campo por campo qué cambió — un libro fiscalizable tiene que
   // poder responder "¿esto siempre dijo 5.20 m³?".
   | "ctp_ingreso_update"
+  // Cuánto se pagó por la madera. Va aparte de `update` porque se carga cuando
+  // llega la factura —con el ingreso ya validado— y porque el costo es lo que
+  // sostiene el COGS: quién lo puso y cuándo es media auditoría del margen.
+  | "ctp_ingreso_costo"
   // Piezas agregadas a la lista de trozas de un ingreso ya registrado (ADR-320).
   // Va aparte de `update` porque no corrige un campo: suma madera al detalle que
   // ampara el ingreso, y el fiscalizador pregunta cuándo apareció cada pieza.

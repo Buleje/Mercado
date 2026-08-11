@@ -13,7 +13,7 @@
  * atribución que después sostiene el certificado de trazabilidad (I4/I5).
  */
 
-import { Boxes, Info, Trash2, TreePine } from "@buleje/design-system/icons";
+import { Boxes, Info, Ruler, Trash2, TreePine } from "@buleje/design-system/icons";
 import {
   piezasTotales,
   resumenPorProducto,
@@ -38,10 +38,11 @@ export default function CtpListaProductosTab({
   onObservaciones,
   onAbrirStock,
   onAbrirTrozas,
+  onCubicar,
   problemas,
 }: {
   filas: FilaDespacho[];
-  onCambiarFila: (uid: string, campo: "cantidad" | "volumen", valor: number) => void;
+  onCambiarFila: (uid: string, campo: "cantidad" | "volumen" | "valorVenta", valor: number | null) => void;
   onQuitar: (uid: string) => void;
   /** Casillero (35): N° de la lista de trozas/productos que acompaña la guía. */
   listaNro: string;
@@ -51,10 +52,16 @@ export default function CtpListaProductosTab({
   onAbrirStock: () => void;
   /** El otro origen: las trozas que salen sin aserrar (ADR-363). */
   onAbrirTrozas: () => void;
+  /** Medir lo que sube al camión y cuadrarlo contra la lista (ADR-374). */
+  onCubicar?: () => void;
   problemas: string[];
 }) {
   const total = volumenTotal(filas);
   const piezas = piezasTotales(filas);
+  /** Total vendido de la guía. `null` si a alguna línea le falta el precio. */
+  const ventaTotal = filas.length > 0 && filas.every((f) => f.valorVenta != null)
+    ? filas.reduce((a, f) => a + (f.valorVenta ?? 0), 0)
+    : null;
   const resumen = resumenPorProducto(filas);
   const unidad = filas[0]?.unidad ?? "m3";
 
@@ -74,6 +81,14 @@ export default function CtpListaProductosTab({
           <Btn variant="secondary" onClick={onAbrirTrozas}>
             <TreePine className="h-4 w-4" /> Trozas / productos ingresados
           </Btn>
+          {/* Cubicar ANTES de registrar: la guía declara volumen y piezas, y lo
+              que la cinta métrica diga distinto se corrige acá, no después de
+              que el camión salió con el papel firmado (ADR-374). */}
+          {onCubicar && (
+            <Btn variant="secondary" onClick={onCubicar} disabled={filas.length === 0}>
+              <Ruler className="h-4 w-4" /> Cubicar madera
+            </Btn>
+          )}
           <p className="flex items-start gap-1.5 text-xs text-[var(--text-tertiary)]">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             Cada renglón guarda de dónde salió —la corrida o la guía de ingreso—: eso es lo que después permite emitir el certificado.
@@ -95,12 +110,16 @@ export default function CtpListaProductosTab({
             <th className="px-3 py-2 text-right font-bold">Largo</th>
             <th className="px-3 py-2 text-right font-bold">Volumen</th>
             <th className="px-3 py-2 font-bold">U. medida</th>
+            {/* La venta se pide acá porque acá está el precio: quien arma la
+                guía lo tiene delante. Cargarlo después, despacho por despacho,
+                es lo que dejaba el margen sin calcular. */}
+            <th className="px-3 py-2 text-right font-bold">Venta S/</th>
             <th className="px-3 py-2 text-right font-bold">Eliminar</th>
           </tr>
         </TheadCtp>
         <TbodyCtp>
           {filas.length === 0 && (
-            <FilaVacia cols={12}>
+            <FilaVacia cols={13}>
               La guía todavía no tiene productos. Abrí <b>Producción</b> y elegí lo que sale de la planta.
             </FilaVacia>
           )}
@@ -149,6 +168,23 @@ export default function CtpListaProductosTab({
               </td>
               <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{MEDIDA[f.unidad] ?? f.unidad}</td>
               <td className="px-3 py-2 text-right">
+                <input
+                  type="number" min="0" step="0.01"
+                  value={f.valorVenta ?? ""}
+                  placeholder="—"
+                  onChange={(e) => onCambiarFila(f.uid, "valorVenta", e.target.value.trim() === "" ? null : Number(e.target.value))}
+                  aria-label={`Valor de venta del ítem ${i + 1}`}
+                  className={CELDA_NUM}
+                />
+                {/* El S//unidad delata el dedazo mientras se tipea: el total en
+                    soles solo, no. */}
+                {f.valorVenta != null && f.volumen > 0 && (
+                  <div className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                    {(f.valorVenta / f.volumen).toFixed(2)}/{f.unidad}
+                  </div>
+                )}
+              </td>
+              <td className="px-3 py-2 text-right">
                 <button
                   type="button"
                   onClick={() => onQuitar(f.uid)}
@@ -167,6 +203,13 @@ export default function CtpListaProductosTab({
               <td colSpan={4} />
               <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{total.toFixed(4)}</td>
               <td className="px-3 py-2.5 text-xs font-normal text-[var(--text-tertiary)]">{MEDIDA[unidad] ?? unidad}</td>
+              {/* El total de la guía sólo si TODAS las líneas tienen precio:
+                  sumar las que sí daría una cifra que parece el total y no lo es. */}
+              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                {ventaTotal == null
+                  ? <span className="text-xs font-normal text-[var(--text-tertiary)]">—</span>
+                  : ventaTotal.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </td>
               <td />
             </tr>
           )}

@@ -43,6 +43,15 @@ export interface DatosPendientes {
    * es un papel sino madera.
    */
   trozasVaradas?: number;
+  /**
+   * Ingresos vigentes sin costo cargado.
+   *
+   * El único pendiente que no le importa a SERFOR: el libro cierra perfecto sin
+   * un solo precio. Le importa al dueño — sin costo no hay COGS, y sin COGS
+   * ningún despacho puede decir si dejó plata. Por eso "pendiente" y nunca
+   * "bloquea".
+   */
+  ingresosSinCosto?: number;
 }
 
 /** A partir de acá una troza parada empieza a costar. Mismo corte que el patio. */
@@ -151,6 +160,17 @@ export function pendientesDelLibro(d: DatosPendientes): Pendiente[] {
       titulo: `Trozas paradas hace ${TROZAS_VARADAS_DIAS} días o más`,
       detalle: "La madera en troza se mancha y se raja: conviene aserrarlas primero.",
       vista: "trozas",
+    },
+    /* Tampoco es un papel: es la mitad de la cuenta. El libro cierra igual sin
+       costos —a SERFOR no le interesan— pero el margen de todo lo que salga de
+       esa madera queda en "no sé". */
+    {
+      clave: "ingresos-sin-costo",
+      urgencia: "pendiente",
+      cantidad: d.ingresosSinCosto ?? 0,
+      titulo: "Ingresos sin costo cargado",
+      detalle: "Sin lo que se pagó no hay margen posible en lo que salga de esa madera.",
+      vista: "rentabilidad",
     },
   ];
 

@@ -128,6 +128,14 @@ export interface CtpEntryInput {
   observations?: string | null;
   /** Aserrío / secado / mano de obra (ADR-134). Sin esto no hay margen. */
   costoProceso?: number | string | null;
+  /**
+   * En cuánto se vendió lo que sale (sólo despacho). Hasta ahora se cargaba
+   * únicamente después, con `set_venta` desde el panel de Rentabilidad: quien
+   * registraba la salida tenía el precio delante y no había dónde ponerlo, y
+   * volver a buscarlo despacho por despacho es lo que dejaba el 100% sin valor.
+   * Sigue siendo opcional — a veces la venta se cierra después del camión.
+   */
+  valorVenta?: number | string | null;
   moneda?: string | null;
   /**
    * La línea es una salida de TROZAS SIN ASERRAR (ADR-363).
@@ -359,6 +367,9 @@ export class ForestCtpDB {
           serforVerificadoEn: input.serforVerificadoEn ?? null,
           observations: input.observations?.trim() || null,
           costoProceso: dec(input.costoProceso),
+          // Sólo la salida tiene precio de venta: en una corrida de producción
+          // no se vende nada todavía.
+          valorVenta: input.section === "despacho" ? dec(input.valorVenta) : null,
           moneda: input.moneda?.trim() || "PEN",
           status: "registrado",
           createdBy: input.createdBy,

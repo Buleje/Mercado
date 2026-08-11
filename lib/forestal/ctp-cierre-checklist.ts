@@ -50,6 +50,15 @@ export function revisarCierre(d: DatosPendientes, mes = "el mes"): RevisionCierr
   if (d.guiasSinIngresar > 0) {
     observaciones.push(`${plural(d.guiasSinIngresar, "guía", "guías")} del monte sin ingresar al CTP.`);
   }
+  /* Va como observación y no como nota porque el cierre lo vuelve irreversible:
+     congela los costos Y bloquea `setCosto`. Una factura que llegue después del
+     cierre ya no entra sin reabrir el período, y el margen de todo lo que salió
+     de esa madera queda en "no sé" para siempre. */
+  if ((d.ingresosSinCosto ?? 0) > 0) {
+    observaciones.push(
+      `${plural(d.ingresosSinCosto ?? 0, "ingreso", "ingresos")} sin costo cargado: al cerrar se congelan así y la factura que llegue después ya no entra sin reabrir.`,
+    );
+  }
   if (d.despachosSinAnexo > 0) {
     nota.push(`${plural(d.despachosSinAnexo, "despacho", "despachos")} sin ANEXO N° 04 — se puede emitir después del cierre.`);
   }

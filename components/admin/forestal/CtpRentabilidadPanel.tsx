@@ -13,6 +13,7 @@ import { CardTitle, StatCard } from "@buleje/design-system";
 import { PanelSkeleton } from "./ctp-shared";
 import { AlertCircle, Award, CheckCircle2, Coins, Loader2, Sparkles, TrendingDown, TrendingUp, Wallet } from "@buleje/design-system/icons";
 import { BulejeWaterfallChart, type WaterfallStep } from "@/components/ui-system/charts";
+import CtpValorizarIngresos from "./CtpValorizarIngresos";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 
@@ -204,6 +205,12 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
           </div>
         </div>
       )}
+
+      {/* La entrada del circuito: qué costó la madera. Va ANTES de la venta
+          porque es la mitad que faltaba —el COGS sale de acá— y porque el
+          orden en pantalla es el del negocio: primero se compra, después se
+          vende. */}
+      <CtpValorizarIngresos period={period} />
 
       {/* Por despacho — venta editable */}
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">

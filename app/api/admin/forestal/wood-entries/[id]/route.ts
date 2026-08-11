@@ -64,11 +64,38 @@ const updateFieldsSchema = z.object({
 
 const patchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("validate") }),
+  /* Recepcionar (ADR-339): fecha las piezas que llegaron, fecha el ingreso y lo
+     valida. La fecha va como texto `AAAA-MM-DD` — es un día, no un instante. */
+  z.object({
+    action: z.literal("recepcionar"),
+    fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD").optional(),
+  }),
   z.object({ action: z.literal("reject"), reason: z.string().trim().min(3).max(500) }),
   // Anular un ingreso YA validado (con motivo). Distinto de reject (pre-validación).
   z.object({ action: z.literal("annul"), reason: z.string().trim().min(3).max(500) }),
   z.object({ action: z.literal("delete") }),
   z.object({ action: z.literal("update"), fields: updateFieldsSchema }),
+  /* Cuánto costó la madera. Aparte de `update` porque la factura del proveedor
+     llega después del camión, con el ingreso ya validado — y `update` sólo
+     acepta pendientes. `null` es legítimo (se cargó la factura equivocada);
+     0 no se prohíbe acá pero significa "gratis", no "no sé". */
+  z.object({
+    action: z.literal("set_costo"),
+    costoTotal: z.coerce.number().min(0).max(99_999_999.99).nullable(),
+    moneda: z.enum(["PEN", "USD"]).optional(),
+  }),
+  /* Cuadrar una guía que se contradice a sí misma (ADR-353). El operador elige
+     cuál de los dos testigos del papel vale; el motivo NO es opcional.
+     Los campos de la pieza van opcionales acá y se exigen abajo según el `lado`:
+     una unión discriminada no admite dos ramas con el mismo `action`. */
+  z.object({
+    action: z.literal("cuadrar"),
+    lado: z.enum(["lista", "cabecera"]),
+    motivo: z.string().trim().min(3).max(500),
+    trozaId: z.string().trim().min(1).max(60).optional(),
+    cantidad: z.coerce.number().int().min(1).max(9999).optional(),
+    volumenM3: z.coerce.number().positive().max(9999).optional(),
+  }),
   // Agregar piezas a la lista de trozas de un ingreso ya registrado (ADR-320).
   // Mismo shape que el alta: los campos son `nullable` pero NO opcionales, así
   // una pieza a la que le falta una columna se rechaza acá y no entra a medias.
@@ -179,6 +206,37 @@ export const PATCH = withApiHandler("forestal-wood-entries-id-patch", async (req
       return NextResponse.json(r);
     }
 
+    if (parsed.data.action === "cuadrar") {
+      const d = parsed.data;
+      if (d.lado === "cabecera" && (!d.trozaId || d.cantidad == null || d.volumenM3 == null)) {
+        return NextResponse.json(
+          { error: "validation_error", message: "Cuadrar por la cabecera necesita la pieza, su cantidad y su volumen." },
+          { status: 400 },
+        );
+      }
+      const r = await WoodEntriesDB.cuadrarIngreso(
+        auth.tenantId,
+        id,
+        d.lado === "cabecera"
+          ? { lado: "cabecera", motivo: d.motivo, trozaId: d.trozaId!, cantidad: d.cantidad!, volumenM3: d.volumenM3! }
+          : { lado: "lista", motivo: d.motivo },
+        auth.username ?? "unknown",
+      );
+      logger.info("[wood-entries.PATCH] cuadrar", {
+        tenantId: auth.tenantId,
+        id,
+        lado: d.lado,
+        actor: auth.username,
+      });
+      return NextResponse.json({ ok: true, entry: r.entry, troza: r.troza });
+    }
+
+    if (parsed.data.action === "recepcionar") {
+      const r = await WoodEntriesDB.recepcionar(auth.tenantId, id, parsed.data.fecha, auth.username ?? "unknown");
+      if (!r) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json(r);
+    }
+
     let entry;
     if (parsed.data.action === "validate") {
       entry = await WoodEntriesDB.validate(auth.tenantId, id, auth.username);
@@ -199,6 +257,15 @@ export const PATCH = withApiHandler("forestal-wood-entries-id-patch", async (req
         auth.tenantId,
         id,
         parsed.data.fields,
+        auth.username ?? "unknown",
+      );
+    } else if (parsed.data.action === "set_costo") {
+      const actual = await WoodEntriesDB.getById(auth.tenantId, id);
+      if (!actual) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      entry = await WoodEntriesDB.setCosto(
+        auth.tenantId,
+        id,
+        { costoTotal: parsed.data.costoTotal, moneda: parsed.data.moneda },
         auth.username ?? "unknown",
       );
     } else {

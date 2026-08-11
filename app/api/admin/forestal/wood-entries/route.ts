@@ -8,6 +8,8 @@ import { logger } from "@/lib/logger";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 import { withApiHandler } from "@/lib/api-handler";
 import { TIPOS_DOCUMENTO_LOCTP, UNIDADES_LOCTP } from "@/lib/forestal/loctp-campos";
+import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * /api/admin/forestal/wood-entries
@@ -107,7 +109,24 @@ const createSchema = z.object({
   humidityPct: z.coerce.number().min(0).max(100).nullable().optional(),
   defectsNotes: z.string().trim().max(500).nullable().optional(),
 
+  /** Cuándo llegó FÍSICAMENTE a la planta (ADR-335). */
+  fechaRecepcion: z.coerce.date().nullable().optional(),
+  /**
+   * El cuerpo del documento que ampara el ingreso: propietario del producto
+   * (13-21), destinatario (22-28), transportista y vehículo (29-34) — ADR-336.
+   * MISMO esquema que la guía de salida: un solo formato oficial, un solo Zod.
+   */
+  gtfDatos: gtfDatosSchema.nullable().optional(),
   notes: z.string().trim().max(1000).nullable().optional(),
+  /**
+   * Lo que se pagó por esta madera. Opcional a propósito: la factura del
+   * proveedor casi nunca viaja con el camión, y exigirla acá haría que el
+   * operario invente un número para poder cerrar el formulario. Cuando llega
+   * se carga con `action: "set_costo"` (PATCH), que sí funciona con el ingreso
+   * ya validado. Ausente ⇒ `null`, nunca 0: un 0 fingiría madera regalada.
+   */
+  costoTotal: z.coerce.number().min(0).max(99_999_999.99).nullable().optional(),
+  moneda: z.enum(["PEN", "USD"]).optional(),
   photos: z.array(z.string().url()).max(10).nullable().optional(),
   /** Lista de trozas cargada a mano o desde un Excel (ADR-320). Tope 500: una
    *  guía real no trae más y sin tope un pegado accidental tumba la request. */
@@ -125,6 +144,20 @@ const createSchema = z.object({
         d2Cm: z.number().nonnegative().max(999).nullable(),
         cantidad: z.number().int().min(0).max(9999).nullable(),
         volumenM3: z.number().positive().max(9999).nullable(),
+        /** El código que ESTE centro le marca a la pieza al recibirla (ADR-335). */
+        codigoPlanta: z.string().trim().max(120).nullable().optional(),
+        /** Parcela de corta del POA, si el documento la trae. */
+        parcela: z.string().trim().max(120).nullable().optional(),
+        /** Cuándo bajó ESTA pieza del camión (ADR-336). Vacío = la del ingreso. */
+        fechaRecepcion: z.coerce.date().nullable().optional(),
+        /**
+         * La guía la declara pero NO llegó al patio (ADR-325).
+         *
+         * Se marca en el alta y no después: el que descarga el camión sabe en
+         * ese momento cuál falta, y obligarlo a entrar de nuevo a "recepción"
+         * garantiza que nadie lo haga.
+         */
+        noRecepcionada: z.boolean().optional(),
       }),
     )
     .max(500)
@@ -177,6 +210,11 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
   const cites = url.searchParams.get("cites");
   const late = url.searchParams.get("late") === "1";
   const sinOrigen = url.searchParams.get("sin_origen") === "1";
+  /* `?recepcion=pendiente` es la bandeja del patio y `cerrada` el archivo de
+     GTF ingresadas (ADR-339). Un valor raro no filtra en vez de romper. */
+  const recepcionRaw = url.searchParams.get("recepcion");
+  const recepcion: "pendiente" | "cerrada" | undefined =
+    recepcionRaw === "pendiente" || recepcionRaw === "cerrada" ? recepcionRaw : undefined;
   // Orden: whitelist en la DB class. Un valor desconocido NO es un 400 —
   // degrada al default (una URL vieja o un typo no debe romper el listado).
   const sortParsed = sortFieldEnum.safeParse(url.searchParams.get("sort"));
@@ -208,13 +246,29 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
     cites: cites === "1" ? true : cites === "0" ? false : undefined,
     late: late || undefined,
     sinOrigenCode: sinOrigen || undefined,
+    recepcion,
     sortBy: sortParsed.success ? sortParsed.data : undefined,
     sortDir: dirParsed.success ? dirParsed.data : undefined,
     limit,
     offset,
   };
 
+  /* ?agrupar=guia → la unidad de la respuesta es el DOCUMENTO y no el asiento
+     (ADR-346): una GTF con dos especies es una fila con sus dos líneas adentro.
+     El libro sigue guardando una línea por especie. */
+  const porGuia = url.searchParams.get("agrupar") === "guia";
+
   try {
+    if (porGuia) {
+      if (url.searchParams.get("stats") === "1") {
+        const [result, stats] = await Promise.all([
+          WoodEntriesDB.listPorGuia(auth.tenantId, filters),
+          WoodEntriesDB.stats(auth.tenantId, filters),
+        ]);
+        return NextResponse.json({ ...result, stats });
+      }
+      return NextResponse.json(await WoodEntriesDB.listPorGuia(auth.tenantId, filters));
+    }
     // ?stats=1 → adjunta los agregados del período (calculados en DB) a la misma
     // respuesta. Van juntos, no en dos requests: así KPIs y tabla describen
     // exactamente el mismo instante (y es la mitad de tráfico por interacción).
@@ -244,6 +298,64 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
         : { error: "internal_error" },
       { status: 500 },
     );
+  }
+});
+
+// ─── PATCH — recepcionar una GUÍA entera ────────────────────────────────
+
+/**
+ * Un solo pedido para toda la guía (ADR-351).
+ *
+ * La pantalla mandaba un PATCH por asiento, en paralelo: si uno fallaba, la guía
+ * quedaba **partida** entre la bandeja y el archivo, y el operador la buscaba en
+ * «GTF ingresadas» sin encontrarla entera. Acá va la guía completa y la
+ * respuesta dice cuántos entraron y cuál falló.
+ */
+const recepcionGuiaSchema = z.object({
+  action: z.literal("recepcionar_guia"),
+  /** Los asientos de la guía. Tope alto: una GTF no tiene 50 especies. */
+  ids: z.array(z.string().trim().min(1).max(60)).min(1).max(50),
+  fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD").optional(),
+});
+
+export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: NextRequest) => {
+  const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
+  if (auth instanceof NextResponse) return auth;
+
+  const rl = await applyRateLimit(req, "GENEROUS", "ctp");
+  if (rl) return rl;
+  const csrf = assertCsrf(req);
+  if (csrf) return csrf;
+
+  const guard = await ensureSpecializationOrDeny(auth.tenantId);
+  if (guard) return guard;
+
+  let body: unknown;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
+  const parsed = recepcionGuiaSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
+  }
+
+  try {
+    const r = await WoodEntriesDB.recepcionarGuia(
+      auth.tenantId,
+      parsed.data.ids,
+      parsed.data.fecha,
+      auth.username ?? "unknown",
+    );
+    /* Un fallo parcial NO es un 200 silencioso: la guía quedó a medias y la
+       pantalla tiene que poder decir cuál falta. */
+    if (r.fallo) {
+      return NextResponse.json(
+        { ...r, error: "recepcion_parcial", message: r.fallo.motivo },
+        { status: 409 },
+      );
+    }
+    return NextResponse.json(r);
+  } catch (err) {
+    logger.error("[wood-entries.PATCH] recepcionar_guia failed", { error: String(err) });
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 });
 

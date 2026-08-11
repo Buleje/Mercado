@@ -18,7 +18,7 @@ import {
 const VACIO: DatosPendientes = {
   ingresosPendientes: 0, fueraDePlazo: 0, guiasSinIngresar: 0,
   despachosSinGtf: 0, despachosSinAnexo: 0, corridasSinOrigen: 0, saldosNegativos: 0,
-  trozasVaradas: 0,
+  trozasVaradas: 0, ingresosSinCosto: 0,
 };
 
 /* Deduplicado (ADR-347): estos mismos GET los hace la vista activa en el mismo
@@ -34,7 +34,7 @@ type Respuesta = {
   entries?: unknown;
   gtfs?: unknown;
   anexos?: unknown;
-  stats?: { byStatus?: Record<string, number>; lateCount?: number };
+  stats?: { byStatus?: Record<string, number>; lateCount?: number; sinCostoCount?: number };
   saldos?: { materiaPrima?: unknown; productos?: unknown };
   /** `?varadas=`: sólo el conteo, para no traerse el patio entero. */
   piezas?: number;
@@ -102,6 +102,7 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
             arr<{ negativa?: boolean }>(saldos?.saldos?.materiaPrima).filter((s) => s.negativa).length +
             arr<{ negativo?: boolean }>(saldos?.saldos?.productos).filter((s) => s.negativo).length,
           trozasVaradas: varadas?.piezas ?? 0,
+          ingresosSinCosto: we?.stats?.sinCostoCount ?? 0,
         });
       })
       .catch(() => { if (miCarga === cargaRef.current) setFalló(true); })

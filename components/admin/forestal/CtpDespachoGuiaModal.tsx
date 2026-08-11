@@ -344,9 +344,19 @@ export default function CtpDespachoGuiaModal({
     setTab("productos");
   }
 
-  function cambiarFila(uid: string, campo: "cantidad" | "volumen", valor: number) {
+  function cambiarFila(uid: string, campo: "cantidad" | "volumen" | "valorVenta", valor: number | null) {
     setFilas((prev) =>
-      prev.map((f) => (f.uid === uid ? { ...f, [campo]: Number.isFinite(valor) ? Math.max(0, valor) : 0 } : f)),
+      prev.map((f) => {
+        if (f.uid !== uid) return f;
+        /* La venta admite vacío y eso NO es 0: es "todavía no sé en cuánto se
+           vendió". Cantidad y volumen sí caen a 0 —una línea sin volumen no
+           despacha nada— pero un 0 en la venta diría "regalado" y le fabricaría
+           al margen una pérdida del 100%. */
+        if (campo === "valorVenta") {
+          return { ...f, valorVenta: valor != null && Number.isFinite(valor) ? Math.max(0, valor) : null };
+        }
+        return { ...f, [campo]: valor != null && Number.isFinite(valor) ? Math.max(0, valor) : 0 };
+      }),
     );
   }
 

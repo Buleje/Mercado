@@ -62,6 +62,12 @@ export interface FilaDespacho {
   unidad: string;
   /** Saldo de la corrida al momento de elegirla: el techo de lo que puede salir. */
   disponibleCorrida: number;
+  /**
+   * En cuánto se vendió esta línea. `null` = todavía no se sabe (la venta se
+   * cierra después del camión más seguido de lo que parece), y se carga luego
+   * desde Rentabilidad. Nunca 0 por defecto: un 0 diría "regalado".
+   */
+  valorVenta?: number | null;
   // ── Contexto de origen (se muestra en la lista, no se guarda en la línea) ──
   gtfOrigen: string[];
   titularOrigen: string[];
@@ -230,6 +236,7 @@ export function payloadDeFila(fila: FilaDespacho, comun: ComunDeGuia, gtfDatos?:
     ...(comun.serforVerificadoEn ? { serforVerificadoEn: comun.serforVerificadoEn } : {}),
     // La cadena de custodia: de qué corrida sale ESTE producto (ADR-135, I4/I5).
     origenes: [{ produccionEntryId: fila.corridaId, quantity: r4(fila.volumen) }],
+    ...(fila.valorVenta != null ? { valorVenta: fila.valorVenta } : {}),
     ...(gtfDatos ? { gtfDatos } : {}),
   };
 }
@@ -270,6 +277,14 @@ function payloadDeTrozas(filas: readonly FilaDespacho[], comun: ComunDeGuia, gtf
     ...(comun.serforVerificadoEn ? { serforVerificadoEn: comun.serforVerificadoEn } : {}),
     // La cadena: las PIEZAS que se van enteras. El servidor valida T2 con lock.
     trozas: filas.map((f) => f.trozaId!).filter(Boolean),
+    /* Varias trozas caen en UNA línea del libro, así que su venta es la suma.
+       Pero sólo si TODAS tienen precio: sumar las que sí y omitir las que no
+       daría un total que parece completo y no lo es —el mismo vicio que el
+       COGS evita con `falta_costo`—. Con una sola sin precio, la línea nace
+       sin valor y se completa después. */
+    ...(filas.every((f) => f.valorVenta != null)
+      ? { valorVenta: r4(filas.reduce((a, f) => a + (f.valorVenta ?? 0), 0)) }
+      : {}),
     ...(gtfDatos ? { gtfDatos } : {}),
   };
 }

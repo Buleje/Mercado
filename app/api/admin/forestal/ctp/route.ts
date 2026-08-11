@@ -76,6 +76,9 @@ const createSchema = z.object({
     .max(50)
     .optional(),
   costoProceso: z.coerce.number().nonnegative().max(9999999).nullable().optional(),
+  /* En cuánto se vendió (sólo despacho). Mismo tope que `set_venta`, para que
+     un monto que entra por el alta no sea rechazado después al corregirlo. */
+  valorVenta: z.coerce.number().min(0).max(9_999_999_999.99).nullable().optional(),
   moneda: z.string().trim().max(8).nullable().optional(),
   // ADR-135: de qué corridas salió el producto de este despacho. Cierra la
   // cadena de custodia; `ForestCtpDespachoDB` valida I4/I5 antes de escribir.
