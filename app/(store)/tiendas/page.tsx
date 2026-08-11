@@ -3,6 +3,7 @@ import TiendasClient from "./TiendasClient";
 import { JoinUsSection } from "@/components/marketing/JoinUsSection";
 import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
 import { getStoreShowcaseByCategory } from "@/lib/db/marketplace-featured.db";
+import { precioVigente } from "@/lib/marketplace/precio-vigente";
 import type { PremiumProduct } from "@/components/marketplace/PremiumStoreCard";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
@@ -160,6 +161,7 @@ export default async function TiendasPage() {
         image: p.image,
         retailPrice: p.retailPrice,
         discountPrice: p.discountPrice,
+        discountUntil: p.discountUntil,
         category: p.category,
       })),
     ]),
@@ -276,7 +278,10 @@ export default async function TiendasPage() {
               ...(p.category ? { category: p.category } : {}),
               offers: {
                 "@type": "Offer",
-                price: Number(p.discountPrice ?? p.retailPrice).toFixed(2),
+                // Structured data: el precio que se publica a Google tiene que
+                // ser el que se cobra. Una oferta vencida acá es una
+                // discrepancia de precio que el buscador penaliza.
+                price: precioVigente(p).precio.toFixed(2),
                 priceCurrency: "PEN",
                 availability: "https://schema.org/InStock",
                 url: `${BASE_URL}/marketplace/${p.storeSlug}`,

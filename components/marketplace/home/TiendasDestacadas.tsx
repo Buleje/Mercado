@@ -26,6 +26,7 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
+import { precioVigente } from "@/lib/marketplace/precio-vigente";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import { MARKETPLACE_VERTICALS, verticalForStoreCategory } from "@/lib/marketplace/verticals";
 
@@ -36,6 +37,8 @@ interface PreviewProduct {
   image: string;
   retailPrice: number;
   discountPrice: number | null;
+  /** Hasta cuándo vale la rebaja. `null` = sin caducidad. */
+  discountUntil: string | null;
 }
 
 interface FeaturedStore {
@@ -149,7 +152,7 @@ function FeaturedStoreCard({ store }: { store: FeaturedStore }) {
                 )}
               </span>
               <span className="block px-1 pb-1 text-center text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-primary)]">
-                {fmt(p.discountPrice ?? p.retailPrice)}
+                {fmt(precioVigente(p).precio)}
               </span>
             </Link>
           ))}

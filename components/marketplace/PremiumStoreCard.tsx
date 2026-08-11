@@ -11,6 +11,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { formatCategoryLabel } from "@/lib/format-category";
+import { precioVigente } from "@/lib/marketplace/precio-vigente";
 import dynamic from "next/dynamic";
 import {
   ArrowRight,
@@ -42,6 +43,8 @@ export interface PremiumProduct {
   image: string;
   retailPrice: number;
   discountPrice?: number | null;
+  /** Hasta cuándo vale la rebaja. Sin esto la card anunciaría ofertas vencidas. */
+  discountUntil?: string | null;
   /** Categoría del producto — para mostrar la variedad de la tienda. */
   category?: string;
 }
@@ -72,8 +75,9 @@ interface Props {
 }
 
 function price(p: PremiumProduct) {
-  const v = p.discountPrice ?? p.retailPrice;
-  return `S/ ${v.toFixed(2)}`;
+  // El precio sale de la misma regla que cobra el checkout: una oferta vencida
+  // no se anuncia (antes era `discountPrice ?? retailPrice`, sin mirar fecha).
+  return `S/ ${Number(precioVigente(p).precio).toFixed(2)}`;
 }
 
 function Stars({ rating = 0, reviewCount = 0 }: { rating?: number; reviewCount?: number }) {

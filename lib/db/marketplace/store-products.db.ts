@@ -2,7 +2,7 @@ import "server-only";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
-import { NotFoundError } from "@/lib/api-error";
+import { NotFoundError, ValidationError } from "@/lib/api-error";
 import { toNum, toNumOrZero } from "@/lib/decimal-utils";
 import { type DbStoreProduct } from "./types";
 
@@ -364,18 +364,47 @@ export const MarketplaceStoreProductsDB = {
   async updateOneForTenant(
     tenantId: string,
     storeProductId: string,
-    data: { isActive?: boolean; retailPrice?: number; wholesalePrice?: number },
-  ): Promise<{ id: string; isActive: boolean; retailPrice: number; wholesalePrice: number } | null> {
+    data: {
+      isActive?: boolean;
+      retailPrice?: number;
+      wholesalePrice?: number;
+      discountPrice?: number | null;
+      discountUntil?: Date | null;
+      discountLabel?: string | null;
+    },
+  ): Promise<{
+    id: string; isActive: boolean; retailPrice: number; wholesalePrice: number;
+    discountPrice: number | null; discountUntil: string | null; discountLabel: string | null;
+  } | null> {
     const existing = await prisma.storeProduct.findFirst({
       where: { id: storeProductId },
-      select: { id: true, store: { select: { tenantId: true } } },
+      select: { id: true, retailPrice: true, store: { select: { tenantId: true } } },
     });
     if (!existing || existing.store.tenantId !== tenantId) return null;
+
+    /* Una "oferta" que no baja el precio no es una oferta: es un dedazo, y
+       anunciada como rebaja es publicidad engañosa. Se compara contra el precio
+       que va a quedar —si en el mismo PATCH se cambia `retailPrice`, manda el
+       nuevo—, no contra el que había. */
+    if (data.discountPrice != null) {
+      const lista = data.retailPrice ?? toNumOrZero(existing.retailPrice);
+      if (data.discountPrice >= lista) {
+        // ValidationError y no `Error` pelado: con el error genérico el vendor
+        // recibía un 500 "Error interno del servidor" y no se enteraba de que
+        // el problema era su número.
+        throw new ValidationError(
+          `La oferta (S/ ${data.discountPrice.toFixed(2)}) tiene que ser MENOR que el precio de lista (S/ ${lista.toFixed(2)}).`,
+        );
+      }
+    }
 
     const updated = await prisma.storeProduct.update({
       where: { id: storeProductId },
       data,
-      select: { id: true, isActive: true, retailPrice: true, wholesalePrice: true },
+      select: {
+        id: true, isActive: true, retailPrice: true, wholesalePrice: true,
+        discountPrice: true, discountUntil: true, discountLabel: true,
+      },
     });
     invalidateByPrefix(`marketplace:store-products`);
     return {
@@ -383,6 +412,9 @@ export const MarketplaceStoreProductsDB = {
       isActive: updated.isActive,
       retailPrice: toNumOrZero(updated.retailPrice),
       wholesalePrice: toNumOrZero(updated.wholesalePrice ?? 0),
+      discountPrice: updated.discountPrice != null ? toNumOrZero(updated.discountPrice) : null,
+      discountUntil: updated.discountUntil ? updated.discountUntil.toISOString() : null,
+      discountLabel: updated.discountLabel,
     };
   },
 

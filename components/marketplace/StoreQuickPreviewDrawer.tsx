@@ -19,6 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { m as motion, AnimatePresence } from "framer-motion";
+import { precioVigente } from "@/lib/marketplace/precio-vigente";
 import {
   Star,
   MapPin,
@@ -103,12 +104,12 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
    */
   const top = useMemo<FeaturedNearbyProduct[]>(() => {
     return [...featured].sort((a, b) => {
-      const aDisc = a.discountPrice != null ? 1 : 0;
-      const bDisc = b.discountPrice != null ? 1 : 0;
-      if (aDisc !== bDisc) return bDisc - aDisc;
-      const aP = a.discountPrice ?? a.retailPrice;
-      const bP = b.discountPrice ?? b.retailPrice;
-      return bP - aP;
+      // Precio y oferta salen de la regla única: una rebaja vencida no
+      // prioriza ni baja el precio efectivo del orden.
+      const va = precioVigente(a);
+      const vb = precioVigente(b);
+      if (va.enOferta !== vb.enOferta) return va.enOferta ? -1 : 1;
+      return vb.precio - va.precio;
     });
   }, [featured]);
 
@@ -119,7 +120,7 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
       onAddToCart(p);
       return;
     }
-    const price = p.discountPrice ?? p.retailPrice;
+    const price = precioVigente(p).precio;
     addItem({
       id: p.productId,
       name: p.name,
@@ -393,8 +394,7 @@ function ListView({
   return (
     <ul className="space-y-2 px-3 py-3">
       {products.map((p) => {
-        const price = p.discountPrice ?? p.retailPrice;
-        const hasDiscount = p.discountPrice != null;
+        const { precio: price, enOferta: hasDiscount } = precioVigente(p);
         const flashing = addedFlash === p.id;
         return (
           <li
@@ -465,8 +465,7 @@ function GridView({
   return (
     <ul className="grid grid-cols-2 gap-2.5 px-3 py-3">
       {products.map((p, i) => {
-        const price = p.discountPrice ?? p.retailPrice;
-        const hasDiscount = p.discountPrice != null;
+        const { precio: price, enOferta: hasDiscount } = precioVigente(p);
         return (
           <li key={p.id} className="group">
             <Link
