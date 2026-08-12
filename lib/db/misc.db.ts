@@ -332,8 +332,20 @@ export type DbPurchaseOrder = {
   status: PurchaseStatus;
   notes?: string;
   paymentMethod?: string;
+  /** Fecha PROMETIDA por el proveedor. La real es `receivedDate`. */
   deliveryDate?: string;
   discount?: number;
+  // ADR-377 — el papel del proveedor y el costo real de la mercadería.
+  invoiceNumber?: string;
+  invoiceType?: string;
+  igvIncluded?: boolean;
+  /** Flete: se prorratea entre los items al recibir. */
+  flete?: number;
+  otrosCostos?: number;
+  receivedDate?: string;
+  createdBy?: string;
+  receivedBy?: string;
+  cancelReason?: string;
   createdAt: string;
   updatedAt: string;
 };

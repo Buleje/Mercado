@@ -6,6 +6,7 @@ import { GoodsReceiptsDB } from "@/lib/db/goods-receipts.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getRecibidoAcumulado, estaCompleta } from "@/lib/compras/recibido-acumulado";
+import { costoUnitarioReal } from "@/lib/compras/totales-oc";
 
 // Item del checklist tal como lo arma ReceivingTab. `productId` es opcional: si
 // el item se eligió del combobox o vino prefilleado de la OC, trae el id real
@@ -120,6 +121,9 @@ export async function POST(req: NextRequest) {
             // había que cerrarla con el <select> — que duplicaba el stock.
             const ocItemRefs = oc.items.map((i) => ({ productId: i.productId, name: i.name }));
             const recibidoTotal = await getRecibidoAcumulado(tx, tenantId, oc.id, ocItemRefs, receipt.id);
+            // ADR-377: flete + otros costos, repartidos por valor entre items.
+            const subtotalOrden = oc.items.reduce((s, i) => s + i.quantity * Number(i.unitCost ?? 0), 0);
+            const sobrecostos = Number(oc.flete ?? 0) + Number(oc.otrosCostos ?? 0);
 
             for (const item of data.items) {
               // Preferir match por productId exacto; caer a nombre si no vino.
@@ -138,7 +142,10 @@ export async function POST(req: NextRequest) {
               if (!product) continue;
 
               const previousStock = product.stock ?? 0;
-              const authorizedUnitCost = Number(ocItem.unitCost ?? 0);
+              // ADR-377: el costo autorizado incluye la parte de flete que le
+              // toca a esta línea. Sin eso el costo promedio del producto
+              // ignora lo que costó traerlo.
+              const authorizedUnitCost = costoUnitarioReal(ocItem, subtotalOrden, sobrecostos);
               const currentCost = Number(product.costPrice ?? 0);
               const totalQty = previousStock + item.receivedQty;
               const weightedAvgCost =
@@ -163,6 +170,10 @@ export async function POST(req: NextRequest) {
               where: { id: oc.id },
               data: {
                 status: (allComplete ? "recibido" : "parcial") as never,
+                // ADR-377: quién recibió y cuándo llegó de verdad. Este camino
+                // no lo anotaba, así que la orden cerrada por el botón
+                // "Recibir" no decía nada de su recepción.
+                ...(allComplete ? { receivedDate: new Date(), receivedBy: auth.username } : {}),
                 notes: `${oc.notes ? oc.notes + " | " : ""}Recepción ${ref}${data.invoiceUrl ? ` · Factura: ${data.invoiceUrl}` : ""}`,
               },
             });

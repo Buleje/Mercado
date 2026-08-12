@@ -855,6 +855,7 @@ model Supplier {
   evaluations SupplierEvaluation[]
   woodEntries WoodEntry[] // ingresos de madera al CTP (ADR-134)
   portal      SupplierPortal?
+  recurrentes RecurringPurchaseOrder[] // pedidos que se repiten (ADR-377)
 
   @@index([tenantId])
   @@index([estado])
@@ -878,8 +879,26 @@ model PurchaseOrder {
   status        PurchaseStatus @default(pendiente)
   notes         String?
   paymentMethod String?
+  /// Fecha PROMETIDA por el proveedor (la real es receivedDate).
   deliveryDate  DateTime?
   discount      Decimal?       @default(0) @db.Decimal(12, 2)
+
+  // ADR-377 — el papel del proveedor y lo que la mercadería cuesta de verdad.
+  /// Nº de la factura/boleta del proveedor: el vínculo con SUNAT.
+  invoiceNumber String?
+  /// factura | boleta | guia | ninguno
+  invoiceType   String?
+  /// ¿El costo unitario cargado ya incluye IGV? En bodega, casi siempre sí.
+  igvIncluded   Boolean        @default(true)
+  /// Flete: se prorratea entre los items al recibir, para que el costo no mienta.
+  flete         Decimal?       @default(0) @db.Decimal(12, 2)
+  otrosCostos   Decimal?       @default(0) @db.Decimal(12, 2)
+  /// Cuándo llegó de verdad. Comparada con deliveryDate mide al proveedor.
+  receivedDate  DateTime?
+  createdBy     String?
+  receivedBy    String?
+  cancelReason  String?
+
   tenantId      String
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -892,6 +911,33 @@ model PurchaseOrder {
   // @@index([tenantId])
   // TD-020 / ADR-017 — aplicado en prod 2026-04-09 via scripts/apply-ola1-indices.ts
   @@index([tenantId, status], map: "PurchaseOrder_tenantId_status_idx")
+  @@index([tenantId, invoiceNumber], map: "PurchaseOrder_tenantId_invoiceNumber_idx")
+}
+
+/// ADR-377 — Un pedido que se repite solo. Antes vivía en localStorage: se
+/// perdía al cambiar de equipo y su "avisame 2 días antes" no lo leía nadie.
+model RecurringPurchaseOrder {
+  id               String    @id @default(cuid())
+  tenantId         String
+  supplierId       String
+  supplierName     String
+  /// [{productId,name,quantity,unitCost,unit}] — los items que se repiten.
+  itemsJson        Json
+  intervalDays     Int       @default(15)
+  nextDate         DateTime
+  notifyDaysBefore Int       @default(2)
+  paymentMethod    String?
+  active           Boolean   @default(true)
+  lastGeneratedAt  DateTime?
+  lastOrderId      String?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, nextDate], map: "RecurringPurchaseOrder_tenantId_nextDate_idx")
+  @@index([tenantId, supplierId], map: "RecurringPurchaseOrder_tenantId_supplierId_idx")
 }
 
 model PurchaseItem {

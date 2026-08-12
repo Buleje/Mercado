@@ -58,6 +58,17 @@ function mapPurchaseOrder(po: PPurchaseOrder & { items: PPurchaseItem[] }): DbPu
     ...(po.paymentMethod != null && { paymentMethod: po.paymentMethod }),
     ...(po.deliveryDate != null && { deliveryDate: toISO(po.deliveryDate) }),
     ...(po.discount != null && { discount: toNumOrZero(po.discount) }),
+    // ADR-377. Ojo: agregar una columna y NO mapearla acá la deja invisible
+    // para toda la app aunque exista en la base (gotcha del serializador).
+    ...(po.invoiceNumber != null && { invoiceNumber: po.invoiceNumber }),
+    ...(po.invoiceType != null && { invoiceType: po.invoiceType }),
+    igvIncluded: po.igvIncluded,
+    ...(po.flete != null && { flete: toNumOrZero(po.flete) }),
+    ...(po.otrosCostos != null && { otrosCostos: toNumOrZero(po.otrosCostos) }),
+    ...(po.receivedDate != null && { receivedDate: toISO(po.receivedDate) }),
+    ...(po.createdBy != null && { createdBy: po.createdBy }),
+    ...(po.receivedBy != null && { receivedBy: po.receivedBy }),
+    ...(po.cancelReason != null && { cancelReason: po.cancelReason }),
     createdAt: toISO(po.createdAt), updatedAt: toISO(po.updatedAt),
   };
 }
@@ -124,7 +135,15 @@ export const PurchasesDB = {
         total: po.total, status: po.status as never, notes: po.notes,
         paymentMethod: po.paymentMethod ?? null,
         deliveryDate: po.deliveryDate ? new Date(po.deliveryDate) : null,
-        discount: po.discount ?? 0, tenantId,
+        discount: po.discount ?? 0,
+        // ADR-377
+        invoiceNumber: po.invoiceNumber ?? null,
+        invoiceType: po.invoiceType ?? null,
+        ...(po.igvIncluded != null && { igvIncluded: po.igvIncluded }),
+        flete: po.flete ?? 0,
+        otrosCostos: po.otrosCostos ?? 0,
+        createdBy: po.createdBy ?? null,
+        tenantId,
         items: { create: po.items.map((i) => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })) },
       },
       include: { items: true },
@@ -144,6 +163,15 @@ export const PurchasesDB = {
     if (patch.paymentMethod !== undefined) data.paymentMethod = patch.paymentMethod;
     if (patch.deliveryDate !== undefined) data.deliveryDate = patch.deliveryDate ? new Date(patch.deliveryDate) : null;
     if (patch.discount !== undefined) data.discount = patch.discount;
+    // ADR-377
+    if (patch.invoiceNumber !== undefined) data.invoiceNumber = patch.invoiceNumber || null;
+    if (patch.invoiceType !== undefined) data.invoiceType = patch.invoiceType || null;
+    if (patch.igvIncluded !== undefined) data.igvIncluded = patch.igvIncluded;
+    if (patch.flete !== undefined) data.flete = patch.flete;
+    if (patch.otrosCostos !== undefined) data.otrosCostos = patch.otrosCostos;
+    if (patch.receivedDate !== undefined) data.receivedDate = patch.receivedDate ? new Date(patch.receivedDate) : null;
+    if (patch.receivedBy !== undefined) data.receivedBy = patch.receivedBy || null;
+    if (patch.cancelReason !== undefined) data.cancelReason = patch.cancelReason || null;
     await prisma.purchaseOrder.updateMany({ where: { id, tenantId }, data });
     const row = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, include: { items: true } });
     // Audit 2026-05-17 Q-P0-4: update status (recibido) cambia stock visible

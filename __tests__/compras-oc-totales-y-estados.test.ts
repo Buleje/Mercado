@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { totalesOC } from "@/lib/compras/totales-oc";
+import { totalesOC, costoUnitarioReal } from "@/lib/compras/totales-oc";
 import {
   opcionesDeEstado,
   transicionValida,
@@ -57,6 +57,45 @@ describe("totales de la orden — el papel dice lo que dice la orden", () => {
   it("un total negativo se piso en 0, no se imprime en rojo al proveedor", () => {
     const t = totalesOC({ items: [{ quantity: 1, unitCost: 10 }], total: -5 });
     expect(t.total).toBe(0);
+  });
+});
+
+describe("el flete entra al costo — ADR-377", () => {
+  it("reparte el flete y el costo deja de mentir (19.50 + 40/20 = 21.50)", () => {
+    const item = { quantity: 20, unitCost: 19.5 };
+    expect(costoUnitarioReal(item, 390, 40)).toBeCloseTo(21.5, 2);
+  });
+
+  it("sin flete el costo no se toca", () => {
+    expect(costoUnitarioReal({ quantity: 20, unitCost: 19.5 }, 390, 0)).toBeCloseTo(19.5, 2);
+  });
+
+  it("reparte por valor, no por cantidad: el caro carga más flete que el barato", () => {
+    // 10 whiskies de S/100 (S/1000) + 10 fideos de S/2 (S/20) = S/1020, flete S/102.
+    const whisky = costoUnitarioReal({ quantity: 10, unitCost: 100 }, 1020, 102);
+    const fideo = costoUnitarioReal({ quantity: 10, unitCost: 2 }, 1020, 102);
+    expect(whisky - 100).toBeCloseTo(10, 2); // 10% de su valor
+    expect(fideo - 2).toBeCloseTo(0.2, 2); //  10% del suyo
+    // Por cantidad, cada uno cargaría S/5.10: el fideo se encarecería 3.5 veces.
+    expect(fideo).toBeLessThan(5);
+  });
+
+  it("todo el flete se reparte, no se pierde ni se inventa plata", () => {
+    const items = [
+      { quantity: 20, unitCost: 19.5 },
+      { quantity: 5, unitCost: 40 },
+    ];
+    const subtotal = items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
+    const flete = 75;
+    const repartido = items.reduce(
+      (s, i) => s + (costoUnitarioReal(i, subtotal, flete) - i.unitCost) * i.quantity,
+      0,
+    );
+    expect(repartido).toBeCloseTo(flete, 2);
+  });
+
+  it("una linea sin cantidad no divide por cero", () => {
+    expect(costoUnitarioReal({ quantity: 0, unitCost: 19.5 }, 390, 40)).toBe(19.5);
   });
 });
 

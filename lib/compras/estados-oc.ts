@@ -72,3 +72,17 @@ export type FormaDePago = (typeof FORMAS_DE_PAGO)[number]["id"];
 export function generaCuentaPorPagar(forma: string): boolean {
   return forma.startsWith("credito_");
 }
+
+/**
+ * Comprobante que entrega el proveedor (ADR-377). Es el vínculo con SUNAT:
+ * sin factura no hay crédito fiscal, y sin número no hay forma de encontrar
+ * la compra cuando el contador la pide.
+ */
+export const TIPOS_COMPROBANTE = [
+  { id: "ninguno", label: "Sin comprobante" },
+  { id: "factura", label: "Factura" },
+  { id: "boleta", label: "Boleta" },
+  { id: "guia", label: "Guía de remisión" },
+] as const;
+
+export type TipoComprobante = (typeof TIPOS_COMPROBANTE)[number]["id"];

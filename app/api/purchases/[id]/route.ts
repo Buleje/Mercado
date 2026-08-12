@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { PurchasesDB } from "@/lib/jsondb";
+import { PurchasesDB, type DbPurchaseOrder } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getRecibidoAcumulado, saldoPendiente } from "@/lib/compras/recibido-acumulado";
+import { costoUnitarioReal } from "@/lib/compras/totales-oc";
 import { TRANSICIONES_OC, transicionValida, type EstadoOC } from "@/lib/compras/estados-oc";
 
 const DiferenciaSchema = z.object({
@@ -32,6 +33,14 @@ const PatchSchema = z.object({
   status: z.enum(["pendiente", "parcial", "recibido", "cancelado"]).optional(),
   notes: z.string().max(1000).optional(),
   diferencias: z.array(DiferenciaSchema).optional(),
+  // ADR-377 — datos que se completan después de emitir: la factura llega con
+  // la mercadería, el flete se sabe cuando el mototaxi cobra.
+  invoiceNumber: z.string().max(60).optional(),
+  invoiceType: z.enum(["factura", "boleta", "guia", "ninguno"]).optional(),
+  igvIncluded: z.boolean().optional(),
+  flete: z.number().min(0).optional(),
+  otrosCostos: z.number().min(0).optional(),
+  cancelReason: z.string().max(300).optional(),
 });
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -76,7 +85,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // diferencias no es campo de DbPurchaseOrder — se procesa más abajo.
-    const { diferencias: _diferencias, ...patch } = parsed.data;
+    const { diferencias: _diferencias, ...campos } = parsed.data;
+
+    // ADR-377: quién y cuándo. `deliveryDate` es lo que el proveedor prometió;
+    // esto es lo que pasó de verdad, y la diferencia entre ambas es la que
+    // mide si el proveedor cumple.
+    const patch: Partial<DbPurchaseOrder> = {
+      ...campos,
+      ...(statusChanged && parsed.data.status === "recibido"
+        ? { receivedDate: new Date().toISOString(), receivedBy: auth.username }
+        : {}),
+    };
+
     const updated = await PurchasesDB.update(auth.tenantId, id, patch);
 
     if (!updated) return NextResponse.json({ error: "Error updating" }, { status: 500 });
@@ -98,6 +118,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           // sumaba la cantidad ENTERA otra vez (medido: OC de 10 con 4
           // recibidos terminaba en stock 14).
           const yaRecibido = await getRecibidoAcumulado(tx, auth.tenantId, updated.id, updated.items);
+          // ADR-377: flete + otros costos se reparten por valor entre los items.
+          const subtotalOrden = updated.items.reduce((s, i) => s + i.quantity * toNumOrZero(i.unitCost), 0);
+          const sobrecostos = (updated.flete ?? 0) + (updated.otrosCostos ?? 0);
 
           for (const item of updated.items) {
             const product = await tx.product.findUnique({ where: { id: item.productId } });
@@ -115,8 +138,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             const prevStock = product.stock ?? 0;
             const newStock = prevStock + quantityReceived;
 
-            // TD-018: item.unitCost y product.costPrice son Decimal
-            const unitCostNum = toNumOrZero(item.unitCost);
+            // TD-018: item.unitCost y product.costPrice son Decimal.
+            // ADR-377: el costo lleva la parte de flete que le toca — si no,
+            // el margen que muestra el sistema es optimista por unidad.
+            const unitCostNum = costoUnitarioReal(item, subtotalOrden, sobrecostos);
             let avgCost = unitCostNum;
             if (prevStock > 0) {
               const oldVal = prevStock * toNumOrZero(product.costPrice);

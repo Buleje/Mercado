@@ -27,6 +27,12 @@ const PurchaseSchema = z.object({
   deliveryDate: z.string().optional(),
   discount: z.number().min(0).max(100).default(0),
   idempotencyKey: z.string().min(1).max(100).optional(),
+  // ADR-377 — el papel del proveedor y lo que costó traer la mercadería.
+  invoiceNumber: z.string().max(60).optional(),
+  invoiceType: z.enum(["factura", "boleta", "guia", "ninguno"]).optional(),
+  igvIncluded: z.boolean().default(true),
+  flete: z.number().min(0).default(0),
+  otrosCostos: z.number().min(0).default(0),
 });
 
 export async function GET(req: NextRequest) {
@@ -87,6 +93,13 @@ export async function POST(req: NextRequest) {
       paymentMethod: data.paymentMethod,
       deliveryDate: data.deliveryDate,
       discount: discountPct,
+      // ADR-377
+      invoiceNumber: data.invoiceNumber,
+      invoiceType: data.invoiceType,
+      igvIncluded: data.igvIncluded,
+      flete: data.flete,
+      otrosCostos: data.otrosCostos,
+      createdBy: auth.username,
       createdAt: now,
       updatedAt: now,
     }, auth.tenantId);

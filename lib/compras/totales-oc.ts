@@ -18,12 +18,43 @@
 
 export const IGV_PERU = 0.18;
 
-export type ItemParaTotales = { quantity: number; unitCost: number | string };
+/** `unitCost` llega como number, string o Decimal de Prisma según el camino. */
+export type ItemParaTotales = { quantity: number; unitCost: unknown };
 
 /** Número finito o 0. Un NaN acá termina impreso en la orden del proveedor. */
 function num(v: unknown): number {
   const n = Number(v ?? 0);
   return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * Cuánto cuesta DE VERDAD una unidad, con el flete encima (ADR-377).
+ *
+ * El arroz "cuesta" S/19.50, pero si llegó con S/40 de mototaxi repartidos
+ * entre 20 bolsas, cada bolsa costó S/21.50. Sin esto el margen que muestra el
+ * sistema es dos soles optimista por bolsa, y las decisiones de precio salen
+ * de un número que no existe.
+ *
+ * El reparto es por VALOR, no por cantidad: mover una caja de whisky ocupa lo
+ * mismo que una de fideos, pero cargarle el mismo flete a un producto de S/2
+ * que a uno de S/200 distorsiona más de lo que corrige.
+ *
+ * @param sobrecostos flete + otros costos de la orden entera.
+ * @returns costo unitario con la parte de sobrecosto que le toca.
+ */
+export function costoUnitarioReal(
+  item: ItemParaTotales,
+  subtotalDeLaOrden: number,
+  sobrecostos: number,
+): number {
+  const cantidad = num(item.quantity);
+  const costo = num(item.unitCost);
+  if (cantidad <= 0) return costo;
+  if (sobrecostos <= 0 || subtotalDeLaOrden <= 0) return costo;
+
+  const valorDeLaLinea = cantidad * costo;
+  const parteQueLeToca = sobrecostos * (valorDeLaLinea / subtotalDeLaOrden);
+  return costo + parteQueLeToca / cantidad;
 }
 
 export type TotalesOC = {

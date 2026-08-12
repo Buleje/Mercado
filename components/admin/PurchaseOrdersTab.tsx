@@ -10,9 +10,12 @@ import {
   X, FileText, ScanBarcode, History,
   TrendingUp, BarChart3, Download, PackageCheck, Copy, ShoppingBag,
   Calendar, Building2, Loader2, Repeat, Hash, StickyNote, Check, Truck,
-  AlertTriangle, CreditCard, Percent } from "@buleje/design-system/icons";
+  AlertTriangle, CreditCard, Percent, Receipt } from "@buleje/design-system/icons";
 import type { DbPurchaseOrder, DbSupplier, DbProduct, PurchaseStatus } from "@/lib/jsondb";
-import { ESTADO_OC_LABELS, opcionesDeEstado, FORMAS_DE_PAGO, generaCuentaPorPagar, type FormaDePago } from "@/lib/compras/estados-oc";
+import {
+  ESTADO_OC_LABELS, opcionesDeEstado, FORMAS_DE_PAGO, generaCuentaPorPagar,
+  TIPOS_COMPROBANTE, type FormaDePago, type TipoComprobante,
+} from "@/lib/compras/estados-oc";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
@@ -157,6 +160,12 @@ export default function PurchaseOrdersTab() {
   const [deliveryDate, setDeliveryDate] = useState("");
   const [discount, setDiscount] = useState(0);
   const idempotencyKeyRef = useRef<string>(nuevaIdempotencyKey());
+  // ADR-377 — el papel del proveedor y lo que costó traer la mercadería.
+  const [invoiceType, setInvoiceType] = useState<TipoComprobante>("ninguno");
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [flete, setFlete] = useState(0);
+  const [otrosCostos, setOtrosCostos] = useState(0);
+  const [igvIncluded, setIgvIncluded] = useState(true);
 
   // Per-item search
   const [itemQueries, setItemQueries] = useState<string[]>([]);
@@ -333,6 +342,12 @@ export default function PurchaseOrdersTab() {
           paymentMethod,
           deliveryDate: deliveryDate || undefined,
           discount,
+          // ADR-377
+          invoiceType,
+          invoiceNumber: invoiceType === "ninguno" ? undefined : (invoiceNumber || undefined),
+          flete,
+          otrosCostos,
+          igvIncluded,
           // Dos clicks al botón ya no crean dos órdenes.
           idempotencyKey: idempotencyKeyRef.current,
         }),
@@ -357,6 +372,11 @@ export default function PurchaseOrdersTab() {
       setPaymentMethod("contado");
       setDeliveryDate("");
       setDiscount(0);
+      setInvoiceType("ninguno");
+      setInvoiceNumber("");
+      setFlete(0);
+      setOtrosCostos(0);
+      setIgvIncluded(true);
       idempotencyKeyRef.current = nuevaIdempotencyKey();
       load();
     } catch {
@@ -465,6 +485,9 @@ export default function PurchaseOrdersTab() {
   // Preview: el total que manda es el que calcula el backend con la misma
   // fórmula (regla 6 — totales en backend, el cliente sólo anticipa).
   const totalConDescuento = Math.max(0, itemsTotal * (1 - discount / 100));
+  // ADR-377: flete y otros costos NO van en el total que se le paga al
+  // proveedor por la mercadería, pero sí en lo que cuesta tenerla en el local.
+  const sobrecostos = flete + otrosCostos;
 
   // Filter orders by supplier + status
   const filteredOrders = orders.filter((o) => {
@@ -1071,6 +1094,75 @@ export default function PurchaseOrdersTab() {
                   </div>
                 </section>
 
+                {/* ── Sección: Comprobante y costos de traer (ADR-377) ── */}
+                <section className="space-y-3">
+                  <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                    <Receipt className="h-4 w-4 text-[var(--text-tertiary)]" />
+                    Comprobante y costos de traer
+                  </CardTitle>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field label="Tipo de comprobante" labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                      <select
+                        value={invoiceType}
+                        onChange={(e) => setInvoiceType(e.target.value as TipoComprobante)}
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary cursor-pointer"
+                      >
+                        {TIPOS_COMPROBANTE.map(t => (
+                          <option key={t.id} value={t.id}>{t.label}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Número" labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                      <input
+                        value={invoiceNumber}
+                        onChange={(e) => setInvoiceNumber(e.target.value)}
+                        disabled={invoiceType === "ninguno"}
+                        placeholder={invoiceType === "ninguno" ? "Sin comprobante" : "F001-00012345"}
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary disabled:opacity-50"
+                      />
+                    </Field>
+                    <Field label={<><Truck className="inline h-3 w-3 mr-1" />Flete (S/)</>} labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                      <input
+                        type="number" min="0" step="0.5"
+                        value={flete}
+                        onChange={(e) => setFlete(Math.max(0, Number(e.target.value)))}
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                      />
+                    </Field>
+                    <Field label="Otros costos (S/)" labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                      <input
+                        type="number" min="0" step="0.5"
+                        value={otrosCostos}
+                        onChange={(e) => setOtrosCostos(Math.max(0, Number(e.target.value)))}
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                      />
+                    </Field>
+                  </div>
+
+                  {sobrecostos > 0 && items.length > 0 && (
+                    <p className="text-xs text-[var(--text-secondary)] bg-[var(--surface-sunken)] rounded-xl px-3.5 py-2.5 border border-[var(--rule-base)]">
+                      Los S/{sobrecostos.toFixed(2)} se reparten entre los productos según cuánto vale cada uno.
+                      Así el costo del producto incluye lo que costó traerlo, y el margen que ves después es el de verdad.
+                    </p>
+                  )}
+
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={igvIncluded}
+                      onChange={(e) => setIgvIncluded(e.target.checked)}
+                      className="mt-0.5 h-5 w-5 rounded-md border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                    />
+                    <span className="text-sm font-medium text-[var(--text-primary)]">
+                      Los costos que cargué ya incluyen IGV
+                      <span className="block text-xs text-[var(--text-secondary)] font-normal">
+                        Es lo normal cuando el proveedor te pasa precio de lista.
+                      </span>
+                    </span>
+                  </label>
+                </section>
+
                 {/* ── Sección: Productos ── */}
                 <section className="space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
@@ -1224,10 +1316,20 @@ export default function PurchaseOrdersTab() {
                           Subtotal S/{itemsTotal.toFixed(2)} − {discount}% = ahorrás S/{(itemsTotal - totalConDescuento).toFixed(2)}
                         </p>
                       )}
+                      {sobrecostos > 0 && (
+                        <p className="text-xs text-[var(--text-secondary)] font-bold mt-0.5">
+                          + S/{sobrecostos.toFixed(2)} de traerla · te cuesta S/{(totalConDescuento + sobrecostos).toFixed(2)}
+                        </p>
+                      )}
                     </div>
-                    <p className="text-3xl font-extrabold text-primary tabular-nums">
-                      S/{totalConDescuento.toFixed(2)}
-                    </p>
+                    <div className="text-right">
+                      <p className="text-3xl font-extrabold text-primary tabular-nums">
+                        S/{totalConDescuento.toFixed(2)}
+                      </p>
+                      {sobrecostos > 0 && (
+                        <p className="text-xs text-[var(--text-tertiary)] font-bold">le pagás al proveedor</p>
+                      )}
+                    </div>
                   </div>
                 )}
                 <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
@@ -1467,6 +1569,47 @@ export default function PurchaseOrdersTab() {
                       <span className="text-primary">S/{Number(o.total).toFixed(2)}</span>
                     </div>
                   </div>
+                  {/* ADR-377: el papel, lo que costó traerla y quién la manejó. */}
+                  {(() => {
+                    const sobrecosto = (o.flete ?? 0) + (o.otrosCostos ?? 0);
+                    const datos: Array<{ etiqueta: string; valor: string }> = [];
+                    if (o.invoiceNumber) datos.push({ etiqueta: TIPOS_COMPROBANTE.find(t => t.id === o.invoiceType)?.label ?? "Comprobante", valor: o.invoiceNumber });
+                    if (sobrecosto > 0) datos.push({ etiqueta: "Costo de traerla", valor: `S/${sobrecosto.toFixed(2)}` });
+                    if (o.deliveryDate) datos.push({ etiqueta: "Prometida", valor: formatDate(o.deliveryDate) });
+                    if (o.receivedDate) datos.push({ etiqueta: "Llegó", valor: formatDate(o.receivedDate) });
+                    if (o.createdBy) datos.push({ etiqueta: "La pidió", valor: o.createdBy });
+                    if (o.receivedBy) datos.push({ etiqueta: "La recibió", valor: o.receivedBy });
+                    if (datos.length === 0) return null;
+                    return (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {datos.map(d => (
+                          <span key={d.etiqueta} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs">
+                            <span className="font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{d.etiqueta}</span>
+                            <span className="font-extrabold text-[var(--text-primary)]">{d.valor}</span>
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Entrega tarde: la promesa contra lo que pasó. */}
+                  {(() => {
+                    if (!o.deliveryDate || !o.receivedDate) return null;
+                    const dias = Math.round(
+                      (new Date(o.receivedDate).getTime() - new Date(o.deliveryDate).getTime()) / 86400000,
+                    );
+                    if (dias <= 0) return (
+                      <p className="mt-2 text-xs font-bold text-[var(--data-success-500)]">
+                        Llegó {dias === 0 ? "el día prometido" : `${Math.abs(dias)} día${Math.abs(dias) === 1 ? "" : "s"} antes`}
+                      </p>
+                    );
+                    return (
+                      <p className="mt-2 text-xs font-bold text-[var(--data-warning-500)]">
+                        Llegó {dias} día{dias === 1 ? "" : "s"} después de lo prometido
+                      </p>
+                    );
+                  })()}
+
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">ID: {o.id}</p>
 
                   {/* Mejora 14: Ahorro vs compra anterior del proveedor */}
