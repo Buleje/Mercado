@@ -1,6 +1,7 @@
 "use client";
 
 import type { DbPurchaseOrder, DbSupplier } from "@/lib/jsondb";
+import { totalesOC } from "@/lib/compras/totales-oc";
 
 interface PurchaseOrderPDFProps {
   order: DbPurchaseOrder;
@@ -8,9 +9,11 @@ interface PurchaseOrderPDFProps {
 }
 
 export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier) {
-  const subtotal = order.items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
-  const igv = subtotal * 0.18;
-  const total = subtotal + igv;
+  // El TOTAL del papel es el de la orden. Antes se calculaba acá sumando 18%
+  // encima del costo e ignorando el descuento, así que el PDF que se le
+  // entregaba al proveedor no coincidía con la orden ni con la pantalla.
+  const { subtotalBruto, descuentoPct, descuentoMonto, total, baseImponible, igvContenido } =
+    totalesOC(order);
 
   const orderDate = (() => {
     try {
@@ -159,13 +162,22 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
   <!-- Totals -->
   <div class="totals">
     <div class="totals-box">
+      ${descuentoPct > 0 ? `
       <div class="totals-row">
-        <span>Subtotal (sin IGV)</span>
-        <span>S/${subtotal.toFixed(2)}</span>
+        <span>Subtotal</span>
+        <span>S/${subtotalBruto.toFixed(2)}</span>
       </div>
       <div class="totals-row">
-        <span>IGV (18%)</span>
-        <span>S/${igv.toFixed(2)}</span>
+        <span>Descuento (${descuentoPct}%)</span>
+        <span>-S/${descuentoMonto.toFixed(2)}</span>
+      </div>` : ""}
+      <div class="totals-row">
+        <span>Valor de venta</span>
+        <span>S/${baseImponible.toFixed(2)}</span>
+      </div>
+      <div class="totals-row">
+        <span>IGV (18%) incluido</span>
+        <span>S/${igvContenido.toFixed(2)}</span>
       </div>
       <div class="totals-row total">
         <span>TOTAL</span>

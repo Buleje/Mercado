@@ -2,15 +2,17 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useState, useEffect, useCallback, useMemo, type FormEvent } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent } from "react";
 import dynamic from "next/dynamic";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   Trash2, Plus, ChevronDown, ChevronUp, Package,
   X, FileText, ScanBarcode, History,
   TrendingUp, BarChart3, Download, PackageCheck, Copy, ShoppingBag,
-  Calendar, Building2, Loader2, Repeat, Hash, StickyNote, Check, Truck } from "@buleje/design-system/icons";
+  Calendar, Building2, Loader2, Repeat, Hash, StickyNote, Check, Truck,
+  AlertTriangle, CreditCard, Percent } from "@buleje/design-system/icons";
 import type { DbPurchaseOrder, DbSupplier, DbProduct, PurchaseStatus } from "@/lib/jsondb";
+import { ESTADO_OC_LABELS, opcionesDeEstado, FORMAS_DE_PAGO, generaCuentaPorPagar, type FormaDePago } from "@/lib/compras/estados-oc";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
@@ -21,13 +23,10 @@ import SupplierPriceComparison, { QuotationComparator } from "./compras/Supplier
 const BarcodeScanner = dynamic(() => import("./BarcodeScanner"), { ssr: false });
 const OCRecepcionModal = dynamic(() => import("./compras/OCRecepcionModal"), { ssr: false });
 
-const STATUS_LABELS: Record<PurchaseStatus, string> = {
-  pendiente: "Pendiente",
-  recibido: "Recibido",
-  parcial: "Parcial",
-  cancelado: "Cancelado",
-  auto_generated: "Auto-generado",
-};
+// Labels y transiciones salen de lib/compras/estados-oc.ts — la misma tabla
+// que valida el endpoint. Antes este select ofrecía "Auto-generado", que el
+// servidor rechaza con 400.
+const STATUS_LABELS = ESTADO_OC_LABELS as Record<PurchaseStatus, string>;
 const STATUS_COLORS: Record<PurchaseStatus, string> = {
   pendiente: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30",
   recibido: "bg-primary/10 dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] border-[var(--data-success-500)]/30",
@@ -85,6 +84,13 @@ function formatDate(iso: string) {
 }
 
 type ItemDraft = { productId: number; name: string; quantity: number; unitCost: number; unit: string };
+
+/** Clave de un intento de creación: dos clicks al mismo botón comparten clave. */
+function nuevaIdempotencyKey(): string {
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `oc-${Math.random().toString(36).slice(2)}`;
+}
 
 // ── KPI Card (audit 2026-05-17): card compacta con ícono tinted box ──
 type KPIAccent = "danger" | "warning" | "success" | "neutral";
@@ -145,6 +151,12 @@ export default function PurchaseOrdersTab() {
   const [items, setItems] = useState<ItemDraft[]>([]);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  // Campos que la DB y el endpoint ya soportaban y el formulario nunca mandaba:
+  // toda OC salía como "contado" sin fecha de entrega ni descuento.
+  const [paymentMethod, setPaymentMethod] = useState<FormaDePago>("contado");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const idempotencyKeyRef = useRef<string>(nuevaIdempotencyKey());
 
   // Per-item search
   const [itemQueries, setItemQueries] = useState<string[]>([]);
@@ -159,8 +171,14 @@ export default function PurchaseOrdersTab() {
   // Reception modal
   const [recepcionOC, setRecepcionOC] = useState<DbPurchaseOrder | null>(null);
 
-  // Mejora 19: Toast for duplicate
-  const [duplicateToast, setDuplicateToast] = useState<string | null>(null);
+  // Aviso flotante. Nace como toast de "OC duplicada" pero ahora también
+  // reporta los rechazos del servidor: antes un cambio de estado fallido no
+  // decía nada y la pantalla mostraba el estado nuevo igual.
+  const [toast, setToast] = useState<{ msg: string; tone: "ok" | "error" } | null>(null);
+  const avisar = useCallback((msg: string, tone: "ok" | "error" = "ok") => {
+    setToast({ msg, tone });
+    setTimeout(() => setToast(null), tone === "error" ? 6000 : 4000);
+  }, []);
 
   // Mejora 15: Pedido recurrente a proveedor
   type RecurringOrder = { ocId: string; items: ItemDraft[]; supplierId: string; supplierName: string; intervalDays: number; nextDate: string; notifyDaysBefore: number };
@@ -300,51 +318,88 @@ export default function PurchaseOrdersTab() {
 
   const createOrder = async (e: FormEvent) => {
     e.preventDefault();
-    if (!supplierId || items.length === 0) return;
+    if (!supplierId || items.length === 0 || saving) return;
     const sup = suppliers.find(s => s.id === supplierId);
     setSaving(true);
-    const res = await fetch("/api/purchases", {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        supplierId,
-        supplierName: sup?.name || "",
-        items,
-        notes: notes || undefined,
-      }),
-    });
-    if (res.ok) {
-      // Auto-create payable for this PO
-      const po = await res.json();
-      await fetch("/api/payables", {
+    try {
+      const res = await fetch("/api/purchases", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           supplierId,
           supplierName: sup?.name || "",
-          purchaseOrderId: po.id,
-          description: `Orden de compra ${po.id}`,
-          amount: po.total,
-          dueDate: new Date(Date.now() + 30 * 86400000).toISOString(),
+          items,
+          notes: notes || undefined,
+          paymentMethod,
+          deliveryDate: deliveryDate || undefined,
+          discount,
+          // Dos clicks al botón ya no crean dos órdenes.
+          idempotencyKey: idempotencyKeyRef.current,
         }),
       });
+      if (!res.ok) {
+        avisar("No se pudo crear la orden de compra", "error");
+        return;
+      }
+      // La cuenta por pagar la abre el endpoint, y sólo si la compra es a
+      // crédito. Antes la creaba acá SIEMPRE, a 30 días: cada compra pagada en
+      // efectivo dejaba una deuda que nadie debía.
+      avisar(
+        generaCuentaPorPagar(paymentMethod)
+          ? "Orden creada — se abrió la cuenta por pagar con su vencimiento"
+          : "Orden de compra creada",
+      );
+      setShowCreate(false);
+      setSupplierId("");
+      setItems([]);
+      setItemQueries([]);
+      setNotes("");
+      setPaymentMethod("contado");
+      setDeliveryDate("");
+      setDiscount(0);
+      idempotencyKeyRef.current = nuevaIdempotencyKey();
+      load();
+    } catch {
+      avisar("Sin conexión con el servidor — la orden no se creó", "error");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    setShowCreate(false);
-    setSupplierId("");
-    setItems([]);
-    setItemQueries([]);
-    setNotes("");
-    load();
   };
 
+  // El estado sólo cambia en pantalla si el servidor lo aceptó. Antes esto
+  // ignoraba la respuesta y pintaba "Recibido" aunque el PATCH devolviera 422:
+  // la orden se veía cerrada y el stock nunca subía.
   const updateStatus = async (id: string, status: PurchaseStatus) => {
-    await fetch(`/api/purchases/${id}`, {
-      method: "PATCH",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ status }),
-    });
+    const anterior = orders.find(o => o.id === id)?.status;
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+    try {
+      const res = await fetch(`/api/purchases/${id}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        if (anterior) setOrders(prev => prev.map(o => o.id === id ? { ...o, status: anterior } : o));
+        // El cuerpo puede no ser JSON (502 de un proxy, por ejemplo): en ese
+        // caso cae al mensaje genérico con el código.
+        const detalle = await res.json().catch((err) => {
+          console.warn("[compras] respuesta de error sin JSON", err);
+          return null;
+        });
+        avisar(
+          typeof detalle?.error === "string"
+            ? detalle.error
+            : `No se pudo cambiar el estado (error ${res.status})`,
+          "error",
+        );
+        return;
+      }
+      // Marcar recibido mueve stock: recargar para ver los totales reales.
+      if (status === "recibido" || status === "parcial") load();
+    } catch {
+      if (anterior) setOrders(prev => prev.map(o => o.id === id ? { ...o, status: anterior } : o));
+      avisar("Sin conexión con el servidor — el estado no se guardó", "error");
+    }
   };
 
   const _receiveOrder = async (id: string) => {
@@ -396,14 +451,20 @@ export default function PurchaseOrdersTab() {
         }),
       });
       if (res.ok) {
-        setDuplicateToast("OC duplicada — revisa las cantidades antes de enviar");
-        setTimeout(() => setDuplicateToast(null), 4000);
+        avisar("OC duplicada — revisa las cantidades antes de enviar");
         load();
+      } else {
+        avisar("No se pudo duplicar la orden", "error");
       }
-    } catch { /* ignore */ }
+    } catch {
+      avisar("Sin conexión con el servidor — no se duplicó la orden", "error");
+    }
   };
 
   const itemsTotal = items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
+  // Preview: el total que manda es el que calcula el backend con la misma
+  // fórmula (regla 6 — totales en backend, el cliente sólo anticipa).
+  const totalConDescuento = Math.max(0, itemsTotal * (1 - discount / 100));
 
   // Filter orders by supplier + status
   const filteredOrders = orders.filter((o) => {
@@ -939,9 +1000,73 @@ export default function PurchaseOrdersTab() {
                       <input
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Ej. Entrega antes del 25, pagar a 30 días, traer factura..."
+                        placeholder="Ej. Traer factura, descargar por el portón de atrás..."
                         className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
                       />
+                    </Field>
+                  </div>
+                </section>
+
+                {/* ── Sección: Condiciones de compra ── */}
+                <section className="space-y-3">
+                  <h3 className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                    <CreditCard className="h-4 w-4 text-[var(--text-tertiary)]" />
+                    Condiciones
+                  </h3>
+
+                  <div>
+                    <span className="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">Forma de pago</span>
+                    <div className="flex flex-wrap gap-2">
+                      {FORMAS_DE_PAGO.map(forma => {
+                        const activa = paymentMethod === forma.id;
+                        return (
+                          <button
+                            key={forma.id}
+                            type="button"
+                            onClick={() => setPaymentMethod(forma.id)}
+                            aria-pressed={activa}
+                            title={forma.ayuda}
+                            className={cn(
+                              "h-12 px-4 rounded-2xl border-2 text-sm font-bold transition-colors",
+                              activa
+                                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                                : "border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
+                            )}
+                          >
+                            {forma.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1.5">
+                      {generaCuentaPorPagar(paymentMethod)
+                        ? `Se abre una cuenta por pagar que vence en ${FORMAS_DE_PAGO.find(f => f.id === paymentMethod)?.dias} días.`
+                        : "No genera cuenta por pagar: la compra queda saldada."}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field label={<><Calendar className="inline h-3 w-3 mr-1" />Fecha de entrega prometida</>} labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                      <input
+                        type="date"
+                        value={deliveryDate}
+                        onChange={(e) => setDeliveryDate(e.target.value)}
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                      />
+                    </Field>
+                    <Field label={<><Percent className="inline h-3 w-3 mr-1" />Descuento del proveedor</>} labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                      {(id) => (
+                        <div className="relative">
+                          <input
+                            id={id}
+                            type="number" min="0" max="100" step="0.5"
+                            value={discount}
+                            onChange={(e) => setDiscount(Math.min(100, Math.max(0, Number(e.target.value))))}
+                            className="w-full h-12 pl-3.5 pr-9 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                          />
+                          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--text-tertiary)]">%</span>
+                        </div>
+                      )}
                     </Field>
                   </div>
                 </section>
@@ -1094,9 +1219,14 @@ export default function PurchaseOrdersTab() {
                     <div>
                       <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Total de la orden</p>
                       <p className="text-xs text-[var(--text-secondary)]">{items.length} producto{items.length === 1 ? "" : "s"} · {items.reduce((s, i) => s + i.quantity, 0)} unidades</p>
+                      {discount > 0 && (
+                        <p className="text-xs text-[var(--data-success-500)] font-bold mt-0.5">
+                          Subtotal S/{itemsTotal.toFixed(2)} − {discount}% = ahorrás S/{(itemsTotal - totalConDescuento).toFixed(2)}
+                        </p>
+                      )}
                     </div>
                     <p className="text-3xl font-extrabold text-primary tabular-nums">
-                      S/{itemsTotal.toFixed(2)}
+                      S/{totalConDescuento.toFixed(2)}
                     </p>
                   </div>
                 )}
@@ -1210,16 +1340,28 @@ export default function PurchaseOrdersTab() {
 
                 {/* Acciones */}
                 <div className="flex flex-wrap items-center gap-2 shrink-0 lg:border-l-2 lg:border-[var(--rule-soft)] lg:pl-4">
-                  <select
-                    value={o.status}
-                    onChange={(e) => updateStatus(o.id, e.target.value as PurchaseStatus)}
-                    aria-label="Cambiar estado"
-                    className="h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer"
-                  >
-                    {(Object.keys(STATUS_LABELS) as PurchaseStatus[]).map(s => (
-                      <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                    ))}
-                  </select>
+                  {/* Sólo los estados a los que esta orden puede ir de verdad.
+                      Una orden recibida no tiene destinos: el select queda
+                      deshabilitado en vez de ofrecer cambios que el servidor
+                      rechaza. */}
+                  {(() => {
+                    const destinos = opcionesDeEstado(o.status);
+                    const cerrada = destinos.length <= 1;
+                    return (
+                      <select
+                        value={o.status}
+                        onChange={(e) => updateStatus(o.id, e.target.value as PurchaseStatus)}
+                        aria-label="Cambiar estado"
+                        disabled={cerrada}
+                        title={cerrada ? `Una orden ${STATUS_LABELS[o.status].toLowerCase()} ya no cambia de estado` : "Cambiar estado"}
+                        className="h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {destinos.map(s => (
+                          <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                        ))}
+                      </select>
+                    );
+                  })()}
                   {(o.status === "pendiente" || o.status === "parcial") && (
                     <button
                       type="button"
@@ -1560,14 +1702,31 @@ export default function PurchaseOrdersTab() {
         />
       )}
 
-      {/* Mejora 19: Toast de duplicacion */}
-      {duplicateToast && (
-        <div className="fixed bottom-4 right-4 z-50 bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-primary/10 dark:bg-primary/15 flex items-center justify-center shrink-0">
-              <Copy className="h-4 w-4 text-[var(--data-success-500)]" />
+      {/* Aviso flotante: confirma lo que salió bien y, sobre todo, muestra lo
+          que el servidor rechazó (antes fallaba en silencio). */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={cn(
+            "fixed bottom-4 right-4 z-50 bg-[var(--surface-raised)] border-2 rounded-2xl p-4 max-w-sm shadow-lg animate-in slide-in-from-bottom-5",
+            toast.tone === "error"
+              ? "border-[var(--data-error-500)]/40"
+              : "border-[var(--data-success-500)]/40",
+          )}
+        >
+          <div className="flex items-start gap-3">
+            <div className={cn(
+              "h-9 w-9 rounded-xl flex items-center justify-center shrink-0",
+              toast.tone === "error"
+                ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/15"
+                : "bg-primary/10 dark:bg-[var(--data-success-500)]/15",
+            )}>
+              {toast.tone === "error"
+                ? <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
+                : <Check className="h-5 w-5 text-[var(--data-success-500)]" />}
             </div>
-            <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{duplicateToast}</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)] pt-1.5">{toast.msg}</p>
           </div>
         </div>
       )}

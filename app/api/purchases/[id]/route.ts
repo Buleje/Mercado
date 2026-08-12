@@ -8,6 +8,8 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { getRecibidoAcumulado, saldoPendiente } from "@/lib/compras/recibido-acumulado";
+import { TRANSICIONES_OC, transicionValida, type EstadoOC } from "@/lib/compras/estados-oc";
 
 const DiferenciaSchema = z.object({
   productoId: z.number().int().positive(),
@@ -16,19 +18,17 @@ const DiferenciaSchema = z.object({
   motivo: z.string().max(500).optional(),
 });
 
-// F5: Tabla de transiciones válidas para state machine
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  pendiente: ["emitida", "cancelado"],
-  emitida:   ["parcial", "recibido", "cancelado"],
-  parcial:   ["recibido", "cancelado"],
-  recibido:  ["pagada"],
-  cancelado: [],
-  pagada:    [],
-};
+// Las transiciones viven en lib/compras/estados-oc.ts — la misma tabla que
+// alimenta el <select> de la pantalla. 2026-08-11: la copia que había acá
+// enrutaba `pendiente` hacia "emitida" y `recibido` hacia "pagada", dos
+// estados que no existen en el enum PurchaseStatus ni los aceptaba el Zod de
+// abajo; medido, todo cambio de estado desde `pendiente` devolvía 422 salvo
+// cancelar.
 
 const PatchSchema = z.object({
-  // F5: alineado con DbPurchaseOrder.status enum (lib/db/misc.db.ts).
-  // 'emitida' y 'pagada' no existen en DB todavia — pendiente migration.
+  // Alineado con el enum PurchaseStatus de Prisma (lib/db/misc.db.ts).
+  // `auto_generated` es estado de origen, no destino: el admin la aprueba
+  // pasándola a pendiente, no vuelve a marcarla como auto-generada.
   status: z.enum(["pendiente", "parcial", "recibido", "cancelado"]).optional(),
   notes: z.string().max(1000).optional(),
   diferencias: z.array(DiferenciaSchema).optional(),
@@ -66,8 +66,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // F5: Validar transición de estado
     const statusChanged = parsed.data.status && parsed.data.status !== existing.status;
     if (statusChanged && parsed.data.status) {
-      const allowed = VALID_TRANSITIONS[existing.status as string] ?? [];
-      if (!allowed.includes(parsed.data.status)) {
+      if (!transicionValida(existing.status, parsed.data.status)) {
+        const allowed = TRANSICIONES_OC[existing.status as EstadoOC] ?? [];
         return NextResponse.json(
           { error: `Transición inválida: ${existing.status} → ${parsed.data.status}. Permitidas: [${allowed.join(", ")}]` },
           { status: 422 }
@@ -91,15 +91,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
 
       try {
-         
+
         await prisma.$transaction(async (tx) => {
+          // 2026-08-11: descontar lo que las recepciones ya metieron al stock.
+          // Sin esto, cerrar por el <select> una OC con recepción parcial
+          // sumaba la cantidad ENTERA otra vez (medido: OC de 10 con 4
+          // recibidos terminaba en stock 14).
+          const yaRecibido = await getRecibidoAcumulado(tx, auth.tenantId, updated.id, updated.items);
+
           for (const item of updated.items) {
             const product = await tx.product.findUnique({ where: { id: item.productId } });
             if (!product) continue;
 
-            // Use cantidadRecibida from diferencias if available, otherwise use item.quantity
+            // Con diferencias declaradas manda lo declarado; si no, lo que
+            // falte por recibir según las recepciones ya registradas.
             const dif = difMap.get(item.productId);
-            const quantityReceived = dif ? dif.cantidadRecibida : item.quantity;
+            const quantityReceived = dif
+              ? dif.cantidadRecibida
+              : saldoPendiente(item.quantity, yaRecibido.get(item.productId) ?? 0);
 
             if (quantityReceived <= 0) continue; // Nothing received for this item
 

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { GoodsReceiptsDB } from "@/lib/db/goods-receipts.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { getRecibidoAcumulado, estaCompleta } from "@/lib/compras/recibido-acumulado";
 
 // Item del checklist tal como lo arma ReceivingTab. `productId` es opcional: si
 // el item se eligió del combobox o vino prefilleado de la OC, trae el id real
@@ -112,18 +113,26 @@ export async function POST(req: NextRequest) {
         if (oc) {
           const norm = (s: string) => s.trim().toLowerCase();
           await prisma.$transaction(async (tx) => {
-            let allComplete = true;
+            // 2026-08-11: el veredicto parcial/recibido se calcula sobre lo
+            // ACUMULADO de todas las recepciones de la OC. Antes comparaba
+            // cada tanda contra el total (`4 < 10` → parcial), así que una
+            // compra recibida en dos viajes quedaba parcial para siempre y
+            // había que cerrarla con el <select> — que duplicaba el stock.
+            const ocItemRefs = oc.items.map((i) => ({ productId: i.productId, name: i.name }));
+            const recibidoTotal = await getRecibidoAcumulado(tx, tenantId, oc.id, ocItemRefs, receipt.id);
+
             for (const item of data.items) {
               // Preferir match por productId exacto; caer a nombre si no vino.
               const ocItem = item.productId != null
                 ? oc.items.find((i) => i.productId === item.productId)
                 : oc.items.find((i) => norm(i.name) === norm(item.product));
               if (!ocItem) continue;
-              if (item.receivedQty <= 0) {
-                if (ocItem.quantity > 0) allComplete = false;
-                continue;
-              }
-              if (item.receivedQty < ocItem.quantity) allComplete = false;
+              if (item.receivedQty <= 0) continue;
+
+              recibidoTotal.set(
+                ocItem.productId,
+                (recibidoTotal.get(ocItem.productId) ?? 0) + item.receivedQty,
+              );
 
               const product = await tx.product.findFirst({ where: { id: ocItem.productId, tenantId } });
               if (!product) continue;
@@ -149,6 +158,7 @@ export async function POST(req: NextRequest) {
               });
               stockUpdated++;
             }
+            const allComplete = estaCompleta(oc.items, recibidoTotal);
             await tx.purchaseOrder.update({
               where: { id: oc.id },
               data: {
