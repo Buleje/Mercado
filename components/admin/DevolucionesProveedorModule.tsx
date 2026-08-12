@@ -85,6 +85,39 @@ const ESTADO_LABEL_SIGUIENTE: Record<DevolucionEstado, string> = {
   RESUELTA:  "",
 };
 
+const CACHE_KEY = "admin-devoluciones-cache";
+const CACHE_TTL = 60 * 1000;
+
+/**
+ * Traduce una respuesta fallida a algo accionable para el encargado.
+ *
+ * Reporte QA Compras 2026-08-12: «"Marcar enviada" no cambió el estado ni tras
+ * refrescar». Las tres mutaciones hacían `if (res.ok) { … }` y nada en el else,
+ * con `catch {}` vacío al lado: un 404 (la fila vivía en otro tenant), un 403 de
+ * CSRF y un click sin efecto se veían exactamente igual — nada.
+ */
+async function mensajeDeError(res: Response, accion: string): Promise<string> {
+  // Un cuerpo ilegible no debe tapar el status, que es la parte útil.
+  const body = (await res.json().catch((err: unknown) => {
+    console.warn("[DevolucionesProveedorModule] respuesta de error sin JSON:", String(err));
+    return null;
+  })) as { error?: unknown; detail?: unknown } | null;
+  const detalle =
+    typeof body?.detail === "string" ? body.detail
+    : typeof body?.error === "string" ? body.error
+    : null;
+
+  switch (res.status) {
+    case 400: return detalle ?? "Faltan datos o son inválidos. Revisá el formulario.";
+    case 401:
+    case 403: return "Tu sesión venció. Recargá la página e intentá de nuevo.";
+    case 402: return detalle ?? "El plan de esta tienda no permite registrar cambios.";
+    case 404: return "Esa devolución ya no está disponible. Recargá la lista.";
+    case 429: return "Demasiados intentos seguidos. Esperá unos segundos.";
+    default:  return detalle ?? `No se pudo ${accion} (error ${res.status}).`;
+  }
+}
+
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function DevolucionesProveedorModule() {
@@ -107,33 +140,61 @@ export default function DevolucionesProveedorModule() {
   // Productos reales del inventario → combobox de búsqueda (reporte QA: el
   // producto era texto libre, propenso a typos y descuadres).
   const [products, setProducts] = useState<ProductOption[]>([]);
+  // Aviso al operador: la causa real de un guardado que no entró.
+  const [aviso, setAviso] = useState<{ tipo: "error" | "ok"; texto: string } | null>(null);
 
-  // Cargar devoluciones con cache localStorage SWR (TTL 60s)
-  const fetchDevoluciones = useCallback(async () => {
-    const KEY = "admin-devoluciones-cache";
-    const TTL = 60 * 1000;
+  /**
+   * Deja el estado y el cache de localStorage en la misma página.
+   *
+   * Sin esto, una mutación exitosa vivía sólo en memoria: al volver al tab
+   * dentro del TTL, `fetchDevoluciones` rehidrataba el cache viejo y revertía
+   * en pantalla lo que ya estaba guardado en la DB.
+   */
+  // Toma un updater (no una lista ya calculada) para que dos acciones seguidas
+  // sobre filas distintas no se pisen: la segunda parte SIEMPRE del estado más
+  // reciente, no del que capturó su closure.
+  const persistir = useCallback((actualizar: (prev: Devolucion[]) => Devolucion[]) => {
+    setDevoluciones(prev => {
+      const next = actualizar(prev);
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: next, ts: Date.now() }));
+      } catch { /* quota */ }
+      return next;
+    });
+  }, []);
+
+  // Cargar devoluciones con cache localStorage SWR (TTL 60s).
+  // `forzar` = ignorar el TTL: lo usa el botón de recargar, que existe
+  // justamente para desconfiar de lo que hay en pantalla.
+  const fetchDevoluciones = useCallback(async (forzar = false) => {
     // Hidratar de cache primero
-    try {
-      const cached = localStorage.getItem(KEY);
-      if (cached) {
-        const { data, ts } = JSON.parse(cached) as { data: Devolucion[]; ts: number };
-        if (Array.isArray(data)) {
-          setDevoluciones(data);
-          setLoading(false);
-          if (Date.now() - ts < TTL) return;
+    if (!forzar) {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached) as { data: Devolucion[]; ts: number };
+          if (Array.isArray(data)) {
+            setDevoluciones(data);
+            setLoading(false);
+            if (Date.now() - ts < CACHE_TTL) return;
+          }
         }
-      }
-    } catch { /* ignore */ }
+      } catch { /* ignore */ }
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/supplier-returns");
       if (res.ok) {
         const data = await res.json();
         setDevoluciones(data);
-        try { localStorage.setItem(KEY, JSON.stringify({ data, ts: Date.now() })); } catch { /* quota */ }
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+        } catch { /* quota */ }
+      } else {
+        setAviso({ tipo: "error", texto: await mensajeDeError(res, "cargar las devoluciones") });
       }
     } catch {
-      // silencioso
+      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. Revisá tu internet." });
     } finally {
       setLoading(false);
     }
@@ -249,6 +310,7 @@ export default function DevolucionesProveedorModule() {
     if (!proveedorId || itemsValidos.length === 0) return;
 
     setGuardando(true);
+    setAviso(null);
     try {
       const proveedor = proveedores.find(p => p.id === proveedorId);
       const res = await fetch("/api/supplier-returns", {
@@ -265,12 +327,15 @@ export default function DevolucionesProveedorModule() {
 
       if (res.ok) {
         const nueva = await res.json();
-        setDevoluciones(prev => [nueva, ...prev]);
+        persistir(prev => [nueva, ...prev]);
         resetFormulario();
         setMostrarFormulario(false);
+        setAviso({ tipo: "ok", texto: `Devolución registrada para ${proveedor?.name ?? "el proveedor"}.` });
+      } else {
+        setAviso({ tipo: "error", texto: await mensajeDeError(res, "registrar la devolución") });
       }
     } catch {
-      // silencioso
+      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. La devolución no se guardó." });
     } finally {
       setGuardando(false);
     }
@@ -283,6 +348,7 @@ export default function DevolucionesProveedorModule() {
     if (!siguiente) return;
 
     setActionId(id);
+    setAviso(null);
     try {
       const res = await fetch(`/api/supplier-returns/${id}`, {
         method: "PATCH",
@@ -290,25 +356,39 @@ export default function DevolucionesProveedorModule() {
         body: JSON.stringify({ estado: siguiente }),
       });
       if (res.ok) {
-        const updated = await res.json();
-        setDevoluciones(prev => prev.map(d => d.id === id ? updated : d));
+        const updated = await res.json() as Devolucion;
+        persistir(prev => prev.map(d => d.id === id ? updated : d));
+        setAviso({ tipo: "ok", texto: `${dev.proveedorNombre}: ${ESTADO_LABEL[siguiente].toLowerCase()}.` });
+      } else {
+        setAviso({ tipo: "error", texto: await mensajeDeError(res, "cambiar el estado") });
       }
     } catch {
-      // silencioso
+      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. El estado no cambió." });
     } finally {
       setActionId(null);
     }
   }
 
   async function eliminar(id: string) {
+    // El borrado es definitivo y no había ninguna pregunta de por medio: un
+    // click en el ícono equivocado se llevaba el registro de una devolución
+    // que quizá ya se le reclamó al proveedor.
+    const dev = devoluciones.find(d => d.id === id);
+    const detalle = dev ? `la devolución a ${dev.proveedorNombre} (${dev.items.length} item${dev.items.length === 1 ? "" : "s"})` : "esta devolución";
+    if (!window.confirm(`¿Eliminar ${detalle}?\n\nEs definitivo: no queda en la papelera ni se puede deshacer.`)) return;
+
     setActionId(id);
+    setAviso(null);
     try {
       const res = await fetch(`/api/supplier-returns/${id}`, { method: "DELETE", headers: csrfHeaders() });
       if (res.ok) {
-        setDevoluciones(prev => prev.filter(d => d.id !== id));
+        persistir(prev => prev.filter(d => d.id !== id));
+        setAviso({ tipo: "ok", texto: "Devolución eliminada." });
+      } else {
+        setAviso({ tipo: "error", texto: await mensajeDeError(res, "eliminar la devolución") });
       }
     } catch {
-      // silencioso
+      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. No se eliminó nada." });
     } finally {
       setActionId(null);
     }
@@ -339,7 +419,7 @@ export default function DevolucionesProveedorModule() {
       >
         <div className="flex items-center gap-2">
           <button
-            onClick={fetchDevoluciones}
+            onClick={() => fetchDevoluciones(true)}
             disabled={loading}
             aria-label="Recargar devoluciones"
             className="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
@@ -355,6 +435,40 @@ export default function DevolucionesProveedorModule() {
           </button>
         </div>
       </AdminModuleHeader>
+
+      {/* Resultado de la última acción. Antes no había ninguno: una devolución
+          que no se guardaba y una que sí se veían igual (reporte QA Compras). */}
+      {aviso && (
+        <div
+          role={aviso.tipo === "error" ? "alert" : "status"}
+          className={cn(
+            "flex items-start gap-2 rounded-xl border px-3 py-2.5",
+            aviso.tipo === "error"
+              ? "border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10"
+              : "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10",
+          )}
+        >
+          {aviso.tipo === "error"
+            ? <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-error-500)]" />
+            : <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-success-500)]" />}
+          <p className={cn(
+            "text-sm font-medium flex-1",
+            aviso.tipo === "error"
+              ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+              : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+          )}>
+            {aviso.texto}
+          </p>
+          <button
+            type="button"
+            onClick={() => setAviso(null)}
+            aria-label="Cerrar aviso"
+            className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* KPI summary 4 cards minimalistas */}
       {!loading && devoluciones.length > 0 && (() => {
