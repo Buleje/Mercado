@@ -40,6 +40,9 @@ const TYPE_LABELS: Record<string, { label: string; Icon: LucideIcon; dir: "in" |
   ajuste_negativo:  { label: "Ajuste (−)",    Icon: Minus, dir: "out" },
   merma:            { label: "Pérdida/Merma", Icon: AlertTriangle, dir: "out" },
   transferencia:    { label: "Transferencia", Icon: ArrowLeftRight, dir: "out" },
+  // ADR-379. Mercadería devuelta al proveedor: sale. `devolucion` (arriba) es
+  // la del cliente y entra — son hechos opuestos con nombres parecidos.
+  devolucion_proveedor: { label: "Devuelto al proveedor", Icon: Undo2, dir: "out" },
 };
 
 // Tipos que el usuario puede registrar a mano (ventas vienen del POS).

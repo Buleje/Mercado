@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
+import { revalidateTenantTag } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import {
@@ -69,8 +70,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Estado requerido" }, { status: 400 });
     }
 
-    const updated = await updateSupplierReturnEstado(auth.tenantId, id, body.estado);
-    if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const resultado = await updateSupplierReturnEstado(auth.tenantId, id, body.estado);
+    if (!resultado) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const { devolucion, avisos } = resultado;
+
+    // ADR-379: al marcar ENVIADA la mercadería salió del stock, y ese write va
+    // por `tx.product.update` fuera de ProductsDB — la invalidación corre por
+    // cuenta del endpoint o el Inventario sigue mostrando lo que ya no está.
+    if (devolucion.stockAplicadoAt) {
+      revalidateTenantTag(auth.tenantId, "products");
+    }
 
     // Notificar al proveedor por WhatsApp cuando se marca como ENVIADA
     if (body.estado === "ENVIADA" && record.estado !== "ENVIADA") {
@@ -83,7 +92,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       );
     }
 
-    return NextResponse.json(updated);
+    // `avisos` viaja al cliente para que la pantalla pueda decir qué NO se
+    // descontó (ítems a mano, productos sin control de stock, saldos negativos).
+    return NextResponse.json({ ...devolucion, avisos });
   } catch (e) {
     logger.error("[supplier-returns] PATCH error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });

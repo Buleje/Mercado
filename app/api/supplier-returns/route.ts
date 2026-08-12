@@ -21,6 +21,11 @@ const ItemSchema = z.object({
   nombre:   z.string().min(1).max(200),
   cantidad: z.number().positive(),
   unidad:   z.string().max(20).default("und"),
+  // ADR-379. Opcionales a propósito: se puede devolver algo que no está en el
+  // catálogo (un envase, una promo armada). Sin `productId` no se mueve stock,
+  // y la pantalla lo dice en vez de fallar.
+  productId:      z.number().int().positive().optional(),
+  precioUnitario: z.number().min(0).optional(),
 });
 
 const ReturnSchema = z.object({

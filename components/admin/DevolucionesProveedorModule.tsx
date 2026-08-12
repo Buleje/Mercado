@@ -17,7 +17,31 @@ interface ItemDevuelto {
   nombre:   string;
   cantidad: number;
   unidad:   string;
+  // ADR-379. Sin `productId` el ítem no puede salir del stock: es un texto
+  // escrito a mano. Con él, la devolución mueve inventario al marcarse enviada.
+  productId?:     number;
+  precioUnitario?: number;
 }
+
+/** Lo que el proveedor debe por un ítem. Sin precio no se puede afirmar nada. */
+function valorItem(item: ItemDevuelto): number | null {
+  if (item.precioUnitario == null) return null;
+  return item.precioUnitario * item.cantidad;
+}
+
+/** Total de la devolución y cuántos ítems quedaron sin precio (que se avisa). */
+function valorDevolucion(items: ItemDevuelto[]): { total: number; sinPrecio: number } {
+  let total = 0;
+  let sinPrecio = 0;
+  for (const i of items) {
+    const v = valorItem(i);
+    if (v == null) sinPrecio++;
+    else total += v;
+  }
+  return { total, sinPrecio };
+}
+
+const soles = (n: number) => `S/${n.toFixed(2)}`;
 
 interface Devolucion {
   id:              string;
@@ -28,6 +52,8 @@ interface Devolucion {
   motivo:          string;
   estado:          DevolucionEstado;
   notas?:          string | null;
+  /** Cuándo salió la mercadería del stock (ADR-379). Null = todavía no salió. */
+  stockAplicadoAt?: string | null;
 }
 
 interface Proveedor {
@@ -224,9 +250,11 @@ export default function DevolucionesProveedorModule() {
       .then((data: unknown) => {
         if (cancelled) return;
         const arr = Array.isArray(data) ? data : (data as { products?: unknown[] })?.products ?? [];
-        const list = (arr as Array<{ id?: number | string; name?: string; stock?: number | null; unit?: string; barcode?: string }>)
+        const list = (arr as Array<{ id?: number | string; name?: string; stock?: number | null; unit?: string; barcode?: string; costPrice?: number | null }>)
           .filter(p => !!p.name)
-          .map(p => ({ id: p.id ?? p.name!, name: p.name!, stock: p.stock ?? null, unit: p.unit, barcode: p.barcode }));
+          // `costPrice` se conserva (ADR-379): es lo que se le reclama al
+          // proveedor, y hasta ahora se descartaba junto con el resto.
+          .map(p => ({ id: p.id ?? p.name!, name: p.name!, stock: p.stock ?? null, unit: p.unit, barcode: p.barcode, costPrice: p.costPrice ?? null }));
         setProducts(list);
       })
       .catch(err => console.warn("[DevolucionesProveedorModule] products load failed:", err));
@@ -245,6 +273,36 @@ export default function DevolucionesProveedorModule() {
 
   function actualizarItem(index: number, campo: keyof ItemDevuelto, valor: string | number) {
     setItems(prev => prev.map((item, i) => i === index ? { ...item, [campo]: valor } : item));
+  }
+
+  /**
+   * Al elegir del inventario se guarda TODO lo que el buscador ya sabía: hasta
+   * ahora se quedaba sólo con el nombre y tiraba el id, que es justo lo que
+   * hace falta para mover stock y para saber cuánto vale lo devuelto (ADR-379).
+   */
+  function seleccionarProducto(index: number, p: ProductOption) {
+    setItems(prev => prev.map((item, i) => i === index ? {
+      ...item,
+      nombre: p.name,
+      productId: typeof p.id === "number" ? p.id : undefined,
+      precioUnitario: p.costPrice ?? undefined,
+      unidad: p.unit || item.unidad,
+    } : item));
+  }
+
+  /**
+   * Si el texto deja de coincidir con el producto elegido, el vínculo se corta.
+   * Mantenerlo sería peor que no tenerlo: descontaría stock de un producto que
+   * ya no es el que dice la pantalla.
+   */
+  function escribirNombreItem(index: number, texto: string) {
+    setItems(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      if (item.productId != null && texto !== item.nombre) {
+        return { ...item, nombre: texto, productId: undefined, precioUnitario: undefined };
+      }
+      return { ...item, nombre: texto };
+    }));
   }
 
   function resetFormulario() {
@@ -356,9 +414,22 @@ export default function DevolucionesProveedorModule() {
         body: JSON.stringify({ estado: siguiente }),
       });
       if (res.ok) {
-        const updated = await res.json() as Devolucion;
+        const updated = await res.json() as Devolucion & { avisos?: string[] };
         persistir(prev => prev.map(d => d.id === id ? updated : d));
-        setAviso({ tipo: "ok", texto: `${dev.proveedorNombre}: ${ESTADO_LABEL[siguiente].toLowerCase()}.` });
+
+        // Al marcar enviada la mercadería sale del stock (ADR-379). Decirlo es
+        // parte del cambio: un descuento de inventario silencioso es
+        // exactamente lo que no queremos que vuelva a pasar en este módulo.
+        const salioDelStock = siguiente === "ENVIADA" && !!updated.stockAplicadoAt;
+        const pendientes = updated.avisos ?? [];
+        setAviso({
+          tipo: pendientes.length > 0 ? "error" : "ok",
+          texto: [
+            `${dev.proveedorNombre}: ${ESTADO_LABEL[siguiente].toLowerCase()}.`,
+            salioDelStock ? "La mercadería salió del inventario." : "",
+            ...pendientes,
+          ].filter(Boolean).join(" "),
+        });
       } else {
         setAviso({ tipo: "error", texto: await mensajeDeError(res, "cambiar el estado") });
       }
@@ -611,8 +682,8 @@ export default function DevolucionesProveedorModule() {
                   value={item.nombre}
                   placeholder="Nombre del producto"
                   inputClassName="py-2 text-sm"
-                  onChange={(text) => actualizarItem(index, "nombre", text)}
-                  onSelect={(p) => actualizarItem(index, "nombre", p.name)}
+                  onChange={(text) => escribirNombreItem(index, text)}
+                  onSelect={(p) => seleccionarProducto(index, p)}
                 />
                 <input
                   type="number"
@@ -632,6 +703,15 @@ export default function DevolucionesProveedorModule() {
                   <option value="paq">paq</option>
                   <option value="bot">bot</option>
                 </select>
+                {/* Lo que vale este renglón. Sin producto elegido no hay costo
+                    que mostrar, y decirlo evita que el total parezca completo
+                    cuando no lo es. */}
+                <span className={cn(
+                  "w-24 shrink-0 text-right text-sm tabular-nums",
+                  valorItem(item) != null ? "font-semibold text-[var(--text-primary)]" : "text-[var(--text-tertiary)]",
+                )}>
+                  {valorItem(item) != null ? soles(valorItem(item)!) : "sin costo"}
+                </span>
                 {items.length > 1 && (
                   <button
                     onClick={() => quitarItem(index)}
@@ -642,6 +722,29 @@ export default function DevolucionesProveedorModule() {
                 )}
               </div>
             ))}
+
+            {/* El número con el que se le reclama al proveedor. */}
+            {(() => {
+              const { total, sinPrecio } = valorDevolucion(items.filter(i => i.nombre.trim() !== ""));
+              if (total === 0 && sinPrecio === 0) return null;
+              return (
+                <div className="flex items-baseline justify-between gap-3 rounded-xl bg-[var(--surface-sunken)] px-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">El proveedor te debe</p>
+                    {sinPrecio > 0 && (
+                      <p className="text-xs text-[var(--text-tertiary)]">
+                        {sinPrecio === 1
+                          ? "Falta el costo de 1 ítem: elegilo del inventario para contarlo."
+                          : `Faltan los costos de ${sinPrecio} ítems: elegilos del inventario para contarlos.`}
+                      </p>
+                    )}
+                  </div>
+                  <span className="shrink-0 text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
+                    {soles(total)}
+                  </span>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Notas */}
@@ -740,6 +843,17 @@ export default function DevolucionesProveedorModule() {
                         <Package className="h-3 w-3" />
                         {dev.items.length} {dev.items.length === 1 ? "item" : "items"}
                       </span>
+                      {/* Cuánto debe el proveedor por esta devolución. Es el
+                          dato con el que se le reclama, y antes no existía. */}
+                      {(() => {
+                        const { total } = valorDevolucion(dev.items);
+                        if (total <= 0) return null;
+                        return (
+                          <span className="text-xs font-bold tabular-nums text-[var(--text-secondary)]">
+                            {soles(total)}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">

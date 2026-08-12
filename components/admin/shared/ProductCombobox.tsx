@@ -16,6 +16,8 @@ export interface ProductOption {
   stock?: number | null;
   unit?: string;
   barcode?: string;
+  /** Costo del producto. Lo usa Devoluciones para saber cuánto debe el proveedor (ADR-379). */
+  costPrice?: number | null;
 }
 
 interface ProductComboboxProps {

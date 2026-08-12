@@ -45,6 +45,9 @@ const TYPE_LABELS: Record<string, { label: string; color: string; dir: "in" | "o
   venta:            { label: "Venta POS",    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/30",       dir: "out" },
   venta_online:     { label: "Venta Online", color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-orange-950/30",   dir: "out" },
   ajuste_negativo:  { label: "Ajuste (-)",   color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30",               dir: "out" },
+  // ADR-379. Es la mercadería que le devolvés al proveedor: SALE. No confundir
+  // con `devolucion`, que es la del cliente y entra.
+  devolucion_proveedor: { label: "Devuelto al proveedor", color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30", dir: "out" },
   merma:            { label: "Pérdida",      color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)]",           dir: "out" },
 };
 
