@@ -11,7 +11,16 @@
  * Se re-arma con:
  *   - actividad real del usuario (mousedown/keydown/scroll/touch), y
  *   - cada renovación del "modo mantener sesión activa" (KEEPALIVE_PING_EVENT).
- * Por eso, con ese modo ON el aviso nunca aparece: los pings resetean el reloj.
+ *
+ * CON "mantener sesión activa" ON el reloj NO se arma (Brandon 2026-08-12).
+ * Antes sí se armaba y sólo lo frenaban los pings: si el navegador congelaba la
+ * pestaña de fondo —Chrome lo hace a los pocos minutos— los pings dejaban de
+ * llegar, el temporizador se disparaba al volver y te echaba al login con la
+ * sesión del servidor todavía sana. Prender el switch ahora significa lo que
+ * dice: no te saca la ausencia, sólo apagarlo o que el servidor corte.
+ * Esto NO debilita nada: no toca la duración de los tokens y la autoridad sigue
+ * siendo el backend — cuando el refresh token (7 días) vence de verdad, el
+ * `refrescarSesion` recibe 401 y manda al login igual.
  *
  * No es bloqueante: la página sigue interactiva y cualquier interacción lo
  * descarta renovando. No cambia la duración base de los tokens.
@@ -20,7 +29,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { refrescarSesion } from "@/lib/auth/session-refresh";
 import { Clock, ShieldCheck } from "@buleje/design-system/icons";
-import { KEEPALIVE_PING_EVENT } from "@/lib/session-keepalive";
+import { KEEPALIVE_PING_EVENT, KEEPALIVE_EVENT, getKeepAlive } from "@/lib/session-keepalive";
 
 type Panel = "admin" | "superadmin";
 
@@ -43,6 +52,9 @@ export function SessionExpiryGuard({
   onLogout?: () => void;
 }) {
   const { idleMs, endpoint, method } = CFG[panel];
+  // Estado del switch por-dispositivo. Se lee tras montar para no romper SSR y
+  // se sincroniza con el evento (mismo tab) y `storage` (otras pestañas).
+  const [keepAlive, setKeepAliveState] = useState(false);
   const [warning, setWarning] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const warnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -82,6 +94,37 @@ export function SessionExpiryGuard({
   }, [clearTimers, idleMs]);
 
   useEffect(() => {
+    setKeepAliveState(getKeepAlive());
+    const sync = () => setKeepAliveState(getKeepAlive());
+    window.addEventListener(KEEPALIVE_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(KEEPALIVE_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Modo "mantener sesión activa": ningún reloj de inactividad. Al volver a
+    // la pestaña se renueva por las dudas de que el navegador la haya
+    // congelado; si el servidor ya cortó, `refrescarSesion` redirige al login
+    // por su cuenta (401) y no hace falta echar a nadie desde acá.
+    if (keepAlive) {
+      clearTimers();
+      setWarning(false);
+      const alVolver = () => {
+        if (document.visibilityState === "visible") {
+          refrescarSesion({ forzar: true, motivo: "keepalive-visibilidad" }).catch((err: unknown) => {
+            // Red caída al volver: no echamos a nadie por eso — el próximo
+            // ciclo del keepalive reintenta.
+            console.warn("[SessionExpiryGuard] refresh al volver falló:", String(err));
+          });
+        }
+      };
+      document.addEventListener("visibilitychange", alVolver);
+      return () => document.removeEventListener("visibilitychange", alVolver);
+    }
+
     arm();
     const onActivity = () => arm();
     const events = ["mousedown", "keydown", "scroll", "touchstart"] as const;
@@ -92,7 +135,7 @@ export function SessionExpiryGuard({
       events.forEach((e) => window.removeEventListener(e, onActivity));
       window.removeEventListener(KEEPALIVE_PING_EVENT, onActivity);
     };
-  }, [arm, clearTimers]);
+  }, [arm, clearTimers, keepAlive]);
 
   const stayConnected = useCallback(async () => {
     try {

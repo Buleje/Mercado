@@ -552,7 +552,8 @@ export default function AdminLoginPage() {
               />
               <span className="text-sm text-[var(--text-secondary)]">
                 <span className="font-semibold text-[var(--text-primary)]">Confiar en este equipo</span>
-                {" "}— mantené la sesión activa mientras trabajás y no vuelvas al login tan seguido.
+                {" "}— no te saca del panel por estar ausente. Seguís adentro hasta que lo apagues
+                en Ajustes › Seguridad.
               </span>
             </label>
 

@@ -162,10 +162,11 @@ export function KeepAliveSwitch() {
 
       {/* Explicación en lenguaje simple */}
       <p className="border-t-2 border-[var(--rule-base)] px-4 py-2.5 text-[length:var(--ts-xs)] leading-relaxed text-[var(--text-tertiary)]">
-        Renueva tu sesión sola cada pocos minutos, incluso si dejás esta pestaña
-        de lado un rato. <span className="font-semibold">No baja la seguridad:</span>{" "}
-        si cerrás el navegador o dejás el equipo mucho tiempo sin usar, la sesión
-        igual expira.
+        Mientras esté encendido no te saca por estar ausente: renueva tu sesión
+        sola cada pocos minutos y seguís en el panel hasta que lo apagues.{" "}
+        <span className="font-semibold">No baja la seguridad:</span> no cambia la
+        duración de los tokens, y si cerrás el navegador varios días la sesión
+        expira igual y hay que volver a entrar.
       </p>
     </div>
   );
