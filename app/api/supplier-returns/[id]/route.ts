@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import {
@@ -15,6 +16,7 @@ import {
 
 /** Fire-and-forget WhatsApp al proveedor cuando se marca ENVIADA */
 function notifySupplierWhatsApp(
+  tenantId: string,
   proveedorId: string | null,
   proveedorNombre: string,
   returnId: string,
@@ -25,7 +27,7 @@ function notifySupplierWhatsApp(
   const apiToken = process.env.WHATSAPP_API_TOKEN;
   if (!apiUrl || !apiToken) return;
 
-  getSupplierPhone(proveedorId)
+  getSupplierPhone(tenantId, proveedorId)
     .then((phone) => {
       if (!phone) return;
       const digits = phone.replace(/\D/g, "");
@@ -50,6 +52,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   try {
     const auth = await requireAdmin(req, ["admin", "almacenero"]);
     if (auth instanceof NextResponse) return auth;
+    const blocked = await requireActiveSubscription(auth.tenantId);
+    if (blocked) return blocked;
 
     const { id } = await params;
     const body = await req.json();
@@ -71,6 +75,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // Notificar al proveedor por WhatsApp cuando se marca como ENVIADA
     if (body.estado === "ENVIADA" && record.estado !== "ENVIADA") {
       notifySupplierWhatsApp(
+        auth.tenantId,
         record.proveedorId,
         record.proveedorNombre,
         id,
@@ -90,6 +95,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   try {
     const auth = await requireAdmin(req, ["admin"]);
     if (auth instanceof NextResponse) return auth;
+    const blocked = await requireActiveSubscription(auth.tenantId);
+    if (blocked) return blocked;
 
     const { id } = await params;
     const deleted = await deleteSupplierReturn(auth.tenantId, id);

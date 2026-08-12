@@ -61,12 +61,19 @@ export async function deleteSupplierReturn(tenantId: string, id: string): Promis
 /**
  * Obtiene el teléfono de un proveedor para notificaciones WhatsApp (fire-and-forget).
  * Devuelve null si no tiene teléfono o no existe.
+ *
+ * `tenantId` no es decorativo: sin él, un `proveedorId` de otro tenant devolvía
+ * su teléfono y la devolución se le avisaba por WhatsApp a un proveedor ajeno.
  */
-export async function getSupplierPhone(proveedorId: string): Promise<string | null> {
+export async function getSupplierPhone(
+  tenantId: string,
+  proveedorId: string,
+): Promise<string | null> {
   const supplier = await prisma.supplier
-    .findUnique({ where: { id: proveedorId }, select: { phone: true } })
+    .findFirst({ where: { id: proveedorId, tenantId }, select: { phone: true } })
     .catch((err: unknown) => {
       logger.warn("[supplier-returns-by-id] supplier lookup failed", {
+        tenantId,
         proveedorId,
         error: String(err),
       });
