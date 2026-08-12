@@ -119,7 +119,11 @@ export async function GET(req: NextRequest) {
         dailyAvg: ventaDiaria,
         diasConStock: Math.round(venta.diasConStock * 10) / 10,
         vendidoEnVentana: venta.vendido,
-        suggestedSupplier: compra ? { id: compra.supplierId, name: compra.supplierName } : null,
+        // `condicionPago` viaja con el proveedor para que la OC generada desde
+        // acá nazca con la forma de pago pactada (ADR-377).
+        suggestedSupplier: compra
+          ? { id: compra.supplierId, name: compra.supplierName, condicionPago: lead?.condicionPago ?? null }
+          : null,
         lastPrice: compra?.lastPrice ?? null,
         leadTimeDias,
         leadTimeOrigen: lead?.origen ?? "default",

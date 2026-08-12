@@ -310,6 +310,14 @@ export type DbSupplier = {
   email?: string;
   address?: string;
   notes?: string;
+  /**
+   * Forma de pago pactada: contado | credito_7 | credito_15 | credito_30.
+   * La columna existía en `Supplier` desde siempre, pero el mapper no la
+   * copiaba, así que para el resto de la app no existía y toda orden nacía
+   * con un default. Es la trampa del serializador con whitelist: la columna
+   * está en la base y aun así el dato no llega.
+   */
+  condicionPago?: string;
   createdAt: string;
 };
 

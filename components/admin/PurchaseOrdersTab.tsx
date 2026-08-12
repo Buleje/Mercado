@@ -10,12 +10,18 @@ import {
   X, FileText, ScanBarcode, History,
   TrendingUp, BarChart3, Download, PackageCheck, Copy, ShoppingBag,
   Calendar, Building2, Loader2, Repeat, Hash, StickyNote, Check, Truck,
-  AlertTriangle, CreditCard, Percent, Receipt } from "@buleje/design-system/icons";
+  AlertTriangle, CreditCard, Percent, Receipt, Search, ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
 import type { DbPurchaseOrder, DbSupplier, DbProduct, PurchaseStatus } from "@/lib/jsondb";
+// Sólo el tipo: TS lo borra al compilar, así que el "server-only" de esa clase
+// no viaja al bundle del cliente (mismo patrón que el resto del repo).
+import type { DbRecurringPurchase } from "@/lib/db/recurring-purchases.db";
 import {
   ESTADO_OC_LABELS, opcionesDeEstado, FORMAS_DE_PAGO, generaCuentaPorPagar,
   TIPOS_COMPROBANTE, type FormaDePago, type TipoComprobante,
 } from "@/lib/compras/estados-oc";
+import {
+  useFiltrosOrdenesCompra, ORDENES_DE_LISTA, POR_PAGINA, type OrdenDeLista,
+} from "@/hooks/use-filtros-ordenes-compra";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
@@ -25,6 +31,9 @@ import SupplierPriceComparison, { QuotationComparator } from "./compras/Supplier
 
 const BarcodeScanner = dynamic(() => import("./BarcodeScanner"), { ssr: false });
 const OCRecepcionModal = dynamic(() => import("./compras/OCRecepcionModal"), { ssr: false });
+// Sólo se ven al expandir un proveedor en el Historial: no cargarlos de entrada.
+const SupplierScorecard = dynamic(() => import("./compras/SupplierScorecard"), { ssr: false });
+const SupplierTimeline = dynamic(() => import("./compras/SupplierTimeline"), { ssr: false });
 
 // Labels y transiciones salen de lib/compras/estados-oc.ts — la misma tabla
 // que valida el endpoint. Antes este select ofrecía "Auto-generado", que el
@@ -141,13 +150,16 @@ export default function PurchaseOrdersTab() {
   const [suppliers, setSuppliers] = useState<DbSupplier[]>([]);
   const [products, setProducts] = useState<DbProduct[]>([]);
   
-  // Supplier filtering and history
-  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
+  // Supplier history
   const [showSupplierHistory, setShowSupplierHistory] = useState(false);
   const [expandedHistorySupplier, setExpandedHistorySupplier] = useState<string | null>(null);
 
-  // Status filter pills
-  const [statusFilter, setStatusFilter] = useState<"todas" | "pendiente" | "parcial" | "recibido" | "cancelado">("todas");
+  // Buscar / acotar por fecha / ordenar / paginar viven en su propio hook.
+  const f = useFiltrosOrdenesCompra(orders);
+  const selectedSupplierId = f.proveedorId;
+  const setSelectedSupplierId = f.setProveedorId;
+  const statusFilter = f.estado;
+  const setStatusFilter = f.setEstado;
 
   // Create form
   const [supplierId, setSupplierId] = useState("");
@@ -189,56 +201,92 @@ export default function PurchaseOrdersTab() {
     setTimeout(() => setToast(null), tone === "error" ? 6000 : 4000);
   }, []);
 
-  // Mejora 15: Pedido recurrente a proveedor
-  type RecurringOrder = { ocId: string; items: ItemDraft[]; supplierId: string; supplierName: string; intervalDays: number; nextDate: string; notifyDaysBefore: number };
-  const [recurringOrders, setRecurringOrders] = useState<RecurringOrder[]>([]);
+  // Pedidos recurrentes (ADR-377). Antes vivían en localStorage: se perdían
+  // al abrir el admin en otro equipo y nadie más del negocio los veía.
+  const [recurringOrders, setRecurringOrders] = useState<DbRecurringPurchase[]>([]);
   const [showRecurringModal, setShowRecurringModal] = useState<DbPurchaseOrder | null>(null);
   const [recurringInterval, setRecurringInterval] = useState(15);
   const [recurringNotifyDays, setRecurringNotifyDays] = useState(2);
+  const [guardandoRecurrente, setGuardandoRecurrente] = useState(false);
 
-  // Load recurring orders from localStorage
-  useEffect(() => {
+  const cargarRecurrentes = useCallback(async () => {
     try {
-      const stored = localStorage.getItem("recurring-orders");
-      if (stored) setRecurringOrders(JSON.parse(stored));
-    } catch { /* ignore */ }
+      const res = await fetch("/api/compras/recurrentes");
+      if (res.ok) setRecurringOrders(await res.json());
+    } catch (err) {
+      console.warn("[compras] no se pudieron cargar los pedidos recurrentes", err);
+    }
   }, []);
 
-  const saveRecurring = (updated: RecurringOrder[]) => {
-    setRecurringOrders(updated);
-    localStorage.setItem("recurring-orders", JSON.stringify(updated));
-  };
+  useEffect(() => { void cargarRecurrentes(); }, [cargarRecurrentes]);
 
-  const addRecurringOrder = (oc: DbPurchaseOrder) => {
+  const addRecurringOrder = async (oc: DbPurchaseOrder) => {
     const sup = suppliers.find(s => s.id === oc.supplierId);
-    const nextDate = new Date(Date.now() + recurringInterval * 86400000).toISOString().slice(0, 10);
-    const newRecurring: RecurringOrder = {
-      ocId: oc.id,
-      items: oc.items.map(i => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })),
-      supplierId: oc.supplierId,
-      supplierName: sup?.name || oc.supplierName || "",
-      intervalDays: recurringInterval,
-      nextDate,
-      notifyDaysBefore: recurringNotifyDays,
-    };
-    const updated = [...recurringOrders.filter(r => r.ocId !== oc.id), newRecurring];
-    saveRecurring(updated);
-    setShowRecurringModal(null);
+    setGuardandoRecurrente(true);
+    try {
+      const res = await fetch("/api/compras/recurrentes", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          supplierId: oc.supplierId,
+          supplierName: sup?.name || oc.supplierName || "",
+          items: oc.items.map(i => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })),
+          intervalDays: recurringInterval,
+          notifyDaysBefore: recurringNotifyDays,
+          paymentMethod: oc.paymentMethod,
+        }),
+      });
+      if (!res.ok) {
+        avisar("No se pudo programar el pedido recurrente", "error");
+        return;
+      }
+      avisar(`Listo: se repite cada ${recurringInterval} días`);
+      setShowRecurringModal(null);
+      cargarRecurrentes();
+    } catch {
+      avisar("Sin conexión con el servidor — no se programó", "error");
+    } finally {
+      setGuardandoRecurrente(false);
+    }
   };
 
-  const removeRecurring = (ocId: string) => {
-    saveRecurring(recurringOrders.filter(r => r.ocId !== ocId));
+  const removeRecurring = async (id: string) => {
+    try {
+      const res = await fetch(`/api/compras/recurrentes/${id}`, { method: "DELETE", headers: csrfHeaders() });
+      if (!res.ok) { avisar("No se pudo eliminar la recurrencia", "error"); return; }
+      setRecurringOrders(prev => prev.filter(r => r.id !== id));
+    } catch {
+      avisar("Sin conexión con el servidor", "error");
+    }
   };
 
-  // Upcoming recurring orders — Date.now() intencional.
+  /** Crea la orden ahora y corre la fecha al siguiente ciclo. */
+  const generarDesdeRecurrente = async (id: string) => {
+    try {
+      const res = await fetch(`/api/compras/recurrentes/${id}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ generar: true }),
+      });
+      if (!res.ok) { avisar("No se pudo crear la orden", "error"); return; }
+      avisar("Orden creada — revisá las cantidades antes de enviarla");
+      load();
+      cargarRecurrentes();
+    } catch {
+      avisar("Sin conexión con el servidor — no se creó la orden", "error");
+    }
+  };
+
+  // Cuánto falta para cada uno. Date.now() intencional (componente cliente).
   const upcomingRecurring = useMemo(() => {
-     
     const now = Date.now();
     return recurringOrders
-      .map(r => {
-        const daysUntil = Math.max(0, Math.ceil((new Date(r.nextDate).getTime() - now) / 86400000));
-        return { ...r, daysUntil };
-      })
+      .filter(r => r.active)
+      .map(r => ({
+        ...r,
+        daysUntil: Math.max(0, Math.ceil((new Date(r.nextDate).getTime() - now) / 86400000)),
+        vencido: new Date(r.nextDate).getTime() < now,
+      }))
       .sort((a, b) => a.daysUntil - b.daysUntil);
   }, [recurringOrders]);
 
@@ -489,17 +537,8 @@ export default function PurchaseOrdersTab() {
   // proveedor por la mercadería, pero sí en lo que cuesta tenerla en el local.
   const sobrecostos = flete + otrosCostos;
 
-  // Filter orders by supplier + status
-  const filteredOrders = orders.filter((o) => {
-    if (selectedSupplierId && o.supplierId !== selectedSupplierId) return false;
-    if (statusFilter !== "todas") {
-      if (statusFilter === "pendiente"  && o.status !== "pendiente") return false;
-      if (statusFilter === "parcial"    && o.status !== "parcial") return false;
-      if (statusFilter === "recibido"   && o.status !== "recibido") return false;
-      if (statusFilter === "cancelado"  && o.status !== "cancelado") return false;
-    }
-    return true;
-  });
+  // Lo que se pinta: la página actual de lo filtrado (el hook ordena y corta).
+  const filteredOrders = f.visibles;
 
   // KPIs por estado (sobre todas las órdenes, no filtradas — para que el chip mantenga el counter)
   const kpis = useMemo(() => {
@@ -586,21 +625,95 @@ export default function PurchaseOrdersTab() {
         </button>
       </section>
 
-      {/* ─── Toolbar: filtro proveedor + acciones ────────────────────── */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-          <select
-            value={selectedSupplierId ?? ""}
-            onChange={(e) => setSelectedSupplierId(e.target.value || null)}
-            className="w-full h-11 pl-10 pr-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary appearance-none cursor-pointer"
-          >
-            <option value="">Todos los proveedores</option>
-            {suppliers.map(s => (
-              <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (${s.ruc})` : ""}</option>
-            ))}
-          </select>
+      {/* ─── Buscador: por proveedor, factura o producto ─────────────── */}
+      {!loading && orders.length > 0 && (
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-3 sm:p-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[240px]">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+              <input
+                value={f.busqueda}
+                onChange={(e) => f.setBusqueda(e.target.value)}
+                placeholder="Buscar por proveedor, N° de factura o producto…"
+                aria-label="Buscar órdenes de compra"
+                className="w-full h-12 pl-10 pr-10 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+              />
+              {f.busqueda && (
+                <button
+                  type="button"
+                  onClick={() => f.setBusqueda("")}
+                  aria-label="Borrar búsqueda"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 h-8 w-8 inline-flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Field label="Desde" labelClassName="sr-only">
+              <input
+                type="date"
+                value={f.desde}
+                onChange={(e) => f.setDesde(e.target.value)}
+                aria-label="Desde"
+                className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+              />
+            </Field>
+            <Field label="Hasta" labelClassName="sr-only">
+              <input
+                type="date"
+                value={f.hasta}
+                onChange={(e) => f.setHasta(e.target.value)}
+                aria-label="Hasta"
+                className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+              />
+            </Field>
+            <div className="relative min-w-[190px]">
+              <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+              <select
+                value={selectedSupplierId ?? ""}
+                onChange={(e) => setSelectedSupplierId(e.target.value || null)}
+                aria-label="Filtrar por proveedor"
+                className="w-full h-12 pl-10 pr-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary appearance-none cursor-pointer"
+              >
+                <option value="">Todos los proveedores</option>
+                {suppliers.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (${s.ruc})` : ""}</option>
+                ))}
+              </select>
+            </div>
+            <select
+              value={f.orden}
+              onChange={(e) => f.setOrden(e.target.value as OrdenDeLista)}
+              aria-label="Ordenar por"
+              className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer"
+            >
+              {ORDENES_DE_LISTA.map(o => (
+                <option key={o.id} value={o.id}>{o.label}</option>
+              ))}
+            </select>
+            {f.hayFiltros && (
+              <button
+                type="button"
+                onClick={f.limpiar}
+                className="inline-flex items-center gap-1.5 h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
+              >
+                <X className="h-4 w-4" />
+                Limpiar
+              </button>
+            )}
+          </div>
+          {f.hayFiltros && (
+            <p className="text-sm font-bold text-[var(--text-secondary)]">
+              {f.filtradas.length === 0
+                ? "Ninguna orden coincide con lo que buscás."
+                : `${f.filtradas.length} de ${orders.length} ${orders.length === 1 ? "orden" : "órdenes"}`}
+            </p>
+          )}
         </div>
+      )}
+
+      {/* ─── Toolbar: acciones sobre la lista ────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => setShowSupplierHistory(v => !v)}
@@ -618,13 +731,21 @@ export default function PurchaseOrdersTab() {
           type="button"
           disabled={orders.length === 0}
           onClick={() => {
-            if (orders.length === 0) return;
-            const rows = orders.map(o => ({
+            // Se exporta lo que estás viendo: filtrar y que el Excel traiga
+            // igual las 300 órdenes del año es una sorpresa desagradable.
+            if (f.filtradas.length === 0) return;
+            const rows = f.filtradas.map(o => ({
               ID: o.id,
               Proveedor: suppliers.find(s => s.id === o.supplierId)?.name ?? o.supplierId,
               Estado: STATUS_LABELS[o.status as PurchaseStatus] ?? o.status,
+              Comprobante: o.invoiceNumber ?? "",
               "Total (S/)": o.total,
+              "Flete (S/)": o.flete ?? 0,
               Fecha: new Date(o.createdAt).toLocaleDateString("es-PE"),
+              "Prometida": o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString("es-PE") : "",
+              "Llegó": o.receivedDate ? new Date(o.receivedDate).toLocaleDateString("es-PE") : "",
+              "La pidió": o.createdBy ?? "",
+              "La recibió": o.receivedBy ?? "",
               Notas: o.notes ?? "",
             }));
             exportToExcel(rows, `compras-${new Date().toISOString().slice(0, 10)}`, "Compras");
@@ -722,17 +843,31 @@ export default function PurchaseOrdersTab() {
             <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-primary/10 shrink-0">
               <Repeat className="h-4 w-4 text-primary" strokeWidth={2.2} />
             </span>
-            <p className="text-sm font-extrabold text-[var(--text-primary)]">
-              {upcomingRecurring.length} pedido{upcomingRecurring.length > 1 ? "s" : ""} recurrente{upcomingRecurring.length > 1 ? "s" : ""} programado{upcomingRecurring.length > 1 ? "s" : ""}
-            </p>
+            <div className="min-w-0">
+              <p className="text-sm font-extrabold text-[var(--text-primary)]">
+                {upcomingRecurring.length} pedido{upcomingRecurring.length > 1 ? "s" : ""} recurrente{upcomingRecurring.length > 1 ? "s" : ""} programado{upcomingRecurring.length > 1 ? "s" : ""}
+              </p>
+              {(() => {
+                const tocan = upcomingRecurring.filter(r => r.daysUntil <= r.notifyDaysBefore).length;
+                if (tocan === 0) return null;
+                return (
+                  <p className="text-xs font-bold text-[var(--data-warning-500)]">
+                    {tocan === 1 ? "1 toca pedirlo ahora" : `${tocan} tocan pedirlos ahora`}
+                  </p>
+                );
+              })()}
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {upcomingRecurring.map(r => {
-              const dueToday = r.daysUntil === 0;
-              const dueSoon = r.daysUntil <= 3;
+              const dueToday = r.daysUntil === 0 || r.vencido;
+              // Acá es donde `notifyDaysBefore` por fin significa algo: cada
+              // recurrencia se pone en amarillo según SU propio umbral, no
+              // según un 3 fijo que ignoraba lo que el usuario configuró.
+              const dueSoon = r.daysUntil <= r.notifyDaysBefore;
               return (
                 <div
-                  key={r.ocId}
+                  key={r.id}
                   className={cn(
                     "rounded-2xl border-2 p-4 bg-white dark:bg-[var(--color-card)] transition-all",
                     dueToday ? "border-[var(--data-error-500)]/50 ring-2 ring-[var(--data-error-500)]/20" : dueSoon ? "border-[var(--data-warning-500)]/40" : "border-[var(--rule-base)]",
@@ -742,10 +877,13 @@ export default function PurchaseOrdersTab() {
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">OC a</p>
                       <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">{r.supplierName}</p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                        {r.items.length} producto{r.items.length === 1 ? "" : "s"} · S/{r.items.reduce((s, i) => s + i.quantity * i.unitCost, 0).toFixed(2)}
+                      </p>
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeRecurring(r.ocId)}
+                      onClick={() => removeRecurring(r.id)}
                       className="h-8 w-8 inline-flex items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors"
                       title="Eliminar recurrencia"
                       aria-label="Eliminar pedido recurrente"
@@ -763,7 +901,7 @@ export default function PurchaseOrdersTab() {
                         : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-base)]",
                     )}>
                       <Calendar className="h-3.5 w-3.5" />
-                      {dueToday ? "Hoy" : r.daysUntil === 1 ? "Mañana" : `En ${r.daysUntil} días`}
+                      {r.vencido ? "Atrasado" : dueToday ? "Hoy" : r.daysUntil === 1 ? "Mañana" : `En ${r.daysUntil} días`}
                     </span>
                     <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-semibold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
                       <Repeat className="h-3 w-3" />
@@ -772,11 +910,8 @@ export default function PurchaseOrdersTab() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      const oc = orders.find(o => o.id === r.ocId);
-                      if (oc) duplicateOrder(oc);
-                    }}
-                    className="w-full inline-flex items-center justify-center gap-1.5 h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+                    onClick={() => generarDesdeRecurrente(r.id)}
+                    className="w-full inline-flex items-center justify-center gap-1.5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
                   >
                     <Plus className="h-4 w-4" />
                     Crear OC ahora
@@ -832,11 +967,21 @@ export default function PurchaseOrdersTab() {
               </select>
             </Field>
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setShowRecurringModal(null)} className="flex-1 py-2.5 rounded-lg bg-[var(--surface-sunken)] dark:bg-surface text-sm font-bold text-[var(--text-secondary)]">
+              <button
+                type="button"
+                onClick={() => setShowRecurringModal(null)}
+                className="flex-1 h-12 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface text-sm font-bold text-[var(--text-secondary)]"
+              >
                 Cancelar
               </button>
-              <button onClick={() => addRecurringOrder(showRecurringModal)} className="flex-1 py-2.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:bg-[var(--accent)] transition-colors">
-                Guardar
+              <button
+                type="button"
+                disabled={guardandoRecurrente}
+                onClick={() => addRecurringOrder(showRecurringModal)}
+                className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:bg-[var(--accent)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {guardandoRecurrente && <Loader2 className="h-4 w-4 animate-spin" />}
+                {guardandoRecurrente ? "Guardando…" : "Guardar"}
               </button>
             </div>
           </div>
@@ -941,26 +1086,15 @@ export default function PurchaseOrdersTab() {
                   </div>
                 </div>
 
-                {/* Expanded Timeline */}
+                {/* Expandido: cómo se porta el proveedor y su cronología.
+                    SupplierScorecard y SupplierTimeline ya existían en
+                    components/admin/compras/ y ningún archivo los importaba;
+                    la cronología estaba reimplementada a mano acá, sin las
+                    devoluciones que el Timeline sí cruza. */}
                 {isExpanded && (
-                  <div className="border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface p-4">
-                    <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase mb-3">Cronología completa de compras</p>
-                    <div className="space-y-2 max-h-80 overflow-y-auto">
-                      {orders.filter(o => o.supplierId === supplier.id).map(order => (
-                        <div key={order.id} className="bg-[var(--surface-raised)] rounded-xl p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatDate(order.createdAt)}</span>
-                            <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[order.status])}>
-                              {STATUS_LABELS[order.status]}
-                            </span>
-                          </div>
-                          <div className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                            {order.items.length} producto{order.items.length !== 1 ? "s" : ""} · <span className="font-bold text-primary">S/{Number(order.total).toFixed(2)}</span>
-                          </div>
-                          {order.notes && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1 italic">{order.notes}</p>}
-                        </div>
-                      ))}
-                    </div>
+                  <div className="border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface p-4 space-y-4">
+                    <SupplierScorecard supplierId={supplier.id} />
+                    <SupplierTimeline supplierId={supplier.id} supplierName={supplier.name} />
                   </div>
                 )}
               </div>
@@ -1363,22 +1497,35 @@ export default function PurchaseOrdersTab() {
           <span className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 mb-4">
             <ShoppingBag className="h-8 w-8 text-primary" strokeWidth={2.2} />
           </span>
+          {/* Buscar sin resultados no es lo mismo que no tener órdenes: en el
+              primer caso ofrecer "crear la primera" desorienta. */}
           <CardTitle className="text-xl font-extrabold">
-            {selectedSupplierId ? "Sin órdenes para este proveedor" : "Sin órdenes de compra"}
+            {f.hayFiltros ? "Ninguna orden coincide" : "Sin órdenes de compra"}
           </CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-md mx-auto">
-            {selectedSupplierId
-              ? "Este proveedor todavía no tiene órdenes registradas. Creá la primera o cambiá de proveedor."
+            {f.hayFiltros
+              ? "Probá con otro texto, ampliá el rango de fechas o sacá los filtros."
               : "Llevá registro de lo que pedís a tus proveedores: fechas, cantidades, costos. Después podés duplicar pedidos frecuentes o hacerlos recurrentes."}
           </p>
-          <button
-            type="button"
-            onClick={() => setShowCreate(true)}
-            className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors shadow-sm"
-          >
-            <Plus className="h-5 w-5" strokeWidth={2.5} />
-            Crear primera orden
-          </button>
+          {f.hayFiltros ? (
+            <button
+              type="button"
+              onClick={f.limpiar}
+              className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors"
+            >
+              <X className="h-5 w-5" strokeWidth={2.5} />
+              Limpiar filtros
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors shadow-sm"
+            >
+              <Plus className="h-5 w-5" strokeWidth={2.5} />
+              Crear primera orden
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -1652,6 +1799,41 @@ export default function PurchaseOrdersTab() {
             </div>
             );
           })}
+
+          {/* ─── Paginación ──────────────────────────────────────────── */}
+          {f.totalPaginas > 1 && (
+            <nav
+              aria-label="Páginas de órdenes"
+              className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-4 py-3"
+            >
+              <p className="text-sm font-bold text-[var(--text-secondary)]">
+                Mostrando {(f.pagina - 1) * POR_PAGINA + 1}–{Math.min(f.pagina * POR_PAGINA, f.filtradas.length)} de {f.filtradas.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => f.setPagina(f.pagina - 1)}
+                  disabled={f.pagina <= 1}
+                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anterior
+                </button>
+                <span className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums px-2">
+                  {f.pagina} / {f.totalPaginas}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => f.setPagina(f.pagina + 1)}
+                  disabled={f.pagina >= f.totalPaginas}
+                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </nav>
+          )}
         </div>
       )}
 

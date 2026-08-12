@@ -184,6 +184,15 @@ export async function getStockEnTransito(
   return map;
 }
 
+/** Lo que hace falta saber del proveedor para sugerir y para pedir. */
+export type DatosProveedorParaCompra = {
+  /** Días que tarda en entregar. `null` = no se sabe, usá el default. */
+  dias: number | null;
+  origen: "declarado" | "historial" | "default";
+  /** Forma de pago pactada: contado | credito_7 | credito_15 | credito_30. */
+  condicionPago?: string;
+};
+
 /**
  * Días que tarda cada proveedor, declarado o derivado del historial.
  *
@@ -193,16 +202,23 @@ export async function getStockEnTransito(
  */
 export async function getLeadTimePorProveedor(
   tenantId: string,
-): Promise<Map<string, { dias: number; origen: "declarado" | "historial" }>> {
-  const map = new Map<string, { dias: number; origen: "declarado" | "historial" }>();
+): Promise<Map<string, DatosProveedorParaCompra>> {
+  const map = new Map<string, DatosProveedorParaCompra>();
   const [proveedores, ordenes] = await Promise.all([
     prisma.supplier.findMany({
       where: { tenantId },
-      select: { id: true, leadTimeDias: true },
+      // `condicionPago` es lo pactado con ese proveedor: la OC que se genere
+      // desde una sugerencia tiene que nacer con esa forma de pago, no con un
+      // "contado" por defecto que después abre (o no) la deuda equivocada.
+      select: { id: true, leadTimeDias: true, condicionPago: true },
     }),
     prisma.purchaseOrder.findMany({
-      where: { tenantId, status: { in: ["recibido", "parcial"] }, deliveryDate: { not: null } },
-      select: { supplierId: true, createdAt: true, deliveryDate: true },
+      where: {
+        tenantId,
+        status: { in: ["recibido", "parcial"] },
+        OR: [{ receivedDate: { not: null } }, { deliveryDate: { not: null } }],
+      },
+      select: { supplierId: true, createdAt: true, deliveryDate: true, receivedDate: true },
       orderBy: { createdAt: "desc" },
       take: 300,
     }),
@@ -210,22 +226,33 @@ export async function getLeadTimePorProveedor(
 
   const demorasPorProveedor = new Map<string, number[]>();
   for (const o of ordenes) {
-    if (!o.deliveryDate) continue;
-    const dias = (o.deliveryDate.getTime() - o.createdAt.getTime()) / 86_400_000;
+    // ADR-377: `receivedDate` es cuándo llegó DE VERDAD; `deliveryDate` es lo
+    // que el proveedor prometió. Para saber cuánto tarda manda lo primero —
+    // medir la promesa mide sus intenciones, no su cumplimiento.
+    const llegada = o.receivedDate ?? o.deliveryDate;
+    if (!llegada) continue;
+    const dias = (llegada.getTime() - o.createdAt.getTime()) / 86_400_000;
     // Una entrega «antes de pedirla» es un dato mal cargado, no un lead time.
     if (dias < 0 || dias > 180) continue;
     demorasPorProveedor.set(o.supplierId, [...(demorasPorProveedor.get(o.supplierId) ?? []), dias]);
   }
 
   for (const p of proveedores) {
+    const condicionPago = p.condicionPago ?? undefined;
     if (p.leadTimeDias != null && p.leadTimeDias > 0) {
-      map.set(p.id, { dias: p.leadTimeDias, origen: "declarado" });
+      map.set(p.id, { dias: p.leadTimeDias, origen: "declarado", condicionPago });
       continue;
     }
     const demoras = demorasPorProveedor.get(p.id);
     if (demoras && demoras.length > 0) {
       const promedio = demoras.reduce((s, d) => s + d, 0) / demoras.length;
-      map.set(p.id, { dias: Math.max(Math.round(promedio), 1), origen: "historial" });
+      map.set(p.id, { dias: Math.max(Math.round(promedio), 1), origen: "historial", condicionPago });
+    } else if (condicionPago) {
+      // Sin lead time pero con condición pactada: se registra igual para poder
+      // usar la forma de pago. `dias: null` —no 0— porque el consumidor hace
+      // `lead?.dias ?? DEFAULT` y un cero se colaría como "entrega inmediata",
+      // dejando el punto de reorden en el piso.
+      map.set(p.id, { dias: null, origen: "default", condicionPago });
     }
   }
   return map;

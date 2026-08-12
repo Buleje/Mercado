@@ -29,7 +29,7 @@ type Sugerencia = {
   leadTimeDias: number;
   leadTimeOrigen: "declarado" | "historial" | "default";
   suggestedQty: number;
-  suggestedSupplier: { id: string; name: string } | null;
+  suggestedSupplier: { id: string; name: string; condicionPago?: string | null } | null;
   lastPrice: number | null;
   urgency: Urgency;
   /** Por qué se sugiere, en palabras. */
@@ -281,7 +281,7 @@ export default function SugerenciasCompraTab() {
    */
   const createOCForItems = async (
     items: Sugerencia[],
-  ): Promise<{ createdCount: number; groupCount: number; sinPrecio: number; payablesFallidos: number }> => {
+  ): Promise<{ createdCount: number; groupCount: number; sinPrecio: number; aCredito: number }> => {
     const groups = new Map<string, Sugerencia[]>();
     for (const item of items) {
       const key = item.suggestedSupplier?.id ?? "sin-proveedor";
@@ -291,12 +291,15 @@ export default function SugerenciasCompraTab() {
 
     let createdCount = 0;
     let sinPrecio = 0;
-    let payablesFallidos = 0;
+    let aCredito = 0;
     for (const [supplierId, groupItems] of groups) {
       const supplierName =
         supplierId !== "sin-proveedor"
           ? groupItems[0].suggestedSupplier?.name ?? "Proveedor por definir"
           : "Proveedor por definir";
+      // Lo pactado con este proveedor en su ficha. Sin condición declarada se
+      // asume contado: es lo que hace la bodega cuando no hay acuerdo.
+      const condicionPago = groupItems[0].suggestedSupplier?.condicionPago || "contado";
 
       // Los productos sin precio de referencia entraban con `unitCost: 0`, así
       // que la orden se creaba por S/0,00 y ese cero viajaba al Historial de
@@ -319,37 +322,23 @@ export default function SugerenciasCompraTab() {
             unit: "und",
           })),
           notes: `OC generada automaticamente por sugerencias de compra`,
+          // ADR-377: la forma de pago pactada con ESE proveedor. El endpoint
+          // abre la cuenta por pagar sólo si es a crédito, y con el
+          // vencimiento correcto.
+          paymentMethod: condicionPago,
         }),
       });
 
       if (res.ok) {
         createdCount++;
-        const po = await res.json();
-        // La cuenta por pagar se crea aparte y puede fallar. Antes el error se
-        // tragaba en un console.warn: la orden quedaba sin payable y el
-        // Historial de Gastos la mostraba como «sin registro de pago» sin que
-        // nadie supiera por qué. Ahora se cuenta y se dice.
-        try {
-          const rp = await fetch("/api/payables", {
-            method: "POST",
-            headers: csrfHeaders({ "Content-Type": "application/json" }),
-            body: JSON.stringify({
-              supplierId: supplierId !== "sin-proveedor" ? supplierId : "",
-              supplierName,
-              purchaseOrderId: po.id,
-              description: `Orden de compra ${po.id}`,
-              amount: po.total,
-              dueDate: new Date(Date.now() + 30 * 86_400_000).toISOString(),
-            }),
-          });
-          if (!rp.ok) payablesFallidos++;
-        } catch (err) {
-          payablesFallidos++;
-          console.warn("[SugerenciasCompraTab] payable create failed:", err);
-        }
+        if (condicionPago.startsWith("credito_")) aCredito++;
+        // La cuenta por pagar la abre POST /api/purchases, y SÓLO si la
+        // compra es a crédito. Antes se creaba acá una a 30 días para toda
+        // orden, incluso las que se pagan en efectivo al recibir: eso llenaba
+        // las cuentas por pagar con deuda que nadie debía.
       }
     }
-    return { createdCount, groupCount: groups.size, sinPrecio, payablesFallidos };
+    return { createdCount, groupCount: groups.size, sinPrecio, aCredito };
   };
 
   // Creación masiva de los seleccionados.
@@ -358,13 +347,13 @@ export default function SugerenciasCompraTab() {
     setCreating(true);
     try {
       const selectedItems = sugerencias.filter((s) => selected.has(s.productId));
-      const { createdCount, groupCount, sinPrecio, payablesFallidos } = await createOCForItems(selectedItems);
+      const { createdCount, groupCount, sinPrecio, aCredito } = await createOCForItems(selectedItems);
 
       if (createdCount === groupCount) {
         const detalles = [
           `${selected.size} productos repartidos en ${groupCount} ${groupCount === 1 ? "proveedor" : "proveedores"}.`,
           sinPrecio > 0 ? `${sinPrecio} ${sinPrecio === 1 ? "producto va" : "productos van"} sin precio: ponéselo antes de recibir la orden o entrará como S/0.` : "",
-          payablesFallidos > 0 ? `${payablesFallidos} ${payablesFallidos === 1 ? "orden quedó" : "órdenes quedaron"} sin cuenta por pagar.` : "",
+          aCredito > 0 ? `${aCredito} ${aCredito === 1 ? "va" : "van"} a crédito: se ${aCredito === 1 ? "abrió su cuenta" : "abrieron sus cuentas"} por pagar.` : "",
         ].filter(Boolean).join(" ");
         toast.success(
           `${createdCount} ${createdCount === 1 ? "orden creada" : "órdenes creadas"}`,
@@ -388,13 +377,13 @@ export default function SugerenciasCompraTab() {
   const createOCForOne = async (item: Sugerencia) => {
     setCreatingItemId(item.productId);
     try {
-      const { createdCount, sinPrecio, payablesFallidos } = await createOCForItems([item]);
+      const { createdCount, sinPrecio, aCredito } = await createOCForItems([item]);
       if (createdCount > 0) {
         toast.success("Orden de compra creada", {
           description: [
             item.productName,
             sinPrecio > 0 ? "Va sin precio: ponéselo antes de recibirla o entrará como S/0." : "",
-            payablesFallidos > 0 ? "Quedó sin cuenta por pagar." : "",
+            aCredito > 0 ? "Va a crédito: se abrió su cuenta por pagar." : "",
           ].filter(Boolean).join(" · "),
         });
         void load(true);
@@ -809,7 +798,7 @@ export default function SugerenciasCompraTab() {
       {/* Sticky bottom bar — solo aparece con seleccionados */}
       {selected.size > 0 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-1.5rem)] w-full sm:w-auto px-2">
-          <div className="bg-white dark:bg-[var(--color-card)] border-2 border-[var(--rule-base)] rounded-2xl shadow-2xl flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3">
+          <div className="bg-white dark:bg-[var(--color-card)] border-2 border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-xl)] flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3">
             <span className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-primary/10 shrink-0">
               <Sparkles className="h-5 w-5 text-primary" strokeWidth={2.2} />
             </span>

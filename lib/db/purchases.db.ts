@@ -44,6 +44,7 @@ function mapSupplier(s: PSupplier): DbSupplier {
     ...(s.email != null && { email: s.email }),
     ...(s.address != null && { address: s.address }),
     ...(s.notes != null && { notes: s.notes }),
+    ...(s.condicionPago != null && { condicionPago: s.condicionPago }),
     createdAt: toISO(s.createdAt),
   };
 }
@@ -96,7 +97,7 @@ export const SuppliersDB = {
   },
   async add(s: DbSupplier, tenantId: string): Promise<DbSupplier> {
     const row = await prisma.supplier.create({
-      data: { id: s.id, name: s.name, ruc: s.ruc, phone: s.phone, email: s.email, address: s.address, notes: s.notes, tenantId },
+      data: { id: s.id, name: s.name, ruc: s.ruc, phone: s.phone, email: s.email, address: s.address, notes: s.notes, condicionPago: s.condicionPago, tenantId },
     });
     // Audit 2026-05-17 Q-P0-4: invalida cache para que POS vea proveedor nuevo
     invalidateAdminCache.afterPurchase(tenantId);
