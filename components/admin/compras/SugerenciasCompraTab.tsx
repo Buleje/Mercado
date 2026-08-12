@@ -156,6 +156,9 @@ export default function SugerenciasCompraTab() {
   const [sinRotacion, setSinRotacion] = useState<SinRotacion[]>([]);
   const [resumen, setResumen] = useState<Resumen | null>(null);
   const [avisos, setAvisos] = useState<string[]>([]);
+  // Presente sólo cuando NO se analizó ningún producto porque ninguno tiene
+  // stock mínimo cargado — distinto de "analicé todo y está abastecido".
+  const [sinStockMinimo, setSinStockMinimo] = useState<{ productosActivos: number } | null>(null);
   const [verSinRotacion, setVerSinRotacion] = useState(false);
   const [ventanaDias, setVentanaDias] = useState(30);
   const [loading, setLoading] = useState(true);
@@ -181,6 +184,7 @@ export default function SugerenciasCompraTab() {
         setSinRotacion(data.sinRotacion ?? []);
         setResumen(data.resumen ?? null);
         setAvisos(data.avisos ?? []);
+        setSinStockMinimo(data.sinStockMinimo ?? null);
       }
     } catch { /* silent */ }
     setLoading(false);
@@ -426,12 +430,23 @@ export default function SugerenciasCompraTab() {
         <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/10 dark:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 shrink-0">
           <Sparkles className="h-6 w-6 text-[var(--data-success-500)]" strokeWidth={2.2} />
         </span>
-        <div className="flex-1 min-w-0">
+        {/* `basis-64` en vez de `min-w-0`: el contenedor ya tenía `flex-wrap`,
+            pero no alcanzaba. Las utilidades `min-w-*` no hacen nada en este
+            proyecto (un `* { min-width: 0 }` global le gana a la capa de
+            utilities), así que el texto se encogía a cero antes de que la fila
+            decidiera envolver — a 768px el título salía UNA PALABRA POR RENGLÓN
+            con el selector de ventana al lado. Con un `basis` real, el selector
+            y "Recalcular" bajan de línea en tablet. */}
+        <div className="flex-1 basis-64">
           <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)]">
             Sugerencias de compra
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)]">
-            {stats.total === 0
+            {/* El subtítulo también afirmaba "ningún producto llega a su punto
+                de pedido" cuando en realidad no se había analizado ninguno. */}
+            {sinStockMinimo
+              ? "Falta cargar el stock mínimo de tus productos para poder calcular reposición."
+              : stats.total === 0
               ? `Nada por reponer: ningún producto llega a su punto de pedido según lo que se vendió en ${ventanaDias} días.`
               : `${stats.total} ${stats.total === 1 ? "producto llega" : "productos llegan"} a su punto de pedido. Marcá los que querés pedir y generamos las órdenes por proveedor.`}
           </p>
@@ -465,7 +480,37 @@ export default function SugerenciasCompraTab() {
         </button>
       </section>
 
-      {nadaQueComprar && (
+      {/* Falta configurar, no falta comprar. Antes esto caía en "Nada que
+          reponer", que afirmaba que el stock alcanzaba sin haber analizado un
+          solo producto (medido 2026-08-12: tres tiendas en ese estado). */}
+      {sinStockMinimo && (
+        <div className="rounded-2xl border-2 border-dashed border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/8 px-6 py-10 text-center">
+          <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--data-warning-500)]/15">
+            <AlertTriangle className="h-8 w-8 text-[var(--data-warning-500)]" strokeWidth={2.5} aria-hidden />
+          </span>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">
+            Todavía no puedo sugerirte compras
+          </SectionTitle>
+          <p className="mx-auto mt-2 max-w-lg text-sm text-[var(--text-secondary)]">
+            {sinStockMinimo.productosActivos > 0 ? (
+              <>
+                Tenés <strong>{sinStockMinimo.productosActivos}</strong>{" "}
+                {sinStockMinimo.productosActivos === 1 ? "producto activo" : "productos activos"} y
+                ninguno tiene <strong>stock mínimo</strong> cargado. Ese es el dato que me dice
+                cuándo un producto está por acabarse, así que sin él no hay nada que calcular.
+              </>
+            ) : (
+              <>Todavía no cargaste productos, así que no hay nada de qué calcular reposición.</>
+            )}
+          </p>
+          <p className="mx-auto mt-3 max-w-lg text-xs text-[var(--text-tertiary)]">
+            Se carga por producto en Inventario. Con ponerle mínimo a los que más vendés ya alcanza
+            para empezar: el resto se puede ir completando después.
+          </p>
+        </div>
+      )}
+
+      {nadaQueComprar && !sinStockMinimo && (
         <div className="rounded-2xl border-2 border-dashed border-[var(--data-success-500)]/30 bg-primary/10 px-6 py-10 text-center dark:bg-[var(--data-success-500)]/5">
           <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-[var(--data-success-500)]/20">
             <Check className="h-8 w-8 text-[var(--data-success-ink)]" strokeWidth={2.5} />

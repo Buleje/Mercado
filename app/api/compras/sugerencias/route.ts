@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger";
 import { evaluarReposicion, LEAD_TIME_DEFAULT } from "@/lib/compras/reorden";
 import {
   getProductosConStockMin,
+  contarProductosActivos,
   getVentasYDisponibilidad,
   getStockEnTransito,
   getLeadTimePorProveedor,
@@ -56,10 +57,18 @@ export async function GET(req: NextRequest) {
 
     const products = await getProductosConStockMin(tenantId);
     if (products.length === 0) {
+      // Sin productos con stock mínimo no se analizó NADA, que es distinto de
+      // «miré todo y está abastecido» — y hasta ahora las dos cosas devolvían
+      // la misma respuesta vacía, así que la pantalla afirmaba que no había
+      // nada que reponer sin haber mirado un solo producto. `productosActivos`
+      // deja que el front distinga: si hay productos pero ninguno tiene mínimo,
+      // lo que falta es configurarlos, no comprar.
+      const productosActivos = await contarProductosActivos(tenantId);
       return NextResponse.json({
         sugerencias: [], sinRotacion: [],
         resumen: { costoEstimado: 0, unidades: 0, sinPrecio: 0, enTransito: 0 },
         avisos: [],
+        sinStockMinimo: { productosActivos },
       });
     }
 

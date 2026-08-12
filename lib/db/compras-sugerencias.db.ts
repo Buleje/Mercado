@@ -68,6 +68,21 @@ export async function getProductosConStockMin(
 }
 
 /**
+ * Cuántos productos activos hay en total, tengan mínimo o no.
+ *
+ * Sirve para distinguir dos silencios que se veían idénticos: «miré todo y no
+ * hay nada que reponer» y «no pude mirar nada porque ningún producto tiene
+ * stock mínimo cargado». Medido el 2026-08-12: tres tiendas (44, 15 y 10
+ * productos) no tenían ni un mínimo configurado y la pantalla les afirmaba que
+ * estaba todo abastecido.
+ */
+export async function contarProductosActivos(tenantId: string): Promise<number> {
+  return prisma.product.count({
+    where: { tenantId, active: true, deletedAt: null },
+  });
+}
+
+/**
  * Ventas de la ventana Y días en que hubo stock, por producto.
  *
  * Los días con stock se reconstruyen del kardex (`InventoryMovement` guarda
