@@ -196,7 +196,27 @@ export const ProductsDB = {
 
     return { products: items.map(mapProduct), nextCursor, total };
   },
+  /**
+   * Un producto vivo del tenant. `deletedAt: null` NO es opcional acá.
+   *
+   * 2026-08-11: este método era el único de lectura por identidad que no
+   * filtraba borrados (`getBySku` y `listBySkus` sí lo hacían), y el borrado
+   * de productos es SOFT. Efecto medido: `DELETE /api/products/<id>` devolvía
+   * 200, el producto desaparecía de la lista, y un `GET` por id lo seguía
+   * devolviendo con `active: true`. Lo consultan por id el recomendador, el
+   * agente de pricing, las acciones del asistente IA y el generador de QR:
+   * todos podían operar sobre mercadería que el bodeguero dio de baja.
+   */
   async getById(tenantId: string, id: number): Promise<DbProduct | null> {
+    const p = await prisma.product.findFirst({ where: { id, tenantId, deletedAt: null } });
+    return p ? mapProduct(p) : null;
+  },
+
+  /**
+   * Incluye los borrados. Sólo para mirar hacia atrás —una venta vieja que
+   * apunta a un producto dado de baja—, nunca para operar sobre él.
+   */
+  async getByIdIncluyendoBorrados(tenantId: string, id: number): Promise<DbProduct | null> {
     const p = await prisma.product.findFirst({ where: { id, tenantId } });
     return p ? mapProduct(p) : null;
   },
