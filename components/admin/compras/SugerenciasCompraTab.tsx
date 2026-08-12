@@ -476,6 +476,13 @@ export default function SugerenciasCompraTab() {
             {ventanaDias} días, el stock alcanza hasta la próxima entrega.
             {sinRotacion.length > 0 && " Abajo está lo que no se movió."}
           </p>
+          {/* Reporte QA Compras 2026-08-12: ver "Nada que reponer" acá y "2 a
+              reponer" en Punto de Compra parecía un dato roto. Son dos criterios
+              distintos; decirlo evita la desconfianza. */}
+          <p className="mx-auto mt-3 max-w-lg text-xs text-[var(--text-tertiary)]">
+            Si en Punto de Compra ves un número distinto, es correcto: ahí se cuentan los
+            productos por debajo del stock mínimo que fijaste, sin mirar cuánto se vendió.
+          </p>
           <button
             type="button"
             onClick={() => void load(true)}

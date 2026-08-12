@@ -926,13 +926,22 @@ export default function PuntoCompraView() {
             type="button"
             onClick={() => { setSoloReponer(true); setPage(1); }}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 bg-[var(--surface-raised)] hover:bg-[var(--data-error-500)]/5 px-2.5 py-1 rounded-full transition-colors"
-            title="Ver solo los productos que necesitan reponerse"
+            title="Productos con stock en o por debajo del mínimo que fijaste. La pestaña Sugerencias cuenta distinto: mira cuánto se vendió, no el mínimo."
           >
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-error-500)]" />
             {needsReorderCount} a reponer
           </button>
         )}
       </div>
+
+      {/* Reporte QA Compras 2026-08-12: acá decía "2 a reponer" y Sugerencias
+          "Nada que reponer" con los mismos datos. No es una contradicción: son
+          dos preguntas distintas y conviene decirlo donde aparece el número. */}
+      {needsReorderCount > 0 && (
+        <p className="-mt-2 mb-3 text-xs text-[var(--text-tertiary)] text-right">
+          Contados por stock mínimo. Sugerencias mira la venta de los últimos días, así que puede darte otro número.
+        </p>
+      )}
 
       {/* Aviso reposición destacado */}
       {needsReorderCount > 5 && !soloReponer && (

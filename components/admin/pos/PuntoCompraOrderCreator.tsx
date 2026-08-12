@@ -7,8 +7,23 @@ import { X, Search, Loader2, CheckCircle2, User, ShoppingCart } from "@buleje/de
 import { csrfHeaders } from "@/lib/csrf-client";
 
 interface CartItemInput {
-  product: { id: number; name: string; costPrice?: number | null };
+  /** `price` = precio de VENTA; `costPrice` = lo que te cuesta a vos. */
+  product: { id: number; name: string; costPrice?: number | null; price?: number | null };
   quantity: number;
+}
+
+/**
+ * Precio al que se le cobra al cliente.
+ *
+ * Reporte QA Compras 2026-08-12: un producto con costo S/50 aparecía en S/0.00.
+ * La causa era peor que el cero — este modal cobraba `costPrice`, o sea el
+ * precio al que VOS comprás: vender así deja margen cero, y si el costo no está
+ * cargado, cobra nada. El pedido es una VENTA, así que manda el precio de venta;
+ * el costo queda sólo como último recurso visible, nunca silencioso.
+ */
+function precioDeVenta(p: CartItemInput["product"]): number {
+  if (p.price != null && p.price > 0) return p.price;
+  return p.costPrice ?? 0;
 }
 
 interface CustomerResult {
@@ -70,9 +85,13 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
     });
   }, []);
 
-  const selectedTotal = cartItems
-    .filter((i) => selectedItems.has(i.product.id))
-    .reduce((sum, i) => sum + (i.product.costPrice ?? 0) * i.quantity, 0);
+  const seleccionados = cartItems.filter((i) => selectedItems.has(i.product.id));
+
+  const selectedTotal = seleccionados
+    .reduce((sum, i) => sum + precioDeVenta(i.product) * i.quantity, 0);
+
+  /** Seleccionados sin ningún precio cargado: se cobrarían en cero. */
+  const sinPrecio = seleccionados.filter((i) => precioDeVenta(i.product) <= 0);
 
   const handleCreateOrder = async () => {
     if (!selectedCustomer || selectedItems.size === 0) return;
@@ -80,14 +99,12 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
     setError(null);
 
     try {
-      const items = cartItems
-        .filter((i) => selectedItems.has(i.product.id))
-        .map((i) => ({
-          productId: i.product.id,
-          name: i.product.name,
-          quantity: i.quantity,
-          unitPrice: i.product.costPrice ?? 0,
-        }));
+      const items = seleccionados.map((i) => ({
+        productId: i.product.id,
+        name: i.product.name,
+        quantity: i.quantity,
+        unitPrice: precioDeVenta(i.product),
+      }));
 
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -267,8 +284,15 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">
                           x{item.quantity}
                         </span>
-                        <span className="text-xs font-mono font-medium text-[var(--text-secondary)] shrink-0">
-                          S/{((item.product.costPrice ?? 0) * item.quantity).toFixed(2)}
+                        <span className={cn(
+                          "text-xs font-mono font-medium shrink-0",
+                          precioDeVenta(item.product) > 0
+                            ? "text-[var(--text-secondary)]"
+                            : "text-[var(--data-error-500)]",
+                        )}>
+                          {precioDeVenta(item.product) > 0
+                            ? `S/${(precioDeVenta(item.product) * item.quantity).toFixed(2)}`
+                            : "sin precio"}
                         </span>
                       </button>
                     );
@@ -286,6 +310,21 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                 </span>
               </div>
 
+              {/* Un pedido en cero no se reclama después: mejor frenarlo acá. */}
+              {sinPrecio.length > 0 && (
+                <div role="alert" className="rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-2.5">
+                  <p className="text-xs font-bold text-[var(--data-warning-500)]">
+                    {sinPrecio.length === 1
+                      ? "Un producto no tiene precio de venta cargado"
+                      : `${sinPrecio.length} productos no tienen precio de venta cargado`}
+                  </p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">
+                    {sinPrecio.map((i) => i.product.name).join(", ")} — se cobrarían S/0.00.
+                    Cargá el precio en Inventario o destildalos para seguir.
+                  </p>
+                </div>
+              )}
+
               {/* Error message */}
               {error && (
                 <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 rounded-lg p-2">
@@ -297,7 +336,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
               <button
                 type="button"
                 onClick={handleCreateOrder}
-                disabled={submitting || !selectedCustomer || selectedItems.size === 0}
+                disabled={submitting || !selectedCustomer || selectedItems.size === 0 || sinPrecio.length > 0}
                 className={cn(
                   "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors",
                   "bg-primary hover:bg-primary-dark text-white",
