@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { prisma } from "@/lib/prisma";
 import { GoodsReceiptsDB } from "@/lib/db/goods-receipts.db";
 import { logger } from "@/lib/logger";
@@ -67,6 +68,10 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "compras-recepciones"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
+  // Paridad del bloqueo por plan en todo el módulo Compras (ADR-084):
+  // recepcionar mercadería mueve stock y costos, igual que crear la OC.
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   const tenantId = auth.tenantId;
 
