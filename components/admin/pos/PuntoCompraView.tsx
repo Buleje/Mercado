@@ -5,6 +5,7 @@ import {
   useEffect,
   useMemo,
   useCallback,
+  useRef,
 } from "react";
 import dynamic from "next/dynamic";
 import { useLocalStorageDraft } from "@/hooks/use-local-storage-draft";
@@ -54,7 +55,7 @@ const PuntoCompraLotSelector = dynamic(() => import("./PuntoCompraLotSelector"),
 const RecurringExpenseModal = dynamic(() => import("./RecurringExpenseModal"), { ssr: false });
 
 // Helpers para parsear metadata extra de gastos recurrentes (encoded en `description`).
-import { decodeExpenseDescription, summarizeMeta } from "@/lib/expense-meta";
+import { agruparDuplicados, decodeExpenseDescription, proximoVencimiento, summarizeMeta, yaPagadoEnPeriodo } from "@/lib/expense-meta";
 import { findCategory, CATEGORY_COLOR_CLASSES } from "@/lib/expense-categories";
 import { getCategoryIcon } from "@/lib/expense-icons";
 
@@ -187,6 +188,12 @@ export default function PuntoCompraView() {
   const [expenseError, setExpenseError] = useState<string | null>(null);
   const [executingTemplateId, setExecutingTemplateId] = useState<string | null>(null);
   const [showIGV, setShowIGV] = useState(false);
+  /** Identifica el intento de compra: dos clicks comparten clave, no crean dos OCs. */
+  const idempotencyKeyRef = useRef<string>(
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `poc-${Math.random().toString(36).slice(2)}`,
+  );
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [discount, setDiscount] = useState(0);
@@ -348,6 +355,42 @@ export default function PuntoCompraView() {
   }, []);
 
   useEffect(() => { fetchExpenseCatalog(); }, [fetchExpenseCatalog]);
+
+  /**
+   * Los gastos YA registrados. Sin esto la tarjeta ofrecía «Pagar» igual
+   * hubieras pagado o no — la misma trampa que los duplicados, por otro camino.
+   */
+  const [pagosHechos, setPagosHechos] = useState<{ description: string; amount: number; date: string }[]>([]);
+  useEffect(() => {
+    fetch("/api/expenses", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d) => {
+        const arr = Array.isArray(d) ? d : [];
+        setPagosHechos(
+          arr
+            .filter((e: { recurring?: boolean }) => !e.recurring)
+            .map((e: { description?: string; amount?: number; date?: string; createdAt?: string }) => ({
+              description: e.description ?? "",
+              amount: Number(e.amount ?? 0),
+              date: e.date ?? e.createdAt ?? "",
+            })),
+        );
+      })
+      .catch((err) => console.warn("[PuntoCompraView] pagos hechos fetch failed", err));
+  }, [expenseCatalog]);
+
+  /**
+   * El catálogo real del tenant trae SEIS tarjetas para tres gastos: el alquiler
+   * de S/850 aparecía dos veces, cada una con su botón «Pagar». El riesgo no es
+   * visual — es pagar dos veces. Se muestra uno por gasto y se avisa del resto.
+   */
+  /** Una sola fecha de referencia por montaje: si cada render creara la suya,
+   *  el «vence en N días» podría cambiar entre repintados. */
+  const [hoyRef] = useState(() => new Date());
+  const { unicos: expenseCatalogUnico, duplicados: expenseDuplicados } = useMemo(
+    () => agruparDuplicados(expenseCatalog, (g) => ({ description: g.description ?? "", amount: Number(g.amount ?? 0) })),
+    [expenseCatalog],
+  );
 
   // Ejecuta un gasto a partir de un template recurring
   const executeExpenseFromTemplate = useCallback(async (template: ExpenseTemplate) => {
@@ -626,9 +669,13 @@ export default function PuntoCompraView() {
     [subtotal, discountAmount],
   );
 
-  const igvAmount = useMemo(() => total * 0.18, [total]);
-
-  const totalWithIGV = useMemo(() => total + igvAmount, [total, igvAmount]);
+  // El IGV va CONTENIDO en el costo, no encima. El precio de lista que pasa el
+  // proveedor ya lo incluye (ADR-377, `igvIncluded` por defecto true), así que
+  // sumarle 18% inventaba plata: el toggle mostraba un total que la orden no
+  // guardaba y —peor— ese número inflado era el que viajaba por WhatsApp al
+  // proveedor. Ahora desglosa cuánto IGV hay adentro, que es lo que sirve para
+  // sustentar el crédito fiscal.
+  const igvAmount = useMemo(() => total - total / 1.18, [total]);
 
   const needsReorderCount = useMemo(
     () => products.filter((p) => needsReorder(p)).length,
@@ -640,7 +687,9 @@ export default function PuntoCompraView() {
     [cart],
   );
 
-  const displayTotal = showIGV ? totalWithIGV : total;
+  // Uno solo: el que se le paga al proveedor, el que guarda la orden y el que
+  // se manda por WhatsApp. El toggle sólo abre o cierra el desglose.
+  const displayTotal = total;
 
   // Mapa de carrito para lookup O(1) en vez de O(n) por producto
   const cartMap = useMemo(
@@ -714,6 +763,9 @@ export default function PuntoCompraView() {
           paymentMethod,
           deliveryDate: deliveryDate || undefined,
           discount,
+          // Dos clicks (o un reintento por conexión lenta, que en Pucallpa
+          // pasa) creaban dos órdenes iguales al mismo proveedor.
+          idempotencyKey: idempotencyKeyRef.current,
         }),
       });
       if (!res.ok) {
@@ -732,6 +784,10 @@ export default function PuntoCompraView() {
       const ocId = String(oc.id);
       setToastMsg(`Orden de Compra creada — ID: ${ocId}`);
       setLastOC({ id: ocId, total, items: cart.length });
+      idempotencyKeyRef.current =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `poc-${Math.random().toString(36).slice(2)}`;
       setCart([]);
       setNotes("");
       setDiscount(0);
@@ -1017,11 +1073,14 @@ export default function PuntoCompraView() {
             <Tag className="h-5 w-5 text-[var(--data-warning-500)]" strokeWidth={2.2} />
           </span>
           <div className="flex-1 min-w-0">
+            {/* El rótulo decía «Artículos para Comprar» sobre un bloque de
+                gastos fijos: combustible, internet y alquiler no son artículos,
+                y el propio subtítulo lo desmentía. */}
             <h2 className="text-base font-extrabold text-[var(--text-primary)] truncate">
-              Artículos para Comprar
+              Gastos fijos del negocio
             </h2>
             <p className="text-sm text-[var(--text-secondary)]">
-              Gastos fijos del negocio. Click en una card para registrar el gasto del mes.
+              Lo que se paga todos los meses: alquiler, servicios, combustible. Tocá una tarjeta para registrar el pago del período.
             </p>
           </div>
           <button
@@ -1062,7 +1121,24 @@ export default function PuntoCompraView() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {expenseCatalog.map((tpl) => {
+              {expenseDuplicados.length > 0 && (
+                <div className="col-span-full rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-3 py-2.5 text-sm">
+                  <p className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                    {expenseDuplicados.length === 1
+                      ? "1 gasto está cargado más de una vez"
+                      : `${expenseDuplicados.length} gastos están cargados más de una vez`}
+                  </p>
+                  <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                    Se muestra uno de cada uno para que no se pague dos veces:{" "}
+                    {expenseDuplicados
+                      .map((g) => decodeExpenseDescription(g.items[0].description ?? "").description)
+                      .join(", ")}
+                    . Para borrar los repetidos, usá el botón de eliminar de cada tarjeta acá mismo: el Historial de Gastos sólo
+                    lista los pagos ya registrados, no estas plantillas.
+                  </p>
+                </div>
+              )}
+              {expenseCatalogUnico.map((tpl) => {
                 const { description: humanDesc, meta } = decodeExpenseDescription(tpl.description || "");
                 const catDef = findCategory(tpl.category, "global");
                 const colorKey = meta.colorKey ?? catDef.color;
@@ -1071,6 +1147,8 @@ export default function PuntoCompraView() {
                 const Icon = getCategoryIcon(iconKey);
                 const isExecuting = executingTemplateId === tpl.id;
                 const metaSummary = summarizeMeta(meta);
+                const venc = proximoVencimiento(meta, hoyRef);
+                const pago = yaPagadoEnPeriodo({ description: tpl.description ?? "", amount: Number(tpl.amount ?? 0) }, pagosHechos, hoyRef);
                 const isDeleting = deletingTemplateId === tpl.id;
                 return (
                   <div
@@ -1117,10 +1195,39 @@ export default function PuntoCompraView() {
                               {meta.supplierName}
                             </p>
                           )}
+                          {/* «Mensual · Día 5» dejaba la cuenta al lector: para
+                              saber si vence mañana había que mirar el calendario. */}
+                          {pago.pagado ? (
+                            <p className="text-xs mt-0.5 font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                              ya pagado este período
+                            </p>
+                          ) : venc.estado !== "sin_fecha" && (
+                            <p
+                              className={cn(
+                                "text-xs mt-0.5 font-bold",
+                                venc.estado === "vencido" || venc.estado === "hoy"
+                                  ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                                  : venc.estado === "pronto"
+                                    ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                                    : "text-[var(--text-tertiary)]",
+                              )}
+                            >
+                              {venc.texto}
+                            </p>
+                          )}
                         </div>
                         <span className={cn(
                           "inline-flex items-center gap-1 h-8 px-3 rounded-xl text-xs font-bold border-2 transition-all",
-                          cls.iconBg, cls.text, cls.border,
+                          // El color salía de `colorKey`, que es decorativo: tres
+                          // botones «Pagar» en verde, rojo y violeta sin que la
+                          // diferencia significara nada. Ahora lo dice el vencimiento.
+                          pago.pagado
+                            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] border-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                            : venc.estado === "vencido" || venc.estado === "hoy"
+                            ? "bg-[var(--data-error-500)]/12 text-[var(--data-error-700)] border-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
+                            : venc.estado === "pronto"
+                              ? "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] border-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
+                              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-base)]",
                           "group-hover:scale-105"
                         )}>
                           {isExecuting ? (
@@ -1357,12 +1464,35 @@ export default function PuntoCompraView() {
             <div className="bg-[var(--surface-sunken)] border border-dashed border-[var(--rule-base)] rounded-xl p-6 text-center">
               <Package className="h-8 w-8 mx-auto text-[var(--text-tertiary)] mb-2" strokeWidth={1.5} />
               <p className="text-sm font-semibold text-[var(--text-primary)]">
-                Productos de inventario ocultos
+                {needsReorderCount > 0
+                  ? `${needsReorderCount} producto${needsReorderCount === 1 ? "" : "s"} por debajo del stock mínimo`
+                  : "Productos de inventario ocultos"}
               </p>
               <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-sm mx-auto">
-                Encendé el toggle <strong>&quot;Usar artículos de mi inventario&quot;</strong> arriba
-                para ver y agregar productos de reposición al carrito.
+                {needsReorderCount > 0
+                  ? "Esta pantalla abre mostrando sólo los gastos fijos. Traé el inventario para armar la reposición."
+                  : "Esta pantalla abre mostrando sólo los gastos fijos. Traé el inventario para agregar productos al carrito."}
               </p>
+              {/* Antes esto mandaba a buscar un toggle que estaba en otra parte
+                  de la pantalla. La acción va acá, donde se necesita. */}
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                {needsReorderCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { setShowInventario(true); setSoloReponer(true); }}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white hover:bg-primary-dark transition-colors"
+                  >
+                    Ver los {needsReorderCount} que faltan
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowInventario(true)}
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors"
+                >
+                  Ver todo el inventario
+                </button>
+              </div>
             </div>
           ) : loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -1479,8 +1609,10 @@ export default function PuntoCompraView() {
             </div>
           )}
 
-          {/* Paginación */}
-          {totalPages > 1 && (
+          {/* Paginación — sólo si de verdad hay productos en pantalla. Antes se
+              renderizaba igual con el inventario oculto: el cuerpo decía
+              «productos ocultos» y el pie «Página 1 de 3 · 56 productos». */}
+          {showInventario && totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 mt-4">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -1802,11 +1934,11 @@ export default function PuntoCompraView() {
                       aria-pressed={showIGV}
                       className="text-xs underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
                     >
-                      IGV 18%
+                      IGV 18% incluido
                     </button>
                     {showIGV && (
                       <span className="font-mono ml-auto">
-                        +S/{igvAmount.toFixed(2)}
+                        S/{igvAmount.toFixed(2)}
                       </span>
                     )}
                   </div>
