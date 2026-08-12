@@ -139,8 +139,56 @@ export async function POST(req: NextRequest) {
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          // `claude-sonnet-4-20250514` estaba deprecado con retiro el
+          // 2026-06-15: la rama de Anthropic respondía 404 desde entonces, así
+          // que el fallback del escáner de facturas no existía en la práctica.
+          model: "claude-sonnet-5",
           max_tokens: 1500,
+          // Sonnet 5 razona por defecto cuando no se manda `thinking`, y
+          // `max_tokens` es el tope de razonamiento MÁS respuesta: con 1500 el
+          // JSON se cortaría a la mitad. Leer una boleta es extracción, no un
+          // problema a pensar — se apaga y el presupuesto queda para el JSON.
+          thinking: { type: "disabled" },
+          // El JSON deja de ser un pedido por prompt ("responde SOLO JSON") y
+          // pasa a ser el formato garantizado por la API. Es el que más
+          // importa acá: el fallo típico del OCR no es leer mal la foto, es
+          // devolver el JSON envuelto en markdown y morir en el parseo.
+          output_config: {
+            format: {
+              type: "json_schema",
+              schema: {
+                type: "object",
+                properties: {
+                  proveedor: {
+                    type: "object",
+                    properties: {
+                      nombre: { type: "string" },
+                      ruc: { type: "string" },
+                    },
+                    required: ["nombre"],
+                    additionalProperties: false,
+                  },
+                  fecha: { type: "string" },
+                  items: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        nombre: { type: "string" },
+                        cantidad: { type: "number" },
+                        precioUnitario: { type: "number" },
+                      },
+                      required: ["nombre", "cantidad", "precioUnitario"],
+                      additionalProperties: false,
+                    },
+                  },
+                  total: { type: "number" },
+                },
+                required: ["proveedor", "items", "total"],
+                additionalProperties: false,
+              },
+            },
+          },
           messages: [
             {
               role: "user",
@@ -154,8 +202,11 @@ export async function POST(req: NextRequest) {
                   },
                 },
                 {
+                  // La forma del JSON la fija `output_config.format`, así que
+                  // el prompt sólo aporta lo que el schema no puede decir: que
+                  // es un comprobante peruano y qué representa cada campo.
                   type: "text",
-                  text: 'Extrae de esta boleta/factura peruana: proveedor (nombre, ruc), fecha, items (nombre, cantidad, precioUnitario), total. Responde SOLO JSON válido sin markdown: {"proveedor":{"nombre":"...","ruc":"..."},"fecha":"...","items":[{"nombre":"...","cantidad":1,"precioUnitario":0}],"total":0}',
+                  text: "Extrae los datos de esta boleta o factura peruana: el proveedor con su RUC, la fecha de emisión, cada ítem con su cantidad y precio unitario, y el total. Si un dato no figura en el comprobante, omitilo en vez de inventarlo.",
                 },
               ],
             },
@@ -184,12 +235,19 @@ export async function POST(req: NextRequest) {
       await aiCostGuard.recordSpend(auth.tenantId, OCR_COST_USD);
       return NextResponse.json(parsed.data);
     } else {
+      // El mensaje lo lee el encargado en el modal, no un programador: decía
+      // "No se encontró API key para OCR (OPENAI_API_KEY o ANTHROPIC_API_KEY)",
+      // que para quien está con la factura en la mano no significa nada ni
+      // sugiere qué hacer. El detalle técnico va al log, donde sirve.
+      logger.warn("[ocr-invoice] sin OPENAI_API_KEY ni ANTHROPIC_API_KEY configuradas", {
+        tenantId: auth.tenantId.slice(-6),
+      });
       return NextResponse.json(
         {
           error:
-            "No se encontró API key para OCR (OPENAI_API_KEY o ANTHROPIC_API_KEY)",
+            "La lectura automática de facturas todavía no está activada en esta tienda. Podés cargar la compra a mano mientras tanto.",
         },
-        { status: 500 },
+        { status: 503 },
       );
     }
   } catch (error) {
