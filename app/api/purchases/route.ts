@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { PurchasesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
@@ -142,6 +143,14 @@ export async function POST(req: NextRequest) {
           },
         });
       });
+
+      // La cuenta se crea con `tx.payable.create` para que sea atómica con la
+      // orden, pero eso saltea `PayablesDB.add`, que es quien invalida el cache
+      // de `getAll` (tag `payables`, 30s). Sin esto comprás a crédito y tu
+      // propia deuda no figura en Cuentas pendientes hasta medio minuto después
+      // — el e2e del ciclo lo mostró listando las deudas de la corrida anterior
+      // y no la recién creada.
+      revalidateTag(`tenant:${auth.tenantId}:payables`, "max");
 
       logAudit({ req, action: "CREATE", entity: "Purchase", entityId: id, detail: `Payable auto-generado OC ${id}, S/${total.toFixed(2)}, vence en ${days} días` });
     }

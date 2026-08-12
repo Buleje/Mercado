@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
@@ -189,6 +190,16 @@ export async function POST(req: NextRequest) {
           ref, err: stockErr instanceof Error ? stockErr.message : String(stockErr),
         });
       }
+    }
+
+    // El stock se escribe acá con `tx.product.update`, salteando ProductsDB, que
+    // es quien normalmente invalida. Sin esto, `ProductsDB.getAll` sigue
+    // sirviendo su cache de 5 minutos: el encargado recibe 10 unidades, entra a
+    // Inventario y ve el stock viejo — el riesgo real es que crea que no entró y
+    // recepcione de nuevo, ahora sí duplicando. Lo encontró el e2e del ciclo
+    // completo (la recepción informaba stockUpdated:1 y el panel seguía en 0).
+    if (stockUpdated > 0) {
+      revalidateTag(`tenant:${tenantId}:products`, "max");
     }
 
     return NextResponse.json({ ...toReception(receipt), stockUpdated }, { status: 201 });
