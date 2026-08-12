@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent } from "react";
 import dynamic from "next/dynamic";
@@ -546,7 +546,7 @@ export default function PurchaseOrdersTab() {
           <FileText className="h-6 w-6 text-primary" strokeWidth={2.2} />
         </span>
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-extrabold text-[var(--text-primary)]">Órdenes de Compra</h2>
+          <SectionTitle className="text-lg font-extrabold">Órdenes de Compra</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)]">
             {orders.length === 0
               ? "Creá la primera orden a un proveedor. Después podés duplicarla o hacerla recurrente."
@@ -955,14 +955,14 @@ export default function PurchaseOrdersTab() {
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
           onClick={(e) => e.target === e.currentTarget && setShowCreate(false)}
         >
-          <div className="bg-white dark:bg-[var(--color-card)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-3xl shadow-2xl flex flex-col max-h-[92dvh] border-0 sm:border-2 sm:border-[var(--rule-base)] overflow-hidden">
+          <div className="bg-white dark:bg-[var(--color-card)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[92dvh] border-0 sm:border-2 sm:border-[var(--rule-base)] overflow-hidden">
             {/* Header */}
             <header className="px-5 sm:px-6 py-4 border-b-2 border-[var(--rule-base)] flex items-center gap-3 bg-linear-to-r from-primary/5 to-transparent">
               <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/15 border border-primary/30 shrink-0">
                 <FileText className="h-6 w-6 text-primary" strokeWidth={2.2} />
               </span>
               <div className="flex-1 min-w-0">
-                <h2 id="create-oc-title" className="text-lg font-extrabold text-[var(--text-primary)]">Nueva orden de compra</h2>
+                <SectionTitle id="create-oc-title" className="text-lg font-extrabold">Nueva orden de compra</SectionTitle>
                 <p className="text-sm text-[var(--text-secondary)]">Elegí proveedor, sumá productos y guardá. Después podés marcarla como recibida cuando llegue la mercadería.</p>
               </div>
               <button
@@ -980,10 +980,10 @@ export default function PurchaseOrdersTab() {
               <div className="px-5 sm:px-6 py-5 space-y-6">
                 {/* ── Sección: Proveedor + Notas ── */}
                 <section className="space-y-3">
-                  <h3 className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                  <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
                     <Building2 className="h-4 w-4 text-[var(--text-tertiary)]" />
                     Proveedor
-                  </h3>
+                  </CardTitle>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Field label="Proveedor *" labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1" className="sm:col-span-2">
                       <select
@@ -1009,10 +1009,10 @@ export default function PurchaseOrdersTab() {
 
                 {/* ── Sección: Condiciones de compra ── */}
                 <section className="space-y-3">
-                  <h3 className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                  <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
                     <CreditCard className="h-4 w-4 text-[var(--text-tertiary)]" />
                     Condiciones
-                  </h3>
+                  </CardTitle>
 
                   <div>
                     <span className="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">Forma de pago</span>
@@ -1074,7 +1074,7 @@ export default function PurchaseOrdersTab() {
                 {/* ── Sección: Productos ── */}
                 <section className="space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <h3 className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                    <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
                       <Package className="h-4 w-4 text-[var(--text-tertiary)]" />
                       Productos de la orden
                       {items.length > 0 && (
@@ -1082,7 +1082,7 @@ export default function PurchaseOrdersTab() {
                           {items.length}
                         </span>
                       )}
-                    </h3>
+                    </CardTitle>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -1261,9 +1261,9 @@ export default function PurchaseOrdersTab() {
           <span className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 mb-4">
             <ShoppingBag className="h-8 w-8 text-primary" strokeWidth={2.2} />
           </span>
-          <h3 className="text-xl font-extrabold text-[var(--text-primary)]">
+          <CardTitle className="text-xl font-extrabold">
             {selectedSupplierId ? "Sin órdenes para este proveedor" : "Sin órdenes de compra"}
-          </h3>
+          </CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-md mx-auto">
             {selectedSupplierId
               ? "Este proveedor todavía no tiene órdenes registradas. Creá la primera o cambiá de proveedor."
