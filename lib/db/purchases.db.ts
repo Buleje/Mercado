@@ -36,6 +36,11 @@ function toISO(d: Date): string {
 
 // ── Mappers ───────────────────────────────────────────────────────────────────
 
+/**
+ * La ficha completa. Omitir campos acá no los "esconde": hace que el
+ * formulario los reciba vacíos y los BORRE al guardar (medido 2026-08-11:
+ * 7 campos perdidos por abrir una ficha desde la lista y darle guardar).
+ */
 function mapSupplier(s: PSupplier): DbSupplier {
   return {
     id: s.id, name: s.name,
@@ -44,7 +49,28 @@ function mapSupplier(s: PSupplier): DbSupplier {
     ...(s.email != null && { email: s.email }),
     ...(s.address != null && { address: s.address }),
     ...(s.notes != null && { notes: s.notes }),
+    // Identificación
+    ...(s.tipoPersona != null && { tipoPersona: s.tipoPersona }),
+    ...(s.tipoDocumento != null && { tipoDocumento: s.tipoDocumento }),
+    ...(s.documento != null && { documento: s.documento }),
+    ...(s.razonSocial != null && { razonSocial: s.razonSocial }),
+    ...(s.estado != null && { estado: s.estado }),
+    // Contacto
+    ...(s.whatsappSecundario != null && { whatsappSecundario: s.whatsappSecundario }),
+    ...(s.personaContacto != null && { personaContacto: s.personaContacto }),
+    // Ubicación
+    ...(s.departamento != null && { departamento: s.departamento }),
+    ...(s.provincia != null && { provincia: s.provincia }),
+    ...(s.distrito != null && { distrito: s.distrito }),
+    ...(s.direccion != null && { direccion: s.direccion }),
+    // Comercial
+    ...(s.categoria != null && { categoria: s.categoria }),
     ...(s.condicionPago != null && { condicionPago: s.condicionPago }),
+    ...(s.diasCredito != null && { diasCredito: s.diasCredito }),
+    ...(s.leadTimeDias != null && { leadTimeDias: s.leadTimeDias }),
+    ...(s.cuentaBancaria != null && { cuentaBancaria: s.cuentaBancaria }),
+    ...(s.banco != null && { banco: s.banco }),
+    ...(s.observaciones != null && { observaciones: s.observaciones }),
     createdAt: toISO(s.createdAt),
   };
 }
@@ -97,7 +123,22 @@ export const SuppliersDB = {
   },
   async add(s: DbSupplier, tenantId: string): Promise<DbSupplier> {
     const row = await prisma.supplier.create({
-      data: { id: s.id, name: s.name, ruc: s.ruc, phone: s.phone, email: s.email, address: s.address, notes: s.notes, condicionPago: s.condicionPago, tenantId },
+      // La ficha entera, no un recorte: lo que no se pase acá se pierde al
+      // crear y el usuario lo vuelve a tipear.
+      data: {
+        id: s.id, name: s.name, ruc: s.ruc, phone: s.phone, email: s.email,
+        address: s.address, notes: s.notes,
+        tipoPersona: s.tipoPersona, tipoDocumento: s.tipoDocumento,
+        documento: s.documento, razonSocial: s.razonSocial, estado: s.estado,
+        whatsappSecundario: s.whatsappSecundario, personaContacto: s.personaContacto,
+        departamento: s.departamento, provincia: s.provincia,
+        distrito: s.distrito, direccion: s.direccion,
+        categoria: s.categoria, condicionPago: s.condicionPago,
+        diasCredito: s.diasCredito, leadTimeDias: s.leadTimeDias,
+        cuentaBancaria: s.cuentaBancaria, banco: s.banco,
+        observaciones: s.observaciones,
+        tenantId,
+      },
     });
     // Audit 2026-05-17 Q-P0-4: invalida cache para que POS vea proveedor nuevo
     invalidateAdminCache.afterPurchase(tenantId);

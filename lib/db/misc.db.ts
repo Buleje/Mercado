@@ -302,6 +302,20 @@ export type DbSettings = {
   storeTheme?: Record<string, unknown>;
 };
 
+/**
+ * La ficha del proveedor, completa.
+ *
+ * Hasta el 2026-08-11 este tipo declaraba 7 campos de los 24 que tiene la
+ * tabla, y la lista de proveedores devolvía sólo esos. El formulario captura
+ * los 24, así que abrir una ficha desde la lista y guardarla mandaba `""` en
+ * todo lo que la lista no había traído: **razón social, banco, categoría,
+ * persona de contacto, ubicación, cuenta y observaciones se borraban** con
+ * sólo abrir y guardar. Medido sobre `main`: 7 campos perdidos por edición.
+ *
+ * Es la trampa del serializador con whitelist: la columna está en la base y
+ * aun así el dato no llega. Columna nueva → tocar TAMBIÉN este tipo, el
+ * mapper y el `add`.
+ */
 export type DbSupplier = {
   id: string;
   name: string;
@@ -310,14 +324,35 @@ export type DbSupplier = {
   email?: string;
   address?: string;
   notes?: string;
-  /**
-   * Forma de pago pactada: contado | credito_7 | credito_15 | credito_30.
-   * La columna existía en `Supplier` desde siempre, pero el mapper no la
-   * copiaba, así que para el resto de la app no existía y toda orden nacía
-   * con un default. Es la trampa del serializador con whitelist: la columna
-   * está en la base y aun así el dato no llega.
-   */
+
+  // Identificación
+  tipoPersona?: string;
+  tipoDocumento?: string;
+  documento?: string;
+  razonSocial?: string;
+  estado?: string;
+
+  // Contacto
+  whatsappSecundario?: string;
+  personaContacto?: string;
+
+  // Ubicación
+  departamento?: string;
+  provincia?: string;
+  distrito?: string;
+  direccion?: string;
+
+  // Comercial
+  categoria?: string;
+  /** Forma de pago pactada: contado | credito_7 | credito_15 | credito_30. */
   condicionPago?: string;
+  diasCredito?: number;
+  /** Días que tarda en entregar (ADR-376): de acá sale el punto de reorden. */
+  leadTimeDias?: number;
+  cuentaBancaria?: string;
+  banco?: string;
+
+  observaciones?: string;
   createdAt: string;
 };
 

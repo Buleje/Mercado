@@ -29,6 +29,9 @@ const SupplierSchema = z.object({
   categoria: z.string().max(50).optional().nullable(),
   condicionPago: z.string().max(30).optional().nullable(),
   diasCredito: z.number().int().min(0).optional(),
+  // ADR-376: días que tarda en entregar. Sin esto, el punto de reorden de
+  // Sugerencias cae al default y el formulario perdía el dato al crear.
+  leadTimeDias: z.number().int().min(0).max(365).optional().nullable(),
   cuentaBancaria: z.string().max(50).optional().nullable(),
   banco: z.string().max(50).optional().nullable(),
   observaciones: z.string().max(2000).optional().nullable(),
@@ -85,6 +88,7 @@ export async function POST(req: NextRequest) {
       categoria: data.categoria || null,
       condicionPago: data.condicionPago || null,
       diasCredito: data.diasCredito || 0,
+      leadTimeDias: data.leadTimeDias ?? null,
       cuentaBancaria: data.cuentaBancaria || null,
       banco: data.banco || null,
       observaciones: data.observaciones || null,
