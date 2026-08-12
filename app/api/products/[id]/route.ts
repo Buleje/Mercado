@@ -123,6 +123,10 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
         quantity: Math.abs(diff),
         notes: body.adjustReason ?? "Ajuste manual sin razón documentada",
         createdBy: auth.username ?? "admin",
+        // `ProductsDB.update` de arriba ya dejó el stock en el valor pedido.
+        // Sin esta bandera, `record` aplicaba la diferencia de nuevo: ajustar
+        // de 100 a 80 terminaba en 60 (medido 2026-08-11).
+        stockYaAplicado: true,
       }).catch((err) => logger.warn("[products/id] stock diff log failed", { error: String(err) }));
     }
 

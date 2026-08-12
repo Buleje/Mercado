@@ -592,6 +592,10 @@ async function salesHandler(
       reference: sale.id,
       notes: `Venta POS: ${item.name}`,
       tenantId: auth.tenantId,
+      // El stock ya lo bajó el `decrement` de la transacción de arriba. Sin
+      // esto, `record` lo bajaba OTRA VEZ: vender 3 descontaba 6 (medido
+      // 2026-08-11). Acá sólo se deja la constancia en el kardex.
+      stockYaAplicado: true,
     }).catch((err) => {
       logger.warn("[sales] inventory movement failed", { saleId: sale.id, err: String(err) });
       import("@sentry/nextjs")

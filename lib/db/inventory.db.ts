@@ -150,11 +150,42 @@ export const InventoryMovementsDB = {
     return { movements: items.map(mapInventoryMovement), nextCursor, total };
   },
 
-  async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string; tenantId: string }): Promise<DbInventoryMovement> {
+  /**
+   * Registra un movimiento y **mueve el stock**.
+   *
+   * Ojo con el nombre: `record` suena a "sólo anotar", y por eso dos llamadores
+   * que YA habían escrito el stock lo llamaban "para el audit trail" y el
+   * movimiento se aplicaba dos veces. Medido el 2026-08-11:
+   *
+   *   - vender 3 unidades descontaba **6** (`app/api/sales`)
+   *   - ajustar el stock a 80 desde 100 dejaba **60** (`PUT /api/products/[id]`)
+   *
+   * Para esos casos existe `stockYaAplicado: true`: deja la constancia en el
+   * kardex con las cantidades correctas, sin volver a tocar el producto.
+   */
+  async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string; tenantId: string; stockYaAplicado?: boolean }): Promise<DbInventoryMovement> {
     // Atomic: read current stock, compute new stock, update product, create movement
     const product = await prisma.product.findFirst({ where: { id: data.productId, tenantId: data.tenantId } });
     const prevStock = product?.stock ?? 0;
     const isIncrease = ["compra", "devolucion", "ajuste_positivo"].includes(data.type);
+
+    if (data.stockYaAplicado) {
+      // El caller ya escribió el stock. El kardex se reconstruye hacia atrás
+      // para que la fila diga de dónde vino y a dónde fue.
+      const previoReal = isIncrease ? prevStock - data.quantity : prevStock + data.quantity;
+      const row = await prisma.inventoryMovement.create({
+        data: {
+          productId: data.productId, type: data.type, lossType: data.lossType, quantity: data.quantity,
+          previousStock: Math.max(0, previoReal), newStock: prevStock,
+          reference: data.reference, notes: data.notes,
+          tenantId: data.tenantId,
+          ...(data.warehouseId ? { warehouseId: data.warehouseId } : {}),
+          ...(data.createdBy ? { createdBy: data.createdBy } : {}),
+        },
+      });
+      return mapInventoryMovement(row);
+    }
+
     const newStock = isIncrease ? prevStock + data.quantity : prevStock - data.quantity;
     const clampedNewStock = Math.max(0, newStock);
     // SECURITY 2026-05-06 (audit stock #1): updateMany con guard `stock=prevStock`

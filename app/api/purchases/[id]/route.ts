@@ -58,6 +58,66 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
+/**
+ * Reparte un flete cargado DESPUÉS de recibir la mercadería (ADR-377).
+ *
+ * El costo de esos productos se calculó sin ese gasto. No se puede rehacer la
+ * historia —el promedio ponderado ya se mezcló con otras compras y parte del
+ * lote quizá ya se vendió—, así que el sobrecosto se reparte entre las
+ * unidades que TODAVÍA están en stock: es la revaluación de inventario que
+ * haría un contador cuando la factura del flete llega tarde.
+ *
+ * Si no queda stock de un producto, no hay nada que revaluar: esa mercadería
+ * ya salió y su costo histórico quedó como quedó. Se dice, no se disimula.
+ */
+async function revaluarPorSobrecosto(
+  tenantId: string,
+  oc: DbPurchaseOrder,
+  deltaSobrecosto: number,
+  username: string,
+): Promise<number> {
+  const subtotal = oc.items.reduce((s, i) => s + i.quantity * toNumOrZero(i.unitCost), 0);
+  if (subtotal <= 0) return 0;
+
+  let revaluados = 0;
+  await prisma.$transaction(async (tx) => {
+    for (const item of oc.items) {
+      const product = await tx.product.findFirst({ where: { id: item.productId, tenantId } });
+      if (!product) continue;
+
+      const stockActual = product.stock ?? 0;
+      if (stockActual <= 0) continue; // ya se vendió: nada que revaluar
+
+      const valorLinea = item.quantity * toNumOrZero(item.unitCost);
+      const parteDeLaLinea = deltaSobrecosto * (valorLinea / subtotal);
+      const ajustePorUnidad = parteDeLaLinea / stockActual;
+
+      const costoAnterior = toNumOrZero(product.costPrice);
+      const costoNuevo = Math.max(0, costoAnterior + ajustePorUnidad);
+
+      await tx.product.update({ where: { id: product.id }, data: { costPrice: costoNuevo } });
+      await tx.inventoryMovement.create({
+        data: {
+          tenantId,
+          productId: product.id,
+          type: "ajuste",
+          quantity: 0, // no cambia el stock: cambia lo que vale
+          previousStock: stockActual,
+          newStock: stockActual,
+          reference: oc.id,
+          notes:
+            `Costo de traer la mercadería en la OC ${oc.id}: ` +
+            `S/${parteDeLaLinea.toFixed(2)} repartidos entre ${stockActual} en stock ` +
+            `(S/${costoAnterior.toFixed(2)} → S/${costoNuevo.toFixed(2)} por unidad)`,
+          createdBy: username,
+        },
+      });
+      revaluados++;
+    }
+  });
+  return revaluados;
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const _rl = await applyRateLimit(req, "MODERATE", "purchases-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
@@ -97,9 +157,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         : {}),
     };
 
+    // ADR-377 · backfill: cargarle el flete a una orden YA recibida. El costo
+    // de esos productos se calculó sin ese gasto, así que hay que revaluar el
+    // inventario que queda. Se mide el delta ANTES de escribir.
+    const sobrecostoAntes = (existing.flete ?? 0) + (existing.otrosCostos ?? 0);
+    const sobrecostoDespues =
+      (parsed.data.flete ?? existing.flete ?? 0) + (parsed.data.otrosCostos ?? existing.otrosCostos ?? 0);
+    const deltaSobrecosto = sobrecostoDespues - sobrecostoAntes;
+    const revaluarInventario =
+      !statusChanged && existing.status === "recibido" && Math.abs(deltaSobrecosto) > 0.005;
+
     const updated = await PurchasesDB.update(auth.tenantId, id, patch);
 
     if (!updated) return NextResponse.json({ error: "Error updating" }, { status: 500 });
+
+    let productosRevaluados = 0;
+    if (revaluarInventario) {
+      productosRevaluados = await revaluarPorSobrecosto(
+        auth.tenantId, updated, deltaSobrecosto, auth.username,
+      ).catch((err) => {
+        logger.error("[purchases/id] revaluación por flete falló", { err: String(err), id });
+        return 0;
+      });
+    }
 
     if (statusChanged && updated.status === "recibido") {
       // Build a map of diferencias by productoId for quick lookup
@@ -196,7 +276,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
        logActivity("Actualizar", "compra", `Estado de orden ${id.slice(-6)} cambiado a ${updated.status}`, id, auth.username).catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
     }
 
-    return NextResponse.json(updated);
+    // `productosRevaluados` deja que la pantalla diga qué pasó con el costo,
+    // en vez de cambiarlo en silencio.
+    return NextResponse.json(
+      revaluarInventario ? { ...updated, productosRevaluados } : updated,
+    );
   } catch (e) {
     logger.error("[purchases/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
