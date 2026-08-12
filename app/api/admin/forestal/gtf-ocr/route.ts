@@ -95,15 +95,54 @@ export async function POST(req: NextRequest) {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": anthropic, "anthropic-version": "2023-06-01" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          // `claude-sonnet-4-20250514` se retiró el 2026-06-15: esta rama venía
+          // respondiendo 404, o sea que el fallback de lectura de guías no
+          // existía. Migrado a `claude-sonnet-5`.
+          model: "claude-sonnet-5",
           max_tokens: 800,
+          // Sonnet 5 razona por defecto y `max_tokens` topea razonamiento MÁS
+          // respuesta: con 800 el JSON se cortaba. Leer una guía es extracción.
+          thinking: { type: "disabled" },
+          // El JSON pasa a estar garantizado por la API en vez de pedido por
+          // prompt. Los campos son EXACTAMENTE los de `GtfSchema` y del PROMPT
+          // de arriba — este cambio no reinterpreta la guía ni agrega campos:
+          // qué se extrae de una GTF es materia de SERFOR, no de un refactor.
+          output_config: {
+            format: {
+              type: "json_schema",
+              schema: {
+                type: "object",
+                properties: {
+                  gtfNumber: { type: "string" },
+                  gtfSeries: { type: "string" },
+                  especie: { type: "string" },
+                  especieCientifica: { type: "string" },
+                  volumenM3: { type: "number" },
+                  proveedor: { type: "string" },
+                  ruc: { type: "string" },
+                  fecha: { type: "string" },
+                  origen: { type: "string" },
+                },
+                // Todos requeridos a propósito: el contrato del PROMPT es
+                // "si un dato no se lee, dejalo vacío o 0", no omitirlo.
+                required: [
+                  "gtfNumber", "gtfSeries", "especie", "especieCientifica",
+                  "volumenM3", "proveedor", "ruc", "fecha", "origen",
+                ],
+                additionalProperties: false,
+              },
+            },
+          },
           messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: "image/jpeg", data: imageData } }, { type: "text", text: PROMPT }] }],
         }),
       });
       if (!res.ok) return NextResponse.json({ error: `API error: ${res.status}` }, { status: 502 });
       content = (await res.json()).content?.[0]?.text ?? "";
     } else {
-      return NextResponse.json({ error: "No se encontró API key para OCR (OPENAI_API_KEY o ANTHROPIC_API_KEY)" }, { status: 500 });
+      // Mensaje para el operador del patio, no para un programador; el detalle
+      // técnico va al log.
+      logger.warn("[gtf-ocr] sin OPENAI_API_KEY ni ANTHROPIC_API_KEY configuradas", { tenantId: auth.tenantId.slice(-6) });
+      return NextResponse.json({ error: "La lectura automática de guías todavía no está activada. Cargá los datos de la GTF a mano mientras tanto." }, { status: 503 });
     }
 
     const result = safeParseJSON(content, GtfSchema);

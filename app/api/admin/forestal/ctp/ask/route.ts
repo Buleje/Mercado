@@ -85,8 +85,15 @@ async function askLLM(context: string, question: string): Promise<string | null>
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": anthropic, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        // `claude-sonnet-4-20250514` se retiró el 2026-06-15 — esta rama
+        // devolvía 404 y la función caía a `null` en silencio.
+        model: "claude-sonnet-5",
         max_tokens: 500,
+        // Migración a comportamiento IDÉNTICO: Sonnet 5 razona por defecto y
+        // `max_tokens` topea razonamiento MÁS respuesta, así que con 500 la
+        // respuesta salía cortada. Encender el razonamiento acá es una decisión
+        // de calidad aparte (pide subir `max_tokens`), no parte del arreglo.
+        thinking: { type: "disabled" },
         system,
         messages: [{ role: "user", content: prompt }],
       }),
