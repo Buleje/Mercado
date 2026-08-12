@@ -50,6 +50,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet:         vi.fn((_k: string, _t: number, fn: () => unknown) => fn()),
   invalidateByPrefix: vi.fn(),
 }));

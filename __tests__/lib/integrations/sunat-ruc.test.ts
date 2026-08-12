@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   cacheStore: {
     get: vi.fn(() => null),
     set: vi.fn(),

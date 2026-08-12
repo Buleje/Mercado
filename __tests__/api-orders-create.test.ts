@@ -65,6 +65,7 @@ vi.mock("@/lib/plans", () => ({
 
 // ── Mock: cache — pass-through (execute the fn immediately) ──────────────────
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
 }));
 

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { PurchasesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
@@ -9,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { getOrSet } from "@/lib/cache";
+import { getOrSet, revalidateTenantTag } from "@/lib/cache";
 
 const PurchaseItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -150,7 +149,7 @@ export async function POST(req: NextRequest) {
       // propia deuda no figura en Cuentas pendientes hasta medio minuto después
       // — el e2e del ciclo lo mostró listando las deudas de la corrida anterior
       // y no la recién creada.
-      revalidateTag(`tenant:${auth.tenantId}:payables`, "max");
+      revalidateTenantTag(auth.tenantId, "payables");
 
       logAudit({ req, action: "CREATE", entity: "Purchase", entityId: id, detail: `Payable auto-generado OC ${id}, S/${total.toFixed(2)}, vence en ${days} días` });
     }

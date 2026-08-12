@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTenantTag } from "@/lib/cache";
 import { z } from "zod";
 import { PurchasesDB, type DbPurchaseOrder } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
@@ -275,6 +276,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (statusChanged) {
        logActivity("Actualizar", "compra", `Estado de orden ${id.slice(-6)} cambiado a ${updated.status}`, id, auth.username).catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
     }
+
+    // Este camino también mueve stock y costo con `tx.product.update` fuera de
+    // ProductsDB, así que la invalidación corre por cuenta del endpoint: si no,
+    // el Inventario muestra lo de antes de recibir.
+    revalidateTenantTag(auth.tenantId, "products");
 
     // `productosRevaluados` deja que la pantalla diga qué pasó con el costo,
     // en vez de cambiarlo en silencio.

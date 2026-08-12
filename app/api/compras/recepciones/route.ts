@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { revalidateTenantTag } from "@/lib/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
@@ -199,7 +199,7 @@ export async function POST(req: NextRequest) {
     // recepcione de nuevo, ahora sí duplicando. Lo encontró el e2e del ciclo
     // completo (la recepción informaba stockUpdated:1 y el panel seguía en 0).
     if (stockUpdated > 0) {
-      revalidateTag(`tenant:${tenantId}:products`, "max");
+      revalidateTenantTag(tenantId, "products");
     }
 
     return NextResponse.json({ ...toReception(receipt), stockUpdated }, { status: 201 });

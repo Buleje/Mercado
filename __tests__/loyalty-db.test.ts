@@ -17,6 +17,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
   invalidate: vi.fn(),
   invalidateByPrefix: vi.fn(),

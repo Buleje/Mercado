@@ -17,7 +17,7 @@ import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { deductStockFEFO, hasBatchesWithStock } from "@/lib/inventory/fefo-deduct";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { conteoLockKey } from "@/app/api/inventory/conteo/route";
-import { getOrSet } from "@/lib/cache";
+import { getOrSet, revalidateTenantTag } from "@/lib/cache";
 import { FiadosDB } from "@/lib/db/fiados.db";
 import { CustomersDB } from "@/lib/db/customers.db";
 import { SettingsDB } from "@/lib/db/settings.db";
@@ -645,6 +645,13 @@ async function salesHandler(
     detail: `Venta POS creada por ${fmtCurrent(finalTotal)} con método ${data.payment ?? "efectivo"}${data.comprobanteTipo !== "ticket" ? ` (${data.comprobanteTipo})` : ""}.`,
     user: cashierId || "system",
   });
+
+  // El stock se descuenta arriba con `tx.product.updateMany` (updateMany
+  // condicional, para no quedar en negativo bajo dos cajeros a la vez), y eso
+  // saltea a ProductsDB, que es quien invalida. Sin esto `getAll` sirve su cache
+  // de 5 minutos: se vende toda la mañana y el Inventario muestra el stock de
+  // antes. Mismo patrón que mordió en recepciones y cuentas por pagar.
+  revalidateTenantTag(auth.tenantId, "products");
 
   // Asegurar que comprobanteNumero + fiadoId se incluyan en la respuesta
   const response = {

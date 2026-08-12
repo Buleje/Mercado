@@ -83,6 +83,7 @@ vi.mock("@/lib/prisma", () => ({
 
 // ── Mock: cache — no-op para evitar side-effects en tests ─────────────────────
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet:           vi.fn(async (_k: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
   invalidate:         vi.fn(),
   invalidateByPrefix: vi.fn(),
