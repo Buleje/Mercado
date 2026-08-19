@@ -1,8 +1,11 @@
 /**
- * lib/slo/__tests__/budget-calculator.test.ts
+ * __tests__/slo-budget-calculator.test.ts
  *
  * Unit tests for the SLO budget calculator.
  * Ref: ADR-034 (SLOs Operational Contract)
+ *
+ * Movido desde lib/slo/__tests__/ (2026-08-19): vitest.config.ts sólo incluye
+ * __tests__/**, así que este test literalmente nunca corrió ni en local ni en CI.
  */
 
 import { describe, it, expect } from "vitest";
@@ -12,7 +15,7 @@ import {
   formatStatusTable,
   loadSLOs,
   type BudgetStatus,
-} from "../budget-calculator";
+} from "@/lib/slo/budget-calculator";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
