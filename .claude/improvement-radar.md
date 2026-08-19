@@ -7,6 +7,19 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ---
 
+## Aplicadas en sesión 2026-08-19 (auditoría de poder agéntico)
+
+### [applied] 2026-08-19 — Bug real: auto-learn.mjs y post-edit-dispatcher.mjs truncaban stdin
+- `readStdinSync()` leía con un solo `readFileSync(stdin.fd)` dentro de un retry-EAGAIN que devolvía en el PRIMER read exitoso — en un pipe no-bloqueante eso puede ser un chunk parcial. 1080 líneas de `SyntaxError` acumuladas en `auto-learn.errors.log`, siempre con fragmentos de la MITAD de un archivo grande. El dispatcher además fallaba en silencio (sin log) — posible skip silencioso de hex-guard/typography/screenshot/rubric en ediciones grandes.
+- Fix: mismo patrón `data`+`end` que ya usaban los 3 hooks hermanos (hex-code-guard/typography-lint/ui-screenshot). Verificado con payload de 448KB por el camino real. Commit `d7153640`.
+- **Explica** por qué "Skills sugeridos por compound-learning" no generó nada nuevo pese a las 500+ archivos de forestal/adelantos/admin de las últimas semanas — vale la pena revisar en una próxima sesión qué patrones detecta ahora que el pipeline no está roto.
+
+### [applied] 2026-08-19 — Poda skill `review` (redundante con `/code-review` built-in). Commit `c9267a0d`.
+### [applied] 2026-08-19 — Skill `commit` afilado con sección de reorganización masiva (>50 archivos) — lecciones de la sesión de 555 archivos → 13 commits. Commit `b840769d`.
+### [applied] 2026-08-19 — `agentic-style.md`: nota sobre scope de forks (heredan la meta grande del padre, pueden commitear en paralelo si no se les prohíbe explícito). Commit `b840769d`.
+
+### [pending] `/doctor` quincenal — sigue sin correr (pendiente desde 2026-08-03+). Es un comando de la CLI, Brandon tiene que dispararlo él (no invocable vía Skill tool).
+
 ## Aplicadas en sesión 2026-07-06 (tune PC + harness)
 
 ### [applied] 2026-07-06 — Edge AutoLaunch bloqueado PERMANENTE
@@ -194,10 +207,10 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ### [applied] 2026-08-03 — RUM de PostHog VIVO por primera vez: el provider huérfano de mayo (nunca montado en toda la historia del repo — `git log -S "<PostHogProvider"` vacío) se reemplazó por `instrumentation-client.ts` (patrón oficial Next 15.3+, pageviews por history_change). Key en .env.local, dominios en la CSP de middleware-utils. Verificado end-to-end: evento en el backend de PostHog vía SQL. Gotcha mayor documentado en memoria: posthog-js descarta eventos de webdriver/headless (`_is_bot()`), la verificación con Playwright exige `opt_out_useragent_filter` (activo solo en dev).
 
-### [pending] 2026-08-03 — `lib/security/csp.ts` está huérfano (nadie lo importa; la CSP real vive en `lib/middleware-utils.ts`). Dos fuentes de CSP = la trampa de siempre. Candidato a borrar tras confirmar que ningún plan lo referencia.
+### [applied] 2026-08-19 — `lib/security/csp.ts` borrado (0 importers confirmados por grep). Commit `0a97a3a8`.
 ### [applied] 2026-08-03 — `no-unused-vars` en CERO absoluto: 518 → 0. Fan-out de 3 subagentes sonnet por scope + remanente a mano; el de admin ejercitó generator≠evaluator anidado (su verifier atrapó 1 hunk ajeno). Bonus: ~1.000 líneas de código muerto real (StoreCard/TopStoresSection/CategoryTreemapView/InventoryAnalyticsDashboard nunca cableados). Lección operativa: los agent-defs con isolation worktree por default hacen que el fan-out anidado branchee de una base de HACE MESES en ramas largas — el barredor lo detectó, descartó 3 worktrees y rehizo directo en el checkout (valida code-quality §5.2).
 
-### [pending] 2026-08-03 — `lib/slo/__tests__/budget-calculator.test.ts` está FUERA del glob del runner (`vitest.config` incluye sólo `__tests__/**` de la raíz): ese test no corre ni en local ni en CI. Mover el archivo a `__tests__/` o ampliar el include.
+### [applied] 2026-08-19 — `lib/slo/__tests__/budget-calculator.test.ts` movido a `__tests__/slo-budget-calculator.test.ts` (import cambiado a `@/lib/slo/budget-calculator`). Corrido por primera vez desde que existe: 9/9 verde. Commit `0a97a3a8`.
 ### [applied] 2026-07-13 — **oxlint** adoptado como pre-check (`npm run lint:fast`)
 - Medido en este repo: oxlint **7.6s / 204MB / 506 hallazgos** vs ESLint **98.9s / 1.84GB / 1746 warnings** → 13× más rápido, 9× menos RAM. Instalado como devDep (v1.73).
 - Encontró código muerto que el gate no reporta (ej. 6 vars/función sin usar en `InicioDashboard.tsx`). ESLint sigue siendo el gate autoritativo (reglas custom design-tokens + jsx-a11y).
