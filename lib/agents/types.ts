@@ -7,13 +7,29 @@
 
 // ── Domain & Status enums ─────────────────────────────────────────────────────
 
-export type AgentDomain =
-  | "inventory"
-  | "orders"
-  | "customers"
-  | "analytics"
-  | "notifications"
-  | "pricing";
+/**
+ * Los dominios, como VALOR y no sólo como tipo.
+ *
+ * `/api/agents/execute` tenía su propia copia de la lista y quedó vieja: los
+ * dominios nuevos existían, estaban registrados, y ese endpoint los rechazaba
+ * con "dominio inválido". Un tipo no valida en runtime; esta constante sí, y
+ * `AgentDomain` se deriva de ella para que no puedan divergir.
+ */
+export const AGENT_DOMAINS = [
+  "inventory",
+  "orders",
+  "customers",
+  "analytics",
+  "notifications",
+  "pricing",
+  "forestal",
+  "documentos",
+  "caja",
+  "cobranzas",
+  "ui",
+] as const;
+
+export type AgentDomain = (typeof AGENT_DOMAINS)[number];
 
 export type TaskPriority = "critical" | "high" | "normal" | "low";
 

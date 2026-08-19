@@ -18,7 +18,7 @@ import {
   agentBus,
   ensureAgentsRegistered,
 } from "@/lib/agents";
-import type { AgentDomain, TaskPriority } from "@/lib/agents/types";
+import { AGENT_DOMAINS, type AgentDomain, type TaskPriority } from "@/lib/agents/types";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Constants ───────────────────────────────────────────────────────────────
@@ -27,14 +27,9 @@ const EXECUTION_TIMEOUT_MS = 30_000;
 
 // ── Validation ──────────────────────────────────────────────────────────────
 
-const VALID_DOMAINS: [AgentDomain, ...AgentDomain[]] = [
-  "inventory",
-  "orders",
-  "customers",
-  "analytics",
-  "notifications",
-  "pricing",
-];
+// Single source: `AGENT_DOMAINS` en lib/agents/types. Una copia local se queda
+// vieja en cuanto se agrega un dominio, y el endpoint rechaza algo que existe.
+const VALID_DOMAINS = AGENT_DOMAINS as unknown as [AgentDomain, ...AgentDomain[]];
 
 const VALID_PRIORITIES: [TaskPriority, ...TaskPriority[]] = [
   "critical",

@@ -29,6 +29,10 @@ export const AGENT_ACTION_PERMISSIONS: Record<
     "reorder-suggestions":  { resource: "auto-reorder",         action: "read" },
     "stock-valuation":      { resource: "inventory",            action: "read" },
     "movement-summary":     { resource: "inventory-movements",  action: "read" },
+    "buscar-producto":      { resource: "products",             action: "read" },
+    // ESCRITURA: además del permiso, el tool pide aprobación humana en el chat
+    // (ver `requiresApproval` en tool-definitions).
+    "ajustar-stock":        { resource: "inventory",            action: "write" },
   },
   orders: {
     "pending-summary":      { resource: "orders",         action: "read" },
@@ -50,6 +54,39 @@ export const AGENT_ACTION_PERMISSIONS: Record<
     "margin-analysis":      { resource: "analytics", action: "read" },
     "sales-trend":          { resource: "analytics", action: "read" },
     "category-breakdown":   { resource: "analytics", action: "read" },
+  },
+  /**
+   * El libro forestal no tiene Resource propio en el RBAC (26 recursos, ninguno
+   * forestal) y agregarlo toca `role-permissions.ts`, que es zona de peligro.
+   * Se gatea con `inventory:read`: el Libro de Operaciones ES el inventario de
+   * la madera, y todas estas acciones son de lectura.
+   */
+  forestal: {
+    "existencias":          { resource: "inventory", action: "read" },
+    "buscar-guia":          { resource: "inventory", action: "read" },
+    "buscar-troza":         { resource: "inventory", action: "read" },
+    "pendientes":           { resource: "inventory", action: "read" },
+  },
+  documentos: {
+    "buscar":               { resource: "settings",       action: "read" },
+    "por-vencer":           { resource: "settings",       action: "read" },
+  },
+  caja: {
+    "estado":               { resource: "cash-registers", action: "read" },
+  },
+  cobranzas: {
+    // Dos deudas distintas, dos recursos distintos: quien ve fiados no
+    // necesariamente ve la planilla de adelantos.
+    "fiados":               { resource: "sales",          action: "read" },
+    "adelantos":            { resource: "adelantos",      action: "read" },
+  },
+  /**
+   * Abrir una pantalla no lee ni escribe datos: el módulo destino aplica su
+   * propio RBAC cuando carga. Se gatea con el permiso más básico que tiene
+   * cualquier rol del panel.
+   */
+  ui: {
+    "abrir":                { resource: "analytics", action: "read" },
   },
   notifications: {
     "send-order-update":    { resource: "notifications", action: "write" },

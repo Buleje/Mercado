@@ -365,6 +365,129 @@ async function movementSummary(
 
 // ── Agent definition ─────────────────────────────────────────────────────────
 
+// ── Buscar un producto (para resolver "el arroz" antes de tocarlo) ───────────
+
+/**
+ * Qué productos matchean un texto. Existe para que una acción de escritura
+ * NUNCA adivine: el usuario dice "el arroz", el modelo busca, ve que hay tres
+ * y pregunta cuál. Cambiarle el stock al producto equivocado es peor que no
+ * hacer nada.
+ */
+async function buscarProducto(task: AgentTask, ctx: AgentContext): Promise<AgentResult> {
+  const log = scopedLogger(ctx);
+  const q = String(task.payload.texto ?? "").trim().toLowerCase();
+  if (!q) return { success: false, error: "Decime qué producto buscar." };
+  log.info("Buscando producto", { q });
+
+  const products = await ProductsDB.getAll(task.tenantId);
+  const match = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(q) ||
+      (p.sku ?? "").toLowerCase() === q ||
+      (p.barcode ?? "") === q,
+  );
+
+  return {
+    success: true,
+    data: {
+      total: match.length,
+      productos: match.slice(0, 10).map((p) => ({
+        id: p.id,
+        nombre: p.name,
+        categoria: p.category,
+        precio: p.price,
+        stock: p.stock,
+        unidad: p.unit,
+        activo: p.active,
+      })),
+      ...(match.length === 0 && { mensaje: `Ningún producto contiene "${q}".` }),
+      ...(match.length > 1 && {
+        mensaje: "Hay más de uno: preguntá cuál antes de modificar nada.",
+      }),
+    },
+  };
+}
+
+// ── Ajustar stock (ESCRITURA — pasa por aprobación humana) ───────────────────
+
+/**
+ * Deja el stock de un producto en la cantidad contada, con motivo.
+ *
+ * Va por `InventoryMovementsDB.adjust`, que es lo mismo que usa el conteo físico: crea
+ * el movimiento de kardex con `previousStock`/`newStock` y valida que el
+ * producto sea del tenant. Un ajuste sin rastro en el kardex es un descuadre
+ * que nadie puede explicar el mes siguiente.
+ */
+async function ajustarStock(task: AgentTask, ctx: AgentContext): Promise<AgentResult> {
+  const log = scopedLogger(ctx);
+  const productId = Number(task.payload.productId);
+  const nuevoStock = Number(task.payload.nuevoStock);
+  const motivo = String(task.payload.motivo ?? "").trim();
+
+  if (!Number.isInteger(productId) || productId <= 0) {
+    return { success: false, error: "Falta el id del producto (buscalo primero con inventory_buscar_producto)." };
+  }
+  if (!Number.isFinite(nuevoStock) || nuevoStock < 0) {
+    return { success: false, error: "El stock nuevo tiene que ser un número de 0 para arriba." };
+  }
+  if (!motivo) {
+    return { success: false, error: "Todo ajuste necesita motivo: es lo que explica el descuadre después." };
+  }
+
+  const producto = await ProductsDB.getById(task.tenantId, productId);
+  if (!producto) {
+    return {
+      success: false,
+      error: `No existe un producto con id ${productId} en este negocio. Buscalo con inventory_buscar_producto y usá el id que devuelve — no lo inventes.`,
+    };
+  }
+
+  const anterior = producto.stock ?? 0;
+
+  /**
+   * Ensayo: valida y describe, sin tocar nada.
+   *
+   * Lo pide el route ANTES de ofrecer la confirmación. Sin esto, el modelo
+   * podía inventar un `productId` y la tarjeta preguntaba «¿confirmás ajustar
+   * el producto 12345?» — un número que el usuario no puede juzgar, sobre un
+   * producto que no existe. Ahora si el id es inventado no hay tarjeta: hay un
+   * error que manda al modelo a buscar primero.
+   */
+  if (task.payload.__validar === true) {
+    return {
+      success: true,
+      data: {
+        resumen: `Stock de "${producto.name}": ${anterior} → ${nuevoStock} (${nuevoStock - anterior >= 0 ? "+" : ""}${nuevoStock - anterior}). Motivo: ${motivo}.`,
+        producto: producto.name,
+        stockActual: anterior,
+        stockNuevo: nuevoStock,
+        motivo,
+      },
+    };
+  }
+  log.info("Ajustando stock desde el asistente", { productId, anterior, nuevoStock });
+  const mov = await InventoryMovementsDB.adjust(
+    productId,
+    nuevoStock,
+    task.tenantId,
+    undefined,
+    `Asistente IA: ${motivo}`,
+    "asistente-ia",
+  );
+
+  return {
+    success: true,
+    data: {
+      producto: producto.name,
+      stockAnterior: anterior,
+      stockNuevo: nuevoStock,
+      diferencia: nuevoStock - anterior,
+      motivo,
+      movimientoId: mov.id,
+    },
+  };
+}
+
 export const inventoryAgent: DomainAgent = {
   domain: "inventory",
   actions: [
@@ -373,6 +496,8 @@ export const inventoryAgent: DomainAgent = {
     "reorder-suggestions",
     "stock-valuation",
     "movement-summary",
+    "buscar-producto",
+    "ajustar-stock",
   ],
   description:
     "Gestiona inventario: niveles de stock, auditoria FEFO, sugerencias de reorden, valuacion y resumen de movimientos.",
@@ -404,6 +529,12 @@ export const inventoryAgent: DomainAgent = {
           break;
         case "movement-summary":
           result = await movementSummary(task, ctx);
+          break;
+        case "buscar-producto":
+          result = await buscarProducto(task, ctx);
+          break;
+        case "ajustar-stock":
+          result = await ajustarStock(task, ctx);
           break;
         default:
           result = {

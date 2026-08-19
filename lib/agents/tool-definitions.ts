@@ -179,6 +179,35 @@ const inventoryTools = defineTools("inventory", [
   },
   {
     function: {
+      name: "inventory_buscar_producto",
+      description:
+        "Busca productos por nombre, SKU o código de barras y devuelve su id, precio y stock. SIEMPRE usar esto ANTES de modificar un producto: si hay más de una coincidencia, preguntale al usuario cuál antes de tocar nada.",
+      parameters: {
+        type: "object",
+        properties: { texto: { type: "string", description: "Parte del nombre, SKU o código de barras" } },
+        required: ["texto"],
+      },
+    },
+  },
+  {
+    function: {
+      name: "inventory_ajustar_stock",
+      description:
+        "Deja el stock de un producto en la cantidad indicada y lo registra en el kardex con su motivo. Requiere el productId exacto (buscalo antes con inventory_buscar_producto) y un motivo. El usuario tiene que confirmar antes de que se ejecute.",
+      parameters: {
+        type: "object",
+        properties: {
+          productId: { type: "number", description: "Id del producto (de inventory_buscar_producto)" },
+          nuevoStock: { type: "number", description: "Cantidad que queda en stock" },
+          motivo: { type: "string", description: "Por qué se ajusta: conteo físico, rotura, merma…" },
+        },
+        required: ["productId", "nuevoStock", "motivo"],
+      },
+    },
+    requiresApproval: true,
+  },
+  {
+    function: {
       name: "inventory_movement_summary",
       description:
         "Resumen de movimientos de inventario (entradas, salidas, ajustes) en un rango de fechas. Úsalo cuando pregunten por movimientos de almacén o historial de stock.",
@@ -637,6 +666,148 @@ const pricingTools = defineTools("pricing", [
 
 // ── All tools combined ────────────────────────────────────────────────────────
 
+
+// ── Forestal tools (Libro de Operaciones CTP — SERFOR) ───────────────────────
+//
+// Todos de LECTURA. Escribir en el libro tiene efectos legales ante SERFOR
+// (invariantes I1-I5, auditoría, plazos) y se hace desde su pantalla.
+
+const forestalTools = defineTools("forestal", [
+  {
+    function: {
+      name: "forestal_existencias",
+      description:
+        "Cuánta madera hay en el aserradero según el Libro de Operaciones CTP: materia prima (trozas) por especie y producto terminado (tablones, tablillas) con su stock. Usar para '¿cuánta madera tengo?', '¿cuánto tornillo queda?', 'existencias del patio'. NO usar para el inventario de la bodega/minimarket (para eso, inventory_check_stock).",
+      parameters: {
+        type: "object",
+        properties: {
+          desde: { type: "string", description: "Inicio del período YYYY-MM-DD (opcional; sin esto, todo el libro)" },
+          hasta: { type: "string", description: "Fin del período YYYY-MM-DD (opcional)" },
+        },
+      },
+    },
+  },
+  {
+    function: {
+      name: "forestal_buscar_guia",
+      description:
+        "Busca ingresos de madera del libro CTP por N° de guía GTF, proveedor o especie. La GTF es el documento que acredita el origen legal de la madera. Usar para 'buscá la guía 001-0000123', '¿qué me trajo el proveedor X?'.",
+      parameters: {
+        type: "object",
+        properties: {
+          texto: { type: "string", description: "N° de guía, nombre del proveedor o especie" },
+        },
+        required: ["texto"],
+      },
+    },
+  },
+  {
+    function: {
+      name: "forestal_buscar_troza",
+      description:
+        "El estado y la historia de UNA troza por su código (el pintado en la testa o el código de planta): si está libre en el patio, ya consumida, retrozada o si no llegó. Usar para 'la troza A-14', '¿qué pasó con la pieza 231?'.",
+      parameters: {
+        type: "object",
+        properties: {
+          codigo: { type: "string", description: "Código de la troza (codificación de la guía o código de planta)" },
+        },
+        required: ["codigo"],
+      },
+    },
+  },
+  {
+    function: {
+      name: "forestal_pendientes",
+      description:
+        "Estado de cumplimiento del libro forestal: ingresos sin validar, registrados fuera del plazo SERFOR, CITES, sin código de origen, sin costo, y los problemas de la Ficha legal (títulos habilitantes vencidos, casilleros de la GTF en blanco). Usar para '¿qué me falta en el libro?', '¿estoy en regla con SERFOR?'.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+]);
+
+// ── UI tools (llevar al usuario a la pantalla correcta) ──────────────────────
+
+const uiTools = defineTools("ui", [
+  {
+    function: {
+      name: "ui_abrir",
+      description:
+        "Devuelve un botón que abre la pantalla del panel donde se resuelve lo que el usuario pide. Usalo SIEMPRE que la respuesta implique 'andá a…' o 'revisá en…', en vez de nombrar el módulo en texto. Destinos: inventario, kardex, conteo-fisico, ventas, pos, caja, pedidos, clientes, fiados, compras, historial-gastos, sugerencias-compra, plata, adelantos, productos, promociones, analytics, documentos, libro-ctp, ctp-existencias, ctp-ingresos, ctp-ficha, libro-th.",
+      parameters: {
+        type: "object",
+        properties: {
+          destino: { type: "string", description: "Clave del destino (ej. 'kardex', 'ctp-ingresos')" },
+          filtro: { type: "string", description: "Texto de búsqueda con el que abrir la pantalla (opcional)" },
+        },
+        required: ["destino"],
+      },
+    },
+  },
+]);
+
+
+// ── Documentos (drive) ───────────────────────────────────────────────────────
+
+const documentosTools = defineTools("documentos", [
+  {
+    function: {
+      name: "documentos_buscar",
+      description:
+        "Busca archivos en el drive del negocio por nombre, etiqueta o por el TEXTO DENTRO del archivo (OCR): facturas, contratos, guías, comprobantes. Usar para 'buscá la factura de X', '¿dónde está el contrato de alquiler?'.",
+      parameters: {
+        type: "object",
+        properties: { texto: { type: "string", description: "Qué buscar: proveedor, número de documento, palabra que aparece adentro" } },
+        required: ["texto"],
+      },
+    },
+  },
+  {
+    function: {
+      name: "documentos_por_vencer",
+      description:
+        "Documentos con fecha de vencimiento próxima (contratos, seguros, certificados, licencias). Usar para '¿qué se me vence?', '¿algún papel por renovar?'.",
+      parameters: {
+        type: "object",
+        properties: { dias: { type: "number", description: "Ventana en días (por defecto 30)" } },
+      },
+    },
+  },
+]);
+
+// ── Caja ─────────────────────────────────────────────────────────────────────
+
+const cajaTools = defineTools("caja", [
+  {
+    function: {
+      name: "caja_estado",
+      description:
+        "Estado de la caja abierta: monto de apertura, entradas por método de pago (efectivo, Yape, tarjeta), salidas y cuánto efectivo DEBERÍA haber. Usar para '¿cómo va la caja?', '¿cuánto hay en caja?'. Aclarale al usuario que el efectivo esperado es un cálculo, no un conteo.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+]);
+
+// ── Cobranzas (fiados + adelantos) ───────────────────────────────────────────
+
+const cobranzasTools = defineTools("cobranzas", [
+  {
+    function: {
+      name: "cobranzas_fiados",
+      description:
+        "Lo que los clientes deben (fiado), con antigüedad y cuánto lleva más de 30 días sin cobrarse. Usar para '¿quién me debe?', '¿cuánto tengo en la calle?', 'deudas viejas'.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    function: {
+      name: "cobranzas_adelantos",
+      description:
+        "Adelantos de sueldo pendientes de descontar, por persona. NO son fiados de clientes: es plata ya entregada al personal. Usar para '¿cuánto adelanté?', 'adelantos pendientes'.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+]);
+
 export const ALL_AGENT_TOOLS: ToolDefinition[] = [
   ...inventoryTools,
   ...ordersTools,
@@ -644,6 +815,11 @@ export const ALL_AGENT_TOOLS: ToolDefinition[] = [
   ...analyticsTools,
   ...notificationsTools,
   ...pricingTools,
+  ...forestalTools,
+  ...documentosTools,
+  ...cajaTools,
+  ...cobranzasTools,
+  ...uiTools,
 ];
 
 // Inicializa el registry usado por `isToolApprovalRequired` (declarado arriba).

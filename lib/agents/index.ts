@@ -73,6 +73,11 @@ export async function ensureAgentsRegistered(): Promise<void> {
     { analyticsAgent },
     { notificationsAgent },
     { pricingAgent },
+    { forestalAgent },
+    { documentosAgent },
+    { cajaAgent },
+    { cobranzasAgent },
+    { uiAgent },
   ] = await Promise.all([
     import("./domains/inventory.agent"),
     import("./domains/orders.agent"),
@@ -80,6 +85,11 @@ export async function ensureAgentsRegistered(): Promise<void> {
     import("./domains/analytics.agent"),
     import("./domains/notifications.agent"),
     import("./domains/pricing.agent"),
+    import("./domains/forestal.agent"),
+    import("./domains/documentos.agent"),
+    import("./domains/caja.agent"),
+    import("./domains/cobranzas.agent"),
+    import("./domains/ui.agent"),
   ]);
 
   reg.register(inventoryAgent);
@@ -88,6 +98,11 @@ export async function ensureAgentsRegistered(): Promise<void> {
   reg.register(analyticsAgent);
   reg.register(notificationsAgent);
   reg.register(pricingAgent);
+  reg.register(forestalAgent);
+  reg.register(documentosAgent);
+  reg.register(cajaAgent);
+  reg.register(cobranzasAgent);
+  reg.register(uiAgent);
 
   // Initialize event hooks
   const { initAgentHooks } = await import("./hooks");

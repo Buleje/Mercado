@@ -205,25 +205,21 @@ REGLAS:
 - Siempre basa tus respuestas en los datos reales proporcionados
 - Si no sabes algo, di "no tengo esa información" en vez de inventar
 - Prioriza siempre: dinero > clientes > inventario > operaciones
-- Cuando sugieras ir a un módulo, indica el nombre exacto entre comillas
 - Responde en formato Markdown para que sea legible
 - Sé conciso: máximo 300 palabras por respuesta
 
-ACCIONES EJECUTABLES:
-Puedes sugerir acciones que el usuario puede ejecutar directamente desde el chat.
-Cuando propongas una acción, usa EXACTAMENTE este formato en una línea propia:
+LLEVAR AL USUARIO A LA PANTALLA:
+Nunca escribas "andá al módulo X" ni el nombre interno de un tab: llamá a la
+herramienta "ui_abrir" con el destino y el chat pinta un botón que abre esa
+pantalla. Si además hay un texto a buscar (un producto, un cliente, una guía),
+pasalo en "filtro".
 
-[ACTION:tipo_accion|{"campo":"valor"}|Descripción para el usuario]
-
-Tipos de acción disponibles:
-- update_price: {"productId":1,"newPrice":5.50} — Cambiar precio de producto
-- update_stock: {"productId":1,"newStock":100} — Ajustar stock
-- toggle_product: {"productId":1,"active":false} — Activar/desactivar producto
-- create_product: {"name":"X","category":"Y","price":Z,"unit":"unidad","stock":0,"stockMin":5} — Crear producto nuevo
-- update_order_status: {"orderId":"abc","status":"confirmado"} — Cambiar estado de pedido
-
-Solo sugiere acciones cuando el usuario pida explícitamente hacer algo (crear, cambiar, activar, etc).
-Máximo 3 acciones por mensaje.
+QUÉ NO PODÉS HACER TODAVÍA:
+No podés cambiar precios, ajustar stock, crear productos ni mover pedidos desde
+el chat. Si te lo piden, decilo con todas las letras —"eso todavía no lo puedo
+hacer desde acá"— y abrí la pantalla donde sí se hace con "ui_abrir". Nunca
+escribas un bloque tipo [ACTION:...] ni afirmes que ejecutaste algo: no hay nada
+del otro lado que lo ejecute, y el usuario se quedaría creyendo que se hizo.
 
 HERRAMIENTAS DE DATOS:
 Tienes acceso a herramientas (tools/functions) que puedes llamar para obtener datos en tiempo real del negocio.
@@ -261,6 +257,76 @@ function generateRuleBasedResponse(query: string, metrics: Record<string, unknow
   return `Resumen: Ventas hoy S/ ${metrics.todayRevenue ?? 0}, ${metrics.pendingOrders ?? 0} pedidos pendientes, ${metrics.outOfStockCount ?? 0} sin stock, ${metrics.lowStockCount ?? 0} stock bajo. Deuda: S/ ${metrics.totalDebt ?? 0}.`;
 }
 
+/**
+ * Cuando la SEGUNDA llamada al modelo falla (429 del proveedor, timeout) pero
+ * los tools YA corrieron, lo que no se puede es redactar — el dato está.
+ *
+ * Antes acá se devolvía `generateRuleBasedResponse`, un resumen de la bodega
+ * que ignoraba la pregunta: preguntando por la madera del aserradero contestaba
+ * «no tengo acceso a esa información» habiendo leído el libro dos líneas antes.
+ * Una respuesta que contradice lo que el sistema sabe es peor que un error.
+ */
+function respuestaConDatosCrudos(
+  toolsUsados: { nombre: string; resultado: string }[],
+): string | null {
+  const utiles = toolsUsados.filter((t) => {
+    if (!t.resultado) return false;
+    try {
+      const d = JSON.parse(t.resultado) as Record<string, unknown>;
+      // Un error o una acción de UI no son "datos que mostrar".
+      return !d.error && !d.navegar && !d.requiresApproval;
+    } catch {
+      return false;
+    }
+  });
+  if (utiles.length === 0) return null;
+
+  const bloques = utiles
+    .map((t) => {
+      const etiqueta = getToolLabel(t.nombre);
+      // Se recorta: el JSON de un tool puede ser largo y esto va a pantalla.
+      const cuerpo = t.resultado.length > 1500 ? `${t.resultado.slice(0, 1500)}…` : t.resultado;
+      return `**${etiqueta}**\n\n\`\`\`json\n${cuerpo}\n\`\`\``;
+    })
+    .join("\n\n");
+
+  return `**Consulté tus datos pero no pude redactar la respuesta** (el proveedor de IA está saturado). Esto es lo que encontré, en crudo:\n\n${bloques}\n\n_Volvé a preguntar en un momento y te lo explico normal._`;
+}
+
+/**
+ * La respuesta JSON del asistente, con las DOS claves.
+ *
+ * El endpoint devolvía `{ response }` y los dos clientes
+ * (`ChatIAClean`, `AIAssistant`) leen `data.reply`. Resultado: todo el camino
+ * sin streaming —fallback sin IA, respuesta cacheada, mensaje bloqueado por
+ * seguridad, presupuesto agotado— llegaba al usuario como «No pude responder:
+ * respuesta vacía del servidor». El dato estaba en el JSON, con otro nombre.
+ *
+ * Se mandan las dos claves en vez de renombrar: `response` puede tener otros
+ * consumidores (tests, integraciones) y romperlos para arreglar esto sería
+ * cambiar un bug por otro.
+ */
+function respuestaJson(texto: string, extra: Record<string, unknown> = {}) {
+  return NextResponse.json({ reply: texto, response: texto, ...extra });
+}
+
+/**
+ * El error crudo del proveedor a algo que el dueño de la bodega pueda leer.
+ * Devuelve `null` cuando no se reconoce: ahí sigue el fallback de siempre.
+ */
+function motivoLegible(error: string | null | undefined): string | null {
+  const e = String(error ?? "");
+  if (!e) return null;
+  if (/rate.?limit|429|tokens per day|TPD/i.test(e)) {
+    const espera = /try again in ([^.\"]+)/i.exec(e)?.[1]?.trim();
+    return `**El asistente se quedó sin cuota por hoy.** El proveedor de IA cortó el servicio por límite diario de tokens${espera ? ` y se repone en ${espera}` : ""}.\n\nMientras tanto podés usar los módulos del panel normalmente — los datos están intactos.`;
+  }
+  if (/401|unauthor|api.?key|invalid.*key|permission-denied|credits/i.test(e)) {
+    return "**El asistente no puede conectarse al proveedor de IA** (credencial rechazada o cuenta sin créditos). Es configuración del servidor: los datos del negocio no están afectados.";
+  }
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
@@ -283,7 +349,7 @@ export async function POST(req: NextRequest) {
   const safetyCheck = processSafeInput(rawMessage);
   if (!safetyCheck.safe) {
     logger.warn("[ai-assistant] Prompt injection blocked", { user: auth.username });
-    return NextResponse.json({ response: safetyCheck.reason, mode: "blocked" as const });
+    return respuestaJson(safetyCheck.reason, { mode: "blocked" as const });
   }
   const userMessage = safetyCheck.input;
   const injectionCheck = detectPromptInjection(userMessage);
@@ -297,8 +363,7 @@ export async function POST(req: NextRequest) {
   // ── Helper: return rule-based fallback (always 200) ────────────────────────
   const returnRuleBased = () => {
     const response = generateRuleBasedResponse(userMessage, snapshot.metrics);
-    return NextResponse.json({
-      response,
+    return respuestaJson(response, {
       mode: "rule-based" as const,
       snapshot: snapshot.metrics,
     });
@@ -311,8 +376,7 @@ export async function POST(req: NextRequest) {
   // ── Token budget check — prevent overspending on AI ──────────────────────
   const budget = checkTokenBudget(auth.tenantId);
   if (!budget.allowed) {
-    return NextResponse.json({
-      response: budget.warning,
+    return respuestaJson(budget.warning ?? "Se agotó el presupuesto de IA de este mes. Volvé a intentar el mes que viene o subí el límite en Configuración.", {
       mode: "budget-exceeded" as const,
       usage: { percentUsed: budget.percentUsed, limit: budget.limit },
       snapshot: snapshot.metrics,
@@ -336,8 +400,7 @@ export async function POST(req: NextRequest) {
   if (isSimpleQuery) {
     const cached = getCachedLLMResponse(auth.tenantId, "assistant", userMessage);
     if (cached) {
-      return NextResponse.json({
-        response: cached.response,
+      return respuestaJson(cached.response, {
         mode: "ai" as const,
         cached: true,
         snapshot: snapshot.metrics,
@@ -379,6 +442,11 @@ export async function POST(req: NextRequest) {
     if (!res.ok) {
       logger.error("[ai-assistant] LLM router error", { error: String(res.error), tenantId: auth.tenantId });
       recordAIFailure("ai-assistant", res.error ?? "unknown");
+      // Un "no pude responder" a secas manda a revisar la conexión cuando el
+      // problema es la cuota del proveedor y sólo hay que esperar. El motivo
+      // real ya viene en el error del router: se traduce, no se esconde.
+      const motivo = motivoLegible(res.error);
+      if (motivo) return respuestaJson(motivo, { mode: "sin-ia" as const });
       return returnRuleBased();
     }
 
@@ -413,6 +481,8 @@ export async function POST(req: NextRequest) {
         });
 
         const toolCalls = assistantMessage.tool_calls.slice(0, 5);
+        /** Lo que devolvió cada tool — la red cuando la redacción falla. */
+        const toolsEjecutados: { nombre: string; resultado: string }[] = [];
 
         // TransformStream pattern — Next 16 + undici compat (avoids
         // "controller[kState].transformAlgorithm is not a function" on ReadableStream).
@@ -446,6 +516,33 @@ export async function POST(req: NextRequest) {
 
                 // ── HITL gate (Excel Agentes IA práctica #10, TD-025) ──
                 if (isToolApprovalRequired(toolName)) {
+                  // ── Ensayo antes de preguntar ──────────────────────────
+                  // Una confirmación sólo vale si la acción se puede hacer. Se
+                  // corre el tool en modo validación: si el payload está mal
+                  // (un id inventado, un producto de otro tenant), el error va
+                  // al modelo y NO se ofrece confirmar nada.
+                  const ensayo = await orchestrator.executeSync({
+                    domain: mapping.domain,
+                    action: mapping.action,
+                    payload: { ...args, __validar: true },
+                    tenantId: auth.tenantId,
+                    actorRole: auth.role,
+                  });
+                  if (!ensayo.success) {
+                    toolResult = JSON.stringify({ error: ensayo.error });
+                    toolsEjecutados.push({ nombre: toolName, resultado: toolResult });
+                    logger.info("[ai-assistant] acción rechazada en la validación", {
+                      tool: toolName,
+                      error: ensayo.error,
+                    });
+                    capturedMessages.push({
+                      role: "tool" as const,
+                      content: toolResult,
+                      tool_call_id: toolCall.id,
+                    });
+                    continue;
+                  }
+                  const resumenEnsayo = (ensayo.data as { resumen?: string } | undefined)?.resumen;
                   const approvalId = stashPendingApproval({
                     tenantId: auth.tenantId,
                     toolName,
@@ -460,6 +557,22 @@ export async function POST(req: NextRequest) {
                     requiresApproval: true,
                     message: `Acción "${toolName}" pendiente de aprobación humana. Un admin debe confirmarla antes de ejecutar.`,
                   });
+                  // La tarjeta [Confirmar]/[Cancelar] en el chat. Sin esto, el
+                  // stash quedaba esperando una UI que no existía: el modelo
+                  // decía "pendiente de aprobación" y no había dónde aprobar.
+                  send(
+                    `data: ${JSON.stringify({
+                      aprobacion: {
+                        id: approvalId,
+                        tool: toolName,
+                        titulo: getToolLabel(toolName),
+                        // Lo que el usuario tiene que poder juzgar de un
+                        // vistazo: "Stock de Tabla de tornillo: 3 → 4".
+                        resumen: resumenEnsayo ?? null,
+                        payload: args,
+                      },
+                    })}\n\n`,
+                  );
                 } else {
                   const result = await orchestrator.executeSync({
                     domain: mapping.domain,
@@ -469,9 +582,29 @@ export async function POST(req: NextRequest) {
                     actorRole: auth.role, // SECURITY 2026-05-06 (audit AI #1)
                   });
                   toolResult = JSON.stringify(result.success ? result.data : { error: result.error });
+
+                  // ── Acciones para el cliente ────────────────────────────
+                  // El agente `ui` no devuelve datos: devuelve a DÓNDE hay que
+                  // ir. Se emite como evento propio para que el chat pinte un
+                  // botón; el texto del LLM no puede navegar, y nombrar el
+                  // módulo ("andá a inventario-almacenes") deja al usuario
+                  // buscando a mano lo que el asistente ya sabía.
+                  const navegar = (result.data as { navegar?: unknown } | undefined)?.navegar;
+                  if (result.success && navegar) {
+                    send(`data: ${JSON.stringify({ accion: navegar })}\n\n`);
+                  }
                 }
               }
 
+              toolsEjecutados.push({ nombre: toolName, resultado: toolResult });
+              // Sin esto, un tool que devuelve `{error}` es invisible: el modelo
+              // redacta "no tengo acceso a eso" y desde afuera parece que el
+              // tool nunca corrió.
+              logger.info("[ai-assistant] tool ejecutado", {
+                tool: toolName,
+                bytes: toolResult.length,
+                muestra: toolResult.slice(0, 220),
+              });
               capturedMessages.push({
                 role: "tool" as const,
                 content: toolResult,
@@ -493,7 +626,11 @@ export async function POST(req: NextRequest) {
 
             if (!followUpRes.ok || !followUpRes.body) {
               recordAIFailure("ai-assistant-followup", followUpRes.error ?? "unknown");
-              const fallback = generateRuleBasedResponse(userMessage, snapshot.metrics);
+              // Los datos ya se leyeron: se muestran. Sólo si no hubo ninguno
+              // se cae al resumen genérico del negocio.
+              const fallback =
+                respuestaConDatosCrudos(toolsEjecutados) ??
+                generateRuleBasedResponse(userMessage, snapshot.metrics);
               send(`data: ${JSON.stringify({ content: fallback })}\n\n`);
               send("data: [DONE]\n\n");
               tsClosed = true;
@@ -681,8 +818,7 @@ export async function POST(req: NextRequest) {
         }).catch((err) => logger.warn("[ai-assistant] op failed", { err: String(err) }));
       }
 
-      return NextResponse.json({
-        response: reply,
+      return respuestaJson(reply, {
         mode: "ai" as const,
         conversationId: activeConversationId,
         abVariant: abVariant?.id ?? null,
@@ -741,8 +877,7 @@ export async function POST(req: NextRequest) {
       }).catch((err) => logger.warn("[ai-assistant] op failed", { err: String(err) }));
     }
 
-    return NextResponse.json({
-      response: directReply,
+    return respuestaJson(directReply, {
       mode: "ai" as const,
       conversationId: activeConversationId,
       abVariant: abVariant?.id ?? null,
@@ -768,6 +903,18 @@ const TOOL_LABELS: Record<string, string> = {
   inventory_reorder_suggestions: "Calculando reposición...",
   inventory_stock_valuation: "Valuando inventario...",
   inventory_movement_summary: "Analizando movimientos...",
+  inventory_buscar_producto: "Buscando el producto...",
+  inventory_ajustar_stock: "Ajustar stock",
+  forestal_existencias: "Leyendo el libro forestal...",
+  forestal_buscar_guia: "Buscando la guía GTF...",
+  forestal_buscar_troza: "Buscando la troza...",
+  forestal_pendientes: "Revisando el cumplimiento SERFOR...",
+  ui_abrir: "Preparando el acceso...",
+  documentos_buscar: "Buscando en el drive...",
+  documentos_por_vencer: "Revisando vencimientos de papeles...",
+  caja_estado: "Mirando la caja...",
+  cobranzas_fiados: "Sumando lo que te deben...",
+  cobranzas_adelantos: "Revisando adelantos...",
   orders_pending_summary: "Revisando pedidos pendientes...",
   orders_delivery_schedule: "Verificando entregas...",
   orders_returns_analysis: "Analizando devoluciones...",
