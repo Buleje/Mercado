@@ -13,26 +13,21 @@
  * superset. Si se agrega un hook post-edit nuevo, sumarlo a CHILDREN acá.
  */
 import { spawn } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HOOKS_DIR = dirname(fileURLToPath(import.meta.url));
 
-function readStdinSync() {
-  // Mismo retry anti-EAGAIN que auto-learn.mjs (WSL + ráfagas de edits).
-  for (let attempt = 0; attempt < 20; attempt++) {
-    try {
-      return readFileSync(process.stdin.fd, "utf8");
-    } catch (err) {
-      if (err?.code !== "EAGAIN") throw err;
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
-    }
-  }
-  return "";
-}
-
-const raw = readStdinSync();
+// FIX 2026-08-19: el retry-EAGAIN de un solo `readFileSync(stdin.fd)` devolvía
+// en el PRIMER read exitoso, que en un pipe no-bloqueante puede ser un chunk
+// parcial — truncaba el JSON en ediciones grandes y este hook salía en
+// silencio (catch → process.exit(0), SIN log) saltándose hex-guard/typography/
+// screenshot/rubric para esa edición sin dejar rastro. Mismo patrón `data`+
+// `end` que ya usan los hijos (nunca tuvieron este bug): acumula todos los
+// chunks hasta que el pipe cierra de verdad.
+let raw = "";
+process.stdin.on("data", (c) => (raw += c));
+process.stdin.on("end", () => {
 let event = {};
 try {
   event = JSON.parse(raw);
@@ -99,3 +94,4 @@ for (const c of CHILDREN) {
 // SIN process.exit() acá: mataría los writes de stdin encolados hacia los
 // hijos (payload truncado/vacío). Los hijos están unref'd — el proceso sale
 // solo cuando los pipes terminan de flushear.
+});

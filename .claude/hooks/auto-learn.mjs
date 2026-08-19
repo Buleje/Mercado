@@ -65,23 +65,20 @@ function writeJSON(path, data) {
   }
 }
 
-function readStdinSync() {
-  // WSL deja stdin no-bloqueante bajo ráfagas de edits → readFileSync tira
-  // EAGAIN (672 errores acumulados). Retry con sleep bloqueante corto.
-  for (let attempt = 0; attempt < 20; attempt++) {
-    try {
-      return readFileSync(process.stdin.fd, "utf8");
-    } catch (err) {
-      if (err?.code !== "EAGAIN") throw err;
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
-    }
-  }
-  return "";
-}
-
-try {
-  const input = readStdinSync();
-  const event = JSON.parse(input);
+// FIX 2026-08-19: la versión anterior leía con `readFileSync(process.stdin.fd)`
+// dentro de un retry-EAGAIN que devolvía en el PRIMER read exitoso — en un pipe
+// no-bloqueante eso puede ser un chunk parcial (el payload real llega en varios
+// writes desde post-edit-dispatcher.mjs). Resultado: 1080 líneas de
+// `SyntaxError: Unexpected token` en auto-learn.errors.log, siempre con
+// fragmentos de la MITAD de un archivo grande (ej. "ounded-xl", "nt-disable-").
+// Mismo patrón `data`+`end` que ya usan hex-code-guard/typography-lint/
+// ui-screenshot (esos 3 nunca tuvieron este bug) — acumula TODOS los chunks
+// hasta que el pipe cierra de verdad, en vez de confiar en un solo read.
+let raw = "";
+process.stdin.on("data", (c) => (raw += c));
+process.stdin.on("end", () => {
+  try {
+    const event = JSON.parse(raw);
 
   // Only process Edit/Write/MultiEdit
   const toolName = event.tool_name || "";
@@ -223,8 +220,9 @@ try {
   editLog.lastUpdated = now;
   writeJSON(logPath, editLog);
 
-} catch (err) {
-  logErr("main", err);
-}
+  } catch (err) {
+    logErr("main", err);
+  }
 
-process.exit(0);
+  process.exit(0);
+});
