@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getRecibidoAcumulado, saldoPendiente } from "@/lib/compras/recibido-acumulado";
-import { costoUnitarioReal } from "@/lib/compras/totales-oc";
+import { costoUnitarioReal, totalDeOrden } from "@/lib/compras/totales-oc";
 import { TRANSICIONES_OC, transicionValida, type EstadoOC } from "@/lib/compras/estados-oc";
 
 const DiferenciaSchema = z.object({
@@ -151,8 +151,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // ADR-377: quién y cuándo. `deliveryDate` es lo que el proveedor prometió;
     // esto es lo que pasó de verdad, y la diferencia entre ambas es la que
     // mide si el proveedor cumple.
+    // Corregir «¿los costos ya incluían IGV?» después de emitida la orden tiene
+    // que mover el total: el flag se podía cambiar acá y el número quedaba
+    // igual, así que la orden decía una cosa y su casilla, otra.
+    const cambiaIgv =
+      parsed.data.igvIncluded !== undefined && parsed.data.igvIncluded !== existing.igvIncluded;
+    const totalRecalculado = cambiaIgv
+      ? totalDeOrden({
+          subtotal: existing.items.reduce((s, i) => s + i.quantity * toNumOrZero(i.unitCost), 0),
+          discountPct: existing.discount ?? 0,
+          igvIncluded: parsed.data.igvIncluded,
+        })
+      : null;
+
     const patch: Partial<DbPurchaseOrder> = {
       ...campos,
+      ...(totalRecalculado != null ? { total: totalRecalculado } : {}),
       ...(statusChanged && parsed.data.status === "recibido"
         ? { receivedDate: new Date().toISOString(), receivedBy: auth.username }
         : {}),
@@ -171,6 +185,41 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const updated = await PurchasesDB.update(auth.tenantId, id, patch);
 
     if (!updated) return NextResponse.json({ error: "Error updating" }, { status: 500 });
+
+    /**
+     * Cancelar una orden a crédito tiene que cerrar la deuda que abrió.
+     *
+     * El POST crea un `Payable` automático cuando la forma de pago es
+     * `credito_*`. Al cancelar la orden ese Payable quedaba vivo: Cuentas por
+     * Pagar seguía mostrando —y sumando— una deuda con un proveedor al que
+     * nunca se le compró.
+     *
+     * Si ya se le pagó algo, NO se toca: esa plata salió de verdad y borrar el
+     * registro la haría desaparecer del historial. En ese caso se avisa.
+     */
+    let cuentaPorPagar: "anulada" | "conservada_con_pagos" | null = null;
+    if (statusChanged && parsed.data.status === "cancelado") {
+      const payable = await prisma.payable.findFirst({
+        where: { purchaseOrderId: id, tenantId: auth.tenantId },
+        select: { id: true, paidAmount: true },
+      });
+      if (payable) {
+        if (toNumOrZero(payable.paidAmount) > 0) {
+          cuentaPorPagar = "conservada_con_pagos";
+        } else {
+          await prisma.payable.deleteMany({ where: { id: payable.id, tenantId: auth.tenantId } });
+          cuentaPorPagar = "anulada";
+        }
+        revalidateTenantTag(auth.tenantId, "payables");
+        logActivity(
+          "Actualizar", "compra",
+          cuentaPorPagar === "anulada"
+            ? `Orden ${id.slice(-6)} cancelada: se anuló su cuenta por pagar`
+            : `Orden ${id.slice(-6)} cancelada: la cuenta por pagar se conservó porque ya tenía pagos`,
+          id, auth.username,
+        ).catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
+      }
+    }
 
     let productosRevaluados = 0;
     if (revaluarInventario) {
@@ -204,7 +253,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           const sobrecostos = (updated.flete ?? 0) + (updated.otrosCostos ?? 0);
 
           for (const item of updated.items) {
-            const product = await tx.product.findUnique({ where: { id: item.productId } });
+            // `findFirst` con tenantId, igual que el camino de revaluación de
+            // arriba (línea ~86). Con `findUnique({ where: { id } })` este
+            // camino —cerrar la OC desde el `<select>` de estado— buscaba el
+            // producto por id a secas y después le escribía stock y costo: un
+            // `productId` de otro negocio en los items de la orden alcanzaba
+            // para moverle el inventario a un tercero.
+            const product = await tx.product.findFirst({
+              where: { id: item.productId, tenantId: auth.tenantId },
+            });
             if (!product) continue;
 
             // Con diferencias declaradas manda lo declarado; si no, lo que
@@ -284,9 +341,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     // `productosRevaluados` deja que la pantalla diga qué pasó con el costo,
     // en vez de cambiarlo en silencio.
-    return NextResponse.json(
-      revaluarInventario ? { ...updated, productosRevaluados } : updated,
-    );
+    return NextResponse.json({
+      ...updated,
+      ...(revaluarInventario ? { productosRevaluados } : {}),
+      // Que la pantalla pueda decir qué pasó con la deuda al cancelar.
+      ...(cuentaPorPagar ? { cuentaPorPagar } : {}),
+    });
   } catch (e) {
     logger.error("[purchases/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });

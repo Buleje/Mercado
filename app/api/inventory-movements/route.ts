@@ -49,6 +49,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(movements);
     }
 
+    // Paginado por cursor cuando la pantalla lo pide. Sin `paged` se responde
+    // como siempre (un array de los últimos 200): hay otros consumidores.
+    if (searchParams.get("paged") === "1") {
+      const limitRaw = Number(searchParams.get("limit") ?? 100);
+      const page = await InventoryMovementsDB.listWithCursor(auth.tenantId, {
+        limit: Number.isFinite(limitRaw) ? limitRaw : 100,
+        ...(searchParams.get("cursor") ? { cursor: searchParams.get("cursor")! } : {}),
+      });
+      return NextResponse.json(page);
+    }
+
     return NextResponse.json(await InventoryMovementsDB.getAll(auth.tenantId));
   } catch (err) {
     const { payload, status } = toErrorPayload(err);

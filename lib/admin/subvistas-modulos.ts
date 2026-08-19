@@ -20,17 +20,21 @@ export interface SubvistaModulo {
   hint: string;
 }
 
-/** Libro de Operaciones CTP (forestal) — 18 vistas. */
+/** Libro de Operaciones CTP (forestal) — 19 vistas. */
 export const CTP_VISTAS: readonly SubvistaModulo[] = [
-  { key: "ingresos", label: "Ingresos", hint: "Materia prima recibida" },
+  { key: "ingresos", label: "Ingresos", hint: "Bandeja: las guías que llegaron y falta recepcionar" },
+  { key: "gtf-ingresadas", label: "GTF ingresadas", hint: "Las guías ya recepcionadas, con sus piezas disponibles para la sierra" },
+  { key: "lotes", label: "Lotes de aserrío", hint: "Armar lo que va junto a la sierra: trozas de una especie apartadas en un lote" },
   { key: "consumos", label: "Consumos", hint: "Qué madera entró a la sierra" },
   { key: "produccion", label: "Producción", hint: "Transformación" },
+  { key: "disponibles", label: "Productos disponibles", hint: "La madera aserrada que sigue en la planta, paquete por paquete" },
   { key: "despacho", label: "Despacho", hint: "Salida de producto" },
   { key: "trozas", label: "Trozas", hint: "Buscar una pieza por su codificación" },
   { key: "radar", label: "Radar", hint: "Cadena de custodia visual" },
   { key: "planta", label: "Planta", hint: "Mapa del aserradero" },
   { key: "eudr", label: "EUDR", hint: "Geolocalización + dossier UE" },
   { key: "guias", label: "Guías emitidas", hint: "Las GTF de salida del CTP y cuáles quedaron a medio llenar" },
+  { key: "tablero", label: "Tablero", hint: "Todo el movimiento del libro en gráficos: entradas, sierra, producción y despachos" },
   { key: "saldos", label: "Saldos", hint: "Balance de planta" },
   { key: "resumenes", label: "Cuadros SERFOR", hint: "Los 3 cuadros resumen del formato oficial" },
   { key: "cumplimiento", label: "Cumplimiento", hint: "Alertas del período" },

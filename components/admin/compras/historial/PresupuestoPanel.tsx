@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Check, Loader2, Pencil, TrendingDown, TrendingUp, Zap } from "@buleje/design-system/icons";
+import { Check, ChevronDown, Loader2, Pencil, TrendingDown, TrendingUp, Zap } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import { fmt } from "./shared";
@@ -72,6 +72,13 @@ export default function PresupuestoPanel() {
   const [editando, setEditando] = useState<string | null>(null);
   const [borrador, setBorrador] = useState("");
   const [guardando, setGuardando] = useState(false);
+  /**
+   * Arranca plegado: esto es análisis, no operación. Lo urgente —el total del
+   * mes, el techo y las categorías que se dispararon— vive en la cabecera y en
+   * el aviso, que se ven igual. El resto empujaba la tabla del historial media
+   * pantalla hacia abajo en cada visita.
+   */
+  const [abierto, setAbierto] = useState(false);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -127,7 +134,7 @@ export default function PresupuestoPanel() {
 
   return (
     <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <header className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <header className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1">
         <CardTitle className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
           Presupuesto y comparación
         </CardTitle>
@@ -145,6 +152,15 @@ export default function PresupuestoPanel() {
             <> · techo declarado <span className="font-bold tabular-nums text-[var(--text-primary)]">{fmt(data.totales.presupuesto)}</span></>
           )}
         </p>
+        <button
+          type="button"
+          onClick={() => setAbierto((v) => !v)}
+          aria-expanded={abierto}
+          className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+        >
+          {abierto ? "Ocultar" : "Ver detalle"}
+          <ChevronDown className={cn("h-4 w-4 transition-transform", !abierto && "-rotate-90")} aria-hidden />
+        </button>
       </header>
 
       {atipicas.length > 0 && (
@@ -157,21 +173,35 @@ export default function PresupuestoPanel() {
         </div>
       )}
 
+      {abierto && (<>
+
       {/* Seis meses de gasto. Los meses sin movimiento se dibujan igual: sacarlos
-          haría que la serie mintiera por omisión. */}
+          haría que la serie mintiera por omisión.
+          Pero un mes en cero tampoco puede dibujarse como una barra: el mínimo
+          de 3px pintaba cinco rayas teal —del mismo color que el dato— para
+          cinco meses en los que no se gastó nada. Ahora el cero es una línea
+          punteada del rule, que se lee como «acá no hay barra». */}
       <div className="mb-4 flex items-end gap-2" style={{ height: "5rem" }}>
         {data.meses.map((m, i) => {
           const esActual = i === data.meses.length - 1;
+          const vacio = m.total <= 0;
           return (
             <div key={m.clave} className="flex flex-1 flex-col items-center gap-1">
               <span className="text-sm tabular-nums text-[var(--text-secondary)]">
-                {m.total > 0 ? fmt(m.total).replace("S/", "") : "—"}
+                {vacio ? "—" : fmt(m.total).replace("S/", "")}
               </span>
-              <div
-                className={cn("w-full rounded-t-md", esActual ? "bg-primary" : "bg-primary/40")}
-                style={{ height: `${Math.max((m.total / maxMes) * 48, 3)}px` }}
-                title={`${etiquetaMes(m.clave)}: ${fmt(m.total)}`}
-              />
+              {vacio ? (
+                <div
+                  className="w-full border-b-2 border-dashed border-[var(--rule-base)]"
+                  title={`${etiquetaMes(m.clave)}: sin gastos`}
+                />
+              ) : (
+                <div
+                  className={cn("w-full rounded-t-md", esActual ? "bg-primary" : "bg-primary/40")}
+                  style={{ height: `${Math.max((m.total / maxMes) * 48, 4)}px` }}
+                  title={`${etiquetaMes(m.clave)}: ${fmt(m.total)}`}
+                />
+              )}
               <span className={cn("text-sm", esActual ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-secondary)]")}>
                 {etiquetaMes(m.clave)}
               </span>
@@ -252,6 +282,8 @@ export default function PresupuestoPanel() {
           );
         })}
       </ul>
+
+      </>)}
     </section>
   );
 }

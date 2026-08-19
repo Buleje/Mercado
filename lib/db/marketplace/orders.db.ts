@@ -5,6 +5,7 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 import { CommissionsDB } from "@/lib/db/commissions.db";
 import { PTS_PER_SOL } from "@/lib/loyalty-constants";
+import { loyaltyRedeemWithinTx, LoyaltyInsufficientBalanceError } from "@/lib/db/loyalty.db";
 import { type DbMarketplaceOrder, type DbVendorDashboard } from "./types";
 import type { OrderStatus } from "@/lib/generated/prisma/client";
 
@@ -180,7 +181,15 @@ export const MarketplaceOrdersDB = {
           code:     params.couponCode,
           tenantId: store.tenantId,
           active:   true,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+          AND: [
+            // ADR-380 Fase 1.1: el preview (/api/marketplace/coupons/validate)
+            // ya filtraba storeId, pero el cobro no — un cupón creado para
+            // OTRA tienda del mismo tenant se aceptaba igual si se mandaba el
+            // código directo. storeId null = cupón de todo el tenant (sigue
+            // valiendo en cualquier tienda suya).
+            { OR: [{ storeId: store.id }, { storeId: null }] },
+            { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+          ],
         },
         // PENTEST 2026-05-18 Fase 1 CRIT #2: agregar minPurchase al select.
         // Antes el campo NO se traía y NO se validaba → cliente aplicaba
@@ -458,17 +467,23 @@ export const MarketplaceOrdersDB = {
       // puntos dos veces y/o dejar el saldo negativo. count===0 ⇒ rollback de
       // toda la orden (stock, comisión, order create).
       if (redeemPoints > 0 && params.customerPhone) {
-
-        const updPts = await tx.customer.updateMany({
-          where: {
-            phone:         params.customerPhone,
-            tenantId:      store.tenantId,
-            loyaltyPoints: { gte: redeemPoints },
-          },
-          data:  { loyaltyPoints: { decrement: redeemPoints } },
-        });
-        if (updPts.count === 0) {
-          throw new Error("Puntos de fidelidad insuficientes");
+        // ADR-380 Fase 1.4: antes esto era un updateMany directo — descontaba
+        // el saldo sin dejar asiento en LoyaltyTransaction (el ledger del
+        // marketplace quedaba invisible). `loyaltyRedeemWithinTx` hace el
+        // mismo guard atómico `loyaltyPoints + delta >= 0` PERO adentro de
+        // ESTA `tx` — si algo después falla y la orden entera hace rollback,
+        // el canje de puntos revierte con ella (llamar a `LoyaltyDB.redeem`
+        // a secas habría abierto su propia transacción, que comitea sola).
+        try {
+          await loyaltyRedeemWithinTx(tx, store.tenantId, params.customerPhone, redeemPoints, "redemption", {
+            orderId: fullOrderId,
+            channel: "marketplace",
+          });
+        } catch (e) {
+          if (e instanceof LoyaltyInsufficientBalanceError) {
+            throw new Error("Puntos de fidelidad insuficientes");
+          }
+          throw e;
         }
       }
     });

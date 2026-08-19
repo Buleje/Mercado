@@ -9,6 +9,7 @@ import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getOrSet, revalidateTenantTag } from "@/lib/cache";
+import { totalDeOrden } from "@/lib/compras/totales-oc";
 
 const PurchaseItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -81,7 +82,9 @@ export async function POST(req: NextRequest) {
     const id = `po-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const discountPct = data.discount ?? 0;
     const subtotal = data.items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
-    const total = Math.max(0, subtotal * (1 - discountPct / 100));
+    // El total se guarda SIEMPRE con IGV adentro: si los costos vinieron netos
+    // (`igvIncluded: false`), el 18% se agrega acá, una sola vez.
+    const total = totalDeOrden({ subtotal, discountPct, igvIncluded: data.igvIncluded });
     const po = await PurchasesDB.add({
       id,
       supplierId: data.supplierId,

@@ -3,7 +3,6 @@ import { z } from "zod";
 import { SuppliersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
-import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -68,36 +67,37 @@ export async function POST(req: NextRequest) {
   const data = parsed.data;
   const id = `sup-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
-  // Create using prisma directly to include all new fields
-  const supplier = await prisma.supplier.create({
-    data: {
-      id,
-      tenantId: auth.tenantId,
-      name: data.name,
-      ruc: data.ruc || null,
-      phone: data.phone || null,
-      email: data.email || null,
-      address: data.address || null,
-      notes: data.notes || null,
-      tipoPersona: data.tipoPersona || null,
-      tipoDocumento: data.tipoDocumento || null,
-      documento: data.documento || null,
-      razonSocial: data.razonSocial || null,
-      estado: data.estado || 'activo',
-      whatsappSecundario: data.whatsappSecundario || null,
-      personaContacto: data.personaContacto || null,
-      departamento: data.departamento || null,
-      provincia: data.provincia || null,
-      distrito: data.distrito || null,
-      direccion: data.direccion || null,
-      categoria: data.categoria || null,
-      condicionPago: data.condicionPago || null,
-      diasCredito: data.diasCredito || 0,
-      leadTimeDias: data.leadTimeDias ?? null,
-      cuentaBancaria: data.cuentaBancaria || null,
-      banco: data.banco || null,
-      observaciones: data.observaciones || null,
-    },
-  });
+  // Vía la DB class, no `prisma` directo (regla #1). El comentario que había
+  // acá —«create using prisma directly to include all new fields»— ya no era
+  // cierto: `SuppliersDB.add` guarda la ficha entera desde que se amplió, y
+  // además invalida el caché del admin. Escribiendo por afuera, el proveedor
+  // recién creado no aparecía en el POS hasta que venciera el cache.
+  const supplier = await SuppliersDB.add({
+    id,
+    name: data.name,
+    ruc: data.ruc || null,
+    phone: data.phone || null,
+    email: data.email || null,
+    address: data.address || null,
+    notes: data.notes || null,
+    tipoPersona: data.tipoPersona || null,
+    tipoDocumento: data.tipoDocumento || null,
+    documento: data.documento || null,
+    razonSocial: data.razonSocial || null,
+    estado: data.estado || "activo",
+    whatsappSecundario: data.whatsappSecundario || null,
+    personaContacto: data.personaContacto || null,
+    departamento: data.departamento || null,
+    provincia: data.provincia || null,
+    distrito: data.distrito || null,
+    direccion: data.direccion || null,
+    categoria: data.categoria || null,
+    condicionPago: data.condicionPago || null,
+    diasCredito: data.diasCredito || 0,
+    leadTimeDias: data.leadTimeDias ?? null,
+    cuentaBancaria: data.cuentaBancaria || null,
+    banco: data.banco || null,
+    observaciones: data.observaciones || null,
+  } as Parameters<typeof SuppliersDB.add>[0], auth.tenantId);
   return NextResponse.json(supplier, { status: 201 });
 }

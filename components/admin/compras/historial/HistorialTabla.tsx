@@ -10,21 +10,14 @@
  * contenedor scrollea de verdad, las cabeceras ordenan, y hay `table-fixed`.
  */
 
-import { ArrowDown, ArrowUp, Banknote, ChevronsUpDown, HandCoins, Receipt, Truck } from "@buleje/design-system/icons";
+import { ArrowDown, ArrowUp, ChevronsUpDown } from "@buleje/design-system/icons";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { cn } from "@/lib/utils";
+import { SOURCE_META } from "./fuentes";
 import {
   ESTADO_PAGO_LABELS, fmt, formatDate,
   type EstadoPago, type HistorialItem, type Orden,
 } from "./shared";
-
-const SOURCE_META: Record<HistorialItem["source"], { label: string; icon: typeof Receipt; tone: string }> = {
-  expense: { label: "Gasto operativo", icon: Receipt, tone: "var(--data-warning-ink)" },
-  purchase: { label: "Compra proveedor", icon: Truck, tone: "var(--data-info-ink)" },
-  flete: { label: "Flete", icon: Truck, tone: "var(--data-info-ink)" },
-  adelanto: { label: "Adelanto", icon: HandCoins, tone: "var(--text-secondary)" },
-  caja: { label: "Retiro de caja", icon: Banknote, tone: "var(--text-secondary)" },
-};
 
 const ESTADO_VARIANTE: Record<EstadoPago, "success" | "warning" | "error" | "neutral"> = {
   pagado: "success",
@@ -90,7 +83,10 @@ export default function HistorialTabla({
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)]">
       {/* El scroll vive acá: el header `sticky` necesita un contenedor que
-          scrollee en Y, no un `overflow-hidden` en el padre. */}
+          scrollee en Y, no un `overflow-hidden` en el padre.
+          En celular no hace falta un render aparte: el shell del admin ya
+          convierte toda `<table>` en tarjetas (`useMobileTableCards` +
+          `.admin-mobile-cards` en globals.css). */}
       <div className="max-h-[38rem] overflow-auto rounded-xl">
         <table className="w-full min-w-[880px] table-fixed text-sm">
           <colgroup>
@@ -162,8 +158,21 @@ export default function HistorialTabla({
                     </td>
                     <td className="px-4 py-3 text-[var(--text-primary)]">
                       <span className="block truncate">{item.description || "—"}</span>
-                      {item.supplierName && (
-                        <span className="block truncate text-sm text-[var(--text-secondary)]">{item.supplierName}</span>
+                      {/* Quién está del otro lado y, en un adelanto, cuánto de
+                          eso todavía no volvió. El saldo venía escrito dentro
+                          de la descripción y sin signo de soles: «queda por
+                          devolver 450.00» competía con el código del adelanto
+                          por el mismo renglón truncado. */}
+                      {(item.supplierName || item.saldoPendiente) && (
+                        <span className="block truncate text-sm text-[var(--text-secondary)]">
+                          {item.supplierName}
+                          {item.supplierName && item.saldoPendiente ? " · " : ""}
+                          {item.saldoPendiente ? (
+                            <span className="font-semibold text-[var(--data-warning-ink)]">
+                              debe {fmt(item.saldoPendiente)}
+                            </span>
+                          ) : null}
+                        </span>
                       )}
                       {/* El aviso de duplicado va acá y no en la columna de
                           monto: ahí no entra y se montaba sobre el botón. */}

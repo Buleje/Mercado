@@ -575,7 +575,7 @@ export default function SettingsModule({
 
   // ── Save helper ─────────────────────────────────────────────────────────────
 
-  const patch = useCallback(async (data: SettingsData) => {
+  const patch = useCallback(async (data: SettingsData): Promise<boolean> => {
     setSaving(true);
     const t = toast.loading("Guardando cambios…");
     try {
@@ -591,21 +591,35 @@ export default function SettingsModule({
       toast.success("Cambios guardados", { id: t, description: "La configuración se actualizó correctamente." });
       setSavedSection(activeSection);
       setTimeout(() => setSavedSection(null), 2000);
+      return true;
     } catch (err) {
       toast.error("No se pudo guardar", {
         id: t,
         description: err instanceof Error ? err.message : "Error desconocido. Probá de nuevo.",
       });
+      return false;
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }, [activeSection]);
 
-  const patchFlags = useCallback(async (flags: Record<string, boolean>) => {
-    await fetch("/api/settings/feature-flags", {
-      method: "PATCH",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(flags),
-    });
+  const patchFlags = useCallback(async (flags: Record<string, boolean>): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/settings/feature-flags", {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(flags),
+      });
+      if (!res.ok) {
+        toast.error(`No se pudo guardar el feature flag (error ${res.status})`);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.warn("[SettingsModule] patchFlags falló", err);
+      toast.error("No se pudo guardar el feature flag — revisá tu conexión.");
+      return false;
+    }
   }, []);
 
   // Estados de upload por campo (logo, banner, yape, plin) — para mostrar
@@ -1042,9 +1056,14 @@ export default function SettingsModule({
           if (currentPwInput !== storedAdminPw) { setPwChangeError("La contraseña actual es incorrecta"); return; }
           if (newPw.length < 4) { setPwChangeError("Mínimo 4 caracteres"); return; }
           if (newPw !== confirmPw) { setPwChangeError("Las contraseñas no coinciden"); return; }
-          await patch({ adminPassword: newPw });
+          const ok = await patch({ adminPassword: newPw });
+          if (!ok) return;
+          const loginRes = await fetch("/api/auth/login", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ password: newPw }) }).catch(() => null);
+          if (!loginRes?.ok) {
+            toast.error("La contraseña se guardó, pero no se pudo renovar tu sesión — volvé a iniciar sesión.");
+            return;
+          }
           setStoredAdminPw(newPw); setCurrentPwInput(""); setNewPw(""); setConfirmPw("");
-          await fetch("/api/auth/login", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ password: newPw }) });
         }} className="space-y-3">
           <div><FieldLabel icon={<Lock className="h-3.5 w-3.5" />}>Contraseña actual</FieldLabel><TextInput value={currentPwInput} onChange={setCurrentPwInput} type="password" /></div>
           <div className="grid grid-cols-2 gap-3">
@@ -1073,10 +1092,24 @@ export default function SettingsModule({
       {/* Maintenance mode */}
       <SectionCard title="Modo vacaciones / mantenimiento" desc="Bloquea compras mostrando un banner">
         <Toggle enabled={maintenanceMode} onChange={async v => {
+          const previous = maintenanceMode;
+          const previousMsg = maintenanceMsg;
           setMaintenanceMode(v);
           const msg = v && !maintenanceMsg ? "Estamos de vacaciones. ¡Volvemos pronto!" : maintenanceMsg;
           if (v && !maintenanceMsg) setMaintenanceMsg(msg);
-          await fetch("/api/settings", { method: "PUT", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ maintenanceMode: v, maintenanceMessage: msg }) });
+          try {
+            const res = await fetch("/api/settings", { method: "PUT", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ maintenanceMode: v, maintenanceMessage: msg }) });
+            if (!res.ok) {
+              setMaintenanceMode(previous);
+              setMaintenanceMsg(previousMsg);
+              toast.error(`No se pudo cambiar el modo mantenimiento (error ${res.status})`);
+            }
+          } catch (err) {
+            setMaintenanceMode(previous);
+            setMaintenanceMsg(previousMsg);
+            console.warn("[SettingsModule] modo mantenimiento falló", err);
+            toast.error("No se pudo cambiar el modo mantenimiento — revisá tu conexión.");
+          }
         }} label={maintenanceMode ? "Modo activo — tienda bloqueada" : "Desactivado"} desc="Los clientes ven el catálogo pero no pueden comprar" />
         {maintenanceMode && (
           <div className="space-y-2">
@@ -1093,8 +1126,19 @@ export default function SettingsModule({
       {/* Bypass login — warn */}
       <SectionCard title="Configuración de acceso">
         <Toggle enabled={bypassLogin} onChange={async v => {
+          const previous = bypassLogin;
           setBypassLogin(v);
-          await fetch("/api/settings", { method: "PUT", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ adminBypassLogin: v }) });
+          try {
+            const res = await fetch("/api/settings", { method: "PUT", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ adminBypassLogin: v }) });
+            if (!res.ok) {
+              setBypassLogin(previous);
+              toast.error(`No se pudo cambiar el acceso sin login (error ${res.status})`);
+            }
+          } catch (err) {
+            setBypassLogin(previous);
+            console.warn("[SettingsModule] bypass login falló", err);
+            toast.error("No se pudo cambiar el acceso sin login — revisá tu conexión.");
+          }
         }} label="Acceso sin login" desc="Permite entrar al panel sin credenciales" danger />
         {bypassLogin && (
           <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
@@ -1526,7 +1570,8 @@ export default function SettingsModule({
           {Object.entries(featureFlags).map(([flag, enabled]) => (
             <Toggle key={flag} enabled={enabled} onChange={async v => {
               setFeatureFlags(p => ({ ...p, [flag]: v }));
-              await patchFlags({ [flag]: v });
+              const ok = await patchFlags({ [flag]: v });
+              if (!ok) setFeatureFlags(p => ({ ...p, [flag]: !v }));
             }} label={flag.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())} />
           ))}
         </div>

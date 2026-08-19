@@ -21,6 +21,33 @@ export const IGV_PERU = 0.18;
 /** `unitCost` llega como number, string o Decimal de Prisma según el camino. */
 export type ItemParaTotales = { quantity: number; unitCost: unknown };
 
+/**
+ * El total que se guarda en la orden — SIEMPRE con IGV adentro.
+ *
+ * El formulario pregunta «¿los costos que cargué ya incluyen IGV?» y guardaba
+ * la respuesta en `igvIncluded`… que después no leía nadie: el total era
+ * siempre `subtotal × (1 − descuento)`, así que desmarcar la casilla no
+ * agregaba el 18% por ningún lado. Para un proveedor que cotiza sin IGV, la
+ * deuda quedaba 18% por debajo de lo que iba a facturar, y el PDF le mostraba
+ * un desglose de impuesto que ese total nunca tuvo.
+ *
+ * Acá se normaliza a la única convención del módulo (la de arriba: base + IGV =
+ * total). Si los costos venían sin IGV, se agrega una sola vez, al guardar.
+ */
+export function totalDeOrden(opts: {
+  subtotal: number;
+  /** 0–100. */
+  discountPct?: number;
+  /** `false` = los costos cargados son netos y hay que agregarles el IGV. */
+  igvIncluded?: boolean;
+}): number {
+  const subtotal = num(opts.subtotal);
+  const desc = Math.min(Math.max(num(opts.discountPct), 0), 100);
+  const conDescuento = subtotal * (1 - desc / 100);
+  const total = opts.igvIncluded === false ? conDescuento * (1 + IGV_PERU) : conDescuento;
+  return Math.max(0, Math.round(total * 100) / 100);
+}
+
 /** Número finito o 0. Un NaN acá termina impreso en la orden del proveedor. */
 function num(v: unknown): number {
   const n = Number(v ?? 0);

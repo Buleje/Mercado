@@ -328,21 +328,46 @@ export const OrdersDB = {
     // Ensure the customer exists in the DB before linking via FK
     const phone = order.customer.phone ? normalizePhone(order.customer.phone) : null;
     if (phone) {
-      await prisma.customer.upsert({
+      /**
+       * `Customer.phone` es `@unique` GLOBAL (TD-040 fase 1), o sea que hay UNA
+       * ficha por teléfono en toda la plataforma. El `upsert` de antes hacía
+       * `update` sin mirar de quién era: si el 987654321 ya era cliente de la
+       * bodega A y pedía en la bodega B, el pedido de B le reescribía a la
+       * ficha de A el nombre, la dirección y la referencia. La bodega A abría
+       * su lista de clientes y encontraba otro nombre y otra dirección — y su
+       * próximo delivery salía hacia allá.
+       *
+       * El pedido no pierde nada: `Order` guarda su propia copia
+       * (`customerName`, `customerLocation`), que es la que usa el reparto.
+       * Cuando la FK compuesta `(tenantId, phone)` exista (fase 3), esto se
+       * puede volver a simplificar a un upsert.
+       */
+      const existente = await prisma.customer.findUnique({
         where: { phone },
-        create: {
-          phone,
-          name: order.customer.name,
-          location: order.customer.location ?? "",
-          reference: order.customer.reference ?? "",
-          tenantId,
-        },
-        update: {
-          name: order.customer.name,
-          location: order.customer.location ?? "",
-          reference: order.customer.reference ?? "",
-        },
+        select: { tenantId: true },
       });
+      if (!existente) {
+        await prisma.customer.create({
+          data: {
+            phone,
+            name: order.customer.name,
+            location: order.customer.location ?? "",
+            reference: order.customer.reference ?? "",
+            tenantId,
+          },
+        });
+      } else if (existente.tenantId === tenantId) {
+        await prisma.customer.update({
+          where: { phone },
+          data: {
+            name: order.customer.name,
+            location: order.customer.location ?? "",
+            reference: order.customer.reference ?? "",
+          },
+        });
+      }
+      // Si la ficha es de otro negocio no se toca: el pedido se vincula igual
+      // por el teléfono, que es la PK global.
     }
     // Ensure all catalog products exist in the Product table so the FK constraint is
     // always satisfied. Store-catalog IDs come from data/products.ts and may differ

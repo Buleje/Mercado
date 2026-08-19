@@ -19,6 +19,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { prismaForTenant } from "@/lib/tenant";
 import { InventoryMovementsDB } from "@/lib/db/inventory.db";
 import { CouponsDB as CouponsDBDirect } from "@/lib/db/coupons.db";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace/stores.db";
 import { resolveTenantSlug, resolveTenantSlugToId } from "@/lib/resolve-tenant";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
 import { getOrSet } from "@/lib/cache";
@@ -469,7 +470,18 @@ export const POST = withApiHandler("orders-create", async (req) => {
     if (body.appliedCouponCode) {
       // RED-007: tenant-scoped lookup — tenant B can NOT use a coupon owned
       // by tenant A. Lookup will return null when tenantId doesn't match.
-      const coupon = await CouponsDB.getByCode(tenantId, body.appliedCouponCode);
+      // ADR-380 Fase 1.2: migrado del CouponsDB legacy (ignoraba storeId
+      // por completo) al de lib/db/coupons.db.ts — un cupón creado sólo
+      // para la vidriera de marketplace de OTRA tienda del mismo tenant ya
+      // no se cuela en el checkout de la tienda propia. `own?.id` es la
+      // tienda marketplace de ESTE tenant (si tiene una) — findByCode ya
+      // resuelve "de esa tienda o de todo el tenant" cuando se le pasa.
+      const own = await MarketplaceStoresDB.getByTenant(tenantId).catch(() => null);
+      const coupon = await CouponsDBDirect.findByCode(
+        tenantId,
+        body.appliedCouponCode.toUpperCase().trim(),
+        own?.id,
+      );
       const now = new Date();
       const valid =
         coupon &&

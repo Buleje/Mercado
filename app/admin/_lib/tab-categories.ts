@@ -418,8 +418,12 @@ export const BASIC_MODULES: TabCategory[] = [
   },
 
   // ── 05 · CLIENTES ────────────────────────────────
-  // CRM (con Leads dentro) + Mensajes. "marketplace-chat" abre MensajesHubModule
-  // (chat + soporte). leads → sub-tab de CRM. (Créditos/préstamos en Finanzas.)
+  // CRM (con Leads dentro) + Mensajes. "whatsapp-inbox" y "marketplace-chat"
+  // abren el MISMO MensajesHubModule (initialTab "whatsapp"/"chat") — atajo
+  // redundante (auditoría 2026-08-02). Se deja sólo "whatsapp-inbox" (canal
+  // principal del negocio, ADR-058); "Chat con clientes" sigue a 1 click desde
+  // la barra de sub-tabs del hub. leads → sub-tab de CRM. (Créditos/préstamos
+  // en Finanzas.)
   {
     id: "clientes",
     label: "Clientes",
@@ -427,7 +431,6 @@ export const BASIC_MODULES: TabCategory[] = [
     tabs: [
       "clientes",
       "whatsapp-inbox",
-      "marketplace-chat",
     ],
   },
 
@@ -438,40 +441,46 @@ export const BASIC_MODULES: TabCategory[] = [
   // lives) vivían enterrados como sub-tabs del Marketplace. Ahora UNA categoría
   // visible cuyos accesos directos abren el CrecimientoHubModule en su sub-tab.
   // (segmentos y RFM quedan como sub-tabs internos del hub, a 1 click.)
+  // "campanas" es el único enlace visible: los otros 5 (puntos, gift-cards,
+  // socio, subscriptions, lives) abrían el MISMO CrecimientoHubModule con un
+  // initialTab distinto — atajo redundante (auditoría 2026-08-02, 6→1). Siguen
+  // a 1 click desde la barra de sub-tabs del hub.
   {
     id: "crecimiento",
     label: "Crecimiento",
     icon: Megaphone,
     tabs: [
       "campanas",
-      "puntos",
-      "gift-cards-admin",
-      "socio-members",
-      "subscriptions",
-      "lives-admin",
     ],
   },
 
   // ── 06 · FINANZAS ────────────────────────────────
   // "plata" abre FinanzasModule (P&L, gastos, flujo, tesorería + Fiados,
   // Préstamos, Adelantos, Activos, Por cobrar, Scoring como sub-tabs).
-  // Estos 7 son ACCESOS DIRECTOS clave desde el sidebar: el dueño llega de un
-  // click a "lo que le deben" (Por cobrar/Fiados/Préstamos) y a su capital
-  // (Adelantos/Activos) + Scoring crediticio, sin entrar al hub a buscar la
-  // sub-tab. P&G, Gastos, Flujo, Tesorería y Reportes viven dentro del
-  // dashboard de Mi Plata (su barra de sub-tabs interna). Brandon 2026-06-19.
+  // Antes el sidebar listaba 7 accesos directos (plata/por-cobrar/fiados/
+  // prestamos/adelantos/activos/scoring) que abrían el MISMO hub con un
+  // initialTab distinto — atajo redundante (auditoría 2026-08-02, 7→2). El
+  // hub tiene su propia pestaña "Por cobrar" con Fiados/Préstamos/Adelantos/
+  // Scoring como segundo nivel (`DONDE_VIVE` en FinanzasModule ya resuelve
+  // esos ids viejos), así que la sub-vista sigue a 1-2 clicks, sin perder
+  // acceso ni romper los deep-links `?tab=fiados` etc.
+  //
+  // Se dejan DOS ids, no uno: "activos" es el único de los 7 desbloqueado en
+  // el plan Free (`lib/billing/plan-tiers.ts` PLAN_BASICO) y nunca lo oculta
+  // la plantilla del superadmin (no está en `ADMIN_MODULE_CATALOG`); "plata"
+  // recién se desbloquea en Starter y SÍ puede ocultarlo la plantilla
+  // (`lib/admin-template.ts`, `defaultVisible`/override por tenant). Colapsar
+  // a solo "plata" hace que la categoría entera desaparezca del sidebar para
+  // cualquier tenant Free — verificado en vivo con Playwright contra el
+  // tenant "main" (su plantilla oculta "plata" mientras deja "activos"
+  // visible: con un solo id colapsado, "Finanzas" se esfumaba del sidebar).
   {
     id: "finanzas",
     label: "Finanzas",
     icon: Wallet,
     tabs: [
       "plata",
-      "por-cobrar",
-      "fiados",
-      "prestamos",
-      "adelantos",
       "activos",
-      "scoring",
     ],
   },
 
@@ -501,32 +510,44 @@ export const BASIC_MODULES: TabCategory[] = [
       // super-grupo "Canales" del sidebar (la categoría "crecimiento" no se
       // renderiza en el sidebar curado; acá SÍ aparece). Brandon 2026-07-03.
       "canales",
+      // "delivery-live" abría el MISMO DeliveryPartnersModule que
+      // "delivery-partners" (initialTab="pedidos-vivo") — atajo redundante
+      // (auditoría 2026-08-02, 2→1). "Pedidos en vivo" sigue a 1 click desde
+      // la barra de sub-tabs del hub.
       "delivery-partners",
-      "delivery-live",
     ],
   },
 
   // ── 09 · EQUIPO ──────────────────────────────────
-  // Herramientas operativas internas (tareas + notas de turno). Estaban
-  // construidas y sanas pero huérfanas (sin entrada en el sidebar vivo). Abren
-  // el EquipoHubModule en su sub-tab. Brandon 2026-06-21.
+  // Herramientas operativas internas (tareas + notas de turno). Abren el
+  // MISMO EquipoHubModule con initialTab distinto — atajo redundante
+  // (auditoría 2026-08-02, 2→1). "Notas" sigue a 1 click desde la barra de
+  // sub-tabs del hub.
   {
     id: "equipo",
     label: "Equipo",
     icon: ClipboardList,
     tabs: [
       "tareas",
-      "notas",
     ],
   },
 ];
 
 // ── Módulo Mi Tienda (personalización visual) ─────────────────────────────────
+// "store-customizer" abría el MISMO MiTiendaHubModule que "pagina-inicio"
+// (initialTab="identidad") — atajo redundante (auditoría 2026-08-02, 2→1).
+// Se deja "pagina-inicio", no "store-customizer": en `ADMIN_MODULE_CATALOG`
+// (`lib/admin-template.ts`) "store-customizer" tiene `defaultVisible: false`
+// mientras "pagina-inicio" tiene `defaultVisible: true` — con la plantilla
+// por default (sin overrides), colapsar al revés habría hecho desaparecer
+// "Mi Tienda" del sidebar para cualquier tenant sin personalizar su
+// plantilla. "Identidad y tema" sigue a 1 click desde la barra de sub-tabs
+// del hub.
 export const TIENDA_MODULE: TabCategory = {
   id: "mi-tienda",
   label: "Mi Tienda",
   icon: Palette,
-  tabs: ["store-customizer", "pagina-inicio"],
+  tabs: ["pagina-inicio"],
 };
 
 // ── Módulos de Especialización por vertical (ADR-124) ──────────────────────────
@@ -566,14 +587,17 @@ export const CONFIG_MODULE: TabCategory = {
 };
 
 // ── Módulo Sistema (técnico) — rendimiento + auditoría + colas ───────────────
-// Las 3 entradas abren SistemaHubModule (cada una en su sub-tab). Antes vivían
-// dispersas: rendimiento en Análisis, auditoría en Config, colas sin sidebar.
+// Las 3 abren el MISMO SistemaHubModule (cada una en su sub-tab) — atajo
+// redundante en el sidebar (auditoría 2026-08-02, 3→1). Se deja sólo
+// "rendimiento"; Auditoría y Colas siguen a 1 click desde la barra de
+// sub-tabs del hub. ("auditoria" además queda accesible aparte desde el
+// dropdown de Configuración — ver CONFIG_MODULE — eso no cambia.)
 export const SISTEMA_MODULE: TabCategory = {
   id: "sistema",
   label: "Sistema",
   icon: Gauge,
   alwaysGroup: true,
-  tabs: ["rendimiento", "auditoria", "colas"],
+  tabs: ["rendimiento"],
 };
 
 // ── TAB_CATEGORIES: composición final del sidebar ────────────────────────────

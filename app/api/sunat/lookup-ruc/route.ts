@@ -97,6 +97,16 @@ export async function GET(req: NextRequest) {
           { status: 404 },
         );
       }
+      // 422 = el padrón rechaza el número (dígito verificador que no cierra).
+      // Verificado 2026-08-12: apis.net.pe responde 422 `{"error":"RUC invalido"}`.
+      // Sin este caso, un RUC mal tipeado se reportaba como "servicio caído" y
+      // el usuario reintentaba con el mismo número esperando otra respuesta.
+      if (upstream.status === 422) {
+        return NextResponse.json(
+          { error: "SUNAT no reconoce ese RUC: revisá los dígitos.", ruc },
+          { status: 404 },
+        );
+      }
       logger.warn("[sunat-lookup] upstream non-ok", { ruc, status: upstream.status });
       return NextResponse.json(
         { error: "Servicio SUNAT no disponible. Completa los datos manualmente.", ruc },

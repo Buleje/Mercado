@@ -33,6 +33,10 @@ const RecepcionSchema = z.object({
   photos: z.number().int().nonnegative().optional().default(0),
   nonConformities: z.number().int().nonnegative().optional().default(0),
   invoiceUrl: z.string().url().max(2048).optional(),
+  // La columna `notes` existe en `GoodsReceipt` y la DB class ya la escribe,
+  // pero el schema no la aceptaba: lo que el usuario anotaba sobre la
+  // recepción lo descartaba Zod en silencio.
+  notes: z.string().max(1000).optional(),
 });
 
 // Mapea un registro GoodsReceipt al shape `Reception` que espera ReceivingTab.
@@ -104,6 +108,7 @@ export async function POST(req: NextRequest) {
       photos: data.photos,
       nonConformities: data.nonConformities,
       invoiceUrl: data.invoiceUrl ?? null,
+      notes: data.notes ?? null,
     });
 
     // 2. Best-effort: si hay OC vinculada, actualizar stock (costo promedio
@@ -111,6 +116,8 @@ export async function POST(req: NextRequest) {
     //    productId buscando por NOMBRE dentro de los items de la OC. Va en
     //    try/catch aparte: un fallo acá NO revierte la recepción ya guardada.
     let stockUpdated = 0;
+    /** Unidades que llegaron dañadas o vencidas: se registran, no se venden. */
+    let noAptos = 0;
     if (data.orderRef) {
       try {
         const oc = await prisma.purchaseOrder.findFirst({
@@ -148,6 +155,30 @@ export async function POST(req: NextRequest) {
               if (!product) continue;
 
               const previousStock = product.stock ?? 0;
+
+              /**
+               * Lo dañado y lo vencido NO entra a stock vendible.
+               *
+               * El endpoint aceptaba `condition` desde el primer día y después
+               * sumaba `receivedQty` al stock sin mirarla: marcar «Dañado» en
+               * Recepción servía de acta, pero la mercadería quedaba lista para
+               * venderse igual. Sigue contando como recibida frente al
+               * proveedor (se anotó arriba en `recibidoTotal`): llegó, y hay
+               * que reclamarla. Queda como merma, que es donde se mira lo que
+               * se perdió.
+               */
+              if (item.condition === "dañado" || item.condition === "vencido") {
+                await tx.inventoryMovement.create({
+                  data: {
+                    productId: ocItem.productId, type: "merma", quantity: item.receivedQty,
+                    previousStock, newStock: previousStock, reference: `OC-${oc.id}`,
+                    notes: `Recepción ${ref}: ${item.receivedQty} ${item.condition}${item.notes ? ` · ${item.notes}` : ""} — no entró a stock vendible`,
+                    tenantId, createdBy: auth.username,
+                  },
+                });
+                noAptos += item.receivedQty;
+                continue;
+              }
               // ADR-377: el costo autorizado incluye la parte de flete que le
               // toca a esta línea. Sin eso el costo promedio del producto
               // ignora lo que costó traerlo.
@@ -202,7 +233,7 @@ export async function POST(req: NextRequest) {
       revalidateTenantTag(tenantId, "products");
     }
 
-    return NextResponse.json({ ...toReception(receipt), stockUpdated }, { status: 201 });
+    return NextResponse.json({ ...toReception(receipt), stockUpdated, noAptos }, { status: 201 });
   } catch (e) {
     logger.error("[compras/recepciones] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error procesando recepcion" }, { status: 500 });

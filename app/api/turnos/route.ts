@@ -25,9 +25,19 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const adminUserId = searchParams.get("adminUserId") ?? undefined;
-    const status = searchParams.get("status") ?? undefined;
+    // El status es un enum de Prisma (ABIERTO | CERRADO). Pasarle cualquier otra
+    // cosa hacía explotar la query y salía un 503 «Database error»: un filtro mal
+    // escrito no es una caída del servidor, es una petición inválida.
+    const statusRaw = searchParams.get("status")?.toUpperCase();
+    const ESTADOS = ["ABIERTO", "CERRADO"] as const;
+    if (statusRaw && !(ESTADOS as readonly string[]).includes(statusRaw)) {
+      return NextResponse.json(
+        { error: "invalid_status", message: `status debe ser ${ESTADOS.join(" o ")}` },
+        { status: 400 },
+      );
+    }
 
-    const turnos = await TurnosDB.list(auth.tenantId, { status, adminUserId });
+    const turnos = await TurnosDB.list(auth.tenantId, { status: statusRaw, adminUserId });
 
     return NextResponse.json(turnos, {
       headers: { "X-Total-Count": String(turnos.length) },
@@ -96,6 +106,22 @@ export async function POST(req: NextRequest) {
     //     turno (misma convención de `notes` que /api/cash-registers para que
     //     Cuadre derive el nombre del cajero: "Nombre (detalle)").
     let cashRegisterId = parsed.data.cashRegisterId;
+    /**
+     * La caja que llega por el body tiene que ser de ESTE negocio.
+     *
+     * Venía del cliente y se usaba tal cual: con el id de una caja de otro
+     * tenant, el turno quedaba apuntando ahí y los movimientos del POS —cada
+     * venta del día— se escribían en el cajón de otra empresa.
+     */
+    if (cashRegisterId) {
+      const propia = await CashRegistersDB.getById(auth.tenantId, cashRegisterId).catch(() => null);
+      if (!propia) {
+        return NextResponse.json(
+          { error: "Esa caja no existe en este negocio" },
+          { status: 400 },
+        );
+      }
+    }
     if (!cashRegisterId) {
       try {
         const openReg = await CashRegistersDB.getOpen(auth.tenantId);

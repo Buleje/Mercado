@@ -39,6 +39,74 @@ const CACAO_CICLO_DIAS: Record<string, number> = {
 export const CACAO_LABOR_TIPOS = ["poda", "fertilizacion", "deshierbe", "fitosanitario", "riego", "cosecha"] as const;
 export type CacaoLaborTipo = (typeof CACAO_LABOR_TIPOS)[number];
 
+/**
+ * Proyección de cosecha del próximo ciclo a partir de `tendencia` (kg por año,
+ * ya ordenada ascendente). Método deliberadamente simple: con 3+ años, regresión
+ * lineal (mínimos cuadrados) sobre los años disponibles; con exactamente 2 años,
+ * el promedio de ambos (una recta por 2 puntos extrapola demasiado con datos
+ * ruidosos de campo). Con 0-1 año no hay base para proyectar → `null` explícito,
+ * nunca un número inventado (regla del módulo: todo derivado dice de dónde sale).
+ */
+function proyectarCosecha(tendencia: { anio: number; kg: number }[]): {
+  proyeccionKg: number | null;
+  proyeccionAnio: number | null;
+  metodoProyeccion: string;
+} {
+  const n = tendencia.length;
+  const proyeccionAnio = n > 0 ? tendencia[n - 1].anio + 1 : null;
+  if (n === 0) return { proyeccionKg: null, proyeccionAnio: null, metodoProyeccion: "sin cosechas registradas todavía" };
+  if (n === 1) return { proyeccionKg: null, proyeccionAnio, metodoProyeccion: "un solo año registrado — hace falta al menos 2 para proyectar" };
+  if (n === 2) {
+    const avg = (tendencia[0].kg + tendencia[1].kg) / 2;
+    return {
+      proyeccionKg: Math.round(avg),
+      proyeccionAnio,
+      metodoProyeccion: `promedio de ${tendencia[0].anio} y ${tendencia[1].anio} (solo 2 años, sin base para tendencia)`,
+    };
+  }
+  const xs = tendencia.map((t) => t.anio);
+  const ys = tendencia.map((t) => t.kg);
+  const xMean = xs.reduce((a, x) => a + x, 0) / n;
+  const yMean = ys.reduce((a, y) => a + y, 0) / n;
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) { num += (xs[i] - xMean) * (ys[i] - yMean); den += (xs[i] - xMean) ** 2; }
+  const slope = den > 0 ? num / den : 0;
+  const intercept = yMean - slope * xMean;
+  const nextAnio = xs[n - 1] + 1;
+  const est = intercept + slope * nextAnio;
+  return {
+    proyeccionKg: Math.max(0, Math.round(est)),
+    proyeccionAnio: nextAnio,
+    metodoProyeccion: `tendencia lineal sobre ${n} años (${xs[0]}–${xs[n - 1]})`,
+  };
+}
+
+/** % histórico de la cosecha que cae en cada mes (0-11, UTC) + el mes pico —
+ *  para saber CUÁNDO esperar la próxima cosecha, no sólo cuánto. `null` si no
+ *  hay cosechas con fecha y cantidad válidas. */
+function estacionalidadDe(cosechas: { fechaHecho: Date | null; cantidad: Prisma.Decimal | null }[]): {
+  estacionalidad: { mes: number; pctHistorico: number }[] | null;
+  mesPico: number | null;
+} {
+  const porMes = new Map<number, number>();
+  let total = 0;
+  for (const c of cosechas) {
+    if (!c.fechaHecho) continue;
+    const kgC = c.cantidad == null ? 0 : Number(c.cantidad);
+    if (kgC <= 0) continue;
+    const mes = c.fechaHecho.getUTCMonth();
+    porMes.set(mes, (porMes.get(mes) ?? 0) + kgC);
+    total += kgC;
+  }
+  if (total <= 0) return { estacionalidad: null, mesPico: null };
+  const estacionalidad = [...porMes.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([mes, kgMes]) => ({ mes, pctHistorico: Math.round((kgMes / total) * 1000) / 10 }));
+  let mesPico: number | null = null, mejorPct = -1;
+  for (const e of estacionalidad) if (e.pctHistorico > mejorPct) { mejorPct = e.pctHistorico; mesPico = e.mes; }
+  return { estacionalidad, mesPico };
+}
+
 export type CacaoParcelaStatus = "al_dia" | "pendiente" | "vencido" | "sin_labores";
 
 export interface ParcelaInput {
@@ -479,6 +547,8 @@ export class CacaoCampoDB {
       const porAnio = new Map<number, number>();
       for (const c of cosechas) if (c.fechaHecho) porAnio.set(c.fechaHecho.getUTCFullYear(), (porAnio.get(c.fechaHecho.getUTCFullYear()) ?? 0) + (c.cantidad == null ? 0 : Number(c.cantidad)));
       const tendencia = [...porAnio.entries()].sort((a, b) => a[0] - b[0]).map(([anio, kg]) => ({ anio, kg: Math.round(kg) }));
+      const { proyeccionKg, proyeccionAnio, metodoProyeccion } = proyectarCosecha(tendencia);
+      const { estacionalidad, mesPico } = estacionalidadDe(cosechas);
       return {
         id: p.id, codigo: p.codigo, nombre: p.nombre, variedad: p.variedad,
         areaHa, nPlantas,
@@ -490,12 +560,14 @@ export class CacaoCampoDB {
         margenHa: areaHa && areaHa > 0 ? r2(margen / areaHa) : null,
         roi: costos > 0 ? r2(ingresos / costos) : null,
         tendencia,
+        proyeccionKg, proyeccionAnio, metodoProyeccion, estacionalidad, mesPico,
       };
     });
     const ranked = [...secciones].sort((a, b) => (b.rendKgHa ?? -1) - (a.rendKgHa ?? -1));
 
     const totalCosechaKg = secciones.reduce((a, s) => a + s.cosechaKg, 0);
     const totalArea = secciones.reduce((a, s) => a + (s.areaHa ?? 0), 0);
+    const conProyeccion = secciones.filter((s) => s.proyeccionKg != null);
     const totales = {
       secciones: secciones.length,
       areaHa: r2(totalArea),
@@ -505,6 +577,8 @@ export class CacaoCampoDB {
       costos: r2(secciones.reduce((a, s) => a + s.costos, 0)),
       margen: r2(secciones.reduce((a, s) => a + s.margen, 0)),
       kgSinValorar: secciones.reduce((a, s) => a + s.kgSinValorar, 0),
+      proyeccionKg: conProyeccion.length > 0 ? Math.round(conProyeccion.reduce((a, s) => a + (s.proyeccionKg ?? 0), 0)) : null,
+      seccionesConProyeccion: conProyeccion.length,
     };
 
     // Calendario agronómico: próxima labor sugerida por sección (ciclo + última hecha).

@@ -7,7 +7,6 @@ import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
-import { getTenantIdFromRequest } from "@/lib/tenant";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 const ProductUpdateSchema = z.object({
@@ -53,11 +52,27 @@ const ProductUpdateSchema = z.object({
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
+/**
+ * Ficha completa de un producto — SÓLO para el panel.
+ *
+ * Estaba abierta: sin sesión devolvía el registro entero, con `costPrice`,
+ * `stock` y las notas internas. Cualquiera que supiera el id (son enteros
+ * correlativos) podía leer los márgenes y el inventario del negocio.
+ *
+ * La tienda pública no lo usa: el storefront y el marketplace consumen
+ * `/api/marketplace/products/[productId]`, y el resto del repo sólo llama a
+ * sub-rutas (`/modifiers`, `/price-history`, `/stock-check`). Verificado con
+ * un grep repo-wide antes de cerrarlo.
+ *
+ * El tenant sale de la SESIÓN, no de `getTenantIdFromRequest`: el host lo pone
+ * el cliente y no debería decidir a qué catálogo se entra.
+ */
 export async function GET(req: NextRequest, ctx: RouteCtx) {
+  const auth = await requireAdmin(req, ["admin", "almacenero"]);
+  if (auth instanceof NextResponse) return auth;
   try {
-    const tenantId = getTenantIdFromRequest(req);
     const { id } = await ctx.params;
-    const product = await ProductsDB.getById(tenantId, Number(id));
+    const product = await ProductsDB.getById(auth.tenantId, Number(id));
     if (!product) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     return NextResponse.json(product);
   } catch (e) {

@@ -110,6 +110,13 @@ export type DbHistorialGasto = {
    * total, pero decirlo evita que alguien las sume a mano.
    */
   duplicaDe?: string;
+  /**
+   * Sólo adelantos: cuánto de lo entregado todavía no volvió. Viajaba escrito
+   * dentro de `description` («ADL-2026-0022 · queda por devolver 450.00»), donde
+   * la pantalla no podía ni formatearlo como plata ni destacarlo: el código de
+   * operación y una deuda terminaban siendo la misma cadena de texto.
+   */
+  saldoPendiente?: number;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -375,9 +382,67 @@ export const ExpensesDB = {
     revalidateExpenses(tenantId);
     return mapExpense(row);
   },
-  async delete(tenantId: string, id: string): Promise<void> {
+  /** Un gasto puntual. Sin `"use cache"`: se usa para leer el «antes» de un write. */
+  async getById(tenantId: string, id: string): Promise<DbExpense | null> {
+    const row = await prisma.expense.findFirst({ where: { id, tenantId } });
+    return row ? mapExpense(row) : null;
+  },
+  /**
+   * Corrige un gasto ya registrado.
+   *
+   * Faltaba: el historial era de sólo lectura, así que un monto mal tipeado o
+   * una categoría equivocada sólo se arreglaban borrando el gasto y volviéndolo
+   * a cargar — perdiendo de paso quién lo había registrado y cuándo.
+   *
+   * Sólo los campos que una corrección toca. `recurring` NO está: convertir un
+   * pago suelto en plantilla (o al revés) cambia lo que significa el registro
+   * en cada reporte que lo lee, y eso no es una corrección, es otro gasto.
+   */
+  async update(
+    tenantId: string,
+    id: string,
+    patch: Partial<Pick<DbExpense,
+      "category" | "description" | "amount" | "date" | "paymentMethod" | "supplierName" | "notes"
+    >>,
+  ): Promise<DbExpense | null> {
+    const existing = await prisma.expense.findFirst({ where: { id, tenantId } });
+    if (!existing) return null;
+    const data: Record<string, unknown> = {};
+    if (patch.category !== undefined) data.category = patch.category;
+    if (patch.description !== undefined) data.description = patch.description;
+    if (patch.amount !== undefined) data.amount = patch.amount;
+    if (patch.paymentMethod !== undefined) data.paymentMethod = patch.paymentMethod;
+    if (patch.supplierName !== undefined) data.supplierName = patch.supplierName;
+    if (patch.notes !== undefined) data.notes = patch.notes;
+    if (patch.date !== undefined) {
+      const fecha = new Date(patch.date);
+      data.date = fecha;
+      // Un gasto ejecutado salió de la caja el día que dice `date`. Si se
+      // corrige la fecha y `paidAt` quedara en la vieja, el flujo de caja y el
+      // historial contarían la misma plata en dos meses distintos.
+      if (!existing.recurring) data.paidAt = fecha;
+    }
+    if (Object.keys(data).length === 0) return mapExpense(existing);
+    await prisma.expense.updateMany({ where: { id, tenantId }, data });
+    const row = await prisma.expense.findFirst({ where: { id, tenantId } });
+    if (!row) return null;
+    revalidateExpenses(tenantId);
+    return mapExpense(row);
+  },
+  /**
+   * Borra un gasto y **devuelve lo que borró**.
+   *
+   * Lo devuelve para que quien llame pueda ofrecer un «deshacer» fiel: sin el
+   * registro completo, restaurar significaba re-crearlo con los campos que la
+   * pantalla tenía a mano y perder en silencio el resto (documento, IGV, de qué
+   * plantilla salía). `null` si no existía en este tenant.
+   */
+  async delete(tenantId: string, id: string): Promise<DbExpense | null> {
+    const existing = await prisma.expense.findFirst({ where: { id, tenantId } });
+    if (!existing) return null;
     await prisma.expense.deleteMany({ where: { id, tenantId } }).catch((err) => logger.warn("[finance.db] expense delete failed", { id, tenantId, err: String(err) }));
     revalidateExpenses(tenantId);
+    return mapExpense(existing);
   },
   /**
    * Total por categoría — la fuente del P&L, el Break-even, el Presupuesto y el
@@ -655,14 +720,14 @@ export const ExpensesDB = {
           clase: "anticipo" as const,
           fecha: a.fechaAdelanto.toISOString(),
           category: "Adelantos al personal",
-          description: [
-            a.codigoOperacion ?? "Adelanto",
-            saldo > 0 ? `queda por devolver ${saldo.toFixed(2)}` : "devuelto",
-          ].join(" · "),
+          // La descripción es la identidad del movimiento —su código— y nada
+          // más. Lo que falta devolver es un número, y va como número.
+          description: a.codigoOperacion ?? "Adelanto",
           amount,
           recurring: false,
           estadoPago: "pagado" as EstadoPagoGasto,
           montoPagado: amount,
+          ...(saldo > 0 ? { saldoPendiente: saldo } : {}),
           ...(a.beneficiario?.nombre ? { supplierName: a.beneficiario.nombre } : {}),
         };
       }),

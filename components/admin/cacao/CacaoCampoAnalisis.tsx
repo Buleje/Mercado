@@ -7,7 +7,7 @@
  * computado en backend (view=analytics), sin schema nuevo. Brandon 2026-07-03.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, AlertCircle, TrendingUp, Scale, Coins, Trees, Trophy } from "@buleje/design-system/icons";
+import { RefreshCw, AlertCircle, TrendingUp, Scale, Coins, Trees, Trophy, Calendar } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 
 interface Seccion {
@@ -17,12 +17,16 @@ interface Seccion {
   ingresos: number; kgSinValorar: number; costos: number;
   margen: number; margenHa: number | null; roi: number | null;
   tendencia: { anio: number; kg: number }[];
+  proyeccionKg: number | null; proyeccionAnio: number | null; metodoProyeccion: string;
+  estacionalidad: { mes: number; pctHistorico: number }[] | null; mesPico: number | null;
 }
 interface Totales {
   secciones: number; areaHa: number; cosechaKg: number; rendKgHa: number | null;
   ingresos: number; costos: number; margen: number; kgSinValorar: number;
+  proyeccionKg: number | null; seccionesConProyeccion: number;
 }
 
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const soles = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 const kg = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 0 });
 const n1 = (v: number | null) => (v == null ? "—" : v.toLocaleString("es-PE", { maximumFractionDigits: 1 }));
@@ -69,11 +73,18 @@ export default function CacaoCampoAnalisis({ onOpenParcela }: { onOpenParcela: (
   return (
     <div className="space-y-5">
       {totales && (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <StatCard label="Cosecha total" value={`${kg(totales.cosechaKg)} kg`} subValue={totales.kgSinValorar > 0 ? `${kg(totales.kgSinValorar)} kg sin valorar` : undefined} icon={Trees} emphasis="neutral" />
           <StatCard label="Rendimiento" value={totales.rendKgHa != null ? `${n1(totales.rendKgHa)} kg/ha` : "—"} subValue={`${n2(totales.areaHa)} ha totales`} icon={TrendingUp} emphasis="neutral" />
           <StatCard label="Ingresos − costos" value={`S/ ${soles(totales.ingresos)}`} subValue={`− S/ ${soles(totales.costos)} costos`} icon={Coins} emphasis="neutral" />
           <StatCard label="Margen del campo" value={`S/ ${soles(totales.margen)}`} icon={Scale} emphasis={totales.margen > 0 ? "success" : totales.margen < 0 ? "error" : "neutral"} />
+          <StatCard
+            label="Próxima cosecha (estimado)"
+            value={totales.proyeccionKg != null ? `${kg(totales.proyeccionKg)} kg` : "—"}
+            subValue={totales.seccionesConProyeccion > 0 ? `${totales.seccionesConProyeccion} de ${totales.secciones} secciones con base para proyectar` : "sin secciones con ≥2 años de historial"}
+            icon={Calendar}
+            emphasis="neutral"
+          />
         </div>
       )}
 
@@ -98,6 +109,7 @@ export default function CacaoCampoAnalisis({ onOpenParcela }: { onOpenParcela: (
               <th className="px-3 py-2 text-right font-bold">Margen</th>
               <th className="px-3 py-2 text-right font-bold">ROI</th>
               <th className="px-3 py-2 text-center font-bold">Tendencia</th>
+              <th className="px-3 py-2 text-right font-bold">Próxima cosecha</th>
             </tr>
           </thead>
           <tbody>
@@ -119,12 +131,22 @@ export default function CacaoCampoAnalisis({ onOpenParcela }: { onOpenParcela: (
                 <td className={`px-3 py-2.5 text-right font-bold ${s.margen > 0 ? "text-[var(--data-success-700)]" : s.margen < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-secondary)]"}`}>{s.ingresos > 0 || s.costos > 0 ? `S/ ${soles(s.margen)}` : "—"}</td>
                 <td className="px-3 py-2.5 text-right text-[var(--text-secondary)]">{s.roi != null ? `${n2(s.roi)}×` : "—"}</td>
                 <td className="px-3 py-2.5 text-center"><Sparkline data={s.tendencia} /></td>
+                <td className="px-3 py-2.5 text-right" title={s.metodoProyeccion}>
+                  {s.proyeccionKg != null ? (
+                    <span className="font-bold text-[var(--text-primary)]">
+                      {kg(s.proyeccionKg)} kg
+                      {s.mesPico != null && <span className="ml-1 font-normal text-[var(--text-tertiary)]">· {MESES[s.mesPico]}</span>}
+                    </span>
+                  ) : (
+                    <span className="text-[var(--text-tertiary)]">—</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-[var(--text-tertiary)]">Ingresos = valor de los lotes de acopio generados por las cosechas de la sección. Costos = labores con costo (posteadas a Finanzas). Tocá una fila para ver la sección. Las cosechas sin precio no suman a ingresos (se cuentan como “sin valorar”).</p>
+      <p className="text-xs text-[var(--text-tertiary)]">Ingresos = valor de los lotes de acopio generados por las cosechas de la sección. Costos = labores con costo (posteadas a Finanzas). Tocá una fila para ver la sección. Las cosechas sin precio no suman a ingresos (se cuentan como “sin valorar”). Próxima cosecha = estimado a partir del historial de cada sección (pasá el mouse sobre el valor para ver el método); con menos de 2 años de datos no se proyecta.</p>
     </div>
   );
 }

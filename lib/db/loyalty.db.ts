@@ -129,6 +129,13 @@ function rowToDto(row: {
  * insert + increment inside a single Prisma transaction.
  *
  * `signedAmount` is the canonical signed integer that lands in the row.
+ *
+ * `existingTx` (ADR-380 Fase 1.4): cuando el caller YA está adentro de su
+ * propia `prisma.$transaction` (ej. crear una orden de marketplace que
+ * también canjea puntos) y ese canje tiene que revertir junto con el resto
+ * si algo después falla, se le pasa ESE `tx` en vez de dejar que ésta abra
+ * el suyo — dos transacciones anidadas no comparten atomicidad en Prisma, la
+ * de acá comitearía sola aunque la de afuera hiciera rollback después.
  */
 async function writeTransaction(
   tenantId: string,
@@ -136,14 +143,17 @@ async function writeTransaction(
   signedAmount: number,
   reason: string,
   metadata: Record<string, unknown> | undefined,
+  existingTx?: Prisma.TransactionClient,
 ): Promise<LoyaltyTransactionRow> {
   if (!Number.isInteger(signedAmount) || signedAmount === 0) {
     throw new LoyaltyInvalidAmountError(signedAmount);
   }
 
+  const db = existingTx ?? prisma;
+
   // Cross-tenant guard. We do NOT trust the request — we look the customer up
   // ourselves and refuse the write if its tenantId !== caller's tenantId.
-  const customer = await prisma.customer.findUnique({
+  const customer = await db.customer.findUnique({
     where: { phone: customerId },
     select: { phone: true, tenantId: true, loyaltyPoints: true },
   });
@@ -166,7 +176,7 @@ async function writeTransaction(
   // paralelos con balance=100 y debit=-100 ambos pasaban el check, ambos
   // ejecutaban increment y dejaban balance=-100. Ahora el `updateMany` con
   // guard `loyaltyPoints + signedAmount >= 0` falla atómicamente la 2da.
-  const updateResult = await prisma.$transaction(async (tx) => {
+  const runGuarded = async (tx: Prisma.TransactionClient) => {
     const ledger = await tx.loyaltyTransaction.create({
       data: {
         customerId,
@@ -178,7 +188,7 @@ async function writeTransaction(
     });
     if (signedAmount < 0) {
       // Debit con guard atómico: solo descuenta si hay saldo suficiente.
-       
+
       const updated = await tx.$executeRawUnsafe(
         `UPDATE "Customer"
             SET "loyaltyPoints" = "loyaltyPoints" + $1
@@ -197,11 +207,17 @@ async function writeTransaction(
         data: { loyaltyPoints: { increment: signedAmount } },
       });
     }
-    return [ledger];
-  });
-  const [created] = updateResult;
+    return ledger;
+  };
 
-  // CLAUDE.md #5 — evict every cached page for this customer.
+  const created = existingTx
+    ? await runGuarded(existingTx)
+    : (await prisma.$transaction(async (tx) => [await runGuarded(tx)]))[0];
+
+  // CLAUDE.md #5 — evict every cached page for this customer. Con `existingTx`
+  // esto corre ANTES de que el commit de afuera sea definitivo (best-effort:
+  // si el resto de la orden falla después y hace rollback, el próximo read
+  // recalcula solo — no deja el saldo mal, sólo tibio hasta el próximo TTL).
   invalidateByPrefix(cachePrefix(tenantId, customerId));
 
   // CLAUDE.md #7 — fire-and-forget activity log.
@@ -340,3 +356,28 @@ export const LoyaltyDB: ILoyaltyDB = {
     );
   },
 };
+
+/**
+ * Variante de `LoyaltyDB.redeem` para cuando el caller YA está dentro de su
+ * propia `prisma.$transaction` y el canje de puntos tiene que revertir junto
+ * con el resto si algo después falla (ADR-380 Fase 1.4 — antes el marketplace
+ * descontaba puntos con un `updateMany` suelto, sin ledger; migrarlo a
+ * `LoyaltyDB.redeem` a secas habría abierto una SEGUNDA transacción anidada
+ * que comitea sola, dejando el punto descontado aunque el resto de la orden
+ * hiciera rollback). Vive fuera del objeto `LoyaltyDB` a propósito: no es
+ * parte del contrato formal `ILoyaltyDB` (docs/adr/024), es un escape hatch
+ * explícito para el único caso real que lo necesita.
+ */
+export async function loyaltyRedeemWithinTx(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  customerId: string,
+  amount: number,
+  reason: LoyaltyReason | string,
+  metadata?: Record<string, unknown>,
+): Promise<LoyaltyTransactionRow> {
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw new LoyaltyInvalidAmountError(amount);
+  }
+  return writeTransaction(tenantId, customerId, -amount, reason, metadata, tx);
+}

@@ -15,11 +15,13 @@ import {
 import CacaoPreciosRegionales from "./CacaoPreciosRegionales";
 // Tabla de conversión día a día (sin recharts → eager, liviano)
 import CacaoTablaConversion from "./CacaoTablaConversion";
+// Simulador "qué pasa si el ICE sube/baja X%" (sin recharts → eager, liviano)
+import CacaoSimuladorPrecio from "./CacaoSimuladorPrecio";
 import { VistaHeader } from "@/components/admin/shared/module-primitives";
 // Pulso del mercado: intradía + stats multi-horizonte (sin recharts → eager)
 import CacaoMarketPulse, { type LecturaSesion } from "./CacaoMarketPulse";
 import { computeMarketStats, buildLecturas } from "@/lib/cacao/cacao-lecturas";
-import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT } from "@/lib/cacao/cacao-precio-regional";
+import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT, ANCLA_CC_LABEL } from "@/lib/cacao/cacao-precio-regional";
 // Modal de presentación compartido (mismo del dashboard inicio): navega entre
 // los 3 charts de esta vista con ← →, modo TV y export PNG.
 import { ChartPresentationModal } from "@/components/admin/inicio/_shared/ChartPresentationModal";
@@ -247,7 +249,7 @@ export default function CacaoNoticiero() {
                       </div>
                     )}
                   </div>
-                  <p className="mt-1.5 text-xs text-[var(--text-secondary)]">≈ {COMPRA_LOCAL_PCT}% del precio oficial (S/ {effPen != null ? effPen.toFixed(2) : "—"}/kg, ICE al cambio S/ {data.usdPen != null ? data.usdPen.toFixed(2) : "—"}/USD) — lo que se paga acá por el grano seco. Calibrado con S/ 18.20 del vie 10 jul.</p>
+                  <p className="mt-1.5 text-xs text-[var(--text-secondary)]">≈ {COMPRA_LOCAL_PCT}% del precio oficial (S/ {effPen != null ? effPen.toFixed(2) : "—"}/kg, ICE al cambio S/ {data.usdPen != null ? data.usdPen.toFixed(2) : "—"}/USD) — lo que se paga acá por el grano seco. Calibrado con {ANCLA_CC_LABEL}.</p>
                 </div>
 
                 {/* Contexto internacional */}
@@ -342,6 +344,8 @@ export default function CacaoNoticiero() {
       {/* A cuánto se vende por plaza — compacto, debajo del gráfico. Refleja el
           precio efectivo (hoy o el punto seleccionado). */}
       {data && <CacaoPreciosRegionales refSolKg={effPen} usdPen={data.usdPen} onPresent={() => setPresentingId("cacao-plazas")} />}
+
+      <CacaoSimuladorPrecio iceUsdHoy={p?.value ?? null} oficialSolKgHoy={data?.pricePenPerKg ?? null} />
 
       <CacaoMiPrecio marketRefSolKg={mercadoLocalRef} marketMensual={marketMensual} onPresent={() => setPresentingId("cacao-mi-precio")} />
 

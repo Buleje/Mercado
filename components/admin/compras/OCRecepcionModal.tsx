@@ -20,10 +20,25 @@ type OCItem = {
 
 interface OCRecepcionModalProps {
   ocId: string;
+  /**
+   * Nombre del proveedor. El endpoint lo exige (`supplier`, requerido): sin él
+   * el POST volvía 400 «Datos inválidos» SIEMPRE, así que este botón nunca
+   * llegó a registrar una recepción.
+   */
+  supplier: string;
   items: OCItem[];
   onComplete: () => void;
   onClose: () => void;
 }
+
+/** Los mismos estados que acepta el endpoint y que ya usa Recepción. */
+type CondicionItem = "ok" | "dañado" | "vencido" | "faltante";
+
+const CONDICIONES: Array<{ v: CondicionItem; l: string }> = [
+  { v: "ok", l: "Bien" },
+  { v: "dañado", l: "Dañado" },
+  { v: "vencido", l: "Vencido" },
+];
 
 type ReceivedItem = {
   productId: number;
@@ -34,9 +49,11 @@ type ReceivedItem = {
   originalPrice: number;
   unit: string;
   noLlego: boolean;
+  /** Cómo llegó la mercadería. Lo dañado y lo vencido no entra a stock vendible. */
+  condition: CondicionItem;
 };
 
-export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: OCRecepcionModalProps) {
+export default function OCRecepcionModal({ ocId, supplier, items, onComplete, onClose }: OCRecepcionModalProps) {
   useScrollLock(true);
 
   const [step, setStep] = useState(1);
@@ -50,6 +67,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
       originalPrice: i.unitCost,
       unit: i.unit,
       noLlego: false,
+      condition: "ok",
     })),
   );
   const [notas, setNotas] = useState("");
@@ -85,19 +103,35 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
     setError(null);
 
     try {
+      // El shape es el que valida `RecepcionSchema` en el endpoint, no el que
+      // parecía razonable desde acá: `orderRef` (no `ocId`), `supplier`
+      // requerido, y cada ítem con `product` (el nombre) además del id. Mandar
+      // otra cosa devolvía 400 en cada intento.
       const res = await fetch("/api/compras/recepciones", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
-          ocId,
+          orderRef: ocId,
+          supplier,
           items: receivedItems
-            .filter((i) => i.receivedQty > 0)
+            .filter((i) => i.receivedQty > 0 || i.noLlego)
             .map((i) => ({
+              product: i.name,
               productId: i.productId,
+              expectedQty: i.orderedQty,
               receivedQty: i.receivedQty,
-              unitPrice: i.unitPrice,
+              // Lo que no llegó se declara como faltante: es la diferencia que
+              // el proveedor tiene que responder, no una recepción normal de 0.
+              condition: i.noLlego ? "faltante" : i.condition,
+              notes: "",
             })),
-          notas: notas || undefined,
+          status: receivedItems.some((i) => i.noLlego || i.condition !== "ok" || i.receivedQty !== i.orderedQty)
+            ? "parcial"
+            : "aceptada",
+          nonConformities: receivedItems.filter((i) => i.noLlego || i.condition !== "ok").length,
+          // `notes`, no `notas`: con el nombre en castellano Zod lo descartaba
+          // y la anotación de la recepción se perdía sin decir nada.
+          notes: notas || undefined,
         }),
       });
 
@@ -163,6 +197,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                       <th className="text-center py-2 px-1">Pedido</th>
                       <th className="text-center py-2 px-1">Recibido</th>
                       <th className="text-center py-2 px-1">Dif.</th>
+                      <th className="text-center py-2 px-1">Cómo llegó</th>
                       <th className="text-center py-2 px-1">No llego</th>
                     </tr>
                   </thead>
@@ -203,12 +238,32 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                               </span>
                             )}
                           </td>
+                          {/* Lo dañado o vencido llegó, pero no se puede
+                              vender: el backend lo registra como merma en vez
+                              de sumarlo al stock. */}
+                          <td className="py-2 px-1 text-center">
+                            <label className="sr-only" htmlFor={`cond-${item.productId}`}>
+                              Cómo llegó {item.name}
+                            </label>
+                            <select
+                              id={`cond-${item.productId}`}
+                              value={item.condition}
+                              disabled={item.noLlego}
+                              onChange={(e) => updateItem(idx, { condition: e.target.value as CondicionItem })}
+                              className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary disabled:opacity-50"
+                            >
+                              {CONDICIONES.map((c) => (
+                                <option key={c.v} value={c.v}>{c.l}</option>
+                              ))}
+                            </select>
+                          </td>
                           <td className="py-2 px-1 text-center">
                             <input
                               type="checkbox"
                               checked={item.noLlego}
                               onChange={(e) => updateItem(idx, { noLlego: e.target.checked })}
                               className="h-4 w-4 accent-primary"
+                              aria-label={`${item.name} no llegó`}
                             />
                           </td>
                         </tr>

@@ -76,7 +76,9 @@ export type AdminMobileDrawerProps = {
   onLogout: () => void;
 };
 
-export function AdminMobileDrawer({
+// Memoizado por el mismo motivo que AdminSidebar (ver ese archivo) — sólo
+// sirve si `AdminNavigation`/`AdminPage` le pasan props estables.
+export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
   open,
   onClose,
   activeTenantName,
@@ -457,4 +459,4 @@ export function AdminMobileDrawer({
       </aside>
     </>
   );
-}
+});

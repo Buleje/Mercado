@@ -18,7 +18,7 @@
  * Extraído de app/admin/page.tsx (Paso 5 del refactor — JSX components).
  */
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Menu, Search, Store as StoreIcon, ExternalLink } from "@buleje/design-system/icons";
 import Link from "next/link";
 import NotificationBell from "@/components/notifications/NotificationBell";
@@ -74,7 +74,9 @@ export interface AdminTopHeaderProps {
   onLogout: () => void | Promise<void>;
 }
 
-export function AdminTopHeader({
+// Memoizado — es chrome siempre visible (header sticky); mismo motivo que
+// AdminSidebar. Sólo sirve si AdminPage le pasa callbacks estables.
+export const AdminTopHeader = memo(function AdminTopHeader({
   presentationMode,
   focusMode,
   resolvedTheme,
@@ -255,4 +257,4 @@ export function AdminTopHeader({
       </div>
     </header>
   );
-}
+});

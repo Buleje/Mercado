@@ -49,6 +49,7 @@ type Product = Omit<BaseProduct, "id"> & { id: number; stock?: number; stockMin?
 
 // POS Upgrades
 import { usePOSKeyboard } from "@/components/admin/pos/usePOSKeyboard";
+import POSProductImage from "@/components/admin/pos/POSProductImage";
 import { usePOSSound } from "@/components/admin/pos/usePOSSound";
 import { usePOSOffline } from "@/components/admin/pos/usePOSOffline";
 import POSMetricsStrip from "@/components/admin/pos/POSMetricsStrip";
@@ -64,6 +65,7 @@ import POSCartDetail from "@/components/admin/pos/POSCartDetail";
 import POSVoiceInput from "@/components/admin/pos/POSVoiceInput";
 import POSReturnModal from "@/components/admin/pos/POSReturnModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { fiadoDelCliente } from "@/lib/fiados/fiado-del-cliente";
 import { Field } from "@/components/admin/shared/Field";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
@@ -295,16 +297,30 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
   const [fiado, setFiado] = useState<{ id: string; saldo: number } | null>(null);
   const [paying, setPaying] = useState(false);
   const [done, setDone] = useState(false);
+  /** Lo que dijo el servidor si el abono no entró. Antes se perdía. */
+  const [errorAbono, setErrorAbono] = useState<string | null>(null);
 
   useEffect(() => {
     if (!customerPhone) return;
     (async () => {
       try {
-        const res = await fetch(`/api/fiados?customerPhone=${encodeURIComponent(customerPhone)}&status=ACTIVO`);
+        /**
+         * `customerId` es el teléfono: así se guarda el fiado (`Fiado.customerId`
+         * se cruza contra `Customer.phone` en `FiadosDB.list`).
+         *
+         * Antes se pedía `?customerPhone=`, un parámetro que la API no lee: se
+         * descartaba en silencio y volvían TODOS los fiados activos de la
+         * bodega. El `.find()` de abajo tomaba el primero de la lista —el más
+         * reciente, de cualquier cliente— y el abono se le acreditaba a ese.
+         * Cobrabas S/50 a Juan y se los descontabas de la deuda de Pedro.
+         */
+        const res = await fetch(`/api/fiados?customerId=${encodeURIComponent(customerPhone)}&status=ACTIVO`);
         if (!res.ok) return;
         const data = await res.json();
         const fiados = Array.isArray(data) ? data : data.fiados ?? [];
-        const activo = fiados.find((f: { saldo: number; status: string }) => f.saldo > 0 && (f.status === "ACTIVO" || f.status === "VENCIDO"));
+        // Cinturón y tirantes: aunque el filtro del servidor vuelva a fallar,
+        // `fiadoDelCliente` no devuelve un fiado que no sea de este teléfono.
+        const activo = fiadoDelCliente(fiados, customerPhone);
         if (activo) setFiado({ id: activo.id, saldo: activo.saldo });
       } catch { /* silent */ }
     })();
@@ -313,11 +329,23 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
   const abonar = async (monto: number) => {
     if (!fiado || paying) return;
     setPaying(true);
+    setErrorAbono(null);
     try {
-      await fetch(`/api/fiados/${fiado.id}/pagar`, { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ monto }) });
+      const res = await fetch(`/api/fiados/${fiado.id}/pagar`, { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ monto }) });
+      // El endpoint devuelve 400/404/409/422/503 según el caso, y todos salían
+      // como «Abono registrado» en verde: el cliente se iba creyendo que pagó.
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setErrorAbono(typeof body?.error === "string" ? body.error : `No se pudo registrar el abono (error ${res.status})`);
+        return;
+      }
       setDone(true);
-    } catch { /* silent */ }
-    setPaying(false);
+    } catch (err) {
+      console.warn("[POS] abono de fiado falló", err);
+      setErrorAbono("Sin conexión — el abono no se registró.");
+    } finally {
+      setPaying(false);
+    }
   };
 
   if (!fiado || done) return done ? (
@@ -346,6 +374,11 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
         </button>
         <button onClick={() => setFiado(null)} className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">No, gracias</button>
       </div>
+      {errorAbono && (
+        <p className="text-sm font-semibold text-[var(--data-error-500)]" role="alert">
+          {errorAbono}
+        </p>
+      )}
     </div>
   );
 }
@@ -869,6 +902,13 @@ export default function POSView() {
   const [showReturn, setShowReturn] = useState(false);
   // QA Brandon 2026-06-10 #2: advertencia fuerte al cobrar sin caja abierta.
   const [showNoCajaWarning, setShowNoCajaWarning] = useState(false);
+  /**
+   * ¿Hay turno abierto? Hasta acá el turno no controlaba nada: sólo decidía si
+   * se mostraba el strip de métricas. Una venta sin turno no tiene cajero
+   * responsable — no entra en su cuadre ni en sus comisiones, y si al cierre
+   * falta plata no hay a quién preguntarle.
+   */
+  const [turnoAbierto, setTurnoAbierto] = useState<boolean | null>(null);
   // QA Brandon 2026-06-10 #3: key para refrescar métricas del turno post-venta.
   const [metricsRefreshKey, setMetricsRefreshKey] = useState(0);
   const [showMoreTools, setShowMoreTools] = useState(false);
@@ -1092,15 +1132,32 @@ export default function POSView() {
     } catch { setCashRegisterOpen(false); }
   }, []);
 
+  const checkTurno = useCallback(async () => {
+    try {
+      // El enum de Prisma es ABIERTO/CERRADO en mayúsculas: con "abierto" el
+      // endpoint devuelve 503 (y la falla blanda de abajo lo tapaba en silencio).
+      const res = await fetch("/api/turnos?status=ABIERTO", { credentials: "include" });
+      if (!res.ok) { setTurnoAbierto(null); return; } // no se pudo saber: no se bloquea
+      const data = await res.json();
+      const lista = Array.isArray(data) ? data : (data.turnos ?? []);
+      setTurnoAbierto(lista.length > 0);
+    } catch {
+      // Falla blanda a propósito: si no se puede consultar, la venta NO se
+      // traba. Nunca frenar el mostrador por un fetch caído.
+      setTurnoAbierto(null);
+    }
+  }, []);
+
   // [REMOVIDO] fetchHourlySales — ya existe en CashRegisterTab
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void fetchProducts();
       void checkCashRegister();
+      void checkTurno();
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [fetchProducts, checkCashRegister]);
+  }, [fetchProducts, checkCashRegister, checkTurno]);
 
   // ── Cart operations ────────────────────────────────────────────────────────
 
@@ -1291,12 +1348,13 @@ export default function POSView() {
   // El estado `cashRegisterOpen` ya existe (null = cargando → no bloquear).
   const openPaymentModal = useCallback(() => {
     if (cart.length === 0) return;
-    if (cashRegisterOpen === false) {
+    // `null` = todavía no se sabe (cargando o fetch caído): no se traba el cobro.
+    if (cashRegisterOpen === false || turnoAbierto === false) {
       setShowNoCajaWarning(true);
       return;
     }
     setShowPayment(true);
-  }, [cart.length, cashRegisterOpen]);
+  }, [cart.length, cashRegisterOpen, turnoAbierto]);
 
   usePOSKeyboard({
     onOpenPayment: openPaymentModal,
@@ -1502,9 +1560,16 @@ export default function POSView() {
     localStorage.setItem("pos-font-size", size);
   }, []);
 
-  const handleAddFromSearch = useCallback((productId: number) => {
+  /**
+   * Agrega desde el buscador o el dictado. La `quantity` importa: el dictado
+   * dice «2 tablas» y esto agregaba UNA — la cantidad hablada se perdía en el
+   * camino y el cajero tenía que corregirla a mano en el carrito.
+   */
+  const handleAddFromSearch = useCallback((productId: number, quantity = 1) => {
     const p = products.find(pr => pr.id === productId);
-    if (p) addToCart(p);
+    if (!p) return;
+    const veces = Math.max(1, Math.round(quantity));
+    for (let i = 0; i < veces; i++) addToCart(p);
   }, [products, addToCart]);
 
   // Mejora 10: Pause/Resume cart
@@ -1591,14 +1656,20 @@ export default function POSView() {
               para compactar verticalmente (antes ocupaban una fila entera). */}
           <div className="p-3 space-y-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] relative">
             <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide">
-              <div className="flex-1 min-w-[200px]">
+              {/* `min-w-[200px]` NO funciona acá: un `* { min-width: 0 }` sin capa
+                  en globals.css le gana a `@layer utilities`, y el buscador
+                  quedaba aplastado en 52 px — inusable justo en el control que
+                  más se usa del mostrador. El estilo inline es el escape. */}
+              <div className="flex-1" style={{ minWidth: 220 }}>
                 <POSSearchBar
                   products={products as { id: number; name: string; price: number; image?: string; barcode?: string; stock?: number }[]}
                   onAddToCart={handleAddFromSearch}
                 />
               </div>
               <POSVoiceInput
-                products={products.map(p => ({ id: p.id, name: p.name, price: p.price }))}
+                // El stock viaja para que el dictado avise en el acto cuando no
+                // alcanza, en vez de aceptar y fallar recién al cobrar.
+                products={products.map(p => ({ id: p.id, name: p.name, price: p.price, stock: p.stock }))}
                 onAddToCart={handleAddFromSearch}
               />
 
@@ -1841,7 +1912,7 @@ export default function POSView() {
                       )}
                     >
                       <div className="aspect-[5/4] rounded-md overflow-hidden bg-[var(--surface-sunken)] dark:bg-surface mb-1 relative">
-                        <Image src={p.image || "/products/placeholder.svg"} alt={p.name} fill sizes="(max-width:768px) 25vw, 160px" className="object-cover" loading="lazy" />
+                        <POSProductImage src={p.image} name={p.name} />
                         <span
                           role="button"
                           tabIndex={0}
@@ -2189,7 +2260,7 @@ export default function POSView() {
         <div
           role="alertdialog"
           aria-modal="true"
-          aria-label="Caja sin abrir"
+          aria-label={turnoAbierto === false && cashRegisterOpen === false ? "Turno y caja sin abrir" : turnoAbierto === false ? "Turno sin abrir" : "Caja sin abrir"}
           className="modal-backdrop p-4"
           onClick={(e) => e.target === e.currentTarget && setShowNoCajaWarning(false)}
         >
@@ -2199,10 +2270,25 @@ export default function POSView() {
                 <AlertTriangle className="h-5 w-5" aria-hidden />
               </span>
               <div>
-                <h3 className="text-lg font-extrabold text-[var(--text-primary)]">Caja sin abrir</h3>
+                <h3 className="text-lg font-extrabold text-[var(--text-primary)]">
+                  {turnoAbierto === false && cashRegisterOpen === false
+                    ? "Sin turno ni caja abiertos"
+                    : turnoAbierto === false
+                      ? "Sin turno abierto"
+                      : "Caja sin abrir"}
+                </h3>
                 <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
-                  Esta venta se va a registrar, pero el dinero <strong>no quedará controlado
-                  en ninguna caja</strong> (no aparecerá en el arqueo ni en el cuadre).
+                  {cashRegisterOpen === false && (
+                    <>
+                      El dinero <strong>no quedará controlado en ninguna caja</strong>: no aparecerá en el arqueo ni en el cuadre.{" "}
+                    </>
+                  )}
+                  {turnoAbierto === false && (
+                    <>
+                      La venta <strong>no tendrá cajero responsable</strong>: no entra en su turno ni en sus comisiones, y si al cierre
+                      falta plata no hay a quién preguntarle.{" "}
+                    </>
+                  )}
                   ¿Continuar de todas formas?
                 </p>
               </div>
@@ -2212,11 +2298,11 @@ export default function POSView() {
                 type="button"
                 onClick={() => {
                   setShowNoCajaWarning(false);
-                  window.dispatchEvent(new CustomEvent("buleje:navigate-caja"));
+                  window.dispatchEvent(new CustomEvent(turnoAbierto === false ? "buleje:navigate-turnos" : "buleje:navigate-caja"));
                 }}
                 className="flex-1 py-2.5 rounded-lg bg-[var(--text-primary)] text-[var(--surface-raised)] font-bold text-sm hover:opacity-90 transition-opacity"
               >
-                Abrir caja primero
+                {turnoAbierto === false ? "Abrir turno primero" : "Abrir caja primero"}
               </button>
               <button
                 type="button"
@@ -2226,7 +2312,11 @@ export default function POSView() {
                 }}
                 className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] font-bold text-sm hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
               >
-                Vender sin caja
+                {turnoAbierto === false && cashRegisterOpen === false
+                  ? "Vender sin turno ni caja"
+                  : turnoAbierto === false
+                    ? "Vender sin turno"
+                    : "Vender sin caja"}
               </button>
             </div>
           </div>

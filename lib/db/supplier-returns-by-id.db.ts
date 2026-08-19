@@ -134,12 +134,54 @@ export async function updateSupplierReturnEstado(
 
 /**
  * Elimina una devolución por id. Devuelve true si se eliminó, false si no existía.
+ *
+ * Si la devolución ya había descontado stock (`stockAplicadoAt`), borrarla lo
+ * devuelve: si el movimiento se borra, la mercadería nunca salió. Antes el
+ * `deleteMany` se llevaba la devolución y dejaba el descuento hecho, así que el
+ * inventario quedaba con unidades de menos y sin ningún registro que lo
+ * explicara — la diferencia aparecía recién en el conteo físico.
  */
 export async function deleteSupplierReturn(tenantId: string, id: string): Promise<boolean> {
-  const result = await prisma.supplierReturn.deleteMany({
-    where: { id, tenantId },
+  return prisma.$transaction(async (tx) => {
+    const actual = await tx.supplierReturn.findFirst({
+      where: { id, tenantId },
+      include: { items: true },
+    });
+    if (!actual) return false;
+
+    if (actual.stockAplicadoAt !== null) {
+      for (const item of actual.items) {
+        if (item.productId == null) continue;
+        const producto = await tx.product.findFirst({
+          where: { id: item.productId, tenantId },
+          select: { id: true, name: true, stock: true },
+        });
+        if (!producto || producto.stock === null) continue;
+        const cantidad = Math.round(item.cantidad);
+        if (cantidad <= 0) continue;
+
+        const nuevoStock = producto.stock + cantidad;
+        await tx.product.update({ where: { id: producto.id }, data: { stock: nuevoStock } });
+        await tx.inventoryMovement.create({
+          data: {
+            productId: producto.id,
+            // Entra de vuelta: es la contracara exacta del `devolucion_proveedor`
+            // que sacó estas unidades.
+            type: "ajuste_positivo",
+            quantity: cantidad,
+            previousStock: producto.stock,
+            newStock: nuevoStock,
+            reference: id,
+            notes: `Se borró la devolución a ${actual.proveedorNombre}: vuelve el stock que había salido`,
+            tenantId,
+          },
+        });
+      }
+    }
+
+    const result = await tx.supplierReturn.deleteMany({ where: { id, tenantId } });
+    return result.count > 0;
   });
-  return result.count > 0;
 }
 
 /**

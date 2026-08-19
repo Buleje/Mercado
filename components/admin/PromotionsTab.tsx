@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { activateProps } from "@/components/admin/shared/a11y";
 import Image from "next/image";
@@ -231,42 +232,81 @@ export default function PromotionsTab() {
       expiresAt: form.expiresAt || undefined,
     };
     try {
-      if (editingId) {
-        await fetch(`/api/promotions/${editingId}`, {
-          method: "PATCH",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify(payload),
-        });
-      } else {
-        await fetch("/api/promotions", {
-          method: "POST",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify(payload),
-        });
+      // El formulario se cerraba pasara lo que pasara: si el servidor
+      // rechazaba la promo (fechas inválidas, plan vencido, 503), la pantalla
+      // volvía a la lista sin ella y el dueño la cargaba de nuevo desde cero,
+      // sin saber por qué no había quedado.
+      const res = editingId
+        ? await fetch(`/api/promotions/${editingId}`, {
+            method: "PATCH",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(payload),
+          })
+        : await fetch("/api/promotions", {
+            method: "POST",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(payload),
+          });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(
+          typeof body?.error === "string"
+            ? body.error
+            : `No se pudo guardar la promoción (error ${res.status})`,
+        );
+        return;
       }
       setShowForm(false);
       load();
-    } catch {}
-    setSaving(false);
+    } catch (err) {
+      console.warn("[PromotionsTab] guardar promoción falló", err);
+      toast.error("Sin conexión — la promoción no se guardó.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleActive = async (p: DbPromotion) => {
-    await fetch(`/api/promotions/${p.id}`, {
-      method: "PATCH",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ active: !p.active }),
-    });
+    // Prender o apagar una promo cambia lo que la tienda cobra: si el switch
+    // vuelve solo a su lugar, hay que decir por qué.
+    try {
+      const res = await fetch(`/api/promotions/${p.id}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ active: !p.active }),
+      });
+      if (!res.ok) {
+        toast.error(`No se pudo ${p.active ? "pausar" : "activar"} la promoción (error ${res.status})`);
+      }
+    } catch (err) {
+      console.warn("[PromotionsTab] toggle promoción falló", err);
+      toast.error("Sin conexión — la promoción no cambió.");
+    }
     load();
   };
 
   const confirmDelete = async () => {
     if (!confirmDeleteId) return;
-    await fetch(`/api/promotions/${confirmDeleteId}`, {
-      method: "DELETE",
-      headers: csrfHeaders(),
-    });
-    setConfirmDeleteId(null);
-    load();
+    try {
+      const res = await fetch(`/api/promotions/${confirmDeleteId}`, {
+        method: "DELETE",
+        headers: csrfHeaders(),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(
+          typeof body?.error === "string"
+            ? body.error
+            : `No se pudo eliminar la promoción (error ${res.status})`,
+        );
+        return;
+      }
+      setConfirmDeleteId(null);
+      load();
+    } catch (err) {
+      console.warn("[PromotionsTab] eliminar promoción falló", err);
+      toast.error("Sin conexión — la promoción NO se eliminó.");
+    }
   };
 
   // ── Scheduled Campaigns ────────────────────────────────────────────────

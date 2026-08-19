@@ -113,13 +113,33 @@ function ShiftCloseModal({
 
   const handleConfirm = async () => {
     setConfirming(true);
-    // Attempt to close shift via API (best-effort)
+    setError(null);
+    /**
+     * Cerrar el turno NO es «best-effort»: es el corte del día.
+     *
+     * Antes cualquier fallo —403, 409 de un turno ya cerrado, 503— se tragaba
+     * en el `catch` y la pantalla llamaba a `onConfirm()` igual, así que el
+     * cajero veía «turno cerrado», se iba, y el turno seguía abierto en el
+     * sistema con las ventas del día siguiente cayendo adentro.
+     */
     try {
-      await fetch("/api/cash-registers/close-shift", { method: "POST", headers: csrfHeaders() });
-    } catch {
-      // ignore — shift close is optional
+      const res = await fetch("/api/cash-registers/close-shift", { method: "POST", headers: csrfHeaders() });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(
+          typeof body?.error === "string"
+            ? body.error
+            : `No se pudo cerrar el turno (error ${res.status}). Volvé a intentar.`,
+        );
+        return;
+      }
+    } catch (err) {
+      console.warn("[POSCajaModule] cerrar turno falló", err);
+      setError("Sin conexión con el servidor — el turno NO se cerró.");
+      return;
+    } finally {
+      setConfirming(false);
     }
-    setConfirming(false);
     onConfirm();
   };
 
@@ -273,8 +293,15 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
   // "Abrir caja primero" → salta al sub-tab de Caja Registradora.
   useEffect(() => {
     const goCaja = () => setSub("caja-registradora");
+    // Y su gemelo para el turno: el mismo modal ahora también aparece cuando
+    // falta el turno, y ahí lo que hay que abrir está en otra pestaña.
+    const goTurnos = () => setSub("turnos");
     window.addEventListener("buleje:navigate-caja", goCaja);
-    return () => window.removeEventListener("buleje:navigate-caja", goCaja);
+    window.addEventListener("buleje:navigate-turnos", goTurnos);
+    return () => {
+      window.removeEventListener("buleje:navigate-caja", goCaja);
+      window.removeEventListener("buleje:navigate-turnos", goTurnos);
+    };
   }, []);
 
   const handleOpenCloseModal = () => {

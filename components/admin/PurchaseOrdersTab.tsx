@@ -539,7 +539,19 @@ export default function PurchaseOrdersTab() {
   // ignoraba la respuesta y pintaba "Recibido" aunque el PATCH devolviera 422:
   // la orden se veía cerrada y el stock nunca subía.
   const updateStatus = async (id: string, status: PurchaseStatus) => {
-    const anterior = orders.find(o => o.id === id)?.status;
+    const orden = orders.find(o => o.id === id);
+    const anterior = orden?.status;
+    // Cancelar cierra la orden y anula su cuenta por pagar: no es un cambio de
+    // estado más, y salía del `<select>` sin preguntar nada.
+    if (status === "cancelado") {
+      const aCredito = (orden?.paymentMethod ?? "").startsWith("credito_");
+      const ok = window.confirm(
+        `¿Cancelar la orden de ${orden?.supplierName || "este proveedor"} por S/${Number(orden?.total ?? 0).toFixed(2)}?` +
+        (aCredito ? "\n\nSe anulará también la cuenta por pagar que generó (salvo que ya tenga pagos)." : "") +
+        "\n\nUna orden cancelada no vuelve atrás.",
+      );
+      if (!ok) return;
+    }
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
     try {
       const res = await fetch(`/api/purchases/${id}`, {
@@ -565,6 +577,18 @@ export default function PurchaseOrdersTab() {
       }
       // Marcar recibido mueve stock: recargar para ver los totales reales.
       if (status === "recibido" || status === "parcial") load();
+      if (status === "cancelado") {
+        const detalle = await res.json().catch(() => null);
+        avisar(
+          detalle?.cuentaPorPagar === "conservada_con_pagos"
+            ? "Orden cancelada. La cuenta por pagar quedó abierta porque ya tenía pagos registrados."
+            : detalle?.cuentaPorPagar === "anulada"
+              ? "Orden cancelada y su cuenta por pagar anulada."
+              : "Orden cancelada.",
+          detalle?.cuentaPorPagar === "conservada_con_pagos" ? "error" : "ok",
+        );
+        load();
+      }
     } catch {
       if (anterior) setOrders(prev => prev.map(o => o.id === id ? { ...o, status: anterior } : o));
       avisar("Sin conexión con el servidor — el estado no se guardó", "error");
@@ -646,13 +670,22 @@ export default function PurchaseOrdersTab() {
     const counts = { pendiente: 0, parcial: 0, recibido: 0, cancelado: 0, auto_generated: 0 };
     let totalAcumulado = 0;
     let totalMes = 0;
+    let canceladas = 0;
+    let montoCancelado = 0;
     const mesActual = new Date().toISOString().slice(0, 7);
     for (const o of orders) {
       if (counts[o.status as keyof typeof counts] != null) counts[o.status as keyof typeof counts] += 1;
+      // Una orden cancelada no se le compró a nadie: sumarla al acumulado
+      // inflaba «lo que llevás comprado» con pedidos que nunca existieron.
+      if (o.status === "cancelado") {
+        canceladas += 1;
+        montoCancelado += o.total;
+        continue;
+      }
       totalAcumulado += o.total;
       if (o.createdAt.startsWith(mesActual)) totalMes += o.total;
     }
-    return { counts, totalAcumulado, totalMes, total: orders.length };
+    return { counts, totalAcumulado, totalMes, canceladas, montoCancelado, total: orders.length };
   }, [orders]);
 
   // Supplier analytics
@@ -713,7 +746,13 @@ export default function PurchaseOrdersTab() {
           <p className="text-sm text-[var(--text-secondary)]">
             {orders.length === 0
               ? "Creá la primera orden a un proveedor. Después podés duplicarla o hacerla recurrente."
-              : `${orders.length} ${orders.length === 1 ? "orden registrada" : "órdenes registradas"} · Total acumulado S/${kpis.totalAcumulado.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
+              : `${orders.length} ${orders.length === 1 ? "orden registrada" : "órdenes registradas"} · Total acumulado S/${kpis.totalAcumulado.toLocaleString("es-PE", { maximumFractionDigits: 0 })}${
+                  // Decir qué quedó afuera: un total que baja sin explicación
+                  // se lee como un error del sistema.
+                  kpis.canceladas > 0
+                    ? ` (sin ${kpis.canceladas} cancelada${kpis.canceladas === 1 ? "" : "s"} por S/${kpis.montoCancelado.toLocaleString("es-PE", { maximumFractionDigits: 0 })})`
+                    : ""
+                }`}
           </p>
         </div>
         <button
@@ -2147,6 +2186,7 @@ export default function PurchaseOrdersTab() {
       {recepcionOC && (
         <OCRecepcionModal
           ocId={recepcionOC.id}
+          supplier={recepcionOC.supplierName}
           items={recepcionOC.items}
           onComplete={() => {
             setRecepcionOC(null);

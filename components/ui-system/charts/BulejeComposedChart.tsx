@@ -108,6 +108,16 @@ interface Props {
    * ChartTooltip.
    */
   tooltipExtras?: (entry: Record<string, unknown>) => ReactNode;
+  /**
+   * Cuántas etiquetas del eje X mostrar como máximo en desktop.
+   *
+   * El default (todas) sirve para las series cortas para las que se diseñó el
+   * chart —12 meses, 30 días—, pero una serie diaria de un trimestre son 90
+   * etiquetas rotadas una encima de otra: un garabato negro donde debería
+   * haber fechas. Con esto la serie larga espacia sus ticks y la corta no
+   * cambia en nada. Móvil ya tenía su propio tope (~5) y manda si es menor.
+   */
+  maxXTicks?: number;
   className?: string;
 }
 
@@ -142,6 +152,7 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
   valueFormat,
   referenceAreas = [],
   tooltipExtras,
+  maxXTicks,
   className,
 }: Props) {
   const hasRightAxis = [...bars, ...lines, ...areas].some((s) => s.yAxis === "right");
@@ -159,7 +170,10 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, []);
-  const xInterval = isNarrow ? Math.max(0, Math.ceil(data.length / 5) - 1) : 0;
+  // `interval` de Recharts = cuántos ticks SALTEAR entre uno visible y el
+  // siguiente, así que N etiquetas sobre M puntos son `ceil(M/N) - 1`.
+  const saltoPara = (visibles: number) => Math.max(0, Math.ceil(data.length / visibles) - 1);
+  const xInterval = isNarrow ? saltoPara(5) : maxXTicks ? saltoPara(maxXTicks) : 0;
   const showValuesResolved = showValues && !isNarrow;
 
   if (data.length < minDataPoints) {

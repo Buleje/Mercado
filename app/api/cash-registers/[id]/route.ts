@@ -6,6 +6,7 @@ import { sendCashSummaryEmail } from "@/lib/mailer";
 import { toErrorPayload } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { createNotification } from "@/lib/create-notification";
+import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 
@@ -40,6 +41,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (body.action === "close") {
         const closingAmount = Number(body.closingAmount) || 0;
         const reg = await CashRegistersDB.close(auth.tenantId, id, closingAmount, body.notes);
+        // Cerrar es el otro momento en que se fija el dinero: queda quién contó,
+        // cuánto declaró y qué diferencia dio contra lo esperado.
+        const esperado = Number(reg?.expectedAmount ?? reg?.openingAmount ?? 0);
+        const dif = Math.round((closingAmount - esperado) * 100) / 100;
+        logActivity(
+          "Cerrar",
+          "caja",
+          `Cierre con S/${closingAmount.toFixed(2)} (esperado S/${esperado.toFixed(2)}, diferencia S/${dif.toFixed(2)})${body.notes ? ` — ${body.notes}` : ""}`,
+          id,
+          auth.username,
+          undefined,
+          auth.tenantId,
+        ).catch((err) => logger.warn("[cash-registers] activity log failed", { err: String(err) }));
         if (!reg) return NextResponse.json({ error: "Register not found" }, { status: 404 });
 
         // Send summary email (fire and forget — do not block response)

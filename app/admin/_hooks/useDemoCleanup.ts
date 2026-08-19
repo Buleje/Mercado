@@ -20,6 +20,7 @@
  */
 
 import { useCallback, useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import type { Tab } from "../_lib/tabs.types";
 
 export interface DemoModuleMeta {
@@ -69,7 +70,9 @@ export function useDemoCleanup(demoModules: DemoModulesMap): UseDemoCleanupResul
       }
       setDemoClearing(id);
       try {
-        const res = await fetch(meta.api, { method: "DELETE" });
+        // Sin CSRF el DELETE volvía 403 y el `if (res.ok)` no se cumplía: el
+        // botón de «limpiar datos de ejemplo» no limpiaba ni avisaba nada.
+        const res = await fetch(meta.api, { method: "DELETE", headers: csrfHeaders() });
         if (res.ok) dismissDemoTab(id);
       } catch {
         // ignorar — el usuario puede reintentar

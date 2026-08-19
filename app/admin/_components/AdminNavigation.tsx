@@ -18,7 +18,7 @@
  * los valores en runtime son idénticos.
  */
 
-import type { ComponentProps, ComponentType } from "react";
+import { memo, type ComponentProps, type ComponentType } from "react";
 import { AdminMobileDrawer } from "@/components/admin/layout/AdminMobileDrawer";
 import { AdminSidebar } from "@/components/admin/layout/AdminSidebar";
 import type { Tab } from "../_lib/tabs.types";
@@ -103,7 +103,10 @@ export interface AdminNavigationProps {
   sidebar: AdminNavigationSidebar;
 }
 
-export function AdminNavigation({
+// Memoizado — reenvía a AdminMobileDrawer/AdminSidebar (ambos memoizados);
+// sin esto, este wrapper igual re-renderiza siempre y arrastra a los dos.
+// Sólo sirve si AdminPage le pasa `shared`/`drawer`/`sidebar` estables.
+export const AdminNavigation = memo(function AdminNavigation({
   shared,
   drawer,
   sidebar,
@@ -192,4 +195,4 @@ export function AdminNavigation({
       />
     </>
   );
-}
+});

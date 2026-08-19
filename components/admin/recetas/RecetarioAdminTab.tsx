@@ -2,6 +2,7 @@
 
 import { LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { toast } from "sonner";
 
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -171,23 +172,31 @@ export default function RecetarioAdminTab() {
         activa: true,
       };
 
-      if (editing?._noteId) {
-        await fetch(`/api/admin/recetario/${editing._noteId}`, {
-          method: "PATCH",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify(body),
-        });
-      } else {
-        await fetch("/api/admin/recetario", {
-          method: "POST",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify(body),
-        });
+      const res = editing?._noteId
+        ? await fetch(`/api/admin/recetario/${editing._noteId}`, {
+            method: "PATCH",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(body),
+          })
+        : await fetch("/api/admin/recetario", {
+            method: "POST",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(body),
+          });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        toast.error(typeof errBody?.error === "string" ? errBody.error : `No se pudo guardar la receta (error ${res.status})`);
+        setSaving(false);
+        return;
       }
+      toast.success(editing ? "Receta actualizada" : "Receta creada");
       setShowModal(false);
       resetForm();
       fetchRecetas();
-    } catch { /* silent */ }
+    } catch (err) {
+      console.warn("[RecetarioAdminTab] guardar receta falló", err);
+      toast.error("No se pudo guardar la receta — revisá tu conexión.");
+    }
     setSaving(false);
   };
 
@@ -195,22 +204,39 @@ export default function RecetarioAdminTab() {
   const toggleActiva = async (r: RecetaPublica) => {
     if (!r._noteId) return;
     try {
-      await fetch(`/api/admin/recetario/${r._noteId}`, {
+      const res = await fetch(`/api/admin/recetario/${r._noteId}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ activa: !r.activa }),
       });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        toast.error(typeof errBody?.error === "string" ? errBody.error : `No se pudo cambiar el estado (error ${res.status})`);
+        return;
+      }
       fetchRecetas();
-    } catch { /* silent */ }
+    } catch (err) {
+      console.warn("[RecetarioAdminTab] cambiar estado falló", err);
+      toast.error("No se pudo cambiar el estado — revisá tu conexión.");
+    }
   };
 
   // ── Delete ──
   const handleDelete = async (noteId: string) => {
     try {
-      await fetch(`/api/admin/recetario/${noteId}`, { method: "DELETE", headers: csrfHeaders() });
+      const res = await fetch(`/api/admin/recetario/${noteId}`, { method: "DELETE", headers: csrfHeaders() });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        toast.error(typeof errBody?.error === "string" ? errBody.error : `No se pudo eliminar la receta (error ${res.status})`);
+        return;
+      }
+      toast.success("Receta eliminada");
       setDeleteConfirm(null);
       fetchRecetas();
-    } catch { /* silent */ }
+    } catch (err) {
+      console.warn("[RecetarioAdminTab] eliminar receta falló", err);
+      toast.error("No se pudo eliminar la receta — revisá tu conexión.");
+    }
   };
 
   // ── Filter ──

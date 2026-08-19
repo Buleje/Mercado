@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { totalesOC, costoUnitarioReal } from "@/lib/compras/totales-oc";
+import { totalesOC, costoUnitarioReal, totalDeOrden } from "@/lib/compras/totales-oc";
 import {
   opcionesDeEstado,
   transicionValida,
@@ -13,6 +13,47 @@ import { saldoPendiente, estaCompleta } from "@/lib/compras/recibido-acumulado";
  * pasaban `tsc`, `eslint` y la suite en verde: eran errores de semántica de
  * datos, invisibles para el tipo.
  */
+
+/**
+ * El checkbox «los costos que cargué ya incluyen IGV» se guardaba y no lo leía
+ * ningún cálculo (auditoría 2026-08-12): desmarcarlo no agregaba el 18% por
+ * ningún lado, así que con un proveedor que cotiza neto la deuda quedaba 18%
+ * corta y el PDF le mostraba un IGV que ese total nunca tuvo.
+ */
+describe("totalDeOrden — el IGV entra una sola vez, al guardar", () => {
+  it("con costos que YA incluyen IGV, el total es el subtotal (menos descuento)", () => {
+    expect(totalDeOrden({ subtotal: 100, igvIncluded: true })).toBe(100);
+    expect(totalDeOrden({ subtotal: 100, discountPct: 10, igvIncluded: true })).toBe(90);
+  });
+
+  it("con costos NETOS, agrega el 18% — es lo que el proveedor va a facturar", () => {
+    expect(totalDeOrden({ subtotal: 100, igvIncluded: false })).toBe(118);
+    // El descuento se pacta sobre la mercadería; el IGV se calcula después.
+    expect(totalDeOrden({ subtotal: 100, discountPct: 10, igvIncluded: false })).toBe(106.2);
+  });
+
+  it("sin decir nada asume que ya está incluido (el default del formulario)", () => {
+    expect(totalDeOrden({ subtotal: 250 })).toBe(250);
+  });
+
+  it("redondea a dos decimales: es plata, no un float suelto", () => {
+    expect(totalDeOrden({ subtotal: 33.33, igvIncluded: false })).toBe(39.33);
+  });
+
+  it("un descuento fuera de rango no da un total negativo ni infla el precio", () => {
+    expect(totalDeOrden({ subtotal: 100, discountPct: 150, igvIncluded: true })).toBe(0);
+    expect(totalDeOrden({ subtotal: 100, discountPct: -20, igvIncluded: true })).toBe(100);
+  });
+
+  /** El invariante del módulo: lo guardado siempre contiene el IGV. */
+  it("lo que guarda totalDeOrden lo lee totalesOC como IGV contenido", () => {
+    const total = totalDeOrden({ subtotal: 100, igvIncluded: false });
+    const t = totalesOC({ items: [{ quantity: 1, unitCost: 100 }], total });
+    expect(t.total).toBe(118);
+    expect(t.baseImponible).toBeCloseTo(100, 2);
+    expect(t.igvContenido).toBeCloseTo(18, 2);
+  });
+});
 
 describe("totales de la orden — el papel dice lo que dice la orden", () => {
   it("no le suma IGV encima al total (bug: S/160.80 se imprimía S/189.74)", () => {

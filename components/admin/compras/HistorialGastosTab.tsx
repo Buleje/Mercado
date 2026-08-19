@@ -3,13 +3,14 @@
 import { useState } from "react";
 import {
   DollarSign, RefreshCw, Download, TrendingDown, Wallet,
-  Clock, AlertTriangle, Search, X, Info,
+  Clock, AlertTriangle, Search, X, Info, Copy,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useHistorialGastos } from "@/hooks/use-historial-gastos";
 import GastosFijosPanel from "./historial/GastosFijosPanel";
 import PresupuestoPanel from "./historial/PresupuestoPanel";
 import GastoDetalleModal from "./historial/GastoDetalleModal";
+import GastoEditarModal from "./historial/GastoEditarModal";
 import HistorialTabla from "./historial/HistorialTabla";
 import { PERIOD_LABELS, fmt, type HistorialItem, type Period } from "./historial/shared";
 
@@ -46,7 +47,9 @@ function Kpi({
   );
 }
 
-function Segmento<T extends string>({
+// `boolean` además de `string`: el segmento de «sólo gastos» es un sí/no y
+// merecía el mismo control que el resto, no un checkbox suelto.
+function Segmento<T extends string | boolean>({
   opciones, valor, onChange,
 }: {
   opciones: Array<{ v: T; l: string }>;
@@ -57,7 +60,7 @@ function Segmento<T extends string>({
     <div className="flex items-center gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
       {opciones.map((o) => (
         <button
-          key={o.v}
+          key={String(o.v)}
           type="button"
           onClick={() => onChange(o.v)}
           aria-pressed={valor === o.v}
@@ -78,16 +81,23 @@ function Segmento<T extends string>({
 export default function HistorialGastosTab() {
   const h = useHistorialGastos();
   const [detalle, setDetalle] = useState<HistorialItem | null>(null);
+  const [editando, setEditando] = useState<HistorialItem | null>(null);
+  /**
+   * Cuántas veces se tocó un gasto desde acá. Corregir un monto cambia lo que
+   * el panel de gastos fijos tiene que mostrar («¿el combustible de esta semana
+   * está pagado?»), y ese panel trae sus propios datos.
+   */
+  const [cambios, setCambios] = useState(0);
 
   const { resumen } = h;
   const conDatos = h.items.length > 0;
 
   return (
     <div className="space-y-4">
-      <GastosFijosPanel onPagoRegistrado={h.recargar} />
-
-      <PresupuestoPanel />
-
+      {/* Los KPIs abren la pantalla: son el resumen de lo que se está viendo.
+          Antes venían terceros, detrás de dos paneles de más de 300px cada uno,
+          así que «Historial de Gastos» empezaba con dos pantallas de otra cosa
+          y la tabla —a lo que la gente entra— quedaba abajo de todo. */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kpi
           label="Total gastado"
@@ -136,6 +146,10 @@ export default function HistorialGastosTab() {
           </p>
         </div>
       )}
+
+      <GastosFijosPanel onPagoRegistrado={h.recargar} recargaToken={cambios} />
+
+      <PresupuestoPanel />
 
       {/* Toolbar en dos filas: los tres segmentos juntos no entran en una sola
           y empujaban el buscador fuera de la pantalla. Arriba el período (que
@@ -189,6 +203,18 @@ export default function HistorialGastosTab() {
               <option value="caja">Retiros de caja</option>
             </select>
           </label>
+          {/* Lo que se cuenta como gasto y lo que no viven en la misma tabla a
+              propósito (la caja no distingue), pero en un mes normal los
+              adelantos y retiros son la mayoría de las filas. */}
+          <Segmento
+            opciones={[
+              { v: false as const, l: "Todo lo que salió" },
+              { v: true as const, l: "Sólo gastos" },
+            ]}
+            valor={h.soloGastos}
+            onChange={h.setSoloGastos}
+          />
+
           <Segmento
             opciones={[
               { v: "all" as const, l: "Pagado y no" },
@@ -222,15 +248,15 @@ export default function HistorialGastosTab() {
             </button>
           )}
         </div>
-      </div>
 
-      {/* Distribución por categoría — cada chip filtra la tabla Y los totales */}
-      {resumen.categorias.length > 0 && (
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <p className="mb-3 text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-            Distribución por categoría
-          </p>
-          <div className="flex flex-wrap gap-2">
+        {/* Los chips de categoría son un filtro más: vivían en una tarjeta
+            aparte, con título propio y 4rem de aire, lejos de la fila de
+            filtros con la que trabajan en conjunto. */}
+        {resumen.categorias.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 pt-0.5">
+            <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+              Categorías
+            </span>
             {resumen.categorias.slice(0, 10).map(({ cat, total }) => {
               const isActive = h.categoryFilter === cat;
               return (
@@ -240,7 +266,7 @@ export default function HistorialGastosTab() {
                   onClick={() => h.setCategoryFilter(isActive ? "" : cat)}
                   aria-pressed={isActive}
                   className={cn(
-                    "inline-flex h-10 items-center gap-2 rounded-full border-2 px-3 text-sm font-semibold transition-colors",
+                    "inline-flex h-9 items-center gap-2 rounded-full border-2 px-3 text-sm font-semibold transition-colors",
                     isActive
                       ? "border-primary bg-primary text-white"
                       : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-primary/40 hover:text-primary dark:bg-[var(--color-card)]",
@@ -252,6 +278,33 @@ export default function HistorialGastosTab() {
               );
             })}
           </div>
+        )}
+      </div>
+
+      {/* Ocultar filas sin decirlo sería mentir por omisión: el aviso dice
+          cuántas son, por qué y cómo verlas. */}
+      {(h.duplicadosOcultos > 0 || !h.ocultarDuplicados) && !h.loading && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-2.5">
+          <Copy className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" aria-hidden />
+          <p className="text-sm text-[var(--text-secondary)]">
+            {h.ocultarDuplicados ? (
+              <>
+                <span className="font-bold text-[var(--text-primary)]">
+                  {h.duplicadosOcultos} {h.duplicadosOcultos === 1 ? "retiro de caja oculto" : "retiros de caja ocultos"}
+                </span>{" "}
+                porque {h.duplicadosOcultos === 1 ? "ya está listado" : "ya están listados"} como su adelanto.
+              </>
+            ) : (
+              <>Se están mostrando los retiros de caja que duplican a un adelanto.</>
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => h.setOcultarDuplicados(!h.ocultarDuplicados)}
+            className="ml-auto inline-flex h-9 items-center rounded-lg border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-raised)]"
+          >
+            {h.ocultarDuplicados ? "Mostrarlos igual" : "Volver a ocultarlos"}
+          </button>
         </div>
       )}
 
@@ -318,7 +371,20 @@ export default function HistorialGastosTab() {
         />
       )}
 
-      <GastoDetalleModal item={detalle} onClose={() => setDetalle(null)} />
+      <GastoDetalleModal
+        item={detalle}
+        onEditar={(item) => { setDetalle(null); setEditando(item); }}
+        onClose={() => setDetalle(null)}
+      />
+
+      {editando && (
+        <GastoEditarModal
+          item={editando}
+          categorias={resumen.categorias.map((c) => c.cat)}
+          onGuardado={() => { h.recargar(); setCambios((n) => n + 1); }}
+          onClose={() => setEditando(null)}
+        />
+      )}
     </div>
   );
 }

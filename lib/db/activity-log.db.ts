@@ -128,6 +128,8 @@ export const ActivityLogDB = {
     tenantId: string,
     opts: {
       entity?: string;
+      /** Un registro puntual: «qué le pasó a ESTE gasto», no a todos. */
+      entityId?: string;
       user?: string;
       action?: string;
       limit?: number;
@@ -137,6 +139,7 @@ export const ActivityLogDB = {
     const limit = Math.min(100, Math.max(1, opts.limit ?? 50));
     const where: Record<string, unknown> = { tenantId };
     if (opts.entity) where.entity = opts.entity;
+    if (opts.entityId) where.entityId = opts.entityId;
     if (opts.user) where.user = opts.user;
     if (opts.action) where.action = opts.action;
 

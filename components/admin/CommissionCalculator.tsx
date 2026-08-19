@@ -387,7 +387,26 @@ export default function CommissionCalculator() {
             <Users className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
           </div>
           <p className="text-base font-semibold text-[var(--text-primary)] mb-1">Sin ventas en el periodo</p>
-          <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">Las comisiones se calculan a partir de las ventas registradas. Genera tu primera venta desde POS para ver el desglose.</p>
+          <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
+            Las comisiones se calculan a partir de las ventas registradas. Generá tu primera venta desde el POS para ver el desglose.
+          </p>
+          {/* El empty state decía sólo «no hay ventas» y escondía lo único
+              accionable: la regla con la que se van a calcular. Dejarla lista
+              ANTES de vender es justamente lo que se quiere hacer acá. */}
+          <p className="mt-4 text-sm text-[var(--text-secondary)]">
+            Regla actual: <b className="font-mono text-[var(--text-primary)]">{defaultRate}%</b> sobre el total vendido por cada
+            vendedor.
+            {Object.keys(customRates).length > 0 && (
+              <> Hay {Object.keys(customRates).length} vendedor(es) con porcentaje propio.</>
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowSettings(true)}
+            className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+          >
+            <Settings className="h-4 w-4" /> Ajustar el porcentaje
+          </button>
         </div>
       )}
     </div>

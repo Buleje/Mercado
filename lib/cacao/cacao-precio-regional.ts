@@ -17,14 +17,23 @@
  */
 
 /**
- * ANCLA de calibración del precio de compra local (Brandon, 2026-07-14): el
- * viernes 10-jul-2026 en Ciudad Constitución se compraba el seco a S/ 18.20/kg,
- * cuando la conversión oficial de ese día (ICE US$ 5,919/t × FX 3.3990) daba
- * S/ 20.12/kg → factor real ≈ 0.905 del oficial. Reemplaza el 88% estimado a ojo:
- * la fecha + precio observado quedan acá para re-calibrar cuando haya dato nuevo.
+ * ANCLA de calibración del precio de compra local (Brandon, 2026-08-19): el
+ * miércoles 19-ago-2026 en Ciudad Constitución se compró el seco a S/ 17.80/kg,
+ * cuando la conversión oficial de ese día (ICE US$ 6,008/t × FX 3.3568) daba
+ * S/ 20.17/kg → factor real ≈ 0.883 del oficial. Reemplaza el ancla anterior
+ * (S/ 18.20 del 10-jul-2026, ≈0.905): re-calibrar = editar SOLO este objeto,
+ * el rótulo de fecha (`ANCLA_CC_LABEL`) se recalcula solo.
  */
-const ANCLA_CC = { fecha: "2026-07-10", compraSolKg: 18.2, usdT: 5919, fx: 3.399 } as const;
-const COMPRA_LOCAL = ANCLA_CC.compraSolKg / ((ANCLA_CC.usdT / 1000) * ANCLA_CC.fx); // ≈ 0.905
+const ANCLA_CC = { fecha: "2026-08-19", compraSolKg: 17.8, usdT: 6008, fx: 3.3568 } as const;
+const COMPRA_LOCAL = ANCLA_CC.compraSolKg / ((ANCLA_CC.usdT / 1000) * ANCLA_CC.fx); // ≈ 0.883
+
+/** Rótulo "S/ X.XX del <día corto> <día> <mes corto>" para UI — single source de la
+ * fecha/precio del ancla, para no repetir el string a mano en cada componente. */
+const DIAS_CORTOS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const anclaFecha = new Date(`${ANCLA_CC.fecha}T00:00:00Z`);
+const ANCLA_CC_FECHA_LABEL = `${DIAS_CORTOS[anclaFecha.getUTCDay()]} ${String(anclaFecha.getUTCDate()).padStart(2, "0")} ${MESES_CORTOS[anclaFecha.getUTCMonth()]}`;
+export const ANCLA_CC_LABEL = `S/ ${ANCLA_CC.compraSolKg.toFixed(2)} del ${ANCLA_CC_FECHA_LABEL}`;
 
 /** Fracción del precio internacional (grano SECO) que llega a cada eslabón. */
 const FACTOR = {
@@ -134,7 +143,7 @@ export function estimarPreciosRegionales(
     mk("acopio", "Acopio regional (Oxapampa / Pucallpa)", "Selva Central", "seco", acopio, false,
       "Acopiador intermedio de la región; paga rápido pero menos que Lima."),
     mk("chacra-cc", "Ciudad Constitución — en chacra (seco)", "Ciudad Constitución", "seco", chacra, true,
-      `Dato real de la zona (S/ ${ANCLA_CC.compraSolKg.toFixed(2)} el vie 10 jul): acá se compra ≈${Math.round(FACTOR.chacra * 100)}% del precio oficial. El precio final igual depende de humedad, calidad y comprador del día.`),
+      `Dato real de la zona (${ANCLA_CC_LABEL}): acá se compra ≈${Math.round(FACTOR.chacra * 100)}% del precio oficial. El precio final igual depende de humedad, calidad y comprador del día.`),
     mk("baba-cc", "Ciudad Constitución — en baba (fresco)", "Ciudad Constitución", "baba", baba, true,
       "Cacao fresco sin fermentar/secar. ~2,5 kg de baba hacen 1 kg seco."),
   ];
@@ -152,10 +161,10 @@ export function estimarPreciosRegionales(
 
 /**
  * Precio de COMPRA local en Ciudad Constitución como fracción del precio oficial
- * internacional convertido a soles, calibrado con ANCLA_CC (S/ 18.20 el vie
- * 10-jul-2026). Single source: lo usan el flujo de precio en modo S//kg, el hero
+ * internacional convertido a soles, calibrado con ANCLA_CC (S/ 17.80 del mié
+ * 19-ago-2026). Single source: lo usan el flujo de precio en modo S//kg, el hero
  * "Compra local" del noticiero, la tabla de conversión y Mi precio.
  */
 export const CHACRA_CC_COMPRA_OFICIAL_FACTOR = FACTOR.chacra;
-/** % entero para rotular en UI ("compra local ≈ 90% del oficial"). */
+/** % entero para rotular en UI ("compra local ≈ 88% del oficial"). */
 export const COMPRA_LOCAL_PCT = Math.round(CHACRA_CC_COMPRA_OFICIAL_FACTOR * 100);

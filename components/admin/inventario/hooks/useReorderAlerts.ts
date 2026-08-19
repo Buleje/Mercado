@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { DbProduct } from "@/lib/jsondb";
 
@@ -36,7 +37,10 @@ export function useReorderAlerts(products: DbProduct[], onDone: () => void) {
     const unitCost = product.costPrice ?? product.price * 0.7;
     setGeneratingOC(true);
     try {
-      await fetch("/api/purchases", {
+      // `supplierId: ""` con `PurchaseOrder.supplierId` obligatorio con FK
+      // siempre da 500 — el producto no guarda a qué proveedor se le compra,
+      // así que la orden no se puede armar sola.
+      const res = await fetch("/api/purchases", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
@@ -45,9 +49,21 @@ export function useReorderAlerts(products: DbProduct[], onDone: () => void) {
           notes: `OC automática - stock bajo (${product.name})`,
         }),
       });
-    } catch { /* ignore */ }
-    setGeneratingOC(false);
-    onDone();
+      if (!res.ok) {
+        toast.error(
+          `No se pudo generar la orden de "${product.name}": falta elegir el proveedor. ` +
+          "Creala desde Compras › Órdenes, con el proveedor y la cantidad.",
+        );
+        return;
+      }
+      toast.success(`Orden generada: ${suggestedQty} × ${product.name}`);
+    } catch (err) {
+      console.warn("[useReorderAlerts] generar OC falló", err);
+      toast.error("Sin conexión — no se generó la orden.");
+    } finally {
+      setGeneratingOC(false);
+      onDone();
+    }
   }, [onDone]);
 
   const generateBulkOC = useCallback(async () => {
@@ -61,14 +77,26 @@ export function useReorderAlerts(products: DbProduct[], onDone: () => void) {
         const unitCost = p.costPrice ?? p.price * 0.7;
         return { productId: p.id, name: p.name, quantity: suggestedQty, unitCost, unit: p.unit };
       });
-      await fetch("/api/purchases", {
+      const res = await fetch("/api/purchases", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ supplierId: "", items, notes: "OC automática - stock bajo" }),
       });
-    } catch { /* ignore */ }
-    setGeneratingOC(false);
-    onDone();
+      if (!res.ok) {
+        toast.error(
+          `No se pudo generar la orden con ${items.length} producto${items.length === 1 ? "" : "s"}: ` +
+          "falta elegir el proveedor. Creala desde Compras › Órdenes.",
+        );
+        return;
+      }
+      toast.success(`Orden generada con ${items.length} producto${items.length === 1 ? "" : "s"}`);
+    } catch (err) {
+      console.warn("[useReorderAlerts] generar OC masiva falló", err);
+      toast.error("Sin conexión — no se generó la orden.");
+    } finally {
+      setGeneratingOC(false);
+      onDone();
+    }
   }, [lowStockProducts, onDone]);
 
   const saveAutoReorder = useCallback((productId: number) => {

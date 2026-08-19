@@ -506,6 +506,101 @@ export class DocumentsDB {
   }
 
   /**
+   * Documentos que todavía no tienen contexto: la cola de indexado los toma de
+   * a poco hasta que no queda ninguno.
+   *
+   * "Sin contexto" es no tener descripción — ni de la IA ni escrita a mano —,
+   * que es la medida honesta de "no se puede encontrar por lo que dice adentro".
+   * Se ordena por INTENTOS y después por antigüedad: un escaneo que ya falló
+   * tres veces no puede quedarse adelante de veinte documentos que nunca se
+   * intentaron. El filtro de tipo lo hace el llamador con `isAnalyzableMime`
+   * (vive del lado cliente-safe y no se puede consultar desde SQL).
+   */
+  static async pendientesDeIndexar(
+    tenantId: string,
+    limite = 50,
+    maxIntentos = 3,
+  ): Promise<{ id: string; name: string; mimeType: string; intentos: number; lento: boolean }[]> {
+    const docs = await prisma.document.findMany({
+      where: { tenantId, deletedAt: null },
+      select: { id: true, name: true, mimeType: true, ocrMetadata: true, uploadedAt: true },
+      orderBy: { uploadedAt: "desc" },
+      take: 1000,
+    });
+    const salida: { id: string; name: string; mimeType: string; intentos: number; lento: boolean }[] = [];
+    for (const d of docs) {
+      const meta = (d.ocrMetadata ?? {}) as Record<string, unknown>;
+      const texto = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+      if (texto(meta.description) || texto(meta.summary) || texto(meta.descripcionUsuario)) continue;
+      const intentos = typeof meta.indexIntentos === "number" ? meta.indexIntentos : 0;
+      if (intentos >= maxIntentos) continue;
+      salida.push({
+        id: d.id,
+        name: d.name,
+        mimeType: d.mimeType,
+        intentos,
+        // Se sabe que hay que MIRARLO: o es una imagen, o la vez pasada tardó
+        // minutos (un PDF escaneado no se distingue de uno con texto hasta que
+        // se lo abre — por eso se anota la primera vez y ya no se olvida).
+        lento: d.mimeType.startsWith("image/") || meta.indexLento === true,
+      });
+    }
+    return salida.sort((a, b) => a.intentos - b.intentos).slice(0, limite);
+  }
+
+  /**
+   * Deja anotado que se intentó indexar y no salió.
+   *
+   * Sin esto la cola reintentaría para siempre los mismos 68 escaneos que no se
+   * pueden leer, y nunca llegaría a los que sí. Se guarda el motivo para que la
+   * pantalla pueda decir POR QUÉ falta el contexto de un documento.
+   */
+  static async marcarIntentoDeIndexado(
+    tenantId: string,
+    id: string,
+    motivo: string,
+    opciones: { lento?: boolean } = {},
+  ): Promise<void> {
+    const doc = await prisma.document.findFirst({ where: { id, tenantId }, select: { ocrMetadata: true } });
+    if (!doc) return;
+    const meta = (doc.ocrMetadata ?? {}) as Record<string, unknown>;
+    const intentos = typeof meta.indexIntentos === "number" ? meta.indexIntentos : 0;
+    await prisma.document.update({
+      where: { id },
+      data: {
+        ocrMetadata: {
+          ...meta,
+          indexIntentos: intentos + 1,
+          indexUltimoMotivo: motivo.slice(0, 200),
+          indexUltimoIntento: new Date().toISOString(),
+          ...(opciones.lento ? { indexLento: true } : {}),
+        },
+      },
+    });
+  }
+
+  /** Anota que este documento tarda minutos, aunque haya salido bien. */
+  static async marcarDocumentoLento(tenantId: string, id: string): Promise<void> {
+    const doc = await prisma.document.findFirst({ where: { id, tenantId }, select: { ocrMetadata: true } });
+    if (!doc) return;
+    const meta = (doc.ocrMetadata ?? {}) as Record<string, unknown>;
+    if (meta.indexLento === true) return;
+    await prisma.document.update({ where: { id }, data: { ocrMetadata: { ...meta, indexLento: true } } });
+  }
+
+  /** Tenants que tienen documentos sin describir (para el cron de indexado). */
+  static async tenantsConPendientesDeIndexar(limite = 20): Promise<string[]> {
+    const filas = await prisma.document.groupBy({
+      by: ["tenantId"],
+      where: { deletedAt: null, ocrText: null },
+      _count: { _all: true },
+      orderBy: { _count: { tenantId: "desc" } },
+      take: limite,
+    });
+    return filas.map((f) => f.tenantId);
+  }
+
+  /**
    * ADR-119 — usado por el cron. Trae documentos que vencen dentro de la
    * ventana y aún no recibieron aviso (o cuyo aviso quedó obsoleto). Cross-
    * tenant: el caller agrupa por tenantId para resolver el teléfono destino.
@@ -969,12 +1064,53 @@ export class DocumentsDB {
     return mapFolder(f);
   }
 
-  static async deleteFolder(tenantId: string, id: string): Promise<boolean> {
+  /**
+   * Eliminar carpetas, con o sin lo que tienen adentro.
+   *
+   * Por defecto la FK suelta los documentos a la raíz (`Document.folderId` es
+   * ON DELETE SET NULL): borrabas una carpeta con 80 archivos y los 80
+   * aparecían sueltos en el drive, que para quien la borró es "no se borró
+   * nada". Con `conDocumentos` esos documentos se van antes a la PAPELERA
+   * (recuperables 30 días) y recién después se borran las carpetas.
+   *
+   * Sólo se lleva los documentos de las carpetas que REALMENTE se borran: la
+   * FK de `parentId` también es SetNull, así que una subcarpeta que no está en
+   * `ids` sobrevive —sube a la raíz— y sus documentos siguen adentro. Cuando la
+   * intención es el árbol completo, la UI manda los ids de todo el árbol.
+   */
+  static async eliminarCarpetas(
+    tenantId: string,
+    ids: string[],
+    opciones: { conDocumentos?: boolean } = {},
+  ): Promise<{ carpetas: number; documentos: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const limpios = [...new Set(ids.filter((x) => typeof x === "string" && x.trim()))];
+    if (limpios.length === 0) return { carpetas: 0, documentos: 0 };
+
+    let documentos = 0;
+    if (opciones.conDocumentos) {
+      // Antes del delete: después ya no hay forma de saber qué había adentro.
+      const r = await prisma.document.updateMany({
+        where: { tenantId, folderId: { in: limpios }, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      documentos = r.count;
+    }
+    const { count } = await prisma.documentFolder.deleteMany({ where: { id: { in: limpios }, tenantId } });
+    return { carpetas: count, documentos };
+  }
+
+  static async deleteFolder(
+    tenantId: string,
+    id: string,
+    opciones: { conDocumentos?: boolean } = {},
+  ): Promise<boolean> {
     const existing = await prisma.documentFolder.findFirst({ where: { id, tenantId } });
     if (!existing) return false;
-    // documentos pasan a raíz (folderId → null via ON DELETE SET NULL)
-    await prisma.documentFolder.delete({ where: { id } });
-    return true;
+    // Sin `conDocumentos` los documentos pasan a raíz (folderId → null via ON
+    // DELETE SET NULL); con él se van antes a la papelera.
+    const { carpetas } = await this.eliminarCarpetas(tenantId, [id], opciones);
+    return carpetas > 0;
   }
 
   /**
@@ -986,7 +1122,8 @@ export class DocumentsDB {
    * · `addTags` / `removeTags` — suman o quitan sin pisar lo que ya había: con
    *   varias carpetas seleccionadas, reemplazar el array borraría las etiquetas
    *   propias de cada una.
-   * · `delete` — cascada a subcarpetas (schema) y los documentos van a raíz.
+   * · `delete` — cascada a subcarpetas (schema); los documentos van a la raíz,
+   *   o a la papelera con `conDocumentos` (ver `eliminarCarpetas`).
    */
   static async bulkFolders(
     tenantId: string,
@@ -996,7 +1133,7 @@ export class DocumentsDB {
       | { tipo: "color"; color: string | null }
       | { tipo: "addTags"; tags: string[] }
       | { tipo: "removeTags"; tags: string[] }
-      | { tipo: "delete" },
+      | { tipo: "delete"; conDocumentos?: boolean },
   ): Promise<number> {
     if (!tenantId) throw new Error("tenantId is required");
     const limpios = [...new Set(ids.filter((x) => typeof x === "string" && x.trim()))];
@@ -1004,8 +1141,10 @@ export class DocumentsDB {
     const where = { id: { in: limpios }, tenantId };
 
     if (accion.tipo === "delete") {
-      const { count } = await prisma.documentFolder.deleteMany({ where });
-      return count;
+      const { carpetas } = await this.eliminarCarpetas(tenantId, limpios, {
+        conDocumentos: accion.conDocumentos,
+      });
+      return carpetas;
     }
     if (accion.tipo === "emoji") {
       const { count } = await prisma.documentFolder.updateMany({ where, data: { emoji: accion.emoji } });

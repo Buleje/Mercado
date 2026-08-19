@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { MarketplaceOrdersDB } from "@/lib/db/marketplace.db";
+import { LoyaltyDB } from "@/lib/db/loyalty.db";
 import { MarketplaceAdminDB } from "@/lib/db/marketplace-public.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
@@ -638,9 +639,14 @@ export async function POST(req: NextRequest) {
         if (!exists) return;
         const pointsToEarn = Math.floor(order.total);
         if (pointsToEarn <= 0) return;
-        await prisma.customer.updateMany({
-          where: { phone: customerPhone, tenantId: tenantIdForLoyalty },
-          data: { loyaltyPoints: { increment: pointsToEarn } },
+        // ADR-380 Fase 1.3: antes esto era un updateMany directo — movía el
+        // saldo sin dejar asiento en LoyaltyTransaction, así que el historial
+        // que el cliente ve nunca cuadraba con lo que de verdad tiene. `earn`
+        // hace ambas cosas en la MISMA tx (ver lib/db/loyalty.db.ts) y también
+        // invalida la caché del saldo.
+        await LoyaltyDB.earn(tenantIdForLoyalty, customerPhone, pointsToEarn, "purchase", {
+          orderId: order.id,
+          channel: "marketplace",
         });
       } catch (err) {
         logger.warn("[marketplace/orders] loyalty earn failed", { err: String(err) });

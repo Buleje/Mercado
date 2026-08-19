@@ -17,9 +17,10 @@
  * el CTP sabe moverse en el de Títulos Habilitantes.
  */
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, Keyboard, Loader2, type LucideIcon } from "@buleje/design-system/icons";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { Keyboard, type LucideIcon } from "@buleje/design-system/icons";
 import { Kicker, PageTitle } from "@buleje/design-system";
+import ActionMenu, { type MenuAccion } from "./action-menu";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
 import {
@@ -48,18 +49,13 @@ export interface LibroGroup {
   views: LibroView[];
 }
 
-export interface LibroAction {
-  id: string;
-  label: string;
-  /** Una línea de por qué/para qué. Solo en el menú desplegable. */
-  hint?: string;
-  icon: LucideIcon;
-  onSelect: () => void;
-  /** `dark` = acción oficial (la que se presenta ante la autoridad). */
-  tone?: "default" | "dark";
-  busy?: boolean;
-  disabled?: boolean;
-}
+/**
+ * Una acción del menú de la cabina. Es el MISMO tipo que usan las barras de las
+ * vistas (`admin/shared/action-menu`): el menú se extrajo de acá cuando
+ * Producción y Ingresos necesitaron plegar sus propios botones, y dos tipos
+ * gemelos habrían divergido a la primera opción nueva.
+ */
+export type LibroAction = MenuAccion;
 
 interface LibroChromeProps {
   /** Persistencia de orden/registro en el sidebar. */
@@ -343,83 +339,6 @@ export default function LibroChrome({
 
       {children}
 
-    </div>
-  );
-}
-
-/**
- * Menú de acciones del libro. Exportar/importar/informar son cuatro botones que
- * se usan una vez por mes: ocupaban dos filas de la cabecera para eso. Acá van
- * plegados, con la acción oficial destacada.
- */
-function ActionMenu({ label, actions }: { label: string; actions: LibroAction[] }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const busy = actions.find((a) => a.busy);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)]"
-      >
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-        <span>{busy ? "Generando…" : label}</span>
-        <ChevronDown className={`h-3.5 w-3.5 opacity-60 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
-          <div
-            role="menu"
-            className="absolute right-0 z-50 mt-2 w-[19rem] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
-          >
-            {actions.map((a, i) => {
-              const AIcon = a.icon;
-              return (
-                <button
-                  key={a.id}
-                  type="button"
-                  role="menuitem"
-                  disabled={a.disabled || a.busy}
-                  onClick={() => {
-                    setOpen(false);
-                    a.onSelect();
-                  }}
-                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-50 ${
-                    i > 0 ? "border-t border-[var(--rule-soft)]" : ""
-                  } ${a.tone === "dark" ? "bg-primary/5" : ""}`}
-                >
-                  {a.busy ? (
-                    <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" />
-                  ) : (
-                    <AIcon
-                      className={`mt-0.5 h-4 w-4 shrink-0 ${
-                        a.tone === "dark" ? "text-primary" : "text-[var(--text-tertiary)]"
-                      }`}
-                    />
-                  )}
-                  <span className="min-w-0">
-                    <b className="block text-sm font-bold text-[var(--text-primary)]">{a.label}</b>
-                    {a.hint && <span className="mt-0.5 block text-xs text-[var(--text-tertiary)]">{a.hint}</span>}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
     </div>
   );
 }

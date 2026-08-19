@@ -7,7 +7,7 @@
  * picos/valles locales rotulados con su precio.
  * Toggle de unidad: USD/t internacional ↔ S//kg de compra local Ciudad
  * Constitución = USD→S/ al FX del día × factor calibrado con precio real
- * (ver ANCLA_CC en cacao-precio-regional, ≈90% del oficial).
+ * (ver ANCLA_CC en cacao-precio-regional, ≈88% del oficial).
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot } from "recharts";
@@ -252,7 +252,16 @@ export default function CacaoPriceChart({
                 </>
               )}
               {selLabel && <ReferenceLine x={selLabel} stroke={palette.accent} strokeWidth={2} />}
-              <Area type="monotone" dataKey="c" name="Precio" stroke={color} strokeWidth={2} fill="url(#cacaoPriceGrad)" dot={false} activeDot={{ r: 5, fill: palette.accent }} />
+              <Area
+                type="monotone"
+                dataKey="c"
+                name="Precio"
+                stroke={color}
+                strokeWidth={2}
+                fill="url(#cacaoPriceGrad)"
+                dot={onPointSelect ? { r: 2.5, strokeWidth: 0, fill: color } : false}
+                activeDot={{ r: 5, fill: palette.accent, style: { cursor: onPointSelect ? "pointer" : "default" } }}
+              />
               {showMA && <Line type="monotone" dataKey="sma7" name="MM 7" stroke={palette.ma1} strokeWidth={1.5} dot={false} connectNulls />}
               {showMA && <Line type="monotone" dataKey="sma30" name="MM 30" stroke={palette.ma2} strokeWidth={1.5} dot={false} connectNulls />}
               {showForecast && <Line type="monotone" dataKey="fcHi" name="Proy. alta" stroke={palette.accent} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.5} dot={false} connectNulls />}

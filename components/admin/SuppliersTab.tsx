@@ -42,6 +42,8 @@ export default function SuppliersTab() {
   const [addForm, setAddForm] = useState({ name: "", ruc: "", phone: "", email: "", address: "", notes: "" });
   const [deleteTarget, setDeleteTarget] = useState<DbSupplier | null>(null);
   const [deleting, setDeleting] = useState(false);
+  /** Lo que dijo el servidor cuando no se pudo borrar. Antes se perdía. */
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [expandedScorecard, setExpandedScorecard] = useState<string | null>(null);
   const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null);
   const [showProveedorModal, setShowProveedorModal] = useState(false);
@@ -89,10 +91,32 @@ export default function SuppliersTab() {
   const deleteSupplier = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    await fetch(`/api/suppliers/${deleteTarget.id}`, { method: "DELETE" });
-    setDeleting(false);
-    setDeleteTarget(null);
-    load();
+    setDeleteError(null);
+    try {
+      // Sin `csrfHeaders` esto devolvía 403 SIEMPRE, y como nadie miraba la
+      // respuesta el modal se cerraba igual: parecía borrado hasta que la lista
+      // se recargaba con el proveedor todavía ahí.
+      const res = await fetch(`/api/suppliers/${deleteTarget.id}`, {
+        method: "DELETE",
+        headers: csrfHeaders(),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setDeleteError(
+          typeof body?.error === "string"
+            ? body.error
+            : "No se pudo eliminar el proveedor. Intentá de nuevo.",
+        );
+        return;
+      }
+      setDeleteTarget(null);
+      load();
+    } catch (err) {
+      console.warn("[SuppliersTab] eliminar proveedor falló", err);
+      setDeleteError("No se pudo eliminar el proveedor. Revisá la conexión.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const addSupplier = async (e: FormEvent) => {
@@ -647,10 +671,16 @@ export default function SuppliersTab() {
       {/* ── Add supplier modal ── */}
       <ConfirmDeleteDialog
         open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        onClose={() => { setDeleteTarget(null); setDeleteError(null); }}
         onConfirm={deleteSupplier}
         title="¿Eliminar proveedor?"
-        description={deleteTarget ? `"${deleteTarget.name}" será eliminado permanentemente. Esta acción no se puede deshacer.` : "Esta acción no se puede deshacer"}
+        description={
+          deleteError
+            ? `No se eliminó: ${deleteError}`
+            : deleteTarget
+              ? `"${deleteTarget.name}" será eliminado permanentemente. Esta acción no se puede deshacer.`
+              : "Esta acción no se puede deshacer"
+        }
         confirmText="Sí, eliminar"
         loading={deleting}
       />

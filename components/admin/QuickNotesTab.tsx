@@ -86,35 +86,56 @@ export default function QuickNotesTab() {
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ title: newTitle.trim(), content: newContent.trim(), color: newColor, pinned: false }),
       });
-      if (res.ok) {
-        const n = await res.json();
-        setNotes(prev => [{ ...n, createdAt: n.createdAt.slice(0, 16).replace("T", " "), updatedAt: n.updatedAt.slice(0, 16).replace("T", " ") }, ...prev]);
-        toast.success("Nota creada");
-      } else { toast.error("Error al crear la nota"); }
-    } catch { toast.error("Error al crear la nota"); }
-    setNewTitle(""); setNewContent(""); setNewColor("yellow"); setShowNew(false);
+      if (!res.ok) {
+        toast.error(`No se pudo crear la nota (error ${res.status})`);
+        return;
+      }
+      const n = await res.json();
+      setNotes(prev => [{ ...n, createdAt: n.createdAt.slice(0, 16).replace("T", " "), updatedAt: n.updatedAt.slice(0, 16).replace("T", " ") }, ...prev]);
+      toast.success("Nota creada");
+      setNewTitle(""); setNewContent(""); setNewColor("yellow"); setShowNew(false);
+    } catch {
+      toast.error("Error al crear la nota — revisá tu conexión.");
+    }
   };
 
   const handleDelete = async (id: string) => {
+    const previous = notes;
     setNotes(prev => prev.filter(n => n.id !== id));
     try {
-      await fetch(`/api/notes?id=${id}`, { method: "DELETE", headers: csrfHeaders() });
+      const res = await fetch(`/api/notes?id=${id}`, { method: "DELETE", headers: csrfHeaders() });
+      if (!res.ok) {
+        setNotes(previous);
+        toast.error(`No se pudo eliminar la nota (error ${res.status})`);
+        return;
+      }
       toast.success("Nota eliminada");
-    } catch { toast.error("Error al eliminar la nota"); }
+    } catch {
+      setNotes(previous);
+      toast.error("Error al eliminar la nota — revisá tu conexión.");
+    }
   };
 
   const handlePin = async (id: string) => {
     const note = notes.find(n => n.id === id);
     if (!note) return;
     const newPinned = !note.pinned;
+    const previous = notes;
     setNotes(prev => prev.map(n => n.id === id ? { ...n, pinned: newPinned } : n));
     try {
-      await fetch(`/api/notes?id=${id}`, {
+      const res = await fetch(`/api/notes?id=${id}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ pinned: newPinned }),
       });
-    } catch { toast.error("Error al actualizar la nota"); }
+      if (!res.ok) {
+        setNotes(previous);
+        toast.error(`No se pudo actualizar la nota (error ${res.status})`);
+      }
+    } catch {
+      setNotes(previous);
+      toast.error("Error al actualizar la nota — revisá tu conexión.");
+    }
   };
 
   const startEdit = (note: Note) => {
@@ -124,16 +145,25 @@ export default function QuickNotesTab() {
   const saveEdit = async () => {
     if (!editingId || !editTitle.trim()) return;
     const now = new Date().toISOString().slice(0, 16).replace("T", " ");
+    const previous = notes;
     setNotes(prev => prev.map(n => n.id === editingId ? { ...n, title: editTitle.trim(), content: editContent.trim(), color: editColor, updatedAt: now } : n));
     try {
-      await fetch(`/api/notes?id=${editingId}`, {
+      const res = await fetch(`/api/notes?id=${editingId}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ title: editTitle.trim(), content: editContent.trim(), color: editColor }),
       });
+      if (!res.ok) {
+        setNotes(previous);
+        toast.error(`No se pudo guardar la nota (error ${res.status})`);
+        return;
+      }
       toast.success("Nota guardada");
-    } catch { toast.error("Error al guardar la nota"); }
-    setEditingId(null);
+      setEditingId(null);
+    } catch {
+      setNotes(previous);
+      toast.error("Error al guardar la nota — revisá tu conexión.");
+    }
   };
 
   return (

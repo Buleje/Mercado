@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
@@ -502,6 +503,43 @@ type Props = {
   onClose?: () => void;
 };
 
+/**
+ * Guarda un campo de la ficha del cliente y avisa si NO entró.
+ *
+ * Los cinco guardados de esta pantalla —etiquetas, límite de crédito,
+ * observaciones y notas— hacían `await fetch(...)` sin mirar la respuesta, con
+ * optimistic update y un «Guardado ✓» que salía siempre. Un 400, un 402 por
+ * plan vencido o un 503 se veían exactamente igual que un guardado exitoso.
+ *
+ * Devuelve `true` sólo si el servidor lo aceptó, para que quien llame decida
+ * si deja el cambio en pantalla o lo revierte.
+ */
+async function guardarCliente(
+  phone: string,
+  patch: Record<string, unknown>,
+  queHacia: string,
+): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
+      method: "PATCH",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      toast.error(
+        typeof body?.error === "string" ? body.error : `No se pudo ${queHacia} (error ${res.status})`,
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn("[Customer360Tab] PATCH cliente falló", err);
+    toast.error(`Sin conexión — no se pudo ${queHacia}.`);
+    return false;
+  }
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function Customer360Tab({ phone, onClose }: Props) {
@@ -584,16 +622,17 @@ export default function Customer360Tab({ phone, onClose }: Props) {
   const handleAddTag = async (tag: string) => {
     const trimmed = tag.trim();
     if (!trimmed || tags.includes(trimmed) || !phone) return;
+    const previos = tags;
     const updated = [...tags, trimmed];
     setTags(updated);
     setNewTag("");
     setSavingTags(true);
     try {
-      await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ tags: JSON.stringify(updated) }),
-      });
+      // Si el servidor rechaza, la etiqueta vuelve: dejarla en pantalla sería
+      // decirle al usuario que quedó guardada.
+      if (!await guardarCliente(phone, { tags: JSON.stringify(updated) }, "guardar la etiqueta")) {
+        setTags(previos);
+      }
     } finally {
       setSavingTags(false);
     }
@@ -601,15 +640,14 @@ export default function Customer360Tab({ phone, onClose }: Props) {
 
   const handleRemoveTag = async (tag: string) => {
     if (!phone) return;
+    const previos = tags;
     const updated = tags.filter(t => t !== tag);
     setTags(updated);
     setSavingTags(true);
     try {
-      await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ tags: JSON.stringify(updated) }),
-      });
+      if (!await guardarCliente(phone, { tags: JSON.stringify(updated) }, "quitar la etiqueta")) {
+        setTags(previos);
+      }
     } finally {
       setSavingTags(false);
     }
@@ -621,11 +659,12 @@ export default function Customer360Tab({ phone, onClose }: Props) {
     if (isNaN(limit) || limit < 0) return;
     setSavingCreditLimit(true);
     try {
-      await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ creditLimit: limit }),
-      });
+      /**
+       * El tope de fiado es lo más caro de esta pantalla: `setCustomer` pintaba
+       * el límite nuevo sin saber si el servidor lo había aceptado, y el cajero
+       * fiaba contra un número que sólo existía en su navegador.
+       */
+      if (!await guardarCliente(phone, { creditLimit: limit }, "guardar el límite de crédito")) return;
       setCustomer(prev => prev ? { ...prev, creditLimit: limit } : prev);
       setEditingCreditLimit(false);
     } finally {
@@ -642,15 +681,14 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       if (!phone) return;
       setSavingObs(true);
       try {
-        await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
-          method: "PATCH",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ observaciones: value }),
-        });
-        setObsSaved(true);
-        setTimeout(() => setObsSaved(false), 2500);
-      } catch { /* ignore */ }
-      finally { setSavingObs(false); }
+        // El «Guardado ✓» del autosave salía siempre, incluso con el PATCH
+        // rechazado: el usuario cerraba la ficha convencido de que su
+        // observación quedó escrita.
+        if (await guardarCliente(phone, { observaciones: value }, "guardar las observaciones")) {
+          setObsSaved(true);
+          setTimeout(() => setObsSaved(false), 2500);
+        }
+      } finally { setSavingObs(false); }
     }, 1000);
   };
 
@@ -658,13 +696,10 @@ export default function Customer360Tab({ phone, onClose }: Props) {
     if (!phone) return;
     setSavingNotes(true);
     try {
-      await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ privateNotes: notes }),
-      });
-      setNotesSaved(true);
-      setTimeout(() => setNotesSaved(false), 2500);
+      if (await guardarCliente(phone, { privateNotes: notes }, "guardar las notas")) {
+        setNotesSaved(true);
+        setTimeout(() => setNotesSaved(false), 2500);
+      }
     } finally {
       setSavingNotes(false);
     }

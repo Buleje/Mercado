@@ -150,6 +150,9 @@ export const SuppliersDB = {
     const { id: _id, createdAt: _c, ...data } = patch;
     await prisma.supplier.updateMany({ where: { id, tenantId }, data });
     const row = await prisma.supplier.findFirst({ where: { id, tenantId } });
+    // Faltaba: `add` y `delete` invalidaban, `update` no. Editarle el teléfono
+    // a un proveedor lo dejaba viejo en el POS hasta que venciera el cache.
+    invalidateAdminCache.afterPurchase(tenantId);
     return row ? mapSupplier(row) : null;
   },
   async delete(tenantId: string, id: string): Promise<void> {

@@ -360,7 +360,7 @@ export default function PuntoCompraView() {
    * Los gastos YA registrados. Sin esto la tarjeta ofrecía «Pagar» igual
    * hubieras pagado o no — la misma trampa que los duplicados, por otro camino.
    */
-  const [pagosHechos, setPagosHechos] = useState<{ description: string; amount: number; date: string }[]>([]);
+  const [pagosHechos, setPagosHechos] = useState<{ description: string; amount: number; date: string; templateId?: string | null }[]>([]);
   useEffect(() => {
     fetch("/api/expenses", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : []))
@@ -369,10 +369,11 @@ export default function PuntoCompraView() {
         setPagosHechos(
           arr
             .filter((e: { recurring?: boolean }) => !e.recurring)
-            .map((e: { description?: string; amount?: number; date?: string; createdAt?: string }) => ({
+            .map((e: { description?: string; amount?: number; date?: string; createdAt?: string; templateId?: string | null }) => ({
               description: e.description ?? "",
               amount: Number(e.amount ?? 0),
               date: e.date ?? e.createdAt ?? "",
+              templateId: e.templateId ?? null,
             })),
         );
       })
@@ -1157,7 +1158,9 @@ export default function PuntoCompraView() {
                 const isExecuting = executingTemplateId === tpl.id;
                 const metaSummary = summarizeMeta(meta);
                 const venc = proximoVencimiento(meta, hoyRef);
-                const pago = yaPagadoEnPeriodo({ description: tpl.description ?? "", amount: Number(tpl.amount ?? 0) }, pagosHechos, hoyRef);
+                // `id`: el pago sabe de qué plantilla salió (ADR-374), y ese
+                // vínculo sobrevive a que el importe del mes venga distinto.
+                const pago = yaPagadoEnPeriodo({ id: tpl.id, description: tpl.description ?? "", amount: Number(tpl.amount ?? 0) }, pagosHechos, hoyRef);
                 const isDeleting = deletingTemplateId === tpl.id;
                 return (
                   <div

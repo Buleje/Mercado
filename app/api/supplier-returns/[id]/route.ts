@@ -114,6 +114,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (!deleted) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
+    // Borrar una devolución ya enviada devuelve stock: sin invalidar, el
+    // Inventario sigue mostrando el número de antes (mismo motivo que en el
+    // PATCH de arriba).
+    revalidateTenantTag(auth.tenantId, "products");
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[supplier-returns] DELETE error", { err: e instanceof Error ? e.message : String(e) });

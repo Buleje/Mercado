@@ -462,11 +462,27 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   };
 
   const toggleActive = async (p: DbProduct) => {
-    await fetch(`/api/products/${p.id}`, {
-      method: "PUT",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ active: !p.active }),
-    });
+    // Si el servidor rechaza (402 por plan vencido, 403, 503), el `load()` de
+    // abajo devolvía el switch a su lugar sin decir nada: el usuario lo movía
+    // tres veces creyendo que la pantalla estaba trabada.
+    try {
+      const res = await fetch(`/api/products/${p.id}`, {
+        method: "PUT",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ active: !p.active }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(
+          typeof body?.error === "string"
+            ? body.error
+            : `No se pudo ${p.active ? "desactivar" : "activar"} "${p.name}" (error ${res.status})`,
+        );
+      }
+    } catch (err) {
+      console.warn("[InventoryTab] toggleActive falló", err);
+      toast.error("Sin conexión — el producto no cambió.");
+    }
     load();
   };
 
@@ -540,12 +556,32 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       confirmLabel: "Eliminar",
     });
     if (!ok) return;
-    await fetch(`/api/products/${id}`, { method: "DELETE", headers: csrfHeaders() });
-    showUndo({
-      message: `Producto "${name}" eliminado`,
-      detail: "Si fue un error, contacta soporte para restauración.",
-      duration: 6000,
-    });
+    // Antes se anunciaba «Producto eliminado» pasara lo que pasara. Con un
+    // 409 (el producto tiene ventas asociadas) o un 402 (plan vencido) el
+    // aviso salía igual —incluido el «contacta soporte para restauración»—,
+    // el `load()` lo traía de vuelta a la lista, y el encargado terminaba sin
+    // saber si el producto estaba borrado o no.
+    try {
+      const res = await fetch(`/api/products/${id}`, { method: "DELETE", headers: csrfHeaders() });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(
+          typeof body?.error === "string"
+            ? body.error
+            : `No se pudo eliminar "${name}" (error ${res.status})`,
+        );
+        return;
+      }
+      showUndo({
+        message: `Producto "${name}" eliminado`,
+        detail: "Si fue un error, contacta soporte para restauración.",
+        duration: 6000,
+      });
+    } catch (err) {
+      console.warn("[InventoryTab] eliminar producto falló", err);
+      toast.error("Sin conexión — el producto NO se eliminó.");
+      return;
+    }
     load();
   };
 
@@ -747,16 +783,34 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     if (bulkField === "badge") fields.badge = bulkValue.trim() || null;
 
     try {
-      await fetch("/api/products/bulk", {
+      // Una edición masiva toca el precio o el stock de decenas de productos:
+      // que falle sin decir nada es la peor combinación posible. Antes el
+      // modal se cerraba y la selección se limpiaba igual, así que ni siquiera
+      // quedaba a mano para reintentar.
+      const res = await fetch("/api/products/bulk", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ ids, fields }),
       });
-    } catch { /* ignore */ }
-    setBulkSaving(false);
-    setBulkModal(false);
-    clearSelection();
-    load();
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(
+          typeof body?.error === "string"
+            ? body.error
+            : `No se pudo aplicar el cambio a ${ids.length} producto${ids.length === 1 ? "" : "s"} (error ${res.status})`,
+        );
+        return;
+      }
+      toast.success(`${ids.length} producto${ids.length === 1 ? "" : "s"} actualizado${ids.length === 1 ? "" : "s"}`);
+      setBulkModal(false);
+      clearSelection();
+      load();
+    } catch (err) {
+      console.warn("[InventoryTab] edición masiva falló", err);
+      toast.error("Sin conexión — no se aplicó ningún cambio.");
+    } finally {
+      setBulkSaving(false);
+    }
   };
 
   const executeBulkDelete = async () => {
@@ -850,6 +904,35 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     return p.stock != null && p.stock <= minStock && p.active;
   });
 
+  /**
+   * Activar o desactivar productos en lote, avisando si no entró.
+   * Devuelve `true` sólo si el servidor lo aceptó.
+   */
+  const bulkEstado = async (ids: number[], active: boolean): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/products/bulk", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ ids, fields: { active } }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(
+          typeof body?.error === "string"
+            ? body.error
+            : `No se pudo ${active ? "activar" : "desactivar"} ${ids.length} producto${ids.length === 1 ? "" : "s"} (error ${res.status})`,
+        );
+        return false;
+      }
+      toast.success(`${ids.length} producto${ids.length === 1 ? "" : "s"} ${active ? "activado" : "desactivado"}${ids.length === 1 ? "" : "s"}`);
+      return true;
+    } catch (err) {
+      console.warn("[InventoryTab] bulk activar/desactivar falló", err);
+      toast.error("Sin conexión — no cambió ningún producto.");
+      return false;
+    }
+  };
+
   const generateOC = async (product: DbProduct) => {
     const minStock = product.stockMin ?? 5;
     const maxStock = product.stockMax ?? minStock * 2;
@@ -858,7 +941,20 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
 
     setGeneratingOC(true);
     try {
-      await fetch("/api/purchases", {
+      /**
+       * Este botón nunca creó una orden.
+       *
+       * Manda `supplierId: ""` y la columna `PurchaseOrder.supplierId` es
+       * obligatoria con FK: Postgres responde
+       * `Foreign key constraint violated on PurchaseOrder_supplierId_fkey` y
+       * el endpoint devuelve 500 — medido. Como no se miraba la respuesta y el
+       * `catch` estaba mudo, el usuario clickeaba «Generar OC», no pasaba
+       * nada, y no había forma de saber por qué.
+       *
+       * El producto no guarda a qué proveedor se le compra, así que la orden
+       * no se puede armar sola: se dice qué falta y dónde hacerlo.
+       */
+      const res = await fetch("/api/purchases", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
@@ -873,8 +969,20 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           notes: `OC automática - stock bajo (${product.name})`,
         }),
       });
-    } catch { /* ignore */ }
-    setGeneratingOC(false);
+      if (!res.ok) {
+        toast.error(
+          `No se pudo generar la orden de "${product.name}": falta elegir el proveedor. ` +
+          "Creala desde Compras › Órdenes, con el proveedor y la cantidad.",
+        );
+        return;
+      }
+      toast.success(`Orden generada: ${suggestedQty} × ${product.name}`);
+    } catch (err) {
+      console.warn("[InventoryTab] generar OC falló", err);
+      toast.error("Sin conexión — no se generó la orden.");
+    } finally {
+      setGeneratingOC(false);
+    }
   };
 
   const generateBulkOC = async () => {
@@ -894,7 +1002,9 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           unit: p.unit,
         };
       });
-      await fetch("/api/purchases", {
+      // Mismo caso que `generateOC`: sin proveedor la orden no se puede crear
+      // (FK obligatoria), y antes fallaba en silencio para TODA la lista.
+      const res = await fetch("/api/purchases", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
@@ -903,8 +1013,20 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           notes: "OC automática - stock bajo",
         }),
       });
-    } catch { /* ignore */ }
-    setGeneratingOC(false);
+      if (!res.ok) {
+        toast.error(
+          `No se pudo generar la orden con ${items.length} producto${items.length === 1 ? "" : "s"}: ` +
+          "falta elegir el proveedor. Creala desde Compras › Órdenes.",
+        );
+        return;
+      }
+      toast.success(`Orden generada con ${items.length} producto${items.length === 1 ? "" : "s"}`);
+    } catch (err) {
+      console.warn("[InventoryTab] generar OC masiva falló", err);
+      toast.error("Sin conexión — no se generó la orden.");
+    } finally {
+      setGeneratingOC(false);
+    }
   };
 
   const handleBarcodeScan = async (code: string) => {
@@ -3224,13 +3346,10 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           <button
             onClick={async () => {
               const ids = Array.from(selectedIds);
-              await fetch("/api/products/bulk", {
-                method: "POST",
-                headers: csrfHeaders({ "Content-Type": "application/json" }),
-                body: JSON.stringify({ ids, fields: { active: true } }),
-              });
-              clearSelection();
-              load();
+              // Activar/desactivar en lote toca la vidriera de N productos:
+              // si el servidor rechaza, la selección se limpiaba igual y no
+              // quedaba rastro de que no había pasado nada.
+              if (await bulkEstado(ids, true)) { clearSelection(); load(); }
             }}
             className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >
@@ -3239,13 +3358,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           <button
             onClick={async () => {
               const ids = Array.from(selectedIds);
-              await fetch("/api/products/bulk", {
-                method: "POST",
-                headers: csrfHeaders({ "Content-Type": "application/json" }),
-                body: JSON.stringify({ ids, fields: { active: false } }),
-              });
-              clearSelection();
-              load();
+              if (await bulkEstado(ids, false)) { clearSelection(); load(); }
             }}
             className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >

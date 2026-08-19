@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -268,6 +268,82 @@ function AdminPage() {
     [storeMode, setStoreModeState, visibleCategories, saveCategoryOrder, onboarding],
   );
 
+  /**
+   * Brandon 2026-08-17 (perf shell): mismo problema que arriba pero para
+   * AdminSidebar (1529 líneas) / AdminMobileDrawer / AdminTopHeader — los
+   * tres SIEMPRE están montados y visibles, y no tenían memo. Estos handlers
+   * se escribían inline en el JSX de abajo (una función nueva por render), lo
+   * que rompía cualquier memo() aguas abajo: cualquier cambio de estado en
+   * esta página — incluidos los polls de 60s de alertas/webhooks — repintaba
+   * el sidebar entero. Estabilizados acá; los objetos que los agrupan van
+   * en useMemo más abajo.
+   */
+  const onToggleRecentCollapsed = useCallback(() => {
+    setRecentCollapsed((c) => {
+      const next = !c;
+      try { localStorage.setItem("admin-recientes-plegado", next ? "true" : "false"); } catch { /* modo privado: no persiste, no rompe */ }
+      return next;
+    });
+  }, [setRecentCollapsed]);
+  // setEditingShortcuts/setShowAddShortcut sólo aceptan un boolean (no updater
+  // funcional, ver UseSidebarShortcutsResult) — leen el valor actual, así que
+  // sólo cambian de identidad cuando ESE valor cambia (correcto: si no, el
+  // toggle leería un `editingShortcuts` viejo).
+  const onToggleEditingShortcuts = useCallback(() => setEditingShortcuts(!editingShortcuts), [setEditingShortcuts, editingShortcuts]);
+  const onToggleShowAddShortcut = useCallback(() => setShowAddShortcut(!showAddShortcut), [setShowAddShortcut, showAddShortcut]);
+  const onToggleAccordion = useCallback((categoryId: string) => {
+    setOpenAccordionCategories((prev) => (prev.has(categoryId) ? new Set() : new Set([categoryId])));
+  }, [setOpenAccordionCategories]);
+  const onCloseMobileNav = useCallback(() => setMobileNavOpen(false), [setMobileNavOpen]);
+  const onOpenMobileNav = useCallback(() => setMobileNavOpen(true), [setMobileNavOpen]);
+  const onOpenCierreDiario = useCallback(() => setShowCierreDiario(true), [setShowCierreDiario]);
+  const onOpenSearch = useCallback(() => setSearchOpen(true), [setSearchOpen]);
+  const onTogglePresentationOn = useCallback(() => setPresentationMode(true), [setPresentationMode]);
+  const onExitPresentation = useCallback(() => setPresentationMode(false), [setPresentationMode]);
+  const onNavigateFromHeader = useCallback((t: string) => navigateTab(t as Tab), [navigateTab]);
+
+  const sharedNav = useMemo(() => ({
+    activeTenantName, tab, navigateTab, filteredTabs, allowedTabs,
+    visibleCategories, favoriteTabItems, customShortcutItems, recentTabItems,
+    recentCollapsed, onToggleRecentCollapsed,
+    favoriteTabs, onToggleFavorite: toggleFavorite,
+    resolvedShortcuts, editingShortcuts, onToggleEditingShortcuts,
+    showAddShortcut, onToggleShowAddShortcut,
+    availableForShortcut, onAddShortcut: addShortcut,
+    onRemoveShortcut: removeShortcut, onMoveShortcut: moveShortcut,
+    clearedDemoTabs, alerts,
+  }), [
+    activeTenantName, tab, navigateTab, filteredTabs, allowedTabs,
+    visibleCategories, favoriteTabItems, customShortcutItems, recentTabItems,
+    recentCollapsed, onToggleRecentCollapsed,
+    favoriteTabs, toggleFavorite,
+    resolvedShortcuts, editingShortcuts, onToggleEditingShortcuts,
+    showAddShortcut, onToggleShowAddShortcut,
+    availableForShortcut, addShortcut, removeShortcut, moveShortcut,
+    clearedDemoTabs, alerts,
+  ]);
+
+  const drawerNav = useMemo(() => ({
+    open: mobileNavOpen,
+    onClose: onCloseMobileNav,
+    sidebarSearch, onSidebarSearchChange: setSidebarSearch,
+    demoDataModules: DEMO_DATA_MODULES,
+    onOpenCierreDiario,
+    onLogout: handleLogout,
+  }), [mobileNavOpen, onCloseMobileNav, sidebarSearch, setSidebarSearch, onOpenCierreDiario, handleLogout]);
+
+  const sidebarNav = useMemo(() => ({
+    focusMode: effectiveFocusMode, presentationMode, isSuperAdminImpersonating,
+    activeTenantLogo, activeTenantSlug, userName, userRole, openAccordionCategories,
+    onToggleAccordion,
+    sidebarFlyout, onSidebarFlyoutChange: setSidebarFlyout, flyoutTimerRef,
+    hiddenTabs, allTabs: ALL_TABS,
+  }), [
+    effectiveFocusMode, presentationMode, isSuperAdminImpersonating,
+    activeTenantLogo, activeTenantSlug, userName, userRole, openAccordionCategories,
+    onToggleAccordion, sidebarFlyout, setSidebarFlyout, flyoutTimerRef, hiddenTabs,
+  ]);
+
   if (!authReady) {
     return <LoadingState variant="fullscreen" message="" />;
   }
@@ -291,43 +367,7 @@ function AdminPage() {
       {/* AdminTenantBar removido — el chip tenant ahora vive dentro del
           AdminTopHeader al lado de la busqueda global (mas compacto). */}
 
-      <AdminNavigation
-        shared={{
-          activeTenantName, tab, navigateTab, filteredTabs, allowedTabs,
-          visibleCategories, favoriteTabItems, customShortcutItems, recentTabItems,
-          recentCollapsed,
-          onToggleRecentCollapsed: () => setRecentCollapsed((c) => {
-            const next = !c;
-            try { localStorage.setItem("admin-recientes-plegado", next ? "true" : "false"); } catch { /* modo privado: no persiste, no rompe */ }
-            return next;
-          }),
-          favoriteTabs, onToggleFavorite: toggleFavorite,
-          resolvedShortcuts, editingShortcuts,
-          onToggleEditingShortcuts: () => setEditingShortcuts(!editingShortcuts),
-          showAddShortcut, onToggleShowAddShortcut: () => setShowAddShortcut(!showAddShortcut),
-          availableForShortcut, onAddShortcut: addShortcut,
-          onRemoveShortcut: removeShortcut, onMoveShortcut: moveShortcut,
-          clearedDemoTabs, alerts,
-        }}
-        drawer={{
-          open: mobileNavOpen,
-          onClose: () => setMobileNavOpen(false),
-          sidebarSearch, onSidebarSearchChange: setSidebarSearch,
-          demoDataModules: DEMO_DATA_MODULES,
-          onOpenCierreDiario: () => setShowCierreDiario(true),
-          onLogout: handleLogout,
-        }}
-        sidebar={{
-          focusMode: effectiveFocusMode, presentationMode, isSuperAdminImpersonating,
-          activeTenantLogo, activeTenantSlug, userName, userRole, openAccordionCategories,
-          onToggleAccordion: (categoryId) =>
-            setOpenAccordionCategories(prev =>
-              prev.has(categoryId) ? new Set() : new Set([categoryId])
-            ),
-          sidebarFlyout, onSidebarFlyoutChange: setSidebarFlyout, flyoutTimerRef,
-          hiddenTabs, allTabs: ALL_TABS,
-        }}
-      />
+      <AdminNavigation shared={sharedNav} drawer={drawerNav} sidebar={sidebarNav} />
 
       <div
         data-dark-fallback
@@ -367,14 +407,14 @@ function AdminPage() {
           userName={userName}
           userRole={userRole}
           tenantSlug={activeTenantSlug}
-          onOpenMobileNav={() => setMobileNavOpen(true)}
-          onOpenSearch={() => setSearchOpen(true)}
-          onOpenCierreDiario={() => setShowCierreDiario(true)}
+          onOpenMobileNav={onOpenMobileNav}
+          onOpenSearch={onOpenSearch}
+          onOpenCierreDiario={onOpenCierreDiario}
           onToggleFocus={toggleFocusMode}
-          onTogglePresentation={() => setPresentationMode(true)}
+          onTogglePresentation={onTogglePresentationOn}
           onToggleTheme={toggleTheme}
           onSetTheme={setTheme}
-          onNavigate={(t) => navigateTab(t as Tab)}
+          onNavigate={onNavigateFromHeader}
           onLogout={handleLogout}
         />
 
@@ -425,7 +465,7 @@ function AdminPage() {
           focusMode={focusMode}
           presentationMode={presentationMode}
           onToggleFocus={toggleFocusMode}
-          onExitPresentation={() => setPresentationMode(false)}
+          onExitPresentation={onExitPresentation}
           showShortcuts={showShortcuts}
           onCloseShortcuts={() => setShowShortcuts(false)}
           userRole={userRole}
@@ -433,7 +473,7 @@ function AdminPage() {
           filteredTabs={filteredTabs}
           alerts={alerts}
           navigateTab={navigateTab}
-          onOpenMobileNav={() => setMobileNavOpen(true)}
+          onOpenMobileNav={onOpenMobileNav}
           showOnboarding={showOnboarding}
           setShowOnboarding={setShowOnboarding}
           activeTenantSlug={activeTenantSlug}

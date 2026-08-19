@@ -10,7 +10,7 @@
  */
 import { useMemo, useState } from "react";
 import { Table } from "@buleje/design-system/icons";
-import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT } from "@/lib/cacao/cacao-precio-regional";
+import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT, ANCLA_CC_LABEL } from "@/lib/cacao/cacao-precio-regional";
 import CacaoChartPresent from "./CacaoChartPresent";
 
 interface PricePoint { t: number; c: number }
@@ -112,7 +112,7 @@ export default function CacaoTablaConversion({
             <Table className="h-4 w-4 text-[var(--accent)]" />
             Tabla de conversión del cacao
           </h3>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Equivalente de compra local ({COMPRA_LOCAL_PCT}% del oficial, calibrado con S/ 18.20 del vie 10 jul) según la variación internacional. Tocá una fila para fijarla como base.</p>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Equivalente de compra local ({COMPRA_LOCAL_PCT}% del oficial, calibrado con {ANCLA_CC_LABEL}) según la variación internacional. Tocá una fila para fijarla como base.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
@@ -180,7 +180,7 @@ export default function CacaoTablaConversion({
         </div>
       )}
       <p className="mt-2.5 text-[length:var(--ts-2xs)] leading-relaxed text-[var(--text-tertiary)]">
-        Fuente: ICE cocoa + USD/PEN (Yahoo Finance), tipo de cambio real de cada día. Equivalente local = conversión × {COMPRA_LOCAL_PCT}% (calibrado con el precio real S/ 18.20 del vie 10 jul). Estimado — el precio final depende de humedad, calidad y comprador.
+        Fuente: ICE cocoa + USD/PEN (Yahoo Finance), tipo de cambio real de cada día. Equivalente local = conversión × {COMPRA_LOCAL_PCT}% (calibrado con el precio real {ANCLA_CC_LABEL}). Estimado — el precio final depende de humedad, calidad y comprador.
       </p>
     </div>
   );

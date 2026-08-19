@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 export interface CouponItem {
@@ -71,31 +72,60 @@ export function useMarketplaceCoupons() {
           expiresAt: form.expiresAt || null,
         }),
       });
-      if (res.ok) {
-        setShowForm(false);
-        setForm(EMPTY_FORM);
-        fetchCoupons();
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo crear el cupón (error ${res.status})`);
+        return;
       }
-    } catch {}
-    setSaving(false);
+      toast.success("Cupón creado");
+      setShowForm(false);
+      setForm(EMPTY_FORM);
+      fetchCoupons();
+    } catch (err) {
+      console.warn("[use-marketplace-coupons] crear cupón falló", err);
+      toast.error("No se pudo crear el cupón — revisá tu conexión.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleActive = async (id: string, active: boolean) => {
-    await fetch(`/api/marketplace/coupons/${id}`, {
-      method: "PATCH",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ active: !active }),
-    });
-    fetchCoupons();
+    try {
+      const res = await fetch(`/api/marketplace/coupons/${id}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ active: !active }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo cambiar el estado del cupón (error ${res.status})`);
+        return;
+      }
+      fetchCoupons();
+    } catch (err) {
+      console.warn("[use-marketplace-coupons] cambiar estado falló", err);
+      toast.error("No se pudo cambiar el estado del cupón — revisá tu conexión.");
+    }
   };
 
   const deleteCoupon = async (id: string) => {
     if (!confirm("¿Eliminar este cupón?")) return;
-    await fetch(`/api/marketplace/coupons/${id}`, {
-      method: "DELETE",
-      headers: csrfHeaders(),
-    });
-    fetchCoupons();
+    try {
+      const res = await fetch(`/api/marketplace/coupons/${id}`, {
+        method: "DELETE",
+        headers: csrfHeaders(),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo eliminar el cupón (error ${res.status})`);
+        return;
+      }
+      toast.success("Cupón eliminado");
+      fetchCoupons();
+    } catch (err) {
+      console.warn("[use-marketplace-coupons] eliminar cupón falló", err);
+      toast.error("No se pudo eliminar el cupón — revisá tu conexión.");
+    }
   };
 
   return {

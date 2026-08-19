@@ -10,6 +10,15 @@
     "app/api/cron/churn-score/route.ts": {
       "maxDuration": 300
     },
+    "app/api/cron/documentos-papelera/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/documentos-indexar/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/admin/documents/indexar-pendientes/route.ts": {
+      "maxDuration": 300
+    },
     "app/api/cron/agent-tasks/route.ts": {
       "maxDuration": 300
     },
@@ -68,12 +77,24 @@
       "schedule": "10 9 * * *"
     },
     {
+      "path": "/api/cron/documentos-papelera",
+      "schedule": "20 9 * * *"
+    },
+    {
+      "path": "/api/cron/documentos-indexar",
+      "schedule": "40 3 * * *"
+    },
+    {
       "path": "/api/cron/adelantos-recordatorios",
       "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/cacao-beneficio-recordatorios",
       "schedule": "30 8 * * *"
+    },
+    {
+      "path": "/api/cron/cacao-precio-diario",
+      "schedule": "0 12 * * *"
     },
     {
       "path": "/api/cron/adelantos-recurrentes",
@@ -366,6 +387,10 @@
     {
       "path": "/api/cron/activity-log-purge",
       "schedule": "0 4 * * 0"
+    },
+    {
+      "path": "/api/cron/forestal-plazos",
+      "schedule": "20 12 * * *"
     }
   ]
 }

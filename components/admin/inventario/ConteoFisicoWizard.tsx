@@ -149,8 +149,13 @@ export default function ConteoFisicoWizard() {
     if (!conteo) return;
     setLoading(true);
     try {
+      // Sin los headers de CSRF esto devolvía 403 SIEMPRE (el token se valida
+      // en `proxy.ts` para todo POST bajo /api/, y esta ruta no está exenta):
+      // el conteo se podía empezar y cargar, pero nunca cerrar. En la base
+      // quedó la huella — un conteo «INICIADO» desde mayo y ninguno cerrado.
       const res = await fetch(`/api/inventory/conteo/${conteo.id}/close`, {
         method: 'POST',
+        headers: csrfHeaders(),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al cerrar');
@@ -163,9 +168,34 @@ export default function ConteoFisicoWizard() {
     }
   };
 
-  // Toggle ajustado
-  const toggleAjustado = (itemId: string) => {
-    setItems(prev => prev.map(i => i.id === itemId ? { ...i, ajustado: !i.ajustado } : i));
+  /**
+   * Tildar/destildar «ajustar» y que el servidor se entere.
+   *
+   * Antes esto sólo movía estado de React: el cierre leía `ajustado` de la
+   * base —que el PATCH ponía en `true` para toda diferencia— y terminaba
+   * ajustando también los productos que el encargado había desmarcado para
+   * revisar. Se contaban 200 ítems, se desmarcaban 3, y se ajustaban los 200.
+   */
+  const toggleAjustado = async (itemId: string) => {
+    const actual = items.find(i => i.id === itemId);
+    if (!actual || !conteo) return;
+    const nuevo = !actual.ajustado;
+    setItems(prev => prev.map(i => i.id === itemId ? { ...i, ajustado: nuevo } : i));
+    try {
+      const res = await fetch(`/api/inventory/conteo/${conteo.id}/items`, {
+        method: 'PATCH',
+        headers: csrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ itemId, ajustado: nuevo }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      console.warn('[ConteoFisicoWizard] no se pudo guardar el check', err);
+      // Volver atrás: mostrar tildado lo que el servidor no aceptó sería
+      // exactamente el engaño que este arreglo elimina.
+      setItems(prev => prev.map(i => i.id === itemId ? { ...i, ajustado: actual.ajustado } : i));
+      setError('No se pudo guardar ese cambio. Revisá la conexión.');
+      setTimeout(() => setError(''), 4000);
+    }
   };
 
   // Barcode scan handler

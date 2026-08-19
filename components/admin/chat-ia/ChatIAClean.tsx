@@ -35,6 +35,7 @@ import {
   Loader2,
   Copy,
   Check,
+  ArrowRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
@@ -42,12 +43,45 @@ import { csrfHeaders } from "@/lib/csrf-client";
 
 type Role = "user" | "assistant";
 
+/**
+ * Un lugar del panel al que la respuesta puede llevarte. Lo emite el agente
+ * `ui` (SSE `{accion}`) cuando la respuesta implica "andá a…": el texto de un
+ * LLM no puede navegar, y nombrar el módulo deja al usuario buscándolo a mano.
+ */
+interface AccionNavegar {
+  tab: string;
+  vista: string | null;
+  filtro: string | null;
+  label: string;
+  url: string;
+}
+
+/**
+ * Una acción que TOCA datos y espera el sí del usuario (HITL). El servidor ya
+ * guardó el pedido con su payload; acá sólo se confirma o se descarta.
+ */
+interface AprobacionPendiente {
+  id: string;
+  tool: string;
+  titulo: string;
+  /** Lo que va a pasar, en una línea legible ("Stock de X: 3 → 4"). */
+  resumen?: string | null;
+  payload: Record<string, unknown>;
+  /** Qué pasó al resolverla — para no dejar la tarjeta viva después del click. */
+  estado?: "hecha" | "cancelada" | "error";
+  detalle?: string;
+}
+
 interface Message {
   id: string;
   role: Role;
   content: string;
   timestamp: number;
   error?: boolean;
+  /** Botones "Abrir X" que acompañan a la respuesta. */
+  acciones?: AccionNavegar[];
+  /** Acciones de escritura esperando confirmación. */
+  aprobaciones?: AprobacionPendiente[];
 }
 
 interface QuickPrompt {
@@ -248,9 +282,34 @@ export default function ChatIAClean({
               const payload = t.slice(6);
               if (payload === "[DONE]") break;
               try {
-                const json = JSON.parse(payload) as { content?: string; error?: string };
+                const json = JSON.parse(payload) as {
+                  content?: string;
+                  error?: string;
+                  accion?: AccionNavegar;
+                  aprobacion?: AprobacionPendiente;
+                };
                 if (json.error) {
                   sawError = json.error;
+                } else if (json.accion) {
+                  // Se acumulan en el mensaje: llegan ANTES del texto (el tool
+                  // corre antes de la segunda llamada al modelo).
+                  const accion = json.accion;
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === assistantId
+                        ? { ...m, acciones: [...(m.acciones ?? []).filter((a) => a.url !== accion.url), accion] }
+                        : m,
+                    ),
+                  );
+                } else if (json.aprobacion) {
+                  const ap = json.aprobacion;
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === assistantId
+                        ? { ...m, aprobaciones: [...(m.aprobaciones ?? []).filter((x) => x.id !== ap.id), ap] }
+                        : m,
+                    ),
+                  );
                 } else if (json.content) {
                   fullContent += json.content;
                   const captured = fullContent;
@@ -349,6 +408,50 @@ export default function ChatIAClean({
     [input, sendMessage],
   );
 
+  /**
+   * Confirma o descarta una acción que toca datos. El resultado se escribe en
+   * la propia tarjeta: si el POST falla, la tarjeta lo dice y NO se marca como
+   * hecha — dar por buena una escritura que no ocurrió es el peor final posible.
+   */
+  const resolverAprobacion = useCallback(async (id: string, accion: "approve" | "reject") => {
+    const marcar = (estado: AprobacionPendiente["estado"], detalle?: string) =>
+      setMessages((prev) =>
+        prev.map((m) => ({
+          ...m,
+          aprobaciones: m.aprobaciones?.map((a) => (a.id === id ? { ...a, estado, detalle } : a)),
+        })),
+      );
+    try {
+      const res = await fetch("/api/ai-assistant/approvals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...csrfHeaders() },
+        credentials: "include",
+        body: JSON.stringify({ id, action: accion }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { error?: string; result?: unknown };
+      if (!res.ok) {
+        marcar("error", body.error ?? `HTTP ${res.status}`);
+        return;
+      }
+      if (accion === "reject") {
+        marcar("cancelada");
+        return;
+      }
+      const datos = body.result as Record<string, unknown> | undefined;
+      marcar(
+        "hecha",
+        datos
+          ? Object.entries(datos)
+              .filter(([, v]) => v !== null && typeof v !== "object")
+              .map(([k, v]) => `${k}: ${String(v)}`)
+              .join(" · ")
+          : "Acción ejecutada.",
+      );
+    } catch (e) {
+      marcar("error", e instanceof Error ? e.message : String(e));
+    }
+  }, []);
+
   const handleCopy = useCallback(async (msg: Message) => {
     try {
       await navigator.clipboard.writeText(msg.content);
@@ -390,6 +493,7 @@ export default function ChatIAClean({
                 isStreaming={streaming && m.role === "assistant" && m === messages[messages.length - 1]}
                 copied={copiedId === m.id}
                 onCopy={() => handleCopy(m)}
+                onResolverAprobacion={resolverAprobacion}
               />
             ))}
             <div ref={messagesEndRef} />
@@ -538,11 +642,13 @@ function MessageRow({
   isStreaming,
   copied,
   onCopy,
+  onResolverAprobacion,
 }: {
   message: Message;
   isStreaming: boolean;
   copied: boolean;
   onCopy: () => void;
+  onResolverAprobacion: (id: string, accion: "approve" | "reject") => void;
 }) {
   const isUser = message.role === "user";
 
@@ -618,12 +724,140 @@ function MessageRow({
         ) : isStreaming ? (
           <StreamingDots />
         ) : null}
+        {/* Fuera del `content`: si el modelo no llegó a redactar (429, timeout)
+            la acción pendiente y el botón igual tienen que verse — si no, el
+            usuario pidió algo, el sistema lo preparó y no hay dónde apretar. */}
+        <TarjetasDeAprobacion aprobaciones={message.aprobaciones} onResolver={onResolverAprobacion} />
+        <BotonesDeAccion acciones={message.acciones} />
       </div>
     </div>
   );
 }
 
 // ── MarkdownContent — renderer minimalista seguro ────────────────────────────
+
+/**
+ * La tarjeta «¿Confirmás?» de una acción que va a tocar datos.
+ *
+ * El asistente NUNCA escribe solo: el servidor guarda el pedido con su payload
+ * y hasta que no se aprieta Confirmar no pasa nada. Se muestra el payload
+ * completo a propósito —qué producto, qué número, con qué motivo— porque una
+ * confirmación a ciegas no es una confirmación.
+ */
+function TarjetasDeAprobacion({
+  aprobaciones,
+  onResolver,
+}: {
+  aprobaciones?: AprobacionPendiente[];
+  onResolver: (id: string, accion: "approve" | "reject") => void;
+}) {
+  const [enCurso, setEnCurso] = useState<string | null>(null);
+  if (!aprobaciones || aprobaciones.length === 0) return null;
+
+  return (
+    <div className="mt-3 space-y-2">
+      {aprobaciones.map((a) => {
+        if (a.estado === "hecha") {
+          return (
+            <div key={a.id} className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 text-sm text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]">
+              <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span><strong>Hecho.</strong> {a.detalle}</span>
+            </div>
+          );
+        }
+        if (a.estado === "cancelada" || a.estado === "error") {
+          const malo = a.estado === "error";
+          return (
+            <div
+              key={a.id}
+              className={`flex items-start gap-2 rounded-xl border-2 p-3 text-sm ${malo
+                ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"
+                : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span>{malo ? <><strong>No se pudo:</strong> {a.detalle}</> : "Cancelado. No se tocó nada."}</span>
+            </div>
+          );
+        }
+        return (
+          <div key={a.id} className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 dark:bg-[var(--data-warning-500)]/12">
+            <p className="flex items-center gap-2 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+              {a.titulo} — esto cambia tus datos
+            </p>
+            {a.resumen && (
+              <p className="mt-1.5 text-sm font-medium text-[var(--text-primary)]">{a.resumen}</p>
+            )}
+            <dl className="mt-2 grid gap-1 text-sm text-[var(--text-secondary)] sm:grid-cols-2">
+              {Object.entries(a.payload).map(([k, v]) => (
+                <div key={k} className="flex gap-1.5">
+                  <dt className="font-semibold text-[var(--text-tertiary)]">{k}:</dt>
+                  <dd className="min-w-0 break-words text-[var(--text-primary)]">{String(v)}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={enCurso === a.id}
+                onClick={() => { setEnCurso(a.id); onResolver(a.id, "approve"); }}
+                className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
+              >
+                {enCurso === a.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                Confirmar
+              </button>
+              <button
+                type="button"
+                disabled={enCurso === a.id}
+                onClick={() => { setEnCurso(a.id); onResolver(a.id, "reject"); }}
+                className="inline-flex h-10 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Los botones que abren la pantalla de la que habla la respuesta.
+ *
+ * Navega por el evento `admin:navigate` —el mismo que usan el buscador global y
+ * las notificaciones— en vez de un `<a href>`: el panel es una SPA y recargar
+ * pierde la conversación. Nunca navega solo; el usuario decide cuándo.
+ */
+function BotonesDeAccion({ acciones }: { acciones?: AccionNavegar[] }) {
+  if (!acciones || acciones.length === 0) return null;
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {acciones.map((a) => (
+        <button
+          key={a.url}
+          type="button"
+          onClick={() => {
+            if (a.filtro) {
+              // El módulo destino levanta el filtro al montar. sessionStorage y
+              // no el evento: los módulos son lazy y pueden no estar montados
+              // cuando se dispara.
+              try { sessionStorage.setItem("admin-buscar", a.filtro); } catch { /* modo privado */ }
+            }
+            window.dispatchEvent(
+              new CustomEvent("admin:navigate", { detail: { tab: a.tab, vista: a.vista ?? undefined } }),
+            );
+          }}
+          className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--surface-sunken)] transition-colors"
+        >
+          <ArrowRight className="h-4 w-4" aria-hidden />
+          Abrir {a.label}
+          {a.filtro && <span className="font-normal text-[var(--text-tertiary)]">· {a.filtro}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function MarkdownContent({ text }: { text: string }) {
   // Render minimalista inspirado en prose. Soporta:

@@ -112,7 +112,14 @@ export default function WebhookQueuePage() {
   const dismissItem = async (id: string) => {
     setDeletingId(id);
     try {
-      await fetch(`/api/billing/webhook-queue?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      // El replay de arriba manda CSRF y este DELETE no: devolvía 403 y la
+      // fila desaparecía de la pantalla igual, así que el evento seguía en la
+      // cola y volvía a aparecer al recargar.
+      const res = await fetch(`/api/billing/webhook-queue?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: csrfHeaders(),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setItems((prev) => prev.filter((i) => i.id !== id));
     } catch {
       setError("Error al eliminar el evento");

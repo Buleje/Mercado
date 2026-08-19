@@ -119,7 +119,11 @@ export type AdminSidebarProps = {
 };
 
 // ─── Componente ───────────────────────────────────────────────────────────────
-export function AdminSidebar({
+// Memoizado: sin esto, re-renderiza entero (133 tabs + categorías + búsqueda)
+// en CUALQUIER cambio de estado de AdminPage — incluidos los polls de 60s de
+// alertas/webhooks — porque `AdminPage` no lo aisla. Sólo sirve si las props
+// que le llegan son estables (ver `sharedNav`/`sidebarNav` en page.tsx).
+export const AdminSidebar = React.memo(function AdminSidebar({
   focusMode,
   presentationMode,
   activeTenantName,
@@ -1526,4 +1530,4 @@ export function AdminSidebar({
       )}
     </>
   );
-}
+});

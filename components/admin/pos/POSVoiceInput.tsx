@@ -22,6 +22,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comandoDe, resolverDictado, separarPedidos, type LineaDictada } from "@/lib/pos/voz-parser";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -38,7 +39,8 @@ interface ClarificationInfo {
 }
 
 interface POSVoiceInputProps {
-  products: { id: number; name: string; price: number }[];
+  /** `stock` habilita avisar en el acto cuando no alcanza para lo dictado. */
+  products: { id: number; name: string; price: number; stock?: number | null }[];
   onAddToCart: (productId: number, quantity?: number) => void;
   onHighlightProduct?: (productId: number | null) => void;
 }
@@ -59,6 +61,16 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPanel, setShowPanel] = useState(false);
+
+  /**
+   * Lo dictado, resuelto frase por frase contra el inventario. Antes había que
+   * decir «listo» y esperar a la IA para saber si algo se había entendido: el
+   * cajero hablaba a ciegas y un fallo de red se llevaba el dictado entero.
+   */
+  const [lineas, setLineas] = useState<LineaDictada[]>([]);
+  const lineasRef = useRef<LineaDictada[]>([]);
+  const catalogoRef = useRef(products);
+  useEffect(() => { catalogoRef.current = products; }, [products]);
 
   const recognitionRef = useRef<any>(null);
   const transcriptBufferRef = useRef("");
@@ -130,6 +142,25 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
           transcriptBufferRef.current += " " + final;
           setTranscript(transcriptBufferRef.current.trim());
           const lower = final.toLowerCase().trim();
+
+          // Cada frase se resuelve YA, contra el catálogo que está en pantalla.
+          const cmd = comandoDe(final);
+          if (cmd === "deshacer") {
+            lineasRef.current = lineasRef.current.slice(0, -1);
+            setLineas([...lineasRef.current]);
+          } else if (!cmd) {
+            const nuevas = separarPedidos(final)
+              .map((frase, i) => resolverDictado(frase, catalogoRef.current, `${Date.now()}-${i}`))
+              .filter((l): l is LineaDictada => l != null);
+            if (nuevas.length > 0) {
+              lineasRef.current = [...lineasRef.current, ...nuevas];
+              setLineas([...lineasRef.current]);
+              // Resaltar en la grilla lo último que se entendió.
+              const ultimo = nuevas[nuevas.length - 1];
+              if (ultimo.elegido) onHighlightProduct?.(ultimo.elegido.id);
+            }
+          }
+
           if (lower.includes("listo") || lower.includes("confirmar")) {
             recognition.stop();
             setIsListening(false);
@@ -182,6 +213,8 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
       setTranscript("");
       setInterimTranscript("");
       setItems([]);
+      lineasRef.current = [];
+      setLineas([]);
       setClarification(null);
       setError(null);
       setShowPanel(true);
@@ -495,7 +528,113 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                 </div>
               )}
 
-              {/* Productos reconocidos */}
+              {/* Lo dictado, resuelto en vivo contra el inventario */}
+              {lineas.length > 0 && (
+                <div className="mt-2 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      {lineas.filter((l) => l.estado === "listo").length} de {lineas.length} listo
+                      {lineas.filter((l) => l.estado === "listo").length === 1 ? "" : "s"} para agregar
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => { lineasRef.current = []; setLineas([]); }}
+                      className="text-[length:var(--ts-2xs,0.6875rem)] font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                    >
+                      Limpiar
+                    </button>
+                  </div>
+
+                  {lineas.map((l) => {
+                    const p = l.elegido;
+                    const tono =
+                      l.estado === "listo"
+                        ? "border-primary/40 bg-primary/5"
+                        : l.estado === "sin_stock"
+                          ? "border-[var(--data-warning-500)]/50 bg-[var(--data-warning-500)]/10"
+                          : l.estado === "ambiguo"
+                            ? "border-[var(--data-info-500)]/50 bg-[var(--data-info-500)]/10"
+                            : "border-[var(--data-error-500)]/50 bg-[var(--data-error-500)]/10";
+                    return (
+                      <div key={l.id} className={cn("rounded-xl border-2 px-3 py-2", tono)}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-bold text-[var(--text-primary)]">
+                              <span className="font-mono">{l.pedido.cantidad}</span>
+                              {l.pedido.unidad ? ` ${l.pedido.unidad}` : ""} ·{" "}
+                              {p ? p.name : <span className="italic">«{l.pedido.crudo}»</span>}
+                            </p>
+                            <p className="text-xs text-[var(--text-secondary)]">
+                              {l.estado === "listo" && p && (
+                                <>
+                                  S/ {(p.price * l.pedido.cantidad).toFixed(2)}
+                                  {p.stock != null && ` · quedan ${p.stock}`}
+                                </>
+                              )}
+                              {l.estado === "sin_stock" && p && (
+                                <>Sin stock suficiente: hay {p.stock ?? 0} y se pidieron {l.pedido.cantidad}</>
+                              )}
+                              {l.estado === "ambiguo" && <>¿Cuál de estos?</>}
+                              {l.estado === "no_encontrado" && <>No está en el inventario — repetilo o buscalo a mano</>}
+                            </p>
+                            {l.estado === "ambiguo" && (
+                              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                                {l.candidatos.map((c) => (
+                                  <button
+                                    key={c.producto.id}
+                                    type="button"
+                                    onClick={() => {
+                                      lineasRef.current = lineasRef.current.map((x) =>
+                                        x.id === l.id ? { ...x, elegido: c.producto, estado: "listo" as const } : x,
+                                      );
+                                      setLineas([...lineasRef.current]);
+                                    }}
+                                    className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-xs font-bold text-[var(--text-primary)] hover:border-primary"
+                                  >
+                                    {c.producto.name}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {l.estado !== "no_encontrado" && p && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onAddToCart(p.id, l.pedido.cantidad);
+                                lineasRef.current = lineasRef.current.filter((x) => x.id !== l.id);
+                                setLineas([...lineasRef.current]);
+                              }}
+                              title="Agregar al carrito"
+                              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-primary px-2.5 text-xs font-bold text-white hover:opacity-90"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> Agregar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {lineas.some((l) => l.estado === "listo") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        for (const l of lineasRef.current) {
+                          if (l.estado === "listo" && l.elegido) onAddToCart(l.elegido.id, l.pedido.cantidad);
+                        }
+                        lineasRef.current = lineasRef.current.filter((l) => l.estado !== "listo");
+                        setLineas([...lineasRef.current]);
+                      }}
+                      className="w-full rounded-xl bg-primary py-2.5 text-sm font-extrabold text-white hover:opacity-90"
+                    >
+                      Agregar los {lineas.filter((l) => l.estado === "listo").length} al carrito
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Productos reconocidos por la IA (respaldo de lo que no se resolvió acá) */}
               {items.length > 0 && (
                 <div className="mt-2 space-y-2">
                   <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">

@@ -15,6 +15,7 @@ import { Field } from "@/components/admin/shared/Field";
 import { activateProps } from "@/components/admin/shared/a11y";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { diaLocal, ultimosDiasLocales } from "@/lib/fechas/dia-local";
 
 const CashRegisterChart = dynamic(
   () => import("./cash-register/CashRegisterChart"),
@@ -42,7 +43,7 @@ interface CashRegister {
   movements: CashMovement[];
 }
 
-type View = "current" | "history" | "reconcile";
+type View = "current" | "history" | "reconcile" | "auditoria";
 type MethodFilter = "all" | "efectivo" | "yape" | "plin" | "tarjeta";
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
@@ -183,6 +184,8 @@ export default function CashRegisterTab() {
   const [registers, setRegisters] = useState<CashRegister[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("current");
+  /** Rastro de auditoría: quién abrió, cerró o movió plata, y cuándo. */
+  const [trail, setTrail] = useState<{ id: string; action: string; entity: string; detail: string; user: string; createdAt: string }[] | null>(null);
   // Open dialog
   const [showOpen, setShowOpen] = useState(false);
   const [openAmount, setOpenAmount] = useState("");
@@ -220,6 +223,15 @@ export default function CashRegisterTab() {
   const [guiadoBilletes, setGuiadoBilletes] = useState<Record<string, number>>({});
   const [guiadoMonedas, setGuiadoMonedas] = useState<Record<string, number>>({});
   const [addingArqueoGuiado, setAddingArqueoGuiado] = useState(false);
+  /**
+   * Error de abrir caja, cerrar caja o registrar un movimiento.
+   *
+   * Los tres hacían `await fetch(...)` sin mirar la respuesta, con
+   * `catch { /* ignore *\/ }`, y limpiaban el modal igual: el cajero cerraba
+   * la caja, veía la pantalla volver a la normalidad y seguía trabajando sin
+   * saber que no se había guardado nada.
+   */
+  const [cajaError, setCajaError] = useState<string | null>(null);
   // Mejora 12: Tolerancia configurable
   const [cashTolerance, setCashTolerance] = useState(() => {
     try { const v = localStorage.getItem("cash-tolerance"); return v ? Number(v) : 5; } catch { return 5; }
@@ -373,18 +385,24 @@ export default function CashRegisterTab() {
   const handleOpen = async () => {
     if (opening) return;
     setOpening(true);
+    setCajaError(null);
     try {
-      await fetch("/api/cash-registers", {
+      const res = await fetch("/api/cash-registers", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "open", openingAmount: Number(openAmount) || 0, notes: openNotes || undefined }),
       });
+      if (!res.ok) { setCajaError(await mensajeDeError(res, "No se pudo abrir la caja")); return; }
       setShowOpen(false);
       setOpenAmount("");
       setOpenNotes("");
       fetchData();
-    } catch { /* ignore */ }
-    setOpening(false);
+    } catch (err) {
+      console.warn("[CashRegisterTab] abrir caja falló", err);
+      setCajaError("Sin conexión con el servidor — la caja NO se abrió.");
+    } finally {
+      setOpening(false);
+    }
   };
 
   // ── Close register ─────────────────────────────────────────────────────────
@@ -392,19 +410,27 @@ export default function CashRegisterTab() {
   const handleClose = async () => {
     if (!currentRegister || closing) return;
     setClosing(true);
+    setCajaError(null);
     try {
-      await fetch(`/api/cash-registers/${currentRegister.id}`, {
+      const res = await fetch(`/api/cash-registers/${currentRegister.id}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "close", closingAmount: Number(closeAmount) || 0, notes: closeNotes || undefined }),
       });
+      // Si el cierre falla, el conteo de billetes NO se borra: volver a
+      // contarlo todo por un 503 es lo que hacía que nadie confiara en esto.
+      if (!res.ok) { setCajaError(await mensajeDeError(res, "No se pudo cerrar la caja")); return; }
       setShowClose(false);
       setCloseAmount("");
       setCloseNotes("");
       setDenominations({});
       fetchData();
-    } catch { /* ignore */ }
-    setClosing(false);
+    } catch (err) {
+      console.warn("[CashRegisterTab] cerrar caja falló", err);
+      setCajaError("Sin conexión con el servidor — la caja NO se cerró y el conteo sigue acá.");
+    } finally {
+      setClosing(false);
+    }
   };
 
   // ── Add movement ───────────────────────────────────────────────────────────
@@ -414,8 +440,9 @@ export default function CashRegisterTab() {
     // Egreso requires a description (motivo)
     if (mvType === "egreso" && !mvDescription.trim()) return;
     setAddingMv(true);
+    setCajaError(null);
     try {
-      await fetch(`/api/cash-registers/${currentRegister.id}`, {
+      const res = await fetch(`/api/cash-registers/${currentRegister.id}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
@@ -426,14 +453,29 @@ export default function CashRegisterTab() {
           description: [mvMotivo, mvDescription].filter(Boolean).join(" — ") || (mvType === "ingreso" ? "Ingreso manual" : "Egreso manual"),
         }),
       });
+      // Un retiro que no se guarda descuadra el arqueo del día entero.
+      if (!res.ok) {
+        setCajaError(await mensajeDeError(res, `No se pudo registrar el ${mvType}`));
+        return;
+      }
       setShowMovement(false);
       setMvAmount("");
       setMvMotivo("");
       setMvDescription("");
       fetchData();
-    } catch { /* ignore */ }
-    setAddingMv(false);
+    } catch (err) {
+      console.warn("[CashRegisterTab] movimiento de caja falló", err);
+      setCajaError("Sin conexión con el servidor — el movimiento NO se registró.");
+    } finally {
+      setAddingMv(false);
+    }
   };
+
+  /** El mensaje del servidor, o uno genérico con el código. */
+  async function mensajeDeError(res: Response, fallback: string): Promise<string> {
+    const body = await res.json().catch(() => ({}));
+    return typeof body?.error === "string" ? body.error : `${fallback} (error ${res.status})`;
+  }
 
   // ── Arqueo Express ──────────────────────────────────────────────────────────
 
@@ -494,7 +536,19 @@ export default function CashRegisterTab() {
 
   const handleArqueoGuiado = async () => {
     if (!currentRegister || addingArqueoGuiado) return;
+    /**
+     * Esto CIERRA la caja del día (manda `action: "close"`), no es sólo contar.
+     * El botón decía «Confirmar arqueo» y el cajero se quedaba sin caja sin
+     * haberlo pedido — y sin que nada se lo dijera.
+     */
+    const ok = window.confirm(
+      `Esto CIERRA la caja del día con S/${guiadoTotal.toFixed(2)} contados en efectivo.\n\n` +
+      `Esperado: S/${guiadoExpected.toFixed(2)} · Diferencia: ${guiadoDiff >= 0 ? "+" : "−"}S/${Math.abs(guiadoDiff).toFixed(2)}\n\n` +
+      "Después de cerrar hay que abrir una caja nueva para seguir vendiendo. ¿Cerrar?",
+    );
+    if (!ok) return;
     setAddingArqueoGuiado(true);
+    setArqueoError(null);
     try {
       const timestamp = new Date().toLocaleString("es-PE", {
         day: "2-digit",
@@ -528,7 +582,7 @@ export default function CashRegisterTab() {
         }
       }
 
-      await fetch(`/api/cash-registers/${currentRegister.id}`, {
+      const res = await fetch(`/api/cash-registers/${currentRegister.id}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
@@ -537,6 +591,18 @@ export default function CashRegisterTab() {
           notes: `Arqueo Guiado - ${timestamp} | Billetes: S/${guiadoTotalBilletes.toFixed(2)} | Monedas: S/${guiadoTotalMonedas.toFixed(2)} | Total efectivo: S/${guiadoTotal.toFixed(2)}${digitalNote} | Total general: S/${grandTotal.toFixed(2)} | Diferencia: ${guiadoDiff >= 0 ? "+" : ""}S/${guiadoDiff.toFixed(2)}${fotoNote}`,
         }),
       });
+      // Antes se limpiaba la pantalla pasara lo que pasara: si el cierre
+      // fallaba (409 de otra pestaña, 503 de la base), el conteo de billetes
+      // se perdía y la caja quedaba abierta sin que nadie se enterara.
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setArqueoError(
+          typeof body?.error === "string"
+            ? body.error
+            : `No se pudo cerrar la caja (error ${res.status}). El conteo sigue acá.`,
+        );
+        return;
+      }
 
       setShowArqueoGuiado(false);
       setGuiadoBilletes({});
@@ -547,8 +613,12 @@ export default function CashRegisterTab() {
       setArqueoFoto(null);
       setArqueoTab("efectivo");
       fetchData();
-    } catch { /* ignore */ }
-    setAddingArqueoGuiado(false);
+    } catch (err) {
+      console.warn("[CashRegisterTab] arqueo guiado falló", err);
+      setArqueoError("Sin conexión con el servidor. La caja NO se cerró y el conteo sigue acá.");
+    } finally {
+      setAddingArqueoGuiado(false);
+    }
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -559,6 +629,26 @@ export default function CashRegisterTab() {
 
   return (
     <div className="space-y-4">
+      {/* Lo que el servidor rechazó, a la vista. Abrir caja, cerrarla y
+          registrar un retiro fallaban en silencio: el modal se cerraba igual y
+          el cajero seguía trabajando sobre una caja que no existía. */}
+      {cajaError && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-4 py-3"
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-error-500)]" aria-hidden />
+          <p className="flex-1 text-sm font-semibold text-[var(--text-primary)]">{cajaError}</p>
+          <button
+            type="button"
+            onClick={() => setCajaError(null)}
+            className="text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          >
+            Entendido
+          </button>
+        </div>
+      )}
+
       {/* Toolbar (sin breadcrumb redundante — el nav ya indica el modulo) */}
       <div className="flex items-center justify-end flex-wrap gap-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -616,6 +706,20 @@ export default function CashRegisterTab() {
               className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "history" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
             >
               Historial
+            </button>
+            <button
+              onClick={() => {
+                setView("auditoria");
+                if (trail === null) {
+                  fetch("/api/cash-registers/historial?limit=100", { credentials: "include" })
+                    .then((r) => (r.ok ? r.json() : { entries: [] }))
+                    .then((j) => setTrail(j.entries ?? []))
+                    .catch(() => setTrail([]));
+                }
+              }}
+              className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "auditoria" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+            >
+              Quién la tocó
             </button>
             <button
               onClick={() => setView("reconcile")}
@@ -1141,12 +1245,69 @@ export default function CashRegisterTab() {
       )}
 
       {/* Reconciliation view */}
+      {view === "auditoria" && (
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-[var(--rule-base)]">
+            <h3 className="text-sm font-bold text-[var(--text-primary)]">Quién tocó la caja</h3>
+            <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+              Aperturas, cierres e ingresos o egresos manuales, con el usuario que los hizo. Es un registro de auditoría: no se edita
+              ni se borra.
+            </p>
+          </div>
+          {trail === null ? (
+            <div className="p-8 text-center text-sm text-[var(--text-secondary)]">Cargando el historial…</div>
+          ) : trail.length === 0 ? (
+            <div className="p-8 text-center text-sm text-[var(--text-secondary)]">
+              Todavía no hay movimientos registrados. Las aperturas y cierres de caja quedan acá desde ahora.
+            </div>
+          ) : (
+            <ul className="divide-y divide-[var(--rule-base)]">
+              {trail.map((t) => {
+                const esApertura = t.action === "Abrir";
+                const esCierre = t.action === "Cerrar";
+                return (
+                  <li key={t.id} className="flex flex-wrap items-start gap-3 px-5 py-3">
+                    <span
+                      className={cn(
+                        "mt-0.5 inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide",
+                        esApertura
+                          ? "bg-primary/10 text-primary"
+                          : esCierre
+                            ? "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                      )}
+                    >
+                      {esApertura ? "Apertura" : esCierre ? "Cierre" : "Movimiento"}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-[var(--text-primary)]">{t.detail}</p>
+                      <p className="text-xs text-[var(--text-secondary)]">
+                        <span className="font-semibold">{t.user}</span> ·{" "}
+                        {new Date(t.createdAt).toLocaleString("es-PE", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+
       {view === "reconcile" && (() => {
         // Group closed registers by calendar day
         type DayRow = { date: string; count: number; totalExpected: number; totalClosing: number; totalDiff: number; hasAlert: boolean };
         const byDay = new Map<string, DayRow>();
         for (const r of closedRegisters) {
-          const day = r.closedAt ? r.closedAt.slice(0, 10) : r.openedAt.slice(0, 10);
+          // Día local: con el ISO crudo, un cierre de las 20:00 aparecía en la
+          // fila del día siguiente.
+          const day = diaLocal(r.closedAt ?? r.openedAt);
           const existing = byDay.get(day) ?? { date: day, count: 0, totalExpected: 0, totalClosing: 0, totalDiff: 0, hasAlert: false };
           existing.count++;
           existing.totalExpected += r.expectedAmount ?? 0;
@@ -1158,24 +1319,34 @@ export default function CashRegisterTab() {
         const rows = Array.from(byDay.values()).sort((a, b) => b.date.localeCompare(a.date));
         const totalDiscrepancy = rows.reduce((s, r) => s + Math.abs(r.totalDiff), 0);
         
-        // Weekly cash flow computation (last 7 days)
-        const today = new Date();
+        /**
+         * Flujo de caja de los últimos 7 días. Tres cosas que estaban mal:
+         *
+         *  1. El día se calculaba en UTC (`toISOString().slice(0,10)` y el
+         *     `closedAt` crudo). En Perú son 5 horas de corrimiento: la caja
+         *     que se cierra a las 20:00 del lunes caía en el martes.
+         *  2. Sumaba `openingAmount` como ingreso. El fondo con el que se abre
+         *     no es plata que entró: es la misma que ya estaba.
+         *  3. Sumaba TODAS las ventas, también las de Yape y tarjeta, que no
+         *     pasan por el cajón. Esto es flujo de EFECTIVO.
+         */
         const weekData: Array<{ date: string; income: number; expenses: number; net: number }> = [];
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date(today);
-          d.setDate(d.getDate() - i);
-          const dateStr = d.toISOString().slice(0, 10);
-          const dayRegs = closedRegisters.filter(r => {
-            const rDate = r.closedAt ? r.closedAt.slice(0, 10) : r.openedAt.slice(0, 10);
-            return rDate === dateStr;
-          });
+        for (const dateStr of ultimosDiasLocales(7)) {
+          const dayRegs = closedRegisters.filter(r =>
+            diaLocal(r.closedAt ?? r.openedAt) === dateStr,
+          );
           let income = 0;
           let expenses = 0;
           for (const reg of dayRegs) {
-            income += reg.openingAmount;
             for (const m of reg.movements) {
-              if (m.type === "venta" || m.type === "ingreso") income += m.amount;
-              else if (m.type === "egreso") expenses += m.amount;
+              if (m.type === "venta") {
+                // Sólo lo cobrado en efectivo entra al cajón.
+                if ((m.method ?? "efectivo") === "efectivo") income += m.amount;
+              } else if (m.type === "ingreso") {
+                income += m.amount;
+              } else if (m.type === "egreso") {
+                expenses += m.amount;
+              }
             }
           }
           weekData.push({ date: dateStr, income, expenses, net: income - expenses });
@@ -2212,9 +2383,15 @@ export default function CashRegisterTab() {
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
               >
                 {addingArqueoGuiado ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
-                Confirmar arqueo
+                {/* El botón dice lo que hace: esto cierra la caja del día. */}
+                Cerrar caja con este conteo
               </button>
             </div>
+            {arqueoError && (
+              <p className="mt-3 text-sm font-semibold text-[var(--data-error-500)]" role="alert">
+                {arqueoError}
+              </p>
+            )}
           </div>
         </div>
       )}

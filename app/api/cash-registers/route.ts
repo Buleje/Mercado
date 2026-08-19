@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { toErrorPayload } from "@/lib/api-error";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);
@@ -70,6 +72,19 @@ export async function POST(req: NextRequest) {
           : operator
         : userNotes || undefined;
       const reg = await CashRegistersDB.open(auth.tenantId, openingAmount, notes);
+      // Abrir la caja define con cuánta plata arranca el día: sin esto, el
+      // historial auditaba los ingresos y egresos manuales pero NO los dos
+      // momentos en que el monto se fija. Si al cierre falta plata, el primer
+      // dato que se busca es quién abrió y con cuánto.
+      logActivity(
+        "Abrir",
+        "caja",
+        `Apertura de caja con S/${openingAmount.toFixed(2)}${notes ? ` — ${notes}` : ""}`,
+        reg.id,
+        auth.username,
+        undefined,
+        auth.tenantId,
+      ).catch((err) => logger.warn("[cash-registers] activity log failed", { err: String(err) }));
       return NextResponse.json(reg, { status: 201 });
     }
 

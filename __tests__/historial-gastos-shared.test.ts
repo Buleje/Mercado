@@ -160,6 +160,29 @@ describe("construirCsv", () => {
     expect(lineas.at(-1)).toContain('"500,00"');
   });
 
+  // El saldo del adelanto salió de `description` (donde iba pegado al código y
+  // sin signo de soles) y pasó a ser el número `saldoPendiente`. El archivo no
+  // tiene columna propia para eso, así que se vuelve a pegar al exportar: sacar
+  // el dato de la vista no puede significar perderlo del CSV.
+  it("el CSV conserva lo que el adelanto no devolvió", () => {
+    const csv = construirCsv([
+      item({
+        id: "adl-1", source: "adelanto", clase: "anticipo",
+        description: "ADL-2026-0022", amount: 500, montoPagado: 500, saldoPendiente: 450,
+      }),
+    ]);
+    const [cabecera, fila] = csv.split("\r\n");
+    expect(fila).toContain('"ADL-2026-0022 · queda por devolver 450,00"');
+    expect(fila!.split(";").length).toBe(cabecera!.split(";").length);
+  });
+
+  it("un adelanto ya devuelto no arrastra el texto del saldo", () => {
+    const csv = construirCsv([
+      item({ id: "adl-2", source: "adelanto", clase: "anticipo", description: "ADL-2026-0009", amount: 300 }),
+    ]);
+    expect(csv).not.toContain("queda por devolver");
+  });
+
   it("sin anticipos ni retiros no agrega la fila de aparte", () => {
     const csv = construirCsv([item({ amount: 100 })]);
     expect(csv).not.toContain("NO CUENTAN COMO GASTO");

@@ -24,6 +24,7 @@ import {
   GripVertical,
 } from "@buleje/design-system/icons";
 import Image from "next/image";
+import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   DndContext,
@@ -326,66 +327,96 @@ function ProductModifierEditor({
     maxSelect: number;
     options: Array<{ name: string; priceDelta?: number }>;
   }) {
-    const res = await fetch(
-      `/api/admin/products/${product.id}/modifier-groups`,
-      {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          name: input.name,
-          required: input.required,
-          minSelect: input.minSelect,
-          maxSelect: input.maxSelect,
-          position: groups.length,
-        }),
-      },
-    );
-    if (!res.ok) throw new Error("No se pudo crear el grupo");
-    const group = (await res.json()) as ModifierGroup;
-    // Crear opciones en cascada
-    for (const [idx, opt] of input.options.entries()) {
-      await fetch(`/api/admin/modifier-groups/${group.id}/options`, {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          name: opt.name,
-          priceDelta: opt.priceDelta ?? 0,
-          position: idx,
-        }),
-      });
+    try {
+      const res = await fetch(
+        `/api/admin/products/${product.id}/modifier-groups`,
+        {
+          method: "POST",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            name: input.name,
+            required: input.required,
+            minSelect: input.minSelect,
+            maxSelect: input.maxSelect,
+            position: groups.length,
+          }),
+        },
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo crear el grupo (error ${res.status})`);
+        return;
+      }
+      const group = (await res.json()) as ModifierGroup;
+      // Crear opciones en cascada
+      let optionFailures = 0;
+      for (const [idx, opt] of input.options.entries()) {
+        const optRes = await fetch(`/api/admin/modifier-groups/${group.id}/options`, {
+          method: "POST",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            name: opt.name,
+            priceDelta: opt.priceDelta ?? 0,
+            position: idx,
+          }),
+        });
+        if (!optRes.ok) optionFailures += 1;
+      }
+      if (optionFailures > 0) {
+        toast.error(`El grupo se creó, pero ${optionFailures} opción${optionFailures === 1 ? "" : "es"} no se pudo${optionFailures === 1 ? "" : "ieron"} agregar.`);
+      }
+      await reload();
+      onChange();
+    } catch (err) {
+      console.warn("[VariationsTab] crear grupo falló", err);
+      toast.error("No se pudo crear el grupo — revisá tu conexión.");
     }
-    await reload();
-    onChange();
   }
 
   async function deleteGroup(groupId: string) {
     if (!confirm("¿Eliminar este grupo y todas sus opciones?")) return;
-    const res = await fetch(
-      `/api/admin/products/${product.id}/modifier-groups/${groupId}`,
-      { method: "DELETE", headers: csrfHeaders() },
-    );
-    if (!res.ok) {
-      alert("No se pudo eliminar");
-      return;
+    try {
+      const res = await fetch(
+        `/api/admin/products/${product.id}/modifier-groups/${groupId}`,
+        { method: "DELETE", headers: csrfHeaders() },
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo eliminar el grupo (error ${res.status})`);
+        return;
+      }
+      await reload();
+      onChange();
+    } catch (err) {
+      console.warn("[VariationsTab] eliminar grupo falló", err);
+      toast.error("No se pudo eliminar el grupo — revisá tu conexión.");
     }
-    await reload();
-    onChange();
   }
 
   async function updateGroup(
     groupId: string,
     patch: Partial<Pick<ModifierGroup, "name" | "required" | "minSelect" | "maxSelect" | "isActive">>,
   ) {
-    await fetch(
-      `/api/admin/products/${product.id}/modifier-groups/${groupId}`,
-      {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(patch),
-      },
-    );
-    await reload();
-    onChange();
+    try {
+      const res = await fetch(
+        `/api/admin/products/${product.id}/modifier-groups/${groupId}`,
+        {
+          method: "PATCH",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify(patch),
+        },
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo guardar el grupo (error ${res.status})`);
+        return;
+      }
+      await reload();
+      onChange();
+    } catch (err) {
+      console.warn("[VariationsTab] guardar grupo falló", err);
+      toast.error("No se pudo guardar el grupo — revisá tu conexión.");
+    }
   }
 
   async function addOption(groupId: string) {
@@ -393,36 +424,66 @@ function ProductModifierEditor({
     if (!name?.trim()) return;
     const priceDeltaStr = prompt("Costo adicional en S/ (0 si no cobra extra)", "0");
     const priceDelta = parseFloat(priceDeltaStr ?? "0") || 0;
-    await fetch(`/api/admin/modifier-groups/${groupId}/options`, {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ name: name.trim(), priceDelta }),
-    });
-    await reload();
-    onChange();
+    try {
+      const res = await fetch(`/api/admin/modifier-groups/${groupId}/options`, {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ name: name.trim(), priceDelta }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo agregar la opción (error ${res.status})`);
+        return;
+      }
+      await reload();
+      onChange();
+    } catch (err) {
+      console.warn("[VariationsTab] agregar opción falló", err);
+      toast.error("No se pudo agregar la opción — revisá tu conexión.");
+    }
   }
 
   async function updateOption(
     optionId: string,
     patch: Partial<Pick<ModifierOption, "name" | "priceDelta" | "isDefault" | "isActive" | "imageUrl">>,
   ) {
-    await fetch(`/api/admin/modifier-options/${optionId}`, {
-      method: "PATCH",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(patch),
-    });
-    await reload();
-    onChange();
+    try {
+      const res = await fetch(`/api/admin/modifier-options/${optionId}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo guardar la opción (error ${res.status})`);
+        return;
+      }
+      await reload();
+      onChange();
+    } catch (err) {
+      console.warn("[VariationsTab] guardar opción falló", err);
+      toast.error("No se pudo guardar la opción — revisá tu conexión.");
+    }
   }
 
   async function deleteOption(optionId: string) {
     if (!confirm("¿Eliminar esta opcion?")) return;
-    await fetch(`/api/admin/modifier-options/${optionId}`, {
-      method: "DELETE",
-      headers: csrfHeaders(),
-    });
-    await reload();
-    onChange();
+    try {
+      const res = await fetch(`/api/admin/modifier-options/${optionId}`, {
+        method: "DELETE",
+        headers: csrfHeaders(),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo eliminar la opción (error ${res.status})`);
+        return;
+      }
+      await reload();
+      onChange();
+    } catch (err) {
+      console.warn("[VariationsTab] eliminar opción falló", err);
+      toast.error("No se pudo eliminar la opción — revisá tu conexión.");
+    }
   }
 
   return (
@@ -479,21 +540,29 @@ function ProductModifierEditor({
               groups={groups}
               onReorder={async (ids) => {
                 // Optimistic — actualizamos el orden en local primero
+                const previous = groups;
                 const reordered = ids
                   .map((id) => groups.find((g) => g.id === id))
                   .filter((g): g is ModifierGroup => Boolean(g));
                 setGroups(reordered);
-                await fetch(
-                  `/api/admin/products/${product.id}/modifier-groups/reorder`,
-                  {
-                    method: "POST",
-                    headers: csrfHeaders({ "Content-Type": "application/json" }),
-                    body: JSON.stringify({ ids }),
-                  },
-                ).catch((err) => {
-                   
-                  console.warn("[reorder-groups] silent fail", err);
-                });
+                try {
+                  const res = await fetch(
+                    `/api/admin/products/${product.id}/modifier-groups/reorder`,
+                    {
+                      method: "POST",
+                      headers: csrfHeaders({ "Content-Type": "application/json" }),
+                      body: JSON.stringify({ ids }),
+                    },
+                  );
+                  if (!res.ok) {
+                    setGroups(previous);
+                    toast.error(`No se pudo guardar el orden de los grupos (error ${res.status})`);
+                  }
+                } catch (err) {
+                  setGroups(previous);
+                  console.warn("[VariationsTab] reordenar grupos falló", err);
+                  toast.error("No se pudo guardar el orden de los grupos — revisá tu conexión.");
+                }
               }}
               renderGroup={(g) => (
                 <GroupCard
@@ -504,17 +573,24 @@ function ProductModifierEditor({
                   onUpdateOption={updateOption}
                   onDeleteOption={deleteOption}
                   onReorderOptions={async (optionIds) => {
-                    await fetch(
-                      `/api/admin/modifier-groups/${g.id}/options/reorder`,
-                      {
-                        method: "POST",
-                        headers: csrfHeaders({ "Content-Type": "application/json" }),
-                        body: JSON.stringify({ ids: optionIds }),
-                      },
-                    ).catch((err) => {
-                       
-                      console.warn("[reorder-options] silent fail", err);
-                    });
+                    try {
+                      const res = await fetch(
+                        `/api/admin/modifier-groups/${g.id}/options/reorder`,
+                        {
+                          method: "POST",
+                          headers: csrfHeaders({ "Content-Type": "application/json" }),
+                          body: JSON.stringify({ ids: optionIds }),
+                        },
+                      );
+                      if (!res.ok) {
+                        toast.error(`No se pudo guardar el orden de las opciones (error ${res.status})`);
+                      }
+                      await reload();
+                    } catch (err) {
+                      console.warn("[VariationsTab] reordenar opciones falló", err);
+                      toast.error("No se pudo guardar el orden de las opciones — revisá tu conexión.");
+                      await reload();
+                    }
                   }}
                 />
               )}

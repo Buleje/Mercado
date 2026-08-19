@@ -22,6 +22,7 @@ import { FiadosDB } from "@/lib/db/fiados.db";
 import { CustomersDB } from "@/lib/db/customers.db";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { extractIgv, igvRateFromSettings } from "@/lib/tax";
+import { desglosarPago } from "@/lib/caja/desglosar-pago";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -620,12 +621,24 @@ async function salesHandler(
 
   // Register cash movement if a register is open (fire-and-forget)
   CashRegistersDB.getOpen(auth.tenantId).then(async (reg) => {
-    if (reg) {
+    if (!reg) return;
+    /**
+     * Una línea por forma de pago, no una sola por el total.
+     *
+     * Con pago mixto el POS manda `payment: "MIXTO"`, y el arqueo suma sólo
+     * los movimientos con `method === "efectivo"`: la venta entera quedaba
+     * fuera del esperado y el efectivo que sí estaba en el cajón aparecía
+     * como sobrante al cerrar. Desarmado, cada medio suma donde corresponde.
+     */
+    const lineas = desglosarPago(data.payment, data.paymentDetails, finalTotal);
+    for (const linea of lineas) {
       await CashRegistersDB.addMovement(reg.id, {
         type: "venta",
-        amount: finalTotal,
-        method: data.payment ?? "efectivo",
-        description: `Venta ${sale.id}`,
+        amount: linea.amount,
+        method: linea.method,
+        description: lineas.length > 1
+          ? `Venta ${sale.id} · ${linea.method}`
+          : `Venta ${sale.id}`,
         saleId: sale.id,
       });
     }

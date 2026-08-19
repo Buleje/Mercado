@@ -37,6 +37,13 @@ export type HistorialItem = {
   meta?: ExpenseMeta;
   /** Código del movimiento que este ya duplica (ej. el adelanto que lo originó). */
   duplicaDe?: string;
+  /**
+   * Sólo adelantos: cuánto de lo entregado todavía no volvió. NO es «lo que
+   * falta pagar» — es al revés, lo que la persona debe. Viaja como número y no
+   * dentro del texto de la descripción, que era donde estaba: así se puede
+   * formatear como plata y decidir si hace falta mostrarlo.
+   */
+  saldoPendiente?: number;
 };
 
 export type KpisServidor = {
@@ -77,6 +84,17 @@ export const CLASE_LABELS: Record<ClaseMovimiento, string> = {
   gasto: "Gasto",
   anticipo: "Anticipo (vuelve)",
   caja: "Retiro de caja (fuera del total)",
+};
+
+/**
+ * Por qué un movimiento queda afuera del total. La tabla sólo alcanza a decir
+ * «no suma» al lado del monto; en la ficha hay lugar para el motivo, que es lo
+ * que evita la llamada de «me falta plata en el reporte».
+ */
+export const CLASE_MOTIVO: Record<ClaseMovimiento, string | null> = {
+  gasto: null,
+  anticipo: "No suma al total gastado: la plata salió de la caja pero vuelve como trabajo o descuento de sueldo.",
+  caja: "No suma al total gastado: un retiro de caja suele ser la otra cara de un gasto que ya está cargado aparte.",
 };
 
 export const ESTADO_PAGO_LABELS: Record<EstadoPago, string> = {
@@ -226,7 +244,11 @@ export function construirCsv(items: HistorialItem[]): string {
     celda(ORIGEN_LABELS[i.source]),
     celda(CLASE_LABELS[i.clase]),
     celda(i.category),
-    celda(i.description),
+    // El saldo del adelanto salió de la descripción para poder formatearlo en
+    // pantalla; acá se vuelve a pegar para que el archivo no pierda el dato.
+    celda(i.saldoPendiente
+      ? `${i.description} · queda por devolver ${numero(i.saldoPendiente)}`
+      : i.description),
     celda(i.supplierName ?? ""),
     celda(ESTADO_PAGO_LABELS[i.estadoPago]),
     celda(numero(i.amount)),
