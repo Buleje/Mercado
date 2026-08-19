@@ -131,6 +131,11 @@ build-output.txt
 /*.png
 /*.jpg
 /*.jpeg
+/*.pdf
+# Scratch de sesión en la raíz (mediciones, snaps sueltos, one-liners de debug)
+/_*.mjs
+/.*.mjs
+/snap-*.mjs
 # Playwright MCP working directory (exploration artifacts)
 /.playwright-mcp/
 # Vitest JSON reports (local per-session debugging)
@@ -168,20 +173,13 @@ lint-compact.txt
 lint-output.txt
 tsc-errors.log
 check-tenants.sql
-reports/smoke-test/
-reports/footer-redesign/
-reports/baseline/2026-04-17-ds-sprint-c/lint-design-tokens-pre.txt
-
-# Visual verify artifacts (transient — solo baselines se commitean)
-reports/visual-verify/
-reports/a11y/
-reports/browser-tour/
-# Audit / snapshot outputs from scripts/audit-*.mjs and scripts/snap-*.mjs.
-# Solo `reports/visual-baselines/` se versiona (referencia para regresiones).
-reports/audit-final/
-reports/i18n-audit/
-reports/sidebar-buleje/
-reports/forecasting/
+# reports/ = artefactos transitorios de verificación (screenshots, audits, snaps de
+# scripts/visual-verify-*.mjs y scripts/audit-*.mjs). Se regeneran corriendo el script;
+# no se versionan. La única excepción son los baselines de regresión visual.
+# Lo ya trackeado antes de esta regla sigue trackeado (git ignora .gitignore para el índice).
+reports/**
+!reports/visual-baselines/
+!reports/visual-baselines/**
 
 # Claude Code session metrics — JSON regenerado en cada agente run.
 .claude/agent-metrics.json
@@ -254,3 +252,7 @@ ${CLAUDE_PROJECT_DIR}/
 
 # attachments de vitest browser mode (diffs de VRT fallidos)
 .vitest-attachments/
+
+# Config del agente de sync de escritorio (ADR-307): contiene la API key
+tools/buleje-sync/buleje-sync.config.json
+.tmp-qa/

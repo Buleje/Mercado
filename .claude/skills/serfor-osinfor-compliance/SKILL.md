@@ -154,12 +154,14 @@ Formalizarla (serie/correlativo/formato imprimible) = subir al estándar SERFOR.
 
 ---
 
-## 7. Plazos ⚠️ (RECONCILIAR antes de tocar)
+## 7. Plazos ✅ (ya reconciliado 2026-07-30 — no re-litigar)
 
-- El código encoda **15 días** (`PLAZO_REGISTRO_DIAS` en `lib/forestal/ctp-compliance.ts`,
-  comparado en ms contra `WoodEntriesDB.stats().lateCount`).
-- La **guía práctica del LO-CTP (RDE D000025-2023)** apunta a un plazo mucho más corto
-  (**~2 días hábiles** para registrar la operación en el libro electrónico).
+- **CTP:** `PLAZO_REGISTRO_DIAS = 2` **días hábiles** en `lib/forestal/ctp-compliance.ts`, que
+  es lo que pide la guía práctica del LO-CTP (RDE D000025-2023). La misma fórmula de días
+  hábiles está replicada en SQL (`FUERA_DE_PLAZO_SQL` en `wood-entries.db.ts`) para que el
+  conteo (`stats().lateCount`) y el filtro devuelvan el mismo conjunto. No descuenta feriados.
+- **LO-TH (otro libro, otra norma):** `loth-constants.ts` encoda **15 días** (RDE 264-2019).
+  Ver 15 en el repo NO es un bug del CTP — es el libro del título habilitante.
 - **NO cambies el número a ciegas.** Antes de mover `PLAZO_REGISTRO_DIAS`:
   1. Leé el texto vigente de la RDE D000025-2023 y del Reglamento (art. del Libro de Operaciones).
   2. Distinguí "días" vs "días hábiles" y a qué operación aplica cada plazo.

@@ -208,6 +208,12 @@
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/stop-skill-suggester.mjs",
             "timeout": 5,
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/avisar-terminado.mjs",
+            "timeout": 10,
+            "async": true
           }
         ]
       },
