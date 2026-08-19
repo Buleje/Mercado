@@ -828,9 +828,9 @@ function POSTodayStrip() {
       ) : (
         <>
           <div className="flex items-center gap-1.5 shrink-0">
-            <Receipt className="h-3.5 w-3.5 text-[var(--text-tertiary)] dark:text-muted" aria-hidden />
-            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Hoy:</span>
-            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] dark:text-foreground">
+            <Receipt className="h-3.5 w-3.5 text-[var(--text-tertiary)]" aria-hidden />
+            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Hoy:</span>
+            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">
               {state.count} venta{state.count !== 1 ? "s" : ""}
             </span>
           </div>
@@ -845,8 +845,8 @@ function POSTodayStrip() {
             <>
               <div className="h-3 w-px bg-[var(--rule-base)] dark:bg-card-border shrink-0" aria-hidden />
               <div className="flex items-center gap-1 shrink-0">
-                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Ticket prom.:</span>
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Ticket prom.:</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
                   {fmt(ticket)}
                 </span>
               </div>
@@ -1655,7 +1655,13 @@ export default function POSView() {
           {/* Search + Actions + Categories — acciones a la derecha de la search bar
               para compactar verticalmente (antes ocupaban una fila entera). */}
           <div className="p-3 space-y-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] relative">
-            <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide">
+            {/* Wrapper relative propio: en mobile esta fila desborda (búsqueda +
+                mic + caja + Express + Escanear + Foto + Opciones + Expandir no
+                entran en 390px) y el scroll horizontal no tenía NINGUNA pista
+                visual — el usuario no se enteraba que "Opciones"/"Expandir"
+                existían. El degradado del borde derecho avisa que hay más. */}
+            <div className="relative">
+              <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide">
               {/* `min-w-[200px]` NO funciona acá: un `* { min-width: 0 }` sin capa
                   en globals.css le gana a `@layer utilities`, y el buscador
                   quedaba aplastado en 52 px — inusable justo en el control que
@@ -1675,13 +1681,13 @@ export default function POSView() {
 
               {/* Acciones POS — badge caja + entrada + opciones + expandir */}
               {cashRegisterOpen === false && (
-                <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-semibold bg-[var(--surface-raised)] text-[var(--data-warning-500)] border border-[var(--data-warning-500)]/30 px-2.5 py-1.5 rounded-lg">
+                <span className="shrink-0 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-semibold bg-[var(--surface-raised)] text-[var(--data-warning-500)] border border-[var(--data-warning-500)]/30 px-2.5 py-1.5 rounded-lg">
                   <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)]" />
                   Sin caja
                 </span>
               )}
               {cashRegisterOpen === true && (
-                <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-semibold bg-[var(--surface-raised)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 px-2.5 py-1.5 rounded-lg">
+                <span className="shrink-0 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-semibold bg-[var(--surface-raised)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 px-2.5 py-1.5 rounded-lg">
                   <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)] animate-pulse" />
                   Caja abierta
                 </span>
@@ -1691,7 +1697,7 @@ export default function POSView() {
                   href={`/venta/${lastSaleInfo.id}/recibo`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hidden md:inline-flex items-center gap-1 text-xs bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted rounded-full px-2 py-1 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
+                  className="shrink-0 hidden md:inline-flex items-center gap-1 text-xs bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted rounded-full px-2 py-1 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
                   title="Reimprimir última venta"
                 >
                   Última: {fmt(lastSaleInfo.total)} · {Math.max(1, lastSaleInfo.minutesAgo)}m
@@ -1705,16 +1711,16 @@ export default function POSView() {
               />
               <button
                 onClick={() => setShowScanner(true)}
-                className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 max-sm:min-h-[44px] rounded-lg transition-colors"
+                className="shrink-0 inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 max-sm:min-h-[44px] rounded-lg transition-colors"
                 title="Escanear codigo de barras"
               >
-                <ScanBarcode className="h-4 w-4 text-primary" /> <span className="hidden sm:inline">Escanear</span>
+                <ScanBarcode className="h-4 w-4 text-primary" /> <span className="hidden 2xl:inline">Escanear</span>
               </button>
               <label
-                className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 max-sm:min-h-[44px] rounded-lg transition-colors cursor-pointer"
+                className="shrink-0 inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 max-sm:min-h-[44px] rounded-lg transition-colors cursor-pointer"
                 title="Escanear producto con camara"
               >
-                <Camera className="h-4 w-4 text-primary" aria-hidden /> <span className="hidden sm:inline">Foto</span>
+                <Camera className="h-4 w-4 text-primary" aria-hidden /> <span className="hidden 2xl:inline">Foto</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -1742,14 +1748,18 @@ export default function POSView() {
                 />
               </label>
 
-              {/* Dropdown "Opciones" — acciones secundarias + preferencias */}
-              <div className="relative">
+              {/* Dropdown "Opciones" — acciones secundarias + preferencias.
+                  shrink-0: sin esto, el * { min-width: 0 } de globals.css deja que este
+                  wrapper se achique en el flex row, pero el <button> de adentro NO se
+                  achica con él — se desborda y tapa el botón "Expandir" de al lado
+                  (memoria min-width-utilities-muertas). */}
+              <div className="relative shrink-0">
                 <button
                   onClick={() => setShowMoreTools(v => !v)}
                   className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent px-3 py-2 max-sm:min-h-[44px] rounded-lg transition-colors"
                   title="Opciones del POS"
                 >
-                  <Settings className="h-4 w-4" /> <span className="hidden sm:inline">Opciones</span>
+                  <Settings className="h-4 w-4" /> <span className="hidden 2xl:inline">Opciones</span>
                 </button>
                 {showMoreTools && (
                   <>
@@ -1840,38 +1850,49 @@ export default function POSView() {
 
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-lg transition-colors"
+                className="shrink-0 inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-lg transition-colors"
                 title={expanded ? "Reducir" : "Expandir"}
               >
                 {expanded ? <Minimize2 className="h-4 w-4 text-[var(--text-secondary)]" /> : <Maximize2 className="h-4 w-4 text-[var(--text-secondary)]" />}
-                <span className="hidden min-[390px]:inline sm:inline">{expanded ? "Reducir" : "Expandir"}</span>
+                <span className="hidden 2xl:inline">{expanded ? "Reducir" : "Expandir"}</span>
               </button>
+              </div>
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-[var(--surface-raised)] to-transparent"
+              />
             </div>
             {/* Categorías compactas (chips h-10) derivadas del inventario real
                 (products de /api/products), no de la lista estática. Antes: cards
                 verticales 92×80 (muy altas). Ahora: pills bajas que se adaptan al
                 POS y reflejan exactamente las categorías que usa el dueño. */}
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x pt-1 pb-1">
-              {posCategories.map((c) => {
-                const Icon = CATEGORY_ICONS[c.id] ?? Package;
-                const active = category === c.id;
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => setCategory(c.id)}
-                    aria-pressed={active}
-                    className={cn(
-                      "snap-start shrink-0 inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border text-sm font-semibold transition-all duration-[var(--dur-fast)]",
-                      active
-                        ? "bg-primary text-white border-primary shadow-[var(--shadow-sm)]"
-                        : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",
-                    )}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
-                    <span className="whitespace-nowrap">{c.label}</span>
-                  </button>
-                );
-              })}
+            <div className="relative">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x pt-1 pb-1">
+                {posCategories.map((c) => {
+                  const Icon = CATEGORY_ICONS[c.id] ?? Package;
+                  const active = category === c.id;
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => setCategory(c.id)}
+                      aria-pressed={active}
+                      className={cn(
+                        "snap-start shrink-0 inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border text-sm font-semibold transition-all duration-[var(--dur-fast)]",
+                        active
+                          ? "bg-primary text-white border-primary shadow-[var(--shadow-sm)]"
+                          : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",
+                      )}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
+                      <span className="whitespace-nowrap">{c.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-[var(--surface-raised)] to-transparent"
+              />
             </div>
           </div>
 
