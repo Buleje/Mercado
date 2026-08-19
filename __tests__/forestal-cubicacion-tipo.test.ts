@@ -4,7 +4,7 @@
  * sección exacta ganan sobre las de rango.
  */
 import { describe, expect, it } from "vitest";
-import { clasificarTipo, tipoCorto, tonoTipo, type MedidaPieza } from "@/lib/forestal/cubicacion-tipo";
+import { clasificarTipo, tipoCorto, tipoDePieza, tipoEsManual, tonoTipo, type MedidaPieza } from "@/lib/forestal/cubicacion-tipo";
 
 function m(espesor: number, ancho: number, largo: number, u: Partial<MedidaPieza> = {}): MedidaPieza {
   return { espesor, ancho, largo, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", ...u };
@@ -24,10 +24,12 @@ describe("clasificarTipo", () => {
     expect(clasificarTipo(m(6, 6, 6))).toBe("Paquetería larga");  // largo 6 = largo
   });
 
-  it("Comercial: espesor ≥ 2, ancho ≥ 6, largo ≥ 6", () => {
+  it("Comercial: espesor ≥ 1.5, ancho ≥ 6, largo ≥ 6", () => {
+    expect(clasificarTipo(m(1.5, 8, 10))).toBe("Comercial"); // justo en el umbral
+    expect(clasificarTipo(m(1.5, 6, 6))).toBe("Comercial");
     expect(clasificarTipo(m(2, 8, 10))).toBe("Comercial");
-    expect(clasificarTipo(m(2, 6, 6))).toBe("Comercial"); // justo en los umbrales
     expect(clasificarTipo(m(3, 12, 8))).toBe("Comercial");
+    expect(clasificarTipo(m(1.25, 8, 10))).not.toBe("Comercial"); // espesor < 1.5, ya no es comercial
   });
 
   it("Larga angosta: espesor ≤ 5, ancho ≤ 5, largo ≥ 6", () => {
@@ -71,5 +73,46 @@ describe("clasificarTipo", () => {
     expect(tonoTipo("Corta")).toBe("warning");
     expect(tonoTipo("Paquetería corta")).toBe("neutral");
     expect(tonoTipo("Otro")).toBe("neutral");
+  });
+});
+
+describe("tipoDePieza · el manual gana sobre la medida", () => {
+  it("sin tipo puesto a mano, decide la regla", () => {
+    expect(tipoDePieza(m(1.5, 8, 10))).toBe("Comercial");
+  });
+
+  it("con tipo puesto a mano, se respeta aunque la medida diga otra cosa", () => {
+    // El aserradero vende por costumbre y por cliente: una 1.5×8×10 que el
+    // cliente compra como paquetería es paquetería. Antes había que falsear
+    // la MEDIDA —el dato que va a la guía— para que el papel saliera bien.
+    expect(tipoDePieza({ ...m(1.5, 8, 10), tipo: "Paquetería larga" })).toBe("Paquetería larga");
+  });
+
+  it("`null` es «automático», no «sin tipo»", () => {
+    expect(tipoDePieza({ ...m(1.5, 8, 10), tipo: null })).toBe("Comercial");
+  });
+
+  it("cambiar la medida NO pisa el tipo manual", () => {
+    // Es la razón de existir del override: si la medida volviera a mandar, el
+    // operario perdería su decisión al corregir un ancho.
+    const forzada = { ...m(1, 4, 8), tipo: "Corta" as const };
+    expect(tipoDePieza(forzada)).toBe("Corta");
+    expect(clasificarTipo(forzada)).toBe("Tabla");
+  });
+});
+
+describe("tipoEsManual · cuándo avisar que está forzado", () => {
+  it("sin tipo propio, no es manual", () => {
+    expect(tipoEsManual(m(1.5, 8, 10))).toBe(false);
+  });
+
+  it("un tipo forzado que DIFIERE de la regla es manual", () => {
+    expect(tipoEsManual({ ...m(1.5, 8, 10), tipo: "Corta" })).toBe(true);
+  });
+
+  it("forzar el mismo que la regla no se marca como manual", () => {
+    // Marcarlo pondría un aviso de «esto está intervenido» sobre una pieza que
+    // dice exactamente lo que diría sola: ruido que enseña a ignorar la marca.
+    expect(tipoEsManual({ ...m(1.5, 8, 10), tipo: "Comercial" })).toBe(false);
   });
 });

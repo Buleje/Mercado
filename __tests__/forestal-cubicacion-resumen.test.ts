@@ -44,7 +44,7 @@ describe("agruparPor", () => {
 
   it("por tipo agrupa según la medida (comercial/corta/tabla)", () => {
     const mix = [
-      pieza(1, 2, 8, 10, "Tornillo"), // Comercial (esp≥2, anc≥6, largo≥6)
+      pieza(1, 1.5, 8, 10, "Tornillo"), // Comercial (esp≤1.5, anc≥6, largo≥6)
       pieza(1, 2, 8, 4, "Cedro"),     // Corta (largo < 6)
       pieza(1, 1, 4, 12, "Cedro"),    // Tabla (esp=1, anc≥3, largo≥6)
     ];
@@ -119,9 +119,9 @@ describe("agruparPor", () => {
 describe("resumenPorEspecie", () => {
   it("una entrada por especie con su desglose por tipo y total", () => {
     const rows = [
-      pieza(2, 2, 8, 10, "Tornillo"), // Comercial
+      pieza(2, 1.5, 8, 10, "Tornillo"), // Comercial
       pieza(1, 2, 8, 4, "Tornillo"),  // Corta (largo < 6)
-      pieza(3, 2, 6, 10, "Cedro"),    // Comercial
+      pieza(3, 1.5, 6, 10, "Cedro"),    // Comercial
     ];
     const bloques = resumenPorEspecie(rows, 4);
     expect(bloques.map((b) => b.especie)).toEqual(["Tornillo", "Cedro"]); // Tornillo pesa más

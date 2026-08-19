@@ -5,7 +5,7 @@
 import { COMANDOS_DEFAULT, type ComandosCfg } from "./cubicacion";
 
 export interface CubicadorConfig {
-  /** Velocidad de la voz que repite (SpeechSynthesis rate 0.6–2). */
+  /** Velocidad de la voz que repite (SpeechSynthesis rate 0.6–3). */
   voiceRate: number;
   /** voiceURI de la voz elegida (tono). "" = la default del navegador. */
   voiceURI: string;
@@ -18,7 +18,7 @@ export interface CubicadorConfig {
 }
 
 export const CONFIG_DEFAULT: CubicadorConfig = {
-  voiceRate: 1.5,
+  voiceRate: 2,
   voiceURI: "",
   speak: true,
   avisarRaras: true,

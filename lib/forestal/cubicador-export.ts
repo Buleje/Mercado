@@ -7,17 +7,29 @@ import type { Workbook, Worksheet } from "exceljs";
 import type { PiezaCubicada } from "./cubicacion";
 import { PT_POR_M3, toInches, toFeet } from "./cubicacion";
 import type { TipoComercial } from "./cubicacion-tipo";
-import { clasificarTipo, ordenTipo } from "./cubicacion-tipo";
+import { tipoDePieza, ordenTipo } from "./cubicacion-tipo";
 import type { PrecioPt, ResumenLote } from "./cubicacion-resumen";
 import { agruparPor } from "./cubicacion-resumen";
 import type { DatosLiquidacion, Liquidacion } from "./cubicacion-liquidacion";
 import { fechaLarga } from "./cubicacion-liquidacion";
+import type { ApartadosAsignados, NombresApartado } from "./cubicacion-apartados";
+import { resumenApartados, etiquetaApartado } from "./cubicacion-apartados";
 
 export interface ExportOpts {
   precioPt: number;      // S/ por pie tablar (0 = sin precio)
   especieGlobal?: string;
   /** Precio por pieza (para precio por especie). Si falta, se usa precioPt. */
   precioDe?: (r: PiezaCubicada) => number;
+  /**
+   * Apartados asignados (función EXTRA, ver `cubicacion-apartados.ts`). Si
+   * viene con algo adentro, el PDF y el Excel suman una columna "Apartado" y
+   * el Excel agrega una hoja "Por apartado". Ausente o vacío = el lote no
+   * usa apartados; no se inventa una columna vacía.
+   */
+  asignados?: ApartadosAsignados;
+  /** Nombres puestos a mano por apartado ("Camión A"). Sin esto, la columna
+   *  y la hoja igual salen — sólo con "Apartado N" pelado. */
+  nombresApartado?: NombresApartado;
 }
 
 /** Precio por PT de una pieza: resolver por especie si existe, si no el global. */
@@ -25,6 +37,12 @@ const precioPieza = (r: PiezaCubicada, opts: ExportOpts) => opts.precioDe?.(r) ?
 /** Hay valores que mostrar si el global > 0 o algún resolver da > 0. */
 const tieneValor = (rows: PiezaCubicada[], opts: ExportOpts) =>
   opts.precioPt > 0 || rows.some((r) => precioPieza(r, opts) > 0);
+/** Etiqueta del apartado de una pieza, o "—" si está pendiente. */
+const apartadoTxt = (r: PiezaCubicada, opts: ExportOpts) => {
+  const n = opts.asignados?.[r.id];
+  return n != null ? etiquetaApartado(n, opts.nombresApartado ?? {}) : "—";
+};
+const conApartados = (opts: ExportOpts) => Object.keys(opts.asignados ?? {}).length > 0;
 
 const fecha = () => new Date().toISOString().slice(0, 10);
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -51,7 +69,7 @@ const precioResolver = (opts: ExportOpts): PrecioPt => opts.precioDe ?? opts.pre
  */
 function agruparDetallePorTipo(rows: PiezaCubicada[], opts: ExportOpts): { grupos: GrupoDetalle[]; total: SubTot } {
   const orden = rows
-    .map((r, i) => ({ r, tipo: clasificarTipo(r), i }))
+    .map((r, i) => ({ r, tipo: tipoDePieza(r), i }))
     .sort((a, b) => ordenTipo(a.tipo) - ordenTipo(b.tipo) || a.i - b.i);
   const grupos: GrupoDetalle[] = [];
   const total: SubTot = { piezas: 0, pt: 0, m3: 0, valor: 0 };
@@ -98,7 +116,13 @@ export async function exportarPDF(rows: PiezaCubicada[], opts: ExportOpts): Prom
   doc.text(`Fecha: ${fecha()}${opts.especieGlobal ? ` · Especie: ${opts.especieGlobal}` : ""}${conPrecio ? ` · Precio: ${precioTxt}` : ""}`, 40, 62);
 
   const val = (v: number) => (conPrecio ? [v.toFixed(2)] : []);
-  const head = [['N°', 'Cant.', 'Esp. "', 'Anc. "', "Largo '", "Tipo", "Especie", "Pie tablar", "m³", ...(conPrecio ? ["Valor S/"] : [])]];
+  // Apartado (función EXTRA): sólo aparece la columna si el lote tiene algo
+  // asignado — un lote que nunca separó en bloques no gana una columna de "—".
+  const conAp = conApartados(opts);
+  const apCol = (r: PiezaCubicada) => (conAp ? [apartadoTxt(r, opts)] : []);
+  const apColVacia = () => (conAp ? [""] : []);
+  const iNum = conAp ? 8 : 7; // dónde caen PT/m³/Valor según haya o no columna Apartado
+  const head = [['N°', 'Cant.', 'Esp. "', 'Anc. "', "Largo '", "Tipo", "Especie", ...(conAp ? ["Apartado"] : []), "Pie tablar", "m³", ...(conPrecio ? ["Valor S/"] : [])]];
   const body: (string | number)[][] = [];
   const subtotalRows = new Set<number>();
   let n = 0;
@@ -107,14 +131,14 @@ export async function exportarPDF(rows: PiezaCubicada[], opts: ExportOpts): Prom
       body.push([
         String(++n), String(r.cantidad),
         String(espPulg(r.espesor, r.uEspesor)), String(espPulg(r.ancho, r.uAncho)), String(larPies(r.largo, r.uLargo)),
-        g.tipo, r.especie ?? "—",
+        g.tipo, r.especie ?? "—", ...apCol(r),
         r.pieTablar.toFixed(2), r.m3.toFixed(4), ...val(r.pieTablar * precioPieza(r, opts)),
       ]);
     }
     subtotalRows.add(body.length);
-    body.push(["", String(g.sub.piezas), "", "", "", `Subtotal ${g.tipo}`, "", r2(g.sub.pt).toFixed(2), r4(g.sub.m3).toFixed(4), ...val(r2(g.sub.valor))]);
+    body.push(["", String(g.sub.piezas), "", "", "", `Subtotal ${g.tipo}`, "", ...apColVacia(), r2(g.sub.pt).toFixed(2), r4(g.sub.m3).toFixed(4), ...val(r2(g.sub.valor))]);
   }
-  const foot = [["", String(t.piezas), "", "", "", "TOTAL GENERAL", "", `${t.pt.toFixed(2)} PT`, t.m3.toFixed(4), ...val(r2(totalValor))]];
+  const foot = [["", String(t.piezas), "", "", "", "TOTAL GENERAL", "", ...apColVacia(), `${t.pt.toFixed(2)} PT`, t.m3.toFixed(4), ...val(r2(totalValor))]];
 
   autoTable(doc, {
     head, body, foot,
@@ -125,7 +149,7 @@ export async function exportarPDF(rows: PiezaCubicada[], opts: ExportOpts): Prom
     columnStyles: {
       0: { halign: "center" }, 1: { halign: "center" },
       2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" },
-      7: { halign: "right" }, 8: { halign: "right" }, 9: { halign: "right" },
+      [iNum]: { halign: "right" }, [iNum + 1]: { halign: "right" }, [iNum + 2]: { halign: "right" },
     },
     didParseCell: (data) => {
       if (data.section === "body" && subtotalRows.has(data.row.index)) {
@@ -139,6 +163,77 @@ export async function exportarPDF(rows: PiezaCubicada[], opts: ExportOpts): Prom
   doc.text(`1 m³ = ${PT_POR_M3} pie tablar · medidas en pulgadas y pies · generado por el cubicador de Buleje.`, 40, y + 20);
 
   doc.save(`cubicacion-${fecha()}.pdf`);
+}
+
+/** Letra de columna por índice (0→A, 1→B…) — alcanza para esta plantilla (< 26). */
+const colLetra = (i: number) => String.fromCharCode(65 + i);
+
+/**
+ * Resumen en vivo, un par de columnas al lado de los datos: piezas, pie
+ * tablar, m³ y especies distintas, todo por FÓRMULA — se actualiza solo
+ * mientras se llenan las filas, sin abrir la app. Es una referencia de lo
+ * que se va a importar, no lo que se importa (eso lo recalcula el parser).
+ * Asume espesor/ancho en pulgadas y largo en pies — el default de la
+ * plantilla; si se agregan columnas de unidad, el resumen no las contempla.
+ */
+function agregarResumenEnVivo(ws: Worksheet, headers: string[]) {
+  const buscar = (patron: RegExp) => headers.findIndex((h) => patron.test(h));
+  const idxEspesor = buscar(/espesor/i);
+  const idxAncho = buscar(/ancho/i);
+  const idxLargo = buscar(/largo/i);
+  if (idxEspesor < 0 || idxAncho < 0 || idxLargo < 0) return; // headers no trae las columnas base: no se arma el resumen
+  const idxCantidad = buscar(/cantidad/i);
+  const idxEspecie = buscar(/especie/i);
+
+  const FIN = 1000; // cubre un día grueso de carga (ver `celdas-excel.tsx`: "cientos de piezas por día")
+  const rango = (i: number) => `${colLetra(i)}2:${colLetra(i)}${FIN}`;
+  const rEsp = rango(idxEspesor), rAnc = rango(idxAncho), rLar = rango(idxLargo);
+  const filaValida = `(${rEsp}<>"")*(${rAnc}<>"")*(${rLar}<>"")`;
+  // Cantidad vacía cuenta como 1 pieza — mismo criterio que `parsearFilasImportadas`.
+  const cantExpr = idxCantidad >= 0 ? `IF(${rango(idxCantidad)}="",1,${rango(idxCantidad)})` : "1";
+
+  const cGap = colLetra(headers.length);
+  const cLabel = colLetra(headers.length + 1);
+  const cValor = colLetra(headers.length + 2);
+  ws.getColumn(cGap).width = 3;
+  ws.getColumn(cLabel).width = 20;
+  ws.getColumn(cValor).width = 14;
+
+  ws.mergeCells(`${cLabel}1:${cValor}1`);
+  const titulo = ws.getCell(`${cLabel}1`);
+  titulo.value = "RESUMEN EN VIVO";
+  titulo.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  titulo.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF008060" } };
+  titulo.alignment = { vertical: "middle", horizontal: "center" };
+
+  const filas: { label: string; formula: string; fmt: string }[] = [
+    { label: "Piezas totales", formula: `SUMPRODUCT(${filaValida}*(${cantExpr}))`, fmt: "#,##0" },
+    { label: "Pie tablar total", formula: `ROUND(SUMPRODUCT(${filaValida}*${rEsp}*${rAnc}*${rLar}/12*(${cantExpr})),2)`, fmt: "#,##0.00" },
+    { label: "Volumen total (m³)", formula: `ROUND(SUMPRODUCT(${filaValida}*(${rEsp}*0.0254)*(${rAnc}*0.0254)*(${rLar}*0.3048)*(${cantExpr})),4)`, fmt: "#,##0.0000" },
+  ];
+  if (idxEspecie >= 0) {
+    const rEspecie = rango(idxEspecie);
+    filas.push({ label: "Especies distintas", formula: `SUMPRODUCT((${rEspecie}<>"")/COUNTIF(${rEspecie},${rEspecie}&""))`, fmt: "#,##0" });
+  }
+  filas.forEach(({ label, formula, fmt }, i) => {
+    const fila = i + 2;
+    const cLbl = ws.getCell(`${cLabel}${fila}`);
+    cLbl.value = label;
+    cLbl.font = { bold: true, color: { argb: "FF374151" } };
+    const cVal = ws.getCell(`${cValor}${fila}`);
+    cVal.value = { formula, result: 0 };
+    cVal.font = { bold: true, color: { argb: "FF111827" } };
+    cVal.alignment = { horizontal: "right" };
+    cVal.numFmt = fmt;
+    [cLbl, cVal].forEach((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF3F4F6" } }; });
+  });
+
+  const filaNota = filas.length + 2;
+  ws.mergeCells(`${cLabel}${filaNota}:${cValor}${filaNota}`);
+  const nota = ws.getCell(`${cLabel}${filaNota}`);
+  nota.value = "Referencia — se calcula solo. Asume pulgadas/pulgadas/pies.";
+  nota.font = { italic: true, size: 8, color: { argb: "FF9CA3AF" } };
+  nota.alignment = { wrapText: true, vertical: "top" };
 }
 
 /**
@@ -158,6 +253,7 @@ export async function descargarPlantillaImport(headers: string[]): Promise<void>
   hdr.alignment = { vertical: "middle", horizontal: "center" };
   hdr.height = 22;
   ws.views = [{ state: "frozen", ySplit: 1 }];
+  agregarResumenEnVivo(ws, headers);
   const buf = await wb.xlsx.writeBuffer();
   descargar(new Blob([buf], { type: MIME_XLSX }), "plantilla-cubicacion.xlsx");
 }
@@ -258,15 +354,49 @@ function hojaResumen(wb: Workbook, nombre: string, etiqueta: string, resumen: Re
 }
 
 /**
- * Excel (.xlsx) con 3 hojas: "Detalle" (piezas numeradas, ORDENADAS por tipo —
- * comercial primero — con subtotal por tipo y total general), "Resumen por tipo"
- * y "Por especie". Espesor/ancho en pulgadas y largo en pies (unidad de comercio).
+ * Hoja "Por apartado": una fila por bloque cerrado (Apartado N · Especie ·
+ * Piezas · Pie tablar · m³), con fila TOTAL al pie. Sólo se llama cuando hay
+ * algo asignado — ver `conApartados`.
+ */
+function hojaApartados(wb: Workbook, rows: PiezaCubicada[], asignados: ApartadosAsignados, nombres: NombresApartado): void {
+  const resumen = resumenApartados(rows, asignados);
+  if (resumen.length === 0) return;
+  const ws = wb.addWorksheet("Por apartado");
+  ws.columns = [
+    { header: "Apartado", key: "ap", width: 28 },
+    { header: "Especie", key: "especie", width: 24 },
+    { header: "Piezas", key: "piezas", width: 10 },
+    { header: "Pie tablar", key: "pt", width: 13 },
+    { header: "m³", key: "m3", width: 11 },
+  ];
+  estilarHeader(ws);
+  for (const a of resumen) {
+    ws.addRow({ ap: etiquetaApartado(a.numero, nombres), especie: a.especies.join(" · "), piezas: a.piezas, pt: a.pieTablar, m3: a.m3 });
+  }
+  const tot = ws.addRow({
+    ap: "TOTAL", especie: "",
+    piezas: resumen.reduce((s, a) => s + a.piezas, 0),
+    pt: r2(resumen.reduce((s, a) => s + a.pieTablar, 0)),
+    m3: r4(resumen.reduce((s, a) => s + a.m3, 0)),
+  });
+  pintarFila(ws, tot, TEAL, true);
+  ws.getColumn("pt").numFmt = "#,##0.00";
+  ws.getColumn("m3").numFmt = "#,##0.0000";
+}
+
+/**
+ * Excel (.xlsx) con 3 hojas fijas: "Detalle" (piezas numeradas, ORDENADAS por
+ * tipo — comercial primero — con subtotal por tipo y total general), "Resumen
+ * por tipo" y "Por especie". Espesor/ancho en pulgadas y largo en pies (unidad
+ * de comercio). Con apartados asignados, suma una 4ª hoja "Por apartado" y una
+ * columna "Apartado" en el Detalle.
  */
 export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Promise<void> {
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
   wb.creator = "Cubicador de Buleje";
   const conPrecio = tieneValor(rows, opts);
+  const conAp = conApartados(opts);
   const { grupos, total } = agruparDetallePorTipo(rows, opts);
   const precio = precioResolver(opts);
 
@@ -280,6 +410,7 @@ export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Pr
     { header: "Largo (pies)", key: "lar", width: 13 },
     { header: "Tipo", key: "tipo", width: 18 },
     { header: "Especie", key: "especie", width: 16 },
+    ...(conAp ? [{ header: "Apartado", key: "apartado", width: 14 }] : []),
     { header: "Pie tablar", key: "pt", width: 12 },
     { header: "m³", key: "m3", width: 11 },
     ...(conPrecio ? [{ header: "Valor S/", key: "val", width: 14 }] : []),
@@ -293,6 +424,7 @@ export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Pr
         n: ++n, cant: r.cantidad,
         esp: espPulg(r.espesor, r.uEspesor), anc: espPulg(r.ancho, r.uAncho), lar: larPies(r.largo, r.uLargo),
         tipo: g.tipo, especie: r.especie ?? "",
+        ...(conAp ? { apartado: apartadoTxt(r, opts) } : {}),
         pt: r.pieTablar, m3: r.m3,
         ...(conPrecio ? { val: r.pieTablar * precioPieza(r, opts) } : {}),
       });
@@ -323,6 +455,9 @@ export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Pr
 
   // ── Hoja 3: Por especie (ordenada por pie tablar, la que más pesa arriba) ──
   hojaResumen(wb, "Por especie", "Especie", agruparPor(rows, "especie", precio), conPrecio);
+
+  // ── Hoja 4: Por apartado (sólo si el lote separó en bloques) ──
+  if (conAp) hojaApartados(wb, rows, opts.asignados ?? {}, opts.nombresApartado ?? {});
 
   const buf = await wb.xlsx.writeBuffer();
   descargar(new Blob([buf], { type: MIME_XLSX }), `cubicacion-${fecha()}.xlsx`);

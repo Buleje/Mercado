@@ -101,7 +101,7 @@ export default function ImportarCubicacionModal({
       <div className={MODAL_BODY}>
 
         <p className="mb-3 text-sm text-[var(--text-secondary)]">
-          El archivo tiene que tener las columnas <b>Especie · Cantidad · Espesor · Ancho · Largo</b> (Cantidad opcional; por defecto 1). El espesor y el ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad.
+          El archivo tiene que tener las columnas <b>Especie · Cantidad · Espesor · Ancho · Largo</b> (Cantidad opcional; por defecto 1). El espesor y el ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad. La plantilla trae, al lado, un <b>resumen en vivo</b> (piezas · pie tablar · m³ · especies distintas) que se calcula solo mientras vas llenando — para ver qué se va a importar sin salir del Excel.
         </p>
 
         {filasActuales > 0 && (

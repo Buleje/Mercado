@@ -8,7 +8,7 @@
  */
 
 import type { PiezaCubicada, Unidad } from "./cubicacion";
-import { clasificarTipo } from "./cubicacion-tipo";
+import { tipoDePieza } from "./cubicacion-tipo";
 
 /** Cómo se puede agrupar el lote. El orden es el de los chips en la UI. */
 export const DIMENSIONES_RESUMEN = [
@@ -56,15 +56,21 @@ const r4 = (n: number) => Math.round(n * 10000) / 10000;
 /** Abrevia la unidad como se lee en el patio. */
 const uCorta = (u: Unidad): string => (u === "pulg" ? '"' : u === "pies" ? " pies" : ` ${u}`);
 
-/** Clave + etiqueta de una pieza según la dimensión elegida. */
-function claveYLabel(r: PiezaCubicada, dim: DimensionResumen): { clave: string; label: string } {
+/**
+ * Clave + etiqueta de una pieza según la dimensión elegida.
+ *
+ * Exportada para que la distribución de rolliza agrupe con EXACTAMENTE el mismo
+ * criterio que los resúmenes: si cada uno arma sus grupos por su cuenta, las
+ * dos pantallas muestran el mismo lote partido de dos formas distintas.
+ */
+export function claveYLabel(r: PiezaCubicada, dim: DimensionResumen): { clave: string; label: string } {
   switch (dim) {
     case "especie": {
       const e = r.especie?.trim() || "Sin especie";
       return { clave: e.toLowerCase(), label: e };
     }
     case "tipo": {
-      const t = clasificarTipo(r);
+      const t = tipoDePieza(r);
       return { clave: t, label: t };
     }
     case "largo":

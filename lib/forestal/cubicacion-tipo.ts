@@ -10,7 +10,7 @@
  *   1. Tabla            → espesor = 1"    · ancho ≥ 3" · largo ≥ 6'
  *   2. Paquetería larga → espesor = 6" y ancho = 6"    · largo ≥ 6'
  *   3. Paquetería corta → espesor = 6" y ancho = 6"    · largo < 6'
- *   4. Comercial        → espesor ≥ 2" · ancho ≥ 6"    · largo ≥ 6'
+ *   4. Comercial        → espesor ≥ 1.5" · ancho ≥ 6"  · largo ≥ 6'
  *   5. Larga angosta    → espesor ≤ 5" · ancho ≤ 5"    · largo ≥ 6'
  *   6. Corta            → espesor ≥ 1" · ancho ≥ 2"    · largo ≤ 5' (todo corto)
  *   7. Otro             → lo que no cae en ninguna
@@ -47,7 +47,7 @@ export const UMBRAL_TIPO = {
   tablaEspesor: 1, // pulg exacto
   tablaAnchoMin: 3, // pulg
   paqueteriaSeccion: 6, // pulg exacto (6×6)
-  comercialEspesor: 2, // pulg
+  comercialEspesor: 1.5, // pulg — piso (Comercial arranca en este espesor: 1.5, 2, 3, 4… en adelante)
   comercialAncho: 6, // pulg
   angostaMax: 5, // pulg — espesor y ancho máximos de "Larga angosta"
   cortaEspesorMin: 1, // pulg — piso de espesor para "Corta" (bajo 1" = Otro)
@@ -71,7 +71,7 @@ export function clasificarTipo(p: MedidaPieza): TipoComercial {
   if (eq(E, U.paqueteriaSeccion) && eq(A, U.paqueteriaSeccion)) {
     return esLargo ? "Paquetería larga" : "Paquetería corta";
   }
-  // 4. Comercial: espesor ≥ 2", ancho ≥ 6", largo ≥ 6' (solo pieza larga)
+  // 4. Comercial: espesor ≥ 1.5", ancho ≥ 6", largo ≥ 6' (solo pieza larga)
   if (E >= U.comercialEspesor && A >= U.comercialAncho && esLargo) return "Comercial";
   // 5. Larga angosta: espesor ≤ 5", ancho ≤ 5", largo ≥ 6'
   if (E <= U.angostaMax && A <= U.angostaMax && esLargo) return "Larga angosta";
@@ -79,6 +79,39 @@ export function clasificarTipo(p: MedidaPieza): TipoComercial {
   if (E >= U.cortaEspesorMin && A >= U.cortaAnchoMin && !esLargo) return "Corta";
   // 7. Lo que no encaja
   return "Otro";
+}
+
+/**
+ * Una pieza que además puede traer el tipo puesto A MANO.
+ *
+ * La medida no siempre alcanza para decidir: el aserradero vende por costumbre
+ * y por cliente, y una 2×6×8 que el cliente compra como paquetería es
+ * paquetería aunque la regla diga "Comercial". Antes eso obligaba a falsear la
+ * medida —que es el dato que va a la guía— para que el papel saliera bien.
+ */
+export interface PiezaConTipo extends MedidaPieza {
+  /** Tipo forzado por el operario. `undefined`/`null` = lo decide la medida. */
+  tipo?: TipoComercial | null;
+}
+
+/**
+ * El tipo de una pieza: el manual si lo tiene, si no el que dicta la medida.
+ *
+ * ⭐ **Single source.** `clasificarTipo` sigue existiendo (es la REGLA, y se
+ * testea sola), pero nadie que muestre, agrupe, filtre o exporte debe llamarla
+ * directo: si un consumidor se queda con la regla pelada, el Excel dice
+ * "Comercial" donde la pantalla dice "Paquetería" y el anexo que se entrega al
+ * fiscalizador no coincide con el que se vio. Gobierna: badge de la tabla,
+ * filtro, `agruparPor`, el agrupado del Excel/PDF, los bloques del Anexo 04 y
+ * los insights.
+ */
+export function tipoDePieza(p: PiezaConTipo): TipoComercial {
+  return p.tipo ?? clasificarTipo(p);
+}
+
+/** ¿El tipo de esta pieza está forzado a mano (y no coincide con la regla)? */
+export function tipoEsManual(p: PiezaConTipo): boolean {
+  return p.tipo != null && p.tipo !== clasificarTipo(p);
 }
 
 /**

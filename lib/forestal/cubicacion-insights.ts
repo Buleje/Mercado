@@ -13,7 +13,8 @@
 import type { PiezaCubicada } from "./cubicacion";
 import { toFeet } from "./cubicacion";
 import { agruparPor, type PrecioPt } from "./cubicacion-resumen";
-import { clasificarTipo } from "./cubicacion-tipo";
+import { fmtPt as ptEntero, fmtSoles } from "./cubicacion-formato";
+import { tipoDePieza } from "./cubicacion-tipo";
 
 export type NivelInsight = "info" | "oportunidad" | "alerta";
 
@@ -32,7 +33,8 @@ const BAJO_VALOR_ALERTA = 0.25;
 
 const pct = (parte: number, total: number) => (total > 0 ? parte / total : 0);
 const fmtPct = (v: number) => `${Math.round(v * 100)}%`;
-const fmtPt = (v: number) => `${v.toLocaleString("es-PE", { maximumFractionDigits: 2 })} PT`;
+/** El pie tablar de un insight se escribe igual que en las tablas: entero. */
+const fmtPt = (v: number) => `${ptEntero(v)} PT`;
 
 /**
  * Analiza el lote y devuelve los insights que aplican, los más accionables
@@ -87,7 +89,7 @@ export function analizarLote(rows: PiezaCubicada[], precioDe?: PrecioPt): Insigh
     out.push({
       nivel: "info",
       texto: "Precio promedio real del lote, ya mezcladas todas las especies.",
-      dato: `S/ ${(totalValor / totalPt).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} por PT`,
+      dato: `S/ ${fmtSoles(totalValor / totalPt)} por PT`,
     });
   }
 
@@ -104,7 +106,7 @@ export function analizarLote(rows: PiezaCubicada[], precioDe?: PrecioPt): Insigh
   // 6. Cortas que ya casi llegan a 6 pies (donde se pierde valor por poco)
   const casiLargas = rows.filter((r) => {
     const l = toFeet(r.largo, r.uLargo);
-    return l >= 4 && l < 6 && clasificarTipo(r) === "Corta";
+    return l >= 4 && l < 6 && tipoDePieza(r) === "Corta";
   });
   if (casiLargas.length > 0) {
     const pt = casiLargas.reduce((a, r) => a + r.pieTablar, 0);

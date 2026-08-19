@@ -10,6 +10,7 @@
  */
 import type { PiezaCubicada } from "./cubicacion";
 import { agruparPor, type DimensionResumen, type PrecioPt } from "./cubicacion-resumen";
+import { fmtPt, fmtPtSigno } from "./cubicacion-formato";
 
 export interface FilaComparacion {
   label: string;
@@ -85,11 +86,13 @@ export function lecturaComparacion(c: Comparacion): string {
   if (c.total.ptA === 0 && c.total.ptB === 0) return "Los dos lotes están vacíos.";
   const mov = c.filas.find((f) => f.deltaPt !== 0);
   const dirTotal = c.total.deltaPt >= 0 ? "más" : "menos";
+  // El pie tablar se escribe entero, igual que en las tablas de Resúmenes: la
+  // frase y la columna de al lado no pueden decir dos cifras distintas.
   const partes = [
-    `Este lote tiene ${Math.abs(c.total.deltaPt).toLocaleString("es-PE", { maximumFractionDigits: 2 })} PT ${dirTotal} que el otro`,
+    `Este lote tiene ${fmtPt(Math.abs(c.total.deltaPt))} PT ${dirTotal} que el otro`,
   ];
   if (mov) {
-    partes.push(`el cambio se explica sobre todo por ${mov.label} (${mov.deltaPt > 0 ? "+" : ""}${mov.deltaPt} PT)`);
+    partes.push(`el cambio se explica sobre todo por ${mov.label} (${fmtPtSigno(mov.deltaPt)} PT)`);
   }
   if (c.precioPtA > 0 && c.precioPtB > 0) {
     const d = r2(c.precioPtB - c.precioPtA);

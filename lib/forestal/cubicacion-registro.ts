@@ -40,6 +40,13 @@ export interface CubicacionRegistro {
    *  ("Enviar al Libro"). Es el hilo que permite, desde un despacho, encontrar
    *  las medidas pieza por pieza que el Libro no guarda. */
   ctpEntryId?: string;
+  /**
+   * Las corridas que esta cubicación ampara, cuando se midió un conjunto
+   * (ADR-369): un camión se cubica entero y cuadra contra los N paquetes que
+   * van a salir, no contra uno. `ctpEntryId` sigue siendo el primero, para que
+   * lo viejo que lee un solo id no deje de funcionar.
+   */
+  ctpEntryIds?: string[];
   /** GTF de salida asociada, si ya se conoce (informativo). */
   gtfNumber?: string;
   createdAt: string;
@@ -106,6 +113,7 @@ export function construirRegistro(input: {
   precioPt?: number;
   piezas: Record<string, unknown>[];
   ctpEntryId?: string;
+  ctpEntryIds?: string[];
   gtfNumber?: string;
   createdAt?: string;
   createdBy?: string;
@@ -125,7 +133,12 @@ export function construirRegistro(input: {
     valor: r2(totales.pieTablar * precioPt),
     totales,
     piezas,
-    ctpEntryId: input.ctpEntryId?.trim().slice(0, 60) || undefined,
+    /* El primero de la lista manda como `ctpEntryId`: lo que ya leía un solo id
+       —el ANEXO N° 04, la ficha del despacho— sigue encontrando su corrida. */
+    ctpEntryId: (input.ctpEntryId ?? input.ctpEntryIds?.[0])?.trim().slice(0, 60) || undefined,
+    ctpEntryIds: input.ctpEntryIds?.length
+      ? [...new Set(input.ctpEntryIds.map((x) => x.trim().slice(0, 60)).filter(Boolean))].slice(0, 100)
+      : undefined,
     gtfNumber: input.gtfNumber?.trim().slice(0, 60) || undefined,
     createdAt: input.createdAt ?? ahora,
     updatedAt: ahora,

@@ -130,12 +130,18 @@ function ToastItem({ t, onDismiss }: { t: ActionToast; onDismiss: (id: number) =
   );
 }
 
-/** Pila flotante — abajo-derecha en desktop, abajo-centro en mobile; sobre modales. */
+/**
+ * Pila flotante — abajo-derecha en desktop, abajo-centro en mobile; sobre modales.
+ *
+ * `--pila-toasts-bottom` la sube cuando hay otra cosa fija al pie (hoy, la barra
+ * de selección del cubicador). El default de 1rem es el de siempre: quien no
+ * setea la variable no cambia en nada.
+ */
 export function ActionToasts({ toasts, onDismiss }: { toasts: ActionToast[]; onDismiss: (id: number) => void }) {
   if (toasts.length === 0) return null;
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] flex flex-col items-center gap-2 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:inset-x-auto sm:bottom-4 sm:right-4 sm:items-end sm:px-0 sm:pb-0"
+      className="pointer-events-none fixed inset-x-0 bottom-[var(--pila-toasts-bottom,0px)] z-[70] flex flex-col items-center gap-2 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:inset-x-auto sm:bottom-[var(--pila-toasts-bottom,1rem)] sm:right-4 sm:items-end sm:px-0 sm:pb-0"
       aria-live="polite"
       aria-atomic="false"
     >

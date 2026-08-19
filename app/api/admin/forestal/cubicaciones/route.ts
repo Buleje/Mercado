@@ -43,6 +43,9 @@ const saveSchema = z.object({
   /** Línea de producción del Libro creada desde esta cubicación (el hilo que
    *  después permite emitir el ANEXO N° 04 de un despacho con sus medidas). */
   ctpEntryId: z.string().trim().max(60).nullish(),
+  /** Las corridas que la cubicación ampara cuando se midió un conjunto
+   *  (ADR-369): un camión se cubica entero contra los N paquetes que salen. */
+  ctpEntryIds: z.array(z.string().trim().min(1).max(60)).max(100).optional(),
   gtfNumber: z.string().trim().max(60).nullish(),
   // Una cubicación de patio no pasa de unos cientos de filas; el tope protege
   // el KV (es un JSON) sin estorbar el uso real.

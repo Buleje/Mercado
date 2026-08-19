@@ -21,6 +21,12 @@ export interface PiezaCubicada {
   uAncho: Unidad;
   uLargo: Unidad;
   especie?: string;
+  /**
+   * Tipo comercial forzado a mano. `undefined` = lo decide la medida
+   * (`clasificarTipo`). Se lee SIEMPRE por `tipoDePieza`, nunca directo: es lo
+   * que mantiene la pantalla, el Excel y el Anexo 04 diciendo lo mismo.
+   */
+  tipo?: import("./cubicacion-tipo").TipoComercial;
   /** Pie tablar total (ya multiplicado por cantidad). */
   pieTablar: number;
   /** m³ total (ya multiplicado por cantidad). */

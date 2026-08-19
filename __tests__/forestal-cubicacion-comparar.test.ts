@@ -12,7 +12,7 @@ function pieza(cantidad: number, espesor: number, ancho: number, largo: number, 
   return { id: `c${++seq}`, ...dims, especie, ...cubicarPieza(dims) };
 }
 
-const COMERCIAL = (n: number) => pieza(n, 2, 8, 10);   // 13.33 PT c/u
+const COMERCIAL = (n: number) => pieza(n, 1.5, 8, 10); // 10.00 PT c/u
 const CORTA = (n: number) => pieza(n, 6, 6, 4);        // 12 PT c/u
 
 describe("compararLotes", () => {

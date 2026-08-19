@@ -11,7 +11,7 @@ function pieza(cantidad: number, espesor: number, ancho: number, largo: number):
   const dims = { cantidad, espesor, ancho, largo, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies" } as const;
   return { id: `m${++seq}`, ...dims, especie: "Tornillo", ...cubicarPieza(dims) };
 }
-const COMERCIAL = (n: number) => pieza(n, 2, 8, 10);   // 13.33 PT c/u
+const COMERCIAL = (n: number) => pieza(n, 1.5, 8, 10); // 10.00 PT c/u
 const CORTA = (n: number) => pieza(n, 6, 6, 4);        // 12 PT c/u
 
 describe("evaluarMeta", () => {
@@ -28,12 +28,12 @@ describe("evaluarMeta", () => {
   });
 
   it("cuando no llega, dice cuántos puntos y cuánto pie tablar faltan", () => {
-    // 133.3 PT comercial + 600 PT corta ≈ 18.2% comercial
+    // 100 PT comercial + 600 PT corta ≈ 14.3% comercial
     const e = evaluarMeta([COMERCIAL(10), CORTA(50)], { tipo: "Comercial", pctMinimo: 50 })!;
     expect(e.cumple).toBe(false);
-    expect(e.actual).toBeCloseTo(18.2, 0);
-    expect(e.faltanPuntos).toBeCloseTo(31.8, 0);
-    expect(e.faltanPt).toBeGreaterThan(200);   // ~31.8% de 733 PT
+    expect(e.actual).toBeCloseTo(14.3, 0);
+    expect(e.faltanPuntos).toBeCloseTo(35.7, 0);
+    expect(e.faltanPt).toBeGreaterThan(200);   // ~35.7% de 700 PT
   });
 
   it("un tipo ausente da 0% y no rompe", () => {
@@ -62,7 +62,7 @@ describe("serieTendencia", () => {
     const t = serieTendencia([reg("x", "2026-07-01", [COMERCIAL(3)], 5)], META_DEFAULT);
     expect(t.puntos[0].pctMeta).toBe(100);
     expect(t.puntos[0].precioPt).toBe(5);
-    expect(t.puntos[0].pieTablar).toBeCloseTo(40, 0);
+    expect(t.puntos[0].pieTablar).toBeCloseTo(30, 0);
   });
 
   it("se queda con las últimas N y descarta cubicaciones vacías", () => {
