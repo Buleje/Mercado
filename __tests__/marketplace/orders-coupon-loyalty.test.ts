@@ -104,7 +104,16 @@ function successTx() {
         update:      vi.fn().mockResolvedValue({}),
         findUnique:  vi.fn().mockResolvedValue({ maxUses: 1, usedCount: 1 }),
       },
-      customer:         { updateMany: vi.fn().mockResolvedValue({}) },
+      customer:         {
+        updateMany: vi.fn().mockResolvedValue({}),
+        // loyaltyRedeemWithinTx (ADR-380 Fase 1.4) mira el saldo por acá antes
+        // de descontar — sin esto cualquier test con loyaltyRedeemPoints > 0
+        // revienta apenas corre esta successTx() por defecto.
+        findUnique: vi.fn().mockResolvedValue({ phone: "999888777", tenantId: "tenant-1", loyaltyPoints: 999 }),
+        update:     vi.fn().mockResolvedValue({}),
+      },
+      loyaltyTransaction: { create: vi.fn().mockResolvedValue({ id: "lt-default", customerId: "999888777", tenantId: "tenant-1", amount: -100, reason: "redemption", metadata: null, createdAt: new Date() }) },
+      $executeRawUnsafe:  vi.fn().mockResolvedValue(1),
     };
     return fn(tx);
   });
@@ -258,7 +267,7 @@ describe("MarketplaceOrdersDB.createFromCart — loyalty points", () => {
     successTx();
   });
 
-  it("100 puntos → S/1 descuento y customer.updateMany llama decrement:100", async () => {
+  it("100 puntos → S/1 descuento y $executeRawUnsafe decrementa -100 vía loyaltyRedeemWithinTx", async () => {
     // subtotal=30, loyalty = 100pts / 100 = 1 → total = 29
     mockCustomerFindFirst.mockResolvedValue({ phone: "999888777", loyaltyPoints: 200 });
 
@@ -270,6 +279,11 @@ describe("MarketplaceOrdersDB.createFromCart — loyalty points", () => {
     expect(result.total).toBe(29);
 
     const txArg = mockTransaction.mock.calls[0][0];
+    // ADR-380 Fase 1.4: el redeem ya no es un tx.customer.updateMany directo —
+    // pasa por loyaltyRedeemWithinTx(tx, ...), que dentro de ESTA misma tx hace
+    // findUnique (guard cross-tenant + saldo) + loyaltyTransaction.create (ledger)
+    // + $executeRawUnsafe (decrement atómico con guard `loyaltyPoints + delta >= 0`).
+    const executeRawUnsafe = vi.fn().mockResolvedValue(1);
     const tx = {
       product:          {
         findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
@@ -281,25 +295,28 @@ describe("MarketplaceOrdersDB.createFromCart — loyalty points", () => {
         // adentro de la $transaction. Default 0 = primer uso del cupón.
         count:  vi.fn().mockResolvedValue(0),
       },
-      commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
-      coupon:           { update: vi.fn(), findUnique: vi.fn() },
-      customer:         { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      commissionLedger:  { create:     vi.fn().mockResolvedValue({}) },
+      coupon:            { update: vi.fn(), findUnique: vi.fn() },
+      customer:          {
+        findUnique: vi.fn().mockResolvedValue({ phone: "999888777", tenantId: "tenant-1", loyaltyPoints: 200 }),
+        update:     vi.fn().mockResolvedValue({}),
+      },
+      loyaltyTransaction: { create: vi.fn().mockResolvedValue({ id: "lt-1", customerId: "999888777", tenantId: "tenant-1", amount: -100, reason: "redemption", metadata: null, createdAt: new Date() }) },
+      $executeRawUnsafe:  executeRawUnsafe,
     };
     await txArg(tx);
-    // El decrement ahora lleva guard atómico `loyaltyPoints: { gte }` (anti-TOCTOU):
-    // solo descuenta si el saldo alcanza, dentro de la $transaction.
-    expect(tx.customer.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { phone: "999888777", tenantId: "tenant-1", loyaltyPoints: { gte: 100 } },
-        data:  { loyaltyPoints: { decrement: 100 } },
-      })
+    expect(executeRawUnsafe).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE "Customer"'),
+      -100,
+      "999888777",
+      "tenant-1",
     );
   });
 
-  it("TOCTOU: decrement atómico devuelve count=0 (race perdida) → rollback de la orden", async () => {
+  it("TOCTOU: $executeRawUnsafe devuelve 0 filas (race perdida) → rollback de la orden", async () => {
     // El check pre-tx pasa (saldo 200 ≥ 100) pero entre el check y el decrement
-    // otra orden concurrente gastó los puntos → el updateMany con guard
-    // `loyaltyPoints: { gte }` afecta 0 filas. Debe throwear y revertir todo.
+    // otra orden concurrente gastó los puntos → el UPDATE con guard
+    // `loyaltyPoints + delta >= 0` afecta 0 filas. Debe throwear y revertir todo.
     mockCustomerFindFirst.mockResolvedValue({ phone: "999888777", loyaltyPoints: 200 });
 
     await MarketplaceOrdersDB.createFromCart({
@@ -314,10 +331,16 @@ describe("MarketplaceOrdersDB.createFromCart — loyalty points", () => {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       order:            { create: vi.fn().mockResolvedValue({}), count: vi.fn().mockResolvedValue(0) },
-      commissionLedger: { create: vi.fn().mockResolvedValue({}) },
-      coupon:           { update: vi.fn(), findUnique: vi.fn() },
-      // Race perdida: el saldo ya no alcanza al momento del decrement atómico.
-      customer:         { updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
+      commissionLedger:  { create: vi.fn().mockResolvedValue({}) },
+      coupon:            { update: vi.fn(), findUnique: vi.fn() },
+      customer:          {
+        // El guard pre-tx pasa (loyaltyPoints:200 ≥ 100 pedidos).
+        findUnique: vi.fn().mockResolvedValue({ phone: "999888777", tenantId: "tenant-1", loyaltyPoints: 200 }),
+        update:     vi.fn().mockResolvedValue({}),
+      },
+      loyaltyTransaction: { create: vi.fn().mockResolvedValue({ id: "lt-1", customerId: "999888777", tenantId: "tenant-1", amount: -100, reason: "redemption", metadata: null, createdAt: new Date() }) },
+      // Race perdida: el UPDATE atómico ya no encuentra saldo suficiente.
+      $executeRawUnsafe:  vi.fn().mockResolvedValue(0),
     };
     await expect(txArg(tx)).rejects.toThrow("Puntos de fidelidad insuficientes");
   });
