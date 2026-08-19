@@ -287,7 +287,11 @@ export default function CobranzaView({
 
       {/* ── Buscar + herramientas ─────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[220px] flex-1 sm:max-w-xs">
+        {/* min-w-[220px] NO alcanza acá: el reset `* { min-width: 0 }` sin capa de
+            globals.css le gana a @layer utilities (memoria min-width-utilities-muertas)
+            — el buscador se aplastaba a ~40px ("Bu" nomás) apenas compartía fila con
+            "Marcar todos". El estilo inline es el escape probado en POSSearchBar. */}
+        <div className="relative flex-1 sm:max-w-xs" style={{ minWidth: 220 }}>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input
             value={q}

@@ -69,7 +69,11 @@ export default function TablaAdelantos({
   return (
     <div className="space-y-3">
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <table className="w-full min-w-[1000px] text-base">
+        {/* min-w-[1000px] es clase muerta acá (memoria min-width-utilities-muertas) —
+            entre 640-999px (tablet, o desktop angosto con sidebar) la tabla se apretaba
+            en vez de forzar el scroll horizontal del wrapper. Bajo 640px no importa:
+            .admin-mobile-cards la convierte en cards (globals.css). */}
+        <table className="w-full text-base" style={{ minWidth: 1000 }}>
           <thead className="bg-[var(--surface-sunken)] text-sm text-[var(--text-tertiary)]">
             <tr>
               {th("codigo", "Código")}

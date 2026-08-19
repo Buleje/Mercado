@@ -259,7 +259,8 @@ export default function FichaPersonaModal({
           </p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-            <table className="w-full min-w-[560px] text-base">
+            {/* min-w-[560px] es clase muerta acá (memoria min-width-utilities-muertas). */}
+            <table className="w-full text-base" style={{ minWidth: 560 }}>
               <thead className="bg-[var(--surface-sunken)] text-sm text-[var(--text-tertiary)]">
                 <tr className="text-left">
                   <th className="px-3 py-2 font-bold">Fecha</th>

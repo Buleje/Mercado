@@ -499,7 +499,8 @@ function AdelantosView({
                 {STATUS_BADGE[e].label} {counts[e]}
               </button>
             ))}
-            <div className="relative ml-auto min-w-[220px] flex-1 sm:flex-none">
+            {/* min-w-* es clase muerta acá (memoria min-width-utilities-muertas) — inline style. */}
+            <div className="relative ml-auto flex-1 sm:flex-none" style={{ minWidth: 220 }}>
               <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
               <input
                 value={q}
@@ -661,7 +662,8 @@ function PersonasView({
         <>
           {/* Filtros por situación + búsqueda + orden */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative min-w-[240px] flex-1 sm:max-w-sm">
+            {/* min-w-* es clase muerta acá (memoria min-width-utilities-muertas) — inline style. */}
+            <div className="relative flex-1 sm:max-w-sm" style={{ minWidth: 240 }}>
               <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
               <input
                 value={q}
@@ -952,7 +954,8 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
         <button className={chip(tipo === "todo")} onClick={() => setTipo("todo")}>Todo</button>
         <button className={chip(tipo === "adelanto")} onClick={() => setTipo("adelanto")}>Adelantos</button>
         <button className={chip(tipo === "entrega")} onClick={() => setTipo("entrega")}>Entregas</button>
-        <div className="relative ml-auto min-w-[200px] flex-1 sm:flex-none">
+        {/* min-w-* es clase muerta acá (memoria min-width-utilities-muertas) — inline style. */}
+        <div className="relative ml-auto flex-1 sm:flex-none" style={{ minWidth: 200 }}>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por persona, código (ADL-2026-7) o recibo…" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary" />
         </div>
