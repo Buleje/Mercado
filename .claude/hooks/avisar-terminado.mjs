@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Avisa a Brandon que la tarea terminó: melodía de Windows Media + toast nativo
- * (Action Center), no el blip genérico ni el balloon viejo de NotifyIcon.
+ * Avisa a Brandon que la tarea terminó: Telegram (push al celu, funciona lejos de
+ * la PC) + melodía de Windows Media/toast nativo local en paralelo — no el blip
+ * genérico ni el balloon viejo de NotifyIcon.
  *
  * Brandon suele estar en otra cosa mientras el agente trabaja; sin un aviso audible
  * se entera minutos después de que ya terminó.
@@ -10,6 +11,40 @@
  * que no suena no puede además romper el cierre del turno.
  */
 import { spawn } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+
+// ~/.bsm-notify.env (fuera del repo, chmod 600) — configurado 2026-08-19 vía @BotFather.
+const NOTIFY_ENV = join(homedir(), ".bsm-notify.env");
+
+/** Lee TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID de ~/.bsm-notify.env si existe. */
+function leerConfigTelegram() {
+  if (!existsSync(NOTIFY_ENV)) return null;
+  const cfg = {};
+  for (const linea of readFileSync(NOTIFY_ENV, "utf8").split("\n")) {
+    const m = linea.match(/^([A-Z_]+)=(.*)$/);
+    if (m) cfg[m[1]] = m[2].trim();
+  }
+  if (!cfg.TELEGRAM_BOT_TOKEN || !cfg.TELEGRAM_CHAT_ID) return null;
+  return { token: cfg.TELEGRAM_BOT_TOKEN, chatId: cfg.TELEGRAM_CHAT_ID };
+}
+
+/** Push a Telegram — no bloquea, no rompe el aviso local si falla. */
+async function avisarTelegram(mensaje) {
+  const cfg = leerConfigTelegram();
+  if (!cfg) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${cfg.token}/sendMessage`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ chat_id: cfg.chatId, text: `🤖 Buleje\n${mensaje}` }),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch {
+    /* PC sin internet, token revocado, etc. — el toast local igual avisa */
+  }
+}
 
 // Alarm02.wav: melodía corta (~4s, xilófono) de Windows Media, no el blip genérico de
 // notificación. Más corta que Alarm01/09 (~6s) a propósito: este hook suena en CADA Stop,
@@ -54,7 +89,11 @@ async function main() {
   // El hook Stop se re-dispara a sí mismo; sin esto suena dos veces por turno.
   if (input?.stop_hook_active) return;
 
-  const mensaje = psEscape(resumenDelTurno(input));
+  const resumen = resumenDelTurno(input);
+  const mensaje = psEscape(resumen);
+
+  // Corre en paralelo con el toast local — no esperar a Telegram para sonar.
+  avisarTelegram(resumen).catch(() => {});
 
   // Sonido + toast en una sola invocación de PowerShell (arrancar powershell.exe cuesta
   // ~300ms; hacerlo dos veces se nota). El toast pide su audio en silencio porque el
