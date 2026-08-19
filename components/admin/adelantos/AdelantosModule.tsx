@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { CardTitle, SectionTitle, StatCard } from "@buleje/design-system";
 import {
   Coins,
@@ -23,19 +23,37 @@ import {
   AlertTriangle,
   FileText,
   Repeat,
+  Download,
+  ChevronLeft,
 } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { AnalisisView } from "./AnalisisView";
 import CrearAdelantoModal from "./CrearAdelantoModal";
 import DescuentoPlanillaModal from "./DescuentoPlanillaModal";
-import { fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, MiniStat } from "./shared";
+import DetalleAdelantoModal from "./detalle/DetalleAdelantoModal";
+import TablaAdelantos from "./lista/TablaAdelantos";
+import TarjetaPersona from "./personas/TarjetaPersona";
+import FichaPersonaModal from "./personas/FichaPersonaModal";
+import CobranzaView from "./cobranza/CobranzaView";
+import ProximosVencimientos from "./cobranza/ProximosVencimientos";
+import CrearPersonaModal from "./personas/CrearPersonaModal";
+import { sinTildes, fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, MiniStat, STATUS_BADGE } from "./shared";
 import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { estadoDeCredito, ordenarPorRiesgoDeCredito, requiereAtencion } from "@/lib/adelantos/limite-credito";
 import { normalizarBusquedaCodigo } from "@/lib/adelantos/codigo-operacion";
-import { descargarComprobante } from "@/lib/adelantos/comprobante";
+import { descargarCsvAdelantos } from "@/lib/adelantos/exportar-csv";
+import { paginar, type ColumnaOrden, type Direccion } from "@/lib/adelantos/ordenar-lista";
+import {
+  cumpleFiltro,
+  ordenarPersonas,
+  type FiltroPersonas,
+  type OrdenPersonas,
+} from "@/lib/adelantos/ordenar-personas";
+import { descargarCsvPersonas } from "@/lib/adelantos/exportar-csv";
+import { enlaceWhatsApp } from "@/lib/adelantos/contacto";
 import {
   bucketDe,
   deudoresDeCobranza,
@@ -43,18 +61,15 @@ import {
   ordenarPorUrgencia,
   type DeudorCobranza,
 } from "@/lib/adelantos/urgencia-cobranza";
+import type { BeneficiarioConSaldo as BeneficiarioConSaldoBase } from "./crear-adelanto/tipos";
 import type {
   DbAdelanto,
-  DbBeneficiario,
   DbRecurrente,
   RecurrenteFrecuencia,
 } from "@/lib/db/adelantos.db";
 
-type BeneficiarioConSaldo = DbBeneficiario & {
-  totalAdelantado: number;
-  saldoPendiente: number;
-  adelantosAbiertos: number;
-};
+/** Single source: la misma forma que consume el alta (ver crear-adelanto/tipos). */
+type BeneficiarioConSaldo = BeneficiarioConSaldoBase;
 
 type Resumen = {
   totalAdelantado: number;
@@ -68,12 +83,17 @@ type Resumen = {
 
 const MODULE_ID = "adelantos";
 
-const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  ABIERTO: { label: "Abierto", className: "bg-[var(--data-warning)]/15 text-[var(--data-warning)]" },
-  LIQUIDADO: { label: "Liquidado", className: "bg-[var(--data-success)]/15 text-[var(--data-success)]" },
-  EXCEDIDO: { label: "Excedido", className: "bg-[var(--data-info)]/15 text-[var(--data-info)]" },
-  CANCELADO: { label: "Cancelado", className: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" },
-};
+/**
+ * Filas por página del listado.
+ *
+ * 25 entra en una pantalla sin scrollear la tabla entera y deja el paginador a
+ * la vista. Más alto vuelve al muro que esto vino a resolver.
+ */
+const POR_PAGINA = 25;
+
+/** Personas por página: 12 llenan tres columnas de cuatro filas sin muro. */
+const PERSONAS_POR_PAGINA = 12;
+
 
 const TABS = [
   { id: "resumen", label: "Resumen", icon: Wallet },
@@ -107,6 +127,13 @@ export default function AdelantosModule() {
   const [beneficiarios, setBeneficiarios] = useState<BeneficiarioConSaldo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * El alta vive acá arriba y no dentro de la lista porque la dispara el botón
+   * de la barra de pestañas, que está visible desde cualquier sub-vista. Antes
+   * ese botón sólo cambiaba de pestaña: decía «Nuevo adelanto» y había que
+   * buscar y apretar OTRO botón igual, ya adentro.
+   */
+  const [creando, setCreando] = useState(false);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -147,7 +174,11 @@ export default function AdelantosModule() {
         moduleId={MODULE_ID}
         rightSlot={
           <button
-            onClick={() => setTab(sinPersonas ? "personas" : "lista")}
+            onClick={() => {
+              if (sinPersonas) { setTab("personas"); return; }
+              setTab("lista");
+              setCreando(true);
+            }}
             className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary-dark"
           >
             <Plus className="h-4 w-4" />
@@ -169,6 +200,8 @@ export default function AdelantosModule() {
               beneficiarios={beneficiarios}
               loading={loading}
               onChange={reload}
+              creando={creando}
+              onCreando={setCreando}
             />
           )}
           {tab === "personas" && (
@@ -287,6 +320,8 @@ function ResumenView({
         </div>
       </div>
 
+      <ProximosVencimientos adelantos={adelantos} />
+
       {/* Quién te debe — lista accionable de adelantos abiertos */}
       {abiertos.length > 0 && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
@@ -340,18 +375,28 @@ function AdelantosView({
   beneficiarios,
   loading,
   onChange,
+  creando,
+  onCreando,
 }: {
   adelantos: DbAdelanto[];
   beneficiarios: BeneficiarioConSaldo[];
   loading: boolean;
   onChange: () => void;
+  /** El alta la controla el módulo: la abre el botón de la barra de pestañas. */
+  creando: boolean;
+  onCreando: (v: boolean) => void;
 }) {
-  const [showCreate, setShowCreate] = useState(false);
   const [detalle, setDetalle] = useState<DbAdelanto | null>(null);
   /** Los descuentos de planilla del período, en una pasada. */
   const [planilla, setPlanilla] = useState(false);
   const [filtro, setFiltro] = useState<string>("TODOS");
   const [q, setQ] = useState("");
+  /** Lo más reciente primero: es lo que uno viene a mirar al abrir la lista. */
+  const [orden, setOrden] = useState<{ columna: ColumnaOrden; direccion: Direccion }>({
+    columna: "fecha",
+    direccion: "desc",
+  });
+  const [pagina, setPagina] = useState(1);
 
   const counts = adelantos.reduce<Record<string, number>>((acc, a) => {
     acc[a.status] = (acc[a.status] ?? 0) + 1;
@@ -378,6 +423,12 @@ function AdelantosView({
         : (a.codigoOperacion ?? "").toLowerCase().includes(texto));
     return okEstado && okQ;
   });
+
+  /**
+   * Filtrar o buscar vuelve a la página 1: quedarse en la 4 después de achicar
+   * el resultado a 12 filas muestra una tabla vacía que parece un error.
+   */
+  useEffect(() => setPagina(1), [filtro, q, orden.columna, orden.direccion]);
 
   // Totales de la vista filtrada — segmentados por moneda (ADR-118)
   const tot = filtrados.reduce(
@@ -416,10 +467,13 @@ function AdelantosView({
               <Users className="h-5 w-5" /> Descuentos de planilla
             </button>
           )}
+          {/* El alta la abre el botón de la barra de pestañas, que está visible
+              desde cualquier sub-vista. Repetirlo acá dejaba dos botones
+              idénticos a diez centímetros uno del otro. */}
           <button
-            onClick={() => setShowCreate(true)}
+            onClick={() => onCreando(true)}
             disabled={beneficiarios.length === 0}
-            className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 lg:hidden"
             title={beneficiarios.length === 0 ? "Creá primero una persona" : undefined}
           >
             <Plus className="h-5 w-5" /> Nuevo adelanto
@@ -456,11 +510,19 @@ function AdelantosView({
             </div>
           </div>
 
-          {/* Totales de la vista filtrada */}
-          <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
+          {/* Totales de la vista filtrada + export de LO FILTRADO */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
             <span>Adelantado <strong className="tabular-nums text-[var(--text-primary)]">{fmtMonedas(tot.adelantado)}</strong></span>
             <span>Liquidado <strong className="tabular-nums text-[var(--data-success)]">{fmtMonedas(tot.liquidado)}</strong></span>
             <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{fmtMonedas(tot.porRecuperar)}</strong></span>
+            <button
+              onClick={() => descargarCsvAdelantos(filtrados, `adelantos-${new Date().toISOString().slice(0, 10)}.csv`)}
+              disabled={filtrados.length === 0}
+              title="Baja exactamente lo que estás viendo, con filtro y búsqueda aplicados"
+              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
+            >
+              <Download className="h-4 w-4" /> CSV ({filtrados.length})
+            </button>
           </div>
         </>
       )}
@@ -472,75 +534,25 @@ function AdelantosView({
       ) : filtrados.length === 0 ? (
         <EmptyState icon={Search} title="Sin resultados" hint="Probá con otro filtro o búsqueda." />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          <table className="w-full text-base">
-            <thead className="bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
-              <tr className="text-left">
-                <th className="px-4 py-3 font-bold">Persona</th>
-                <th className="px-4 py-3 font-bold">Adelantado</th>
-                <th className="px-4 py-3 font-bold">Liquidación</th>
-                <th className="px-4 py-3 font-bold">Saldo</th>
-                <th className="px-4 py-3 font-bold">Estado</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--rule-soft)]">
-              {filtrados.map((a) => {
-                const badge = STATUS_BADGE[a.status];
-                const pct = a.montoAdelantado > 0 ? Math.min(100, Math.max(0, Math.round(((a.montoAdelantado - a.saldoPendiente) / a.montoAdelantado) * 100))) : 0;
-                return (
-                  <tr key={a.id} onClick={() => setDetalle(a)} className="cursor-pointer hover:bg-[var(--surface-sunken)]/50 transition-colors">
-                    <td className="px-4 py-3">
-                      <span className="block font-bold text-[var(--text-primary)]">{a.beneficiario?.nombre ?? "—"}</span>
-                      {/* El código de operación (ADR-329) va acá y no en su
-                          propia columna: se lee junto al nombre, que es como se
-                          identifica el adelanto por teléfono. */}
-                      {(a.codigoOperacion || a.reciboManual) && (
-                        <span className="mt-0.5 flex flex-wrap items-center gap-x-2 font-mono text-xs text-[var(--text-tertiary)]">
-                          {a.codigoOperacion && <span>{a.codigoOperacion}</span>}
-                          {a.reciboManual && <span title="N° del recibo de papel">· recibo {a.reciboManual}</span>}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 tabular-nums text-[var(--text-secondary)]">{fmtMon(a.montoAdelantado, a.moneda)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2.5 w-24 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
-                          <div className="h-full rounded-full bg-[var(--data-success)]" style={{ width: `${pct}%` }} />
-                        </div>
-                        <span className="tabular-nums text-sm font-semibold text-[var(--text-tertiary)]">{pct}%</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 tabular-nums font-bold text-[var(--text-primary)]">{fmtMon(a.saldoPendiente, a.moneda)}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${badge?.className ?? ""}`}>{badge?.label ?? a.status}</span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {a.status === "ABIERTO" && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setDetalle(a); }}
-                          className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border-2 border-primary text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-bold hover:bg-primary/10 transition-colors"
-                        >
-                          <Plus className="h-4 w-4" /> Registrar entrega
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <TablaAdelantos
+          adelantos={filtrados}
+          orden={orden}
+          onOrden={setOrden}
+          pagina={pagina}
+          onPagina={setPagina}
+          porPagina={POR_PAGINA}
+          onVerDetalle={setDetalle}
+        />
       )}
 
-      {showCreate && (
+      {creando && (
         <CrearAdelantoModal
           beneficiarios={beneficiarios}
           adelantos={adelantos}
           onPersonaCreada={onChange}
-          onClose={() => setShowCreate(false)}
+          onClose={() => onCreando(false)}
           onCreated={() => {
-            setShowCreate(false);
+            onCreando(false);
             onChange();
           }}
         />
@@ -553,220 +565,6 @@ function AdelantosView({
         />
       )}
     </div>
-  );
-}
-
-function DetalleAdelantoModal({
-  adelantoId,
-  onClose,
-  onChange,
-}: {
-  adelantoId: string;
-  onClose: () => void;
-  onChange: () => void;
-}) {
-  const [a, setA] = useState<DbAdelanto | null>(null);
-  const [loading, setLoading] = useState(true);
-  // form entrega
-  const [tipo, setTipo] = useState<"LIBRE" | "PRODUCTO">("LIBRE");
-  const [descripcion, setDescripcion] = useState("");
-  const [valor, setValor] = useState("");
-  const [productId, setProductId] = useState("");
-  const [cantidad, setCantidad] = useState("");
-  const [sumarAStock, setSumarAStock] = useState(false);
-  const [entregaComp, setEntregaComp] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [productos, setProductos] = useState<{ id: number; name: string; price: number; stock?: number }[]>([]);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch(`/api/adelantos/${adelantoId}`, { credentials: "include" });
-    setA(res.ok ? await res.json() : null);
-    setLoading(false);
-  }, [adelantoId]);
-
-  useEffect(() => { load(); }, [load]);
-  useEffect(() => {
-    fetch("/api/products", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((d: unknown) => setProductos(Array.isArray(d) ? d.map((p: { id: number; name: string; price?: number; stock?: number }) => ({ id: p.id, name: p.name, price: Number(p.price ?? 0), stock: p.stock })) : []))
-      .catch((err) => console.warn("[adelantos] /api/products failed:", err));
-  }, []);
-
-  const prodSel = productos.find((p) => String(p.id) === productId);
-
-  const registrar = async () => {
-    setErr(null);
-    const body: Record<string, unknown> = { tipo, notas: descripcion.trim() || undefined, comprobanteUrl: entregaComp || undefined };
-    if (tipo === "LIBRE") {
-      const v = Number(valor);
-      if (!descripcion.trim() || !v || v <= 0) { setErr("Describí la entrega y poné un valor."); return; }
-      body.descripcion = descripcion.trim();
-      body.valorManual = v;
-    } else {
-      const pid = Number(productId);
-      if (!pid) { setErr("Elegí un producto del catálogo."); return; }
-      body.productId = pid;
-      body.descripcion = descripcion.trim() || undefined;
-      if (cantidad) body.cantidad = Number(cantidad);
-      if (valor) body.valorManual = Number(valor);
-      body.sumarAStock = sumarAStock;
-    }
-    setSaving(true);
-    const res = await fetch(`/api/adelantos/${adelantoId}/entregas`, {
-      method: "POST",
-      headers: jsonHeaders(),
-      credentials: "include",
-      body: JSON.stringify(body),
-    });
-    setSaving(false);
-    if (res.ok) {
-      setDescripcion(""); setValor(""); setProductId(""); setCantidad(""); setSumarAStock(false); setEntregaComp(null);
-      await load();
-      onChange();
-    } else {
-      const j = await res.json().catch(() => null);
-      setErr(j?.error ?? "No se pudo registrar la entrega.");
-    }
-  };
-
-  const cancelar = async () => {
-    if (!confirm("¿Cancelar este adelanto? No se borra el historial.")) return;
-    await fetch(`/api/adelantos/${adelantoId}`, { method: "PATCH", headers: jsonHeaders(), credentials: "include", body: JSON.stringify({ cancelar: true }) });
-    await load();
-    onChange();
-  };
-
-  const badge = a ? STATUS_BADGE[a.status] : null;
-
-  return (
-    <ModalShell title={a ? `Adelanto · ${a.beneficiario?.nombre ?? ""}` : "Adelanto"} onClose={onClose} wide>
-      {loading || !a ? (
-        <SkeletonGrid />
-      ) : (
-        <div className="space-y-5">
-          {/* El código y el comprobante, arriba de todo: es lo primero que se
-              pide cuando alguien llama preguntando por un adelanto. */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[var(--surface-sunken)] px-4 py-3">
-            <div className="min-w-0">
-              <p className="font-mono text-base font-extrabold text-[var(--text-primary)]">
-                {a.codigoOperacion ?? "— sin código —"}
-              </p>
-              {a.reciboManual && (
-                <p className="font-mono text-sm text-[var(--text-tertiary)]">Recibo de papel {a.reciboManual}</p>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => void descargarComprobante({
-                codigoOperacion: a.codigoOperacion,
-                reciboManual: a.reciboManual,
-                persona: a.beneficiario?.nombre ?? "—",
-                documento: a.beneficiario?.documento,
-                telefono: a.beneficiario?.telefono,
-                monto: a.montoAdelantado,
-                moneda: a.moneda,
-                fecha: a.fechaAdelanto,
-                modalidad: a.modalidad,
-                notas: a.notas,
-              })}
-              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
-            >
-              <FileText className="h-4 w-4" /> Comprobante para firmar
-            </button>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <MiniStat label="Adelantado" value={fmtMon(a.montoAdelantado, a.moneda)} />
-            <MiniStat label="Entregado" value={fmtMon(a.totalEntregado, a.moneda)} tone="success" />
-            <MiniStat label="Saldo" value={fmtMon(a.saldoPendiente, a.moneda)} tone={a.saldoPendiente > 0 ? "warning" : "neutral"} />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${badge?.className ?? ""}`}>{badge?.label}</span>
-            {a.comprobanteUrl && (
-              <a href={a.comprobanteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline">
-                {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */}
-                <img src={a.comprobanteUrl} alt="comprobante" className="h-7 w-7 rounded-md object-cover border border-[var(--rule-base)]" /> Comprobante
-              </a>
-            )}
-            {a.status !== "CANCELADO" && (
-              <button onClick={cancelar} className="ml-auto inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-error)] hover:underline">
-                <Ban className="h-4 w-4" /> Cancelar adelanto
-              </button>
-            )}
-          </div>
-
-          {a.status !== "CANCELADO" && (
-            <div className="rounded-2xl border-2 border-[var(--rule-base)] p-4 space-y-3">
-              <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Registrar entrega</CardTitle>
-              <div className="grid grid-cols-2 gap-2">
-                {(["LIBRE", "PRODUCTO"] as const).map((t) => (
-                  <button key={t} type="button" onClick={() => setTipo(t)} className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${tipo === t ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}>
-                    {t === "LIBRE" ? "Servicio / libre" : "Producto"}
-                  </button>
-                ))}
-              </div>
-              <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder={tipo === "LIBRE" ? "Ej: reparación del local" : "Descripción (opcional)"} className={inputCls} />
-              {tipo === "PRODUCTO" && (
-                <div className="grid grid-cols-2 gap-2">
-                  <select value={productId} onChange={(e) => setProductId(e.target.value)} className={inputCls}>
-                    <option value="">Elegí un producto…</option>
-                    {productos.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name} — {formatCurrency(p.price)}{p.stock != null ? ` · stock ${p.stock}` : ""}</option>
-                    ))}
-                  </select>
-                  <input type="number" min={1} value={cantidad} onChange={(e) => setCantidad(e.target.value)} placeholder="Cantidad" className={inputCls + " tabular-nums"} />
-                </div>
-              )}
-              {tipo === "PRODUCTO" && prodSel && cantidad && Number(cantidad) > 0 && !valor && (
-                <p className="text-sm text-[var(--text-secondary)]">Valor estimado: <strong className="text-[var(--text-primary)]">{formatCurrency(prodSel.price * Number(cantidad))}</strong> ({Number(cantidad)} × {formatCurrency(prodSel.price)})</p>
-              )}
-              <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder={tipo === "LIBRE" ? "Valor en S/" : "Valor S/ (vacío = precio × cantidad)"} className={inputCls + " tabular-nums"} />
-              {tipo === "PRODUCTO" && (
-                <label className="flex items-center gap-2 text-base font-semibold text-[var(--text-secondary)]">
-                  <input type="checkbox" checked={sumarAStock} onChange={(e) => setSumarAStock(e.target.checked)} className="h-5 w-5" />
-                  Sumar al stock del inventario
-                </label>
-              )}
-              <ComprobanteUpload url={entregaComp} onChange={setEntregaComp} />
-              {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}
-              <button onClick={registrar} disabled={saving} className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-[var(--data-success)] text-white text-base font-bold hover:opacity-90 transition disabled:opacity-50">
-                <CheckCircle className="h-5 w-5" /> {saving ? "Registrando…" : "Registrar entrega"}
-              </button>
-            </div>
-          )}
-
-          <div>
-            <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-2">Historial de entregas ({a.entregas.length})</CardTitle>
-            {a.entregas.length === 0 ? (
-              <p className="text-base text-[var(--text-tertiary)]">Todavía no hay entregas.</p>
-            ) : (
-              <ul className="space-y-2">
-                {a.entregas.map((e) => (
-                  <li key={e.id} className="flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-soft)] px-4 py-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--data-success)]/10 text-[var(--data-success)] shrink-0">
-                      {e.tipo === "PRODUCTO" ? <Package className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-base font-bold text-[var(--text-primary)] truncate">{e.descripcion || (e.tipo === "PRODUCTO" ? `Producto #${e.productId}` : "Entrega")}</p>
-                      <p className="text-sm text-[var(--text-tertiary)] tabular-nums">{new Date(e.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</p>
-                    </div>
-                    {e.comprobanteUrl && (
-                      <a href={e.comprobanteUrl} target="_blank" rel="noopener noreferrer" title="Ver comprobante" className="shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */}
-                        <img src={e.comprobanteUrl} alt="comprobante" className="h-9 w-9 rounded-lg object-cover border border-[var(--rule-base)]" />
-                      </a>
-                    )}
-                    <span className="text-base font-extrabold tabular-nums text-[var(--data-success)] shrink-0">{fmtMon(e.valor, a.moneda)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
-    </ModalShell>
   );
 }
 
@@ -786,100 +584,155 @@ function PersonasView({
   const [editPersona, setEditPersona] = useState<BeneficiarioConSaldo | null>(null);
   const [deletePersona, setDeletePersona] = useState<BeneficiarioConSaldo | null>(null);
   const [adelantoPara, setAdelantoPara] = useState<string | null>(null);
-  const [estadoCuenta, setEstadoCuenta] = useState<BeneficiarioConSaldo | null>(null);
+  const [ficha, setFicha] = useState<BeneficiarioConSaldo | null>(null);
+  const [detalleAdelanto, setDetalleAdelanto] = useState<DbAdelanto | null>(null);
   const [q, setQ] = useState("");
-  const [orden, setOrden] = useState<"riesgo" | "saldo" | "nombre" | "adelantado">("saldo");
+  const [orden, setOrden] = useState<OrdenPersonas>("saldo");
+  const [filtro, setFiltro] = useState<FiltroPersonas>("todas");
+  const [pagina, setPagina] = useState(1);
 
-  const filtradas = beneficiarios.filter(
-    (b) => !q.trim() || b.nombre.toLowerCase().includes(q.trim().toLowerCase()),
-  );
   /**
-   * «Cerca del tope» responde la pregunta del mostrador —¿a quién ya no le puedo
-   * fiar más?— que por saldo no se contesta: quien debe S/ 900 de un tope de
-   * S/ 5.000 está mejor que quien debe S/ 400 de S/ 500.
+   * Se busca por nombre, documento Y teléfono, sin tildes: antes sólo por
+   * nombre y con acento exacto, así que «maria» no encontraba a «María» y un
+   * número de teléfono a mano no servía para nada.
    */
-  const ordenados =
-    orden === "riesgo"
-      ? ordenarPorRiesgoDeCredito(filtradas)
-      : [...filtradas].sort((a, b) => {
-          if (orden === "nombre") return a.nombre.localeCompare(b.nombre);
-          if (orden === "adelantado") return b.totalAdelantado - a.totalAdelantado;
-          return b.saldoPendiente - a.saldoPendiente;
-        });
-  const conSaldo = beneficiarios.filter((b) => b.saldoPendiente > 0).length;
+  const filtradas = useMemo(() => {
+    const t = sinTildes(q);
+    const soloDigitos = t.replace(/\D/g, "");
+    return beneficiarios.filter((b) => {
+      if (!cumpleFiltro(b, filtro)) return false;
+      if (!t) return true;
+      return (
+        sinTildes(b.nombre).includes(t) ||
+        (b.documento ?? "").includes(t) ||
+        (!!soloDigitos && (b.telefono ?? "").replace(/\D/g, "").includes(soloDigitos))
+      );
+    });
+  }, [beneficiarios, q, filtro]);
 
-  // Totales de toda la cartera de personas
+  const ordenados = useMemo(() => ordenarPersonas(filtradas, orden), [filtradas, orden]);
+  const pag = paginar(ordenados, pagina, PERSONAS_POR_PAGINA);
+
+  /** Cambiar de filtro con la página 4 abierta dejaba una grilla en blanco. */
+  useEffect(() => setPagina(1), [q, orden, filtro]);
+
+  /**
+   * Los totales de la cartera, con la MISMA definición que la pestaña
+   * Adelantos: los cancelados no se cobran. Antes acá se sumaba todo y las dos
+   * pestañas mostraban cifras distintas para la misma pregunta.
+   */
   const tot = beneficiarios.reduce(
-    (acc, b) => { acc.adelantado += b.totalAdelantado; acc.porRecuperar += b.saldoPendiente; return acc; },
-    { adelantado: 0, porRecuperar: 0 },
+    (acc, b) => {
+      acc.adelantado += b.totalAdelantado;
+      acc.entregado += b.totalEntregado;
+      acc.porRecuperar += b.saldoPendiente;
+      acc.aFavor += b.saldoAFavor;
+      return acc;
+    },
+    { adelantado: 0, entregado: 0, porRecuperar: 0, aFavor: 0 },
   );
-  const entregado = Math.max(0, tot.adelantado - tot.porRecuperar);
+  const conSaldo = beneficiarios.filter((b) => b.saldoPendiente > 0).length;
+  const enRiesgo = beneficiarios.filter((b) => requiereAtencion(estadoDeCredito(b.limiteCredito, b.saldoPendiente))).length;
+  const hayTopes = beneficiarios.some((b) => (b.limiteCredito ?? 0) > 0);
 
-  // Recordatorio por WhatsApp (con saldo si debe).
-  const waLink = (b: BeneficiarioConSaldo) => {
-    const digits = (b.telefono ?? "").replace(/\D/g, "");
-    const phone = digits.length === 9 ? `51${digits}` : digits;
-    const msg =
-      b.saldoPendiente > 0
-        ? `Hola ${b.nombre}, te recuerdo que tenés un saldo pendiente de ${formatCurrency(b.saldoPendiente)} por liquidar. ¡Gracias!`
-        : `Hola ${b.nombre}, ¿cómo estás?`;
-    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
-  };
-
-  const ordenChip = (val: typeof orden, _label: string) =>
-    `h-10 px-3 rounded-full border-2 text-sm font-bold transition-colors ${
-      orden === val ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+  const chip = (activo: boolean) =>
+    `h-10 px-3.5 rounded-full border-2 text-sm font-bold transition-colors ${
+      activo
+        ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+        : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
     }`;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">
           {beneficiarios.length} persona{beneficiarios.length === 1 ? "" : "s"}
           {conSaldo > 0 && <span className="font-semibold text-[var(--text-tertiary)]"> · {conSaldo} con saldo</span>}
         </CardTitle>
-        <button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors">
+        <button
+          onClick={() => setShowCreate(true)}
+          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-5 text-base font-bold text-white transition-colors hover:bg-primary-dark"
+        >
           <Plus className="h-5 w-5" /> Nueva persona
         </button>
       </div>
 
       {beneficiarios.length > 0 && (
         <>
-          {/* Búsqueda + orden */}
+          {/* Filtros por situación + búsqueda + orden */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative min-w-[220px] flex-1 sm:max-w-sm">
+            <div className="relative min-w-[240px] flex-1 sm:max-w-sm">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar por persona, código (ADL-2026-7) o recibo…"
+                placeholder="Buscar por nombre, documento o teléfono…"
+                aria-label="Buscar persona"
                 className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-semibold text-[var(--text-tertiary)]">Orden:</span>
-              <button className={ordenChip("saldo", "")} onClick={() => setOrden("saldo")}>Saldo</button>
-              {/* Sólo si alguien tiene tope cargado: ordenar por «cerca del
-                  límite» sin límites que medir sería un botón que no hace nada. */}
-              {beneficiarios.some((b) => (b.limiteCredito ?? 0) > 0) && (
-                <button
-                  className={ordenChip("riesgo", "")}
-                  onClick={() => setOrden("riesgo")}
-                  title="Primero quien está más cerca de su límite de crédito"
-                >
-                  Cerca del tope
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button className={chip(filtro === "todas")} onClick={() => setFiltro("todas")}>
+                Todas {beneficiarios.length}
+              </button>
+              {conSaldo > 0 && (
+                <button className={chip(filtro === "deben")} onClick={() => setFiltro("deben")}>
+                  Deben {conSaldo}
                 </button>
               )}
-              <button className={ordenChip("nombre", "")} onClick={() => setOrden("nombre")}>Nombre</button>
-              <button className={ordenChip("adelantado", "")} onClick={() => setOrden("adelantado")}>Adelantado</button>
+              <button className={chip(filtro === "al-dia")} onClick={() => setFiltro("al-dia")}>
+                Al día {beneficiarios.length - conSaldo}
+              </button>
+              {/* Sólo si hay topes cargados: un filtro que siempre da cero
+                  enseña a no confiar en los filtros. */}
+              {hayTopes && enRiesgo > 0 && (
+                <button className={chip(filtro === "riesgo")} onClick={() => setFiltro("riesgo")}>
+                  Sin margen {enRiesgo}
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Totales de la cartera */}
-          <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-sm font-semibold text-[var(--text-tertiary)]">Orden:</span>
+            <button className={chip(orden === "saldo")} onClick={() => setOrden("saldo")}>Saldo</button>
+            {hayTopes && (
+              <button
+                className={chip(orden === "riesgo")}
+                onClick={() => setOrden("riesgo")}
+                title="Primero quien está más cerca de su límite de crédito"
+              >
+                Cerca del tope
+              </button>
+            )}
+            <button className={chip(orden === "nombre")} onClick={() => setOrden("nombre")}>Nombre</button>
+            <button className={chip(orden === "adelantado")} onClick={() => setOrden("adelantado")}>Adelantado</button>
+            <button
+              className={chip(orden === "cumplimiento")}
+              onClick={() => setOrden("cumplimiento")}
+              title="Primero quien menos devolvió de lo que sacó"
+            >
+              Cumplimiento
+            </button>
+            <button className={chip(orden === "reciente")} onClick={() => setOrden("reciente")}>Último adelanto</button>
+          </div>
+
+          {/* Totales de la cartera + export de lo filtrado */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
             <span>Adelantado <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(tot.adelantado)}</strong></span>
-            <span>Entregado <strong className="tabular-nums text-[var(--data-success)]">{formatCurrency(entregado)}</strong></span>
+            <span>Devuelto <strong className="tabular-nums text-[var(--data-success)]">{formatCurrency(tot.entregado)}</strong></span>
             <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{formatCurrency(tot.porRecuperar)}</strong></span>
+            {tot.aFavor > 0 && (
+              <span>A favor de ellos <strong className="tabular-nums text-[var(--data-info)]">{formatCurrency(tot.aFavor)}</strong></span>
+            )}
+            <button
+              onClick={() => descargarCsvPersonas(ordenados, `personas-${new Date().toISOString().slice(0, 10)}.csv`)}
+              disabled={ordenados.length === 0}
+              title="Baja exactamente lo que estás viendo, con filtro y búsqueda aplicados"
+              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
+            >
+              <Download className="h-4 w-4" /> CSV ({ordenados.length})
+            </button>
           </div>
         </>
       )}
@@ -889,156 +742,100 @@ function PersonasView({
       ) : beneficiarios.length === 0 ? (
         <EmptyState icon={Users} title="Sin personas" hint="Agregá a quién le das adelantos." />
       ) : ordenados.length === 0 ? (
-        <EmptyState icon={Search} title="Sin resultados" hint="Probá con otro nombre." />
+        <EmptyState icon={Search} title="Sin resultados" hint="Probá con otro nombre, documento o filtro." />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {ordenados.map((b) => {
-            const debe = b.saldoPendiente > 0;
-            return (
-              <div key={b.id} className="relative flex flex-col rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-                {/* Acciones editar / eliminar */}
-                <div className="absolute right-3 top-3 flex gap-1">
-                  <button onClick={() => setEditPersona(b)} title="Editar" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors">
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button onClick={() => setDeletePersona(b)} title="Eliminar" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--data-error)]/10 hover:text-[var(--data-error)] transition-colors">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <button onClick={() => setEstadoCuenta(b)} className="flex items-start gap-3 pr-16 text-left group" title="Ver estado de cuenta">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                    {b.nombre.charAt(0).toUpperCase()}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-base font-extrabold text-[var(--text-primary)] truncate group-hover:text-primary transition-colors">{b.nombre}</p>
-                    {b.documento && <p className="text-sm text-[var(--text-tertiary)] tabular-nums truncate">{b.documento}</p>}
-                    {b.telefono && <p className="text-sm text-[var(--text-tertiary)] tabular-nums truncate">{b.telefono}</p>}
-                  </div>
+        <>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {pag.items.map((b) => (
+              <TarjetaPersona
+                key={b.id}
+                persona={b}
+                onVerFicha={() => setFicha(b)}
+                onEditar={() => setEditPersona(b)}
+                onEliminar={() => setDeletePersona(b)}
+                onAdelanto={() => setAdelantoPara(b.id)}
+              />
+            ))}
+          </div>
+          {pag.totalPaginas > 1 && (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-semibold tabular-nums text-[var(--text-secondary)]">
+                {pag.desde}–{pag.hasta} de {pag.total}
+              </p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setPagina(pag.pagina - 1)}
+                  disabled={pag.pagina <= 1}
+                  aria-label="Página anterior"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
+                >
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
-
-                <div className="mt-3 grid grid-cols-2 gap-2 border-t-2 border-[var(--rule-soft)] pt-3">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text-tertiary)]">Adelantado</p>
-                    <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(b.totalAdelantado)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-[var(--text-tertiary)]">Saldo</p>
-                    <p className={`text-base font-extrabold tabular-nums ${debe ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>{formatCurrency(b.saldoPendiente)}</p>
-                  </div>
-                </div>
-                {/* Antes decía el tope y, en pasado, «alcanzado». Lo que se
-                    necesita saber es cuánto QUEDA: es lo que decide si se le
-                    puede adelantar de nuevo. */}
-                {(() => {
-                  const c = estadoDeCredito(b.limiteCredito, b.saldoPendiente);
-                  if (c.estado === "sin-limite") return null;
-                  return (
-                    <p className={`mt-1.5 text-sm font-semibold ${requiereAtencion(c) ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}`}>
-                      {c.disponible > 0
-                        ? `Le queda ${formatCurrency(c.disponible)} de ${formatCurrency(c.limite)}`
-                        : `Sin margen · debe ${formatCurrency(c.usado)} de un tope de ${formatCurrency(c.limite)}`}
-                    </p>
-                  );
-                })()}
-
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                  {debe ? (
-                    <span className="inline-flex items-center rounded-full bg-[var(--data-warning)]/15 px-3 py-1 text-sm font-bold text-[var(--data-warning)]">
-                      {b.adelantosAbiertos} abierto{b.adelantosAbiertos === 1 ? "" : "s"}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)]/15 px-3 py-1 text-sm font-bold text-[var(--data-success)]">
-                      <CheckCircle className="h-4 w-4" /> Al día
-                    </span>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setAdelantoPara(b.id)}
-                      className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border-2 border-primary text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
-                    >
-                      <Plus className="h-4 w-4" /> Adelanto
-                    </button>
-                    {b.telefono && (
-                      <a
-                        href={waLink(b)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
-                        title={debe ? "Recordar saldo por WhatsApp" : "Escribir por WhatsApp"}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </a>
-                    )}
-                  </div>
-                </div>
+                <span className="px-2 text-sm font-bold tabular-nums text-[var(--text-secondary)]">
+                  {pag.pagina} / {pag.totalPaginas}
+                </span>
+                <button
+                  onClick={() => setPagina(pag.pagina + 1)}
+                  disabled={pag.pagina >= pag.totalPaginas}
+                  aria-label="Página siguiente"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {showCreate && (
-        <CrearPersonaModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); onChange(); }} />
+        <CrearPersonaModal
+          personasExistentes={beneficiarios}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => { setShowCreate(false); onChange(); }}
+        />
       )}
       {editPersona && (
-        <CrearPersonaModal persona={editPersona} onClose={() => setEditPersona(null)} onCreated={() => { setEditPersona(null); onChange(); }} />
+        <CrearPersonaModal
+          persona={editPersona}
+          personasExistentes={beneficiarios}
+          onClose={() => setEditPersona(null)}
+          onCreated={() => { setEditPersona(null); onChange(); }}
+        />
       )}
       {deletePersona && (
         <EliminarPersonaModal persona={deletePersona} onClose={() => setDeletePersona(null)} onDeleted={() => { setDeletePersona(null); onChange(); }} />
       )}
       {adelantoPara && (
-        <CrearAdelantoModal beneficiarios={beneficiarios} adelantos={adelantos} initialBeneficiarioId={adelantoPara} onPersonaCreada={onChange} onClose={() => setAdelantoPara(null)} onCreated={() => { setAdelantoPara(null); onChange(); }} />
+        <CrearAdelantoModal
+          beneficiarios={beneficiarios}
+          adelantos={adelantos}
+          initialBeneficiarioId={adelantoPara}
+          onPersonaCreada={onChange}
+          onClose={() => setAdelantoPara(null)}
+          onCreated={() => { setAdelantoPara(null); onChange(); }}
+        />
       )}
-      {estadoCuenta && (
-        <EstadoCuentaModal persona={estadoCuenta} adelantos={adelantos} onClose={() => setEstadoCuenta(null)} />
+      {ficha && (
+        <FichaPersonaModal
+          persona={ficha}
+          adelantos={adelantos}
+          onClose={() => setFicha(null)}
+          onEditar={() => { setEditPersona(ficha); setFicha(null); }}
+          onNuevoAdelanto={() => { setAdelantoPara(ficha.id); setFicha(null); }}
+          onVerAdelanto={(a) => { setDetalleAdelanto(a); setFicha(null); }}
+        />
+      )}
+      {detalleAdelanto && (
+        <DetalleAdelantoModal
+          adelantoId={detalleAdelanto.id}
+          onClose={() => setDetalleAdelanto(null)}
+          onChange={onChange}
+        />
       )}
     </div>
   );
 }
-
-function CrearPersonaModal({ persona, onClose, onCreated }: { persona?: BeneficiarioConSaldo; onClose: () => void; onCreated: () => void }) {
-  const editing = !!persona;
-  const [nombre, setNombre] = useState(persona?.nombre ?? "");
-  const [documento, setDocumento] = useState(persona?.documento ?? "");
-  const [telefono, setTelefono] = useState(persona?.telefono ?? "");
-  const [notas, setNotas] = useState(persona?.notas ?? "");
-  const [limite, setLimite] = useState(persona?.limiteCredito != null ? String(persona.limiteCredito) : "");
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  const submit = async () => {
-    setErr(null);
-    if (!nombre.trim()) { setErr("El nombre es obligatorio."); return; }
-    const lim = limite.trim() ? Number(limite) : null;
-    setSaving(true);
-    const res = await fetch(
-      editing ? `/api/adelantos/beneficiarios/${persona!.id}` : "/api/adelantos/beneficiarios",
-      {
-        method: editing ? "PATCH" : "POST",
-        headers: jsonHeaders(),
-        credentials: "include",
-        body: JSON.stringify({ nombre: nombre.trim(), documento: documento.trim() || undefined, telefono: telefono.trim() || undefined, notas: notas.trim() || undefined, limiteCredito: lim && lim > 0 ? lim : null }),
-      },
-    );
-    setSaving(false);
-    if (res.ok) onCreated();
-    else setErr(editing ? "No se pudo guardar los cambios." : "No se pudo crear la persona.");
-  };
-
-  return (
-    <ModalShell title={editing ? "Editar persona" : "Nueva persona"} onClose={onClose}>
-      <Field label="Nombre"><input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} /></Field>
-      <Field label="DNI / RUC (opcional)"><input value={documento} onChange={(e) => setDocumento(e.target.value)} className={inputCls + " tabular-nums"} /></Field>
-      <Field label="Teléfono (opcional)"><input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={inputCls + " tabular-nums"} /></Field>
-      <Field label="Límite de crédito S/ (opcional)"><input type="number" min={0} value={limite} onChange={(e) => setLimite(e.target.value)} placeholder="Sin límite" className={inputCls + " tabular-nums"} /></Field>
-      <Field label="Notas (opcional)"><textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} className={inputCls + " py-3"} /></Field>
-      {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}
-      <ModalActions onClose={onClose} onSubmit={submit} saving={saving} label={editing ? "Guardar cambios" : "Crear persona"} />
-    </ModalShell>
-  );
-}
-
 function EliminarPersonaModal({ persona, onClose, onDeleted }: { persona: BeneficiarioConSaldo; onClose: () => void; onDeleted: () => void }) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -1068,324 +865,6 @@ function EliminarPersonaModal({ persona, onClose, onDeleted }: { persona: Benefi
 }
 
 // ── Estado de cuenta por persona (libro mayor + WhatsApp + PDF) ────────────────
-function EstadoCuentaModal({ persona, adelantos, onClose }: { persona: BeneficiarioConSaldo; adelantos: DbAdelanto[]; onClose: () => void }) {
-  const mios = adelantos.filter((a) => a.beneficiarioId === persona.id && a.status !== "CANCELADO");
-  const movs: { fecha: string; concepto: string; monto: number }[] = [];
-  for (const a of mios) {
-    // Con el código: si el deudor pregunta «¿cuál?», el estado de cuenta lo
-    // responde solo en vez de mandarlo a otra pantalla.
-    movs.push({ fecha: a.fechaAdelanto, concepto: `Adelanto ${a.codigoOperacion ?? ""}`.trim(), monto: a.montoAdelantado });
-    for (const e of a.entregas) movs.push({ fecha: e.fecha, concepto: e.descripcion || "Entrega", monto: -e.valor });
-  }
-  movs.sort((x, y) => new Date(x.fecha).getTime() - new Date(y.fecha).getTime());
-  let acc = 0;
-  const rows = movs.map((m) => { acc += m.monto; return { ...m, saldo: acc }; });
-  const saldoFinal = acc;
-  const fmt = (f: string) => new Date(f).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" });
-  const signo = (n: number) => (n >= 0 ? "+" : "−") + formatCurrency(Math.abs(n));
-
-  const texto = () => {
-    const lineas = rows.map((r) => `${fmt(r.fecha)} · ${r.concepto}: ${signo(r.monto)}`).join("\n");
-    return `*Estado de cuenta*\n${persona.nombre}\n━━━━━━━━━━━━━━━━━━━\n${lineas}\n━━━━━━━━━━━━━━━━━━━\n*Saldo pendiente: ${formatCurrency(saldoFinal)}*`;
-  };
-  const waLink = () => {
-    const digits = (persona.telefono ?? "").replace(/\D/g, "");
-    const phone = digits.length === 9 ? `51${digits}` : digits;
-    return `https://wa.me/${phone}?text=${encodeURIComponent(texto())}`;
-  };
-  const exportarPdf = async () => {
-    const { default: jsPDF } = await import("jspdf");
-    const autoTable = (await import("jspdf-autotable")).default;
-    const doc = new jsPDF();
-    doc.setFontSize(16); doc.text("Estado de cuenta", 14, 18);
-    doc.setFontSize(11); doc.text(persona.nombre, 14, 26);
-    if (persona.documento) doc.text(`Doc: ${persona.documento}`, 14, 32);
-    if (persona.telefono) doc.text(`Tel: ${persona.telefono}`, 14, persona.documento ? 38 : 32);
-    autoTable(doc, {
-      startY: persona.documento ? 44 : 38,
-      head: [["Fecha", "Concepto", "Monto", "Saldo"]],
-      body: rows.map((r) => [fmt(r.fecha), r.concepto, signo(r.monto), formatCurrency(r.saldo)]),
-      foot: [["", "", "Saldo pendiente", formatCurrency(saldoFinal)]],
-    });
-    doc.save(`estado-cuenta-${persona.nombre.replace(/\s+/g, "-")}.pdf`);
-  };
-
-  return (
-    <ModalShell title="Estado de cuenta" onClose={onClose} wide>
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-lg font-extrabold text-[var(--text-primary)] truncate">{persona.nombre}</p>
-          {persona.telefono && <p className="text-sm text-[var(--text-tertiary)] tabular-nums">{persona.telefono}</p>}
-        </div>
-        <div className="text-right shrink-0">
-          <p className="text-sm font-semibold text-[var(--text-tertiary)]">Saldo pendiente</p>
-          <p className={`text-2xl font-extrabold tabular-nums ${saldoFinal > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>{formatCurrency(saldoFinal)}</p>
-        </div>
-      </div>
-
-      {rows.length === 0 ? (
-        <EmptyState icon={FileText} title="Sin movimientos" hint="Esta persona no tiene adelantos registrados." />
-      ) : (
-        <div className="overflow-hidden rounded-xl border border-[var(--rule-base)]">
-          <table className="w-full text-base">
-            <thead className="bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-bold">Fecha</th>
-                <th className="px-3 py-2 font-bold">Concepto</th>
-                <th className="px-3 py-2 font-bold text-right">Monto</th>
-                <th className="px-3 py-2 font-bold text-right">Saldo</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--rule-soft)]">
-              {rows.map((r, i) => (
-                <tr key={i}>
-                  <td className="px-3 py-2 tabular-nums text-[var(--text-secondary)]">{fmt(r.fecha)}</td>
-                  <td className="px-3 py-2 text-[var(--text-primary)]">{r.concepto}</td>
-                  <td className={`px-3 py-2 text-right tabular-nums font-bold ${r.monto >= 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>{signo(r.monto)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums font-bold text-[var(--text-primary)]">{formatCurrency(r.saldo)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div className="mt-5 flex flex-wrap justify-end gap-2">
-        <button onClick={exportarPdf} className="inline-flex items-center gap-1 h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
-          <FileText className="h-5 w-5" /> Descargar PDF
-        </button>
-        {persona.telefono && (
-          <a href={waLink()} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors">
-            <MessageCircle className="h-5 w-5" /> Enviar por WhatsApp
-          </a>
-        )}
-      </div>
-    </ModalShell>
-  );
-}
-
-// ── Cobranza ─────────────────────────────────────────────────────────────────
-
-function CobranzaView({ adelantos, loading, onRecordado }: { adelantos: DbAdelanto[]; loading: boolean; onGoTab: (t: string) => void; onRecordado?: () => void }) {
-  const [filtro, setFiltro] = useState<"todos" | "d0" | "d30" | "d60">("todos");
-  const [marcando, setMarcando] = useState<string | null>(null);
-  const now = Date.now();
-  const abiertos = adelantos.filter((a) => a.status === "ABIERTO" && a.saldoPendiente > 0);
-
-  /**
-   * Cuándo se le recordó por última vez a cada persona, **según la base**.
-   *
-   * Antes esto salía de `localStorage`, así que el cron de recordatorios y la
-   * pantalla no se enteraban uno del otro: al mismo deudor le llegaba el aviso
-   * automático y el manual el mismo día, y desde otra computadora la pantalla
-   * decía "sin recordar" sobre alguien al que ya se le había escrito.
-   */
-  const recordados: Record<string, number> = {};
-  for (const a of adelantos) {
-    const ts = a.beneficiario?.ultimoRecordatorio;
-    if (ts) recordados[a.beneficiarioId] = new Date(ts).getTime();
-  }
-
-  const bucketOf = bucketDe;
-  const BUCKETS = [
-    { id: "d0" as const, label: "Al día", hint: "sin nada vencido", tone: "var(--data-success)" },
-    { id: "d30" as const, label: "Vencido", hint: "hasta 60 días de atraso", tone: "var(--data-warning)" },
-    { id: "d60" as const, label: "Crítico", hint: "más de 60 días", tone: "var(--data-error)" },
-  ];
-
-  // Deudores con saldo + días de atraso (adelanto abierto más antiguo)
-  /**
-   * El atraso se mide contra la ENTREGA PACTADA incumplida, no contra la edad
-   * del adelanto (ver `lib/adelantos/urgencia-cobranza.ts`). Antes un adelanto
-   * de 45 días con la entrega pactada para el mes que viene salía «Vencido», y
-   * uno de 20 días con una entrega incumplida hace cinco salía «Al día».
-   */
-  const deudores = deudoresDeCobranza(abiertos, now);
-
-  const bucketTotals = { d0: { total: 0, n: 0 }, d30: { total: 0, n: 0 }, d60: { total: 0, n: 0 } };
-  for (const d of deudores) { const b = bucketTotals[bucketOf(d.dias)]; b.total += d.saldo; b.n += 1; }
-
-  const totalPorCobrar = deudores.reduce((s, d) => s + d.saldo, 0);
-  const vencidoTotal = bucketTotals.d30.total + bucketTotals.d60.total;
-  const pctVencido = totalPorCobrar > 0 ? Math.round((vencidoTotal / totalPorCobrar) * 100) : 0;
-  const masAntiguo = [...deudores].sort((a, b) => b.dias - a.dias)[0];
-
-  const pactadas = abiertos
-    .filter((a) => a.modalidad === "ENTREGAS_PACTADAS")
-    .flatMap((a) => a.entregasPactadas.filter((p) => p.fechaEsperada).map((p) => ({ persona: a.beneficiario?.nombre ?? "—", desc: p.descripcionEsperada, valor: p.valorEsperado, fecha: p.fechaEsperada! })))
-    .sort((x, y) => new Date(x.fecha).getTime() - new Date(y.fecha).getTime());
-
-    // Primero quien rompió un compromiso: tiene fecha y nombre, es el reclamo más
-  // fácil de sostener. Ordenar sólo por días los mezclaría.
-  const filtrados = ordenarPorUrgencia(filtro === "todos" ? deudores : deudores.filter((d) => bucketOf(d.dias) === filtro));
-
-  const waLink = (d: DeudorCobranza) => {
-    const digits = (d.telefono ?? "").replace(/\D/g, "");
-    const phone = digits.length === 9 ? `51${digits}` : digits;
-    return `https://wa.me/${phone}?text=${encodeURIComponent(`Hola ${d.nombre}, te recuerdo que tenés un saldo pendiente de ${formatCurrency(d.saldo)} por liquidar. ¡Gracias!`)}`;
-  };
-  /** Anota el recordatorio en la BASE — la misma columna que escribe el cron. */
-  const marcarRecordado = async (id: string) => {
-    setMarcando(id);
-    try {
-      const r = await fetch(`/api/adelantos/beneficiarios/${encodeURIComponent(id)}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ action: "recordatorio" }),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      onRecordado?.();
-    } catch (err) {
-      logger.error("[adelantos] no se pudo anotar el recordatorio", { error: String(err) });
-    } finally {
-      setMarcando(null);
-    }
-  };
-  const haceTexto = (dias: number) => (dias <= 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} días`);
-  const recordadoHace = (ts: number) => { const d = Math.floor((now - ts) / 86_400_000); return d <= 0 ? "hoy" : d === 1 ? "ayer" : `hace ${d} días`; };
-
-  const exportarPdf = async () => {
-    const { default: jsPDF } = await import("jspdf");
-    const autoTable = (await import("jspdf-autotable")).default;
-    const doc = new jsPDF();
-    doc.setFontSize(16); doc.text("Lista de cobranza", 14, 18);
-    doc.setFontSize(10); doc.text(`Total por cobrar: ${formatCurrency(totalPorCobrar)} · ${deudores.length} deudores · ${new Date().toLocaleDateString("es-PE")}`, 14, 25);
-    autoTable(doc, {
-      startY: 31,
-      head: [["Persona", "Saldo", "Atraso", "Por qué", "Teléfono"]],
-      // Mismo orden que la pantalla: el papel que se lleva el cobrador no puede
-      // priorizar distinto que la lista que se acaba de mirar.
-      body: ordenarPorUrgencia(deudores).map((d) => [
-        d.nombre,
-        formatCurrency(d.saldo),
-        `${d.dias} días`,
-        d.base === "pactada" ? "Entrega pactada sin cumplir" : "Antigüedad (sin fecha pactada)",
-        d.telefono ?? "—",
-      ]),
-    });
-    doc.save(`cobranza-${new Date().toISOString().slice(0, 10)}.pdf`);
-  };
-
-  if (loading) return <SkeletonGrid />;
-  if (abiertos.length === 0) return <EmptyState icon={CheckCircle} title="Nada por cobrar" hint="No hay adelantos abiertos con saldo pendiente." />;
-
-  return (
-    <div className="space-y-5">
-      {/* KPIs de cobranza */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Total por cobrar</p>
-          <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--data-warning)]">{formatCurrency(totalPorCobrar)}</p>
-          <p className="text-sm text-[var(--text-secondary)]">{deudores.length} deudor{deudores.length === 1 ? "" : "es"}</p>
-        </div>
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Cartera vencida</p>
-          <p className={`mt-1 text-2xl font-extrabold tabular-nums ${pctVencido > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]"}`}>{pctVencido}%</p>
-          <p className="text-sm text-[var(--text-secondary)]">{formatCurrency(vencidoTotal)} con atraso</p>
-        </div>
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Deuda más antigua</p>
-          <p className="mt-1 text-2xl font-extrabold text-[var(--text-primary)] truncate">{masAntiguo?.nombre ?? "—"}</p>
-          <p className="text-sm text-[var(--text-secondary)]">{masAntiguo ? haceTexto(masAntiguo.dias) : "—"}</p>
-        </div>
-      </div>
-
-      {/* Antigüedad de saldos — clickeable para filtrar */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        {BUCKETS.map((b) => {
-          const activo = filtro === b.id;
-          return (
-            <button
-              key={b.id}
-              onClick={() => setFiltro(activo ? "todos" : b.id)}
-              className={`text-left rounded-xl border bg-[var(--surface-raised)] p-4 transition-all ${activo ? "ring-2 ring-primary border-primary" : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]"}`}
-              style={{ borderLeftWidth: 6, borderLeftColor: b.tone }}
-            >
-              <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                {b.label} <span className="font-medium normal-case tracking-normal">· {b.hint}</span>
-              </p>
-              <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(bucketTotals[b.id].total)}</p>
-              <p className="text-sm text-[var(--text-secondary)]">{bucketTotals[b.id].n} deudor{bucketTotals[b.id].n === 1 ? "" : "es"}</p>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Entregas pactadas pendientes */}
-      {pactadas.length > 0 && (
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-2">Entregas pactadas pendientes</CardTitle>
-          <ul className="divide-y divide-[var(--rule-soft)]">
-            {pactadas.slice(0, 8).map((p, i) => {
-              const vencida = new Date(p.fecha).getTime() < now;
-              return (
-                <li key={i} className="flex items-center gap-3 py-2.5">
-                  <span className="flex-1 text-base font-semibold text-[var(--text-primary)] truncate">{p.persona} · <span className="font-normal text-[var(--text-secondary)]">{p.desc}</span></span>
-                  <span className="tabular-nums text-base font-bold text-[var(--text-primary)]">{formatCurrency(p.valor)}</span>
-                  <span className={`tabular-nums text-sm font-bold ${vencida ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}`}>{new Date(p.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-
-      {/* Recordatorios de cobranza */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">
-            Recordatorios ({filtrados.length}{filtro !== "todos" ? ` de ${deudores.length}` : ""})
-          </CardTitle>
-          <button onClick={exportarPdf} className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
-            <FileText className="h-4 w-4" /> Descargar lista (PDF)
-          </button>
-        </div>
-        <ul className="divide-y divide-[var(--rule-soft)]">
-          {filtrados.map((d) => {
-            const ts = recordados[d.id];
-            const vencido = d.dias > 30;
-            return (
-              <li key={d.id} className="flex items-center gap-3 py-2.5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]">{d.nombre.charAt(0).toUpperCase()}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-base font-bold text-[var(--text-primary)] truncate">{d.nombre}</p>
-                  {/* Explica de DÓNDE sale el atraso: «vencida hace 12 días»
-                      (compromiso roto) no es lo mismo que «45 días desde que se
-                      dio el adelanto» (antigüedad, el único proxy si no hay
-                      fecha pactada). Antes las dos cosas se mostraban igual. */}
-                  <p className={`text-sm ${vencido ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}`}>
-                    {explicarAtraso(d)}
-                    {ts ? ` · recordado ${recordadoHace(ts)}` : ""}
-                  </p>
-                </div>
-                <span className="tabular-nums text-base font-extrabold text-[var(--data-warning)]">{formatCurrency(d.saldo)}</span>
-                {d.telefono ? (
-                  <a
-                    href={waLink(d)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => void marcarRecordado(d.id)}
-                    /* Es un <a> a WhatsApp, así que `disabled` no aplica:
-                       mientras la anotación va en camino se marca con
-                       `aria-busy` y se apagan los eventos. */
-                    aria-busy={marcando === d.id}
-                    className={`inline-flex items-center gap-1 h-9 px-3 rounded-xl border text-sm font-bold transition-colors ${marcando === d.id ? "pointer-events-none opacity-60" : ""} ${ts ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-primary text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10"}`}
-                  >
-                    <MessageCircle className="h-4 w-4" /> {ts ? "Recordar de nuevo" : "Recordar"}
-                  </a>
-                ) : (
-                  <span className="text-sm text-[var(--text-tertiary)]">sin teléfono</span>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
 // ── Actividad ────────────────────────────────────────────────────────────────
 type ActEvento = { fecha: string; tipo: "adelanto" | "entrega"; persona: string; monto: number; moneda?: string | null; desc?: string };
 
