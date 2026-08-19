@@ -147,3 +147,74 @@ describe("los buckets de siempre", () => {
     expect(bucketDe(-15)).toBe("d0");
   });
 });
+
+describe("fecha de devolución acordada (332)", () => {
+  const AHORA = new Date("2026-08-04T12:00:00.000Z").getTime();
+  const hace = (d: number) => new Date(AHORA - d * 86_400_000).toISOString();
+  const dentroDe = (d: number) => new Date(AHORA + d * 86_400_000).toISOString();
+
+  const base = {
+    beneficiarioId: "b1",
+    saldoPendiente: 500,
+    status: "ABIERTO",
+    beneficiario: { nombre: "Juan", telefono: null },
+  };
+
+  it("el atraso se mide contra la fecha acordada, no contra la antigüedad", () => {
+    // 60 días desde que se dio, pero se tenía que devolver hace 10.
+    const [d] = deudoresDeCobranza([{ ...base, fechaAdelanto: hace(60), fechaVencimiento: hace(10) }], AHORA);
+    expect(d.base).toBe("vencimiento");
+    expect(d.dias).toBe(10);
+  });
+
+  it("un adelanto viejo con vencimiento futuro NO está atrasado", () => {
+    // El caso que hacía aparecer «vencido» a quien todavía está en fecha.
+    const [d] = deudoresDeCobranza([{ ...base, fechaAdelanto: hace(45), fechaVencimiento: dentroDe(15) }], AHORA);
+    expect(d.base).toBe("antiguedad");
+    expect(d.dias).toBe(45);
+  });
+
+  it("la cuota pactada incumplida sigue mandando sobre el vencimiento del adelanto", () => {
+    const [d] = deudoresDeCobranza(
+      [
+        {
+          ...base,
+          fechaAdelanto: hace(60),
+          fechaVencimiento: hace(5),
+          entregasPactadas: [{ fechaEsperada: hace(20), cumplidaEn: null }],
+        },
+      ],
+      AHORA,
+    );
+    expect(d.base).toBe("pactada");
+    expect(d.dias).toBe(20);
+  });
+
+  it("sin fecha acordada se sigue cayendo a la antigüedad, como antes", () => {
+    const [d] = deudoresDeCobranza([{ ...base, fechaAdelanto: hace(30) }], AHORA);
+    expect(d.base).toBe("antiguedad");
+    expect(d.dias).toBe(30);
+  });
+
+  it("el orden pone primero la cuota rota, después el vencimiento, al final la antigüedad", () => {
+    const deudores = deudoresDeCobranza(
+      [
+        { ...base, beneficiarioId: "antiguo", fechaAdelanto: hace(200) },
+        { ...base, beneficiarioId: "vencido", fechaAdelanto: hace(30), fechaVencimiento: hace(3) },
+        {
+          ...base,
+          beneficiarioId: "incumplio",
+          fechaAdelanto: hace(20),
+          entregasPactadas: [{ fechaEsperada: hace(2), cumplidaEn: null }],
+        },
+      ],
+      AHORA,
+    );
+    expect(ordenarPorUrgencia(deudores).map((d) => d.id)).toEqual(["incumplio", "vencido", "antiguo"]);
+  });
+
+  it("lo explica sin prometer lo que no sabe", () => {
+    const [d] = deudoresDeCobranza([{ ...base, fechaAdelanto: hace(60), fechaVencimiento: hace(7) }], AHORA);
+    expect(explicarAtraso(d)).toBe("Se tenía que devolver hace 7 días");
+  });
+});

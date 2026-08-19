@@ -20,6 +20,21 @@ const UpdateSchema = z.object({
   telefono: z.string().max(20).optional(),
   notas: z.string().max(500).optional(),
   limiteCredito: z.number().positive().max(9_999_999).nullable().optional(),
+  /** (330) Lo que trae RENIEC/SUNAT, o se carga a mano. */
+  tipoDocumento: z.string().max(10).nullable().optional(),
+  razonSocial: z.string().max(300).nullable().optional(),
+  direccion: z.string().max(400).nullable().optional(),
+  departamento: z.string().max(80).nullable().optional(),
+  provincia: z.string().max(80).nullable().optional(),
+  distrito: z.string().max(80).nullable().optional(),
+  email: z.string().max(200).nullable().optional(),
+  estadoSunat: z.string().max(60).nullable().optional(),
+  condicionSunat: z.string().max(60).nullable().optional(),
+  verificadoEn: z.string().max(40).nullable().optional(),
+  banco: z.string().max(80).nullable().optional(),
+  cuentaBancaria: z.string().max(40).nullable().optional(),
+  cci: z.string().max(40).nullable().optional(),
+  activo: z.boolean().optional(),
 });
 
 // PATCH /api/adelantos/beneficiarios/[id] — editar persona

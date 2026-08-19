@@ -13,6 +13,8 @@ const CreateSchema = z.object({
   montoAdelantado: z.number().positive().max(9999999999),
   moneda: z.string().max(3).optional(),
   fechaAdelanto: z.string().optional(),
+  /** (332) Cuándo se acordó devolverlo. */
+  fechaVencimiento: z.string().max(40).nullable().optional(),
   notas: z.string().max(1000).optional(),
   comprobanteUrl: z.string().url().max(500).optional(),
   /** N° del talonario de papel que firmó la persona (ADR-329). */

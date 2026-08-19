@@ -27,13 +27,20 @@ export interface AdelantoParaCobranza {
   beneficiarioId: string;
   saldoPendiente: number;
   fechaAdelanto: string | Date;
+  /** (332) Cuándo se acordó devolverlo, si se acordó algo. */
+  fechaVencimiento?: string | Date | null;
   status?: string;
   beneficiario?: { nombre?: string | null; telefono?: string | null } | null;
   entregasPactadas?: PactadaParaCobranza[] | null;
 }
 
-/** Cómo se llegó al número de días: cambia lo que la pantalla puede afirmar. */
-export type BaseDeAtraso = "pactada" | "antiguedad";
+/**
+ * Cómo se llegó al número de días: cambia lo que la pantalla puede afirmar.
+ *
+ * `pactada` y `vencimiento` son compromisos con fecha —se pueden reclamar—;
+ * `antiguedad` es sólo el tiempo que pasó, que no es un incumplimiento.
+ */
+export type BaseDeAtraso = "pactada" | "vencimiento" | "antiguedad";
 
 export interface DeudorCobranza {
   id: string;
@@ -84,6 +91,8 @@ export function deudoresDeCobranza(
       /** La pactada incumplida más vieja de TODOS sus adelantos. */
       pactadaMasVieja: Date | null;
       pactadasVencidas: number;
+      /** La fecha de devolución acordada más vieja que ya pasó (332). */
+      vencimientoMasViejo: Date | null;
       /** El adelanto más viejo, de respaldo. */
       adelantoMasViejo: number;
     }
@@ -102,12 +111,20 @@ export function deudoresDeCobranza(
         saldo: 0,
         pactadaMasVieja: null,
         pactadasVencidas: 0,
+        vencimientoMasViejo: null,
         adelantoMasViejo: Number.POSITIVE_INFINITY,
       };
 
     acc.saldo += a.saldoPendiente;
     const dado = fecha(a.fechaAdelanto)?.getTime() ?? ahora;
     if (dado < acc.adelantoMasViejo) acc.adelantoMasViejo = dado;
+
+    /* La fecha de devolución acordada del adelanto entero: sirve para los que
+       no tienen plan de cuotas, que son la mayoría. Sólo cuenta si ya pasó. */
+    const vence = fecha(a.fechaVencimiento);
+    if (vence && vence.getTime() <= ahora && (!acc.vencimientoMasViejo || vence < acc.vencimientoMasViejo)) {
+      acc.vencimientoMasViejo = vence;
+    }
 
     for (const p of a.entregasPactadas ?? []) {
       // Una entrega ya cumplida no debe nada, por tarde que se haya cumplido.
@@ -122,9 +139,16 @@ export function deudoresDeCobranza(
   }
 
   return [...porPersona.entries()].map(([id, d]) => {
-    // La pactada incumplida manda: es un compromiso roto con fecha y nombre.
-    const referencia = d.pactadaMasVieja ?? (Number.isFinite(d.adelantoMasViejo) ? new Date(d.adelantoMasViejo) : null);
-    const base: BaseDeAtraso = d.pactadaMasVieja ? "pactada" : "antiguedad";
+    /**
+     * Orden de preferencia: la cuota pactada incumplida (el compromiso más
+     * fino), después la fecha de devolución del adelanto, y recién al final la
+     * antigüedad —que no es un incumplimiento y se declara como tal.
+     */
+    const referencia =
+      d.pactadaMasVieja ??
+      d.vencimientoMasViejo ??
+      (Number.isFinite(d.adelantoMasViejo) ? new Date(d.adelantoMasViejo) : null);
+    const base: BaseDeAtraso = d.pactadaMasVieja ? "pactada" : d.vencimientoMasViejo ? "vencimiento" : "antiguedad";
     const dias = referencia ? Math.floor((ahora - referencia.getTime()) / DIA) : 0;
     return {
       id,
@@ -148,8 +172,9 @@ export function deudoresDeCobranza(
  * entrega que prometió para el martes", y no son lo mismo.
  */
 export function ordenarPorUrgencia(deudores: readonly DeudorCobranza[]): DeudorCobranza[] {
+  const peso: Record<BaseDeAtraso, number> = { pactada: 0, vencimiento: 1, antiguedad: 2 };
   return [...deudores].sort((a, b) => {
-    if (a.base !== b.base) return a.base === "pactada" ? -1 : 1;
+    if (a.base !== b.base) return peso[a.base] - peso[b.base];
     if (a.dias !== b.dias) return b.dias - a.dias;
     return b.saldo - a.saldo;
   });
@@ -161,6 +186,9 @@ export function explicarAtraso(d: DeudorCobranza): string {
     return d.pactadasVencidas === 1
       ? `1 entrega pactada sin cumplir, vencida hace ${d.dias} día${d.dias === 1 ? "" : "s"}`
       : `${d.pactadasVencidas} entregas pactadas sin cumplir; la más vieja hace ${d.dias} días`;
+  }
+  if (d.base === "vencimiento") {
+    return `Se tenía que devolver hace ${d.dias} día${d.dias === 1 ? "" : "s"}`;
   }
   return `Sin fecha pactada: ${d.dias} día${d.dias === 1 ? "" : "s"} desde que se dio el adelanto`;
 }
