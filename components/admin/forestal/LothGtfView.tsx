@@ -6,12 +6,13 @@
  * Interna, no oficial (la GTF oficial se emite vía SNIFFS).
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, FileText, Plus, Printer, Ban, Loader2, Trash2, Truck, LogIn } from "@buleje/design-system/icons";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, FileText, Plus, Printer, Ban, Loader2, Search, Trash2, Truck, LogIn } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
+import { documentoGtfLoth, type LothGtfCaratula, type LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
 
 interface GtfItem {
   code?: string | null; species?: string | null; scientific?: string | null; cites?: boolean;
@@ -31,7 +32,14 @@ const smalian = (dM: number, dm: number, L: number) =>
 const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }) : "—";
 
-export default function LothGtfView() {
+export default function LothGtfView({
+  focusGtf,
+  onFocusHandled,
+}: {
+  /** Guía a resaltar al entrar (se llega acá desde la trazabilidad por árbol). */
+  focusGtf?: string | null;
+  onFocusHandled?: () => void;
+} = {}) {
   const [gtfs, setGtfs] = useState<Gtf[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -40,6 +48,14 @@ export default function LothGtfView() {
   // Puente inverso: GTF de trozas emitidas que aún no ingresaron al CTP —
   // mismo conjunto que la bandeja del lado planta (single source: ?sinIngresar=1).
   const [sinIngresar, setSinIngresar] = useState<Set<string>>(new Set());
+  const [busqueda, setBusqueda] = useState("");
+  const [estado, setEstado] = useState<"todas" | "emitida" | "anulada" | "sin_ingresar">("todas");
+  const [tipo, setTipo] = useState<"todos" | "trozas" | "producto">("todos");
+  const [pagina, setPagina] = useState(0);
+  /** Guías que el LIBRO declara y que no están emitidas acá (se piden aparte). */
+  const [declaradasSinEmitir, setDeclaradasSinEmitir] = useState<string[]>([]);
+  /** Identidad del titular para la hoja oficial (casilleros 6 y 7). */
+  const [caratula, setCaratula] = useState<LothGtfCaratula | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,15 +64,62 @@ export default function LothGtfView() {
         fetch("/api/admin/forestal/gtf", { credentials: "include" }),
         fetch("/api/admin/forestal/gtf?sinIngresar=1", { credentials: "include" }),
       ]);
-      if (rGtf.ok) setGtfs((await rGtf.json()).gtfs ?? []);
+      let emitidas: Gtf[] = [];
+      if (rGtf.ok) {
+        emitidas = ((await rGtf.json()).gtfs ?? []) as Gtf[];
+        setGtfs(emitidas);
+      }
       if (rPend.ok) {
         const pend = ((await rPend.json()).gtfs ?? []) as { gtfNumber: string }[];
         setSinIngresar(new Set(pend.map((g) => g.gtfNumber)));
+      }
+
+      // El cruce inverso: guías que el LIBRO declara en sus despachos y que
+      // nadie emitió acá. Hasta ahora sólo se veía en Cumplimiento, que es
+      // donde menos sirve — el que puede emitirla está en esta pantalla.
+      try {
+        const rLib = await fetch("/api/admin/forestal/loth?limit=500", { credentials: "include" });
+        if (rLib.ok) {
+          const lineas = ((await rLib.json()).entries ?? []) as { section: string; gtfNumber: string | null; status: string }[];
+          const vivas = new Set(emitidas.filter((g) => g.status !== "anulada").map((g) => g.gtfNumber));
+          const declaradas = new Set(
+            lineas
+              .filter((l) => l.status !== "anulado" && (l.section === "despacho_troza" || l.section === "despacho_producto") && l.gtfNumber)
+              .map((l) => l.gtfNumber as string),
+          );
+          setDeclaradasSinEmitir([...declaradas].filter((g) => !vivas.has(g)).sort());
+        }
+      } catch (err) {
+        // Falla blanda: sin el cruce no se acusa a nadie.
+        console.warn("[loth-gtf] no se pudo cruzar el libro contra las guías emitidas", err);
       }
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  // La carátula del libro es la identidad legal que va en la hoja: sin ella los
+  // casilleros del titular salen vacíos y el papel no sirve en un control.
+  useEffect(() => {
+    fetch("/api/admin/forestal/loth/caratula", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setCaratula(j?.active ?? null))
+      .catch((err) => console.warn("[loth-gtf] no se pudo leer la carátula", err));
+  }, []);
+
+  // Llegar a la guía sin buscarla: al entrar desde «Por árbol» la fila se
+  // resalta y la lista se desplaza hasta ella. El foco se consume una vez —si
+  // quedara pegado, la próxima visita a esta vista lo repetiría sin motivo.
+  const filaEnfocada = useRef<HTMLTableRowElement | null>(null);
+  useEffect(() => {
+    if (!focusGtf || loading) return;
+    // Si la guía no está en la lista, el foco NO se consume: así el aviso de
+    // «declarada en el libro pero no emitida acá» queda a la vista.
+    if (!filaEnfocada.current) return;
+    filaEnfocada.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    const t = setTimeout(() => onFocusHandled?.(), 4000);
+    return () => clearTimeout(t);
+  }, [focusGtf, loading, gtfs, onFocusHandled]);
 
   /** Manda la guía al Libro CTP: deja el N° en sessionStorage y navega al módulo. */
   function ingresarAlCtp(gtfNumber: string) {
@@ -79,6 +142,14 @@ export default function LothGtfView() {
 
   const gtfAnular = annulId ? gtfs.find((g) => g.id === annulId) ?? null : null;
 
+  /**
+   * Se llegó buscando una guía que no está emitida acá. Pasa de verdad: el libro
+   * puede declarar un despacho con un N° de GTF que nadie registró en este
+   * módulo. Callarlo deja al usuario mirando una lista donde su guía no aparece;
+   * decirlo convierte el viaje en un hallazgo de compliance.
+   */
+  const focoAusente = !!focusGtf && !loading && !gtfs.some((g) => g.gtfNumber === focusGtf);
+
   // Resumen del período: lo que un titular quiere saber sin leer la tabla.
   const resumen = useMemo(() => {
     const vivas = gtfs.filter((g) => g.status !== "anulada");
@@ -90,6 +161,34 @@ export default function LothGtfView() {
     };
   }, [gtfs, sinIngresar]);
 
+  /** Lo que se está viendo, tras búsqueda y filtros. */
+  const filtradas = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return gtfs.filter((g) => {
+      if (q) {
+        const heno = [g.gtfNumber, g.titularName, g.destino, g.transportista, g.placaVehiculo, g.origen]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!heno.includes(q)) return false;
+      }
+      if (tipo === "trozas" && g.tipo === "producto") return false;
+      if (tipo === "producto" && g.tipo !== "producto") return false;
+      if (estado === "emitida" && g.status === "anulada") return false;
+      if (estado === "anulada" && g.status !== "anulada") return false;
+      if (estado === "sin_ingresar" && !(g.tipo !== "producto" && g.status !== "anulada" && sinIngresar.has(g.gtfNumber))) return false;
+      return true;
+    });
+  }, [gtfs, busqueda, tipo, estado, sinIngresar]);
+
+  const POR_PAGINA = 25;
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
+  const pagActual = Math.min(pagina, totalPaginas - 1);
+  const enPagina = filtradas.slice(pagActual * POR_PAGINA, (pagActual + 1) * POR_PAGINA);
+  const volumenFiltrado = filtradas.filter((g) => g.status !== "anulada").reduce((a, g) => a + Number(g.volumenTotalM3 ?? 0), 0);
+
+  useEffect(() => setPagina(0), [busqueda, tipo, estado]);
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -98,6 +197,81 @@ export default function LothGtfView() {
           <Plus className="h-4 w-4" /> Emitir GTF
         </button>
       </div>
+
+      {/* Las guías que el libro declara y nadie emitió. Acá sí sirve: quien puede
+          emitirlas está en esta pantalla. */}
+      {declaradasSinEmitir.length > 0 && (
+        <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-500)]/10 p-3">
+          <p className="flex items-center gap-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+            <AlertTriangle className="h-4 w-4" />
+            {declaradasSinEmitir.length === 1
+              ? "1 guía está declarada en el libro y no figura acá"
+              : `${declaradasSinEmitir.length} guías están declaradas en el libro y no figuran acá`}
+          </p>
+          <p className="mt-1 text-xs text-[var(--text-secondary)]">
+            El libro ampara salidas con {declaradasSinEmitir.length === 1 ? "este número" : "estos números"}: o la guía se emitió fuera
+            del sistema, o el número del libro tiene un error de tipeo. Ante una fiscalización, esa madera viaja sin documento que la
+            respalde.
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {declaradasSinEmitir.map((g) => (
+              <span
+                key={g}
+                className="rounded-full border border-[var(--data-error-500)] bg-[var(--surface-raised)] px-2.5 py-0.5 font-mono text-xs font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+              >
+                {g}
+              </span>
+            ))}
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
+            >
+              <Plus className="h-3.5 w-3.5" /> Emitir la guía faltante
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Buscar y filtrar: la lista no tenía ninguna de las dos cosas. */}
+      {!loading && gtfs.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex h-11 min-w-[16rem] flex-1 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
+            <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por N° de guía, titular, destino, transportista o placa…"
+              className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
+            />
+          </div>
+          <label className="flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
+            <span className="text-[var(--text-tertiary)]">Tipo</span>
+            <select value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} className="bg-transparent font-bold text-[var(--text-primary)] outline-none">
+              <option value="todos">Todos</option>
+              <option value="trozas">Trozas</option>
+              <option value="producto">Producto</option>
+            </select>
+          </label>
+          <label className="flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
+            <span className="text-[var(--text-tertiary)]">Estado</span>
+            <select value={estado} onChange={(e) => setEstado(e.target.value as typeof estado)} className="bg-transparent font-bold text-[var(--text-primary)] outline-none">
+              <option value="todas">Todas</option>
+              <option value="emitida">Emitidas</option>
+              <option value="sin_ingresar">Sin ingresar al CTP</option>
+              <option value="anulada">Anuladas</option>
+            </select>
+          </label>
+        </div>
+      )}
+
+      {focoAusente && (
+        <div className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 p-3 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          La guía <b className="font-mono">{focusGtf}</b> está declarada en el Libro de Operaciones pero no figura entre las guías
+          emitidas acá. O se emitió fuera del sistema, o el número del libro tiene un error de tipeo.
+        </div>
+      )}
 
       {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">{error}</div>}
 
@@ -143,8 +317,14 @@ export default function LothGtfView() {
               <tr>{["N° GTF", "Fecha", "Tipo", "Titular", "Destino", "Vol. m³", "Estado", "Acciones"].map((h, i) => <th key={i} className={`px-4 py-2.5 font-bold text-[var(--text-primary)] ${i === 5 ? "text-right" : ""}`}>{h}</th>)}</tr>
             </thead>
             <tbody>
-              {gtfs.map((g) => (
-                <tr key={g.id} className={`border-t border-[var(--rule-soft)] ${g.status === "anulada" ? "opacity-50" : ""}`}>
+              {enPagina.map((g) => (
+                <tr
+                  key={g.id}
+                  ref={g.gtfNumber === focusGtf ? filaEnfocada : undefined}
+                  className={`border-t border-[var(--rule-soft)] ${g.status === "anulada" ? "opacity-50" : ""} ${
+                    g.gtfNumber === focusGtf ? "bg-[var(--data-info-500)]/15 outline outline-2 -outline-offset-2 outline-[var(--data-info-500)]" : ""
+                  }`}
+                >
                   <td className="px-4 py-2.5"><span className="font-mono font-bold text-[var(--text-primary)]">{g.gtfNumber}</span></td>
                   <td className="px-4 py-2.5 text-[var(--text-secondary)]">{fmtDate(g.gtfDate)}</td>
                   <td className="px-4 py-2.5"><span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">{g.tipo === "producto" ? "Producto" : "Trozas"}</span></td>
@@ -164,7 +344,15 @@ export default function LothGtfView() {
                           <LogIn className="h-3.5 w-3.5" /> Ingresar al CTP
                         </button>
                       )}
-                      <button type="button" onClick={() => printGtf(g)} title="Imprimir" className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-3.5 w-3.5" /> Imprimir</button>
+                      <button
+                        type="button"
+                        onClick={() => printGtfOficial(g, caratula)}
+                        title="Imprimir en la hoja de casilleros SERFOR (mismo formato que el Libro CTP)"
+                        className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                      >
+                        <Printer className="h-3.5 w-3.5" /> Hoja SERFOR
+                      </button>
+                      <button type="button" onClick={() => printGtf(g)} title="Imprimir el resumen interno" className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-3.5 w-3.5" /> Resumen</button>
                       {g.status !== "anulada" && (
                         <button type="button" onClick={() => setAnnulId(g.id)} title="Anular esta guía" aria-label={`Anular la GTF ${g.gtfNumber}`} className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><Ban className="h-3.5 w-3.5" /></button>
                       )}
@@ -175,6 +363,38 @@ export default function LothGtfView() {
               {gtfs.length === 0 && <tr><td colSpan={8} className="px-4 py-10 text-center text-[var(--text-tertiary)]"><FileText className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin GTF emitidas. Hacé click en &quot;Emitir GTF&quot;.</td></tr>}
             </tbody>
           </table>
+        </div>
+      )}
+      {!loading && filtradas.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-[var(--text-tertiary)]">
+            {filtradas.length === gtfs.length
+              ? `${gtfs.length} guía${gtfs.length === 1 ? "" : "s"}`
+              : `${filtradas.length} de ${gtfs.length} guías`}
+            {" · "}
+            <span className="font-mono tabular-nums">{volumenFiltrado.toFixed(4)}</span> m³
+            {totalPaginas > 1 && ` · página ${pagActual + 1} de ${totalPaginas}`}
+          </p>
+          {totalPaginas > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPagina((p) => Math.max(0, p - 1))}
+                disabled={pagActual === 0}
+                className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                onClick={() => setPagina((p) => Math.min(totalPaginas - 1, p + 1))}
+                disabled={pagActual >= totalPaginas - 1}
+                className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -434,6 +654,21 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
 }
 
 // ─── Impresión (ventana nueva, aislada) — QR real vía lazy-import ───────────
+/**
+ * Imprime la guía en la hoja de casilleros SERFOR — la MISMA que usa el Libro
+ * CTP. Antes cada libro tenía su papel: el del título habilitante, que es el que
+ * viaja con la madera desde el bosque, era el peor de los dos.
+ */
+function printGtfOficial(g: Gtf, caratula: LothGtfCaratula | null) {
+  const { cuerpo, css, titulo } = documentoGtfLoth(g as unknown as LothGtfDoc, caratula);
+  const w = window.open("", "_blank", "width=920,height=1000");
+  if (!w) return;
+  w.document.write(
+    `<!doctype html><html><head><meta charset="utf-8"><title>${titulo}</title><style>${css}</style></head><body>${cuerpo}</body></html>`,
+  );
+  w.document.close();
+}
+
 async function printGtf(g: Gtf) {
   const items = Array.isArray(g.items) ? g.items : [];
   const rows = items.map((x, i) => `<tr><td>${i + 1}</td><td>${x.code ?? ""}</td><td>${x.species ?? ""}${x.cites ? " <b>(CITES)</b>" : ""}</td><td style="text-align:right">${x.diamMayorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.diamMenorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.lengthM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.volumeM3?.toFixed?.(4) ?? ""}</td></tr>`).join("");

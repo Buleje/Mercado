@@ -30,7 +30,7 @@ interface Analytics {
     rendimientoGlobalPct: number;
     bySpecies: { species: string }[];
   };
-  balance: { rows: { movilizado: number; saldo: number }[] } | null;
+  balance: { rows: { movilizado: number; saldo: number }[]; fueraDePlan?: { species: string; movilizadoM3: number }[] } | null;
   anomalias: { level: "error" | "warn" }[];
 }
 
@@ -77,6 +77,12 @@ export default function LothResumenStrip({ onNavigate, reloadSignal }: { onNavig
   const totalAutorizado = data.balance ? data.balance.rows.reduce((a, r) => a + r.movilizado + Math.max(0, r.saldo), 0) : 0;
   const pctUsado = totalAutorizado > 0 ? Math.min(100, (totalMov / totalAutorizado) * 100) : 0;
   const excedido = data.balance ? data.balance.rows.some((r) => r.saldo < -1e-6) : false;
+  // Lo que salió de especies que el POA no declara. El saldo de arriba NO lo
+  // cuenta —recorre las autorizadas— así que sin esto la barra decía «0.00 de
+  // 320» al lado de un «movilizado 4.05 m³»: dos cifras del mismo hecho, y la
+  // más tranquilizadora justo cuando la infracción es peor.
+  const fueraDePlan = data.balance?.fueraDePlan ?? [];
+  const volFueraDePlan = fueraDePlan.reduce((a, f) => a + f.movilizadoM3, 0);
 
   return (
     <section
@@ -141,7 +147,12 @@ export default function LothResumenStrip({ onNavigate, reloadSignal }: { onNavig
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[var(--rule-soft)] px-4 py-2.5">
           {totalAutorizado > 0 && (
             <div className="flex min-w-[14rem] flex-1 items-center gap-3">
-              <span className="shrink-0 text-xs font-medium text-[var(--text-tertiary)]">Saldo autorizado (POA)</span>
+              <span
+                className="shrink-0 text-xs font-medium text-[var(--text-tertiary)]"
+                title="Mide sólo las especies declaradas en el plan de manejo: lo movilizado de una especie no autorizada no descuenta saldo porque nunca tuvo saldo."
+              >
+                Saldo POA <span className="hidden sm:inline">· especies autorizadas</span>
+              </span>
               <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
                 <div
                   className={`h-full rounded-full ${excedido ? "bg-[var(--data-error-500)]" : pctUsado > 85 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent)]"}`}
@@ -152,6 +163,20 @@ export default function LothResumenStrip({ onNavigate, reloadSignal }: { onNavig
                 {fm(totalMov)} / {fm(totalAutorizado)} m³
               </span>
             </div>
+          )}
+          {volFueraDePlan > 0 && (
+            <button
+              type="button"
+              onClick={() => onNavigate("cumplimiento")}
+              title={fueraDePlan.map((f) => `${f.species}: ${fm(f.movilizadoM3)} m³`).join(" · ")}
+              className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--data-error-500)] bg-[var(--data-error-500)]/10 px-2.5 py-1 text-xs font-bold text-[var(--data-error-700)] transition-colors hover:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)]"
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span className="font-mono tabular-nums">{fm(volFueraDePlan)} m³</span> movilizados fuera del plan
+              <span className="font-normal opacity-80">
+                ({fueraDePlan.length === 1 ? fueraDePlan[0].species : `${fueraDePlan.length} especies`})
+              </span>
+            </button>
           )}
           {especies > 0 && (
             <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">

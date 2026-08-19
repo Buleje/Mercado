@@ -18,7 +18,7 @@
  */
 
 export type LothComplianceTone = "success" | "warning" | "error";
-export type LothNavTarget = "analitica" | "secciones" | "plan" | "caratula";
+export type LothNavTarget = "analitica" | "secciones" | "plan" | "caratula" | "gtf";
 export type LothSeverity = "error" | "warning";
 
 /** Una anomalía tal como la devuelve `detectAnomalias`. */
@@ -38,6 +38,18 @@ export interface LothComplianceInput {
   citesSinPermiso?: string[];
   /** Especies con operaciones en el libro que NO figuran en el POA (infracción, SÍ resta). */
   especiesNoAutorizadas?: string[];
+  /**
+   * N° de guía que el libro declara en sus despachos pero que no existen entre
+   * las GTF emitidas. Madera que salió amparada en un documento que nadie
+   * encuentra: o se emitió fuera del sistema, o el número está mal.
+   */
+  gtfsFantasma?: string[];
+  /**
+   * Especies que el libro escribe distinto que el plan pero son la misma
+   * («Cedro» vs «Cedro rojo»). NO restan: es nomenclatura, y tratarla como
+   * infracción es exactamente lo que hacía el cruce por string exacto.
+   */
+  especiesAmbiguas?: { libro: string; plan: string }[];
 }
 
 export interface LothCheck {
@@ -91,8 +103,42 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
 
   const citesSinPermiso = input.citesSinPermiso ?? [];
   const especiesNoAutorizadas = input.especiesNoAutorizadas ?? [];
+  const gtfsFantasma = input.gtfsFantasma ?? [];
+  const especiesAmbiguas = input.especiesAmbiguas ?? [];
 
   const checks: LothCheck[] = [
+    {
+      key: "gtf_fantasma",
+      count: gtfsFantasma.length,
+      severity: "error",
+      penalty: 25,
+      title: `${gtfsFantasma.length} ${plural(gtfsFantasma.length, "guía declarada no existe", "guías declaradas no existen")}`,
+      okTitle: "Todas las guías declaradas están emitidas",
+      description:
+        gtfsFantasma.length > 0
+          ? `El libro ampara salidas con ${plural(gtfsFantasma.length, "una guía que no figura", "guías que no figuran")} entre las emitidas: ${listar(gtfsFantasma)}. Ante una fiscalización, esa madera viaja sin documento que la respalde.`
+          : "Cada N° de guía declarado en el libro corresponde a una GTF emitida.",
+      action: "Emití la guía faltante o corregí el número en la línea de despacho del libro.",
+      navTarget: "gtf",
+      navigateLabel: "Ver guías",
+    },
+    {
+      key: "especies_ambiguas",
+      count: especiesAmbiguas.length,
+      severity: "warning",
+      // No resta: el titular no cometió ninguna falta, el nombre está escrito
+      // de dos maneras. Restar acá sería multar por ortografía.
+      penalty: 0,
+      title: `${especiesAmbiguas.length} ${plural(especiesAmbiguas.length, "especie se escribe", "especies se escriben")} distinto que en el plan`,
+      okTitle: "Los nombres de especie coinciden con el plan",
+      description:
+        especiesAmbiguas.length > 0
+          ? `El libro y el plan nombran distinto a la misma especie: ${especiesAmbiguas.map((e) => `«${e.libro}» / «${e.plan}»`).join(", ")}. Se cruzan igual, pero conviene unificar el texto antes de presentar el libro.`
+          : "Cada especie del libro se llama igual que en el plan de manejo.",
+      action: "Unificá el nombre en Plan de Manejo · Especies autorizadas o al registrar la línea.",
+      navTarget: "plan",
+      navigateLabel: "Ver plan de manejo",
+    },
     {
       key: "caratula",
       count: caratulaIncompleta ? 1 : 0,
@@ -242,9 +288,12 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
   const tone: LothComplianceTone = bloqueos > 0 ? "error" : advertencias > 0 ? "warning" : "success";
   const readiness = bloqueos > 0 ? "error" : advertencias > 0 ? "warning" : "ready";
 
+  // El label sigue al estado: con casos activos va el título del PROBLEMA, no el
+  // del alta. Con `okTitle` fijo, el desglose decía «Todas las guías declaradas
+  // están emitidas · −25 pts (2 casos)» — una línea que se contradice sola.
   const breakdown = checks
     .filter((c) => c.penalty > 0)
-    .map((c) => ({ key: c.key, label: c.okTitle, puntos: c.count > 0 ? c.penalty : 0, casos: c.count }));
+    .map((c) => ({ key: c.key, label: c.count > 0 ? c.title : c.okTitle, puntos: c.count > 0 ? c.penalty : 0, casos: c.count }));
 
   return { score, tone, checks, problemas, enOrden, bloqueos, advertencias, readiness, breakdown };
 }

@@ -25,7 +25,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { listSpecies, findSpeciesByCommonName } from "@/data/forestry-species";
-import { LOTH_SECTIONS, type LothSection } from "@/lib/forestal/loth-constants";
+import { claveEspecie, LOTH_SECTIONS, type LothEntryDTO, type LothSection } from "@/lib/forestal/loth-constants";
 import { estadoVencimiento, permisoParaEspecie, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
 import { fromUtm, parseUtmZone } from "@/lib/forestal/loth-utm";
 import LothGpsField from "./LothGpsField";
@@ -35,6 +35,16 @@ interface Props {
   caratulaId?: string | null;
   onClose: () => void;
   onSaved: (opts?: { keepOpen?: boolean }) => void;
+  /**
+   * Línea de la que se parte. Sirve para dos cosas distintas:
+   *  · **duplicar** (registrar la troza siguiente del mismo árbol sin volver a
+   *    tipear seis campos), y
+   *  · **corregir** (subsanación SERFOR: se asienta una línea nueva que enmienda
+   *    a otra; la vieja nunca se borra).
+   */
+  plantilla?: LothEntryDTO | null;
+  /** N° de línea que esta nueva corrige. Presente = modo subsanación. */
+  corrigeLineNo?: number | null;
 }
 
 export const SECTION_META: Record<
@@ -80,33 +90,41 @@ function smalian(dMayor: number, dMenor: number, len: number): number {
   return Math.round(0.7854 * dProm * dProm * len * 10000) / 10000;
 }
 
-export default function LothEntryForm({ section, caratulaId, onClose, onSaved }: Props) {
+export default function LothEntryForm({ section, caratulaId, onClose, onSaved, plantilla, corrigeLineNo }: Props) {
   const speciesOptions = useMemo(() => listSpecies(), []);
+  /** Slug de la especie de la plantilla; «otro» si no está en el catálogo. */
+  const slugDePlantilla = useMemo(() => {
+    if (!plantilla?.speciesCommon) return null;
+    const hit = listSpecies().find((s) => s.commonName.toLowerCase() === plantilla.speciesCommon!.toLowerCase());
+    return hit?.slug ?? "otro";
+  }, [plantilla]);
   const fields = FIELDS[section];
   const meta = SECTION_META[section];
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
-  const [treeCode, setTreeCode] = useState("");
-  const [trozaCode, setTrozaCode] = useState("");
-  const [despachoCode, setDespachoCode] = useState("");
-  const [isRama, setIsRama] = useState(false);
-  const [speciesSlug, setSpeciesSlug] = useState("tornillo");
-  const [customSpecies, setCustomSpecies] = useState("");
-  const [diamMayor, setDiamMayor] = useState("");
-  const [diamMenor, setDiamMenor] = useState("");
-  const [lengthM, setLengthM] = useState("");
-  const [volumeM3, setVolumeM3] = useState("");
-  const [productType, setProductType] = useState(PRODUCT_TYPES[0]);
-  const [quantity, setQuantity] = useState("");
-  const [unit, setUnit] = useState<"m3" | "kg" | "unidad">("m3");
-  const [pieces, setPieces] = useState("");
-  const [gtfNumber, setGtfNumber] = useState("");
+  const [entryDate, setEntryDate] = useState(plantilla?.entryDate?.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
+  const [treeCode, setTreeCode] = useState(plantilla?.treeCode ?? "");
+  const [trozaCode, setTrozaCode] = useState(plantilla?.trozaCode ?? "");
+  const [despachoCode, setDespachoCode] = useState(plantilla?.despachoCode ?? "");
+  const [isRama, setIsRama] = useState(plantilla?.isRama ?? false);
+  const [speciesSlug, setSpeciesSlug] = useState(slugDePlantilla ?? "tornillo");
+  const [customSpecies, setCustomSpecies] = useState(slugDePlantilla === "otro" ? (plantilla?.speciesCommon ?? "") : "");
+  const [diamMayor, setDiamMayor] = useState(plantilla?.diamMayorM ?? "");
+  const [diamMenor, setDiamMenor] = useState(plantilla?.diamMenorM ?? "");
+  const [lengthM, setLengthM] = useState(plantilla?.lengthM ?? "");
+  const [volumeM3, setVolumeM3] = useState(plantilla?.volumeM3 ?? "");
+  const [productType, setProductType] = useState(plantilla?.productType ?? PRODUCT_TYPES[0]);
+  const [quantity, setQuantity] = useState(plantilla?.quantity ?? "");
+  const [unit, setUnit] = useState<"m3" | "kg" | "unidad">((plantilla?.unit as "m3" | "kg" | "unidad") ?? "m3");
+  const [pieces, setPieces] = useState(plantilla?.pieces != null ? String(plantilla.pieces) : "");
+  const [gtfNumber, setGtfNumber] = useState(plantilla?.gtfNumber ?? "");
   const [discarded, setDiscarded] = useState(false);
   const [consumoInterno, setConsumoInterno] = useState(false);
-  const [observations, setObservations] = useState("");
+  const [observations, setObservations] = useState(plantilla && !corrigeLineNo ? (plantilla.observations ?? "") : "");
+  /** Por qué se corrige. SERFOR pide que la enmienda diga su motivo. */
+  const [correctionNote, setCorrectionNote] = useState("");
 
   const [speciesQuery, setSpeciesQuery] = useState("");
   const [showPicker, setShowPicker] = useState(false);
@@ -190,7 +208,10 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
       .then((j) => {
         if (cancel) return;
         const rows = (j?.species ?? []) as Array<{ speciesCommon: string }>;
-        setAuthorizedSpecies(new Set(rows.map((s) => s.speciesCommon.trim().toLowerCase())));
+        // Misma clave canónica que usa el motor: el plan escribe «Tornillo
+        // (Cedrelinga catenaeformis)» y acá se elige «Tornillo». Comparar los
+        // strings crudos avisaba «no autorizada» sobre una especie que sí lo está.
+        setAuthorizedSpecies(new Set(rows.map((s) => claveEspecie(s.speciesCommon))));
       })
       .catch(() => { /* best-effort: sin lista, no se muestra el aviso */ });
     return () => { cancel = true; };
@@ -318,7 +339,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
   const speciesFueraDelPlan =
     speciesName.trim().length > 0 &&
     authorizedSpecies.size > 0 &&
-    !authorizedSpecies.has(speciesName.trim().toLowerCase());
+    !authorizedSpecies.has(claveEspecie(speciesName));
   const matched = isCustom ? findSpeciesByCommonName(customSpecies) : null;
   const scientific = isCustom ? matched?.scientificName ?? null : selected?.scientificName ?? null;
   const cites = isCustom ? matched?.cites ?? false : selected?.cites ?? false;
@@ -354,8 +375,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
     if (fields.has("volume") && !(Number(volumeM3) > 0) && !(autoVolume > 0)) m.push("Volumen — completá Ø mayor, Ø menor y longitud");
     if (fields.has("quantity") && !(Number(quantity) > 0)) m.push("Cantidad");
     if (fields.has("productType") && !productType.trim()) m.push("Tipo de producto");
+    if (corrigeLineNo && correctionNote.trim().length < 3) m.push("Motivo de la corrección");
     return m;
-  }, [fields, section, treeCode, trozaCode, speciesName, gtfNumber, volumeM3, quantity, autoVolume, productType]);
+  }, [fields, section, treeCode, trozaCode, speciesName, gtfNumber, volumeM3, quantity, autoVolume, productType, corrigeLineNo, correctionNote]);
 
   const isValid = missing.length === 0;
 
@@ -438,6 +460,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
         caratulaId: caratulaId ?? null,
         planId: planId ?? null,
         entryDate: new Date(entryDate).toISOString(),
+        // Subsanación SERFOR: la línea nueva declara a cuál enmienda y por qué.
+        // La vieja NO se toca — el libro corrige asentando, no borrando.
+        ...(corrigeLineNo ? { correctsLineNo: corrigeLineNo, correctionNote: correctionNote.trim() || null } : {}),
         observations: observations.trim() || null,
       };
       if (fields.has("treeCode")) payload.treeCode = treeCode.trim() || null;
@@ -672,6 +697,36 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
             <Field label="Código de troza" required hint="Código del árbol + letra/número por nivel de trozado (ej. 1-MIS-A)">
               <input type="text" value={trozaCode} onChange={(e) => setTrozaCode(e.target.value)} placeholder="1-MIS-A" className={cls.input} />
             </Field>
+          )}
+
+          {corrigeLineNo != null && (
+            <div className="rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-500)]/10 p-3 sm:col-span-2">
+              <p className="text-sm font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
+                Subsanación de la línea N° {corrigeLineNo}
+              </p>
+              <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                La línea N° {corrigeLineNo} <b>no se borra</b>: queda en el libro marcada como corregida por esta. Así lo pide SERFOR —
+                la enmienda tiene que poder leerse.
+              </p>
+              <input
+                type="text"
+                value={correctionNote}
+                onChange={(e) => setCorrectionNote(e.target.value)}
+                placeholder="Motivo de la corrección (ej.: el Ø mayor se anotó en cm, no en m)"
+                className="mt-2 h-11 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]"
+              />
+            </div>
+          )}
+
+          {/* Despacho de PT sin troza de origen: se guarda igual (el libro admite
+              huecos), pero la trazabilidad de esa línea deja de llegar al árbol
+              y su volumen se reparte por especie. Decirlo acá es mucho más
+              barato que descubrirlo en la vista «Por árbol». */}
+          {section === "despacho_producto" && !trozaCode.trim() && (
+            <div className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-3 py-2 text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)] sm:col-span-2">
+              Sin troza de origen esta salida no se puede atribuir a un árbol: su volumen se reparte por especie entre todos los de{" "}
+              {speciesName || "esa especie"}. Elegí el producto desde la lista de arriba para que herede su troza.
+            </div>
           )}
 
           {fields.has("despachoCode") && (

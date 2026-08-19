@@ -55,6 +55,80 @@ export function estaFueraDePlazo(
   return d != null && d > PLAZO_REGISTRO_DIAS;
 }
 
+// ─── Nombre de especie: UNA clave para cruzar plan y libro ─────────────────
+
+/**
+ * Clave canónica de una especie.
+ *
+ * El plan de manejo copia el nombre como figura en la resolución —«Tornillo
+ * (Cedrelinga catenaeformis)»— y el libro registra el nombre común solo
+ * —«Tornillo»—, con el científico en su propio campo. Cruzarlos por igualdad de
+ * string hacía que **nunca** coincidieran, y eso no daba un error: daba una
+ * infracción falsa («especie fuera del plan»), un saldo POA intacto habiendo
+ * talado, y una rentabilidad en cero.
+ *
+ * Se queda con el nombre común: sin lo que va entre paréntesis, sin tildes, sin
+ * dobles espacios y en minúscula.
+ */
+export function claveEspecie(nombre: string | null | undefined): string {
+  return (nombre ?? "")
+    .replace(/\([^)]*\)/g, " ") // el científico entre paréntesis no identifica
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+/** ¿Son la misma especie, escritas distinto? */
+export const mismaEspecie = (a: string | null | undefined, b: string | null | undefined): boolean =>
+  claveEspecie(a) !== "" && claveEspecie(a) === claveEspecie(b);
+
+export interface CruceEspecies {
+  /** clave → nombre tal como lo declara el plan. */
+  autorizadas: Map<string, string>;
+  /** Especies del libro que no están en el plan **ni se parecen** a ninguna. */
+  sinAutorizar: string[];
+  /**
+   * Se parecen pero no son iguales: comparten la primera palabra. Casi siempre
+   * es nomenclatura («Cedro» vs «Cedro rojo»), no una infracción — así que se
+   * avisa, no se acusa.
+   */
+  ambiguas: { libro: string; plan: string }[];
+}
+
+/**
+ * Cruza las especies que aparecen en el libro contra las autorizadas del plan.
+ * Distingue tres casos en vez de dos, porque «no la encontré» y «está escrita
+ * distinto» tienen consecuencias legales muy diferentes.
+ */
+export function cruzarEspecies(delLibro: string[], delPlan: string[]): CruceEspecies {
+  const autorizadas = new Map<string, string>();
+  for (const p of delPlan) {
+    const k = claveEspecie(p);
+    if (k) autorizadas.set(k, p);
+  }
+
+  const sinAutorizar: string[] = [];
+  const ambiguas: { libro: string; plan: string }[] = [];
+  const vistas = new Set<string>();
+
+  for (const nombre of delLibro) {
+    const k = claveEspecie(nombre);
+    if (!k || vistas.has(k) || autorizadas.has(k)) {
+      vistas.add(k);
+      continue;
+    }
+    vistas.add(k);
+    const primera = k.split(" ")[0];
+    const parecida = [...autorizadas.entries()].find(([kp]) => kp.split(" ")[0] === primera);
+    if (parecida) ambiguas.push({ libro: nombre, plan: parecida[1] });
+    else sinAutorizar.push(nombre);
+  }
+
+  return { autorizadas, sinAutorizar, ambiguas };
+}
+
 // ─── Fórmulas SERFOR (puras, testeables, sin deps) ─────────────────────────
 
 /** Cubicación de troza (Smalian/SERFOR): 0.7854 × ((Ø mayor + Ø menor)/2)² × Longitud (m³). */
@@ -102,25 +176,51 @@ export function computeBalance(
   species: BalanceSpeciesInput[],
   movements: BalanceMovement[],
   opts: { uitRef?: number; areaHa?: number } = {},
-): { rows: BalanceRowOut[]; pagoArea: number; pagoDerechoTotal: number; valorTotal: number } {
+): {
+  rows: BalanceRowOut[];
+  /**
+   * Lo movilizado de especies que el POA **no** autoriza. Va aparte porque
+   * `rows` recorre las especies del plan: sin esta lista, mover una especie no
+   * autorizada no aparecía en ninguna fila y el saldo se leía impecable —
+   * cuanto más grave la infracción, más limpio se veía el tablero.
+   */
+  fueraDePlan: { species: string; movilizadoM3: number }[];
+  pagoArea: number;
+  pagoDerechoTotal: number;
+  valorTotal: number;
+} {
+  // Todo se acumula por CLAVE de especie: el plan escribe «Tornillo (Cedrelinga
+  // catenaeformis)» y el libro «Tornillo». Cruzarlos por string exacto dejaba el
+  // saldo intacto habiendo talado, que es el peor error posible acá.
   const trozaMap = new Map<string, { species: string | null; vol: number }>();
   const talado: Record<string, number> = {};
+  const nombreDe: Record<string, string> = {}; // clave → primer nombre visto
+  const recordar = (sp: string) => {
+    const k = claveEspecie(sp);
+    if (k && !nombreDe[k]) nombreDe[k] = sp.trim();
+    return k;
+  };
   for (const e of movements) {
     if (e.section === "trozado" && e.trozaCode) {
       trozaMap.set(e.trozaCode, { species: e.speciesCommon, vol: Number(e.volumeM3 ?? 0) });
     }
     if (e.section === "tala" && e.speciesCommon) {
-      talado[e.speciesCommon] = (talado[e.speciesCommon] ?? 0) + Number(e.volumeM3 ?? 0);
+      const k = recordar(e.speciesCommon);
+      if (k) talado[k] = (talado[k] ?? 0) + Number(e.volumeM3 ?? 0);
     }
   }
   const movilizado: Record<string, number> = {};
   for (const e of movements) {
     if (e.section === "despacho_troza" && e.trozaCode) {
       const t = trozaMap.get(e.trozaCode);
-      if (t?.species) movilizado[t.species] = (movilizado[t.species] ?? 0) + t.vol;
+      if (t?.species) {
+        const k = recordar(t.species);
+        if (k) movilizado[k] = (movilizado[k] ?? 0) + t.vol;
+      }
     }
     if (e.section === "despacho_producto" && e.speciesCommon && e.unit === "m3") {
-      movilizado[e.speciesCommon] = (movilizado[e.speciesCommon] ?? 0) + Number(e.quantity ?? 0);
+      const k = recordar(e.speciesCommon);
+      if (k) movilizado[k] = (movilizado[k] ?? 0) + Number(e.quantity ?? 0);
     }
   }
   const uit = Number(opts.uitRef ?? 0);
@@ -130,9 +230,10 @@ export function computeBalance(
   let pagoDerechoTotal = pagoArea;
   let valorTotal = 0;
   const rows = species.map((s) => {
+    const clave = claveEspecie(s.speciesCommon);
     const autorizado = Number(s.volumenAutorizadoM3);
-    const mov = movilizado[s.speciesCommon] ?? 0;
-    const tal = talado[s.speciesCommon] ?? 0;
+    const mov = movilizado[clave] ?? 0;
+    const tal = talado[clave] ?? 0;
     const saldo = Math.round((autorizado - mov) * 10000) / 10000;
     const precio = Number(s.precioVentaSoles ?? 0);
     const ven = Number(s.valorEstadoNaturalSoles ?? 0);
@@ -148,7 +249,19 @@ export function computeBalance(
       exceso: tal > autorizado + 1e-6 || mov > autorizado + 1e-6,
     };
   });
-  return { rows, pagoArea, pagoDerechoTotal: Math.round(pagoDerechoTotal * 100) / 100, valorTotal: Math.round(valorTotal * 100) / 100 };
+  const autorizadas = new Set(species.map((s) => claveEspecie(s.speciesCommon)));
+  const fueraDePlan = Object.entries(movilizado)
+    .filter(([k, vol]) => !autorizadas.has(k) && vol > 1e-6)
+    .map(([k, vol]) => ({ species: nombreDe[k] ?? k, movilizadoM3: Math.round(vol * 10000) / 10000 }))
+    .sort((a, b) => b.movilizadoM3 - a.movilizadoM3);
+
+  return {
+    rows,
+    fueraDePlan,
+    pagoArea,
+    pagoDerechoTotal: Math.round(pagoDerechoTotal * 100) / 100,
+    valorTotal: Math.round(valorTotal * 100) / 100,
+  };
 }
 
 // ─── Analítica de aprovechamiento (Batch 2 · frente C) ─────────────────────
@@ -337,4 +450,17 @@ export interface LothEntryDTO {
   gpsLat: string | null;
   gpsLng: string | null;
   photoUrl: string | null;
+  /**
+   * Cuándo se ASENTÓ la línea en el libro (≠ `entryDate`, que es cuándo pasó la
+   * actividad). La API ya lo devuelve —`ForestLothDB.list` no filtra columnas—;
+   * acá se declara opcional porque los fixtures viejos no lo traen. Sin este
+   * campo no hay forma de ver el plazo de registro de 15 días (RDE 264-2019),
+   * que es lo primero que revisa una fiscalización.
+   */
+  createdAt?: string | null;
+  /** Quién asentó la línea. Viaja en el JSON; hace falta para auditar el libro. */
+  createdBy?: string | null;
+  /** Subsanación SERFOR: esta línea corrige a la N° tal (la vieja NO se borra). */
+  correctsLineNo?: number | null;
+  correctionNote?: string | null;
 }

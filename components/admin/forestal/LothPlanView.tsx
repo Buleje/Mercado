@@ -15,6 +15,7 @@ import {
 import { CardTitle, StatCard } from "@buleje/design-system";
 import { analizarPoa, defaultPoaConfig, CATEGORIA_COLOR, CATEGORIA_LABEL, type PoaAnalisis, type PoaConfig } from "@/lib/forestal/loth-poa";
 import { printLothPoa } from "@/lib/forestal/loth-poa-print";
+import { mismaEspecie } from "@/lib/forestal/loth-constants";
 import LothPoaPanel from "./LothPoaPanel";
 import LothCensoImportModal from "./LothCensoImportModal";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -26,6 +27,7 @@ import LothEspecieFueraModal from "./LothEspecieFueraModal";
 import { analizarZafra } from "@/lib/forestal/loth-zafra";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
+import { toast } from "sonner";
 
 interface Plan {
   id: string; planType: string; planNumber: string | null; tituloHabilitante: string | null;
@@ -443,7 +445,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
               planId={plan.id}
               especie={especieFuera}
               arboles={trees
-                .filter((t) => t.speciesCommon.trim().toLowerCase() === especieFuera.trim().toLowerCase())
+                .filter((t) => mismaEspecie(t.speciesCommon, especieFuera))
                 .map((t) => ({ id: t.id, treeCode: t.treeCode, volumenEstimadoM3: t.volumenEstimadoM3, estado: t.estado }))}
               resolucion={plan.resolucionNumber}
               onClose={() => setEspecieFuera(null)}
@@ -543,7 +545,7 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
     setBusy(true);
     const matched = findSpeciesByCommonName(f.speciesCommon);
     try {
-      await fetch("/api/admin/forestal/plan/species", {
+      const r = await fetch("/api/admin/forestal/plan/species", {
         method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
         body: JSON.stringify({
           planId, speciesCommon: f.speciesCommon.trim(), speciesScientific: matched?.scientificName ?? null,
@@ -553,8 +555,16 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
           valorEstadoNaturalSoles: f.valorEstadoNaturalSoles ? Number(f.valorEstadoNaturalSoles) : null,
         }),
       });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo agregar la especie (error ${r.status})`);
+        return;
+      }
       setF({ speciesCommon: "", cites: false, volumenAutorizadoM3: "", arbolesAutorizados: "", precioVentaSoles: "", valorEstadoNaturalSoles: "" });
       onChange();
+    } catch (err) {
+      console.warn("[LothPlanView] agregar especie falló", err);
+      toast.error("No se pudo agregar la especie — revisá tu conexión.");
     } finally { setBusy(false); }
   }
   async function del(s: Species) {
@@ -568,8 +578,18 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
       confirmLabel: "Sí, borrar la especie",
     });
     if (!ok) return;
-    await fetch(`/api/admin/forestal/plan/species?id=${s.id}`, { method: "DELETE", headers: csrfHeaders(), credentials: "include" });
-    onChange();
+    try {
+      const r = await fetch(`/api/admin/forestal/plan/species?id=${s.id}`, { method: "DELETE", headers: csrfHeaders(), credentials: "include" });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo borrar la especie (error ${r.status})`);
+        return;
+      }
+      onChange();
+    } catch (err) {
+      console.warn("[LothPlanView] borrar especie falló", err);
+      toast.error("No se pudo borrar la especie — revisá tu conexión.");
+    }
   }
 
   function startEdit(s: Species) {
@@ -588,7 +608,7 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
     if (busy || !(Number(edit.volumenAutorizadoM3) > 0)) return;
     setBusy(true);
     try {
-      await fetch("/api/admin/forestal/plan/species", {
+      const r = await fetch("/api/admin/forestal/plan/species", {
         method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
         body: JSON.stringify({
           id,
@@ -598,8 +618,16 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
           valorEstadoNaturalSoles: edit.valorEstadoNaturalSoles ? Number(edit.valorEstadoNaturalSoles) : null,
         }),
       });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo guardar la especie (error ${r.status})`);
+        return;
+      }
       setEditingId(null);
       onChange();
+    } catch (err) {
+      console.warn("[LothPlanView] guardar especie falló", err);
+      toast.error("No se pudo guardar la especie — revisá tu conexión.");
     } finally { setBusy(false); }
   }
 
@@ -708,7 +736,7 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
     setBusy(true);
     const matched = findSpeciesByCommonName(f.speciesCommon);
     try {
-      await fetch("/api/admin/forestal/plan/census", {
+      const r = await fetch("/api/admin/forestal/plan/census", {
         method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
         body: JSON.stringify({
           planId, treeCode: f.treeCode.trim(), speciesCommon: f.speciesCommon.trim(),
@@ -718,8 +746,16 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
           utmZona: f.utmZona || null, utmX: f.utmX ? Number(f.utmX) : null, utmY: f.utmY ? Number(f.utmY) : null,
         }),
       });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo agregar el árbol (error ${r.status})`);
+        return;
+      }
       setF({ ...f, treeCode: "", dapM: "", alturaComercialM: "", utmX: "", utmY: "" });
       onChange();
+    } catch (err) {
+      console.warn("[LothPlanView] agregar árbol falló", err);
+      toast.error("No se pudo agregar el árbol — revisá tu conexión.");
     } finally { setBusy(false); }
   }
   /** Importa las filas ya validadas por el modal (shape del endpoint bulk). */
@@ -736,8 +772,15 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
         body: JSON.stringify({ planId, rows }),
       });
       const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        toast.error(typeof j?.error === "string" ? j.error : `No se pudo importar el censo (error ${r.status})`);
+        return;
+      }
       setMsg(`Importados ${j.creados ?? 0} árboles${j.errores?.length ? ` · ${j.errores.length} con error` : ""}.`);
       setImporting(false); onChange();
+    } catch (err) {
+      console.warn("[LothPlanView] importar censo falló", err);
+      toast.error("No se pudo importar el censo — revisá tu conexión.");
     } finally { setBusy(false); }
   }
 
@@ -751,8 +794,18 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
       confirmLabel: "Sí, borrar el árbol",
     });
     if (!ok) return;
-    await fetch(`/api/admin/forestal/plan/census?id=${t.id}`, { method: "DELETE", headers: csrfHeaders(), credentials: "include" });
-    onChange();
+    try {
+      const r = await fetch(`/api/admin/forestal/plan/census?id=${t.id}`, { method: "DELETE", headers: csrfHeaders(), credentials: "include" });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo borrar el árbol (error ${r.status})`);
+        return;
+      }
+      onChange();
+    } catch (err) {
+      console.warn("[LothPlanView] borrar árbol falló", err);
+      toast.error("No se pudo borrar el árbol — revisá tu conexión.");
+    }
   }
 
   return (

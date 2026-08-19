@@ -116,7 +116,14 @@ function toOps(entries: LothEntryDTO[]): OpForEudr[] {
   }));
 }
 
-export default function LothMapaView() {
+export default function LothMapaView({
+  focusTree,
+  onFocusHandled,
+}: {
+  /** Árbol a centrar al entrar (se llega acá desde la trazabilidad por árbol). */
+  focusTree?: string | null;
+  onFocusHandled?: () => void;
+} = {}) {
   const { confirm } = useConfirm();
   const [raw, setRaw] = useState<LothEntryDTO[] | null>(null);
   const [trees, setTrees] = useState<CensusTreeDTO[]>([]);
@@ -442,6 +449,18 @@ export default function LothMapaView() {
   }, []);
 
   const centrar = useCallback((p: LatLng) => setCentrarEn((c) => ({ p, n: (c?.n ?? 0) + 1 })), []);
+
+  // Llegar al árbol, no al mapa entero: desde «Por árbol» se entra acá con un
+  // código y el mapa se posiciona sobre él. Si el árbol no tiene coordenada, el
+  // foco se consume igual — si no, quedaría pegado esperando para siempre.
+  useEffect(() => {
+    if (!focusTree || raw == null) return;
+    const punto = geoAll.find((g) => g.code === focusTree || g.code.startsWith(`${focusTree}-`));
+    const censado = punto ? undefined : censoAll.find((t) => t.code === focusTree);
+    if (punto) centrar([punto.lat, punto.lng]);
+    else if (censado) centrar([censado.lat, censado.lng]);
+    onFocusHandled?.();
+  }, [focusTree, raw, geoAll, censoAll, centrar, onFocusHandled]);
 
   const addMedicionPunto = useCallback((v: LatLng) => setMedicion((m) => [...(m ?? []), v]), []);
   /** Salta a la última imagen anterior al corte EUDR (31-dic-2020). */

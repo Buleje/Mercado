@@ -76,6 +76,9 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
   const [caratula, setCaratula] = useState<FullCaratula | null>(null);
   const [citesEspecies, setCitesEspecies] = useState<string[]>([]);
   const [especiesNoAutorizadas, setEspeciesNoAutorizadas] = useState<string[]>([]);
+  const [especiesAmbiguas, setEspeciesAmbiguas] = useState<{ libro: string; plan: string }[]>([]);
+  /** Guías que el libro declara y que no existen entre las emitidas. */
+  const [gtfsFantasma, setGtfsFantasma] = useState<string[]>([]);
   const [citesPermisos, setCitesPermisos] = useState<LothCitesPermiso[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -98,8 +101,35 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
       setAnomalias(analytics?.anomalias ?? []);
       setCitesEspecies(analytics?.citesEspecies ?? []);
       setEspeciesNoAutorizadas(analytics?.especiesNoAutorizadas ?? []);
+      setEspeciesAmbiguas(analytics?.especiesAmbiguas ?? []);
       if (cRes.ok) setCaratula((await cRes.json()).active ?? null);
       if (xRes.ok) setCitesPermisos((await xRes.json()).catalogo?.permisos ?? []);
+
+      // Cruce guías-del-libro contra guías-emitidas. Falla blanda a propósito:
+      // si alguno de los dos lados no se pudo leer, la lista queda VACÍA y el
+      // chequeo pasa — nunca se acusa por falta de datos.
+      try {
+        const [libRes, gtfRes] = await Promise.all([
+          fetch("/api/admin/forestal/loth?limit=500", { credentials: "include" }),
+          fetch("/api/admin/forestal/gtf", { credentials: "include" }),
+        ]);
+        if (libRes.ok && gtfRes.ok) {
+          const lineas = ((await libRes.json()).entries ?? []) as { section: string; gtfNumber: string | null; status: string }[];
+          const emitidas = new Set(
+            (((await gtfRes.json()).gtfs ?? []) as { gtfNumber: string; status: string }[])
+              .filter((g) => g.status !== "anulada")
+              .map((g) => g.gtfNumber),
+          );
+          const declaradas = new Set(
+            lineas
+              .filter((l) => l.status !== "anulado" && (l.section === "despacho_troza" || l.section === "despacho_producto") && l.gtfNumber)
+              .map((l) => l.gtfNumber as string),
+          );
+          setGtfsFantasma([...declaradas].filter((g) => !emitidas.has(g)).sort());
+        }
+      } catch (err) {
+        console.warn("[loth-compliance] no se pudo cruzar guías del libro contra emitidas", err);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -127,7 +157,7 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
   }
 
   const citesSinPermiso = citesEspecies.filter((sp) => !permisoParaEspecie({ permisos: citesPermisos }, sp));
-  const result = computeLothCompliance({ anomalias: anomalias ?? [], caratula, totalLineas, citesSinPermiso, especiesNoAutorizadas });
+  const result = computeLothCompliance({ anomalias: anomalias ?? [], caratula, totalLineas, citesSinPermiso, especiesNoAutorizadas, especiesAmbiguas, gtfsFantasma });
   const { problemas, enOrden, bloqueos, advertencias, readiness, breakdown, tone, score } = result;
   const totalRestado = breakdown.reduce((a, d) => a + d.puntos, 0);
 

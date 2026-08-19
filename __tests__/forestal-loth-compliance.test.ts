@@ -106,3 +106,57 @@ describe("computeLothCompliance", () => {
     expect(r.readiness).toBe("error");
   });
 });
+
+describe("guías declaradas que no existen", () => {
+  it("sin guías fantasma el chequeo pasa y no resta", () => {
+    const r = computeLothCompliance({ anomalias: [], caratula: CARATULA_OK, totalLineas: 10, gtfsFantasma: [] });
+    expect(r.score).toBe(100);
+    expect(r.enOrden.some((c) => c.key === "gtf_fantasma")).toBe(true);
+  });
+
+  it("una guía declarada y no emitida es bloqueo y resta 25", () => {
+    const r = computeLothCompliance({
+      anomalias: [],
+      caratula: CARATULA_OK,
+      totalLineas: 10,
+      gtfsFantasma: ["001-0045678"],
+    });
+    expect(r.score).toBe(75);
+    expect(r.readiness).toBe("error");
+    const check = r.problemas.find((c) => c.key === "gtf_fantasma");
+    expect(check?.severity).toBe("error");
+    expect(check?.navTarget).toBe("gtf");
+    expect(check?.description).toContain("001-0045678");
+  });
+
+  it("el input ausente se comporta como «no hay» y no inventa una infracción", () => {
+    // Si el cruce no se pudo hacer (fetch caído), el libro no puede quedar
+    // acusado de mover madera sin guía.
+    const r = computeLothCompliance({ anomalias: [], caratula: CARATULA_OK, totalLineas: 10 });
+    expect(r.problemas.some((c) => c.key === "gtf_fantasma")).toBe(false);
+  });
+});
+
+describe("desglose «cómo se compone»", () => {
+  it("la línea con casos activos usa el título del problema, no el del alta", () => {
+    // Antes decía «Todas las guías declaradas están emitidas · −25 pts (2 casos)»:
+    // el texto afirmaba justo lo contrario de lo que la penalización descontaba.
+    const r = computeLothCompliance({
+      anomalias: [],
+      caratula: CARATULA_OK,
+      totalLineas: 10,
+      gtfsFantasma: ["A-1", "A-2"],
+    });
+    const linea = r.breakdown.find((b) => b.key === "gtf_fantasma")!;
+    expect(linea.puntos).toBe(25);
+    expect(linea.casos).toBe(2);
+    expect(linea.label).toBe("2 guías declaradas no existen");
+  });
+
+  it("sin casos, la línea mantiene el texto en positivo y no resta", () => {
+    const r = computeLothCompliance({ anomalias: [], caratula: CARATULA_OK, totalLineas: 10, gtfsFantasma: [] });
+    const linea = r.breakdown.find((b) => b.key === "gtf_fantasma")!;
+    expect(linea.puntos).toBe(0);
+    expect(linea.label).toBe("Todas las guías declaradas están emitidas");
+  });
+});
