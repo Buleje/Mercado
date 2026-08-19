@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Loader2, Palette, Smile, Tag, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FOLDER_COLORS } from "./folder-visuals";
+import { ConfirmarBorrarCarpetas, type BorradoCarpetas } from "./ConfirmarBorrarCarpetas";
 import type { BulkFolderAccion } from "@/hooks/use-documents";
 
 /** Emojis que sirven para papeles y trámites, no un picker de 1800. */
@@ -40,6 +41,10 @@ export interface FolderBulkBarProps {
    * Se le pregunta y se borran explícitamente.
    */
   descendientesIds: string[];
+  /** Documentos vivos en las carpetas marcadas (para el aviso de borrado). */
+  documentosDirectos: number;
+  /** Documentos vivos en las subcarpetas que cuelgan de lo marcado. */
+  documentosEnSubcarpetas: number;
   /** Etiquetas ya usadas en otras carpetas — para no inventar sinónimos. */
   sugerencias: string[];
   /** `ids` explícitos para cuando la acción alcanza más que lo marcado\n   *  (borrar el árbol completo). Sin eso, se aplica a lo marcado. */
@@ -55,6 +60,8 @@ export default function FolderBulkBar({
   ids,
   nombres,
   descendientesIds,
+  documentosDirectos,
+  documentosEnSubcarpetas,
   sugerencias,
   onAccion,
   onSalir,
@@ -65,6 +72,7 @@ export default function FolderBulkBar({
   const [tag, setTag] = useState("");
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [hecho, setHecho] = useState<string | null>(null);
+  const [confirmando, setConfirmando] = useState(false);
   const cajaRef = useRef<HTMLDivElement>(null);
 
   // Escape cierra el panel abierto y, si no hay ninguno, sale de la selección.
@@ -101,25 +109,16 @@ export default function FolderBulkBar({
     }
   }
 
-  async function borrar() {
-    const lista = nombres.slice(0, 4).join(", ") + (nombres.length > 4 ? ` y ${nombres.length - 4} más` : "");
-    const ok = window.confirm(
-      `¿Eliminar ${ids.length} carpeta(s)?\n\n${lista}\n\nLos documentos que contienen NO se borran: pasan a la raíz.`,
-    );
-    if (!ok) return;
-
-    // Las subcarpetas no caen solas. Se pregunta en vez de decidir por el
-    // usuario: dejarlas en la raíz o borrarlas son dos intenciones distintas y
-    // ninguna es obviamente la correcta.
-    let aBorrar = ids;
-    if (descendientesIds.length > 0) {
-      const tambien = window.confirm(
-        `Estas carpetas tienen ${descendientesIds.length} subcarpeta(s).\n\n` +
-          `Aceptar = borrarlas también.\nCancelar = dejarlas (pasan a la raíz).`,
-      );
-      if (tambien) aBorrar = [...new Set([...ids, ...descendientesIds])];
-    }
-    await correr("delete", { action: "delete" }, true, aBorrar);
+  /**
+   * El borrado se confirma en un modal con los números a la vista (subcarpetas
+   * y documentos) y dos salidas explícitas: llevarse los documentos a la
+   * papelera o dejarlos sueltos. Antes eran dos `confirm()` encadenados que
+   * sólo avisaban que los documentos NO se borraban.
+   */
+  async function borrar({ conDocumentos, incluirSubcarpetas }: BorradoCarpetas) {
+    const aBorrar = incluirSubcarpetas ? [...new Set([...ids, ...descendientesIds])] : ids;
+    await correr("delete", { action: "delete", conDocumentos }, true, aBorrar);
+    setConfirmando(false);
     onSalir();
   }
 
@@ -170,7 +169,7 @@ export default function FolderBulkBar({
         </button>
         <button
           type="button"
-          onClick={() => void borrar()}
+          onClick={() => setConfirmando(true)}
           disabled={ocupado === "delete"}
           className={cn(btn, "text-[var(--data-error-700)] hover:bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/15")}
         >
@@ -308,6 +307,17 @@ export default function FolderBulkBar({
             Sin color
           </button>
         </div>
+      )}
+
+      {confirmando && (
+        <ConfirmarBorrarCarpetas
+          nombres={nombres}
+          subcarpetas={descendientesIds.length}
+          documentosDirectos={documentosDirectos}
+          documentosEnSubcarpetas={documentosEnSubcarpetas}
+          onCancelar={() => setConfirmando(false)}
+          onConfirmar={borrar}
+        />
       )}
     </div>
   );

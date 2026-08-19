@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
+import CarpetaLocalPanel from "./CarpetaLocalPanel";
 
 type Salud = "activo" | "demorado" | "caido";
 
@@ -88,7 +90,17 @@ const haceCuanto = (iso: string): string => {
   return `hace ${Math.floor(h / 24)} días`;
 };
 
-export default function SyncEscritorioView() {
+export default function SyncEscritorioView({
+  tenantId,
+  documentos,
+  carpetas,
+  onCambios,
+}: {
+  tenantId: string;
+  documentos: DbDocument[];
+  carpetas: DbDocumentFolder[];
+  onCambios: () => void;
+}) {
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [claves, setClaves] = useState<Clave[]>([]);
   const [duplicadas, setDuplicadas] = useState<string[]>([]);
@@ -193,6 +205,8 @@ export default function SyncEscritorioView() {
               Elegís una carpeta de Windows y todo lo que pongas ahí aparece en Documentación. Lo que subís
               desde el panel o el celular baja a la carpeta. Si borrás un archivo en la PC va a la papelera del
               panel (se puede recuperar), y si lo renombrás o lo movés de subcarpeta, el panel lo sigue.
+              Hay dos formas: <strong>desde acá mismo</strong> (sin instalar nada, mientras el panel esté
+              abierto) o con el <strong>agente de Windows</strong>, que sigue sincronizando con el panel cerrado.
             </p>
           </div>
           <button
@@ -205,6 +219,14 @@ export default function SyncEscritorioView() {
           </button>
         </div>
       </div>
+
+      {/* La vía sin instalación va primero: es la que sirve hoy mismo. */}
+      <CarpetaLocalPanel
+        tenantId={tenantId}
+        documentos={documentos}
+        carpetas={carpetas}
+        onCambios={onCambios}
+      />
 
       {error && (
         <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">

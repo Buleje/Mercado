@@ -26,6 +26,7 @@ import type { DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, descendantIds, folderPath } from "@/lib/documentos/folder-tree";
 import { useAnchoPanel } from "@/hooks/use-ancho-panel";
 import RamaCarpeta, { idsArrastrados, type AccionesCarpeta, type EstadoArbol } from "./RamaCarpeta";
+import { ConfirmarBorrarCarpetas, type BorradoCarpetas } from "./ConfirmarBorrarCarpetas";
 
 export type { AccionesCarpeta };
 
@@ -68,38 +69,32 @@ export default function PanelCarpetasDoc({ folders, folderId, carpetaActiva, acc
   const [filtro, setFiltro] = useState("");
 
   /**
-   * Qué pasa AL BORRAR, comprobado contra la base y no contra el schema: el
-   * schema declara borrado en cascada, pero la base no lo aplica — las
-   * subcarpetas y los documentos NO se pierden, quedan sueltos en la raíz.
-   * El aviso dice eso, que es lo que va a ver el usuario después.
+   * Borrar abre el MISMO modal que el drive, y por la misma razón: hasta ahora
+   * un `confirm()` avisaba que los documentos de adentro "quedan sin carpeta",
+   * y quien borraba la carpeta los veía reaparecer sueltos. Ahora se elige si
+   * se van con ella a la papelera.
    */
-  const borrar = useCallback(async (carpeta: DbDocumentFolder) => {
+  const [porBorrar, setPorBorrar] = useState<DbDocumentFolder | null>(null);
+  const cuentaDocs = useCallback((ids: Iterable<string>) => {
+    let n = 0;
+    for (const id of ids) n += porId.get(id)?.documentCount ?? 0;
+    return n;
+  }, [porId]);
+
+  const confirmarBorrado = useCallback(async (carpeta: DbDocumentFolder, opciones: BorradoCarpetas) => {
     if (!acciones.onBorrar || ocupado) return;
-    const dentro = descendantIds(hijosDe, carpeta.id);
-    const docsSueltos = [carpeta.id, ...dentro]
-      .reduce((t, id) => t + (porId.get(id)?.documentCount ?? 0), 0);
-
-    const partes = [`¿Borrar la carpeta "${carpeta.name}"?`, ""];
-    if (dentro.size > 0) {
-      partes.push(`Sus ${dentro.size} subcarpeta${dentro.size === 1 ? "" : "s"} NO se borran: quedan sueltas, fuera de toda carpeta.`);
-      partes.push([...dentro].map((id) => `  · ${porId.get(id)?.name ?? id}`).join("\n"));
-      partes.push("");
-    }
-    partes.push(
-      docsSueltos > 0
-        ? `Los ${docsSueltos} documento${docsSueltos === 1 ? "" : "s"} que hay adentro tampoco se borran: quedan sin carpeta.`
-        : "No hay documentos adentro.",
-    );
-    partes.push("", "Se borra sólo la carpeta, y eso no se puede deshacer.");
-
-    if (!confirm(partes.join("\n"))) return;
     setOcupado(true);
     try {
-      await acciones.onBorrar(carpeta.id);
+      const dentro = opciones.incluirSubcarpetas ? [...descendantIds(hijosDe, carpeta.id)] : [];
+      // El panel sólo sabe borrar de a una: las subcarpetas van en cadena.
+      for (const id of [...dentro, carpeta.id]) {
+        await acciones.onBorrar(id, { conDocumentos: opciones.conDocumentos });
+      }
     } finally {
       setOcupado(false);
+      setPorBorrar(null);
     }
-  }, [acciones, hijosDe, ocupado, porId]);
+  }, [acciones, hijosDe, ocupado]);
 
   const alternar = useCallback((id: string) =>
     setAbiertas((s) => {
@@ -145,7 +140,8 @@ export default function PanelCarpetasDoc({ folders, folderId, carpetaActiva, acc
     creandoEn,
     iniciarCreacion: (parentId) => { setCreandoEn(parentId); setNombreNuevo(""); },
     cancelarCreacion: () => setCreandoEn(undefined),
-    nombreNuevo, setNombreNuevo, crear, borrar,
+    nombreNuevo, setNombreNuevo, crear,
+    borrar: (carpeta: DbDocumentFolder) => { if (!ocupado) setPorBorrar(carpeta); },
   };
 
   const raiz = hijosDe.get(null) ?? [];
@@ -307,6 +303,17 @@ export default function PanelCarpetasDoc({ folders, folderId, carpetaActiva, acc
         )}
         title="Arrastrá para cambiar el ancho · doble clic para volver al normal"
       />
+
+      {porBorrar && (
+        <ConfirmarBorrarCarpetas
+          nombres={[porBorrar.name]}
+          subcarpetas={descendantIds(hijosDe, porBorrar.id).size}
+          documentosDirectos={porBorrar.documentCount ?? 0}
+          documentosEnSubcarpetas={cuentaDocs(descendantIds(hijosDe, porBorrar.id))}
+          onCancelar={() => setPorBorrar(null)}
+          onConfirmar={(opciones) => confirmarBorrado(porBorrar, opciones)}
+        />
+      )}
     </>
   );
 }

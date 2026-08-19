@@ -35,6 +35,7 @@ import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, s
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
 import FolderBulkBar from "./FolderBulkBar";
+import { ConfirmarBorrarCarpetas, type BorradoCarpetas } from "./ConfirmarBorrarCarpetas";
 import SyncEscritorioView from "./SyncEscritorioView";
 import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
 import { ordenarPorRelevancia, tieneDescripcion } from "@/lib/documentos/relevancia";
@@ -83,11 +84,17 @@ import { formatBytes, getFileIcon } from "./archivo-visual";
 /** Estado de cada archivo mientras se sube (panel de progreso). */
 type EstadoArchivo = "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error";
 
+/**
+ * Tienda activa. Es lo que separa lo guardado en el navegador (sugerencias
+ * descartadas, carpeta vinculada del PC) entre dos empresas del mismo dueño.
+ */
+function slugActivo(): string {
+  try { return localStorage.getItem("active-tenant-slug") ?? "main"; } catch { return "main"; }
+}
+
 /** Clave por tenant de las sugerencias IA que el usuario descartó. */
 function sugDescartadasKey(): string {
-  let slug = "main";
-  try { slug = localStorage.getItem("active-tenant-slug") ?? "main"; } catch { /* ignore */ }
-  return `doc-sug-descartadas-${slug}`;
+  return `doc-sug-descartadas-${slugActivo()}`;
 }
 
 const fmtFechaCorta = (iso: string) =>
@@ -729,6 +736,18 @@ export default function DocumentosModule() {
     }
     return [...caen];
   }, [selectedFolderIds, childrenMap]);
+  /** Cuántos documentos hay en juego al borrar lo marcado (el modal los dice). */
+  const documentosMarcados = useMemo(() => {
+    const cuantos = (ids: Iterable<string>) => {
+      let n = 0;
+      for (const id of ids) n += folderById.get(id)?.documentCount ?? 0;
+      return n;
+    };
+    return {
+      directos: cuantos(selectedFolderIds),
+      enSubcarpetas: cuantos(descendientesMarcados),
+    };
+  }, [selectedFolderIds, descendientesMarcados, folderById]);
   const allFolderRows = useMemo(() => flattenAll(childrenMap), [childrenMap]);
   const activePath = useMemo(
     () => (filterMode === "folder" && activeFolderId ? folderPath(folderById, activeFolderId) : []),
@@ -1036,16 +1055,23 @@ export default function DocumentosModule() {
     setNewFolderParent(undefined);
     if (parentId) setExpandedFolders((prev) => new Set(prev).add(parentId));
   };
-  const handleDeleteFolder = async (f: DbDocumentFolder) => {
+  /**
+   * Borrar UNA carpeta abre el mismo modal que el borrado en lote: las
+   * subcarpetas no caen solas (la FK es SET NULL) y los documentos de adentro
+   * pueden irse a la papelera o quedar sueltos. Antes era un `confirm()` que
+   * sólo avisaba que los documentos iban a la raíz — y quien borraba la carpeta
+   * los veía reaparecer.
+   */
+  const [borrandoCarpeta, setBorrandoCarpeta] = useState<DbDocumentFolder | null>(null);
+  const handleDeleteFolder = (f: DbDocumentFolder) => setBorrandoCarpeta(f);
+  const confirmarBorrarCarpeta = async (f: DbDocumentFolder, opciones: BorradoCarpetas) => {
     const descs = descendantIds(childrenMap, f.id);
-    // Las subcarpetas NO se borran con el padre (la FK es SET NULL): suben a la
-    // raíz. Decirlo, porque antes el texto prometía que se iban con ella.
-    const msg =
-      descs.size > 0
-        ? `¿Eliminar la carpeta "${f.name}"?\n\nSus ${descs.size} subcarpeta(s) pasan a la raíz (no se borran), y sus documentos también.`
-        : `¿Eliminar la carpeta "${f.name}"? Los documentos pasarán a la raíz.`;
-    if (!confirm(msg)) return;
-    await deleteFolder(f.id);
+    if (opciones.incluirSubcarpetas && descs.size > 0) {
+      await bulkFolders([f.id, ...descs], { action: "delete", conDocumentos: opciones.conDocumentos });
+    } else {
+      await deleteFolder(f.id, { conDocumentos: opciones.conDocumentos });
+    }
+    setBorrandoCarpeta(null);
     if (activeFolderId === f.id || (activeFolderId && descs.has(activeFolderId))) {
       setActiveFolderId(null);
       setFilterMode("all");
@@ -1448,6 +1474,8 @@ export default function DocumentosModule() {
               ids={[...selectedFolderIds]}
               nombres={[...selectedFolderIds].map((id) => folderById.get(id)?.name ?? id)}
               descendientesIds={descendientesMarcados}
+              documentosDirectos={documentosMarcados.directos}
+              documentosEnSubcarpetas={documentosMarcados.enSubcarpetas}
               sugerencias={folderTagSuggestions}
               totalCarpetas={folders.length}
               onSeleccionarTodas={() => setSelectedFolderIds(new Set(folders.map((f) => f.id)))}
@@ -1997,7 +2025,10 @@ export default function DocumentosModule() {
                   <>
                     <span className="tabular-nums font-bold text-[var(--text-primary)]">{indexableDocs.length}</span>{" "}
                     {indexableDocs.length === 1 ? "documento no tiene descripción" : "documentos no tienen descripción"}: no
-                    aparecen cuando buscás por lo que dicen adentro.
+                    aparecen cuando buscás por lo que dicen adentro.{" "}
+                    <span className="font-normal text-[var(--text-tertiary)]">
+                      Se van leyendo solos cada noche; con el botón se apura la fila.
+                    </span>
                   </>
                 ) : (
                   "Ya está todo descrito."
@@ -2067,7 +2098,12 @@ export default function DocumentosModule() {
           ) : filterMode === "enlaces" ? (
             <EnlacesView onOpenDoc={(id) => { const d = documents.find((x) => x.id === id); if (d) setPreview(d); }} />
           ) : filterMode === "sync" ? (
-            <SyncEscritorioView />
+            <SyncEscritorioView
+              tenantId={slugActivo()}
+              documentos={documents}
+              carpetas={folders}
+              onCambios={refresh}
+            />
           ) : filterMode === "duplicados" ? (
             <DuplicadosView
               onOpenDoc={(d) => setPreview(d)}
@@ -2286,7 +2322,7 @@ export default function DocumentosModule() {
               onMoverDoc: async (docId, folderId) => { await patch(docId, { folderId }); },
               onCrear: async (nombre, parentId) => { await createFolder({ name: nombre, parentId }); },
               onRenombrar: async (id, nombre) => { await updateFolder(id, { name: nombre }); },
-              onBorrar: async (id) => { await deleteFolder(id); },
+              onBorrar: async (id, opciones) => { await deleteFolder(id, opciones); },
             }}
             // Las mismas herramientas del menú de la lista, para no tener que
             // cerrar el documento y buscarlo de nuevo para sellarlo o rotarlo.
@@ -2449,6 +2485,18 @@ export default function DocumentosModule() {
 
       {sharingFolder && (
         <FolderShareModal folder={sharingFolder} onClose={() => setSharingFolder(null)} />
+      )}
+
+      {borrandoCarpeta && (
+        <ConfirmarBorrarCarpetas
+          nombres={[borrandoCarpeta.name]}
+          subcarpetas={descendantIds(childrenMap, borrandoCarpeta.id).size}
+          documentosDirectos={borrandoCarpeta.documentCount ?? 0}
+          documentosEnSubcarpetas={[...descendantIds(childrenMap, borrandoCarpeta.id)]
+            .reduce((n, id) => n + (folderById.get(id)?.documentCount ?? 0), 0)}
+          onCancelar={() => setBorrandoCarpeta(null)}
+          onConfirmar={(opciones) => confirmarBorrarCarpeta(borrandoCarpeta, opciones)}
+        />
       )}
 
       {showTags && (

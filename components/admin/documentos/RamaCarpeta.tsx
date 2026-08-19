@@ -49,8 +49,14 @@ export interface AccionesCarpeta {
   onMoverDoc?: (docId: string, folderId: string | null) => Promise<void> | void;
   onCrear: (nombre: string, parentId: string | null) => Promise<void> | void;
   onRenombrar: (id: string, nombre: string) => Promise<void> | void;
-  /** Opcional: si no se pasa, el panel no ofrece borrar. */
-  onBorrar?: (id: string) => Promise<void> | void;
+  /**
+   * Opcional: si no se pasa, el panel no ofrece borrar.
+   *
+   * `conDocumentos` manda lo que hay adentro a la papelera. Sin eso los
+   * documentos quedan sueltos en la raíz, que es lo que hacía parecer que el
+   * borrado no había funcionado.
+   */
+  onBorrar?: (id: string, opciones?: { conDocumentos?: boolean }) => Promise<void> | void;
 }
 
 /** Todo lo que la rama necesita del panel, en un solo objeto (evita 15 props). */
