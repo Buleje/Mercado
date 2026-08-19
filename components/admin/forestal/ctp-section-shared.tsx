@@ -51,7 +51,12 @@ export interface CtpEntry {
  */
 export const UNIT_LABELS: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "unidad" };
 
-export function estadoSalida(e: CtpEntry): { label: string; tono: "stock" | "parcial" | "salido" } | null {
+export function estadoSalida(
+  /* `Pick` y no `CtpEntry` entero: la misma pregunta —¿esto ya salió?— se la
+     hace la tarjeta del LOTE de aserrío sobre su corrida (ADR-337), y ahí no hay
+     una fila del libro sino cuatro números. La regla vive una sola vez. */
+  e: Pick<CtpEntry, "section" | "quantity" | "despachadoQty" | "reprocesadoQty">,
+): { label: string; tono: "stock" | "parcial" | "salido" } | null {
   if (e.section !== "produccion") return null;
   const producido = Number(e.quantity ?? 0);
   if (!(producido > 0)) return null;

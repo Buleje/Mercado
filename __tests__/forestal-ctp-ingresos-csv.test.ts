@@ -11,7 +11,14 @@ import type { WoodEntry } from "@/components/admin/forestal/ctp-shared";
 
 const base: WoodEntry = {
   id: "e1",
+  // Campos oficiales del LO-CTP (ADR-311).
+  libroNro: 121,
+  docType: "GTF",
+  originSourceNumber: "RD-SD-549",
+  ctpProductCode: null,
+  unit: "m3",
   entryDate: "2026-05-26T00:00:00.000Z",
+  serforNumeroRegistro: null,
   gtfNumber: "001-0000121",
   gtfDate: "2026-05-25T00:00:00.000Z",
   gtfSeries: null,

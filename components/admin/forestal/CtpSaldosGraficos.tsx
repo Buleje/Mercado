@@ -15,24 +15,24 @@
  *    especie. Horizontal porque "Shihuahuaco" no entra bajo una barra vertical
  *    sin rotarse, y apilada porque los tramos SUMAN el volumen físico.
  *
+ * Los KPIs derivados que vivían acá se mudaron a `saldos/KpisDeExistencias`:
+ * eran una tercera fila de tarjetas a media pantalla y dos de ellos repetían
+ * números que ya estaban arriba. Este archivo dibuja; no resume.
+ *
  * Los colores salen de `.charts-forestal` (globals.css): tres tonos elegidos
  * por modo y verificados contra la superficie real de la tarjeta.
  */
 
 import { useMemo } from "react";
-import { StatCard, CardTitle } from "@buleje/design-system";
-import { Activity, CalendarClock, PieChart, PackageCheck } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { BulejeDonutChart, BulejeStackedBar, BulejeWaterfallChart } from "@/components/ui-system/charts";
 import {
   composicionSaldo,
-  kpisDePlanta,
   pasosDeBalance,
   rankingEspecies,
   type EspecieSaldo,
   type MateriaPrimaTotales,
-  type ProductoStock,
 } from "@/lib/forestal/ctp-saldos-analisis";
-import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 
 const n2 = (v: number) => v.toFixed(2);
 const m3 = (v: number | string) => `${Number(v).toFixed(2)} m³`;
@@ -54,23 +54,14 @@ function rampaPara(n: number): string[] {
   return Array.from({ length: n }, (_, i) => RAMPA_PATIO[Math.round((i * ultimo) / (n - 1))]);
 }
 
-/** Cuántos días de patio se consideran cómodos antes de encender el aviso. */
-const COBERTURA_JUSTA = 7;
-const COBERTURA_CRITICA = 3;
-/** Depender de una sola especie por encima de esto es un riesgo de permiso. */
-const CONCENTRACION_ALTA = 60;
-
 export default function CtpSaldosGraficos({
   materiaPrima,
   porEspecie,
-  productos,
   apertura,
   aperturaPendiente = false,
-  period,
 }: {
   materiaPrima: MateriaPrimaTotales;
   porEspecie: ReadonlyArray<EspecieSaldo>;
-  productos: ReadonlyArray<ProductoStock>;
   /** Existencia heredada del cierre anterior; `null` si el período no la tiene. */
   apertura: number | null;
   /**
@@ -80,15 +71,7 @@ export default function CtpSaldosGraficos({
    * después.
    */
   aperturaPendiente?: boolean;
-  period: CtpPeriod;
 }) {
-  // `Date.now()` se toma acá y se INYECTA: la lib es pura y testeable, y el
-  // valor no cambia entre los tres cálculos de un mismo render.
-  const kpis = useMemo(
-    () => kpisDePlanta(materiaPrima, porEspecie, productos, { from: period.from, to: period.to, ahora: Date.now() }),
-    [materiaPrima, porEspecie, productos, period.from, period.to],
-  );
-
   const pasos = useMemo(() => pasosDeBalance(materiaPrima, apertura), [materiaPrima, apertura]);
 
   const patio = useMemo(() => composicionSaldo(porEspecie), [porEspecie]);
@@ -112,61 +95,8 @@ export default function CtpSaldosGraficos({
   const haySobreconsumo = porEstado.some((e) => e.Sobreconsumo > 0);
   const haySinValidar = porEstado.some((e) => e["Sin validar"] > 0);
 
-  const coberturaEmphasis =
-    kpis.coberturaDias == null
-      ? "neutral"
-      : kpis.coberturaDias <= COBERTURA_CRITICA
-        ? "error"
-        : kpis.coberturaDias <= COBERTURA_JUSTA
-          ? "warning"
-          : "success";
-
   return (
     <div className="charts-forestal space-y-4">
-      {/* ── Los cuatro derivados: no "cuánto hay" sino "cómo va" ───────────── */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard
-          label="Rotación del ingreso"
-          value={kpis.rotacionPct != null ? `${n2(kpis.rotacionPct)} %` : "—"}
-          subValue={kpis.rotacionPct != null ? "de lo ingresado ya se transformó" : "sin ingresos en el período"}
-          icon={Activity}
-          emphasis="neutral"
-        />
-        <StatCard
-          label="Cobertura del patio"
-          value={kpis.coberturaDias != null ? `${kpis.coberturaDias} días` : "—"}
-          subValue={
-            kpis.consumoDiario != null
-              ? `al ritmo de ${n2(kpis.consumoDiario)} m³/día (${kpis.diasMedidos} día${kpis.diasMedidos === 1 ? "" : "s"} medidos)`
-              : "todavía no hubo consumo que medir"
-          }
-          icon={CalendarClock}
-          emphasis={coberturaEmphasis}
-        />
-        <StatCard
-          label="Depende de"
-          value={kpis.concentracion ? `${n2(kpis.concentracion.pct)} %` : "—"}
-          subValue={
-            kpis.concentracion
-              ? `${kpis.concentracion.especie} · del saldo en patio`
-              : "sin saldo positivo en patio"
-          }
-          icon={PieChart}
-          emphasis={kpis.concentracion && kpis.concentracion.pct > CONCENTRACION_ALTA ? "warning" : "neutral"}
-        />
-        <StatCard
-          label="Producto terminado"
-          value={`${kpis.productosConStock.con} / ${kpis.productosConStock.total}`}
-          subValue={
-            kpis.productosConStock.total > 0
-              ? "líneas con stock listo para despachar"
-              : "sin producción transformada"
-          }
-          icon={PackageCheck}
-          emphasis="neutral"
-        />
-      </div>
-
       <div className="grid gap-4 lg:grid-cols-2">
         {/* ── Cómo se llegó al saldo ───────────────────────────────────────── */}
         <BulejeWaterfallChart

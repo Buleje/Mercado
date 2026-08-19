@@ -21,11 +21,18 @@ export function useAnexo04Salidas(ctx: {
   datos: DatosAnexo04;
   especieGlobal?: string;
   ctpEntryId?: string;
+  /**
+   * Volumen total declarado a mano (ver `Anexo04Opts.totalManualM3`): viaja
+   * al PDF/Excel para que lo descargado sea igual al preview. La bandeja
+   * (`registrar`) NO lo manda — el servidor recalcula el total desde las
+   * piezas a propósito, por diseño (nunca confía en un total del cliente).
+   */
+  totalManualM3?: number | null;
   onAviso?: (msg: string, tono: "success" | "error") => void;
   /** Se llama cuando la bandeja cambió (para releerla). */
   onRegistrado: () => void;
 }) {
-  const { filas, datos, especieGlobal, ctpEntryId, onAviso, onRegistrado } = ctx;
+  const { filas, datos, especieGlobal, ctpEntryId, totalManualM3, onAviso, onRegistrado } = ctx;
   const [generando, setGenerando] = useState(false);
 
   /**
@@ -52,20 +59,20 @@ export function useAnexo04Salidas(ctx: {
 
   const descargarPdf = useCallback(() => {
     setGenerando(true);
-    exportarAnexo04PDF(filas, datos, { especieGlobal })
+    exportarAnexo04PDF(filas, datos, { especieGlobal, totalManualM3 })
       .then(() => {
         onAviso?.("Anexo N° 04 descargado y registrado", "success");
         registrar(filas, datos);
       })
       .catch(() => onAviso?.("No se pudo generar el PDF.", "error"))
       .finally(() => setGenerando(false));
-  }, [filas, datos, especieGlobal, onAviso, registrar]);
+  }, [filas, datos, especieGlobal, totalManualM3, onAviso, registrar]);
 
   const descargarExcel = useCallback(() => {
-    exportarAnexo04Excel(filas, datos, { especieGlobal })
+    exportarAnexo04Excel(filas, datos, { especieGlobal, totalManualM3 })
       .then(() => onAviso?.("Excel del anexo descargado", "success"))
       .catch(() => onAviso?.("No se pudo generar el Excel.", "error"));
-  }, [filas, datos, especieGlobal, onAviso]);
+  }, [filas, datos, especieGlobal, totalManualM3, onAviso]);
 
   /** Re-descarga un anexo tal como se emitió, sin tocar lo que hay en pantalla. */
   const reDescargar = useCallback((a: AnexoEmitido) => {

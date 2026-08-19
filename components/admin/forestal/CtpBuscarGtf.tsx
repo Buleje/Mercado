@@ -1,21 +1,25 @@
 "use client";
 
 /**
- * CtpBuscarGtf — "¿qué pasó con esta guía?" desde cualquier vista del libro.
+ * CtpBuscarGtf — "tengo este número en la mano, ¿qué es?" desde cualquier vista.
  *
- * Es la pregunta de toda fiscalización y de todo cliente que llama: alguien tiene
- * un número de GTF en la mano. Hasta ahora había que adivinar en qué registro
- * cayó — ir a Ingresos y buscar, y si no estaba, a Despacho y buscar de nuevo —
- * porque una guía puede ser de ENTRADA (con la que llegó la madera) o de SALIDA
- * (la que emitió el CTP). Acá se busca en los dos de una y se dice cuál es cuál.
+ * Es la pregunta de toda fiscalización y de todo cliente que llama. Hasta ahora
+ * había que adivinar en qué registro cayó —ir a Ingresos y buscar, y si no
+ * estaba, a Despacho y buscar de nuevo— porque el mismo papel puede ser una guía
+ * de ENTRADA (con la que llegó la madera) o de SALIDA (la que emitió el CTP).
  *
- * Se abre con `b` o desde la lupa de la cabina. No trae endpoint nuevo: usa los
- * mismos listados que las vistas, con `search`.
+ * Desde ADR-366 hay un tercer registro donde puede caer lo que alguien lee: el
+ * **código de un paquete**, pintado en el atado que está mirando. Los tres se
+ * buscan de una y la pantalla dice cuál es cuál.
+ *
+ * Se abre con `b` o desde la lupa de la cabina. No clona queries: usa los mismos
+ * listados que las vistas, con `search`.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
+  Boxes,
   Loader2,
   PackageOpen,
   Search,
@@ -38,16 +42,31 @@ interface DespachoHit {
   status: string;
 }
 
+/** Un paquete de producción encontrado por su código. */
+interface PaqueteHit {
+  id: string;
+  codigo: string;
+  productType: string | null;
+  presentacion: string | null;
+  cantidad: number;
+  volumenM3: number | null;
+  corrida: { lineNo: number; entryDate: string; speciesCommon: string | null; lote: string | null };
+  saldoCorrida: { disponible: number };
+}
+
 export default function CtpBuscarGtf({
   period,
   onCerrar,
   onVerIngreso,
+  onVerPaquete,
   onIrA,
 }: {
   period: CtpPeriod;
   onCerrar: () => void;
   /** Abre la ficha completa del ingreso (con su trazabilidad hacia adelante). */
   onVerIngreso: (entry: WoodEntry) => void;
+  /** Abre la ficha del paquete: de qué corrida y de qué madera salió (ADR-366). */
+  onVerPaquete?: (codigo: string) => void;
   /** Salta a una vista del libro (para ver el despacho en su registro). */
   onIrA: (vista: string) => void;
 }) {
@@ -56,6 +75,8 @@ export default function CtpBuscarGtf({
   const [error, setError] = useState<string | null>(null);
   const [ingresos, setIngresos] = useState<WoodEntry[]>([]);
   const [despachos, setDespachos] = useState<DespachoHit[]>([]);
+  /** Paquetes cuyo cartel dice eso (ADR-366). */
+  const [paquetes, setPaquetes] = useState<PaqueteHit[]>([]);
   const [buscado, setBuscado] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -79,15 +100,21 @@ export default function CtpBuscarGtf({
     try {
       const pSalida = applyCtpPeriodParams(new URLSearchParams({ section: "despacho" }), period);
       pSalida.set("search", termino);
-      const [rIng, rDes] = await Promise.all([
+      const [rIng, rDes, rPaq] = await Promise.all([
         fetch(`/api/admin/forestal/wood-entries?search=${encodeURIComponent(termino)}&limit=20`, {
           credentials: "include",
         }),
         fetch(`/api/admin/forestal/ctp?${pSalida}`, { credentials: "include" }),
+        /* El tercer registro donde puede caer un número que alguien tiene en la
+           mano: el cartel de un atado en la pila (ADR-366). Sin período — el que
+           lee el cartel no sabe de qué mes es la corrida. */
+        fetch(`/api/admin/forestal/ctp?paquete=${encodeURIComponent(termino)}`, { credentials: "include" }),
       ]);
       if (!rIng.ok) throw new Error(`No se pudo buscar en ingresos (HTTP ${rIng.status})`);
       const dataIng: { entries?: WoodEntry[] } = await rIng.json();
       const dataDes: { entries?: DespachoHit[] } = rDes.ok ? await rDes.json() : { entries: [] };
+      const dataPaq: { resultados?: PaqueteHit[] } = rPaq.ok ? await rPaq.json() : { resultados: [] };
+      setPaquetes(dataPaq.resultados ?? []);
       setIngresos(dataIng.entries ?? []);
       setDespachos(
         (dataDes.entries ?? []).filter((d) =>
@@ -102,14 +129,14 @@ export default function CtpBuscarGtf({
     }
   }, [q, period]);
 
-  const sinResultados = buscado && ingresos.length === 0 && despachos.length === 0;
+  const sinResultados = buscado && ingresos.length === 0 && despachos.length === 0 && paquetes.length === 0;
 
   return (
     <div
       className="modal-backdrop fixed inset-0 z-50 flex items-start justify-center bg-black/45 p-4 backdrop-blur-sm sm:pt-[12vh]"
       role="dialog"
       aria-modal="true"
-      aria-label="Buscar una guía"
+      aria-label="Buscar en el libro"
       onClick={onCerrar}
     >
       <div
@@ -127,8 +154,8 @@ export default function CtpBuscarGtf({
             onKeyDown={(e) => {
               if (e.key === "Enter") void buscar();
             }}
-            placeholder="N° de guía, proveedor o especie…"
-            aria-label="Buscar una guía en el libro"
+            placeholder="N° de guía, código de paquete, proveedor o especie…"
+            aria-label="Buscar una guía o un paquete en el libro"
             className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
           />
           {buscando && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--text-tertiary)]" />}
@@ -155,21 +182,60 @@ export default function CtpBuscarGtf({
                 Escribí el número y apretá <strong>Enter</strong>.
               </p>
               <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                Busca en los dos registros a la vez: la guía con la que <strong>entró</strong> la madera y la que
-                el CTP <strong>emitió</strong> al despachar. Los ingresos se buscan en todo el histórico, no solo
-                en el período elegido.
+                Busca en los tres registros a la vez: la guía con la que <strong>entró</strong> la madera, la
+                que el CTP <strong>emitió</strong> al despachar y el <strong>código del paquete</strong> pintado
+                en la pila. Ingresos y paquetes se buscan en todo el histórico, no sólo en el período elegido.
               </p>
             </div>
           )}
 
           {sinResultados && (
             <div className="px-2 py-6 text-center">
-              <p className="text-sm font-bold text-[var(--text-primary)]">Esa guía no está en el libro.</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Eso no está en el libro.</p>
               <p className="mt-1 text-xs text-[var(--text-tertiary)]">
                 Si es una guía de salida, fijate que el período elegido la incluya. Si es de ingreso y la madera
                 ya llegó, todavía no está registrada.
               </p>
             </div>
+          )}
+
+          {/**
+           * Los paquetes primero: si alguien tipeó un código de atado, ES lo que
+           * está buscando — las guías son el otro extremo de la cadena.
+           */}
+          {paquetes.length > 0 && onVerPaquete && (
+            <section className="mb-4">
+              <h3 className="mb-2 flex items-center gap-2 border-b-2 border-[var(--rule-soft)] pb-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                <Boxes className="h-4 w-4" aria-hidden="true" />
+                Paquetes con ese código · {paquetes.length}
+              </h3>
+              <ul className="space-y-2">
+                {paquetes.map((p) => (
+                  <li key={p.id}>
+                    <button
+                      type="button"
+                      onClick={() => { onVerPaquete(p.codigo); onCerrar(); }}
+                      className="group flex w-full items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-left transition-colors hover:border-[var(--accent)]"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{p.codigo}</span>
+                          <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)]">
+                            corrida N° {p.corrida.lineNo}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 truncate text-sm text-[var(--text-secondary)]">
+                          {formatDate(p.corrida.entryDate)} · {productLabel(p.productType ?? "")} ·{" "}
+                          {p.corrida.speciesCommon ?? "—"} · {Number(p.volumenM3 ?? 0).toFixed(4)} m³
+                          {p.corrida.lote ? ` · lote ${p.corrida.lote}` : ""}
+                        </p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-colors group-hover:text-[var(--accent)]" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
 
           {ingresos.length > 0 && (

@@ -217,3 +217,51 @@ describe("(8) resolución y (9) plan de manejo salen del título habilitante", (
     expect(html).not.toContain("<b>—</b>");
   });
 });
+
+describe("los casilleros (5)(6)(8)(9) declaran el título ELEGIDO en la guía", () => {
+  const fichaDosTitulos = {
+    ...emptyCtpFicha(),
+    razonSocial: "Maderera San Martín S.A.C.",
+    titulos: [
+      { tipo: "concesion", codigo: "CONC-1", resolucion: "R.A. 111", planManejo: "PGMF", vencimiento: "" },
+      { tipo: "permiso", codigo: "PER-2", resolucion: "R.A. 222", planManejo: "DEMA", vencimiento: "" },
+    ],
+  };
+  const cuerpo = (titulos: string[]) =>
+    cuerpoGtfOficial({
+      ficha: fichaDosTitulos,
+      datos: { ...gtfDatosVacio(), titulos },
+      lineas: [],
+      numeroGtf: "GTF-001-000001",
+      fechaExpedicion: "2026-08-12",
+      listasTrozas: "",
+      gtfOrigen: "",
+    });
+
+  /**
+   * El bug: el formulario deja elegir el título de la guía y lo guarda, pero el
+   * papel imprimía `ficha.titulos[0]`. Una guía de madera del permiso PER-2
+   * salía declarando la concesión CONC-1 en el (6), con la resolución de otra.
+   */
+  it("elegir el segundo título imprime SU código, SU resolución y SU plan", () => {
+    const html = cuerpo(["PER-2"]);
+    expect(html).toContain("PER-2");
+    expect(html).toContain("R.A. 222");
+    expect(html).toContain("DEMA");
+    expect(html).not.toContain("R.A. 111");
+    expect(html).not.toContain("PGMF");
+  });
+
+  it("y cruza la casilla (5) del tipo de ESE título (permiso, no concesión)", () => {
+    const html = cuerpo(["PER-2"]);
+    // La X va pegada a la casilla marcada; "Permiso" es la del permiso forestal.
+    expect(/Permiso<\/span><span class="bx">X</.test(html)).toBe(true);
+    expect(/Concesión<\/span><span class="bx">X</.test(html)).toBe(false);
+  });
+
+  it("sin elección explícita sigue el predeterminado de la Ficha", () => {
+    const html = cuerpo([]);
+    expect(html).toContain("CONC-1");
+    expect(html).toContain("R.A. 111");
+  });
+});

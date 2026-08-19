@@ -13,10 +13,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle, Camera, Check, FileText, Loader2, Search, ShieldAlert, ShieldCheck, Sparkles, TreePine, X,
-  ClipboardList,
+  AlertTriangle, Camera, Check, ChevronDown, ChevronRight, FileText, Loader2, Search, ShieldAlert, ShieldCheck,
+  Sparkles, TreePine, X, ClipboardList,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import CtpPiezasDelIngreso from "./CtpPiezasDelIngreso";
 import { Btn, estaFueraDePlazo, Field, I, ModalFooter, PLAZO_REGISTRO_DIAS, Seccion, useAtajoGuardar } from "./ctp-shared";
 import CtpParteBarra from "./CtpParteBarra";
 import CtpTrozasImportModal from "./CtpTrozasImportModal";
@@ -26,6 +27,7 @@ import type { DocTipo } from "@/lib/forestal/directorio";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { printGtfSerfor } from "@/lib/forestal/serfor-gtf-print";
+import CtpGuiaSerforHoja from "./CtpGuiaSerforHoja";
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpFichaFaltantes, type CtpFicha } from "@/lib/forestal/ctp-ficha-types";
@@ -38,6 +40,9 @@ import { PRESENTACIONES_LOCTP } from "@/lib/forestal/loctp-catalogos";
 import { ORIGEN_SERFOR, REGIONS_PE, sinTildesUp } from "@/lib/forestal/serfor-origen";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import { repartirGtfEnIngresos } from "@/lib/forestal/serfor-gtf-a-ingresos";
+import { gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { gtfDatosDesdeSerfor } from "@/lib/forestal/serfor-gtf-a-datos";
+import CtpGuiaOficialForm from "./CtpGuiaOficialForm";
 
 /** Lo que se copia al duplicar un ingreso: el camión siguiente del mismo
  *  proveedor y la misma concesión. Nunca la GTF ni el volumen. */
@@ -132,6 +137,8 @@ interface DraftData {
   entryDate: string;
   gtfNumber: string;
   gtfDate: string;
+  /** Cuándo bajó del camión (ADR-335). Vacío = se asume el día del ingreso. */
+  fechaRecepcion: string;
   gtfSeries: string;
   /** (3) Tipo de documento del LO-CTP: GTF | GRR. */
   docType: string;
@@ -166,6 +173,7 @@ const INITIAL: DraftData = {
   entryDate: new Date().toISOString().slice(0, 10),
   gtfNumber: "",
   gtfDate: "",
+  fechaRecepcion: "",
   gtfSeries: "",
   docType: "GTF",
   providerName: "",
@@ -208,6 +216,15 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   /** Lista de trozas pegada a mano cuando SERFOR no la trajo (ADR-320). */
   const [trozasManuales, setTrozasManuales] = useState<TrozaImportada[]>([]);
   const [importarTrozas, setImportarTrozas] = useState(false);
+  /**
+   * El cuerpo del documento: propietario del producto, destinatario y
+   * transportista (ADR-336). Va aparte de `data` porque es una declaración del
+   * documento y no un campo del libro — y porque lo comparte, con el mismo
+   * esquema, con la guía de salida.
+   */
+  const [gtfDatos, setGtfDatos] = useState<GtfDatos>(() => gtfDatosVacio());
+  /** Arranca plegado: son 20 casilleros y el alta rápida no los toca. */
+  const [verGuiaOficial, setVerGuiaOficial] = useState(false);
   const marcarProveedorUsado = () => {
     if (!partesUsadas.current.size) return;
     directorio.marcarUso({ partes: [...partesUsadas.current] });
@@ -449,6 +466,13 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
       }
       const g = j.gtf as GtfSerforLite;
       setSerforGtf(g);
+      // El cuerpo del documento (propietario, destinatario, transportista) se
+      // lee de la MISMA ficha con la misma función que usa el servidor: si
+      // después se pasa a carga manual, esos casilleros ya están puestos.
+      setGtfDatos((prev) => gtfDatosDesdeSerfor(g, prev));
+      // Si la ficha trae al dueño de la madera, el bloque se abre: esconder un
+      // dato que ya existe es peor que pedirlo.
+      if ((g.propietario ?? "").trim()) setVerGuiaOficial(true);
 
       // Fechas: SERFOR las publica dd/mm/aaaa y el input las quiere aaaa-mm-dd.
       const aISO = (f: string | null) => {
@@ -779,11 +803,21 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         if (!r.ok) throw new Error(j?.message ?? j?.error ?? `HTTP ${r.status}`);
         try { localStorage.removeItem(DRAFT_KEY); } catch {}
         marcarProveedorUsado();
+        /* Una guía que no cuadra CONSIGO MISMA no es un éxito silencioso
+           (ADR-353): entra igual —el documento es el que es— pero se avisa en
+           amarillo y se dice dónde queda marcada, porque si no el problema
+           reaparece recién al consumir y ahí parece culpa del operador. */
+        const avisos: string[] = j.avisos ?? [];
         pushToast?.({
-          tono: "success",
-          msg: `Guía ${j.gtfNumber ?? ""} registrada`,
-          detail: `${j.ingresos?.length ?? 0} ingreso(s) · ${j.trozas ?? 0} troza(s)` +
-            (j.avisos?.length ? ` · ${j.avisos[0]}` : ""),
+          tono: avisos.length > 0 ? "warning" : "success",
+          msg:
+            avisos.length > 0
+              ? `Guía ${j.gtfNumber ?? ""} registrada, pero no cuadra`
+              : `Guía ${j.gtfNumber ?? ""} registrada`,
+          detail:
+            avisos.length > 0
+              ? `${avisos[0]} Queda marcada en Ingresos con el aviso naranja: tocalo para cuadrarla.`
+              : `${j.ingresos?.length ?? 0} ingreso(s) · ${j.trozas ?? 0} troza(s)`,
         });
         onSaved();
         return;
@@ -793,6 +827,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         entryDate: new Date(data.entryDate).toISOString(),
         gtfNumber: data.gtfNumber.trim(),
         gtfDate: data.gtfDate ? new Date(data.gtfDate).toISOString() : null,
+        fechaRecepcion: data.fechaRecepcion ? new Date(data.fechaRecepcion).toISOString() : null,
         gtfSeries: data.gtfSeries.trim() || null,
         docType: data.docType || "GTF",
         // La guía oficial viaja con el ingreso: después se reimprime desde acá.
@@ -822,6 +857,16 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         // (H) El permiso CITES vinculado queda en el acta del ingreso (notes).
         notes: [data.notes.trim(), finalCites && citesPermiso.trim() ? `Permiso CITES: ${citesPermiso.trim()}` : ""].filter(Boolean).join(" · ") || null,
         photos: null,
+        // El cuerpo del documento: propietario del producto, destinatario y
+        // transportista (ADR-336). Se manda sólo si hay algo declarado — un
+        // objeto de campos vacíos ensuciaría el libro sin decir nada.
+        gtfDatos:
+          gtfDatos.propietario.nombre.trim() ||
+          gtfDatos.destinatario.nombre.trim() ||
+          gtfDatos.vehiculo.placa.trim() ||
+          gtfDatos.vehiculo.conductor.trim()
+            ? gtfDatos
+            : undefined,
         // Las trozas van con su guía y en la misma transacción: media guía
         // registrada deja un saldo sin documento (ADR-312).
         trozas: trozasManuales.length ? trozasManuales : undefined,
@@ -1258,6 +1303,18 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     className={`${I} ${avisoPlazo ? "border-[var(--data-warning-500)]" : ""}`}
                   />
                 </Field>
+                {/* La TERCERA fecha, que no es ninguna de las otras dos: el
+                    camión sale el lunes, la guía tiene fecha del viernes y se
+                    descarga el martes. La recepción se cuenta desde ésta y es lo
+                    primero que se pregunta cuando las otras no coinciden. */}
+                <Field span={6} label="Recepcionado en planta el" hint="Cuándo bajó la madera del camión. Vacío = el día del ingreso.">
+                  <input
+                    type="date"
+                    value={data.fechaRecepcion}
+                    onChange={(e) => update("fechaRecepcion", e.target.value)}
+                    className={I}
+                  />
+                </Field>
             </Seccion>
 
             {/* 2 · Especie + producto: eran dos secciones y la de especie gastaba
@@ -1405,29 +1462,6 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 </div>
               )}
 
-              {/* La lista de trozas normalmente viene de SERFOR; cuando el
-                  servicio no responde o el detalle llegó en un Excel, se pega
-                  acá en vez de tipear ochenta filas o quedarse sin trozas. */}
-              <div className="sm:col-span-12 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2">
-                <Btn size="sm" variant="secondary" onClick={() => setImportarTrozas(true)}>
-                  <ClipboardList className="h-4 w-4" />
-                  {trozasManuales.length ? "Cambiar la lista de trozas" : "Pegar lista de trozas"}
-                </Btn>
-                {trozasManuales.length > 0 && (
-                  <>
-                    <span className="text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-                      {trozasManuales.length} troza(s) · {trozasManuales.reduce((a, t) => a + (t.volumenM3 ?? 0), 0).toFixed(4)} m³
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setTrozasManuales([])}
-                      className="text-sm font-medium text-[var(--text-tertiary)] underline hover:text-[var(--text-primary)]"
-                    >
-                      Quitar
-                    </button>
-                  </>
-                )}
-              </div>
                 <Field span={6} label="Tipo de producto" required>
                   <select
                     value={data.productType}
@@ -1559,8 +1593,75 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
 
             </Seccion>
 
-            {/* ─── 3 · Titular ─────────────────────────────────────── */}
-            <Seccion numero={3} title="Titular habilitante" estado={estadoSeccion.titular}>
+            {/* ─── 3 · Lista de trozas, a ANCHO COMPLETO ───────────────
+                Estaba dentro de «Especie y producto», que ocupa media pantalla:
+                la tabla de piezas —diez columnas, con los códigos y las tres
+                dimensiones— entraba en 500px y había que scrollearla de lado
+                para ver la especie. Es la misma razón por la que la ficha de
+                SERFOR se sacó de la columna.
+
+                Y va JUNTO a la especie y antes del titular porque es el mismo
+                momento del trabajo: se descarga el camión, se cuenta la pila y
+                se marca. Lo del titular se copia después, con el papel. */}
+            <Seccion
+              numero={3}
+              title="Lista de trozas"
+              hint={
+                trozasManuales.length > 0
+                  ? `${trozasManuales.length} pieza(s) · ${trozasManuales.reduce((a, t) => a + (t.volumenM3 ?? 0), 0).toFixed(4)} m³`
+                  : "La que acompaña a la guía (casillero 35)"
+              }
+              className="xl:col-span-2"
+            >
+              {/* La lista normalmente viene de SERFOR; cuando el servicio no
+                  responde o el detalle llegó en un Excel, se pega acá en vez de
+                  tipear ochenta filas o quedarse sin trozas. */}
+              <div className="sm:col-span-12 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2">
+                <Btn size="sm" variant="secondary" onClick={() => setImportarTrozas(true)}>
+                  <ClipboardList className="h-4 w-4" />
+                  {trozasManuales.length ? "Cambiar la lista de trozas" : "Pegar lista de trozas"}
+                </Btn>
+                {trozasManuales.length === 0 && (
+                  <span className="text-sm text-[var(--text-secondary)]">
+                    Sin lista, el ingreso entra igual — pero después no se puede cruzar pieza por pieza contra el POA.
+                  </span>
+                )}
+                {trozasManuales.length > 0 && (
+                  <>
+                    <span className="text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                      {trozasManuales.length} troza(s) · {trozasManuales.reduce((a, t) => a + (t.volumenM3 ?? 0), 0).toFixed(4)} m³
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setTrozasManuales([])}
+                      className="text-sm font-medium text-[var(--text-tertiary)] underline hover:text-[var(--text-primary)]"
+                    >
+                      Quitar
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Qué llegó, cuándo llegó, con qué código y cuánto entra de
+                  verdad. Va acá y no en una pantalla de «recepción» posterior
+                  porque el que descarga el camión lo sabe AHORA — y lo que se
+                  pospone no se hace. */}
+              {trozasManuales.length > 0 && (
+                <div className="sm:col-span-12">
+                  <CtpPiezasDelIngreso
+                    trozas={trozasManuales}
+                    onChange={setTrozasManuales}
+                    /* El default razonable para «cuándo bajó del camión»: lo que
+                       ya se declaró como recepción del ingreso y, si no, el día
+                       del ingreso al libro. */
+                    fechaSugerida={data.fechaRecepcion || data.entryDate}
+                  />
+                </div>
+              )}
+            </Seccion>
+
+            {/* ─── 4 · Titular ─────────────────────────────────────── */}
+            <Seccion numero={4} title="Titular habilitante" estado={estadoSeccion.titular}>
               {/* La libreta del CTP (ADR-317): el mismo titular trae madera todo
                   el año y su nombre entraba escrito distinto cada vez. */}
               <div className="sm:col-span-12">
@@ -1632,8 +1733,8 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 </Field>
             </Seccion>
 
-            {/* ─── 4 · Origen ──────────────────────────────────────── */}
-            <Seccion numero={4} title="Origen del material" estado={estadoSeccion.origen}>
+            {/* ─── 5 · Origen ──────────────────────────────────────── */}
+            <Seccion numero={5} title="Origen del material" estado={estadoSeccion.origen}>
                 <Field span={6} label="Tipo de origen" required>
                   <select
                     value={data.originType}
@@ -1692,8 +1793,68 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 </Field>
             </Seccion>
 
-            {/* ─── 5 · Observaciones ───────────────────────────────── */}
-            <Seccion numero={5} title="Observaciones" estado={estadoSeccion.observaciones} className="xl:col-span-2">
+            {/* ─── 5 · El cuerpo del documento (13 a 36) ───────────────
+                Propietario del producto, destinatario, transportista y los
+                casilleros sueltos del formato. Va PLEGADO: son veinte campos
+                que el alta rápida no toca, pero que un fiscalizador pregunta —
+                y hasta ahora, cargando a mano, no había dónde escribirlos.
+
+                Se despliega solo cuando ya hay algo cargado (la consulta a
+                SERFOR los trae): esconder datos que existen sería peor que
+                pedirlos. */}
+            <div className="xl:col-span-2">
+              <Seccion numero={6} title="Datos del documento" hint="Propietario del producto · destinatario · transporte">
+                <div className="sm:col-span-12">
+                  <button
+                    type="button"
+                    onClick={() => setVerGuiaOficial((v) => !v)}
+                    aria-expanded={verGuiaOficial || Boolean(gtfDatos.propietario.nombre.trim())}
+                    className="flex w-full items-center gap-2 rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2.5 text-left transition-colors hover:border-[var(--accent)]"
+                  >
+                    {verGuiaOficial ? (
+                      <ChevronDown className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold text-[var(--text-primary)]">
+                        {verGuiaOficial ? "Ocultar" : "Completar"} los casilleros 13 a 36 de la guía
+                      </span>
+                      <span className="block truncate text-xs text-[var(--text-secondary)]">
+                        {gtfDatos.propietario.nombre.trim()
+                          ? `Propietario: ${gtfDatos.propietario.nombre.trim()}${
+                              gtfDatos.vehiculo.placa.trim() ? ` · ${gtfDatos.vehiculo.placa.trim()}` : ""
+                            }`
+                          : "Sin declarar — el dueño de la madera puede no ser el titular del título habilitante"}
+                      </span>
+                    </span>
+                    {gtfDatos.propietario.nombre.trim() && (
+                      <span className="shrink-0 rounded-full bg-[var(--data-success-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                        cargado
+                      </span>
+                    )}
+                  </button>
+                </div>
+                {verGuiaOficial && (
+                  <div className="sm:col-span-12 xl:grid xl:grid-cols-2 xl:items-start xl:gap-x-5">
+                    <CtpGuiaOficialForm
+                      datos={gtfDatos}
+                      onChange={setGtfDatos}
+                      directorio={directorio}
+                      titular={{
+                        nombre: data.providerName,
+                        docTipo: data.providerDocumentType,
+                        docNumero: data.providerDocument,
+                      }}
+                      ficha={ficha}
+                    />
+                  </div>
+                )}
+              </Seccion>
+            </div>
+
+            {/* ─── 7 · Observaciones ───────────────────────────────── */}
+            <Seccion numero={7} title="Observaciones" estado={estadoSeccion.observaciones} className="xl:col-span-2">
               <Field span={6} label="Defectos visibles">
                 <input
                   type="text"
@@ -1725,60 +1886,19 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 destinatario, transportista— pero que el fiscalizador pregunta.
                 Se muestran como vinieron de SERFOR, sin editar: son
                 declaraciones de un documento ajeno. */}
-            {modo === "serfor" && (
-              <div className="space-y-5">
-              {serforGtf && (
-                <Seccion
-                  numero={2}
-                  title="Datos de la guía · SERFOR"
-                  hint={serforGtf.estado ? `GTF ${serforGtf.gtfNumber ?? ""} · ${serforGtf.estado}` : undefined}
-                >
-                  <div className="sm:col-span-12 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-[var(--surface-sunken)] p-3.5">
-                    <DatoGuia n="5" label="Origen del recurso" value={serforGtf.origenRecurso} />
-                    <DatoGuia n="6" label="N° del título" value={serforGtf.numeroTitulo} />
-                    <DatoGuia n="7" label="Titular" value={serforGtf.titular} />
-                    <DatoGuia label="Representante legal" value={serforGtf.representanteLegal} />
-                    <DatoGuia n="8" label="N° de resolución" value={serforGtf.numeroResolucion} />
-                    <DatoGuia n="10-12" label="Ubicación" value={[serforGtf.departamento, serforGtf.provincia, serforGtf.distrito].filter(Boolean).join(" · ")} />
-                    <DatoGuia n="13" label="Propietario del producto" value={serforGtf.propietario} />
-                    <DatoGuia n="16" label="Dirección del propietario" value={serforGtf.propietarioDireccion} />
-                    <DatoGuia n="22" label="Destinatario" value={serforGtf.destinatario} />
-                    <DatoGuia n="23-24" label="RUC / DNI del destinatario" value={serforGtf.destinatarioDoc} />
-                    <DatoGuia n="25" label="Dirección del destinatario" value={serforGtf.destinatarioDireccion} />
-                    <DatoGuia n="28" label="Distrito del destinatario" value={serforGtf.destinatarioDistrito} />
-                    <DatoGuia n="30-31" label="Transporte" value={[serforGtf.tipoTransporte, serforGtf.tipoVehiculo, serforGtf.placa].filter(Boolean).join(" · ")} />
-                    <DatoGuia n="32-34" label="Conductor" value={[serforGtf.transportista, serforGtf.transportistaDni, serforGtf.licenciaConducir].filter(Boolean).join(" · ")} />
-                    <DatoGuia n="35" label="Lista de trozas" value={serforGtf.listaTrozas} />
-                    <DatoGuia n="3-4" label="Vigencia" value={[serforGtf.fechaExpedicion, serforGtf.fechaVencimiento].filter(Boolean).join(" → ")} />
-                  </div>
-                </Seccion>
-              )}
-              {modo === "serfor" && serforGtf && (serforGtf.productos?.length ?? 0) > 0 && (
-                <div className="mt-5 space-y-3">
-                      <TablaGuia
-                        titulo="Detalle del producto (37) · según la guía"
-                        columnas={["Nombre científico", "Nombre común", "Tipo de producto", "Presentación", "Cant.", "Unidad", "Volumen"]}
-                        filas={(serforGtf.productos ?? []).map((pr) => [
-                          pr.cientifico ?? "—", pr.comun ?? "—", pr.tipoProducto ?? "—",
-                          pr.presentacion ?? "—", pr.cantidad != null ? String(pr.cantidad) : "—",
-                          pr.unidad ?? "—", pr.volumen != null ? pr.volumen.toFixed(3) : "—",
-                        ])}
-                        total={serforGtf.volumenTotal != null ? `Volumen total: ${serforGtf.volumenTotal.toFixed(3)}` : undefined}
-                      />
-                      {(serforGtf.trozas?.length ?? 0) > 0 && (
-                        <TablaGuia
-                          titulo={`Lista de trozas · ${serforGtf.trozas?.length} registro(s)`}
-                          columnas={["Especie", "Codificación", "Dimensiones", "Cant.", "Volumen"]}
-                          filas={(serforGtf.trozas ?? []).map((t) => [
-                            t.comun ?? t.cientifico ?? "—", t.codificacion ?? "—", t.dimensiones ?? "—",
-                            t.cantidad != null ? String(t.cantidad) : "—",
-                            t.volumen != null ? t.volumen.toFixed(3) : "—",
-                          ])}
-                        />
-                      )}
-                    </div>
-                  )}
-              </div>
+            {modo === "serfor" && serforGtf && (
+              <Seccion
+                numero={2}
+                title="Datos de la guía · SERFOR"
+                hint="Como los declara el documento — no se editan"
+              >
+                <div className="sm:col-span-12">
+                  <CtpGuiaSerforHoja
+                    gtf={serforGtf}
+                    onImprimir={() => { void printGtfSerfor(serforGtf as never); }}
+                  />
+                </div>
+              </Seccion>
             )}
 
             {/* Lo que la guía NO trae y el libro sí necesita: cuándo entró al
@@ -2059,73 +2179,6 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
 
 
 
-/**
- * Tabla de sólo lectura con lo que declara la guía. Es un dato ajeno —de SERFOR—
- * así que no se edita: se muestra para contrastar contra la carga que llegó.
- */
-function TablaGuia({
-  titulo,
-  columnas,
-  filas,
-  total,
-}: {
-  titulo: string;
-  columnas: string[];
-  filas: string[][];
-  total?: string;
-}) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-[var(--rule-base)]">
-      <div className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-        {titulo}
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs hoja-grilla">
-          <thead>
-            <tr className="bg-[var(--surface-canvas)]">
-              {columnas.map((c) => (
-                <th key={c} className="whitespace-nowrap px-2.5 py-1.5 text-left font-bold text-[var(--text-secondary)]">{c}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filas.map((f, i) => (
-              <tr key={i} className="border-t border-[var(--rule-soft)]">
-                {f.map((v, j) => (
-                  <td key={j} className={`px-2.5 py-1.5 ${j >= f.length - 2 ? "text-right font-mono tabular-nums" : ""} ${j === 0 ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
-                    {v}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-          {total && (
-            <tfoot>
-              <tr className="border-t border-[var(--rule-base)] bg-[var(--surface-canvas)]">
-                <td colSpan={columnas.length} className="px-2.5 py-1.5 text-right font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
-                  {total}
-                </td>
-              </tr>
-            </tfoot>
-          )}
-        </table>
-      </div>
-    </div>
-  );
-}
-
-/** Un dato de la guía oficial: etiqueta con su casillero y el valor. */
-function DatoGuia({ n, label, value }: { n?: string; label: string; value: string | null | undefined }) {
-  if (!value) return null;
-  return (
-    <div className="min-w-0">
-      <div className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-        {n && <span className="mr-1 font-mono">({n})</span>}{label}
-      </div>
-      <div className="truncate text-sm font-medium text-[var(--text-primary)]" title={value}>{value}</div>
-    </div>
-  );
-}
 
 /**
  * Una fila del resumen. `porDefecto` marca los valores que el operador NO

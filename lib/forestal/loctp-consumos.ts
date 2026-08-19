@@ -16,8 +16,9 @@
 
 /** El grafo de cadena de custodia, con lo mínimo que la sección necesita. */
 export interface GrafoConsumos {
-  ingresos: { id: string; gtf: string; species: string | null }[];
-  corridas: { id: string; lineNo: number; label: string; unit: string | null; fecha?: string }[];
+  /** El ingreso, con los casilleros que la sección pinta por fila (ADR-347). */
+  ingresos: (IngresoConsumo & { id: string; gtf: string; species: string | null })[];
+  corridas: { id: string; lineNo: number; label: string; unit: string | null; fecha?: string; observations?: string | null }[];
   consumos: { from: string; to: string; volumeM3: number }[];
 }
 
@@ -53,7 +54,7 @@ export interface FilaConsumo {
   unidad: string;
   /** (9) Cantidad consumida. */
   cantidad: number;
-  /** (10) N° de lote consumido. Ver nota abajo: va vacío a propósito. */
+  /** (10) N° de lote consumido: el lote de ASERRÍO que entró a la corrida. */
   lote: string;
   /** (11) Observaciones — acá, en qué corrida entró. */
   observaciones: string;
@@ -69,10 +70,13 @@ const txt = (v: unknown): string => (v == null ? "" : String(v).trim());
 /**
  * Arma la Sección 2 del período.
  *
- * **El casillero (10) va vacío a propósito.** Pide el lote del producto
- * *consumido*, y lo que se consume acá son trozas de un ingreso: las trozas no
- * tienen lote (los lotes se arman en producción). Poner el lote de la corrida
- * destino sería declarar como origen algo que se creó DESPUÉS del consumo.
+ * **El casillero (10) sale del lote de ASERRÍO** (ADR-334). Pide el lote del
+ * producto *consumido*, y eso es exactamente lo que ahora tiene: las trozas se
+ * agrupan en un lote antes de la sierra y la corrida se declara sobre ese lote.
+ * Sigue yendo vacío cuando la corrida se cargó a mano —los libros viejos no
+ * tienen lotes— porque el libro admite huecos; lo que no admite es un dato
+ * inventado. **Nunca el lote COMERCIAL de la corrida**: ése se crea DESPUÉS del
+ * consumo y declararlo acá sería datar el origen al revés.
  *
  * Lo mismo con (7): si el ingreso no declara su N° de fuente, va vacío. La GTF
  * ya tiene su propio casillero y repetirla acá sería llenar un casillero con un
@@ -80,7 +84,14 @@ const txt = (v: unknown): string => (v == null ? "" : String(v).trim());
  */
 export function filasConsumo(
   grafo: GrafoConsumos | null | undefined,
-  ingresos: readonly IngresoConsumo[],
+  /**
+   * Los ingresos completos. **Por defecto, los del propio grafo** (ADR-347): ya
+   * viajan con sus casilleros y con el filtro de estado aplicado en la DB, así
+   * que pedirlos aparte era traer miles de filas para leerles seis campos.
+   */
+  ingresos: readonly IngresoConsumo[] = grafo?.ingresos ?? [],
+  /** corrida → código del lote de aserrío (ver `loteAserrioPorCorrida`). */
+  lotesPorCorrida?: ReadonlyMap<string, string>,
 ): FilaConsumo[] {
   if (!grafo) return [];
   const gtfPorIngreso = new Map(grafo.ingresos.map((i) => [i.id, i]));
@@ -102,8 +113,13 @@ export function filasConsumo(
         fuenteOrigen: txt(completo?.originSourceNumber),
         unidad: txt(completo?.unit) || "m3",
         cantidad: c.volumeM3,
-        lote: "",
-        observaciones: cor ? `Corrida #${cor.lineNo}${cor.label ? ` · ${cor.label}` : ""}` : "—",
+        lote: lotesPorCorrida?.get(c.to) ?? "",
+        /* (11) La corrida, y lo que el operador anotó al cargarla. La nota
+           gana sobre el `label` —«rolliza · Tornillo»— que ya está en los
+           casilleros (3) y (4): repetirlo gastaba la única columna libre. */
+        observaciones: cor
+          ? `Corrida #${cor.lineNo}${txt(cor.observations) ? ` · ${txt(cor.observations)}` : cor.label ? ` · ${cor.label}` : ""}`
+          : "—",
         gtf: txt(g?.gtf) || "—",
         woodEntryId: c.from,
         corridaId: c.to,

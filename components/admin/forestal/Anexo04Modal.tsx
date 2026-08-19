@@ -15,7 +15,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { FileText, X } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
-import { construirAnexo04, fmtAnexo, type DatosAnexo04 } from "@/lib/forestal/anexo04-serfor";
+import { construirAnexo04, fmtAnexo } from "@/lib/forestal/anexo04-serfor";
 import { validarAnexo04, anexoPresentable, type DeclaradoEnLibro } from "@/lib/forestal/anexo04-validacion";
 import { useAnexo04Datos } from "@/hooks/use-anexo04-datos";
 import Anexo04Campos from "./Anexo04Campos";
@@ -50,13 +50,11 @@ function imprimirHtml(html: string) {
 }
 
 export default function Anexo04Modal({
-  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, gtfInicial, observacionesIniciales, ctpEntryId, declarado, abrirHistorial = false, despacho,
+  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, ctpEntryId, declarado, abrirHistorial = false, despacho,
 }: {
   /** Lote abierto en el cubicador; puede venir vacío (p. ej. desde el Libro CTP). */
   rows: PiezaCubicada[];
   especieGlobal?: string;
-  /** GTF de salida con la que se abre el anexo (desde una línea del Libro). */
-  gtfInicial?: string;
   /** Despacho del Libro que origina la emisión (queda en el historial). */
   ctpEntryId?: string;
   /**
@@ -68,13 +66,14 @@ export default function Anexo04Modal({
   declarado?: DeclaradoEnLibro | null;
   /** Abre con la bandeja de emitidos desplegada (consulta, no emisión). */
   abrirHistorial?: boolean;
-  observacionesIniciales?: string;
   /** Descarga el PDF interno detallado (el de siempre, con precios y tipos). */
   onPdfDetallado?: () => void;
   onCerrar: () => void;
   onAviso?: (msg: string, tono: "success" | "error") => void;
 }) {
-  const [datos, set] = useAnexo04Datos({ gtfInicial, observacionesIniciales, onError: (msg) => onAviso?.(msg, "error") });
+  /* Sin precargas: ni la GTF de la línea del Libro ni sus observaciones. El
+     anexo es una declaración jurada — lo que dice lo escribe quien lo firma. */
+  const [datos, set] = useAnexo04Datos({ onError: (msg) => onAviso?.(msg, "error") });
   const [factor, setFactor] = useState(1);      // multiplica el ajuste automático
   const [fit, setFit] = useState(0.9);          // escala para que la hoja entre a lo ancho
   /** Origen de las medidas: el lote del cubicador o una cubicación guardada. */
@@ -94,14 +93,31 @@ export default function Anexo04Modal({
   const { lista: emitidos, cargando: cargandoEmitidos, quitar } = useAnexosEmitidos(historialToken);
   /** Identidad legal del CTP: completa lo que esté vacío y coteja el resto. */
   const ficha = useFichaCtp();
+  /**
+   * (3) VOLUMEN TOTAL declarado a mano — texto crudo (mismo motivo que los
+   * buffers de `ResumenReparto`: sin esto, tipear "27,771" se ve colapsar a
+   * "27771" en cuanto se procesa el ".").  Vacío = usar el calculado, como
+   * siempre. Arranca vacío en cada apertura: el anexo abre en blanco.
+   */
+  const [totalBuffer, setTotalBuffer] = useState("");
+  const totalManual = useMemo(() => {
+    if (totalBuffer.trim() === "") return null;
+    const n = Number(totalBuffer.replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  }, [totalBuffer]);
 
   const areaRef = useRef<HTMLDivElement>(null);
   const hojasRef = useRef<HTMLDivElement>(null);
 
   /**
-   * Punto de partida al abrir: si la guía ya tiene anexo se carga ese (vienen a
-   * re-imprimirlo), y si el N° guardado es el de la guía anterior se propone el
-   * siguiente libre. Corre una sola vez, cuando llega la bandeja.
+   * El anexo abre EN BLANCO (Brandon, 2026-08). Nada se rellena solo: ni el N°
+   * correlativo, ni la GTF, ni la razón social o el firmante de la ficha, ni el
+   * anexo que esa guía ya tenía emitido.
+   *
+   * Lo que SÍ se hace es avisar: si la guía ya tiene un anexo, emitir otro sin
+   * saberlo ampararía el mismo volumen dos veces. El aviso dice cuál es y la
+   * bandeja de emitidos lo carga con un clic — cargarlo solo era rellenar siete
+   * campos que después nadie relee.
    */
   const inicioAplicado = useRef(false);
   useEffect(() => {
@@ -109,26 +125,14 @@ export default function Anexo04Modal({
     inicioAplicado.current = true;
     const inicio = inicioDeEmision(datos.numero, datos.gtf, emitidos, ctpEntryId);
     if (inicio.emision) {
-      cargarEmision(inicio.emision);
-      onAviso?.(`Esta guía ya tenía el anexo N° ${inicio.emision.numero || "(sin numerar)"}: lo cargué para revisarlo o re-imprimirlo.`, "success");
-    } else if (inicio.numeroSugerido) {
-      set({ numero: inicio.numeroSugerido });
+      onAviso?.(
+        `Esta guía ya tiene el anexo N° ${inicio.emision.numero || "(sin numerar)"} emitido. ` +
+          "Si es el mismo viaje, abrilo desde «Emitidos» en vez de emitir otro.",
+        "success",
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- una sola vez, con la bandeja ya cargada
   }, [cargandoEmitidos]);
-
-  // Autocompleta SÓLO lo que está vacío: si el operario escribió algo, manda él.
-  const fichaAplicada = useRef(false);
-  useEffect(() => {
-    if (!ficha || fichaAplicada.current) return;
-    fichaAplicada.current = true;
-    const patch: Partial<DatosAnexo04> = {};
-    if (!datos.empresa.trim() && ficha.razonSocial) patch.empresa = ficha.razonSocial;
-    if (!datos.firmante.trim() && ficha.representante) patch.firmante = ficha.representante;
-    if (!datos.documento.trim() && ficha.representanteDni) patch.documento = ficha.representanteDni;
-    if (Object.keys(patch).length > 0) set(patch);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- una sola vez, cuando llega la ficha
-  }, [ficha]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onCerrar(); };
@@ -153,14 +157,14 @@ export default function Anexo04Modal({
   const filas = piezasGuardadas ?? rows;
   const especie = piezasGuardadas ? especieOrigen : especieGlobal;
   const anexo = useMemo(
-    () => construirAnexo04(filas, { unidadV: datos.unidadV, modo: datos.modo }, { especieGlobal: especie }),
-    [filas, datos.unidadV, datos.modo, especie],
+    () => construirAnexo04(filas, { unidadV: datos.unidadV, modo: datos.modo }, { especieGlobal: especie, totalManualM3: totalManual }),
+    [filas, datos.unidadV, datos.modo, especie, totalManual],
   );
   const escala = Math.max(0.25, fit * factor);
 
 
   const { generando, descargarPdf, descargarExcel, reDescargar, pdfDeLote } = useAnexo04Salidas({
-    filas, datos, especieGlobal: especie, ctpEntryId, onAviso,
+    filas, datos, especieGlobal: especie, ctpEntryId, totalManualM3: totalManual, onAviso,
     onRegistrado: () => setHistorialToken((t) => t + 1),
   });
   // Checklist de emisión: lo que la ARFFS devuelve (errores) y lo que un
@@ -218,9 +222,45 @@ export default function Anexo04Modal({
             <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
               <FileText className="h-5 w-5 text-[var(--accent)]" /> Vista previa · ANEXO N° 04
             </CardTitle>
-            <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-              Lista de productos transformados · {anexo.hojas.length} hoja{anexo.hojas.length === 1 ? "" : "s"} ·{" "}
-              {anexo.totalPiezas} piezas · {fmtAnexo(anexo.totalM3)} m³
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-1 text-xs text-[var(--text-tertiary)]">
+              <span>
+                Lista de productos transformados · {anexo.hojas.length} hoja{anexo.hojas.length === 1 ? "" : "s"} ·{" "}
+                {anexo.totalPiezas} piezas ·
+              </span>
+              <label className="inline-flex items-center gap-1">
+                <input
+                  value={totalBuffer}
+                  onChange={(e) => setTotalBuffer(e.target.value.replace(/[^\d.,]/g, ""))}
+                  inputMode="decimal"
+                  placeholder={fmtAnexo(anexo.totalCalculadoM3)}
+                  aria-label="Volumen total del anexo, editable"
+                  title={
+                    totalManual == null
+                      ? "Se calcula sumando las piezas. Escribí el tuyo para declarar otro (ajuste mínimo, las medidas de cada pieza no cambian)."
+                      : `Declarado a mano: el cálculo desde las piezas da ${fmtAnexo(anexo.totalCalculadoM3)} m³. Las hojas se reparten para sumar EXACTO este número.`
+                  }
+                  className={`h-6 w-16 rounded-md border-2 bg-[var(--surface-raised)] px-1 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${totalManual == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-secondary)]" : "border-[var(--accent)] text-[var(--accent)]"}`}
+                />
+                <span>m³</span>
+              </label>
+              {totalManual != null && (
+                <button
+                  type="button"
+                  onClick={() => setTotalBuffer("")}
+                  aria-label="Volver el volumen total al calculado"
+                  className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+              {totalManual != null && Math.abs(anexo.totalM3 - anexo.totalCalculadoM3) >= 0.0005 && (
+                <span className={Math.abs(anexo.totalM3 - anexo.totalCalculadoM3) / Math.max(anexo.totalCalculadoM3, 0.001) > 0.02
+                  ? "font-bold text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]"
+                  : "text-[var(--text-tertiary)]"}
+                >
+                  (cálculo desde las piezas: {fmtAnexo(anexo.totalCalculadoM3)} m³)
+                </span>
+              )}
               {contraste && contraste.cantidad > 0 && (
                 <span className="ml-1 text-[var(--text-secondary)]">
                   {" · "}{contraste.fuente === "corrida" ? "corrida" : "guía"}: {contraste.cantidad.toLocaleString("es-PE", { maximumFractionDigits: 3 })}{" "}

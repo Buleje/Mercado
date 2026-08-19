@@ -18,6 +18,12 @@ import { CSS_GTF_SERFOR, documentoGtfSerfor, trozasDesdeSerfor } from "./ctp-gtf
 import { CSS_GTF_OFICIAL, fechaGtf } from "./ctp-gtf-formato";
 import { CSS_LISTA_TROZAS, htmlListaTrozas } from "./ctp-lista-trozas";
 import type { GtfSerfor } from "./serfor-gtf";
+import {
+  documentoGtfDesdeLibro,
+  trozasDesdeLibro,
+  type GuiaConLineas,
+  type LineaLibro,
+} from "./ctp-gtf-desde-libro";
 
 /** Lo mínimo del ingreso que hace falta para encabezar sus papeles. */
 export interface IngresoConGuia {
@@ -124,4 +130,80 @@ export function papelesDeIngreso(
   };
 
   return { gtf, lista, guia: g, trozas: trozas.length };
+}
+
+/**
+ * Los papeles de una GUÍA entera (ADR-348).
+ *
+ * `papelesDeIngreso` mira UN asiento y exige la ficha de SERFOR. Pero la bandeja
+ * trabaja por documento (ADR-346) y la mayoría de las guías del libro nunca
+ * pasaron por la consulta pública: quedaban sin papel que mirar.
+ *
+ * Acá hay dos caminos y el papel dice cuál se usó:
+ *
+ * · **Con ficha de SERFOR** → la reproducción del registro público, que ya sale
+ *   completa y con todas las especies de la guía.
+ * · **Sin ficha** → la reconstrucción de lo asentado en el libro, con el detalle
+ *   (37) armado de sus asientos y la lista de trozas de las piezas cargadas.
+ *   Los casilleros que el libro no guarda van **vacíos**.
+ */
+export function papelesDeGuia(
+  guia: GuiaConLineas & { lineas: readonly LineaLibro[] },
+  trozas: readonly Parameters<typeof trozasDesdeLibro>[0][number][],
+  opts: { impresoEl?: string; logo?: string | null } = {},
+): { gtf: HojaDeIngreso; lista?: HojaDeIngreso; fuente: "serfor" | "libro" } {
+  const conFicha = guia.lineas.find((l) => l.serforGtf);
+  if (conFicha) {
+    const papeles = papelesDeIngreso(
+      {
+        serforGtf: conFicha.serforGtf,
+        gtfNumber: guia.gtfNumber,
+        providerName: conFicha.providerName,
+      },
+      opts,
+    );
+    if (papeles) return { gtf: papeles.gtf, lista: papeles.lista, fuente: "serfor" };
+  }
+
+  const numero = guia.gtfNumber;
+  const piezas = trozasDesdeLibro(trozas);
+  const pieGtf = `GTF ${numero} · Reconstruida del Libro de Operaciones del CTP`;
+  const gtf: HojaDeIngreso = {
+    nombre: `GTF ${numero}`,
+    archivo: `GTF ${numero}`,
+    etiqueta: "Guía de Transporte Forestal",
+    pieCorrido: pieGtf,
+    html: documentoHtml({
+      titulo: `GTF ${numero}`,
+      css: CSS_GTF_OFICIAL,
+      cuerpo: documentoGtfDesdeLibro(guia, opts),
+      pieCorrido: pieGtf,
+    }),
+  };
+
+  if (piezas.length === 0) return { gtf, fuente: "libro" };
+
+  const pieLista = `Lista de trozas · Anexo de la GTF ${numero}`;
+  const lista: HojaDeIngreso = {
+    nombre: "Lista de trozas",
+    archivo: `Lista de trozas ${numero}`,
+    etiqueta: `${piezas.length} pieza(s) · anexo del (35)`,
+    pieCorrido: pieLista,
+    html: documentoHtml({
+      titulo: `Lista de trozas ${numero}`,
+      css: CSS_LISTA_TROZAS,
+      cuerpo: htmlListaTrozas({
+        titular: guia.lineas[0].providerName,
+        subtitulo: `Guía ${numero}`,
+        ubicacion: "",
+        numero,
+        guia: numero,
+        fecha: fechaGtf(typeof guia.gtfDate === "string" ? guia.gtfDate.slice(0, 10) : ""),
+        trozas: piezas,
+      }),
+      pieCorrido: pieLista,
+    }),
+  };
+
+  return { gtf, lista, fuente: "libro" };
 }

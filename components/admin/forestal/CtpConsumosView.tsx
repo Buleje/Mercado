@@ -41,6 +41,7 @@ import { loteAserrioPorCorrida, type LoteAserrio } from "@/lib/forestal/lotes-as
 import { trozasDelLote } from "@/lib/forestal/lote-programacion";
 import CtpLotesTira from "./CtpLotesTira";
 import CtpCargarSierra from "./CtpCargarSierra";
+import CtpCubicacionParaConsumo from "./CtpCubicacionParaConsumo";
 import CtpTrozasIngresadas from "./CtpTrozasIngresadas";
 import CtpPatioFiltros from "./CtpPatioFiltros";
 import CtpPatioKpis from "./CtpPatioKpis";
@@ -48,6 +49,7 @@ import CtpApartados, { useApartado, type Apartado } from "./ctp-apartados";
 import { CtpPaginacion, usePaginacion } from "./ctp-tabla";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
+import { useRegistrarJornadas } from "./hooks/use-registrar-jornadas";
 import { useFiltroPatio } from "./hooks/use-filtro-patio";
 import {
   agruparConsumos,
@@ -140,6 +142,8 @@ export default function CtpConsumosView({
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
   const { toasts, push: pushToast, dismiss: dismissToast } = useActionToasts();
   const lotes = useLotesAserrio();
+  /* Del reparto al libro: N corridas, una por jornada (ADR-373). */
+  const jornadas = useRegistrarJornadas(lotes);
   const lotesAbiertos = useMemo(() => lotes.lotes.filter((l) => l.status === "abierto"), [lotes.lotes]);
   const loteElegido = useMemo(
     () => lotesAbiertos.find((l) => l.id === loteCarga) ?? null,
@@ -566,6 +570,32 @@ export default function CtpConsumosView({
           donde sale la madera— y el cuadro oficial —donde queda registrada—.
           Apilados obligaban a scrollear una tabla entera para llegar a la otra. */}
       <CtpApartados apartados={apartados} activo={apartado} onIr={irApartado} />
+
+      {/**
+       * Cubicar lo aserrado, del lado del consumo (ADR-370).
+       *
+       * En el patio se asierra primero y se anota después: la medición se hace
+       * acá, se guarda, y el reparto dice qué le toca a cada troza tildada y a
+       * cada día — que es como se declara el libro, jornada por jornada.
+       */}
+      {apartado === "patio" && (
+        <CtpCubicacionParaConsumo
+          trozas={patio.libres
+            .filter((t) => seleccion.has(t.id))
+            .map((t) => ({
+              id: t.id,
+              etiqueta: t.codigoPlanta ?? t.codificacion ?? t.id.slice(-6),
+              especie: t.especieComun ?? "",
+              m3: Number(t.volumenM3 ?? 0),
+            }))}
+          lote={loteElegido ? { id: loteElegido.id, code: loteElegido.code } : null}
+          fecha={fechaConsumo}
+          registrar={(js, loteId) => jornadas.registrar(js, { loteId })}
+          ocupado={jornadas.ocupado}
+          avance={jornadas.avance}
+          onAviso={(msg) => pushToast({ tono: "success", msg })}
+        />
+      )}
 
       {apartado === "patio" && (loteElegido ? (
         <CtpCargarSierra

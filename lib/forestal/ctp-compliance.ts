@@ -129,6 +129,14 @@ export interface CtpComplianceCounts {
   rendimientoAlto?: number;
   /** Títulos habilitantes / permisos CITES vencidos en la Ficha (informativo). */
   documentosVencidos?: number;
+  /**
+   * Documentos de la Ficha que vencen dentro de 30 días (informativo).
+   *
+   * No resta: todavía están vigentes y el operador ya está haciendo lo correcto.
+   * Sirve para llegar a tiempo — la renovación ante la ARFFS no es inmediata, y
+   * enterarse el día que venció es enterarse tarde.
+   */
+  documentosPorVencer?: number;
 }
 
 /**

@@ -14,6 +14,7 @@
 import { useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Sparkles, Send, Loader2, X as XIcon } from "@buleje/design-system/icons";
+import { ctpGet } from "@/lib/forestal/ctp-fetch";
 
 const EJEMPLOS = [
   "¿Cuánto queda de cada especie?",
@@ -33,8 +34,9 @@ export default function CtpAsistente() {
   // No mostrar un botón para una función rota: probamos si hay IA configurada.
   useEffect(() => {
     let alive = true;
-    fetch("/api/admin/forestal/ctp/ask", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : { available: false }))
+    /* Deduplicado (ADR-347): el asistente se monta en más de una vista y el
+       sondeo salía dos veces por carga. */
+    ctpGet<{ available?: boolean }>("/api/admin/forestal/ctp/ask")
       .then((j) => { if (alive) setAvailable(Boolean(j.available)); })
       .catch((err) => { console.warn("[ctp-asistente] probe failed", err); if (alive) setAvailable(false); });
     return () => { alive = false; };

@@ -31,11 +31,28 @@ const DIAS_RIESGO = 60;
  * Colores de ESTADO, no de serie: cada tramo es una condición de la madera
  * (fresca / hay que mirarla / se está degradando). Van siempre con su etiqueta
  * de días al lado, así el tramo se identifica sin depender del color.
+ *
+ * En dark el texto sube a `-500` (el color BASE del preset) en vez del `-700`.
+ * Motivo medido, no estético: `DesignTokensProvider` deriva la escala del
+ * preset activo con `darken(base, 24%)` para el 700 sin mirar el tema, y esa
+ * inyección pisa el bloque `.dark` de `globals.css`. Resultado sobre el fondo
+ * oscuro real de la tarjeta: «Más de 60 días» quedaba en 2.15:1 y «Hasta 30
+ * días» en 2.76:1 — por debajo del piso de 4.5:1 para texto. El 500 no pasa por
+ * el `darken`, así que sobrevive al pisón.
  */
 const TONO_TRAMO = {
-  fresca: { texto: "text-[var(--data-success-700)]", barra: "bg-[var(--data-success-500)]" },
-  atencion: { texto: "text-[var(--data-warning-700)]", barra: "bg-[var(--data-warning-500)]" },
-  riesgo: { texto: "text-[var(--data-error-700)]", barra: "bg-[var(--data-error-500)]" },
+  fresca: {
+    texto: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+    barra: "bg-[var(--data-success-500)]",
+  },
+  atencion: {
+    texto: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
+    barra: "bg-[var(--data-warning-500)]",
+  },
+  riesgo: {
+    texto: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
+    barra: "bg-[var(--data-error-500)]",
+  },
 } as const;
 
 const n2 = (v: number) => v.toFixed(2);

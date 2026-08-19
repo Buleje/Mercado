@@ -11,31 +11,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  Building2, Save, Plus, Trash2, Loader2, CheckCircle2, AlertCircle, Pencil, X as XIcon,
+  Building2, Save, Plus, Trash2, Loader2, CheckCircle2, AlertCircle, AlertTriangle, ArrowUp, FileText, Pencil, Search, X as XIcon,
 } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Field, I } from "./ctp-shared";
 import CtpParteLogo from "./CtpParteLogo";
+import CtpFichaReadView from "./CtpFichaReadView";
 import {
-  emptyCtpFicha, ctpFichaFaltantes, estadoVencimiento,
+  emptyCtpFicha, rucValido, CTP_TITULO_TIPOS,
   type CtpFicha, type CtpTituloHabilitante, type CtpCitesPermiso,
 } from "@/lib/forestal/ctp-ficha-types";
-
-const TITULO_TIPOS: { value: string; label: string }[] = [
-  { value: "concesion", label: "Concesión forestal" },
-  { value: "permiso", label: "Permiso forestal" },
-  { value: "autorizacion", label: "Autorización" },
-  { value: "plantacion", label: "Plantación registrada" },
-  { value: "dema", label: "DEMA (declaración de manejo)" },
-  { value: "predio", label: "Predio privado" },
-  { value: "otro", label: "Otro" },
-];
-const tituloLabel = (t: string) => TITULO_TIPOS.find((x) => x.value === t)?.label ?? (t || "—");
-
-const FIELD_LABELS: Partial<Record<keyof CtpFicha, string>> = {
-  nombreCtp: "Nombre del CTP", codigoCtp: "Código de CTP", ruc: "RUC", razonSocial: "Razón social",
-};
 
 export default function CtpFichaEditor() {
   const [ficha, setFicha] = useState<CtpFicha>(emptyCtpFicha());
@@ -45,6 +31,8 @@ export default function CtpFichaEditor() {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
+  /** Resultado de la última consulta al padrón SUNAT (no bloquea nada). */
+  const [padron, setPadron] = useState<{ estado: "idle" | "cargando" | "ok" | "aviso" | "error"; mensaje: string | null }>({ estado: "idle", mensaje: null });
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -63,6 +51,16 @@ export default function CtpFichaEditor() {
     setDraft((d) => ({ ...d, titulos: d.titulos.map((t, j) => (j === i ? { ...t, ...patch } : t)) }));
   const addTitulo = () => setDraft((d) => ({ ...d, titulos: [...d.titulos, { tipo: "concesion", codigo: "", resolucion: "", planManejo: "", vencimiento: "" }] }));
   const removeTitulo = (i: number) => setDraft((d) => ({ ...d, titulos: d.titulos.filter((_, j) => j !== i) }));
+  /** Sube un título un lugar. El PRIMERO es el que se imprime en la GTF
+   *  (`tituloDeGuia`), así que reordenar es la forma de elegir cuál declara la
+   *  guía de salida — antes era invisible y siempre salía el que se cargó primero. */
+  const subirTitulo = (i: number) =>
+    setDraft((d) => {
+      if (i <= 0) return d;
+      const titulos = [...d.titulos];
+      [titulos[i - 1], titulos[i]] = [titulos[i], titulos[i - 1]];
+      return { ...d, titulos };
+    });
   const setCites = (i: number, patch: Partial<CtpCitesPermiso>) =>
     setDraft((d) => ({ ...d, citesPermisos: d.citesPermisos.map((p, j) => (j === i ? { ...p, ...patch } : p)) }));
   const addCites = () => setDraft((d) => ({ ...d, citesPermisos: [...d.citesPermisos, { especie: "", numero: "", vencimiento: "" }] }));
@@ -85,9 +83,49 @@ export default function CtpFichaEditor() {
     finally { setSaving(false); }
   }
 
-  const faltantes = ctpFichaFaltantes(ficha);
+  // El RUC sale impreso en el certificado y en el Libro: si el dígito
+  // verificador no cierra, el fiscalizador lo cruza contra SUNAT y el documento
+  // queda observado. Se avisa mientras se tipea, sin bloquear el guardado
+  // (puede estar a medio escribir, y un RUC raro no es motivo para perder todo).
+  const rucSospechoso = draft.ruc.length === 11 && !rucValido(draft.ruc);
 
-  if (loading) return <div className="p-8 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando ficha…</p></div>;
+  /**
+   * Trae razón social y domicilio fiscal del padrón (proxy a SUNAT). La razón
+   * social del certificado y los casilleros (7)/(10)/(11)/(12) de la guía tienen
+   * que decir LO MISMO que SUNAT: tipeados a mano difieren por una S.A.C. o un
+   * acento y el documento queda observado.
+   *
+   * Sólo COMPLETA lo vacío salvo la razón social, que es el dato oficial. Si el
+   * padrón no responde, se avisa y se sigue a mano — nunca se pisa en silencio.
+   */
+  async function traerDeSunat() {
+    setPadron({ estado: "cargando", mensaje: null });
+    try {
+      const r = await fetch(`/api/sunat/lookup-ruc?ruc=${encodeURIComponent(draft.ruc)}`, { credentials: "include" });
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(body.error ?? `HTTP ${r.status}`);
+      setDraft((d) => ({
+        ...d,
+        razonSocial: body.razonSocial || d.razonSocial,
+        direccion: d.direccion || body.direccion || "",
+        region: d.region || body.departamento || "",
+        provincia: d.provincia || body.provincia || "",
+        distrito: d.distrito || body.distrito || "",
+        ubigeo: d.ubigeo || body.ubigeo || "",
+      }));
+      const baja = typeof body.estado === "string" && !/activo/i.test(body.estado);
+      setPadron({
+        estado: baja ? "aviso" : "ok",
+        mensaje: baja
+          ? `SUNAT devuelve el RUC en estado «${body.estado}». Revisá antes de emitir documentos con él.`
+          : `Traído de SUNAT: ${body.razonSocial ?? "sin razón social"}.`,
+      });
+    } catch (e) {
+      setPadron({ estado: "error", mensaje: e instanceof Error ? e.message : String(e) });
+    }
+  }
+
+  if (loading) return <LoadingState message="Cargando ficha…" />;
 
   return (
     <div className="space-y-4">
@@ -102,21 +140,46 @@ export default function CtpFichaEditor() {
         )}
       </div>
 
-      {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
-      {ok && <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 text-sm font-medium text-[var(--data-success-700)]"><CheckCircle2 className="h-5 w-5" /> Ficha guardada.</div>}
-      {!editing && faltantes.length > 0 && (
-        <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-700)]">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-          <div><strong>Ficha incompleta.</strong> Faltan datos que los documentos SERFOR necesitan: {faltantes.map((k) => FIELD_LABELS[k] ?? k).join(", ")}.</div>
-        </div>
-      )}
+      {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
+      {ok && <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 text-sm font-medium text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]"><CheckCircle2 className="h-5 w-5" /> Ficha guardada.</div>}
 
       {editing ? (
         <div className="space-y-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <Section title="Identidad del centro" icon={Building2}>
             <Field label="Nombre del CTP" required><input className={I} value={draft.nombreCtp} onChange={(e) => set("nombreCtp", e.target.value)} placeholder="Aserradero San Martín" /></Field>
             <Field label="Código de CTP" required hint="Asignado por la ARFFS"><input className={I} value={draft.codigoCtp} onChange={(e) => set("codigoCtp", e.target.value)} placeholder="CTP-25-000123" /></Field>
-            <Field label="RUC" required hint="11 dígitos"><input className={I} value={draft.ruc} onChange={(e) => set("ruc", e.target.value.replace(/\D/g, "").slice(0, 11))} inputMode="numeric" placeholder="20512345678" /></Field>
+            <Field label="RUC" required hint={rucSospechoso || padron.mensaje ? undefined : "11 dígitos · se puede traer de SUNAT"}>
+              <div className="flex gap-2">
+                <input className={I} value={draft.ruc} onChange={(e) => { set("ruc", e.target.value.replace(/\D/g, "").slice(0, 11)); setPadron({ estado: "idle", mensaje: null }); }} inputMode="numeric" placeholder="20512345671" aria-invalid={rucSospechoso} />
+                <button
+                  type="button"
+                  onClick={() => void traerDeSunat()}
+                  disabled={draft.ruc.length !== 11 || padron.estado === "cargando"}
+                  title="Traer razón social y domicilio fiscal del padrón de SUNAT"
+                  className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+                >
+                  {padron.estado === "cargando" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Search className="h-4 w-4" aria-hidden />} SUNAT
+                </button>
+              </div>
+              {rucSospechoso && (
+                <p className="mt-1.5 flex items-start gap-1.5 text-sm font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  Ese RUC no pasa la verificación de SUNAT (dígito verificador). Revisá que no falte o sobre un número.
+                </p>
+              )}
+              {padron.mensaje && (
+                <p className={`mt-1.5 flex items-start gap-1.5 text-sm font-medium ${padron.estado === "ok"
+                  ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                  : padron.estado === "aviso"
+                    ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                    : "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"}`}>
+                  {padron.estado === "ok"
+                    ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                    : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />}
+                  {padron.mensaje}
+                </p>
+              )}
+            </Field>
             <Field label="Razón social" required><input className={I} value={draft.razonSocial} onChange={(e) => set("razonSocial", e.target.value)} placeholder="Maderera San Martín S.A.C." /></Field>
             {/* El logo es del CENTRO: encabeza la guía de salida, el certificado
                 y todo lo que emite el CTP con su nombre. */}
@@ -138,16 +201,29 @@ export default function CtpFichaEditor() {
               <button type="button" onClick={addTitulo} className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"><Plus className="h-3.5 w-3.5" /> Agregar</button>
             </div>
             <div className="space-y-2">
-              {draft.titulos.length === 0 && <p className="text-xs text-[var(--text-tertiary)]">Sin títulos cargados. Agregá las concesiones/permisos que abastecen el CTP.</p>}
+              {draft.titulos.length === 0 && <p className="text-sm text-[var(--text-tertiary)]">Sin títulos cargados. Agregá las concesiones/permisos que abastecen el CTP.</p>}
+              {draft.titulos.length > 1 && (
+                <p className="text-sm text-[var(--text-tertiary)]">
+                  El <strong className="text-[var(--text-secondary)]">primero</strong> es el que cada guía de salida propone (casilleros 5, 6, 8 y 9); en el formulario de la guía se puede elegir otro. Usá <ArrowUp className="inline h-3.5 w-3.5" aria-hidden /> para cambiar el predeterminado.
+                </p>
+              )}
               {draft.titulos.map((t, i) => (
-                <div key={i} className="rounded-xl border-2 border-[var(--rule-base)] p-2">
+                <div key={i} className={`rounded-xl border-2 p-2 ${i === 0 ? "border-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent)]/10" : "border-[var(--rule-base)]"}`}>
+                  {i === 0 && (
+                    <p className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-muted)] px-2.5 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent-dark)] dark:bg-[var(--accent)]/15 dark:text-[var(--accent)]">
+                      <FileText className="h-3.5 w-3.5" aria-hidden /> Predeterminado en la GTF
+                    </p>
+                  )}
                   <div className="flex flex-wrap items-center gap-2">
                     <select className={`${I} max-w-[13rem]`} value={t.tipo} onChange={(e) => setTitulo(i, { tipo: e.target.value })} title="Tipo de título — es también el casillero (5) de la GTF">
-                      {TITULO_TIPOS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      {CTP_TITULO_TIPOS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                     <input className={`${I} min-w-[10rem] flex-1`} value={t.codigo} onChange={(e) => setTitulo(i, { codigo: e.target.value })} placeholder="N° del título habilitante — casillero (6)" />
                     <input type="date" className={`${I} max-w-[10rem]`} value={t.vencimiento} onChange={(e) => setTitulo(i, { vencimiento: e.target.value })} title="Vencimiento" />
-                    <button type="button" onClick={() => removeTitulo(i)} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--data-error-600)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
+                    {i > 0 && (
+                      <button type="button" onClick={() => subirTitulo(i)} title="Subir — el primero es el que declara la GTF" aria-label="Subir este título" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><ArrowUp className="h-4 w-4" /></button>
+                    )}
+                    <button type="button" onClick={() => removeTitulo(i)} aria-label="Quitar este título" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--data-error-600)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
                   </div>
                   {/* (8) y (9): los pide la GTF y no vivían en ningún lado, así
                       que esos dos casilleros salían vacíos en cada guía. */}
@@ -219,7 +295,7 @@ export default function CtpFichaEditor() {
           </div>
         </div>
       ) : (
-        <FichaReadView ficha={ficha} />
+        <CtpFichaReadView ficha={ficha} onEditar={() => { setDraft(ficha); setEditing(true); setError(null); }} />
       )}
     </div>
   );
@@ -230,82 +306,6 @@ function Section({ title, icon: Icon, children }: { title: string; icon?: typeof
     <div>
       <div className="mb-2.5 flex items-center gap-2">{Icon && <Icon className="h-4 w-4 text-[var(--text-tertiary)]" />}<span className="text-sm font-bold text-[var(--text-primary)]">{title}</span></div>
       <div className="grid gap-3 sm:grid-cols-2">{children}</div>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-0.5 border-b border-[var(--rule-soft)] py-2 last:border-0">
-      <span className="text-xs font-medium text-[var(--text-tertiary)]">{label}</span>
-      <span className="text-sm text-[var(--text-primary)]">{value || "—"}</span>
-    </div>
-  );
-}
-
-function FichaReadView({ ficha: f }: { ficha: CtpFicha }) {
-  return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Building2 className="h-4 w-4" /> Identidad del centro</CardTitle>
-        <Row label="Nombre del CTP" value={f.nombreCtp} />
-        <Row label="Código de CTP (ARFFS)" value={f.codigoCtp} />
-        <Row label="RUC" value={f.ruc} />
-        <Row label="Razón social" value={f.razonSocial} />
-        <Row label="ARFFS competente" value={f.arffs} />
-        <Row label="Registro ARFFS" value={[f.registroArffs, f.registroArffsFecha].filter(Boolean).join(" · ")} />
-        <Row label="Serie GTF autorizada" value={f.gtfSerie} />
-      </div>
-      <div className="space-y-4">
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <CardTitle as="h3" className="mb-3 text-sm font-bold text-[var(--text-primary)]">Títulos habilitantes</CardTitle>
-          {f.titulos.length === 0 ? (
-            <p className="text-sm text-[var(--text-tertiary)]">Sin títulos cargados.</p>
-          ) : (
-            <ul className="space-y-1.5">
-              {f.titulos.map((t, i) => {
-                const estado = estadoVencimiento(t.vencimiento);
-                return (
-                  <li key={i} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                    <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-xs font-bold text-[var(--text-secondary)]">{tituloLabel(t.tipo)}</span>
-                    <span className="flex items-center gap-2">
-                      {estado === "vencido" && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">vencido</span>}
-                      {estado === "por_vencer" && <span className="rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">por vencer</span>}
-                      <span className="font-mono text-[var(--text-primary)]">{t.codigo || "—"}{t.vencimiento ? ` · vence ${t.vencimiento}` : ""}</span>
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-        {f.citesPermisos.length > 0 && (
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-            <CardTitle as="h3" className="mb-3 text-sm font-bold text-[var(--text-primary)]">Permisos CITES</CardTitle>
-            <ul className="space-y-1.5">
-              {f.citesPermisos.map((p, i) => {
-                const estado = estadoVencimiento(p.vencimiento);
-                return (
-                  <li key={i} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                    <span className="rounded-full bg-[var(--data-error-100)] px-2.5 py-0.5 text-xs font-bold text-[var(--data-error-700)]">{p.especie || "—"}</span>
-                    <span className="flex items-center gap-2">
-                      {estado === "vencido" && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">vencido</span>}
-                      {estado === "por_vencer" && <span className="rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">por vencer</span>}
-                      <span className="font-mono text-[var(--text-primary)]">{p.numero || "—"}{p.vencimiento ? ` · vence ${p.vencimiento}` : ""}</span>
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <CardTitle as="h3" className="mb-3 text-sm font-bold text-[var(--text-primary)]">Representante y ubicación</CardTitle>
-          <Row label="Representante legal" value={[f.representante, f.representanteDni].filter(Boolean).join(" · ")} />
-          <Row label="Dirección" value={[f.direccion, f.distrito, f.provincia, f.region].filter(Boolean).join(", ")} />
-          <Row label="Contacto" value={[f.telefono, f.email].filter(Boolean).join(" · ")} />
-        </div>
-      </div>
     </div>
   );
 }

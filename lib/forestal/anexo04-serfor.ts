@@ -13,7 +13,7 @@
  */
 import type { PiezaCubicada } from "./cubicacion";
 import { toInches, toFeet } from "./cubicacion";
-import { clasificarTipo, ordenTipo, type TipoComercial } from "./cubicacion-tipo";
+import { tipoDePieza, ordenTipo, type TipoComercial } from "./cubicacion-tipo";
 
 // ─── Datos que llena el emisor (cabecera y pie del anexo) ───────────────────
 
@@ -81,21 +81,59 @@ export interface BloqueAnexo04 {
   /** (4) Especie. */ especie: string;
   /** (5) Tipo de producto. */ tipo: string;
   filas: FilaAnexo04[];
-  /** (11) SUB TOTAL del bloque. */ subtotal: number;
+  /** (11) SUB TOTAL del bloque, en la unidad elegida (pt o m³). */ subtotal: number;
+  /**
+   * El mismo subtotal SIEMPRE en m³. El casillero (3) se declara en metros
+   * cúbicos aunque la columna V vaya en pies tablares, así que el volumen de la
+   * hoja no se puede derivar de `subtotal`.
+   */
+  m3: number;
   /** El grupo no entró en un bloque y sigue acá. */ continuacion: boolean;
 }
 
 export interface HojaAnexo04 {
   bloques: BloqueAnexo04[];
   /** Filas dibujadas por bloque en ESTA hoja (35 en modo oficial). */ filasPorBloque: number;
+  /**
+   * (3) VOLUMEN TOTAL **de esta hoja**, en m³.
+   *
+   * Cada hoja es un papel que viaja y se muestra sola en un puesto de control:
+   * si las tres dijeran el total del anexo, cualquiera de ellas ampararía 20 m³
+   * teniendo 5. El total del documento sigue disponible en `Anexo04.totalM3`.
+   */
+  totalM3: number;
 }
 
 export interface Anexo04 {
   hojas: HojaAnexo04[];
   totalPiezas: number;
   totalPt: number;
-  /** (3) VOLUMEN TOTAL — siempre en m³, como el formato oficial. */ totalM3: number;
+  /**
+   * (3) VOLUMEN TOTAL — siempre en m³, como el formato oficial. Es el que se
+   * IMPRIME: igual a `totalCalculadoM3` salvo que se declare uno a mano
+   * (`totalManualM3`), en cuyo caso las hojas se reconcilian contra ESTE valor.
+   */
+  totalM3: number;
+  /**
+   * El total que sale de sumar las piezas, sin ningún ajuste a mano — la
+   * referencia para saber cuánto se movió `totalM3` cuando alguien lo declaró
+   * distinto. Nunca se pierde, aunque `totalM3` esté ajustado.
+   */
+  totalCalculadoM3: number;
   unidadV: UnidadVolumen;
+}
+
+/** Lo que aceptan `construirAnexo04` y las salidas (PDF/Excel) que lo envuelven. */
+export interface Anexo04Opts {
+  especieGlobal?: string;
+  /**
+   * Volumen total declarado A MANO — reemplaza al calculado desde las piezas
+   * y las hojas se reconcilian contra él (ver `reconciliarTotales`). `null`/
+   * `undefined` = usar el calculado, como siempre. NUNCA toca las medidas ni
+   * las piezas: es sólo el número que se imprime en (3) VOLUMEN TOTAL de cada
+   * hoja y en el pie "Anexo completo: … m³".
+   */
+  totalManualM3?: number | null;
 }
 
 export const FILAS_OFICIAL = 35;
@@ -132,12 +170,46 @@ const especieDe = (r: PiezaCubicada, global?: string): string =>
   (r.especie || global || "SIN ESPECIE").toUpperCase();
 
 /** Tipo de producto (nomenclatura del aserradero) en MAYÚSCULA. */
-const tipoDe = (r: PiezaCubicada): TipoComercial => clasificarTipo(r);
+const tipoDe = (r: PiezaCubicada): TipoComercial => tipoDePieza(r);
 
 function trocear<T>(arr: T[], n: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
   return out;
+}
+
+/**
+ * Reparte una diferencia de milésimos entre varios totales para que su suma
+ * cierre EXACTO contra `objetivo`, sin tocar de dónde salió cada uno.
+ *
+ * Por qué hace falta: cada hoja redondea su propio total a 3 decimales por
+ * separado (para que ESA hoja, mostrada sola en un puesto de control, sea
+ * consistente consigo misma). Sumar hojas ya redondeadas puede quedar a
+ * 0,001-0,003 m³ del total real por el redondeo de cada una — el mismo hueco
+ * que aparece al sumar a mano IVA por línea vs. IVA del total. Se ajusta de a
+ * 0,001 m³, empezando por la hoja más grande (así el ajuste nunca se nota en
+ * una hoja chica), y cicla si hace falta mover más de una vez por hoja.
+ */
+export function reconciliarTotales(valores: readonly number[], objetivo: number): number[] {
+  if (valores.length === 0) return [];
+  const mil = valores.map((v) => Math.round(v * 1000));
+  const objetivoMil = Math.round(objetivo * 1000);
+  const restante = objetivoMil - mil.reduce((a, v) => a + v, 0);
+  if (restante === 0) return mil.map((v) => v / 1000);
+  const orden = mil.map((_, i) => i).sort((a, b) => mil[b] - mil[a]);
+  const paso = restante > 0 ? 1 : -1;
+  let porMover = Math.abs(restante);
+  // Tope de vueltas: con `orden.length` hojas y como mucho unos pocos m³ de
+  // diferencia esto termina en un puñado de pasos — el tope es sólo para no
+  // colgarse si algún día `objetivo` llega negativo o descabellado (ahí queda
+  // lo mejor posible sin bajar ninguna hoja de 0, en vez de trabarse).
+  for (let intento = 0; porMover > 0 && intento < orden.length * 1000; intento++) {
+    const i = orden[intento % orden.length];
+    if (mil[i] + paso < 0) continue;
+    mil[i] += paso;
+    porMover--;
+  }
+  return mil.map((v) => v / 1000);
 }
 
 /**
@@ -149,7 +221,7 @@ function trocear<T>(arr: T[], n: number): T[][] {
 export function construirAnexo04(
   rows: PiezaCubicada[],
   datos: Pick<DatosAnexo04, "unidadV" | "modo">,
-  opts: { especieGlobal?: string } = {},
+  opts: Anexo04Opts = {},
 ): Anexo04 {
   const { unidadV, modo } = datos;
   const vDe = (r: PiezaCubicada) => (unidadV === "m3" ? r.m3 : ptExacto(r));
@@ -189,6 +261,7 @@ export function construirAnexo04(
         // El subtotal suma los valores EXACTOS (como el Excel del formato), no
         // los ya redondeados de cada fila: así cierra con la guía llenada a mano.
         subtotal: r3(chunk.reduce((a, r) => a + vDe(r), 0)),
+        m3: chunk.reduce((a, r) => a + r.m3, 0),
         continuacion: i > 0,
       });
     });
@@ -200,15 +273,34 @@ export function construirAnexo04(
       modo === "oficial"
         ? FILAS_OFICIAL
         : Math.max(FILAS_MIN_COMPACTO, ...bs.map((b) => b.filas.length)),
+    /* Lo que ampara ESTA hoja. Se suman los m³ exactos y se redondea una sola
+       vez al final: sumando los subtotales ya redondeados, tres hojas podían
+       diferir del total del anexo en un milímetro cúbico por hoja. */
+    totalM3: r3(bs.reduce((a, b) => a + b.m3, 0)),
   }));
   // Un lote vacío igual imprime la hoja en blanco (el formato se llena a mano).
-  if (hojas.length === 0) hojas.push({ bloques: [], filasPorBloque: modo === "oficial" ? FILAS_OFICIAL : FILAS_MIN_COMPACTO });
+  if (hojas.length === 0) hojas.push({ bloques: [], filasPorBloque: modo === "oficial" ? FILAS_OFICIAL : FILAS_MIN_COMPACTO, totalM3: 0 });
+
+  const totalCalculadoM3 = r3(rows.reduce((a, r) => a + r.m3, 0));
+  const manual = opts.totalManualM3;
+  const declararManual = rows.length > 0 && manual != null && Number.isFinite(manual) && manual >= 0;
+  const totalM3 = declararManual ? r3(manual) : totalCalculadoM3;
+
+  // Con más de una hoja (o un total declarado a mano), las hojas se
+  // reconcilian contra `totalM3` — así lo que se suma a mano, hoja por hoja,
+  // da EXACTO el total impreso arriba. Nunca toca `bloques`/`filas`: sólo el
+  // (3) VOLUMEN TOTAL de cada hoja.
+  if (hojas.length > 1 || declararManual) {
+    const reconciliados = reconciliarTotales(hojas.map((h) => h.totalM3), totalM3);
+    hojas.forEach((h, i) => { h.totalM3 = reconciliados[i]; });
+  }
 
   return {
     hojas,
     totalPiezas: rows.reduce((a, r) => a + r.cantidad, 0),
     totalPt: r2(rows.reduce((a, r) => a + ptExacto(r), 0)),
-    totalM3: r3(rows.reduce((a, r) => a + r.m3, 0)),
+    totalM3,
+    totalCalculadoM3,
     unidadV,
   };
 }
@@ -289,6 +381,48 @@ export function geometriaHoja(filas: number): GeoHoja {
     wEmpresa: (conLogo: boolean) => (conLogo ? 84 : 150),
   };
 }
+
+/**
+ * Tamaños de letra del anexo, en PUNTOS de A4 — fuente única.
+ *
+ * Estaban escritos dos veces: `setFontSize()` en el PDF y `font-size` en el
+ * preview HTML. Dos copias de un número que TIENE que coincidir es la receta
+ * para que la pantalla y el papel dejen de decir lo mismo — que es justo lo que
+ * este preview existe para evitar.
+ *
+ * Se agrandaron un tercio (2026-08-05, pedido de Brandon): el formato oficial
+ * se llena a mano con lapicera y las medidas a 5 pt no se leían ni de cerca. El
+ * tope real es el ANCHO de columna: la de volumen mide ~40 pt y el número más
+ * largo que entra ahí («1039,500», 8 caracteres) pide ~0,5 pt por carácter, así
+ * que 7 pt es lo más grande que cabe sin cortar.
+ */
+export const FUENTES = {
+  banner: 9,
+  bannerTitulo: 11,
+  instrucciones: 6,
+  /* 9 y no 10: a 10 pt «LISTA DE PRODUCTOS TRANSFORMADOS» se parte en dos
+     líneas en el preview y en el PDF —que no parte— se montaría sobre la razón
+     social. El ancho de ese casillero es el techo. */
+  titulo: 9,
+  empresa: 9,
+  /** (1) N°, (2) GTF N°, (3) Volumen total. */
+  campos: 8,
+  /** «(4) Especie: …» y «(5) Tipo de producto: …». */
+  bloqueHead: 6.4,
+  tablaHead: 5.4,
+  /** Las medidas y el volumen de cada pieza: la letra que más se mira. */
+  celda: 7,
+  subtotalLabel: 6.4,
+  subtotalValor: 7,
+  observaciones: 7.5,
+  firma: 8,
+  firmaLabel: 6.6,
+  legal: 6,
+  nota: 6,
+} as const;
+
+/** pt → px del preview (72 pt = 96 px). */
+export const aPx = (pt: number): number => Math.round(pt * (96 / 72) * 100) / 100;
 
 /** Encabezados de las 6 columnas, con la numeración del formato oficial. */
 export const HEAD_COLS = ["N°", "(6) Cant", "(7) E", "(8) A", "(9) L", "(10) V"] as const;

@@ -224,6 +224,9 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
           ...period,
           especie: url.searchParams.get("especie") ?? undefined,
           producto: url.searchParams.get("producto") ?? undefined,
+          /* El período NO acota lo disponible salvo que se pida: lo que hay en
+             el depósito no depende del mes que esté mirando el libro. */
+          soloDelPeriodo: url.searchParams.get("soloDelPeriodo") === "1",
         }),
       );
     }

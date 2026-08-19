@@ -12,6 +12,7 @@ import {
   esLineaProduccion,
   juzgarRendimiento,
   presentacionSugerida,
+  productoDelTipoComercial,
   sugerirCodigoPaquete,
 } from "@/lib/forestal/loctp-catalogos";
 
@@ -70,6 +71,17 @@ describe("Presentación sugerida", () => {
   it("cuando no es inequívoca no adivina", () => {
     expect(presentacionSugerida("MADERA ASERRADA")).toBeNull();
     expect(presentacionSugerida(null)).toBeNull();
+  });
+
+  it("lo que sale atado va en PAQUETES y lo que se cuenta suelto, en PIEZAS", () => {
+    // La regla del aserradero (Brandon, 2026-08-08): el producto ya dice qué es,
+    // la presentación dice cómo viene. Listones sueltos son PIEZAS, no LISTONES.
+    for (const p of ["PAQUETERIA CORTA", "PAQUETERIA LARGA"]) {
+      expect(presentacionSugerida(`MADERA ASERRADA (${p})`)).toBe("PAQUETES");
+    }
+    for (const p of ["COMERCIAL", "TABLA", "CORTA", "LARGA ANGOSTA", "BLOQUES", "LISTONES", "POSTE"]) {
+      expect(presentacionSugerida(`MADERA ASERRADA (${p})`)).toBe("PIEZAS");
+    }
   });
 
   it("toda sugerencia existe en el catálogo", () => {
@@ -157,5 +169,26 @@ describe("sugerirCodigoPaquete", () => {
 
   it("una fecha inválida no rompe el alta: cae a hoy", () => {
     expect(sugerirCodigoPaquete("no-es-fecha", "LP")).toMatch(/^LP-\d{6}-\d{4}$/);
+  });
+});
+
+describe("productoDelTipoComercial · del patio al catálogo (ADR-373)", () => {
+  it("traduce los tipos del cubicador al nombre del libro", () => {
+    expect(productoDelTipoComercial("Comercial")).toBe("MADERA ASERRADA (COMERCIAL)");
+    expect(productoDelTipoComercial("Paquetería corta")).toBe("MADERA ASERRADA (PAQUETERIA CORTA)");
+    expect(productoDelTipoComercial("larga angosta")).toBe("MADERA ASERRADA (LARGA ANGOSTA)");
+  });
+
+  it("lo traducido tiene presentación; el nombre del patio no", () => {
+    /* Éste es el bug que motivó el mapeo: el paquete entraba sin presentación. */
+    expect(presentacionSugerida("Comercial")).toBeNull();
+    expect(presentacionSugerida(productoDelTipoComercial("Comercial")!)).toBe("PIEZAS");
+    expect(presentacionSugerida(productoDelTipoComercial("Paquetería larga")!)).toBe("PAQUETES");
+  });
+
+  it("«Otro» y lo desconocido no inventan un producto", () => {
+    expect(productoDelTipoComercial("Otro")).toBeNull();
+    expect(productoDelTipoComercial("cualquier cosa")).toBeNull();
+    expect(productoDelTipoComercial(null)).toBeNull();
   });
 });

@@ -27,6 +27,7 @@ import {
 import { claveProducto, cuadrosResumen, type StockInicial } from "./loctp-resumenes";
 import { calcularMetaEspecies } from "./ctp-cadena-lote";
 import { filasConsumo } from "./loctp-consumos";
+import { loteAserrioPorCorrida } from "./lotes-aserrio";
 import {
   derivarFuentes,
   filasRetrozado,
@@ -415,6 +416,16 @@ interface IngresoOficial extends Ingreso {
 /** Un lote con las corridas que lo arman — para el casillero (8) de secciones 3 y 4. */
 interface LoteLite { loteCode: string; corridaIds: string[] }
 
+/**
+ * Un lote de ASERRÍO con la corrida que se comió — para el casillero (10) de la
+ * Sección 2. Es el lote de la materia prima, no el comercial del producto.
+ */
+interface LoteAserrioLite {
+  code: string;
+  produccionEntryId: string | null;
+  produccion?: { viva: boolean } | null;
+}
+
 const ORIGIN_OFICIAL: Record<string, string> = {
   concesion: "Concesión forestal", predio_privado: "Predio privado", comunidad_nativa: "Comunidad nativa",
   reforestacion: "Reforestación", retroaserradero: "Re-entrada CTP", otro: "Otro",
@@ -426,7 +437,7 @@ const TITULO_OFICIAL: Record<string, string> = {
 const originOf = (t: string) => ORIGIN_OFICIAL[t] ?? t ?? "—";
 
 export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> {
-  const [ing, prod, desp, sal, fic, gra, lot, ret] = await Promise.all([
+  const [ing, prod, desp, sal, fic, gra, lot, ret, loteAs] = await Promise.all([
     getJson<{ entries?: IngresoOficial[] }>(
       withPeriod("/api/admin/forestal/wood-entries", { limit: "5000" }, period), {},
     ),
@@ -440,6 +451,9 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
     getJson<{ retrozos?: RetrozoParaApartado[] }>(
       withPeriod("/api/admin/forestal/trozas", { retrozos: "1" }, period), {},
     ),
+    // Los lotes de ASERRÍO (ADR-334): el casillero (10) de la Sección 2 pide el
+    // lote CONSUMIDO, que es éste y no el comercial de la corrida producida.
+    getJson<{ lotes?: LoteAserrioLite[] }>("/api/admin/forestal/lotes-aserrio?limite=500", {}),
   ]);
   // Rechazados y anulados NO forman parte del libro oficial (QA 2026-07-17).
   const ingresos = (ing.entries ?? []).filter((e) => e.status !== "anulado" && e.status !== "rechazado");
@@ -467,8 +481,9 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
   }
   // La fila de la sección la arma `filasConsumo()`, la misma que dibuja la vista
   // de Consumos del módulo: pantalla y libro presentado no pueden declarar
-  // consumos distintos del mismo período.
-  const consumos = filasConsumo(grafo, ingresos);
+  // consumos distintos del mismo período — incluido el casillero (10), que sale
+  // del MISMO mapa de lotes de aserrío en los dos lados.
+  const consumos = filasConsumo(grafo, ingresos, loteAserrioPorCorrida(loteAs.lotes ?? []));
 
   // m³ ya consumidos de cada ingreso — el casillero (11) del Cuadro Resumen 1.
   const consumidoPorIngreso = new Map<string, number>();

@@ -14,7 +14,7 @@
 
 import { useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { AlertTriangle, Check, Loader2, PackageCheck, X } from "@buleje/design-system/icons";
+import { AlertTriangle, CalendarClock, Check, Hash, Loader2, PackageCheck, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { URL_TROZAS_RECEPCION, escribirDelPatio } from "@/lib/forestal/patio-cola";
 import {
@@ -23,12 +23,22 @@ import {
   type CambioRecepcion,
   type TrozaRecepcion,
 } from "@/lib/forestal/recepcion-trozas";
+import {
+  codigosRepetidos,
+  fecharRecepcion,
+  marcarRecepcion,
+  normalizarCodigo,
+  numerarTrozas,
+} from "@/lib/forestal/trozas-recepcion";
 import CtpRecepcionTrozaCard from "./CtpRecepcionTrozaCard";
 
 export interface TrozaEditable extends TrozaRecepcion {
   especieComun?: string | null;
   dimensiones?: string | null;
 }
+
+const BTN_LOTE =
+  "inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-40";
 
 const CAMPO_TABLA =
   "h-11 rounded-xl border-2 border-[var(--rule-base)] bg-transparent px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] disabled:opacity-40";
@@ -81,6 +91,53 @@ export default function CtpRecepcionTrozas({
   );
 
   const cambios = Object.values(edit);
+  const repetidos = useMemo(() => codigosRepetidos(conCambios), [conCambios]);
+
+  /**
+   * Aplica una acción EN LOTE a todas las piezas, con la MISMA lógica que el
+   * alta (`lib/forestal/trozas-recepcion`).
+   *
+   * Corregir la recepción de una guía de sesenta piezas de a una es lo que nadie
+   * hace: por eso las mismas tres acciones del alta —llegaron, fecha, códigos—
+   * viven también acá. El resultado se vuelca al diccionario de cambios
+   * comparando contra el original, para no marcar como editado lo que no cambió.
+   */
+  const aplicarLote = (fn: (piezas: typeof conCambios) => typeof conCambios) => {
+    const resultado = fn(conCambios);
+    setEdit((prev) => {
+      const siguiente = { ...prev };
+      resultado.forEach((nueva, i) => {
+        const original = madres[i]!;
+        const parche: Partial<CambioRecepcion> = {};
+        if ((nueva.codigoPlanta ?? null) !== (original.codigoPlanta ?? null)) parche.codigoPlanta = nueva.codigoPlanta ?? null;
+        if ((nueva.fechaRecepcion ?? null) !== (original.fechaRecepcion ?? null)) parche.fechaRecepcion = nueva.fechaRecepcion ?? null;
+        if (Boolean(nueva.noRecepcionada) !== Boolean(original.noRecepcionada)) parche.noRecepcionada = Boolean(nueva.noRecepcionada);
+        if (Object.keys(parche).length > 0) {
+          siguiente[original.id] = { ...(siguiente[original.id] ?? { id: original.id }), id: original.id, ...parche };
+        }
+      });
+      return siguiente;
+    });
+  };
+
+  const [fechaLote, setFechaLote] = useState("");
+  const [numerando, setNumerando] = useState(false);
+
+  /** Numera las que todavía no tienen marca, desde el correlativo del centro. */
+  const generarCodigos = async () => {
+    setNumerando(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/admin/forestal/trozas?siguienteCodigo=1", { credentials: "include" });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const desde = Number((await r.json()).siguiente) || 1;
+      aplicarLote((piezas) => numerarTrozas(piezas, { desde }).trozas);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setNumerando(false);
+    }
+  };
 
   const guardar = async () => {
     if (cambios.length === 0) return onCerrar();
@@ -131,6 +188,49 @@ export default function CtpRecepcionTrozas({
         </span>
       </div>
 
+      {/* Las mismas tres acciones del alta, sobre TODAS las piezas: recibir una
+          guía de sesenta y corregirla de a una son el mismo trabajo. */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2.5">
+        <span className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          Sobre las {madres.length}
+        </span>
+        <button type="button" onClick={() => aplicarLote((p) => marcarRecepcion(p, undefined, true))} className={BTN_LOTE}>
+          <Check className="h-4 w-4" aria-hidden /> Llegaron todas
+        </button>
+        <label className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
+          <CalendarClock className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
+          <span className="sr-only sm:not-sr-only">Recibidas el</span>
+          <input
+            type="date"
+            value={fechaLote}
+            onChange={(e) => setFechaLote(e.target.value)}
+            aria-label="Fecha de recepción a aplicar a todas"
+            className="h-9 rounded-lg border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={() => aplicarLote((p) => fecharRecepcion(p, undefined, fechaLote))}
+          disabled={!fechaLote}
+          className={BTN_LOTE}
+        >
+          Aplicar fecha
+        </button>
+        <button type="button" onClick={() => void generarCodigos()} disabled={numerando} className={BTN_LOTE}>
+          {numerando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Hash className="h-4 w-4" aria-hidden />}
+          Generar códigos
+        </button>
+      </div>
+
+      {/* Un código repetido hace que el servidor rechace la recepción ENTERA. */}
+      {repetidos.size > 0 && (
+        <p className="flex items-start gap-1.5 border-b border-[var(--rule-soft)] bg-[var(--data-error-50)] px-4 py-2 text-sm font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/10 dark:text-[var(--data-error-500)]">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          El código {[...repetidos].join(", ")} está puesto en más de una pieza. Cada troza lleva el suyo: renumeralas
+          antes de guardar.
+        </p>
+      )}
+
       {avisos.length > 0 && (
         <ul className="space-y-1 border-b border-[var(--rule-soft)] bg-[var(--data-warning-50)] px-4 py-3 dark:bg-[var(--data-warning-500)]/10">
           {avisos.map((a) => (
@@ -164,6 +264,7 @@ export default function CtpRecepcionTrozas({
               <th className="px-3 py-2 font-bold">Especie</th>
               <th className="px-3 py-2 text-right font-bold">Vol. m³</th>
               <th className="px-3 py-2 font-bold">Código de planta</th>
+              <th className="px-3 py-2 font-bold" title="Cuándo bajó del camión">Recepción</th>
               <th className="px-3 py-2 font-bold">Parcela de corta</th>
               <th className="px-3 py-2 text-center font-bold">¿Llegó?</th>
               <th className="px-3 py-2 font-bold">Observación</th>
@@ -187,7 +288,24 @@ export default function CtpRecepcionTrozas({
                       onChange={(e) => tocar(t.id, { codigoPlanta: e.target.value })}
                       disabled={falta}
                       placeholder="Ej: 118"
-                      className={CAMPO_TABLA + " w-28 font-mono"}
+                      aria-invalid={repetidos.has((normalizarCodigo(valor(t, "codigoPlanta")) ?? "").toUpperCase())}
+                      className={
+                        CAMPO_TABLA +
+                        " w-28 font-mono" +
+                        (repetidos.has((normalizarCodigo(valor(t, "codigoPlanta")) ?? "").toUpperCase())
+                          ? " border-[var(--data-error-500)]"
+                          : "")
+                      }
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="date"
+                      value={valor(t, "fechaRecepcion") ?? ""}
+                      onChange={(e) => tocar(t.id, { fechaRecepcion: e.target.value || null })}
+                      disabled={falta}
+                      aria-label={`Fecha en que llegó la troza ${t.codificacion ?? t.id}`}
+                      className={CAMPO_TABLA + " w-[8.5rem]"}
                     />
                   </td>
                   <td className="px-3 py-2">

@@ -10,7 +10,7 @@
 import { memo, type CSSProperties } from "react";
 import {
   geometriaHoja, fmtAnexo, fmtMedida, notaUnidad,
-  BLOQUES_POR_HOJA, HEAD_COLS, PAGINA, TEXTO_LEGAL, ETIQUETAS_FIRMA,
+  BLOQUES_POR_HOJA, FUENTES, HEAD_COLS, PAGINA, TEXTO_LEGAL, ETIQUETAS_FIRMA, aPx,
   type Anexo04, type DatosAnexo04, type HojaAnexo04,
 } from "@/lib/forestal/anexo04-serfor";
 
@@ -27,33 +27,33 @@ export const ANEXO04_CSS = `
 .anx-b { border: 0.5px solid #000; }
 .anx-verde { background: #e2efd9; }
 .anx-banner { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
-.anx-banner b { font-size: 10.7px; }
-.anx-banner i { font-style: normal; font-weight: 700; font-size: 12px; }
-.anx-instr { display: flex; align-items: center; padding-left: 3px; font-size: 7.3px; }
+.anx-banner b { font-size: ${aPx(FUENTES.banner)}px; }
+.anx-banner i { font-style: normal; font-weight: 700; font-size: ${aPx(FUENTES.bannerTitulo)}px; }
+.anx-instr { display: flex; align-items: center; padding-left: 3px; font-size: ${aPx(FUENTES.instrucciones)}px; }
 .anx-logo { object-fit: contain; object-position: center; }
-.anx-empresa { display: flex; align-items: center; font-size: 11.3px; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.anx-titulo { display: flex; align-items: center; justify-content: center; font-size: 11.3px; font-weight: 700; }
-.anx-campos { font-size: 8.7px; line-height: 20px; text-align: right; }
+.anx-empresa { display: flex; align-items: center; font-size: ${aPx(FUENTES.empresa)}px; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.anx-titulo { display: flex; align-items: center; justify-content: center; font-size: ${aPx(FUENTES.titulo)}px; font-weight: 700; }
+.anx-campos { font-size: ${aPx(FUENTES.campos)}px; line-height: 20px; text-align: right; }
 .anx-campos b { font-weight: 700; }
 .anx-campos span { font-weight: 400; }
-.anx-bh { font-size: 8px; line-height: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.anx-bh { font-size: ${aPx(FUENTES.bloqueHead)}px; line-height: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .anx-bh div { overflow: hidden; text-overflow: ellipsis; }
 .anx-bh b { font-weight: 700; }
 .anx-fila { display: flex; }
-.anx-cell { display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 6.9px; line-height: 1; }
+.anx-cell { display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: ${aPx(FUENTES.celda)}px; line-height: 1; }
 .anx-cell.r { justify-content: flex-end; padding-right: 2px; }
-.anx-head .anx-cell { font-size: 6.1px; font-weight: 700; }
+.anx-head .anx-cell { font-size: ${aPx(FUENTES.tablaHead)}px; font-weight: 700; }
 .anx-sub { display: flex; align-items: stretch; }
-.anx-sub-lbl { display: flex; align-items: center; justify-content: flex-end; padding-right: 3px; font-size: 7.2px; font-weight: 700; }
-.anx-sub-val { display: flex; align-items: center; justify-content: flex-end; padding-right: 2px; border: 0.8px solid #000; font-size: 7.5px; font-weight: 700; }
-.anx-obs { padding: 4px 5px; font-size: 8px; }
+.anx-sub-lbl { display: flex; align-items: center; justify-content: flex-end; padding-right: 3px; font-size: ${aPx(FUENTES.subtotalLabel)}px; font-weight: 700; }
+.anx-sub-val { display: flex; align-items: center; justify-content: flex-end; padding-right: 2px; border: 0.8px solid #000; font-size: ${aPx(FUENTES.subtotalValor)}px; font-weight: 700; }
+.anx-obs { padding: 4px 5px; font-size: ${aPx(FUENTES.observaciones)}px; }
 .anx-obs b { font-weight: 700; }
-.anx-obs p { margin: 4px 0 0; width: 52%; white-space: pre-wrap; font-size: 8px; line-height: 1.25; }
-.anx-firma { text-align: right; font-size: 8.7px; }
+.anx-obs p { margin: 4px 0 0; width: 52%; white-space: pre-wrap; font-size: ${aPx(FUENTES.observaciones)}px; line-height: 1.25; }
+.anx-firma { text-align: right; font-size: ${aPx(FUENTES.firma)}px; }
 .anx-firma-linea { border-top: 1px dotted #000; }
-.anx-firma-lbl { font-size: 7.5px; font-weight: 700; }
-.anx-legal { font-size: 6.9px; line-height: 1.35; color: #3c3c3c; }
-.anx-nota { font-size: 6.9px; color: #787878; display: flex; justify-content: space-between; }
+.anx-firma-lbl { font-size: ${aPx(FUENTES.firmaLabel)}px; font-weight: 700; }
+.anx-legal { font-size: ${aPx(FUENTES.legal)}px; line-height: 1.35; color: #3c3c3c; }
+.anx-nota { font-size: ${aPx(FUENTES.nota)}px; color: #787878; display: flex; justify-content: space-between; }
 `;
 
 /**
@@ -146,7 +146,9 @@ export default function Anexo04Hoja({
       <div className="anx-campos" style={caja(m + g.contentW - 210, g.yInfo + 8, 210, 52)}>
         <div><b>(1) N°:</b> <span>{datos.numero || "…………………"}</span></div>
         <div><b>(2) GTF N°:</b> <span>{datos.gtf || "…………………"}</span></div>
-        <div><b>(3) VOLUMEN TOTAL:</b> <span>{fmtAnexo(anexo.totalM3)} m³</span></div>
+        {/* El volumen de ESTA hoja, no el del anexo: cada hoja se muestra sola
+            en un puesto de control y no puede amparar lo que lleva otra. */}
+        <div><b>(3) VOLUMEN TOTAL:</b> <span>{fmtAnexo(hoja.totalM3)} m³</span></div>
       </div>
 
       {/* Los 4 bloques (especie × tipo, sin mezclar) */}
@@ -180,7 +182,11 @@ export default function Anexo04Hoja({
       </div>
       <div className="anx-nota" style={caja(m, g.yLegal + 18, g.contentW, 12)}>
         <span>{notaUnidad(anexo.unidadV)}</span>
-        <span>Hoja {nro} de {total}</span>
+        {/* Con más de una hoja, el total del anexo va al pie: el (3) es el de
+            esta hoja y el lector tiene que poder ver de qué conjunto es parte. */}
+        <span>
+          {total > 1 ? `Anexo completo: ${fmtAnexo(anexo.totalM3)} m³ · ` : ""}Hoja {nro} de {total}
+        </span>
       </div>
     </div>
   );

@@ -15,6 +15,79 @@
 
 import { logger } from "@/lib/logger";
 
+/* ── Un solo pedido por dato (ADR-347) ──────────────────────────────────────
+ *
+ * El Libro CTP monta varias vistas y tiras a la vez —la cabina, el semáforo de
+ * pendientes, la tira de lotes, la vista activa— y cada una pedía lo suyo por
+ * su cuenta. Medido en el navegador, UNA carga de la pestaña Consumos disparó
+ * **12 pedidos a `/forestal/ctp`, 6 a `lotes-aserrio` y 6 a `wood-entries`**:
+ * la misma respuesta, varias veces, mientras el operador mira un spinner.
+ *
+ * Dos cosas lo arreglan sin tocar cada vista: compartir la promesa de lo que ya
+ * está EN VUELO (que además neutraliza el doble montaje de React en dev) y
+ * reusar unos segundos lo recién traído. El TTL es corto a propósito: es para
+ * el montaje simultáneo de varias vistas, no para ahorrarle trabajo al servidor
+ * durante la sesión.
+ */
+
+const TTL_MS = 8_000;
+
+interface EnCache {
+  /** Cuándo se resolvió; 0 mientras está en vuelo. */
+  t: number;
+  p: Promise<unknown>;
+}
+
+const enVuelo = new Map<string, EnCache>();
+
+/**
+ * Descarta lo cacheado. Sin argumento, todo; con uno, lo que lo contenga.
+ *
+ * **Después de escribir hay que llamarla.** Un caché que sobrevive a un consumo
+ * muestra madera que ya entró a la sierra.
+ */
+export function invalidarCtp(fragmento?: string): void {
+  if (!fragmento) {
+    enVuelo.clear();
+    return;
+  }
+  for (const url of [...enVuelo.keys()]) {
+    if (url.includes(fragmento)) enVuelo.delete(url);
+  }
+}
+
+/**
+ * GET deduplicado. Devuelve la MISMA promesa a quien pida la misma url.
+ *
+ * Un error **no se cachea**: la entrada se borra al fallar, si no un 500
+ * pasajero se pega ocho segundos a toda la pantalla.
+ */
+export function ctpGet<T>(url: string, opciones: { ttlMs?: number } = {}): Promise<T> {
+  const ttl = opciones.ttlMs ?? TTL_MS;
+  const previa = enVuelo.get(url);
+  if (previa && (previa.t === 0 || Date.now() - previa.t < ttl)) return previa.p as Promise<T>;
+
+  const entrada: EnCache = {
+    t: 0,
+    p: (async () => {
+      const r = await fetch(url, { credentials: "include" });
+      if (!r.ok) throw new Error(`El servidor respondió ${r.status}`);
+      return (await r.json()) as T;
+    })()
+      .then((datos) => {
+        const viva = enVuelo.get(url);
+        if (viva === entrada) viva.t = Date.now();
+        return datos;
+      })
+      .catch((e) => {
+        if (enVuelo.get(url) === entrada) enVuelo.delete(url);
+        throw e;
+      }),
+  };
+  enVuelo.set(url, entrada);
+  return entrada.p as Promise<T>;
+}
+
 /** Qué se le dice al operador según lo que respondió el servidor. */
 function motivo(status: number, quePedia: string, mensajeServidor?: string): string {
   if (status === 401) return `Tu sesión venció mientras se cargaban ${quePedia}. Volvé a entrar.`;

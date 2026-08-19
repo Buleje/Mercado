@@ -30,6 +30,7 @@ import {
   type Vehiculo,
 } from "@/lib/forestal/directorio";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
+import CtpDirectorioDesdeGuias from "./CtpDirectorioDesdeGuias";
 import CtpParteModal from "./CtpParteModal";
 import CtpVehiculoModal from "./CtpVehiculoModal";
 import CtpProveedorTrazaModal from "./CtpProveedorTrazaModal";
@@ -102,6 +103,16 @@ export default function CtpDirectorioView() {
           {esVehiculos ? "Agregar vehículo" : `Agregar ${ROL_LABEL[pestaña as RolParte].toLowerCase()}`}
         </Btn>
       </VistaHeader>
+
+      {/* La libreta que ya está escrita en las guías (ADR-357). Va ARRIBA de las
+          pestañas: con el directorio en cero, lo primero que hay que ver es que
+          los contactos ya existen y de dónde sacarlos. */}
+      <CtpDirectorioDesdeGuias
+        partes={dir.partes}
+        vehiculos={dir.vehiculos}
+        onGuardarParte={dir.guardarParte}
+        onGuardarVehiculo={dir.guardarVehiculo}
+      />
 
       <div className="flex flex-wrap gap-1.5">
         {PESTAÑAS.map((p) => (

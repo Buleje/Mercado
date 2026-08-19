@@ -21,6 +21,7 @@ import type { FichaCtp } from "@/hooks/use-ficha-ctp";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
 import CtpParteBarra, { CtpVehiculoBarra, type ValorParte } from "./CtpParteBarra";
+import CtpParteCampos from "./CtpParteCampos";
 import { Btn, Field, I } from "./ctp-shared";
 
 /** Lo que el sistema completa solo la primera vez que se abre la guía. */
@@ -45,7 +46,6 @@ const SECCIONES = [
 type SeccionId = (typeof SECCIONES)[number]["id"];
 /** Claves de `GtfDatos` cuyo valor es un objeto plano — las que parchea `set`. */
 type SeccionObjeto = "propietario" | "destinatario" | "transportista" | "vehiculo" | "traslado";
-type DocTipo = GtfDatos["propietario"]["docTipo"];
 
 const direccionDe = (f: FichaCtp | null) =>
   [f?.direccion, f?.distrito, f?.provincia, f?.region].filter(Boolean).join(", ");
@@ -190,10 +190,12 @@ export default function CtpGtfDatosForm({
   }
 
   return (
-    <div className="space-y-3">
-      {/* Qué le falta a la guía para poder viajar. */}
+    <div className="space-y-2.5">
+      {/* Qué le falta a la guía para poder viajar — en una banda, no en un
+          bloque: arriba de un formulario largo, cada línea de estado empuja los
+          campos fuera de la vista. */}
       <div
-        className={`rounded-xl border-2 p-3 ${
+        className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border-2 px-3 py-2 ${
           faltan.length === 0
             ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-50)]"
             : "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)]"
@@ -204,15 +206,27 @@ export default function CtpGtfDatosForm({
             <Check className="h-4 w-4 shrink-0" /> La guía está completa: se puede imprimir el original y las dos copias.
           </p>
         ) : (
+          /**
+           * Los faltantes en LÍNEA, no en lista.
+           *
+           * Con ocho pendientes la lista medía media pantalla y empujaba el
+           * formulario fuera de la vista — justo el formulario que hay que
+           * llenar para que dejen de faltar. Cada uno es un chip con su motivo
+           * en el `title`: lo que importa a simple vista es cuáles son.
+           */
           <>
             <p className="flex items-center gap-2 text-sm font-bold text-[var(--data-warning-700)]">
               <AlertCircle className="h-4 w-4 shrink-0" />
               Falta{faltan.length === 1 ? "" : "n"} {faltan.length} dato{faltan.length === 1 ? "" : "s"} para poder imprimirla
             </p>
-            <ul className="mt-1 space-y-0.5 text-sm text-[var(--text-secondary)]">
+            <ul className="flex flex-wrap gap-1.5">
               {faltan.map((f) => (
-                <li key={f.campo}>
-                  <strong className="text-[var(--text-primary)]">{f.campo}</strong> — {f.motivo}
+                <li
+                  key={f.campo}
+                  title={f.motivo}
+                  className="rounded-lg bg-[var(--surface-raised)] px-2 py-0.5 text-sm font-bold text-[var(--text-primary)]"
+                >
+                  {f.campo}
                 </li>
               ))}
             </ul>
@@ -220,8 +234,8 @@ export default function CtpGtfDatosForm({
         )}
         {/* `-700` no llega a AA sobre el canvas dark: en dark se usa `-500`. */}
         {vigente === false && (
-          <p className="mt-1.5 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-            La vigencia venció el {datos.traslado.fechaFin}: actualizá las fechas antes de mover el producto.
+          <p className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+            Vigencia vencida el {datos.traslado.fechaFin}: actualizá las fechas antes de mover el producto.
           </p>
         )}
       </div>
@@ -251,7 +265,7 @@ export default function CtpGtfDatosForm({
         })}
       </div>
 
-      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4">
         {seccion === "propietario" && (
           <div className="space-y-3">
             <label className="flex items-start gap-2 text-sm font-medium text-[var(--text-primary)]">
@@ -281,7 +295,7 @@ export default function CtpGtfDatosForm({
                 onGuardar={guardarEnLibreta}
               />
             )}
-            <ParteCampos
+            <CtpParteCampos
               etiquetaNombre="Propietario del producto"
               parte={datos.propietario}
               onChange={(v) => set("propietario", v)}
@@ -299,7 +313,7 @@ export default function CtpGtfDatosForm({
               onElegir={anotarParte}
               onGuardar={guardarEnLibreta}
             />
-            <ParteCampos
+            <CtpParteCampos
               etiquetaNombre="Destinatario"
               direccionRequerida
               parte={datos.destinatario}
@@ -318,13 +332,13 @@ export default function CtpGtfDatosForm({
               onElegir={anotarParte}
               onGuardar={guardarEnLibreta}
             />
-            <ParteCampos
+            <CtpParteCampos
               etiquetaNombre="Transportista"
               sinUbicacion
               parte={datos.transportista}
               onChange={(v) => set("transportista", v)}
               extra={
-                <Field label="Registro MTC" hint="Si es empresa de transporte">
+                <Field span={4} label="Registro MTC" hint="Si es empresa de transporte">
                   <input
                     type="text"
                     className={I}
@@ -334,7 +348,7 @@ export default function CtpGtfDatosForm({
                 </Field>
               }
             />
-            <div className="grid gap-3 border-t-2 border-[var(--rule-soft)] pt-3 sm:grid-cols-3">
+            <div className="border-t-2 border-[var(--rule-soft)] pt-3"><div className="grid grid-cols-1 gap-x-3 gap-y-2.5 sm:grid-cols-6 2xl:grid-cols-12">
               <CtpVehiculoBarra
                 vehiculos={directorio.vehiculosActivos}
                 onAplicar={(v) => set("vehiculo", v)}
@@ -343,7 +357,7 @@ export default function CtpGtfDatosForm({
               {/* Acá la selva manda: buena parte de la madera sale por río, y
                   un control fluvial no busca una placa. El modo cambia lo que se
                   pide, en vez de obligar al operador a inventar un dato. */}
-              <Field label="Modo de transporte" hint="Por río, por carretera o combinado">
+              <Field span={4} label="Modo de transporte" hint="Por río, por carretera o combinado">
                 <select
                   className={I}
                   value={datos.vehiculo.modo}
@@ -355,6 +369,7 @@ export default function CtpGtfDatosForm({
                 </select>
               </Field>
               <Field
+                span={4}
                 label={esFluvial ? "Matrícula" : "Placa"}
                 required
                 hint={esFluvial ? "La de la embarcación" : "Lo primero que compara un control"}
@@ -366,15 +381,15 @@ export default function CtpGtfDatosForm({
                   onChange={(e) => set("vehiculo", { placa: e.target.value.toUpperCase() })}
                 />
               </Field>
-              <Field label="Marca">
+              <Field span={4} label="Marca">
                 <input type="text" className={I} value={datos.vehiculo.marca} onChange={(e) => set("vehiculo", { marca: e.target.value })} />
               </Field>
               {esFluvial ? (
-                <Field label="Nombre de la embarcación" required hint="Así se la identifica en el control">
+                <Field span={4} label="Nombre de la embarcación" required hint="Así se la identifica en el control">
                   <input type="text" className={I} value={datos.vehiculo.embarcacion} onChange={(e) => set("vehiculo", { embarcacion: e.target.value })} placeholder="Chata Doña Rosa" />
                 </Field>
               ) : (
-                <Field label="Tipo de vehículo" hint="Camión, tráiler…">
+                <Field span={4} label="Tipo de vehículo" hint="Camión, tráiler…">
                   <input type="text" className={I} value={datos.vehiculo.tipo} onChange={(e) => set("vehiculo", { tipo: e.target.value })} />
                 </Field>
               )}
@@ -382,7 +397,7 @@ export default function CtpGtfDatosForm({
                   común que la empresa ponga el camión y el chofer sea otro. Al
                   elegirlo de la libreta viene con su licencia, que es lo que
                   pide el puesto de control. */}
-              <div className="sm:col-span-3">
+              <div className="sm:col-span-12">
                 <CtpParteBarra
                   rol="conductor"
                   valor={{
@@ -419,45 +434,47 @@ export default function CtpGtfDatosForm({
               {/* Por río el responsable es el PATRÓN. El faltante ya lo llama así:
                   si el campo dijera otra cosa, el aviso mandaría a buscar algo que
                   no existe en pantalla. */}
-              <Field label={esFluvial ? "Patrón de la embarcación" : "Conductor"} required>
+              <Field span={4} label={esFluvial ? "Patrón de la embarcación" : "Conductor"} required>
                 <input type="text" className={I} value={datos.vehiculo.conductor} onChange={(e) => set("vehiculo", { conductor: e.target.value })} />
               </Field>
-              <Field label={esFluvial ? "DNI del patrón" : "DNI del conductor"}>
+              <Field span={4} label={esFluvial ? "DNI del patrón" : "DNI del conductor"}>
                 <input type="text" className={`${I} font-mono`} value={datos.vehiculo.conductorDni} onChange={(e) => set("vehiculo", { conductorDni: e.target.value })} />
               </Field>
-              <Field label={esFluvial ? "Licencia de navegación" : "Licencia de conducir"}>
+              <Field span={4} label={esFluvial ? "Licencia de navegación" : "Licencia de conducir"}>
                 <input type="text" className={`${I} font-mono`} value={datos.vehiculo.licencia} onChange={(e) => set("vehiculo", { licencia: e.target.value })} />
               </Field>
+            </div>
             </div>
           </div>
         )}
 
         {seccion === "traslado" && (
           <div className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Punto de partida" required>
+            <div><div className="grid grid-cols-1 gap-x-3 gap-y-2.5 sm:grid-cols-6 2xl:grid-cols-12">
+              <Field span={4} label="Punto de partida" required>
                 <input type="text" className={I} value={datos.traslado.puntoPartida} onChange={(e) => set("traslado", { puntoPartida: e.target.value })} />
               </Field>
-              <Field label="Punto de llegada" required>
+              <Field span={4} label="Punto de llegada" required>
                 <input type="text" className={I} value={datos.traslado.puntoLlegada} onChange={(e) => set("traslado", { puntoLlegada: e.target.value })} />
               </Field>
               {/* La ruta a lo ancho: así las dos fechas quedan lado a lado abajo. */}
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-4">
                 <Field label="Ruta declarada" hint="Los puestos de control la cotejan">
                   <input type="text" className={I} value={datos.traslado.ruta} onChange={(e) => set("traslado", { ruta: e.target.value })} />
                 </Field>
               </div>
               {/* Cada fecha ocupa su propia celda: en una sub-grilla el `input[type=date]`
                   quedaba tan angosto que recortaba el año. */}
-              <Field label="Inicio del traslado" required>
+              <Field span={6} label="Inicio del traslado" required>
                 <input type="date" className={I} value={datos.traslado.fechaInicio} onChange={(e) => set("traslado", { fechaInicio: e.target.value })} />
               </Field>
-              <Field label="Vigencia hasta" hint="La fija la ARFFS por ruta y distancia">
+              <Field span={6} label="Vigencia hasta" hint="La fija la ARFFS por ruta y distancia">
                 <input type="date" className={I} value={datos.traslado.fechaFin} onChange={(e) => set("traslado", { fechaFin: e.target.value })} />
               </Field>
             </div>
-            <div className="grid gap-3 border-t-2 border-[var(--rule-soft)] pt-3 sm:grid-cols-2">
-              <Field label="Títulos habilitantes" required hint="Separá con coma. Acreditan el origen legal de la madera">
+            </div>
+            <div className="border-t-2 border-[var(--rule-soft)] pt-3"><div className="grid grid-cols-1 gap-x-3 gap-y-2.5 sm:grid-cols-6 2xl:grid-cols-12">
+              <Field span={6} label="Títulos habilitantes" required hint="Separá con coma. Acreditan el origen legal de la madera">
                 <input
                   type="text"
                   className={I}
@@ -470,12 +487,12 @@ export default function CtpGtfDatosForm({
                   }
                 />
               </Field>
-              <Field label="N° de permiso CITES" hint="Si la especie es protegida — es legal CON permiso">
+              <Field span={6} label="N° de permiso CITES" hint="Si la especie es protegida — es legal CON permiso">
                 <input type="text" className={I} value={datos.citesPermiso} onChange={(e) => setDatos((p) => ({ ...p, citesPermiso: e.target.value }))} />
               </Field>
               {/* La GTF ampara el TRASLADO; la factura, la operación. Van juntas
                   en el control y hasta ahora el número sólo vivía en observaciones. */}
-              <Field label="Comprobante de venta" hint="El que ampara la operación, si ya se emitió">
+              <Field span={4} label="Comprobante de venta" hint="El que ampara la operación, si ya se emitió">
                 <select
                   className={I}
                   value={datos.comprobante.tipo}
@@ -491,7 +508,7 @@ export default function CtpGtfDatosForm({
                 </select>
               </Field>
               {datos.comprobante.tipo !== "ninguno" && (
-                <Field label="N° del comprobante">
+                <Field span={4} label="N° del comprobante">
                   <input
                     type="text"
                     className={`${I} font-mono`}
@@ -501,9 +518,10 @@ export default function CtpGtfDatosForm({
                   />
                 </Field>
               )}
-              <Field label="Observaciones">
+              <Field span={4} label="Observaciones">
                 <input type="text" className={I} value={datos.observaciones} onChange={(e) => setDatos((p) => ({ ...p, observaciones: e.target.value }))} />
               </Field>
+            </div>
             </div>
           </div>
         )}
@@ -535,74 +553,6 @@ export default function CtpGtfDatosForm({
           </Btn>
         </div>
       </div>
-    </div>
-  );
-}
-
-/** Identidad de una parte que interviene en el traslado (nombre + documento + dirección). */
-function ParteCampos({
-  etiquetaNombre,
-  parte,
-  onChange,
-  direccionRequerida,
-  sinUbicacion,
-  extra,
-}: {
-  etiquetaNombre: string;
-  parte: {
-    nombre: string; docTipo: DocTipo; docNumero: string; direccion: string;
-    departamento?: string; provincia?: string; distrito?: string;
-  };
-  onChange: (v: {
-    nombre?: string; docTipo?: DocTipo; docNumero?: string; direccion?: string;
-    departamento?: string; provincia?: string; distrito?: string;
-  }) => void;
-  /** El transportista no tiene casilleros de ubicación en el formato. */
-  sinUbicacion?: boolean;
-  direccionRequerida?: boolean;
-  extra?: React.ReactNode;
-}) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {/* Nombre y dirección a lo ancho: una razón social entra completa y la
-          etiqueta no envuelve (envolviendo, el asterisco quedaba huérfano). */}
-      <Field label={etiquetaNombre} required>
-        <input type="text" className={I} value={parte.nombre} onChange={(e) => onChange({ nombre: e.target.value })} />
-      </Field>
-      <Field
-        label="Dirección"
-        required={direccionRequerida}
-        hint={direccionRequerida ? "Es el punto de llegada que cotejan los controles" : undefined}
-      >
-        <input type="text" className={I} value={parte.direccion} onChange={(e) => onChange({ direccion: e.target.value })} />
-      </Field>
-      <Field label="Tipo de documento">
-        <select className={I} value={parte.docTipo} onChange={(e) => onChange({ docTipo: e.target.value as DocTipo })}>
-          {(["RUC", "DNI", "CE", "PASAPORTE"] as const).map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-      </Field>
-      <Field label="N° de documento">
-        <input type="text" className={`${I} font-mono`} value={parte.docNumero} onChange={(e) => onChange({ docNumero: e.target.value })} />
-      </Field>
-      {/* Casilleros (17)(18)(19) y (26)(27)(28) del formato. Van sueltos y no
-          dentro de la dirección porque el control pide "el (27)": se completan
-          solos al elegir de la libreta, que ya los tiene separados. */}
-      {!sinUbicacion && (
-        <>
-          <Field label="Departamento" hint="Casillero del formato oficial">
-            <input type="text" className={I} value={parte.departamento ?? ""} onChange={(e) => onChange({ departamento: e.target.value })} />
-          </Field>
-          <Field label="Provincia">
-            <input type="text" className={I} value={parte.provincia ?? ""} onChange={(e) => onChange({ provincia: e.target.value })} />
-          </Field>
-          <Field label="Distrito">
-            <input type="text" className={I} value={parte.distrito ?? ""} onChange={(e) => onChange({ distrito: e.target.value })} />
-          </Field>
-        </>
-      )}
-      {extra}
     </div>
   );
 }

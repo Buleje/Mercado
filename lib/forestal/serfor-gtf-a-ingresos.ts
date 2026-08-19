@@ -1,4 +1,5 @@
 import type { GtfSerfor, TrozaGtf } from "./serfor-gtf";
+import { descuadreDeEspecie, explicarDescuadre, type DescuadreDeGuia } from "./guia-descuadre";
 
 /**
  * Convierte una GTF de SERFOR en los ingresos que le corresponden en el libro
@@ -41,7 +42,7 @@ export type TrozaDeIngreso = {
 };
 
 export type ReparteGtf =
-  | { ok: true; ingresos: IngresoDesdeGtf[]; avisos: string[] }
+  | { ok: true; ingresos: IngresoDesdeGtf[]; avisos: string[]; descuadres: DescuadreDeGuia[] }
   | { ok: false; motivo: string };
 
 /** Compara nombres de especie sin tildes ni mayúsculas: SERFOR mezcla las dos. */
@@ -151,6 +152,7 @@ export function repartirGtfEnIngresos(gtf: GtfSerfor): ReparteGtf {
   }
 
   const ingresos: IngresoDesdeGtf[] = [];
+  const descuadres: DescuadreDeGuia[] = [];
   for (const [i, p] of productos.entries()) {
     const k = clave(p.comun) || clave(p.cientifico);
     const mias = [...(porEspecie.get(k) ?? []), ...(i === 0 ? sueltas : [])];
@@ -173,6 +175,24 @@ export function repartirGtfEnIngresos(gtf: GtfSerfor): ReparteGtf {
 
     const piezasDeclaradas = p.cantidad != null && p.cantidad > 0 ? Math.round(p.cantidad) : null;
     const piezas = piezasDeclaradas ?? mias.reduce((a, t) => a + (t.cantidad ?? 1), 0);
+
+    // Los DOS testigos del papel tienen que dar lo mismo (ADR-353). Cuando no
+    // dan, se avisa acá —antes de registrar— y no tres pantallas después, cuando
+    // el consumo choque contra I2 y parezca que se equivocó el operador.
+    const descuadre = descuadreDeEspecie({
+      especie: p.comun ?? p.cientifico ?? null,
+      declaradoM3: declarado,
+      piezasDeclaradas,
+      filas: mias.map((t) => ({
+        codificacion: t.codificacion,
+        cantidad: t.cantidad,
+        volumenM3: t.volumenM3,
+      })),
+    });
+    if (descuadre) {
+      descuadres.push(descuadre);
+      avisos.push(explicarDescuadre(descuadre, gtf.gtfNumber));
+    }
 
     ingresos.push({
       especieComun: (p.comun ?? p.cientifico ?? "").trim() || "Sin especie declarada",
@@ -197,5 +217,5 @@ export function repartirGtfEnIngresos(gtf: GtfSerfor): ReparteGtf {
     );
   }
 
-  return { ok: true, ingresos, avisos };
+  return { ok: true, ingresos, avisos, descuadres };
 }

@@ -23,6 +23,16 @@ export type RetrozoNuevo = {
   largoM: number;
   /** Si no viene, se calcula. El operador puede corregirlo: manda lo que midió. */
   volumenM3?: number | null;
+  /**
+   * El código del pedazo, cuando el documento ya lo trae.
+   *
+   * En el alta manual no viene y se genera (`106/C` → `106/C-1`). Pero el
+   * Apartado 2 del libro del SNIFFS trae su propio código (`3012263/A`), y ese
+   * es el que SERFOR conoce: pisarlo con uno generado dejaba el retrozo
+   * guardado con un nombre que no figura en ningún documento, y el consumo del
+   * mismo libro —que apunta a `3012263/A`— no lo encontraba nunca.
+   */
+  codificacion?: string | null;
   observaciones?: string | null;
   /** El pedazo que no sirve: ocupa volumen de la madre pero no es producto. */
   descarte?: boolean;
@@ -120,7 +130,10 @@ export function calcularRetrozado(madre: TrozaMadre, nuevos: RetrozoNuevo[]): Re
 
     retrozos.push({
       ...n,
-      codificacion: base ? `${base}-${desde + nro}` : `RETRO-${desde + nro}`,
+      /* El código que trae el documento manda —igual que el volumen dos líneas
+         arriba—: si el libro ya nombró al pedazo, ese es su nombre. Sólo se
+         genera cuando nadie lo puso. */
+      codificacion: n.codificacion?.trim() || (base ? `${base}-${desde + nro}` : `RETRO-${desde + nro}`),
       volumenM3,
       orden: desde + nro,
     });

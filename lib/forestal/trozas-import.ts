@@ -40,6 +40,20 @@ export interface TrozaImportada {
   d2Cm: number | null;
   cantidad: number | null;
   volumenM3: number | null;
+  /**
+   * El código que ESTE centro le marca a la pieza al recibirla (ADR-335). Se
+   * carga en el alta —cuando el camión está en el patio— y no después.
+   */
+  codigoPlanta?: string | null;
+  /**
+   * Cuándo bajó ESTA pieza del camión, `YYYY-MM-DD` (ADR-336). Vacío = la
+   * fecha de recepción del ingreso. Se guarda por pieza porque una guía grande
+   * se descarga en dos viajes y el patio del lunes no puede incluir la madera
+   * que llegó el miércoles.
+   */
+  fechaRecepcion?: string | null;
+  /** La guía la declara pero NO bajó del camión (ADR-325). */
+  noRecepcionada?: boolean;
 }
 
 export interface ResultadoImportTrozas {

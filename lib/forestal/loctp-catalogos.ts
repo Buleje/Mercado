@@ -67,15 +67,30 @@ export type PresentacionLoctp = (typeof PRESENTACIONES_LOCTP)[number];
  * habitualmente en paquetes puede salir suelto una vez, y el libro tiene que
  * poder decirlo.
  */
+/**
+ * La regla del aserradero de Brandon (2026-08-08): **lo que sale atado se
+ * declara en PAQUETES y lo que sale suelto, en PIEZAS**. Por eso las dos
+ * paqueterías son `PAQUETES` y toda la madera aserrada que se cuenta pieza por
+ * pieza —comercial, tabla, corta, larga angosta, bloques, listones, postes— es
+ * `PIEZAS`, aunque el catálogo de presentaciones tenga una entrada homónima
+ * (`LISTONES`): el producto ya dice qué es, la presentación dice cómo viene.
+ *
+ * Ripas, tablillas, tacos y cuartón conservan su presentación homónima porque
+ * son bultos con nombre propio en la guía y nadie pidió cambiarlos.
+ */
 const PRESENTACION_POR_PRODUCTO: Record<string, PresentacionLoctp> = {
   "MADERA EN ROLLO": "TROZAS",
   "MADERA ASERRADA (BLOQUES)": "PIEZAS",
   "MADERA ASERRADA (COMERCIAL)": "PIEZAS",
+  "MADERA ASERRADA (CORTA)": "PIEZAS",
   "MADERA ASERRADA (LARGA ANGOSTA)": "PIEZAS",
+  "MADERA ASERRADA (LISTONES)": "PIEZAS",
+  "MADERA ASERRADA (POSTE)": "PIEZAS",
+  "MADERA ASERRADA (TABLA)": "PIEZAS",
+  "MADERA ASERRADA (TABLA CEBILLADA)": "PIEZAS",
   "MADERA ASERRADA (TABLA DE PULGADA)": "PIEZAS",
   "MADERA ASERRADA (PAQUETERIA CORTA)": "PAQUETES",
   "MADERA ASERRADA (PAQUETERIA LARGA)": "PAQUETES",
-  "MADERA ASERRADA (LISTONES)": "LISTONES",
   "MADERA ASERRADA (RIPAS)": "RIPAS",
   "MADERA ASERRADA (TABLILLAS)": "TABLILLAS",
   "MADERA ASERRADA (TACOS)": "TACOS",
@@ -84,6 +99,38 @@ const PRESENTACION_POR_PRODUCTO: Record<string, PresentacionLoctp> = {
 
 export function presentacionSugerida(tipoProducto: string | null | undefined): PresentacionLoctp | null {
   return PRESENTACION_POR_PRODUCTO[(tipoProducto ?? "").trim().toUpperCase()] ?? null;
+}
+
+/**
+ * El tipo que usa el cubicador → el producto que nombra el libro.
+ *
+ * El patio dice «Comercial» y «Paq. corta»; el formato oficial escribe
+ * «MADERA ASERRADA (COMERCIAL)». Sin esta traducción, una corrida declarada
+ * desde una cubicación entraba al libro con el nombre del patio y sin
+ * presentación —`presentacionSugerida("Comercial")` no encuentra nada—, así que
+ * el casillero salía vacío en la guía y en el LO-CTP.
+ *
+ * Single source: lo usan el registro por jornadas y cualquier otro camino que
+ * declare producción a partir de piezas medidas.
+ */
+const PRODUCTO_POR_TIPO_COMERCIAL: Record<string, string> = {
+  comercial: "MADERA ASERRADA (COMERCIAL)",
+  "paqueteria larga": "MADERA ASERRADA (PAQUETERIA LARGA)",
+  "paqueteria corta": "MADERA ASERRADA (PAQUETERIA CORTA)",
+  tabla: "MADERA ASERRADA (TABLA)",
+  "larga angosta": "MADERA ASERRADA (LARGA ANGOSTA)",
+  corta: "MADERA ASERRADA (CORTA)",
+};
+
+export function productoDelTipoComercial(tipo: string | null | undefined): string | null {
+  const k = (tipo ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+  /* «Otro» y lo desconocido devuelven null a propósito: escribir un producto
+     que el catálogo no tiene es peor que dejar que lo elija una persona. */
+  return PRODUCTO_POR_TIPO_COMERCIAL[k] ?? null;
 }
 
 /**

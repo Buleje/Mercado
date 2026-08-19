@@ -59,7 +59,15 @@ interface TrazabilidadDTO {
   atribuido: number;
   sinAtribuir: number;
   motivo: "ok" | "sin_atribucion" | "atribucion_parcial" | "corrida_sin_origen";
-  corridas: { produccionEntryId: string; lineNo: number; quantity: number; guias: string[]; sinOrigen: boolean }[];
+  corridas: {
+    produccionEntryId: string;
+    lineNo: number;
+    quantity: number;
+    guias: string[];
+    sinOrigen: boolean;
+    /** De qué lote de aserrío salió la corrida (ADR-337); `null` si se cargó a mano. */
+    loteAserrio: { code: string; piezas: number } | null;
+  }[];
 }
 
 interface CogsDTO {
@@ -253,6 +261,8 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                       <tr>
                         <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Corrida</th>
                         <th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">Cantidad</th>
+                        {/* El eslabón del patio: de qué pila salió (ADR-337). */}
+                        <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Lote de aserrío</th>
                         <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Guías GTF de ingreso</th>
                         <th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">Costo</th>
                       </tr>
@@ -264,6 +274,18 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                           <tr key={c.produccionEntryId} className="border-t border-[var(--rule-soft)]">
                             <td className="px-3 py-2 font-mono text-xs font-bold text-[var(--text-primary)]">#{c.lineNo}</td>
                             <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{n4(c.quantity)}</td>
+                            <td className="px-3 py-2">
+                              {c.loteAserrio ? (
+                                <span
+                                  title={`La corrida #${c.lineNo} se hizo con el lote ${c.loteAserrio.code} (${c.loteAserrio.piezas} troza(s))`}
+                                  className="inline-block rounded-lg bg-primary/10 px-1.5 py-0.5 font-mono text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                                >
+                                  {c.loteAserrio.code}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-[var(--text-tertiary)]">cargada a mano</span>
+                              )}
+                            </td>
                             <td className="px-3 py-2">
                               {c.sinOrigen ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
@@ -319,22 +341,6 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
               )}
             </section>
 
-            {/* 4. GTF de salida: número formal + el cuerpo que pide un control */}
-            <CtpGtfSeccion
-              // El número de la BASE gana: la fila del listado puede estar vieja.
-              despacho={{ ...entry, unitLabel, gtfNumber: guia?.gtfNumber ?? entry.gtfNumber }}
-              ficha={ficha}
-              cadena={traza ? { corridas: traza.corridas } : null}
-              // CITES es legal CON permiso: si la Ficha lo tiene archivado para esta
-              // especie, se copia a la guía en vez de pedirlo tipeado otra vez.
-              citesPermiso={
-                entry.cites
-                  ? permisoCitesDeEspecie(ficha, entry.speciesCommon, entry.speciesScientific)?.numero ?? null
-                  : null
-              }
-              gtfDatosGuardado={guia?.gtfDatos ?? null}
-            />
-
             {/* 5. Certificado — gate ADR-135 D3 */}
             <div className="space-y-2 border-t-2 border-[var(--rule-soft)] pt-4">
               <Btn
@@ -354,6 +360,32 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
               {printError && <p className="text-center text-xs font-bold text-[var(--data-error-700)]">{printError}</p>}
             </div>
 
+            </div>
+
+            {/**
+             * 4 · GTF de salida, a lo ANCHO de las dos columnas.
+             *
+             * Es un formulario de sesenta casilleros: metido en la columna
+             * derecha (430 px) medía más de mil píxeles de alto y había que
+             * scrollear la ficha entera para llenarlo, mientras la columna
+             * izquierda terminaba a media pantalla y dejaba el hueco al lado.
+             * Con el ancho completo la misma parte entra en dos filas.
+             */}
+            <div className="md:col-span-2">
+              <CtpGtfSeccion
+                // El número de la BASE gana: la fila del listado puede estar vieja.
+                despacho={{ ...entry, unitLabel, gtfNumber: guia?.gtfNumber ?? entry.gtfNumber }}
+                ficha={ficha}
+                cadena={traza ? { corridas: traza.corridas } : null}
+                // CITES es legal CON permiso: si la Ficha lo tiene archivado para esta
+                // especie, se copia a la guía en vez de pedirlo tipeado otra vez.
+                citesPermiso={
+                  entry.cites
+                    ? permisoCitesDeEspecie(ficha, entry.speciesCommon, entry.speciesScientific)?.numero ?? null
+                    : null
+                }
+                gtfDatosGuardado={guia?.gtfDatos ?? null}
+              />
             </div>
             </div>
             {/* Rec #10 QA: historial de cambios de este despacho (audit trail). */}

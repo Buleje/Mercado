@@ -74,6 +74,44 @@ function ImagenCampo({ src, label, alto = "h-11 w-14", onArchivo, onQuitar }: {
   );
 }
 
+/**
+ * Una imagen del emisor en el apartado: preview grande, dónde se imprime y el
+ * botón de quitarla. La caja es alta a propósito —un logo de 14 px de alto no
+ * se puede juzgar— y dice si ya está guardada.
+ */
+function ImagenGuardada({ src, label, donde, onArchivo, onQuitar }: {
+  src?: string; label: string; donde: string;
+  onArchivo: (f?: File) => void; onQuitar: () => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div className="space-y-1">
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={(e) => { onArchivo(e.target.files?.[0]); e.target.value = ""; }} />
+      <button
+        type="button"
+        onClick={() => ref.current?.click()}
+        title={src ? `Cambiar ${label.toLowerCase()}` : `Subir ${label.toLowerCase()}`}
+        aria-label={`${src ? "Cambiar" : "Subir"} ${label.toLowerCase()}`}
+        className={`flex h-20 w-full items-center justify-center overflow-hidden rounded-xl border-2 bg-[var(--surface-raised)] p-1 transition ${src ? "border-[var(--data-success-500)]/50" : "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
+      >
+        {src
+          // eslint-disable-next-line @next/next/no-img-element -- dataURL local, no pasa por el optimizador
+          ? <img src={src} alt={label} className="max-h-full max-w-full object-contain" />
+          : <span className="flex flex-col items-center gap-1 text-[length:var(--ts-2xs)] font-bold"><ImageIcon className="h-5 w-5" /> Subir</span>}
+      </button>
+      <div className="flex items-baseline justify-between gap-1">
+        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">{label}</span>
+        {src && (
+          <button type="button" onClick={onQuitar} className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] underline hover:text-[var(--data-error-700)]">
+            Quitar
+          </button>
+        )}
+      </div>
+      <p className="text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">{donde}</p>
+    </div>
+  );
+}
+
 export default function Anexo04Campos({
   datos, onChange, ficha, onError,
 }: {
@@ -136,13 +174,7 @@ export default function Anexo04Campos({
             </button>
           )}
         </div>
-        <div className="mt-1 flex items-center gap-2">
-          <ImagenCampo
-            src={datos.logo}
-            label="Logo"
-            onArchivo={(f) => void subirImagen(f, "logo", "logoAspect")}
-            onQuitar={() => onChange({ logo: undefined, logoAspect: undefined })}
-          />
+        <div className="mt-1">
           <input value={datos.empresa} onChange={(e) => onChange({ empresa: e.target.value })} placeholder="Razón social" className={INPUT} />
         </div>
       </div>
@@ -170,7 +202,21 @@ export default function Anexo04Campos({
       </div>
 
       <label className="block"><span className={LABEL}>(12) Observaciones</span>
-        <textarea value={datos.observaciones} onChange={(e) => onChange({ observaciones: e.target.value })} rows={2} placeholder="—" className="mt-1 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+        {/* Sigue en blanco por defecto —es jurada, la escribe quien firma—
+            pero el placeholder sugiere qué suele valer la pena anotar, con
+            la GTF ya tipeada si está a mano. Un placeholder no se manda: si
+            el campo queda vacío, el PDF no imprime nada acá. */}
+        <textarea
+          value={datos.observaciones}
+          onChange={(e) => onChange({ observaciones: e.target.value })}
+          rows={3}
+          placeholder={
+            datos.gtf
+              ? `Ej.: procede íntegro de la GTF ${datos.gtf}, sin discrepancias con lo aserrado. Fecha de aserrío, destino, o cualquier aclaración del lote.`
+              : "Ej.: GTF de origen, fecha de aserrío, destino, o cualquier aclaración del lote que el firmante quiera dejar constancia."
+          }
+          className="mt-1 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+        />
       </label>
 
       {/* Firmante (13)-(16) + emisores guardados */}
@@ -191,26 +237,44 @@ export default function Anexo04Campos({
         </label>
       </div>
 
-      {/* Firma escaneada y sello: se imprimen sobre la línea (13) */}
-      <div>
-        <span className={LABEL}>(13) Firma y sello escaneados</span>
-        <div className="mt-1 flex items-center gap-2">
-          <ImagenCampo
+      {/* ── Papelería del emisor: logo, firma y sello ──────────────────────
+          Un apartado propio y no tres controles sueltos: son las imágenes que
+          hacen que el papel parezca de la empresa, se cargan UNA vez y quedan
+          guardadas por tenant para todos los anexos siguientes. Antes el logo
+          vivía pegado a la razón social y la firma tres campos más abajo, así
+          que nadie sabía que existían las tres. */}
+      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <span className={LABEL}>Logo, firma y sello del emisor</span>
+          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+            {[datos.logo, datos.firma, datos.sello].filter(Boolean).length}/3 guardados
+          </span>
+        </div>
+        <p className="mt-0.5 text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">
+          Se guardan en este equipo y salen en todos los anexos que emitas. PNG con fondo transparente es lo que mejor imprime.
+        </p>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          <ImagenGuardada
+            src={datos.logo}
+            label="Logo"
+            donde="Arriba a la izquierda, al lado de la razón social"
+            onArchivo={(f) => void subirImagen(f, "logo", "logoAspect")}
+            onQuitar={() => onChange({ logo: undefined, logoAspect: undefined })}
+          />
+          <ImagenGuardada
             src={datos.firma}
             label="Firma"
-            alto="h-11 w-24"
+            donde="Sobre la línea (13), a la derecha"
             onArchivo={(f) => void subirImagen(f, "firma", "firmaAspect")}
             onQuitar={() => onChange({ firma: undefined, firmaAspect: undefined })}
           />
-          <ImagenCampo
+          <ImagenGuardada
             src={datos.sello}
             label="Sello"
+            donde="A la izquierda de la firma"
             onArchivo={(f) => void subirImagen(f, "sello", "selloAspect")}
             onQuitar={() => onChange({ sello: undefined, selloAspect: undefined })}
           />
-          <span className="text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">
-            Salen impresos sobre la línea de firma. Mejor en PNG con fondo transparente.
-          </span>
         </div>
       </div>
 

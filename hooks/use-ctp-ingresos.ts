@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { WoodEntry, WoodEntryStats } from "@/components/admin/forestal/ctp-shared";
+import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 
 export const CTP_PAGE_SIZE = 50;
 /** Tope de la descarga: un CSV de 5000 filas ya son ~1.5 MB y varias páginas de
@@ -26,6 +27,8 @@ export type CtpEntryAction = "validate" | "reject" | "annul" | "delete";
 
 export type CtpSortField =
   | "entryDate"
+  /** Cuándo se recibió — el orden del archivo de GTF ingresadas (ADR-351). */
+  | "fechaRecepcion"
   | "volumeM3"
   | "pieces"
   | "providerName"
@@ -52,6 +55,11 @@ export interface CtpIngresosFiltros {
   late?: boolean;
   /** true = solo los que no tienen código de origen (bloquean el EUDR). */
   sinOrigen?: boolean;
+  /**
+   * Estado de recepción (ADR-339): `pendiente` es la bandeja del patio,
+   * `cerrada` el archivo de GTF ingresadas. Vacío = las dos.
+   */
+  recepcion?: "pendiente" | "cerrada" | "";
 }
 
 interface UseCtpIngresosArgs {
@@ -63,6 +71,12 @@ interface UseCtpIngresosArgs {
 
 interface UseCtpIngresosResult {
   entries: WoodEntry[];
+  /**
+   * Las mismas líneas agrupadas por documento (ADR-346). La paginación va por
+   * GUÍA: `total` cuenta guías y `lineas` los asientos que hay detrás.
+   */
+  guias: GuiaIngreso<WoodEntry>[];
+  lineas: number;
   stats: WoodEntryStats | null;
   total: number;
   loading: boolean;
@@ -72,6 +86,8 @@ interface UseCtpIngresosResult {
   runAction: (id: string, action: CtpEntryAction, reason?: string) => Promise<void>;
   /** Valida N ingresos; devuelve cuántos fallaron. Recarga una sola vez al final. */
   validateMany: (ids: string[]) => Promise<number>;
+  /** Recepciona N guías con la misma fecha (ADR-339); devuelve cuántas fallaron. */
+  recepcionarMany: (ids: string[], fecha?: string) => Promise<number>;
   /** Rechaza N ingresos con un motivo común; devuelve cuántos fallaron. */
   rejectMany: (ids: string[], reason: string) => Promise<number>;
   /** Todas las filas del filtro actual (hasta CTP_EXPORT_MAX) — para descargar. */
@@ -114,6 +130,8 @@ export function useCtpIngresos({
   page,
 }: UseCtpIngresosArgs): UseCtpIngresosResult {
   const [entries, setEntries] = useState<WoodEntry[]>([]);
+  const [guias, setGuias] = useState<GuiaIngreso<WoodEntry>[]>([]);
+  const [lineas, setLineas] = useState(0);
   const [stats, setStats] = useState<WoodEntryStats | null>(null);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -122,7 +140,7 @@ export function useCtpIngresos({
   // Descarta respuestas de un fetch viejo que llega tarde y pisaría al nuevo.
   const requestSeq = useRef(0);
 
-  const { status, search, species, provider, product, cites, late, sinOrigen } = filtros;
+  const { status, search, species, provider, product, cites, late, sinOrigen, recepcion } = filtros;
 
   /** Los parámetros del conjunto (sin paginación): los comparten la tabla y la
    *  descarga, así que "exportar" baja EXACTAMENTE lo que se está viendo. */
@@ -136,10 +154,11 @@ export function useCtpIngresos({
     if (cites !== undefined) params.set("cites", cites ? "1" : "0");
     if (late) params.set("late", "1");
     if (sinOrigen) params.set("sin_origen", "1");
+    if (recepcion) params.set("recepcion", recepcion);
     params.set("sort", sort.by);
     params.set("dir", sort.dir);
     return params;
-  }, [period, status, search, species, provider, product, cites, late, sinOrigen, sort.by, sort.dir]);
+  }, [period, status, search, species, provider, product, cites, late, sinOrigen, recepcion, sort.by, sort.dir]);
 
   const load = useCallback(async () => {
     const seq = ++requestSeq.current;
@@ -152,17 +171,29 @@ export function useCtpIngresos({
       params.set("limit", String(CTP_PAGE_SIZE));
       params.set("offset", String(page * CTP_PAGE_SIZE));
       params.set("stats", "1");
+      /* La bandeja se lee por documento: una GTF de dos especies es UNA fila
+         (ADR-346). El agrupado lo hace el servidor porque también pagina. */
+      params.set("agrupar", "guia");
 
       const res = await fetch(`/api/admin/forestal/wood-entries?${params}`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error(await errorFrom(res));
 
-      const data: { entries: WoodEntry[]; total: number; stats: WoodEntryStats } = await res.json();
+      const data: {
+        guias: GuiaIngreso<WoodEntry>[];
+        total: number;
+        lineas: number;
+        stats: WoodEntryStats;
+      } = await res.json();
       if (seq !== requestSeq.current) return;
 
-      setEntries(data.entries);
+      setGuias(data.guias ?? []);
+      /* `entries` sigue siendo la lista plana de la página: las acciones en
+         lote, el legajo y el "seleccionar todo" trabajan sobre asientos. */
+      setEntries((data.guias ?? []).flatMap((g) => g.lineas));
       setTotal(data.total);
+      setLineas(data.lineas ?? 0);
       setStats(data.stats);
     } catch (err) {
       if (seq !== requestSeq.current) return;
@@ -197,6 +228,53 @@ export function useCtpIngresos({
       if (msg) setError(msg);
       await load();
       return results.filter((r) => r.status === "rejected").length;
+    },
+    [load],
+  );
+
+  /**
+   * Recepcionar N guías con la MISMA fecha (ADR-339): el camión bajó hoy y son
+   * cinco guías. Cada una fecha sus piezas, se fecha y se valida; la bandeja se
+   * vacía en un paso.
+   */
+  /**
+   * Recepciona una tanda de asientos en UN pedido (ADR-351).
+   *
+   * Antes iban N PATCH en paralelo y un fallo dejaba la guía **partida** entre
+   * la bandeja y el archivo. El servidor los recorre en serie y contesta qué
+   * entró y qué falló; acá sólo se traduce el resultado.
+   */
+  const recepcionarMany = useCallback(
+    async (ids: string[], fecha?: string) => {
+      setError(null);
+      try {
+        const res = await fetch("/api/admin/forestal/wood-entries", {
+          method: "PATCH",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          credentials: "include",
+          body: JSON.stringify({ action: "recepcionar_guia", ids, ...(fecha ? { fecha } : {}) }),
+        });
+        const datos = (await res.json().catch(() => ({}))) as {
+          recepcionados?: number;
+          message?: string;
+          error?: string;
+        };
+        if (!res.ok) {
+          const faltan = ids.length - (datos.recepcionados ?? 0);
+          setError(
+            datos.recepcionados
+              ? `Entraron ${datos.recepcionados} de ${ids.length}; ${faltan} no: ${datos.message ?? datos.error ?? `HTTP ${res.status}`}`
+              : `No se recepcionó: ${datos.message ?? datos.error ?? `HTTP ${res.status}`}`,
+          );
+          return faltan;
+        }
+        return 0;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+        return ids.length;
+      } finally {
+        await load();
+      }
     },
     [load],
   );
@@ -241,6 +319,8 @@ export function useCtpIngresos({
 
   return {
     entries,
+    guias,
+    lineas,
     stats,
     total,
     loading,
@@ -249,6 +329,7 @@ export function useCtpIngresos({
     reload: load,
     runAction,
     validateMany,
+    recepcionarMany,
     rejectMany,
     fetchAllFiltered,
   };

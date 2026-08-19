@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
+import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 
 const URL = "/api/admin/forestal/ctp/cierre";
 
@@ -40,9 +41,8 @@ export function useCtpCierres(): CtpCierresState {
 
   const recargar = useCallback(async () => {
     try {
-      const r = await fetch(URL, { credentials: "include" });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
+      /* Deduplicado (ADR-347): la cabina y el asistente de cierre lo montan a la vez. */
+      const j = await ctpGet<RespuestaCierre>(URL);
       setCierres(Array.isArray(j.cierres) ? j.cierres : []);
       setError(null);
     } catch (e) {
@@ -63,6 +63,7 @@ export function useCtpCierres(): CtpCierresState {
     setBusy(true);
     setError(null);
     try {
+      invalidarCtp("/forestal/");
       const r = await fetch(URL, {
         method: "POST",
         credentials: "include",

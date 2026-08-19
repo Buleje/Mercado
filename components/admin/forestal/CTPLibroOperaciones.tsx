@@ -26,15 +26,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Boxes,
   Building2,
+  BarChart3,
   ClipboardList,
   Coins,
   FileSpreadsheet,
   FileText,
   FolderOpen,
   Globe,
+  Layers,
   Lock,
   MapPin,
   Flame,
+  PackageCheck,
   PackageOpen,
   Scale,
   Search,
@@ -43,6 +46,7 @@ import {
   TreePine,
   TrendingUp,
   Truck,
+  Trash2,
   Upload,
   Users,
 } from "@buleje/design-system/icons";
@@ -68,19 +72,24 @@ import { usePatioCola } from "@/hooks/use-patio-cola";
 import CtpCierreAsistido from "./CtpCierreAsistido";
 import CtpEudrPanel from "./CtpEudrPanel";
 import CtpRentabilidadPanel from "./CtpRentabilidadPanel";
-import CtpImportModal from "./CtpImportModal";
+import CtpSerforImportModal from "./CtpSerforImportModal";
+import VaciarLibroModal from "./VaciarLibroModal";
 import CtpTrazaRadar from "./CtpTrazaRadar";
 import CtpPlantaView from "./CtpPlantaView";
 import CtpAsistente from "./CtpAsistente";
 import CtpAnalisis from "./CtpAnalisis";
+import CtpTableroControl from "./CtpTableroControl";
 import CtpHealthChip from "./CtpHealthChip";
 import CtpPendientes from "./CtpPendientes";
 import CtpBuscarGtf from "./CtpBuscarGtf";
+import CtpPaqueteFicha from "./CtpPaqueteFicha";
 import CtpEntryDetailModal from "./CtpEntryDetailModal";
 import type { WoodEntry } from "./ctp-shared";
 import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
 import CtpResumenesSerfor from "./CtpResumenesSerfor";
 import CtpConsumosView from "./CtpConsumosView";
+import CtpProductosDisponibles from "./CtpProductosDisponibles";
+import CtpLotesView, { type LoteAProducir } from "./CtpLotesView";
 import CtpTrozasView from "./CtpTrozasView";
 import {
   CTP_INGRESAR_GTF_KEY,
@@ -90,7 +99,7 @@ import {
 } from "./ctp-shared";
 import { CTP_VISTAS } from "@/lib/admin/subvistas-modulos";
 
-type CtpView = "ingresos" | "consumos" | "produccion" | "despacho" | "trozas" | "radar" | "planta" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "fletes" | "guias" | "directorio" | "ficha";
+type CtpView = "ingresos" | "gtf-ingresadas" | "lotes" | "consumos" | "produccion" | "disponibles" | "despacho" | "trozas" | "radar" | "planta" | "tablero" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "fletes" | "guias" | "directorio" | "ficha";
 
 /**
  * Las doce vistas, agrupadas por la fase del libro a la que sirven. El orden
@@ -108,8 +117,15 @@ const CTP_GROUPS: LibroGroup[] = [
     label: "Operación",
     views: [
       { key: "ingresos", ...CTP_VISTAS_POR_KEY["ingresos"], icon: PackageOpen, tecla: "i" },
+      /* Las guías que ya se recibieron salen de la bandeja y viven acá (ADR-339):
+         Ingresos es trabajo por hacer, esto es el archivo del período. */
+      { key: "gtf-ingresadas", ...CTP_VISTAS_POR_KEY["gtf-ingresadas"], icon: PackageCheck, tecla: "z" },
+      /* Va entre Ingresos y Consumos porque ése es el orden del patio: llega la
+         madera, se aparta la que entra junta al carro, y recién ahí se aserra. */
+      { key: "lotes", ...CTP_VISTAS_POR_KEY["lotes"], icon: Layers, tecla: "l" },
       { key: "consumos", ...CTP_VISTAS_POR_KEY["consumos"], icon: Flame, tecla: "n" },
       { key: "produccion", ...CTP_VISTAS_POR_KEY["produccion"], icon: Boxes, tecla: "p" },
+      { key: "disponibles", ...CTP_VISTAS_POR_KEY["disponibles"], icon: PackageOpen, tecla: "v" },
       { key: "despacho", ...CTP_VISTAS_POR_KEY["despacho"], icon: Truck, tecla: "d" },
     ],
   },
@@ -128,6 +144,7 @@ const CTP_GROUPS: LibroGroup[] = [
     id: "control",
     label: "Control",
     views: [
+      { key: "tablero", ...CTP_VISTAS_POR_KEY["tablero"], icon: BarChart3, tecla: "k" },
       { key: "saldos", ...CTP_VISTAS_POR_KEY["saldos"], icon: Scale, tecla: "s" },
       { key: "resumenes", ...CTP_VISTAS_POR_KEY["resumenes"], icon: ClipboardList, tecla: "q" },
       { key: "cumplimiento", ...CTP_VISTAS_POR_KEY["cumplimiento"], icon: ShieldCheck, tecla: "c" },
@@ -154,8 +171,10 @@ const CTP_MODULE_ID = "ctp-libro";
 /** Vistas que YA muestran los pendientes en detalle: la tira arriba sobraría. */
 const SIN_TIRA: CtpView[] = ["cumplimiento", "cierre"];
 /** Vistas que no leen el período: Análisis (6 meses fijos), Cierre (por mes) y
- *  Ficha (identidad). Con el selector visible parecería que no hace nada. */
-const SIN_PERIODO: CtpView[] = ["analisis", "cierre", "ficha", "trozas", "directorio"];
+ *  Ficha (identidad). Con el selector visible parecería que no hace nada.
+ *  Lotes tampoco: es el estado VIVO del patio (lo que está apartado hoy), no un
+ *  asiento del período — el período de lo aserrado se mira en Consumos. */
+const SIN_PERIODO: CtpView[] = ["analisis", "cierre", "ficha", "trozas", "directorio", "lotes"];
 
 export default function CTPLibroOperaciones() {
   /** Un solo estado de cierres para el asistente y el historial. */
@@ -170,6 +189,10 @@ export default function CTPLibroOperaciones() {
   // El cierre mensual está a un click en el selector.
   /** Producto elegido en Saldos para despachar (atajo "del stock a la guía"). */
   const [productoADespachar, setProductoADespachar] = useState<{ producto: string; especie: string | null } | null>(null);
+  /** Lote elegido en Lotes para aserrar: abre la corrida con él ya cargado. */
+  const [loteAProducir, setLoteAProducir] = useState<LoteAProducir | null>(null);
+  /** Lote que se va a CARGAR: Consumos abre con él y la tabla filtrada (ADR-342). */
+  const [loteACargar, setLoteACargar] = useState<LoteAProducir | null>(null);
   const [periodKey, setPeriodKey] = useState<CtpPeriodKey>("trimestre");
   const [custom, setCustom] = useState<CtpCustomRange>({ from: "", to: "" });
   const [exporting, setExporting] = useState<null | "interno" | "oficial" | "informe" | "dossier">(null);
@@ -177,13 +200,17 @@ export default function CTPLibroOperaciones() {
   // Puente inverso: GTF que el Libro de Títulos Habilitantes mandó a ingresar.
   const [pendingIngresoGtf, setPendingIngresoGtf] = useState<string | null>(null);
   // Importación del LO-CTP (ADR-138) — etapa 1: ingresos.
-  const [showImport, setShowImport] = useState(false);
+  /** El otro importador: el archivo que devuelve el SNIFFS, no la plantilla. */
+  const [showSerforImport, setShowSerforImport] = useState(false);
+  const [showVaciar, setShowVaciar] = useState(false);
   // Remonta la vista de Ingresos tras importar → re-fetch de la lista.
   const [ingresosKey, setIngresosKey] = useState(0);
   /** Buscador de guías del libro (atajo `b`): "¿qué pasó con esta GTF?". */
   const [buscarGtf, setBuscarGtf] = useState(false);
   /** Ficha abierta desde el buscador, sin salir de la vista donde estabas. */
   const [fichaIngreso, setFichaIngreso] = useState<WoodEntry | null>(null);
+  /** Código del paquete cuya ficha está abierta (ADR-366). */
+  const [fichaPaquete, setFichaPaquete] = useState<string | null>(null);
 
   const period = useMemo(() => resolveCtpPeriod(periodKey, custom), [periodKey, custom]);
 
@@ -293,7 +320,7 @@ export default function CTPLibroOperaciones() {
         {
           title: view === "produccion" ? "En Producción" : "En Despacho",
           items: [
-            { keys: ["N"], description: view === "produccion" ? "Nueva producción" : "Nuevo despacho" },
+            { keys: ["N"], description: view === "produccion" ? "Elegir el lote a producir" : "Nuevo despacho" },
             { keys: ["/"], description: "Ir al buscador" },
             { keys: ["R"], description: "Recargar la lista" },
           ],
@@ -357,11 +384,25 @@ export default function CTPLibroOperaciones() {
         onSelect: () => void exportar("interno"),
       },
       {
+        /* UN solo importador. Antes había dos —la plantilla propia y el reporte
+           del SNIFFS— y el operador tenía que acordarse de cuál archivo tenía
+           para saber por dónde subirlo. */
         id: "importar",
         label: "Importar libro",
-        hint: "Desde el Excel oficial LO-CTP — etapa 1: ingresos",
+        hint: "El Excel del SNIFFS o la plantilla — reconoce las 5 secciones por sus columnas",
         icon: Upload,
-        onSelect: () => setShowImport(true),
+        onSelect: () => setShowSerforImport(true),
+      },
+      {
+        /* Va último y aparte: es lo único del menú que destruye. El modal es el
+           que exige la frase y bloquea si hay meses cerrados — acá sólo se
+           abre. */
+        id: "vaciar",
+        label: "Vaciar el libro",
+        hint: "Borra ingresos, consumos, producción y despachos — no se puede deshacer",
+        icon: Trash2,
+        tone: "danger" as const,
+        onSelect: () => setShowVaciar(true),
       },
     ],
     // `exportar` se redefine en cada render (usa `period`): la lista depende del
@@ -447,10 +488,50 @@ export default function CTPLibroOperaciones() {
             openGtf={pendingIngresoGtf}
             onOpenConsumed={() => setPendingIngresoGtf(null)}
             filtroRapido={filtroIngresos}
+            recepcion="pendiente"
           />
         )}
-        {view === "consumos" && <CtpConsumosView period={period} />}
-        {view === "produccion" && <CtpEntriesView key={`prod-${ingresosKey}`} section="produccion" period={period} />}
+        {view === "gtf-ingresadas" && (
+          <CtpIngresosView key={`gtf-ing-${ingresosKey}`} period={period} recepcion="cerrada" />
+        )}
+        {view === "lotes" && (
+          <CtpLotesView
+            onProducir={(lote) => {
+              // «Producir este lote» cruza de pestaña: el lote se guarda acá —el
+              // shell es lo único que sobrevive al cambio de vista— y Producción
+              // lo consume una vez, igual que el producto que llega de Saldos.
+              setLoteAProducir(lote);
+              setView("produccion");
+            }}
+            onCargar={(lote) => {
+              // «Cargar» va a Consumos, que es donde se eligen las piezas ya
+              // filtradas por la especie del lote (ADR-342).
+              setLoteACargar(lote);
+              setView("consumos");
+            }}
+          />
+        )}
+        {view === "consumos" && (
+          <CtpConsumosView
+            period={period}
+            onIr={irA}
+            presetLoteId={loteACargar?.id ?? null}
+            onPresetLoteUsado={() => setLoteACargar(null)}
+          />
+        )}
+        {view === "produccion" && (
+          <CtpEntriesView
+            key={`prod-${ingresosKey}`}
+            section="produccion"
+            period={period}
+            presetLoteAserrioId={loteAProducir?.id ?? null}
+            onPresetUsado={() => setLoteAProducir(null)}
+            /* Sin lotes abiertos no hay nada que producir: el CTA lleva a
+               armarlos en vez de abrir un menú vacío. */
+            onIr={irA}
+          />
+        )}
+        {view === "disponibles" && <CtpProductosDisponibles period={period} />}
         {view === "despacho" && (
           <CtpEntriesView
             key={`desp-${ingresosKey}`}
@@ -466,6 +547,8 @@ export default function CTPLibroOperaciones() {
         {view === "saldos" && (
           <CtpSaldosView
             period={period}
+            // Cada excepción de existencias sabe en qué pestaña se corrige.
+            onIr={irA}
             onDespachar={(producto, especie) => {
               // Del stock a la guía: se elige el producto en Saldos y el
               // despacho se abre con él, sin volver a buscarlo en el catálogo.
@@ -476,6 +559,7 @@ export default function CTPLibroOperaciones() {
         )}
         {view === "trozas" && <CtpTrozasView />}
         {view === "resumenes" && <CtpResumenesSerfor period={period} />}
+        {view === "tablero" && <CtpTableroControl period={period} />}
         {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={irA} />}
         {view === "cierre" && (
           <div className="space-y-6">
@@ -499,17 +583,31 @@ export default function CTPLibroOperaciones() {
           period={period}
           onCerrar={() => setBuscarGtf(false)}
           onVerIngreso={setFichaIngreso}
+          onVerPaquete={setFichaPaquete}
           onIrA={irA}
         />
       )}
       {fichaIngreso && <CtpEntryDetailModal entry={fichaIngreso} onClose={() => setFichaIngreso(null)} />}
+      {/* El otro extremo de la cadena: del cartel del atado a su corrida y a la
+          madera con la que se hizo (ADR-366). */}
+      {fichaPaquete && (
+        <CtpPaqueteFicha codigo={fichaPaquete} onClose={() => setFichaPaquete(null)} onIrA={irA} />
+      )}
 
-      {showImport && (
-        <CtpImportModal
-          onClose={() => setShowImport(false)}
-          onImported={(reg) => { setIngresosKey((k) => k + 1); setView(reg === "produccion" ? "produccion" : reg === "salida" ? "despacho" : "ingresos"); }}
+      {showVaciar && (
+        <VaciarLibroModal
+          onClose={() => setShowVaciar(false)}
+          onVaciado={() => setIngresosKey((k) => k + 1)}
         />
       )}
+
+      {showSerforImport && (
+        <CtpSerforImportModal
+          onClose={() => setShowSerforImport(false)}
+          onImportado={() => setIngresosKey((k) => k + 1)}
+        />
+      )}
+
     </>
   );
 }

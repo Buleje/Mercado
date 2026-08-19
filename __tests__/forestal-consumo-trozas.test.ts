@@ -7,6 +7,8 @@ import {
   motivoBloqueo,
   totalesSeleccion,
   type TrozaConsumible,
+  cuposDeGuia,
+  motivosDeCupo,
 } from "@/lib/forestal/consumo-trozas";
 
 /**
@@ -178,5 +180,60 @@ describe("corrida anulada ⇒ la pieza vuelve al patio", () => {
   it("el filtro «sólo disponibles» la vuelve a mostrar", () => {
     const lista = [troza({ id: "a", consumidaEnId: null }), troza({ id: "b", consumidaEnId: "c-viva" })];
     expect(filtrarTrozas(lista, { soloDisponibles: true }).map((t) => t.id)).toEqual(["a"]);
+  });
+});
+
+describe("cuposDeGuia — el tope de I2, antes de firmar (ADR-353)", () => {
+  const pieza = (over: Partial<TrozaConsumible>): TrozaConsumible => ({
+    id: Math.random().toString(36).slice(2),
+    woodEntryId: "w1",
+    codificacion: "C-1",
+    especieComun: "Mashonaste",
+    gtfNumber: "019-0000016",
+    volumenM3: 1,
+    ...over,
+  });
+
+  it("suma lo pedido por guía y lo compara con lo que queda", () => {
+    const [c] = cuposDeGuia([
+      pieza({ volumenM3: 2.118, guiaVolumenM3: 4.161, guiaConsumidoM3: 0 }),
+      pieza({ volumenM3: 6.129, guiaVolumenM3: 4.161, guiaConsumidoM3: 0 }),
+    ]);
+    expect(c).toMatchObject({ pedido: 8.247, declarado: 4.161, disponible: 4.161 });
+    expect(c.exceso).toBeCloseTo(4.086, 3);
+  });
+
+  it("distingue «falta cupo» de «la guía no cuadra consigo misma»", () => {
+    // Nada consumido y aun así se pasa → el asiento declara menos que sus piezas.
+    // No es culpa de quien consume: el mensaje manda a CUADRAR la guía (ADR-353).
+    const [malDeclarado] = cuposDeGuia([pieza({ volumenM3: 8.247, guiaVolumenM3: 4.161, guiaConsumidoM3: 0 })]);
+    expect(malDeclarado.descuadrado).toBe(true);
+    expect(motivosDeCupo([malDeclarado])[0]).toMatch(/no cuadra consigo misma/);
+    expect(motivosDeCupo([malDeclarado])[0]).toMatch(/cuadrarla antes de llevar/);
+
+    // Con consumo previo, es cupo: el arreglo es elegir menos.
+    const [sinCupo] = cuposDeGuia([pieza({ volumenM3: 6, guiaVolumenM3: 10, guiaConsumidoM3: 8 })]);
+    expect(sinCupo.descuadrado).toBe(false);
+    expect(motivosDeCupo([sinCupo])[0]).toMatch(/Sacá 4.0000 m³/);
+  });
+
+  it("un litro de redondeo NO es un exceso", () => {
+    const [c] = cuposDeGuia([pieza({ volumenM3: 4.1615, guiaVolumenM3: 4.161, guiaConsumidoM3: 0 })]);
+    expect(c.exceso).toBe(0);
+    expect(motivosDeCupo([c])).toEqual([]);
+  });
+
+  it("sin volumen declarado no se opina: el tope lo pone el servidor", () => {
+    const [c] = cuposDeGuia([pieza({ volumenM3: 99, guiaVolumenM3: null })]);
+    expect(c.disponible).toBeNull();
+    expect(c.exceso).toBe(0);
+  });
+
+  it("separa las guías: una que no entra no arrastra a las que sí", () => {
+    const cupos = cuposDeGuia([
+      pieza({ woodEntryId: "w1", gtfNumber: "A", volumenM3: 9, guiaVolumenM3: 4 }),
+      pieza({ woodEntryId: "w2", gtfNumber: "B", volumenM3: 2, guiaVolumenM3: 10 }),
+    ]);
+    expect(cupos.filter((c) => c.exceso > 0).map((c) => c.gtfNumber)).toEqual(["A"]);
   });
 });

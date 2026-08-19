@@ -24,9 +24,11 @@ import {
   Scale,
   ShieldAlert,
   TreePine,
+  Truck,
   User,
 } from "@buleje/design-system/icons";
-import { Btn, diasDeRegistro, estaFueraDePlazo, formatDate, formatDateTime, MODAL_BODY, ModalFooter, originLabel, parseCitesPermiso, PLAZO_REGISTRO_DIAS, productLabel, STATUS_META, type WoodEntry } from "./ctp-shared";
+import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { Btn, COMPROBANTE_LABEL, diasDeRegistro, estaFueraDePlazo, formatDate, formatDateTime, MODAL_BODY, ModalFooter, originLabel, parseCitesPermiso, PLAZO_REGISTRO_DIAS, productLabel, STATUS_META, type WoodEntry } from "./ctp-shared";
 import { faltantesIngresoPorTipo, UNIDADES_LOCTP } from "@/lib/forestal/loctp-campos";
 import CtpIngresoCompletitud from "./CtpIngresoCompletitud";
 
@@ -189,6 +191,51 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCam
             <Field label="Documento" value={entry.providerDocument} mono />
             <Field label="Tipo" value={entry.providerDocumentType} />
           </Section>
+
+          {/* El cuerpo del documento (ADR-336): el dueño de la madera puede NO
+              ser el titular del título habilitante, y es lo que una fiscalización
+              cruza cuando la madera cambió de manos en el camino. Se muestra sólo
+              si el ingreso lo declara — los viejos no lo tienen y una sección de
+              guiones no informa nada. */}
+          {(() => {
+            const d = leerGtfDatos(entry.gtfDatos);
+            const hayAlgo =
+              d.propietario.nombre.trim() || d.destinatario.nombre.trim() ||
+              d.vehiculo.placa.trim() || d.vehiculo.conductor.trim();
+            if (!hayAlgo) return null;
+            const ubic = (p: { departamento: string; provincia: string; distrito: string }) =>
+              [p.distrito, p.provincia, p.departamento].filter(Boolean).join(", ") || null;
+            return (
+              <>
+                <Section title="Propietario del producto" icon={User}>
+                  <Field label="Nombre o razón social" value={d.propietario.nombre || null} span2 />
+                  <Field label={d.propietario.docTipo} value={d.propietario.docNumero || null} mono />
+                  <Field label="Dirección" value={d.propietario.direccion || null} />
+                  <Field label="Ubicación" value={ubic(d.propietario)} span2 />
+                  <Field
+                    label="Comprobante de compra"
+                    value={
+                      d.comprobante.tipo !== "ninguno"
+                        ? `${COMPROBANTE_LABEL[d.comprobante.tipo]}${d.comprobante.numero ? ` ${d.comprobante.numero}` : ""}`
+                        : null
+                    }
+                  />
+                </Section>
+
+                <Section title="Destinatario y transporte" icon={Truck} opcional>
+                  <Field label="Destinatario" value={d.destinatario.nombre || null} span2 />
+                  <Field label="Documento" value={d.destinatario.docNumero || null} mono />
+                  <Field label="Dirección" value={[d.destinatario.direccion, ubic(d.destinatario)].filter(Boolean).join(" · ") || null} />
+                  <Field label="Transporte" value={[d.vehiculo.modo, d.vehiculo.tipo].filter(Boolean).join(" · ") || null} />
+                  <Field label={d.vehiculo.modo === "fluvial" ? "Matrícula" : "Placa"} value={d.vehiculo.placa || null} mono />
+                  <Field label="Conductor" value={[d.vehiculo.conductor, d.vehiculo.conductorDni].filter(Boolean).join(" · ") || null} span2 />
+                  <Field label="Licencia" value={d.vehiculo.licencia || null} mono />
+                  <Field label="N° guía de remisión" value={d.guia.guiaRemisionNro || null} mono />
+                  <Field label="Vence la guía" value={d.traslado.fechaFin || null} />
+                </Section>
+              </>
+            );
+          })()}
 
           <Section title="Origen del material" icon={MapPin}>
             <Field label="Tipo de origen" value={originLabel(entry.originType)} />

@@ -27,6 +27,9 @@ interface CtpSeccionCardMobileProps {
   anexoEmitido?: boolean;
   onSendInventory: (id: string) => void;
   onAnnul: (id: string) => void;
+  /** Esta corrida admite más producción sobre la misma madera (ADR-365). */
+  ampliable?: boolean;
+  onAmpliar?: (id: string) => void;
 }
 
 const n4 = (v: string | null) => (v == null ? "—" : Number(v).toFixed(4));
@@ -35,7 +38,7 @@ const fmtDate = (iso: string) => {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; }
 };
 
-export default function CtpSeccionCardMobile({ entry: e, section, toProductId, onChain, onAnexo, anexoEmitido, onSendInventory, onAnnul }: CtpSeccionCardMobileProps) {
+export default function CtpSeccionCardMobile({ entry: e, section, toProductId, onChain, onAnexo, anexoEmitido, onSendInventory, onAnnul, ampliable, onAmpliar }: CtpSeccionCardMobileProps) {
   const anulado = e.status === "anulado";
   const KindIcon = section === "produccion" ? Boxes : Truck;
   const rend = section === "produccion" ? evaluarRendimiento(e.productType, e.rendimientoPct != null ? Number(e.rendimientoPct) : null) : null;
@@ -146,6 +149,17 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
           >
             <Link2 className="h-3.5 w-3.5" /> Cadena
           </button>
+          {/* Lo que salió después de la MISMA madera se suma a esta corrida, no
+              abre una nueva: en el patio se declara desde el teléfono. */}
+          {onAmpliar && ampliable && (
+            <button
+              type="button"
+              onClick={() => onAmpliar(e.id)}
+              className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 text-xs font-bold text-[var(--accent-ink)] hover:brightness-105 dark:text-[var(--accent)]"
+            >
+              <Boxes className="h-3.5 w-3.5" /> Declarar lo que faltó
+            </button>
+          )}
           <button
             type="button"
             disabled={toProductId === e.id}

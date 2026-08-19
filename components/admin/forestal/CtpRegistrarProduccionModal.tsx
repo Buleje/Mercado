@@ -13,14 +13,18 @@
  * que decide si la corrida salió bien, y para eso hay que verlo a tiempo.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Boxes, Gauge, Loader2, Plus, Trash2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { PRESENTACIONES_LOCTP, TIPOS_PRODUCTO_SALIDA } from "@/lib/forestal/loctp-catalogos";
+import { PRESENTACIONES_LOCTP, TIPOS_PRODUCTO_SALIDA, presentacionSugerida } from "@/lib/forestal/loctp-catalogos";
+import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
+import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
+import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import CtpMaterialPanel, { type PaquetePrevio } from "./CtpMaterialPanel";
 import { juzgarRendimientoLote, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import {
   motivosParaGuardar,
-  siguienteCodigo,
+  sugerirCodigoPaquete,
   totalesProduccion,
   volumenDimensionado,
   margenDeclarableM3,
@@ -121,6 +125,10 @@ export default function CtpRegistrarProduccionModal({
   error,
   titulo,
   descripcion,
+  yaDeclaradoM3 = 0,
+  paquetesPrevios,
+  ctaLabel,
+  trozas,
   onConfirmar,
   onClose,
 }: {
@@ -138,6 +146,31 @@ export default function CtpRegistrarProduccionModal({
   /** Encabezados propios cuando no se entra por el lote. */
   titulo?: string;
   descripcion?: string;
+  /**
+   * Lo que esta MISMA corrida ya declaró en tandas anteriores (ADR-361/365).
+   *
+   * Con esto el formulario es el mismo para declarar y para ampliar: el tope, el
+   * margen y el rendimiento se miden sobre el acumulado —dos tandas del 40 % son
+   * 80 % entre las dos— y no sobre lo que se está cargando ahora.
+   */
+  yaDeclaradoM3?: number;
+  /**
+   * Lo que la corrida ya declaró, con sus medidas: se muestra en una solapa —
+   * «¿qué códigos usé?» y «¿con qué medidas?» son las dos preguntas de quien
+   * vuelve a cargar— y de ahí salen los códigos que no se pueden repetir.
+   */
+  paquetesPrevios?: readonly PaquetePrevio[];
+  /** El botón de guardar dice qué hace: «Guardar» ≠ «Agregar a la corrida». */
+  ctaLabel?: string;
+  /**
+   * La madera que entró a la sierra, pieza por pieza.
+   *
+   * Se despliega bajo pedido: declarar es mirar la pila y anotar lo que salió, y
+   * tener la lista a mano —con su código de planta y su GTF— evita salir del
+   * modal para responder «¿de qué troza salió esto?». Es la MISMA tabla del
+   * LO-CTP, en sólo lectura: esas piezas ya son un hecho registrado.
+   */
+  trozas?: TrozaConsumible[];
   onConfirmar: (datos: ProduccionRegistrada) => void;
   onClose: () => void;
 }) {
@@ -146,37 +179,124 @@ export default function CtpRegistrarProduccionModal({
   const [observaciones, setObservaciones] = useState("");
   const [paquetes, setPaquetes] = useState<PaqueteBorrador[]>([]);
 
+  // ── El formulario de «Agregar producción» ──
+  const [codigo, setCodigo] = useState("");
+  const codigosUsados = useMemo(() => (paquetesPrevios ?? []).map((p) => p.codigo), [paquetesPrevios]);
   /**
-   * «El de siempre»: las medidas que este aserradero más declaró.
+   * Los códigos que la planta ENTERA ya usó.
+   *
+   * El índice es `@@unique[tenantId, codigo]`: autonumerar desde el último de
+   * ESTA corrida proponía un código que la corrida de al lado ya tenía, y el
+   * choque volvía recién al guardar. Con la serie de la planta el sugerido sale
+   * libre de entrada.
+   */
+  const [codigosPlanta, setCodigosPlanta] = useState<string[]>([]);
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/admin/forestal/ctp?codigosPaquete=1", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : { codigos: [] }))
+      .then((j: { codigos?: string[] }) => { if (vivo) setCodigosPlanta(j.codigos ?? []); })
+      /* Sin la serie se tipea a mano y el servidor sigue validando: es una
+         ayuda, no un requisito. */
+      .catch(() => { if (vivo) setCodigosPlanta([]); });
+    return () => { vivo = false; };
+  }, []);
+  const [producto, setProducto] = useState<string>(TIPOS_PRODUCTO_SALIDA[0]?.valor ?? "");
+  /* Arranca en la del producto inicial, para que el primer paquete no salga con
+     una presentación que el producto contradice. */
+  const [presentacion, setPresentacion] = useState<string>(
+    () => presentacionSugerida(TIPOS_PRODUCTO_SALIDA[0]?.valor) ?? "PAQUETES",
+  );
+  const [cantidad, setCantidad] = useState("");
+  const [volumen, setVolumen] = useState("");
+  /** La presentación la puso el producto y no el operador: se dice, en chico. */
+  const [presentacionAuto, setPresentacionAuto] = useState(false);
+
+  /**
+   * «Las de siempre»: las medidas que este aserradero más declaró **de ESTE
+   * producto**.
    *
    * Salen del propio libro, no de un catálogo que alguien tendría que mantener:
-   * lo más producido ES la plantilla. Un clic llena espesor, ancho, largo,
-   * producto y presentación — los cuatro números que se retipean cada turno.
+   * lo más producido ES la plantilla. Mezcladas, el que declara listones veía
+   * las medidas de la paquetería; por eso se piden por producto y se vuelven a
+   * pedir cuando cambia.
    */
   const [medidas, setMedidas] = useState<
     { productType: string | null; presentacion: string | null; espesorCm: number; anchoCm: number; largoM: number; veces: number }[]
   >([]);
+  /** Las que se muestran son de OTROS productos: no hay historial de éste. */
+  const [medidasDeOtros, setMedidasDeOtros] = useState(false);
   useEffect(() => {
     let vivo = true;
-    fetch("/api/admin/forestal/ctp?medidas=1", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : { medidas: [] }))
-      .then((j: { medidas?: typeof medidas }) => { if (vivo) setMedidas(j.medidas ?? []); })
+    const pedir = (url: string) =>
+      fetch(url, { credentials: "include" })
+        .then((r) => (r.ok ? r.json() : { medidas: [] }))
+        .then((j: { medidas?: typeof medidas }) => j.medidas ?? []);
+    pedir(`/api/admin/forestal/ctp?medidas=1&producto=${encodeURIComponent(producto)}`)
+      .then(async (propias) => {
+        if (!vivo) return;
+        if (propias.length > 0) { setMedidas(propias); setMedidasDeOtros(false); return; }
+        /* Un producto que nunca se declaró no tiene plantillas: antes que dejar
+           el hueco vacío se ofrecen las de la planta, DICIENDO que son de otros
+           productos — la medida sirve igual, el que no sirve es un atajo mudo. */
+        const generales = await pedir("/api/admin/forestal/ctp?medidas=1");
+        if (!vivo) return;
+        setMedidas(generales);
+        setMedidasDeOtros(generales.length > 0);
+      })
       /* Sin plantillas se tipea como siempre: es un atajo, no un requisito. */
-      .catch(() => { if (vivo) setMedidas([]); });
+      .catch(() => { if (vivo) { setMedidas([]); setMedidasDeOtros(false); } });
     return () => { vivo = false; };
-  }, []);
+  }, [producto]);
 
-  // ── El formulario de «Agregar producción» ──
-  const [codigo, setCodigo] = useState("");
-  const [producto, setProducto] = useState<string>(TIPOS_PRODUCTO_SALIDA[0]?.valor ?? "");
-  const [presentacion, setPresentacion] = useState<string>("PAQUETES");
-  const [cantidad, setCantidad] = useState("");
-  const [volumen, setVolumen] = useState("");
   const [dimensionar, setDimensionar] = useState(false);
   const [espesor, setEspesor] = useState("");
   const [ancho, setAncho] = useState("");
   const [largo, setLargo] = useState("");
   const [obsPaquete, setObsPaquete] = useState("");
+
+  /**
+   * El próximo código LIBRE de la serie de la planta, esquivando lo que ya está
+   * en el borrador. Se propone; se puede pisar tipeando.
+   */
+  const proponerCodigo = useCallback(
+    (extra: readonly string[] = []) =>
+      sugerirCodigoPaquete(codigosPlanta, {
+        hoy: new Date(),
+        ocupados: [...codigosUsados, ...paquetes.map((p) => p.codigo), ...extra],
+      }),
+    [codigosPlanta, codigosUsados, paquetes],
+  );
+  /* Sólo mientras el campo esté intacto: pisar lo que el operador tipeó porque
+     llegó una respuesta del servidor es la forma más rápida de perder un código
+     escrito a mano. */
+  const codigoTocado = useRef(false);
+  /**
+   * El último código que propuso la pantalla.
+   *
+   * Sin esto, el primer sugerido —calculado ANTES de que llegue la serie de la
+   * planta, o sea sin datos— se quedaba pegado: proponía `PQ-2608-001` teniendo
+   * la serie `PQ-0289` a la vista. Se puede reemplazar lo que propuso la
+   * pantalla; lo que tipeó el operador, nunca.
+   */
+  const sugeridoRef = useRef("");
+  useEffect(() => {
+    if (codigoTocado.current) return;
+    const sugerido = proponerCodigo();
+    if (!sugerido) return;
+    /**
+     * El anterior se captura ANTES de mutar la ref.
+     *
+     * El updater de `setState` corre diferido —en el render siguiente— y para
+     * entonces `sugeridoRef.current` ya vale el nuevo: comparando contra la ref
+     * adentro, el sugerido inicial (calculado sin la serie de la planta) nunca
+     * se reemplazaba. Medido en el navegador: proponía `PQ-2608-001` teniendo
+     * `PQ-0289` cargado.
+     */
+    const anterior = sugeridoRef.current;
+    sugeridoRef.current = sugerido;
+    setCodigo((actual) => (actual.trim() === "" || actual === anterior ? sugerido : actual));
+  }, [proponerCodigo]);
 
   const piezas = Number(cantidad) || 0;
   /** Dimensionado, el volumen se CALCULA: tipearlo aparte da dos verdades. */
@@ -187,19 +307,37 @@ export default function CtpRegistrarProduccionModal({
   const volumenAUsar = dimensionar ? volumenCalculado : Number(volumen) || null;
 
   const totales = useMemo(() => totalesProduccion(paquetes, material.volumenM3), [paquetes, material.volumenM3]);
-  const veredicto = juzgarRendimientoLote(totales.rendimientoPct);
+  /**
+   * Lo que la corrida va a declarar EN TOTAL: lo de tandas anteriores más lo de
+   * ahora. El tope, el rendimiento y la barra se miden contra esto — mirar sólo
+   * la tanda dejaría pasar dos del 40 % sobre la misma materia prima.
+   */
+  const previo = Math.max(0, Number(yaDeclaradoM3) || 0);
+  const acumulado = Math.round((previo + totales.volumen) * 10_000) / 10_000;
+  const rendimientoPct =
+    material.volumenM3 > 0 && acumulado > 0 ? Math.round((acumulado / material.volumenM3) * 1000) / 10 : null;
+  const veredicto = juzgarRendimientoLote(rendimientoPct);
   /* El techo del 56 %: no se guarda un asiento que declare más producto del que
      sale físicamente de lo que entró (ADR-358). */
   const tope = topeDeclarableM3(material.volumenM3);
-  const margen = margenDeclarableM3(material.volumenM3, totales.volumen);
+  const margen = margenDeclarableM3(material.volumenM3, acumulado);
   const motivos = useMemo(
-    () => motivosParaGuardar(paquetes, { consumidoM3: material.volumenM3 }),
-    [paquetes, material.volumenM3],
+    () =>
+      motivosParaGuardar(paquetes, {
+        consumidoM3: material.volumenM3,
+        yaDeclaradoM3: previo,
+        codigosUsados,
+      }),
+    [paquetes, material.volumenM3, previo, codigosUsados],
   );
-  /** Cómo se reparte lo declarado entre los títulos que lo ampararon. */
+  /**
+   * Cómo se reparte entre los títulos que lo ampararon. Se reparte el ACUMULADO:
+   * el reparto es del producto de la corrida, no del de esta tanda, y mostrar
+   * sólo la tanda haría creer que al título le tocaron 2 m³ cuando le tocan 5.
+   */
   const reparto = useMemo(
-    () => repartirEntreOrigenes(totales.volumen, material.origenes ?? []),
-    [totales.volumen, material.origenes],
+    () => repartirEntreOrigenes(acumulado, material.origenes ?? []),
+    [acumulado, material.origenes],
   );
   const listo = motivos.length === 0 && !guardando;
 
@@ -241,8 +379,12 @@ export default function CtpRegistrarProduccionModal({
       },
     ]);
     /* El código se autonumera y el resto queda: una jornada carga veinte
-       paquetes iguales cambiando el número. */
-    setCodigo(siguienteCodigo(codigo.trim()));
+       paquetes iguales cambiando el número. El recién agregado va como ocupado
+       —todavía no está en el estado— para no proponerlo de nuevo. */
+    const siguiente = proponerCodigo([codigo.trim()]);
+    setCodigo(siguiente);
+    sugeridoRef.current = siguiente;
+    codigoTocado.current = false;
     setObsPaquete("");
   }
 
@@ -264,7 +406,10 @@ export default function CtpRegistrarProduccionModal({
             <span className="font-mono tabular-nums">
               {totales.paquetes} paquete{totales.paquetes === 1 ? "" : "s"} · {totales.piezas} pza ·{" "}
               {totales.volumen.toFixed(4)} m³
-              {totales.rendimientoPct != null && ` · rendimiento ${totales.rendimientoPct}%`}
+              {/* Al ampliar, el pie dice las dos cifras: lo que se agrega ahora y
+                  con cuánto queda la corrida. Una sola se lee como la otra. */}
+              {previo > 0 && ` · total ${acumulado.toFixed(4)} m³`}
+              {rendimientoPct != null && ` · rendimiento ${rendimientoPct}%`}
             </span>
           }
         >
@@ -285,7 +430,7 @@ export default function CtpRegistrarProduccionModal({
             }
           >
             {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Boxes className="h-4 w-4" />}
-            Guardar producción
+            {ctaLabel ?? "Guardar producción"}
           </Btn>
         </ModalFooter>
       }
@@ -326,7 +471,7 @@ export default function CtpRegistrarProduccionModal({
                   }`}
                 >
                   <Gauge className="h-4 w-4" aria-hidden />
-                  {totales.rendimientoPct != null ? `${totales.rendimientoPct} %` : "—"}
+                  {rendimientoPct != null ? `${rendimientoPct} %` : "—"}
                 </p>
               </div>
             </div>
@@ -344,6 +489,13 @@ export default function CtpRegistrarProduccionModal({
               {margen === 0 && <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />}
               Tope de rendimiento <b>{RENDIMIENTO_TOPE_PCT} %</b> · máximo declarable{" "}
               <b className="font-mono tabular-nums">{tope.toFixed(4)} m³</b>
+              {/* Lo ya declarado se NOMBRA acá: es lo que explica por qué el
+                  margen no es el tope entero (ADR-361). */}
+              {previo > 0 && (
+                <>
+                  {" "}· ya declarado <b className="font-mono tabular-nums">{previo.toFixed(4)} m³</b>
+                </>
+              )}
             </span>
             <span className="font-mono tabular-nums">
               {margen > 0 ? `quedan ${margen.toFixed(4)} m³` : "sin margen: sacá volumen para guardar"}
@@ -358,14 +510,14 @@ export default function CtpRegistrarProduccionModal({
               role="progressbar"
               aria-valuemin={0}
               aria-valuemax={tope}
-              aria-valuenow={Math.min(totales.volumen, tope)}
-              aria-label={`Declarado ${totales.volumen.toFixed(4)} de ${tope.toFixed(4)} m³ que permite el tope`}
+              aria-valuenow={Math.min(acumulado, tope)}
+              aria-label={`Declarado ${acumulado.toFixed(4)} de ${tope.toFixed(4)} m³ que permite el tope`}
             >
               <div
                 className={`h-full rounded-full transition-[width] ${
                   margen > 0 ? "bg-[var(--accent)]" : "bg-[var(--data-error-500)]"
                 }`}
-                style={{ width: `${Math.min(100, (totales.volumen / tope) * 100)}%` }}
+                style={{ width: `${Math.min(100, (acumulado / tope) * 100)}%` }}
               />
             </div>
           )}
@@ -404,6 +556,19 @@ export default function CtpRegistrarProduccionModal({
               </p>
             )
           )}
+
+          {/**
+           * Lo que hay que tener a mano mientras se declara: la madera pieza por
+           * pieza, de qué guía y título viene, y lo que la corrida ya declaró.
+           * Plegado en solapas — sin esto había que cerrar el modal (perdiendo
+           * lo tipeado) para ir a buscarlo a otra pestaña.
+           */}
+          <CtpMaterialPanel
+            trozas={trozas}
+            origenes={material.origenes}
+            paquetesPrevios={paquetesPrevios}
+            fecha={dia}
+          />
         </Bloque>
 
         {/* ── La corrida: se llena UNA vez ──────────────────────────────────
@@ -412,21 +577,36 @@ export default function CtpRegistrarProduccionModal({
             y la fecha creyendo que eran del paquete. */}
         <Bloque titulo="La corrida">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Campo label="Línea de producción">
-              <select value={linea} onChange={(e) => setLinea(e.target.value)} className={CAMPO}>
-                {/* Las dos del Cuadro Resumen 3: principal y recuperación. */}
-                <option value="LP">LP · línea principal</option>
-                <option value="LRE">LRE · línea de recuperación</option>
-              </select>
-            </Campo>
-            <Campo label="Fecha de producción">
-              <input type="date" value={dia} onChange={(e) => setDia(e.target.value)} className={CAMPO} />
-            </Campo>
+            {/**
+             * Ampliando, la corrida YA existe: su fecha y su línea son las del
+             * asiento que se está completando y el servidor no las toca. Se
+             * muestran como dato — un campo editable que no viaja es una mentira
+             * de la pantalla.
+             */}
+            {previo > 0 ? (
+              <>
+                <Dato label="Línea de producción" valor={linea} />
+                <Dato label="Fecha de producción" valor={fmtDia(dia)} />
+              </>
+            ) : (
+              <>
+                <Campo label="Línea de producción">
+                  <select value={linea} onChange={(e) => setLinea(e.target.value)} className={CAMPO}>
+                    {/* Las dos del Cuadro Resumen 3: principal y recuperación. */}
+                    <option value="LP">LP · línea principal</option>
+                    <option value="LRE">LRE · línea de recuperación</option>
+                  </select>
+                </Campo>
+                <Campo label="Fecha de producción">
+                  <input type="date" value={dia} onChange={(e) => setDia(e.target.value)} className={CAMPO} />
+                </Campo>
+              </>
+            )}
             <Campo label="Observación de la corrida">
               <input
                 value={observaciones}
                 onChange={(e) => setObservaciones(e.target.value)}
-                placeholder="Turno, sierra…"
+                placeholder={previo > 0 ? "Si la escribís, reemplaza la anterior" : "Turno, sierra…"}
                 maxLength={300}
                 className={CAMPO}
               />
@@ -442,7 +622,9 @@ export default function CtpRegistrarProduccionModal({
           {medidas.length > 0 && (
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Las de siempre
+                {medidasDeOtros
+                  ? "Las de siempre (de otros productos)"
+                  : `Las de siempre en ${TIPOS_PRODUCTO_SALIDA.find((t) => t.valor === producto)?.label ?? producto}`}
               </span>
               {medidas.map((m) => (
                 <button
@@ -470,14 +652,38 @@ export default function CtpRegistrarProduccionModal({
             <Campo label="Código de paquete">
               <input
                 value={codigo}
-                onChange={(e) => setCodigo(e.target.value)}
+                onChange={(e) => { codigoTocado.current = true; setCodigo(e.target.value); }}
                 placeholder="PQ-001"
                 maxLength={60}
                 className={CAMPO}
               />
+              {/* De dónde salió el sugerido: el código es único en TODA la
+                  planta, así que se propone el próximo libre de la serie. */}
+              {!codigoTocado.current && codigo && (
+                <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
+                  Siguiente libre de la serie · {codigosPlanta.length} código
+                  {codigosPlanta.length === 1 ? "" : "s"} ya usados en la planta
+                </span>
+              )}
             </Campo>
             <Campo label="Producto">
-              <select value={producto} onChange={(e) => setProducto(e.target.value)} className={CAMPO}>
+              {/**
+               * Elegir el producto pone la presentación: la paquetería sale
+               * ATADA (PAQUETES) y el resto de la aserrada se cuenta pieza por
+               * pieza (PIEZAS). Se hace en el gesto y no en un efecto, para que
+               * cambiarla a mano después no se revierta sola.
+               */}
+              <select
+                value={producto}
+                onChange={(e) => {
+                  const valor = e.target.value;
+                  setProducto(valor);
+                  const sugerida = presentacionSugerida(valor);
+                  setPresentacionAuto(sugerida != null);
+                  if (sugerida) setPresentacion(sugerida);
+                }}
+                className={CAMPO}
+              >
                 {TIPOS_PRODUCTO_SALIDA.map((t) => (
                   <option key={t.valor} value={t.valor}>
                     {t.label}
@@ -486,13 +692,25 @@ export default function CtpRegistrarProduccionModal({
               </select>
             </Campo>
             <Campo label="Presentación">
-              <select value={presentacion} onChange={(e) => setPresentacion(e.target.value)} className={CAMPO}>
+              <select
+                value={presentacion}
+                onChange={(e) => { setPresentacion(e.target.value); setPresentacionAuto(false); }}
+                className={CAMPO}
+              >
                 {PRESENTACIONES_LOCTP.map((p) => (
                   <option key={p} value={p}>
                     {p}
                   </option>
                 ))}
               </select>
+              {/* Un campo que se llena solo sin avisar se lee como un error de
+                  la pantalla. Y se puede cambiar: el libro tiene que poder decir
+                  que esta vez salió suelto. */}
+              {presentacionAuto && (
+                <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
+                  La puso el producto — cambiala si esta vez salió de otra forma.
+                </span>
+              )}
             </Campo>
             <Campo label="Cantidad (piezas)">
               <input
@@ -529,7 +747,14 @@ export default function CtpRegistrarProduccionModal({
                 </Campo>
                 {/* Calculado, no tipeado: con las medidas puestas, escribir otro
                     volumen crea dos verdades sobre el mismo paquete. */}
-                <Dato label="Volumen (m³)" valor={volumenCalculado != null ? volumenCalculado.toFixed(4) : "—"} />
+                <Dato
+                  label="Volumen (m³)"
+                  valor={
+                    volumenCalculado != null
+                      ? `${volumenCalculado.toFixed(4)}  ·  ${pieTablarDe(volumenCalculado).toLocaleString("es-PE")} pt`
+                      : "—"
+                  }
+                />
               </>
             ) : (
               <>
@@ -543,11 +768,31 @@ export default function CtpRegistrarProduccionModal({
                     className={CAMPO}
                   />
                 </Campo>
-                <div className="sm:col-span-2">
-                  <Campo label="Observación del paquete">
-                    <input value={obsPaquete} onChange={(e) => setObsPaquete(e.target.value)} maxLength={300} className={CAMPO} />
-                  </Campo>
-                </div>
+                {/**
+                 * El mismo bulto, en la unidad en la que se canta en el patio.
+                 *
+                 * El parte del turno viene en pie tablar y el libro se declara en
+                 * m³: la conversión se hacía en una calculadora aparte, que es
+                 * donde aparecen los volúmenes que después no cuadran. Se
+                 * escriben los dos y cada uno actualiza al otro — un solo dato
+                 * con dos caras, no dos campos que puedan discrepar.
+                 */}
+                <Campo label="Pie tablar (equivale)">
+                  <input
+                    type="number"
+                    min={0}
+                    step="1"
+                    value={volumen === "" ? "" : String(Math.round((Number(volumen) || 0) * PT_POR_M3))}
+                    onChange={(e) => {
+                      const pt = Number(e.target.value);
+                      setVolumen(e.target.value === "" || !Number.isFinite(pt) ? "" : String(Math.round((pt / PT_POR_M3) * 10_000) / 10_000));
+                    }}
+                    className={CAMPO}
+                  />
+                </Campo>
+                <Campo label="Observación del paquete">
+                  <input value={obsPaquete} onChange={(e) => setObsPaquete(e.target.value)} maxLength={300} className={CAMPO} />
+                </Campo>
               </>
             )}
             <div className="flex items-end">
@@ -568,7 +813,10 @@ export default function CtpRegistrarProduccionModal({
         </Bloque>
 
         {/* ── Producción cargada ── */}
-        <Bloque titulo={`Producción (${paquetes.length})`}>
+        <Bloque
+          titulo={previo > 0 ? `Paquetes que se agregan (${paquetes.length})` : `Producción (${paquetes.length})`}
+          meta={previo > 0 ? `La corrida ya tiene ${codigosUsados?.length ?? 0} paquete(s) cargados` : undefined}
+        >
           <TablaCtp>
             <TheadCtp>
               <tr>
@@ -588,7 +836,9 @@ export default function CtpRegistrarProduccionModal({
             <TbodyCtp>
               {paquetes.length === 0 && (
                 <FilaVacia cols={9}>
-                  Todavía no agregaste ningún paquete. El volumen de la corrida es la suma de los que cargues acá.
+                  {previo > 0
+                    ? "Todavía no agregaste ningún paquete. Los que cargues acá se SUMAN a los que la corrida ya declaró; los anteriores no se tocan."
+                    : "Todavía no agregaste ningún paquete. El volumen de la corrida es la suma de los que cargues acá."}
                 </FilaVacia>
               )}
               {paquetes.map((p) => (
@@ -635,11 +885,17 @@ export default function CtpRegistrarProduccionModal({
             <span className="text-[var(--text-secondary)]">
               Volumen producción{" "}
               <b className="font-mono tabular-nums text-[var(--text-primary)]">{totales.volumen.toFixed(4)} m³</b>
+              {previo > 0 && (
+                <span className="text-[var(--text-tertiary)]">
+                  {" "}+ {previo.toFixed(4)} ya declarado ={" "}
+                  <b className="font-mono tabular-nums text-[var(--text-primary)]">{acumulado.toFixed(4)} m³</b>
+                </span>
+              )}
             </span>
             <span className="text-[var(--text-secondary)]">
               Rendimiento{" "}
               <b className="font-mono tabular-nums text-[var(--text-primary)]">
-                {totales.rendimientoPct != null ? `${totales.rendimientoPct} %` : "—"}
+                {rendimientoPct != null ? `${rendimientoPct} %` : "—"}
               </b>{" "}
               <span className="text-[var(--text-tertiary)]">· {veredicto.texto}</span>
             </span>

@@ -162,17 +162,15 @@ export default function CtpGtfSeccion({
 
   return (
     <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
-      <div className="mb-2 flex items-center gap-2">
-        <FileText className="h-4 w-4 text-[var(--text-tertiary)]" />
+      {/* Título, número y acciones en UNA banda: eran tres filas para tres datos
+          que se leen de un vistazo, arriba de un formulario largo. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <FileText className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">GTF de salida</CardTitle>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">N° de guía</p>
-          <p className="mt-0.5 font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">{gtf || "— sin emitir —"}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
+        <p className="font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">
+          {gtf || <span className="font-sans text-sm font-normal text-[var(--text-tertiary)]">sin emitir</span>}
+        </p>
+        <div className="ml-auto flex flex-wrap gap-2">
           <Btn
             variant="secondary"
             onClick={() => void emitir()}

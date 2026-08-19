@@ -164,7 +164,9 @@ export function seccionesDossier(d: DatosDossier): SeccionDossier[] {
             titulo: "Consumos (Sección 2)",
             registros: d.consumos.length,
             html: tabla(
-              ["Fecha", "GTF de origen", "Especie", "Producto", "Código origen/CTP", "Cantidad", "Consumido en"],
+              // El lote va pegado a la cantidad: en una visita, después de «de
+              // qué guía salió» viene «de qué pila» (casillero 10, ADR-334).
+              ["Fecha", "GTF de origen", "Especie", "Producto", "Código origen/CTP", "Cantidad", "Lote", "Consumido en"],
               d.consumos.map((c) => [
                 esc(c.fecha ? fmtFecha(c.fecha) : "—"),
                 esc(c.gtf),
@@ -172,6 +174,7 @@ export function seccionesDossier(d: DatosDossier): SeccionDossier[] {
                 esc(c.tipoProducto),
                 esc(c.codigoOrigen),
                 `${num(c.cantidad)} ${esc(c.unidad === "m3" ? "m³" : c.unidad)}`,
+                esc(c.lote || "—"),
                 esc(c.observaciones),
               ]),
               "Sin consumos atribuidos en el período.",

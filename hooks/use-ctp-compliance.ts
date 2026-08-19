@@ -11,8 +11,10 @@ import { useCallback, useEffect, useState } from "react";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ctpComplianceScore, parseCitesPermiso, type CtpComplianceCounts } from "@/lib/forestal/ctp-compliance";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
-import { estadoVencimiento } from "@/lib/forestal/ctp-ficha-types";
+import { diasParaVencer, estadoVencimiento } from "@/lib/forestal/ctp-ficha-types";
 import type { WoodEntryStats } from "@/components/admin/forestal/ctp-shared";
+import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import { logger } from "@/lib/logger";
 
 interface SaldosSummary {
   materiaPrima: { especiesEnNegativo: number };
@@ -38,6 +40,8 @@ export interface CtpComplianceData {
   rendimientoAltoLineas: number[];
   /** Títulos habilitantes / permisos CITES vencidos en la Ficha (informativo). */
   documentosVencidosLabels: string[];
+  /** Los que vencen dentro de 30 días, con los días que quedan (informativo). */
+  documentosPorVencerLabels: string[];
 }
 
 interface UseCtpComplianceResult {
@@ -45,11 +49,6 @@ interface UseCtpComplianceResult {
   loading: boolean;
   error: string | null;
   reload: () => Promise<void>;
-}
-
-async function errorFrom(res: Response): Promise<string> {
-  const body: { message?: string; error?: string } = await res.json().catch(() => ({}));
-  return body.message ?? body.error ?? `HTTP ${res.status}`;
 }
 
 export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
@@ -71,23 +70,27 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
       const trazaParams = applyCtpPeriodParams(new URLSearchParams({ traza: "1" }), period);
       const prodParams = applyCtpPeriodParams(new URLSearchParams({ section: "produccion" }), period);
 
-      const [woodRes, saldosRes, trazaRes, fichaRes, prodRes] = await Promise.all([
-        fetch(`/api/admin/forestal/wood-entries?${woodParams}`, { credentials: "include" }),
-        fetch(`/api/admin/forestal/ctp?${saldosParams}`, { credentials: "include" }),
-        fetch(`/api/admin/forestal/ctp?${trazaParams}`, { credentials: "include" }),
-        // Ficha + producción son INFORMATIVAS: si fallan, el panel core sigue.
-        fetch(`/api/admin/forestal/ctp-ficha`, { credentials: "include" }),
-        fetch(`/api/admin/forestal/ctp?${prodParams}`, { credentials: "include" }),
+      /* Deduplicado (ADR-347): los cinco los pide también la vista activa en el
+         mismo montaje. Ficha y producción son INFORMATIVAS: si fallan, el panel
+         core sigue. */
+      const [wood, saldosBody, trazaBody, fichaJson, prodJson] = await Promise.all([
+        ctpGet<{
+          stats: WoodEntryStats;
+          entries?: { gtfNumber: string; speciesCites: boolean; status: string; notes: string | null }[];
+        }>(`/api/admin/forestal/wood-entries?${woodParams}`),
+        ctpGet<{ saldos: SaldosSummary }>(`/api/admin/forestal/ctp?${saldosParams}`),
+        ctpGet<{ traza: { total: number; incompletos: number; lineas: number[] } }>(
+          `/api/admin/forestal/ctp?${trazaParams}`,
+        ),
+        ctpGet<unknown>(`/api/admin/forestal/ctp-ficha`).catch((err) => {
+          logger.warn("[ctp-compliance] ficha no cargó", { error: String(err) });
+          return null;
+        }),
+        ctpGet<unknown>(`/api/admin/forestal/ctp?${prodParams}`).catch((err) => {
+          logger.warn("[ctp-compliance] producción no cargó", { error: String(err) });
+          return null;
+        }),
       ]);
-      if (!woodRes.ok) throw new Error(await errorFrom(woodRes));
-      if (!saldosRes.ok) throw new Error(await errorFrom(saldosRes));
-      if (!trazaRes.ok) throw new Error(await errorFrom(trazaRes));
-
-      const wood: {
-        stats: WoodEntryStats;
-        entries?: { gtfNumber: string; speciesCites: boolean; status: string; notes: string | null }[];
-      } = await woodRes.json();
-      const saldosBody: { saldos: SaldosSummary } = await saldosRes.json();
 
       // CITES por-ingreso: actas CITES vivas (no rechazadas/anuladas) que no
       // vincularon un permiso en sus notas. Informativo — NO resta score, como
@@ -97,8 +100,6 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         .filter((e) => e.speciesCites && e.status !== "rechazado" && e.status !== "anulado" && !parseCitesPermiso(e.notes))
         .map((e) => e.gtfNumber)
         .filter(Boolean);
-      const trazaBody: { traza: { total: number; incompletos: number; lineas: number[] } } =
-        await trazaRes.json();
       const saldos = saldosBody.saldos;
 
       const productosNegativos = saldos.productos.filter((p) => p.stock < 0).map((p) => p.producto);
@@ -108,13 +109,14 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
       // permiso cargado en la Ficha (match laxo por substring, tolerante a tipeo).
       let citesSinPermisoEspecies: string[] = [];
       const documentosVencidosLabels: string[] = [];
-      if (fichaRes.ok) {
-        const body: {
+      const documentosPorVencerLabels: string[] = [];
+      if (fichaJson) {
+        const body = fichaJson as {
           ficha?: {
             citesPermisos?: { especie: string; vencimiento?: string }[];
             titulos?: { tipo: string; codigo: string; vencimiento?: string }[];
           };
-        } = await fichaRes.json();
+        };
         const f = body.ficha;
         const permisos = (f?.citesPermisos ?? []).map((p) => norm(p.especie)).filter(Boolean);
         citesSinPermisoEspecies = (saldos.porEspecie ?? [])
@@ -125,22 +127,31 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
           })
           .map((e) => e.especie);
         // Documentos vencidos: un título/permiso caducado invalida el origen.
+        // Y los que vencen dentro de 30 días: llegar a tiempo a la renovación es
+        // lo único que evita el vencido de la línea de arriba.
         for (const p of f?.citesPermisos ?? []) {
-          if (p.vencimiento && estadoVencimiento(p.vencimiento) === "vencido") {
-            documentosVencidosLabels.push(`CITES ${p.especie || "—"}`);
+          const estado = estadoVencimiento(p.vencimiento ?? "");
+          if (estado === "vencido") documentosVencidosLabels.push(`CITES ${p.especie || "—"}`);
+          else if (estado === "por_vencer") {
+            const dias = diasParaVencer(p.vencimiento ?? "") ?? 0;
+            documentosPorVencerLabels.push(`CITES ${p.especie || "—"} (${dias} ${dias === 1 ? "día" : "días"})`);
           }
         }
         for (const t of f?.titulos ?? []) {
-          if (t.vencimiento && estadoVencimiento(t.vencimiento) === "vencido") {
-            documentosVencidosLabels.push(t.codigo || t.tipo || "título");
+          const estado = estadoVencimiento(t.vencimiento ?? "");
+          if (estado === "vencido") documentosVencidosLabels.push(t.codigo || t.tipo || "título");
+          else if (estado === "por_vencer") {
+            const dias = diasParaVencer(t.vencimiento ?? "") ?? 0;
+            documentosPorVencerLabels.push(`${t.codigo || t.tipo || "título"} (${dias} ${dias === 1 ? "día" : "días"})`);
           }
         }
       }
       // Rendimiento alto: corridas de producción sobre el referencial SERFOR.
       let rendimientoAltoLineas: number[] = [];
-      if (prodRes.ok) {
-        const prod: { entries?: { lineNo: number; productType: string | null; rendimientoPct: string | null }[] } =
-          await prodRes.json();
+      if (prodJson) {
+        const prod = prodJson as {
+          entries?: { lineNo: number; productType: string | null; rendimientoPct: string | null }[];
+        };
         rendimientoAltoLineas = (prod.entries ?? [])
           .filter((r) => evaluarRendimiento(r.productType, r.rendimientoPct != null ? Number(r.rendimientoPct) : null).estado === "alto")
           .map((r) => r.lineNo);
@@ -156,6 +167,7 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         citesSinPermiso: citesSinPermisoEspecies.length,
         rendimientoAlto: rendimientoAltoLineas.length,
         documentosVencidos: documentosVencidosLabels.length,
+        documentosPorVencer: documentosPorVencerLabels.length,
       };
 
       setData({
@@ -168,6 +180,7 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         citesSinPermisoIngresos,
         rendimientoAltoLineas,
         documentosVencidosLabels,
+        documentosPorVencerLabels,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

@@ -59,10 +59,17 @@ export function Cuadro({
   titulo,
   subtitulo,
   children,
+  pie,
 }: {
   titulo: string;
   subtitulo: string;
   children: React.ReactNode;
+  /**
+   * Debajo de la tabla, dentro del marco: la paginación y los totales
+   * (ADR-344). Va acá y no suelto afuera para que se lea como parte del cuadro
+   * —un cuadro oficial con su pie— y no como un control que quedó flotando.
+   */
+  pie?: React.ReactNode;
 }) {
   return (
     <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)]">
@@ -83,6 +90,7 @@ export function Cuadro({
           className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-2xl bg-linear-to-l from-[var(--surface-canvas)] to-transparent sm:hidden dark:from-[var(--surface-raised)]"
         />
       </div>
+      {pie && <footer className="border-t border-[var(--rule-base)] px-4 py-2.5">{pie}</footer>}
     </section>
   );
 }

@@ -29,6 +29,8 @@ export interface TrozaRecepcion {
   volumenM3?: number | null;
   noRecepcionada?: boolean | null;
   recepcionObs?: string | null;
+  /** Cuándo bajó ESTA pieza del camión, `YYYY-MM-DD` (ADR-336). */
+  fechaRecepcion?: string | null;
   /** Los pedazos, si ya se retrozó: cuentan como la misma madera de la madre. */
   trozaOrigenId?: string | null;
 }
@@ -85,6 +87,8 @@ export interface CambioRecepcion {
   id: string;
   codigoPlanta?: string | null;
   parcela?: string | null;
+  /** Cuándo bajó ESTA pieza del camión, `YYYY-MM-DD` (ADR-336). `null` la borra. */
+  fechaRecepcion?: string | null;
   noRecepcionada?: boolean | null;
   recepcionObs?: string | null;
 }

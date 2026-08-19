@@ -36,7 +36,9 @@ interface LoteDetail {
 
 interface TrazaDTO {
   completa: boolean; totalCantidad: number; motivo: "ok" | "sin_miembros" | "corrida_sin_origen";
-  corridas: { produccionEntryId: string; lineNo: number; quantity: number; guias: string[]; sinOrigen: boolean }[];
+  corridas: { produccionEntryId: string; lineNo: number; quantity: number; guias: string[]; sinOrigen: boolean; lotesAserrio?: string[] }[];
+  /** Las piezas que entraron a la sierra, por lote de aserrío (ADR-334). */
+  lotesDeAserrio?: { code: string | null; piezas: number; volumenM3: number; codigos: string[] }[];
 }
 
 const TRAZA_MOTIVO: Record<Exclude<TrazaDTO["motivo"], "ok">, string> = {
@@ -155,7 +157,17 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
       } else {
         if (!traza?.completa) return;
         const emisor = await fetch("/api/settings", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).catch(() => null) as { businessName?: string; ruc?: string } | null;
-        await printCertificadoLote(certData, { completa: traza.completa, totalCantidad: traza.totalCantidad, corridas: traza.corridas }, { businessName: emisor?.businessName ?? null, ruc: emisor?.ruc ?? null });
+        await printCertificadoLote(
+          certData,
+          {
+            completa: traza.completa,
+            totalCantidad: traza.totalCantidad,
+            corridas: traza.corridas,
+            // El tramo que faltaba en el papel: qué piezas entraron (ADR-334).
+            lotesDeAserrio: traza.lotesDeAserrio,
+          },
+          { businessName: emisor?.businessName ?? null, ruc: emisor?.ruc ?? null },
+        );
       }
     } catch (e) {
       setDocError(e instanceof Error ? e.message : String(e));
@@ -227,12 +239,17 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-[var(--surface-sunken)] text-left"><tr><th className="px-3 py-2 font-bold text-[var(--text-primary)]">Corrida</th><th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">Cantidad</th><th className="px-3 py-2 font-bold text-[var(--text-primary)]">Guías GTF de ingreso</th></tr></thead>
+                    <thead className="bg-[var(--surface-sunken)] text-left"><tr><th className="px-3 py-2 font-bold text-[var(--text-primary)]">Corrida</th><th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">Cantidad</th><th className="px-3 py-2 font-bold text-[var(--text-primary)]">Lote de aserrío</th><th className="px-3 py-2 font-bold text-[var(--text-primary)]">Guías GTF de ingreso</th></tr></thead>
                     <tbody>
                       {traza.corridas.map((c) => (
                         <tr key={c.produccionEntryId} className="border-t border-[var(--rule-soft)]">
                           <td className="px-3 py-2 font-mono text-xs font-bold text-[var(--text-primary)]">#{c.lineNo}</td>
                           <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{n4(c.quantity)} {unitLabel}</td>
+                          {/* El eslabón que faltaba entre la guía y la corrida:
+                              QUÉ PILA entró a la sierra (ADR-334). */}
+                          <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">
+                            {c.lotesAserrio?.length ? c.lotesAserrio.join(" · ") : "—"}
+                          </td>
                           <td className="px-3 py-2">
                             {c.sinOrigen
                               ? <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]"><AlertCircle className="h-3 w-3" /> sin materia prima</span>
@@ -240,12 +257,55 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
                           </td>
                         </tr>
                       ))}
-                      {traza.corridas.length === 0 && <tr><td colSpan={3} className="px-3 py-6 text-center text-sm text-[var(--text-tertiary)]">Lote vacío. Editá para agregar corridas.</td></tr>}
+                      {traza.corridas.length === 0 && <tr><td colSpan={4} className="px-3 py-6 text-center text-sm text-[var(--text-tertiary)]">Lote vacío. Editá para agregar corridas.</td></tr>}
                     </tbody>
                   </table>
                 </div>
               )}
             </section>
+
+            {/* Las PIEZAS. La cadena por GTF dice de qué papel salió la madera;
+                esto dice qué palos — que es lo que se cuenta en la pila y lo que
+                ahora también sale impreso en el certificado (ADR-334). */}
+            {(traza.lotesDeAserrio?.length ?? 0) > 0 && (
+              <section className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]">
+                <div className="flex items-center gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
+                  <Layers className="h-4 w-4 text-[var(--text-tertiary)]" />
+                  <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+                    Piezas que entraron a la sierra
+                  </CardTitle>
+                  <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
+                    {traza.lotesDeAserrio!.reduce((a, l) => a + l.piezas, 0)} trozas
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[var(--surface-sunken)] text-left">
+                      <tr>
+                        <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Lote de aserrío</th>
+                        <th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">Piezas</th>
+                        <th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">Volumen rollizo</th>
+                        <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Códigos</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {traza.lotesDeAserrio!.map((l) => (
+                        <tr key={l.code ?? "sin-lote"} className="border-t border-[var(--rule-soft)]">
+                          <td className="px-3 py-2 font-mono text-xs font-bold text-[var(--text-primary)]">
+                            {l.code ?? <span className="italic text-[var(--text-tertiary)]">sin lote</span>}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{l.piezas}</td>
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{n4(l.volumenM3)} m³</td>
+                          <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">
+                            {l.codigos.join(" · ") || "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
 
             </div>
 

@@ -18,7 +18,19 @@
 import { useEffect, useState } from "react";
 import type { CtpSort, CtpSortField } from "./use-ctp-ingresos";
 
-const KEY = "buleje:ctp-ingresos-prefs-v1";
+/**
+ * Una clave POR PESTAÑA (ADR-352).
+ *
+ * La bandeja y el archivo son el mismo componente con distinto filtro de
+ * recepción, y compartían estas preferencias. Consecuencia real, reportada con
+ * captura: alguien filtró «Pendiente» en Ingresos, entró a «GTF ingresadas» —
+ * donde todo está validado por definición— y la tabla salió vacía con «Ninguna
+ * guía coincide con el filtro». La guía recepcionada estaba ahí; el filtro
+ * heredado la escondía.
+ */
+const KEY_BASE = "buleje:ctp-ingresos-prefs-v1";
+export type VistaPrefs = "pendiente" | "cerrada" | "todas";
+const claveDe = (vista: VistaPrefs) => (vista === "todas" ? KEY_BASE : `${KEY_BASE}:${vista}`);
 
 export interface CtpIngresosPrefs {
   statusFilter: string;
@@ -38,8 +50,19 @@ const DEFAULTS: CtpIngresosPrefs = {
   sort: { by: "entryDate", dir: "desc" },
 };
 
+/**
+ * El archivo abre por lo último RECIBIDO y sin filtro de estado (ADR-351/352):
+ * son guías ya recibidas, filtrarlas por «pendiente» las esconde todas.
+ */
+const DEFAULTS_ARCHIVO: CtpIngresosPrefs = {
+  statusFilter: "",
+  facetas: {},
+  sort: { by: "fechaRecepcion", dir: "desc" },
+};
+
 const SORT_FIELDS: CtpSortField[] = [
   "entryDate",
+  "fechaRecepcion",
   "volumeM3",
   "pieces",
   "providerName",
@@ -49,39 +72,44 @@ const SORT_FIELDS: CtpSortField[] = [
 
 /** Lee lo guardado con desconfianza: es localStorage, puede venir de una versión
  *  vieja o editado a mano. Cualquier cosa rara → el default. */
-export function leerPrefs(): CtpIngresosPrefs {
-  if (typeof window === "undefined") return DEFAULTS;
+export function leerPrefs(vista: VistaPrefs = "todas"): CtpIngresosPrefs {
+  const base = vista === "cerrada" ? DEFAULTS_ARCHIVO : DEFAULTS;
+  if (typeof window === "undefined") return base;
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return DEFAULTS;
+    const raw = localStorage.getItem(claveDe(vista));
+    if (!raw) return base;
     const p = JSON.parse(raw) as Partial<CtpIngresosPrefs>;
     const by = p.sort?.by;
+    const statusFilter = typeof p.statusFilter === "string" ? p.statusFilter : "";
     return {
-      statusFilter: typeof p.statusFilter === "string" ? p.statusFilter : "",
+      /* En el archivo, «pendiente» no puede quedar puesto: una guía recibida
+         está validada, así que ese filtro deja la lista vacía y parece que la
+         guía no se guardó. */
+      statusFilter: vista === "cerrada" && statusFilter === "pendiente" ? "" : statusFilter,
       facetas: p.facetas && typeof p.facetas === "object" ? p.facetas : {},
       sort: {
-        by: by && SORT_FIELDS.includes(by) ? by : DEFAULTS.sort.by,
+        by: by && SORT_FIELDS.includes(by) ? by : base.sort.by,
         dir: p.sort?.dir === "asc" ? "asc" : "desc",
       },
     };
   } catch {
-    return DEFAULTS;
+    return base;
   }
 }
 
 /** Guarda (best-effort) cada vez que cambian. En modo privado falla y no pasa nada. */
-export function useGuardarPrefs(prefs: CtpIngresosPrefs): void {
+export function useGuardarPrefs(prefs: CtpIngresosPrefs, vista: VistaPrefs = "todas"): void {
   useEffect(() => {
     try {
-      localStorage.setItem(KEY, JSON.stringify(prefs));
+      localStorage.setItem(claveDe(vista), JSON.stringify(prefs));
     } catch {
       // localStorage lleno o bloqueado: sin persistencia, sin bug.
     }
-  }, [prefs]);
+  }, [prefs, vista]);
 }
 
 /** Estado inicial leído una sola vez (no en cada render: es I/O sincrónico). */
-export function usePrefsIniciales(): CtpIngresosPrefs {
-  const [prefs] = useState<CtpIngresosPrefs>(leerPrefs);
+export function usePrefsIniciales(vista: VistaPrefs = "todas"): CtpIngresosPrefs {
+  const [prefs] = useState<CtpIngresosPrefs>(() => leerPrefs(vista));
   return prefs;
 }

@@ -95,7 +95,20 @@ export type OpcionesGrilla = {
   onEliminarFila?: (fila: number) => void;
   /** Ctrl/Cmd + D sobre la fila. */
   onDuplicarFila?: (fila: number) => void;
+  /**
+   * Atajo para grillas de forma conocida y ESTABLE (filas contiguas 0..N-1,
+   * mismas columnas en todas): evita `filasDe`/`columnasDe` (querySelectorAll
+   * sobre toda la grilla). En una tabla de cientos de filas ese escaneo se
+   * pagaba en CADA navegación — sin esto cae al DOM, que sigue haciendo
+   * falta para grillas chicas o de forma dinámica (filtrado/reordenado).
+   */
+  totalFilas?: number;
+  columnas?: readonly number[];
 };
+
+/** Teclas que de verdad navegan — el resto (dígitos, backspace…) no necesita
+ *  saber nada de filas/columnas vecinas y no debe tocar el DOM. */
+const TECLAS_NAV = new Set(["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Enter"]);
 
 /**
  * Devuelve el `onKeyDown` para las celdas de una grilla.
@@ -108,7 +121,7 @@ export type OpcionesGrilla = {
  * - `Escape` suelta el foco.
  */
 export function useTecladoGrilla(op: OpcionesGrilla) {
-  const { grilla, onConfirmar, enterSiempreConfirma, onEliminarFila, onDuplicarFila } = op;
+  const { grilla, onConfirmar, enterSiempreConfirma, onEliminarFila, onDuplicarFila, totalFilas, columnas } = op;
 
   return useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -117,12 +130,8 @@ export function useTecladoGrilla(op: OpcionesGrilla) {
       const col = Number(el.dataset.col);
       if (Number.isNaN(fila) || Number.isNaN(col)) return;
 
-      const cols = columnasDe(grilla, fila);
-      const filas = filasDe(grilla);
-      const iCol = cols.indexOf(col);
-      const iFila = filas.indexOf(fila);
-
-      // Atajos de fila (antes que la navegación: llevan modificador).
+      // Atajos de fila (antes que la navegación: llevan modificador). No
+      // necesitan filas/columnas vecinas — resuelven sobre la fila propia.
       if ((e.ctrlKey || e.metaKey) && (e.key === "Delete" || e.key === "Backspace")) {
         if (onEliminarFila) {
           e.preventDefault();
@@ -137,6 +146,18 @@ export function useTecladoGrilla(op: OpcionesGrilla) {
         }
         return;
       }
+      if (e.key === "Escape") { el.blur(); return; }
+
+      // Cualquier otra tecla (dígitos, borrar, coma…) no navega: salir ACÁ,
+      // antes de tocar el DOM. Escanear la grilla entera en cada carácter
+      // tipeado — no sólo al moverse — era el costo real en una tabla
+      // grande, y es la causa de que escribir rápido se sintiera trabado.
+      if (!TECLAS_NAV.has(e.key)) return;
+
+      const cols = columnas ? [...columnas] : columnasDe(grilla, fila);
+      const filas = totalFilas != null ? Array.from({ length: totalFilas }, (_, i) => i) : filasDe(grilla);
+      const iCol = cols.indexOf(col);
+      const iFila = filas.indexOf(fila);
 
       switch (e.key) {
         case "ArrowRight": {
@@ -184,12 +205,9 @@ export function useTecladoGrilla(op: OpcionesGrilla) {
           }
           break;
         }
-        case "Escape":
-          el.blur();
-          break;
       }
     },
-    [grilla, onConfirmar, enterSiempreConfirma, onEliminarFila, onDuplicarFila]
+    [grilla, onConfirmar, enterSiempreConfirma, onEliminarFila, onDuplicarFila, totalFilas, columnas]
   );
 }
 

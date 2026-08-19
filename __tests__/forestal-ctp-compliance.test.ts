@@ -97,6 +97,13 @@ describe("ctpComplianceScore", () => {
     expect(ctpComplianceScore({ ...sinAlertas, citesCount: 7 })).toBe(100);
   });
 
+  /** Los informativos de la Ficha avisan, no castigan: un documento que vence
+   *  en 20 días todavía está vigente y el operador ya está haciendo lo correcto. */
+  it("documentos vencidos o por vencer NO restan: son señales, no faltas del período", () => {
+    expect(ctpComplianceScore({ ...sinAlertas, documentosPorVencer: 3 })).toBe(100);
+    expect(ctpComplianceScore({ ...sinAlertas, documentosVencidos: 2 })).toBe(100);
+  });
+
   /** ADR-135: desde que existe "Editar atribución" (CtpAtribucionEditor) el
    *  hueco es corregible sin anular y recrear ⇒ resta como las demás. */
   it("despachosSinTraza resta 5 por caso con tope 25: la cadena abierta al cierre es corregible", () => {

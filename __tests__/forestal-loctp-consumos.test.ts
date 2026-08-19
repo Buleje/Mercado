@@ -53,6 +53,20 @@ describe("Sección 2 · Consumos", () => {
     expect(copaiba.observaciones).toBe("Corrida #1 · Aserrío");
   });
 
+  it("el casillero (11) muestra lo que anotó el operador, no el label repetido", () => {
+    const conNota = {
+      ...grafo,
+      corridas: [
+        { ...grafo.corridas[0], observations: "Turno mañana, sierra 1" },
+        { ...grafo.corridas[1], observations: "   " },
+      ],
+    };
+    const filas = filasConsumo(conNota, ingresos);
+    expect(filas.find((f) => f.corridaId === "c1")!.observaciones).toBe("Corrida #1 · Turno mañana, sierra 1");
+    // Sin nota real vuelve el label; y una nota en blanco no es una nota.
+    expect(filas.find((f) => f.corridaId === "c2")!.observaciones).toBe("Corrida #2");
+  });
+
   it("numera en el orden en que pasaron las cosas, no en el que llega el grafo", () => {
     const filas = filasConsumo(grafo, ingresos);
     expect(filas.map((f) => f.nro)).toEqual([1, 2]);
@@ -60,8 +74,15 @@ describe("Sección 2 · Consumos", () => {
     expect(filas[0].gtf).toBe("001-0000120");
   });
 
-  it("deja el casillero (10) vacío: las trozas no tienen lote", () => {
+  it("deja el casillero (10) vacío cuando la corrida se cargó a mano", () => {
     expect(filasConsumo(grafo, ingresos).every((f) => f.lote === "")).toBe(true);
+  });
+
+  it("llena el casillero (10) con el lote de aserrío que se comió la corrida", () => {
+    // c1 es la corrida del 30; la del 28 (c2) no salió de un lote.
+    const filas = filasConsumo(grafo, ingresos, new Map([["c1", "LA-2026-004"]]));
+    expect(filas.find((f) => f.corridaId === "c1")!.lote).toBe("LA-2026-004");
+    expect(filas.find((f) => f.corridaId === "c2")!.lote).toBe("");
   });
 
   it("cae al código del CTP cuando el ingreso no trae código de origen", () => {

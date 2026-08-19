@@ -9,6 +9,7 @@
  * lee de un vistazo, imprime bien y no arrastra una librería.
  */
 import type { GrupoResumen } from "@/lib/forestal/cubicacion-resumen";
+import { fmtPct } from "@/lib/forestal/cubicacion-formato";
 import type { Insight } from "@/lib/forestal/cubicacion-insights";
 import { AlertTriangle, Lightbulb, Info } from "@buleje/design-system/icons";
 
@@ -38,17 +39,17 @@ export function BarraComposicion({ grupos, titulo }: { grupos: GrupoResumen[]; t
   return (
     <div>
       <div className="mb-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{titulo}</div>
-      <div className="flex h-4 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]" role="img" aria-label={items.map((i) => `${i.label} ${Math.round(i.pct)}%`).join(", ")}>
+      <div className="flex h-5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)] ring-1 ring-inset ring-[var(--rule-soft)]" role="img" aria-label={items.map((i) => `${i.label} ${Math.round(i.pct)}%`).join(", ")}>
         {items.map((i) => (
-          <div key={i.label} style={{ width: `${i.pct}%`, background: i.tono }} title={`${i.label} · ${i.pct.toFixed(1)}%`} />
+          <div key={i.label} className="border-r border-[var(--surface-raised)] last:border-r-0" style={{ width: `${i.pct}%`, background: i.tono }} title={`${i.label} · ${fmtPct(i.pct)}%`} />
         ))}
       </div>
       <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
         {items.map((i) => (
-          <li key={i.label} className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+          <li key={i.label} className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
             <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: i.tono }} />
             <span className="font-bold text-[var(--text-primary)]">{i.label}</span>
-            <span className="font-mono tabular-nums text-[var(--text-tertiary)]">{i.pct.toFixed(1)}%</span>
+            <span className="font-mono tabular-nums text-[var(--text-tertiary)]">{fmtPct(i.pct)}%</span>
           </li>
         ))}
       </ul>
@@ -76,8 +77,8 @@ export function LecturaDelLote({ insights }: { insights: Insight[] }) {
           <li key={i.texto} className={`flex items-start gap-2 rounded-xl border-2 px-3 py-2 ${TONO_CLS[i.nivel]}`}>
             <Icono className="mt-0.5 h-4 w-4 shrink-0" />
             <div className="min-w-0">
-              <p className="text-xs font-bold leading-snug">{i.texto}</p>
-              <p className="mt-0.5 font-mono text-[length:var(--ts-2xs)] tabular-nums opacity-80">{i.dato}</p>
+              <p className="text-sm font-bold leading-snug">{i.texto}</p>
+              <p className="mt-0.5 font-mono text-sm tabular-nums opacity-80">{i.dato}</p>
             </div>
           </li>
         );

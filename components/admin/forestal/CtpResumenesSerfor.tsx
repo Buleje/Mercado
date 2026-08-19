@@ -224,8 +224,13 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
         <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-transparent px-3 py-2.5 text-sm font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            Los cuadros están armados pero les falta una parte: {incompleto.join(" · ")} Revisá esos
-            casilleros antes de presentar el libro.
+            {/* El aviso decía «les falta una parte» y sonaba a que el cuadro
+                salía en cero. No es así: los tres cuadros se arman de ingresos,
+                corridas y despachos —que son obligatorios— y esto sólo
+                ENRIQUECE una columna. Decirlo evita que alguien no presente el
+                libro creyendo que está inválido (ADR-357). */}
+            Los tres cuadros están completos con los movimientos del libro. Lo único que quedó sin llenar es una
+            columna de apoyo: {incompleto.join(" · ")} Los volúmenes, los saldos y el rendimiento no cambian.
           </span>
         </p>
       )}

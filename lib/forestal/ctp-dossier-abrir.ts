@@ -13,6 +13,7 @@ import { applyCtpPeriodParams, type CtpPeriod } from "./ctp-period";
 import { openCtpReport } from "./ctp-print-shared";
 import { armarDossier, DOSSIER_CSS, type DatosDossier, type LineaLibro } from "./ctp-dossier";
 import { filasConsumo, type GrafoConsumos } from "./loctp-consumos";
+import { loteAserrioPorCorrida, type LoteAserrio } from "./lotes-aserrio";
 import { filasRetrozado, type RetrozoParaApartado } from "./loctp-apartados";
 import { pendientesDelLibro, type DatosPendientes } from "./ctp-pendientes";
 import type { CtpFicha } from "./ctp-ficha-types";
@@ -107,7 +108,7 @@ export async function abrirDossierFiscalizacion(
   periodLabel: string,
   score?: number | null,
 ): Promise<void> {
-  const [fic, ing, prod, desp, sal, gtf, anx, wood, gra, ret] = await Promise.all([
+  const [fic, ing, prod, desp, sal, gtf, anx, wood, gra, ret, loteAs] = await Promise.all([
     getJson<{ ficha?: CtpFicha }>("/api/admin/forestal/ctp-ficha", {}),
     getJson<RespuestaWood>(withPeriod("/api/admin/forestal/wood-entries", { limit: "500" }, period), {}),
     getJson<RespuestaEntries>(withPeriod("/api/admin/forestal/ctp", { section: "produccion" }, period), {}),
@@ -122,6 +123,10 @@ export async function abrirDossierFiscalizacion(
     getJson<{ retrozos?: RetrozoParaApartado[] }>(
       withPeriod("/api/admin/forestal/trozas", { retrozos: "1" }, period), {},
     ),
+    // El casillero (10) de la Sección 2: qué lote de aserrío se comió cada
+    // corrida (ADR-334). En una visita es la pregunta siguiente a «de qué guía
+    // salió»: de qué PILA salió.
+    getJson<{ lotes?: LoteAserrio[] }>("/api/admin/forestal/lotes-aserrio?limite=500", {}),
   ]);
 
   const despachos = vigentesCtp(desp.entries ?? []);
@@ -144,7 +149,11 @@ export async function abrirDossierFiscalizacion(
     periodoLabel: periodLabel,
     score: score ?? null,
     ingresos: vigentesWood(ing.entries ?? []).map(woodALinea),
-    consumos: filasConsumo(gra.grafo ?? null, vigentesWood(ing.entries ?? [])),
+    consumos: filasConsumo(
+      gra.grafo ?? null,
+      vigentesWood(ing.entries ?? []),
+      loteAserrioPorCorrida(loteAs.lotes ?? []),
+    ),
     retrozos: filasRetrozado(ret.retrozos ?? []),
     produccion: vigentesCtp(prod.entries ?? []),
     despachos,

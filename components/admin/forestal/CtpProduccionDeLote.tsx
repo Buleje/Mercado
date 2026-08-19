@@ -19,9 +19,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Archive, Boxes, Layers, Loader2, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
-import { origenesDeTrozas } from "@/lib/forestal/produccion-paquetes";
+import { corridasAMedioDeclarar, origenesDeTrozas } from "@/lib/forestal/produccion-paquetes";
 import { cuposDeGuia, motivoDeCupo } from "@/lib/forestal/consumo-trozas";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
+import CtpProduccionPendiente from "./CtpProduccionPendiente";
 import CtpBarraSeleccion from "./ctp-barra-seleccion";
 import { pieTablarDe, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import CtpRegistrarProduccionModal, {
@@ -75,6 +76,7 @@ export default function CtpProduccionDeLote({
   onLote,
   estado,
   onListo,
+  onAviso,
   onError,
   onCerrar,
   onCerrarLote,
@@ -101,6 +103,12 @@ export default function CtpProduccionDeLote({
   onCerrarLote?: (motivo: string) => Promise<{ liberadas: number; volumenM3: number }>;
   /** Avisa a la vista: recargar la tabla del libro y contar lo que pasó. */
   onListo: (mensaje: string, detalle: string) => void;
+  /**
+   * Pasó algo que NO cierra el panel: se amplió una corrida del lote y todavía
+   * quedan trozas por aserrar. Con `onListo` el panel se cerraría justo cuando el
+   * operador viene a seguir (ADR-365).
+   */
+  onAviso?: (mensaje: string, detalle: string) => void;
   /**
    * Un error que hay que mostrar ARRIBA. Al consumir, el lote deja de estar
    * abierto y este bloque se desmonta: un aviso adentro se iría con él y el
@@ -135,6 +143,35 @@ export default function CtpProduccionDeLote({
   const yaEnElLote = useMemo(
     () => estado.trozas.filter((t) => t.loteAserrioId === lote.id && !t.consumidaEnId),
     [estado.trozas, lote.id],
+  );
+
+  /**
+   * Las corridas de ESTE lote que ya declararon y todavía admiten más (ADR-365).
+   *
+   * Es el caso de Brandon: se aserraron tres de cuatro trozas, se declararon
+   * 3 m³ de los 5 que permitía esa madera, y al otro día sale el resto. Volver a
+   * elegir trozas consumiría madera que no entró — lo que falta se agrega a la
+   * corrida que ya existe.
+   */
+  const pendientes = useMemo(
+    () =>
+      corridasAMedioDeclarar(
+        (lote.corridas ?? [])
+          .filter((c) => c.viva)
+          .map((c) => ({
+            id: c.id,
+            lineNo: c.lineNo,
+            entryDate: c.entryDate,
+            productType: c.productType,
+            speciesCommon: c.speciesCommon ?? lote.speciesCommon,
+            volumeInputM3: c.volumeInputM3,
+            quantity: c.quantity,
+            unit: c.unit,
+            status: c.status,
+            materiaPrimaRef: lote.code,
+          })),
+      ),
+    [lote.corridas, lote.code, lote.speciesCommon],
   );
 
   /* Las apartadas llegan TILDADAS: es lo que el operador armó en el patio y lo
@@ -477,6 +514,26 @@ export default function CtpProduccionDeLote({
         </p>
       )}
 
+      {/**
+       * Lo que este lote ya aserró y todavía no terminó de declarar, ARRIBA de
+       * la tabla de trozas: el operador que vuelve al día siguiente entra por el
+       * lote, y lo primero que tiene que ver es que puede completar la corrida de
+       * ayer sin tocar una sola troza (ADR-365).
+       */}
+      <CtpProduccionPendiente
+        corridas={pendientes}
+        trozas={estado.trozas}
+        titulo={`Corridas del lote ${lote.code} a medio declarar`}
+        piezasLibres={yaEnElLote.length}
+        onListo={async (msg, detalle) => {
+          /* Recargar ANTES de avisar: el margen que acaba de cambiar es lo que
+             decide si este bloque sigue en pantalla. */
+          await estado.recargar();
+          (onAviso ?? onListo)(msg, detalle);
+        }}
+        onError={onError}
+      />
+
       {/* La regla, dicha antes de la tabla y no descubierta por accidente: el
           lote NO tiene que entrar entero. */}
       {yaEnElLote.length > 1 && (
@@ -577,6 +634,9 @@ export default function CtpProduccionDeLote({
         <CtpRegistrarProduccionModal
           lote={lote}
           material={material}
+          /* Las que se están por consumir: el modal las despliega bajo pedido
+             para no tener que cerrarlo y volver a la tabla de atrás. */
+          trozas={alConsumo}
           fecha={fechaConsumo}
           guardando={guardando}
           error={error}

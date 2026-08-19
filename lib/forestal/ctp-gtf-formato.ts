@@ -21,7 +21,7 @@
  */
 
 import { esc, seccionDoc } from "@/lib/forestal/ctp-documento-print";
-import type { CtpFicha } from "@/lib/forestal/ctp-ficha-types";
+import { tituloDeGuia, type CtpFicha } from "@/lib/forestal/ctp-ficha-types";
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 
 /**
@@ -153,6 +153,38 @@ export function tablaProductos(lineas: ReadonlyArray<LineaProducto>): string {
   </table>`;
 }
 
+/**
+ * Los casilleros **(2) a (12)**: los únicos que salen de la Ficha del CTP y del
+ * título habilitante. El resto de la guía depende del despacho.
+ *
+ * Vive aparte para que la Ficha pueda mostrar una VISTA PREVIA de cómo quedan
+ * esos casilleros sin inventar un despacho — misma función que imprime la guía
+ * de verdad, así que lo que se ve acá es exactamente lo que va a salir. Si se
+ * duplicara el HTML, la vista previa mentiría en cuanto cambie el formato.
+ */
+export function bloqueIdentidadGtf(
+  f: CtpFicha,
+  extra: {
+    fechaExpedicion?: string;
+    fechaVencimiento?: string;
+    origenRecurso?: string;
+    /** Código del título elegido EN LA GUÍA (`GtfDatos.titulos[0]`). Manda sobre
+     *  el predeterminado de la Ficha: esa madera salió de ese permiso. */
+    tituloElegido?: string;
+  } = {},
+): string {
+  const titulo = tituloDeGuia(f, extra.tituloElegido);
+  return `${seccionDoc("Título habilitante y titular del recurso", "casilleros (2) a (12)")}
+  <table class="cas">
+    <tr>${box2("2", "Autoridad Regional Forestal (ARFFS)", f.arffs)}${box("3", "F. Expedición", fechaGtf(extra.fechaExpedicion))}${box("4", "F. Vencimiento", fechaGtf(extra.fechaVencimiento))}</tr>
+    <tr><td class="c" colspan="4"><span class="n">(5)</span> <span class="l">Origen del Recurso:</span>${casillasOrigen(extra.origenRecurso ?? titulo?.tipo)}</td></tr>
+    <tr>${box2("6", "N° del título habilitante", titulo?.codigo)}${box2("7", "Nombre del Titular", f.razonSocial)}</tr>
+    <tr>${box2("", "Representante Legal", f.representante)}${box2("8", "N° de Resolución", titulo?.resolucion)}</tr>
+    <tr>${box2("9", "Plan de Manejo (Tipo)", titulo?.planManejo)}${box("10", "Depto.", f.region)}${box("11", "Prov.", f.provincia)}</tr>
+    <tr>${box4("12", "Distrito", f.distrito)}</tr>
+  </table>`;
+}
+
 export interface CuerpoGtfInput {
   ficha: CtpFicha;
   datos: GtfDatos;
@@ -182,7 +214,6 @@ export interface CuerpoGtfInput {
 /** El bloque central del documento, de (2) a (40). */
 export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
   const { ficha: f, datos: d } = i;
-  const titulo = f.titulos?.[0];
   // El (20) se lee en el papel: "guia_remision" es el valor del enum, no algo
   // que un puesto de control deba descifrar.
   const COMPROBANTE_LABEL: Record<string, string> = {
@@ -195,15 +226,14 @@ export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
       : "";
 
   return `
-  ${seccionDoc("Título habilitante y titular del recurso", "casilleros (2) a (12)")}
-  <table class="cas">
-    <tr>${box2("2", "Autoridad Regional Forestal (ARFFS)", f.arffs)}${box("3", "F. Expedición", fechaGtf(i.fechaExpedicion))}${box("4", "F. Vencimiento", fechaGtf(d.traslado?.fechaFin))}</tr>
-    <tr><td class="c" colspan="4"><span class="n">(5)</span> <span class="l">Origen del Recurso:</span>${casillasOrigen(i.origenRecurso ?? titulo?.tipo)}</td></tr>
-    <tr>${box2("6", "N° del título habilitante", titulo?.codigo)}${box2("7", "Nombre del Titular", f.razonSocial)}</tr>
-    <tr>${box2("", "Representante Legal", f.representante)}${box2("8", "N° de Resolución", titulo?.resolucion)}</tr>
-    <tr>${box2("9", "Plan de Manejo (Tipo)", titulo?.planManejo)}${box("10", "Depto.", f.region)}${box("11", "Prov.", f.provincia)}</tr>
-    <tr>${box4("12", "Distrito", f.distrito)}</tr>
-  </table>
+  ${bloqueIdentidadGtf(f, {
+    fechaExpedicion: i.fechaExpedicion,
+    fechaVencimiento: d.traslado?.fechaFin,
+    origenRecurso: i.origenRecurso,
+    // El que eligió el operador en el formulario de la guía. Antes se guardaba
+    // y NO se imprimía: el papel declaraba siempre el primero de la Ficha.
+    tituloElegido: d.titulos?.[0],
+  })}
 
   ${seccionDoc("Propietario del producto", "casilleros (13) a (21)")}
   <table class="cas">

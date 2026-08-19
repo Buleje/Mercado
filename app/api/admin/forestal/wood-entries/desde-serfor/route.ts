@@ -9,6 +9,7 @@ import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
 import { esNumeroRegistroValido, normalizarNumeroRegistro } from "@/lib/forestal/serfor-gtf";
 import { consultarGtfEnSerfor } from "@/lib/forestal/serfor-gtf-fetch";
 import { repartirGtfEnIngresos } from "@/lib/forestal/serfor-gtf-a-ingresos";
+import { gtfDatosDesdeSerfor } from "@/lib/forestal/serfor-gtf-a-datos";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import { ORIGEN_SERFOR, regionDeSerfor } from "@/lib/forestal/serfor-origen";
 import type { WoodOriginType } from "@/lib/generated/prisma/client";
@@ -111,6 +112,11 @@ export async function POST(req: NextRequest) {
       docType: "GTF",
       serforNumeroRegistro: gtf.numeroRegistro || numero,
       serforGtf: gtf as unknown as Record<string, unknown>,
+      // La MISMA ficha leída como cuerpo de guía (ADR-336): propietario del
+      // producto, destinatario y transportista quedan consultables, no sólo
+      // dentro del blob. Se calcula acá —en el servidor, con la ficha que el
+      // servidor pidió— y no en el navegador.
+      gtfDatos: gtfDatosDesdeSerfor(gtf) as unknown as Record<string, unknown>,
       gtfNumber: gtf.gtfNumber.trim(),
       gtfDate: aFecha(gtf.fechaExpedicion),
       providerName: gtf.titular?.trim() || "Sin titular declarado",

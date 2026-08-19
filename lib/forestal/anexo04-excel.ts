@@ -12,7 +12,7 @@ import { PT_POR_M3, type PiezaCubicada } from "./cubicacion";
 import type { AnexoEmitido } from "./anexo04-registro";
 import {
   construirAnexo04, BLOQUES_POR_HOJA, TEXTO_LEGAL, ETIQUETAS_FIRMA,
-  type Anexo04, type DatosAnexo04, type HojaAnexo04,
+  type Anexo04, type Anexo04Opts, type DatosAnexo04, type HojaAnexo04,
 } from "./anexo04-serfor";
 
 const VERDE = "FFE2EFD9";
@@ -188,7 +188,7 @@ function hojaExcel(ws: Worksheet, hoja: HojaAnexo04, datos: DatosAnexo04, anexo:
 }
 
 /** Descarga el ANEXO N° 04 como .xlsx editable (una pestaña por hoja). */
-export async function exportarAnexo04Excel(rows: PiezaCubicada[], datos: DatosAnexo04, opts: { especieGlobal?: string } = {}): Promise<void> {
+export async function exportarAnexo04Excel(rows: PiezaCubicada[], datos: DatosAnexo04, opts: Anexo04Opts = {}): Promise<void> {
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
   wb.creator = "Cubicador de Buleje";

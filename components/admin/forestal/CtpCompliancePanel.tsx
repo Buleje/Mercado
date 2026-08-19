@@ -117,6 +117,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
   const trazaLin = data.despachosSinTrazaLineas;
   const rendLin = data.rendimientoAltoLineas;
   const docsVenc = data.documentosVencidosLabels;
+  const docsPorVenc = data.documentosPorVencerLabels;
 
   // ── Los 9 chequeos como datos: se ordenan (bloqueos → advertencias) y se
   //    agrupan (problemas vs. en orden) antes de renderizar. ──
@@ -251,6 +252,21 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           ? `Un título habilitante o permiso CITES vencido invalida el origen de la materia prima: ${docsVenc.slice(0, 4).join(", ")}${docsVenc.length > 4 ? ` y ${docsVenc.length - 4} más` : ""}.`
           : "Hay un documento habilitante vencido en la Ficha del CTP.",
       action: "Renová o actualizá su vencimiento en la pestaña Ficha CTP.",
+      navTarget: "ficha",
+      navigateLabel: "Ir a Ficha CTP",
+    },
+    {
+      key: "documentosPorVencer",
+      count: data.counts.documentosPorVencer ?? 0,
+      icon: Clock,
+      severity: "warning",
+      title: `${data.counts.documentosPorVencer ?? 0} ${plural(data.counts.documentosPorVencer ?? 0, "documento vence", "documentos vencen")} en menos de 30 días`,
+      okTitle: "Ningún documento de la Ficha vence este mes",
+      description:
+        docsPorVenc.length > 0
+          ? `La renovación ante la ARFFS no es inmediata: ${docsPorVenc.slice(0, 4).join(", ")}${docsPorVenc.length > 4 ? ` y ${docsPorVenc.length - 4} más` : ""}.`
+          : "Un documento habilitante de la Ficha está por vencer.",
+      action: "Empezá el trámite de renovación antes de que caduque.",
       navTarget: "ficha",
       navigateLabel: "Ir a Ficha CTP",
     },

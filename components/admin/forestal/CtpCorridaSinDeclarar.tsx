@@ -475,6 +475,8 @@ export default function CtpCorridaSinDeclarar({
         <CtpRegistrarProduccionModal
           lote={lote ?? null}
           material={material}
+          /* Las piezas que esta corrida se comió, a mano dentro del modal. */
+          trozas={trozas}
           fecha={corrida.entryDate.slice(0, 10)}
           guardando={guardando}
           error={error}

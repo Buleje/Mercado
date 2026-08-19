@@ -38,20 +38,6 @@ export interface DatosDeDocumento {
   estado?: string;
 }
 
-interface RespuestaRuc {
-  razonSocial?: string | null;
-  direccion?: string | null;
-  departamento?: string | null;
-  provincia?: string | null;
-  distrito?: string | null;
-  ubigeo?: string | null;
-  estado?: string | null;
-}
-
-interface RespuestaDni {
-  nombreCompleto?: string | null;
-}
-
 /**
  * Cabeceras de toda mutación del directorio.
  *
@@ -184,44 +170,42 @@ export function useDirectorioForestal(opts: { activo?: boolean } = {}) {
 /**
  * Trae los datos públicos del documento: RUC → SUNAT, DNI → RENIEC.
  *
- * Reusa los endpoints que ya existen en el sistema (`/api/sunat/lookup-ruc` y
- * `/api/reniec/lookup`) en vez de abrir un proxy nuevo: son el mismo servicio
- * público y ya tienen rate-limit y caché.
+ * Pasa por **`/api/documento/lookup`**, que es el único que decide el padrón por
+ * el largo del número, corre admin-only (consulta datos de terceros: Ley 29733),
+ * tiene rate limit —los padrones cobran por consulta— y corta a los 6 s en vez
+ * de encadenar proveedores mientras alguien mira un spinner.
  *
- * Devuelve `null` cuando el tipo de documento no se puede consultar (CE,
- * pasaporte) y **tira** cuando el servicio falla — el que llama decide si eso es
- * un aviso o un error, porque no encontrar un RUC no impide seguir a mano.
+ * Antes se llamaba a `/api/sunat/lookup-ruc` y `/api/reniec/lookup` por separado:
+ * eran tres caminos para la misma pregunta y sólo uno tenía esas tres cosas. Los
+ * otros dos siguen vivos para el alta pública de vendors, que es su caso.
+ *
+ * Devuelve `null` cuando el documento no se puede consultar (CE, pasaporte, o el
+ * padrón no lo tiene) y **tira** cuando el servicio falla — el que llama decide
+ * si eso es un aviso o un error, porque no encontrar un RUC no impide seguir a
+ * mano.
  */
 export async function consultarDocumento(docTipo: DocTipo, numero: string): Promise<DatosDeDocumento | null> {
   const n = normalizarDocumento(numero);
   const fuente = fuenteAutocompletado(docTipo);
   if (!fuente || !n) return null;
 
-  if (fuente === "SUNAT") {
-    const r = await fetch(`/api/sunat/lookup-ruc?ruc=${encodeURIComponent(n)}`, {
-      credentials: "include",
-      cache: "no-store",
-    });
-    if (!r.ok) throw new Error(r.status === 404 ? "SUNAT no tiene ese RUC." : "No se pudo consultar el RUC.");
-    const j = (await r.json()) as RespuestaRuc;
-    if (!j.razonSocial) return null;
-    return {
-      nombre: j.razonSocial,
-      direccion: j.direccion ?? undefined,
-      region: j.departamento ?? undefined,
-      provincia: j.provincia ?? undefined,
-      distrito: j.distrito ?? undefined,
-      ubigeo: j.ubigeo ?? undefined,
-      estado: j.estado ?? undefined,
-    };
-  }
-
-  const r = await fetch(`/api/reniec/lookup?dni=${encodeURIComponent(n)}`, {
+  const r = await fetch(`/api/documento/lookup?numero=${encodeURIComponent(n)}`, {
     credentials: "include",
     cache: "no-store",
   });
-  if (!r.ok) throw new Error("No se pudo consultar el DNI.");
-  const j = (await r.json()) as RespuestaDni;
-  if (!j.nombreCompleto) return null;
-  return { nombre: j.nombreCompleto };
+  if (!r.ok) throw new Error(`No se pudo consultar ${fuente}.`);
+  const j = (await r.json()) as
+    | { encontrado: true; nombre: string; direccion?: string; departamento?: string; provincia?: string; distrito?: string; estado?: string }
+    | { encontrado: false; motivo: string };
+  /* «No encontrado» no es una falla del servicio: el número puede no existir, y
+     el formulario sigue a mano. Por eso `null` y no `throw`. */
+  if (!j.encontrado || !j.nombre) return null;
+  return {
+    nombre: j.nombre,
+    direccion: j.direccion ?? undefined,
+    region: j.departamento ?? undefined,
+    provincia: j.provincia ?? undefined,
+    distrito: j.distrito ?? undefined,
+    estado: j.estado ?? undefined,
+  };
 }

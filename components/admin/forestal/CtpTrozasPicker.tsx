@@ -107,17 +107,24 @@ export default function CtpTrozasPicker({
         </span>
       </div>
 
+      {/* El buscador va en su PROPIA fila y no compitiendo con cuatro controles.
+          Medido en el modal de armado (columna de 640px): con todo en una fila
+          quedaba en 71px —cabía «Có»— porque `min-w-*` NO emite CSS en este
+          proyecto (medido: cero reglas `min-width` en la hoja) y el flex lo
+          encogía a lo que sobraba. En el modal de corrida (471px) pasaba lo
+          mismo. Se busca por código: es el control que más ancho necesita. */}
+      <label className="relative block w-full">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+        <input
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          placeholder="Código, planta o parcela…"
+          aria-label="Buscar troza"
+          className={cn(CAMPO, "w-full pl-9 pr-3")}
+        />
+      </label>
+
       <div className="flex flex-wrap gap-2">
-        <label className="relative flex-1 min-w-44">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
-          <input
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            placeholder="Código, planta o parcela…"
-            aria-label="Buscar troza"
-            className={cn(CAMPO, "w-full pl-9 pr-3")}
-          />
-        </label>
         <select
           value={especie}
           onChange={(e) => setEspecie(e.target.value)}

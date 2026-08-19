@@ -19,12 +19,18 @@ export default function CtpIngresosPaginacion({
   pageSize,
   loading,
   onPage,
+  sustantivo = "registros",
+  detalle,
 }: {
   total: number;
   page: number;
   pageSize: number;
   loading: boolean;
   onPage: (p: number) => void;
+  /** Qué se está paginando: «guías», «registros»… */
+  sustantivo?: string;
+  /** Aclaración a la derecha del total (los asientos que hay detrás). */
+  detalle?: string;
 }) {
   if (total === 0) return null;
 
@@ -37,7 +43,8 @@ export default function CtpIngresosPaginacion({
       <div>
         <p className="text-sm text-[var(--text-tertiary)]">
           Mostrando <strong className="text-[var(--text-secondary)]">{rangeFrom}–{rangeTo}</strong> de{" "}
-          <strong className="text-[var(--text-secondary)]">{total}</strong> registros
+          <strong className="text-[var(--text-secondary)]">{total}</strong> {sustantivo}
+          {detalle ? <span className="text-[var(--text-tertiary)]"> · {detalle}</span> : null}
         </p>
         {/* La lista de atajos salió de acá: vivía como un renglón fijo bajo cada
             tabla y decía una vez lo que después ocupa siempre. Ahora está en el

@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import {
   construirAnexo04, geometriaHoja, fmtAnexo, fmtMedida, siguienteCorrelativo,
-  FILAS_OFICIAL, PAGINA,
+  reconciliarTotales, FILAS_OFICIAL, PAGINA,
 } from "@/lib/forestal/anexo04-serfor";
 import { formulaV } from "@/lib/forestal/anexo04-excel";
 import { validarAnexo04, anexoPresentable, type IdentidadCtp } from "@/lib/forestal/anexo04-validacion";
@@ -88,6 +88,126 @@ describe("construirAnexo04 — paginación", () => {
     const rows = especies.map((e) => pieza(2, 6, 6, 8, e));
     const anexo = construirAnexo04(rows, OFICIAL);
     expect(anexo.hojas.map((h) => h.bloques.length)).toEqual([4, 1]);
+  });
+
+  /**
+   * El (3) VOLUMEN TOTAL es el de SU hoja (Brandon, 2026-08). Cada hoja se
+   * muestra sola en un puesto de control: si las dos dijeran el total del
+   * anexo, cualquiera de ellas ampararía el doble de lo que lleva.
+   */
+  describe("(3) VOLUMEN TOTAL por hoja", () => {
+    const especies = ["Tornillo", "Cedro", "Capirona", "Cumala", "Bolaina"];
+    const rows = especies.map((e, i) => pieza(i === 4 ? 1 : 10, 6, 6, 8, e));
+    const anexo = construirAnexo04(rows, OFICIAL);
+
+    it("cada hoja declara lo suyo, no el total del anexo", () => {
+      expect(anexo.hojas).toHaveLength(2);
+      const [h1, h2] = anexo.hojas;
+      expect(h1!.totalM3).toBeGreaterThan(h2!.totalM3);
+      expect(h1!.totalM3).not.toBe(anexo.totalM3);
+      expect(h2!.totalM3).not.toBe(anexo.totalM3);
+    });
+
+    it("las hojas suman el total del anexo EXACTO (Brandon, 2026-08: sin desvío de 0,001-0,003 por hoja)", () => {
+      const suma = anexo.hojas.reduce((a, h) => a + h.totalM3, 0);
+      // En milésimos (enteros): el redondeo de punto flotante de sumar 2
+      // hojas no puede dejar un resto de 0,0000000001 leyéndose como desvío.
+      expect(Math.round(suma * 1000)).toBe(Math.round(anexo.totalM3 * 1000));
+    });
+
+    it("con una sola hoja, el total de la hoja ES el del anexo", () => {
+      const uno = construirAnexo04(LOTE, OFICIAL);
+      expect(uno.hojas).toHaveLength(1);
+      expect(uno.hojas[0]!.totalM3).toBe(uno.totalM3);
+    });
+
+    it("el total de la hoja va en m³ aunque la columna V vaya en pies tablares", () => {
+      const enPt = construirAnexo04(LOTE, { unidadV: "pt", modo: "oficial" });
+      const enM3 = construirAnexo04(LOTE, { unidadV: "m3", modo: "oficial" });
+      // El subtotal del bloque cambia de unidad; el (3) de la hoja, no.
+      expect(enPt.hojas[0]!.bloques[0]!.subtotal).not.toBe(enM3.hojas[0]!.bloques[0]!.subtotal);
+      expect(enPt.hojas[0]!.totalM3).toBe(enM3.hojas[0]!.totalM3);
+    });
+  });
+
+  /**
+   * Caso real que motivó el fix (Brandon, 2026-08-18): con varias hojas, cada
+   * una redondea su propio total a 3 decimales por separado — sumarlas podía
+   * quedar a 0,001-0,003 m³ del total del anexo. `reconciliarTotales` es la
+   * pieza que lo cierra exacto, sin tocar de dónde salió cada valor.
+   */
+  describe("reconciliarTotales — cierre exacto contra un objetivo", () => {
+    it("reparte el resto de milésimos cuando la suma redondeada queda corta", () => {
+      // 10.6666 + 10.6667 + 6.4667 = 27.8000 real, pero r3 por separado da
+      // 10.667 + 10.667 + 6.467 = 27.801 — 0,001 de más que el objetivo real.
+      const out = reconciliarTotales([10.667, 10.667, 6.467], 27.8);
+      expect(out.reduce((a, v) => a + v, 0)).toBeCloseTo(27.8, 6);
+      expect(Math.round(out.reduce((a, v) => a + v, 0) * 1000)).toBe(27800);
+    });
+
+    it("ajusta primero el valor más grande (el desvío no se nota en una hoja chica)", () => {
+      const out = reconciliarTotales([1, 10], 11.001);
+      expect(out).toEqual([1, 10.001]);
+    });
+
+    it("sin diferencia, no toca nada", () => {
+      expect(reconciliarTotales([5, 3.5], 8.5)).toEqual([5, 3.5]);
+    });
+
+    it("nunca deja un valor negativo aunque el objetivo sea menor que todos", () => {
+      const out = reconciliarTotales([0.001, 0.001], 0);
+      expect(out.every((v) => v >= 0)).toBe(true);
+    });
+
+    it("lista vacía: nada que reconciliar", () => {
+      expect(reconciliarTotales([], 5)).toEqual([]);
+    });
+  });
+
+  /**
+   * (3) VOLUMEN TOTAL declarado a mano — Brandon, 2026-08-18: "el anexo da
+   * 27,770 y quiero que sea 27,771, sin tocar medidas". `totalManualM3`
+   * reemplaza el total impreso y reconcilia las hojas contra él; el total
+   * REAL (sumado desde las piezas) sigue disponible en `totalCalculadoM3`
+   * para no perder de vista cuánto se ajustó.
+   */
+  describe("totalManualM3 — declarar el total a mano", () => {
+    it("con una sola hoja, la hoja pasa a declarar EXACTO lo tipeado", () => {
+      const auto = construirAnexo04(LOTE, OFICIAL);
+      const manual = construirAnexo04(LOTE, OFICIAL, { totalManualM3: auto.totalM3 + 0.003 });
+      expect(manual.totalM3).toBeCloseTo(auto.totalM3 + 0.003, 6);
+      expect(manual.hojas[0]!.totalM3).toBe(manual.totalM3);
+      expect(manual.totalCalculadoM3).toBe(auto.totalM3); // el real no se pierde
+    });
+
+    it("con varias hojas, reconcilia contra el total a mano — no contra el calculado", () => {
+      const especies = ["Tornillo", "Cedro", "Capirona", "Cumala", "Bolaina"];
+      const rows = especies.map((e, i) => pieza(i === 4 ? 1 : 10, 6, 6, 8, e));
+      const auto = construirAnexo04(rows, OFICIAL);
+      const objetivo = auto.totalM3 + 0.002;
+      const manual = construirAnexo04(rows, OFICIAL, { totalManualM3: objetivo });
+      const suma = manual.hojas.reduce((a, h) => a + h.totalM3, 0);
+      expect(Math.round(suma * 1000)).toBe(Math.round(objetivo * 1000));
+      expect(manual.totalM3).toBeCloseTo(objetivo, 6);
+    });
+
+    it("NO toca las medidas ni los subtotales por bloque — sólo el total impreso", () => {
+      const auto = construirAnexo04(LOTE, OFICIAL);
+      const manual = construirAnexo04(LOTE, OFICIAL, { totalManualM3: auto.totalM3 + 0.5 });
+      expect(manual.hojas[0]!.bloques).toEqual(auto.hojas[0]!.bloques);
+    });
+
+    it("sin piezas, un total a mano no se declara (la hoja en blanco sigue en 0)", () => {
+      const manual = construirAnexo04([], OFICIAL, { totalManualM3: 27.771 });
+      expect(manual.totalM3).toBe(0);
+    });
+
+    it("un valor inválido (negativo, no numérico) cae al calculado", () => {
+      const auto = construirAnexo04(LOTE, OFICIAL);
+      expect(construirAnexo04(LOTE, OFICIAL, { totalManualM3: -1 }).totalM3).toBe(auto.totalM3);
+      expect(construirAnexo04(LOTE, OFICIAL, { totalManualM3: NaN }).totalM3).toBe(auto.totalM3);
+      expect(construirAnexo04(LOTE, OFICIAL, { totalManualM3: null }).totalM3).toBe(auto.totalM3);
+    });
   });
 
   it("sin piezas igual imprime una hoja en blanco para llenar a mano", () => {

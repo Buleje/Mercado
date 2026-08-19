@@ -32,8 +32,18 @@ export interface LoteCertData {
 export interface LoteCertCadena {
   completa: boolean;
   totalCantidad: number;
-  corridas: { lineNo: number; quantity: number; guias: string[] }[];
+  corridas: { lineNo: number; quantity: number; guias: string[]; lotesAserrio?: string[] }[];
+  /**
+   * Las piezas que entraron a la sierra, por lote de aserrío (ADR-334).
+   *
+   * La cadena por GTF prueba de qué documento salió la madera; esto prueba **qué
+   * palos**. Es lo que un fiscalizador cuenta en la pila y lo que la EUDR pide.
+   */
+  lotesDeAserrio?: { code: string | null; piezas: number; volumenM3: number; codigos: string[] }[];
 }
+
+/** Cuántos códigos de pieza entran en el papel antes de resumir. */
+const CODIGOS_EN_EL_PAPEL = 40;
 
 export interface LoteCertEmisor {
   businessName: string | null;
@@ -74,10 +84,38 @@ export async function printCertificadoLote(
       (c) => `<tr>
         <td class="mono">#${c.lineNo}</td>
         <td class="mono right">${n4(c.quantity)} ${esc(lote.unitLabel)}</td>
+        <td class="mono">${c.lotesAserrio?.length ? c.lotesAserrio.map(esc).join(" · ") : "—"}</td>
         <td class="mono">${c.guias.length ? c.guias.map(esc).join(" · ") : "—"}</td>
       </tr>`,
     )
     .join("");
+
+  /* El tramo del medio: de la guía a la corrida hay PIEZAS, y son las que se
+     cuentan en la pila. Si no hay ninguna registrada, el bloque no se inventa. */
+  const lotesAserrio = cadena.lotesDeAserrio ?? [];
+  const totalPiezas = lotesAserrio.reduce((a, l) => a + l.piezas, 0);
+  const bloquePiezas = lotesAserrio.length
+    ? `<div class="box">
+      <h2>Piezas que entraron a la sierra — ${totalPiezas} ${totalPiezas === 1 ? "troza" : "trozas"}</h2>
+      <table>
+        <thead><tr><th>Lote de aserrío</th><th class="right">Piezas</th><th class="right">Volumen rollizo</th><th>Códigos de las piezas</th></tr></thead>
+        <tbody>${lotesAserrio
+          .map((l) => {
+            const visibles = l.codigos.slice(0, CODIGOS_EN_EL_PAPEL);
+            const resto = l.codigos.length - visibles.length;
+            return `<tr>
+              <td class="mono">${l.code ? esc(l.code) : "<i>sin lote</i>"}</td>
+              <td class="mono right">${l.piezas}</td>
+              <td class="mono right">${n4(l.volumenM3)} m³</td>
+              <td class="mono codigos">${visibles.length ? visibles.map(esc).join(" · ") : "—"}${
+                resto > 0 ? ` <i>y ${resto} más</i>` : ""
+              }</td>
+            </tr>`;
+          })
+          .join("")}</tbody>
+      </table>
+    </div>`
+    : "";
 
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Certificado de lote ${esc(lote.loteCode)}</title>
   <style>
@@ -100,6 +138,9 @@ export async function printCertificadoLote(
     th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #14532d; border-bottom: 1.5px solid #14532d; padding: 4px 6px; }
     td { padding: 5px 6px; border-bottom: 1px solid #e5e7eb; }
     .mono { font-family: monospace; font-variant-numeric: tabular-nums; }
+    /* Los códigos de pieza son muchos y cortos: se dejan fluir en varias líneas
+       en vez de estirar la columna y romper el A4. */
+    .codigos { font-size: 10px; line-height: 1.5; word-break: break-word; }
     .right { text-align: right; }
     .cites { color: #b91c1c; font-weight: 700; }
     .firma { margin-top: 48px; display: flex; justify-content: space-between; gap: 40px; }
@@ -126,7 +167,11 @@ export async function printCertificadoLote(
     <b>cadena de custodia completa</b>: sus ${cadena.corridas.length}
     ${cadena.corridas.length === 1 ? "corrida de producción tiene" : "corridas de producción tienen"} su
     materia prima identificada por ${totalGuias === 1 ? "guía de transporte forestal (GTF) de ingreso" : `${totalGuias} guías de transporte forestal (GTF) de ingreso`},
-    con un total de ${n4(cadena.totalCantidad)} ${esc(lote.unitLabel)}.</p>
+    con un total de ${n4(cadena.totalCantidad)} ${esc(lote.unitLabel)}${
+      totalPiezas > 0
+        ? `, y que esa materia prima corresponde a <b>${totalPiezas} ${totalPiezas === 1 ? "troza identificada" : "trozas identificadas"} una por una</b>, detalladas más abajo`
+        : ""
+    }.</p>
 
     <div class="box">
       <h2>Datos del lote</h2>
@@ -142,10 +187,12 @@ export async function printCertificadoLote(
     <div class="box">
       <h2>Cadena de custodia — corridas del lote</h2>
       <table>
-        <thead><tr><th>Corrida de producción</th><th class="right">Cantidad</th><th>Guías GTF de ingreso (materia prima)</th></tr></thead>
+        <thead><tr><th>Corrida de producción</th><th class="right">Cantidad</th><th>Lote de aserrío</th><th>Guías GTF de ingreso (materia prima)</th></tr></thead>
         <tbody>${filas}</tbody>
       </table>
     </div>
+
+    ${bloquePiezas}
 
     <div class="firma">
       <div>Responsable del CTP</div>
