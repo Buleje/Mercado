@@ -65,9 +65,12 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
-    const ok = await DocumentsDB.deleteFolder(auth.tenantId, id);
-    if (!ok) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    return NextResponse.json({ ok: true });
+    // `?conDocumentos=1` manda lo que hay adentro a la papelera en vez de
+    // soltarlo a la raíz del drive (ver DocumentsDB.eliminarCarpetas).
+    const conDocumentos = req.nextUrl.searchParams.get("conDocumentos") === "1";
+    const { carpetas, documentos } = await DocumentsDB.eliminarCarpetas(auth.tenantId, [id], { conDocumentos });
+    if (carpetas === 0) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({ ok: true, documentos });
 
   } catch (e) {
     logger.error("[delete] error", { err: e instanceof Error ? e.message : String(e) });

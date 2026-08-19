@@ -21,6 +21,14 @@ const ESCALA_LECTURA = 2;
 export async function renderizarPaginaPdf(
   datos: Buffer | Uint8Array,
   pagina = 1,
+  /**
+   * Qué salió mal, para quien pueda hacer algo con eso.
+   *
+   * El log queda en el servidor y el que sube el papel ve «no se pudo leer» sin
+   * saber si el problema es el archivo o la instalación. Quien llama decide si
+   * lo muestra.
+   */
+  onError?: (motivo: string) => void,
 ): Promise<Buffer | null> {
   try {
     // Sin las fuentes estándar registradas, pdf.js dibuja una página de
@@ -33,10 +41,9 @@ export async function renderizarPaginaPdf(
     })) as ArrayBuffer;
     return png ? Buffer.from(png) : null;
   } catch (err) {
-    logger.warn("documents.pdf_a_imagen.fallo", {
-      pagina,
-      err: err instanceof Error ? err.message : String(err),
-    });
+    const motivo = err instanceof Error ? err.message : String(err);
+    logger.warn("documents.pdf_a_imagen.fallo", { pagina, err: motivo });
+    onError?.(motivo);
     return null;
   }
 }

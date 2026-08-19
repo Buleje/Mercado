@@ -71,7 +71,8 @@ export type BulkFolderAccion =
   | { action: "color"; color: string | null }
   | { action: "addTags"; tags: string[] }
   | { action: "removeTags"; tags: string[] }
-  | { action: "delete" };
+  /** `conDocumentos` manda lo de adentro a la papelera; sin él va a la raíz. */
+  | { action: "delete"; conDocumentos?: boolean };
 
 export interface UseDocumentsResult {
   documents: DbDocument[];
@@ -113,7 +114,7 @@ export interface UseDocumentsResult {
   updateFolder: (id: string, patch: { name?: string; color?: string | null; icon?: string | null; emoji?: string | null; tags?: string[]; allowedRoles?: string[] }) => Promise<void>;
   /** Acciones sobre VARIAS carpetas. Devuelve cuántas cambió el servidor. */
   bulkFolders: (ids: string[], accion: BulkFolderAccion) => Promise<number>;
-  deleteFolder: (id: string) => Promise<void>;
+  deleteFolder: (id: string, opciones?: { conDocumentos?: boolean }) => Promise<void>;
 }
 
 export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsResult {
@@ -448,6 +449,12 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
           });
           borrados += r.purged;
         }
+        // Purgar sólo alcanza a lo que ya está en la papelera: si alguno no
+        // estaba, el endpoint responde 200 sin tocarlo y el documento sigue
+        // vivo. Decirlo, o la papelera parece haberse vaciado y no.
+        if (borrados !== ids.length) {
+          setError(`Se borraron definitivamente ${borrados} de ${ids.length}. Los otros ya no estaban en la papelera.`);
+        }
       } else {
         for (let vuelta = 0; vuelta < 20; vuelta++) {
           const r = await http<{ purged: number; restantes: number }>(`${BASE}/trash`, {
@@ -515,6 +522,22 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
             const crudo = e instanceof Error ? e.message : String(e);
             throw new Error(
               `No se pudo ${VERBO_LOTE[action] ?? "cambiar"} ${ids.length} documento(s): ${motivoLote(crudo)}`,
+            );
+          }
+        }
+        // El servidor puede contestar 200 y no haber tocado nada: `updateMany`
+        // filtra por tenant y por `deletedAt`, así que un id ajeno o ya borrado
+        // devuelve `affected: 0` sin error. La pantalla ya los sacó de la
+        // lista, y al recargar volvían todos — que es exactamente el síntoma
+        // "los elimino y reaparecen". Cuando el número no cuadra, manda el
+        // servidor: se vuelve a pedir la lista y se dice qué pasó de verdad.
+        if (afectados !== ids.length) {
+          void fetchAll({ silencioso: true, soloDocumentos: true });
+          if (action === "delete") {
+            setError(
+              afectados === 0
+                ? `No se eliminó ninguno de los ${ids.length} documentos: el servidor no los encontró. Recargá la página y probá de nuevo.`
+                : `Se eliminaron ${afectados} de ${ids.length}. Los otros ${ids.length - afectados} siguen en el drive.`,
             );
           }
         }
@@ -596,10 +619,12 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
   const bulkFolders = useCallback(async (ids: string[], accion: BulkFolderAccion): Promise<number> => {
     if (ids.length === 0) return 0;
     const marcadas = new Set(ids);
+    // Cascada: se van las marcadas y todo lo que cuelgue de ellas. Se calcula
+    // ANTES de tocar la lista porque los documentos también se acomodan según
+    // el árbol muerto (a la papelera o a la raíz).
+    const muertas = new Set(marcadas);
     const revertir = cambiarCarpetas((lista) => {
       if (accion.action === "delete") {
-        // Cascada: se van las marcadas y todo lo que cuelgue de ellas.
-        const muertas = new Set(marcadas);
         let crecio = true;
         while (crecio) {
           crecio = false;
@@ -625,8 +650,17 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
       });
     });
 
+    // Los documentos de las carpetas que se van: a la papelera (salen de la
+    // lista) o sueltos en la raíz. Sin esto la pantalla los seguía mostrando
+    // dentro de una carpeta que ya no existe.
+    const revertirDocs = accion.action === "delete"
+      ? cambiarLocal((docs) => accion.conDocumentos
+          ? docs.filter((d) => !(d.folderId && muertas.has(d.folderId)))
+          : docs.map((d) => (d.folderId && muertas.has(d.folderId) ? { ...d, folderId: null } : d)))
+      : () => {};
+
     let count = 0;
-    await optimista(() => {}, revertir, async () => {
+    await optimista(() => {}, () => { revertir(); revertirDocs(); }, async () => {
       // Igual que con los documentos: el endpoint toma hasta IDS_POR_LOTE por
       // llamada, así que la selección va en tandas y no en un 400.
       for (const lote of enLotes(ids, IDS_POR_LOTE)) {
@@ -640,12 +674,13 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     // El conteo de documentos por carpeta lo recalcula el servidor.
     void fetchAll();
     return count;
-  }, [optimista, cambiarCarpetas, fetchAll]);
+  }, [optimista, cambiarCarpetas, cambiarLocal, fetchAll]);
 
-  const deleteFolder = useCallback(async (id: string) => {
+  const deleteFolder = useCallback(async (id: string, opciones: { conDocumentos?: boolean } = {}) => {
     // Borrar una carpeta arrastra a sus subcarpetas (el schema las borra en
-    // cascada) y suelta sus documentos a la raíz: se refleja igual acá para
-    // que la pantalla no muestre carpetas que ya no existen.
+    // cascada). Sus documentos van a la papelera o quedan sueltos en la raíz
+    // según `conDocumentos`: se refleja igual acá para que la pantalla no
+    // muestre carpetas que ya no existen ni documentos donde ya no están.
     const hijas = new Set<string>([id]);
     let crecio = true;
     const revertirCarpetas = cambiarCarpetas((f) => {
@@ -657,11 +692,11 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
       }
       return f.filter((c) => !hijas.has(c.id));
     });
-    const revertirDocs = cambiarLocal((docs) =>
-      docs.map((d) => (d.folderId && hijas.has(d.folderId) ? { ...d, folderId: null } : d)),
-    );
+    const revertirDocs = cambiarLocal((docs) => opciones.conDocumentos
+      ? docs.filter((d) => !(d.folderId && hijas.has(d.folderId)))
+      : docs.map((d) => (d.folderId && hijas.has(d.folderId) ? { ...d, folderId: null } : d)));
     await optimista(() => {}, () => { revertirCarpetas(); revertirDocs(); }, () =>
-      http(`${BASE}/folders/${id}`, { method: "DELETE" }),
+      http(`${BASE}/folders/${id}${opciones.conDocumentos ? "?conDocumentos=1" : ""}`, { method: "DELETE" }),
     );
   }, [optimista, cambiarCarpetas, cambiarLocal]);
 

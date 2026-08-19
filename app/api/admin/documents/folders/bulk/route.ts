@@ -50,6 +50,15 @@ const Body = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("delete"),
     ids: Ids,
+    /**
+     * Llevarse también los documentos que hay adentro (a la papelera).
+     *
+     * Sin esto el schema los suelta a la raíz y quien borró la carpeta los ve
+     * reaparecer sueltos en el drive, que es la queja exacta que originó el
+     * cambio. Va explícito desde la UI para que nadie borre 80 archivos por
+     * omisión.
+     */
+    conDocumentos: z.boolean().optional(),
   }),
 ]);
 
@@ -72,6 +81,23 @@ export async function POST(req: NextRequest) {
       );
     }
     const d = parsed.data;
+
+    // Borrar es el único caso que además toca documentos: se resuelve aparte
+    // para poder decir en la respuesta cuántos se fueron a la papelera.
+    if (d.action === "delete") {
+      const { carpetas, documentos } = await DocumentsDB.eliminarCarpetas(auth.tenantId, d.ids, {
+        conDocumentos: d.conDocumentos,
+      });
+      logger.info("[documents.folders.bulk] ok", {
+        tenantId: auth.tenantId,
+        action: d.action,
+        pedidas: d.ids.length,
+        afectadas: carpetas,
+        documentos,
+        actor: auth.username,
+      });
+      return NextResponse.json({ ok: true, count: carpetas, documentos });
+    }
 
     const count = await DocumentsDB.bulkFolders(
       auth.tenantId,

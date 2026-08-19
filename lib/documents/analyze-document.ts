@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { DOCX_MIME, esImagenAnalizable, isAnalyzableMime, XLSX_MIME } from "./analyzable-mime";
+import { esImagenAnalizable, isAnalyzableMime } from "./analyzable-mime";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { downloadFromStorage, getSignedUrl } from "@/lib/documents/storage";
 import { smartModel, getActiveProvider } from "@/lib/ai/provider";
@@ -17,6 +17,9 @@ import { fechaDeVencimientoEnTexto } from "@/lib/documentos/fecha-vencimiento";
 import { motivoDeFalloIA } from "./aviso-ia";
 import { construirTextoBuscable } from "./texto-buscable";
 import { renderizarPaginaPdf } from "./pdf-a-imagen";
+/* La extracción vive aparte desde ADR-372: la comparte la clasificación de
+   papeles del despacho, y el mismo PDF tiene que leerse igual desde los dos. */
+import { extractDocText } from "./extraer-texto";
 import { describirImagenConVision } from "./vision-describe";
 
 /**
@@ -54,71 +57,6 @@ export type AnalyzeResult =
   | { ok: false; error: string; status: number };
 
 export { isAnalyzableMime };
-
-/** Entidades XML básicas → texto (el document.xml viene escapado). */
-const desescapar = (s: string) =>
-  s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'");
-
-/**
- * Texto de un .docx sin DOMParser (no existe en Node): los `<w:t>` de cada
- * párrafo, con salto por párrafo. Suficiente para describir y buscar.
- */
-async function extractDocxText(buf: Uint8Array): Promise<string> {
-  const JSZip = (await import("jszip")).default;
-  const zip = await JSZip.loadAsync(buf);
-  const xml = await zip.file("word/document.xml")?.async("string");
-  if (!xml) return "";
-  return xml
-    .split("</w:p>")
-    .map((p) => (p.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) ?? [])
-      .map((t) => desescapar(t.replace(/<[^>]+>/g, "")))
-      .join(""))
-    .filter((linea) => linea.trim() !== "")
-    .join("\n");
-}
-
-/** Texto de un .xlsx: nombre de hoja + celdas fila por fila (con tope). */
-async function extractXlsxText(buf: Uint8Array): Promise<string> {
-  const ExcelJS = (await import("exceljs")).default;
-  const wb = new ExcelJS.Workbook();
-  await wb.xlsx.load(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer);
-  const celda = (v: unknown): string => {
-    if (v === null || v === undefined) return "";
-    if (typeof v === "object") {
-      const o = v as { richText?: { text?: string }[]; result?: unknown; text?: unknown };
-      if (Array.isArray(o.richText)) return o.richText.map((r) => r.text ?? "").join("");
-      if (o.result !== null && o.result !== undefined) return String(o.result);
-      if (o.text !== null && o.text !== undefined) return String(o.text);
-      return "";
-    }
-    return String(v);
-  };
-  const out: string[] = [];
-  let filas = 0;
-  wb.eachSheet((ws) => {
-    if (filas >= 400) return;
-    out.push(`— Hoja: ${ws.name} —`);
-    ws.eachRow((row) => {
-      if (filas >= 400) return; // tope: para describir alcanza el arranque
-      const vals = (Array.isArray(row.values) ? row.values : []).map(celda).filter((s) => s.trim() !== "");
-      if (vals.length > 0) { out.push(vals.join(" | ")); filas++; }
-    });
-  });
-  return out.join("\n");
-}
-
-async function extractDocText(buf: Uint8Array, mimeType: string): Promise<string> {
-  if (mimeType === "application/pdf") {
-    const { getDocumentProxy, extractText } = await import("unpdf");
-    const pdf = await getDocumentProxy(buf);
-    const { text } = await extractText(pdf, { mergePages: true });
-    return Array.isArray(text) ? text.join("\n") : text;
-  }
-  if (mimeType === DOCX_MIME) return extractDocxText(buf);
-  if (mimeType === XLSX_MIME) return extractXlsxText(buf);
-  if (mimeType.startsWith("text/")) return new TextDecoder().decode(buf);
-  return "";
-}
 
 /** Normaliza el texto extraído: espacios colapsados y tope de contexto. */
 const normalizar = (s: string) => s.replace(/\s+/g, " ").trim().slice(0, 15000);

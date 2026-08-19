@@ -12,6 +12,12 @@
  */
 export const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 export const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+/**
+ * Excel viejo (.xls binario, BIFF8). Sigue muy vivo: los sistemas que usan los
+ * aserraderos exportan así, y en el drive había 28 archivos de estos que nadie
+ * podía leer ni encontrar. Los lee `extraer-xls.ts`, sin dependencias.
+ */
+export const XLS_MIME = "application/vnd.ms-excel";
 
 /** Formatos de imagen que el modelo de visión acepta tal cual. */
 const IMAGENES_CON_VISION = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"]);
@@ -23,6 +29,6 @@ export function esImagenAnalizable(mimeType: string): boolean {
 
 export function isAnalyzableMime(mimeType: string): boolean {
   return mimeType === "application/pdf" || mimeType.startsWith("text/")
-    || mimeType === DOCX_MIME || mimeType === XLSX_MIME
+    || mimeType === DOCX_MIME || mimeType === XLSX_MIME || mimeType === XLS_MIME
     || esImagenAnalizable(mimeType);
 }
