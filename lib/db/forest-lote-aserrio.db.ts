@@ -118,7 +118,26 @@ export class ForestLoteAserrioDB {
       },
     });
 
-    const corridaIds = [...new Set(lotes.map((l) => l.produccionEntryId).filter((x): x is string => Boolean(x)))];
+    /**
+     * Las corridas del lote son TODAS las que se comieron alguna de sus piezas,
+     * no sólo la que lo cerró (ADR-365).
+     *
+     * `produccionEntryId` se escribe cuando el lote se consume ENTERO: un lote
+     * aserrado a medias —tres trozas hoy, la cuarta el jueves— lo tiene en null y
+     * sus corridas quedaban invisibles para la pantalla, que entonces no podía
+     * ofrecer terminar de declarar lo que ya se aserró.
+     */
+    const corridaIds = [
+      ...new Set([
+        ...lotes.map((l) => l.produccionEntryId).filter((x): x is string => Boolean(x)),
+        ...lotes.flatMap((l) =>
+          l.trozas
+            .map((t) => t.consumidaEn)
+            .filter((c): c is NonNullable<typeof c> => Boolean(c) && c!.deletedAt == null && c!.status !== "anulado")
+            .map((c) => c.id),
+        ),
+      ]),
+    ];
     /* Lo que salió de esas corridas cierra el círculo del lote: la madera no
        muere en Producción, se despacha. Mismo criterio que el listado de
        corridas (`ForestCtpDB.list`) — sólo cuentan despachos y reprocesos
@@ -127,7 +146,9 @@ export class ForestLoteAserrioDB {
       corridaIds.length
         ? prisma.forestCtpEntry.findMany({
             where: { tenantId, id: { in: corridaIds } },
-            select: { id: true, lineNo: true, entryDate: true, productType: true, quantity: true, unit: true, status: true, deletedAt: true },
+            /* `volumeInputM3` es el denominador del rendimiento: sin él la
+               pantalla no puede decir cuánto más se puede declarar (ADR-365). */
+            select: { id: true, lineNo: true, entryDate: true, productType: true, quantity: true, unit: true, status: true, deletedAt: true, volumeInputM3: true, speciesCommon: true },
           })
         : [],
       corridaIds.length
@@ -150,10 +171,43 @@ export class ForestLoteAserrioDB {
     const reprocesado = new Map(reprocesos.map((r) => [r.origenEntryId, Number(r._sum.quantity ?? 0)]));
     const num = (v: unknown) => (v == null ? null : Number(v));
 
+    /** Una corrida vista desde el lote, con lo que la pantalla necesita decidir. */
+    const verCorrida = (c: (typeof corridas)[number]) => ({
+      id: c.id,
+      lineNo: c.lineNo,
+      entryDate: c.entryDate,
+      productType: c.productType,
+      speciesCommon: c.speciesCommon,
+      quantity: num(c.quantity),
+      volumeInputM3: num(c.volumeInputM3),
+      unit: c.unit,
+      status: c.status,
+      viva: c.deletedAt == null && c.status !== "anulado",
+      despachadoQty: despachado.get(c.id) ?? 0,
+      reprocesadoQty: reprocesado.get(c.id) ?? 0,
+    });
+
     return lotes.map((l) => {
       const c = l.produccionEntryId ? porCorrida.get(l.produccionEntryId) : undefined;
+      /* Las corridas que se comieron piezas de ESTE lote, la que lo cerró
+         incluida y sin repetirla. Ordenadas por N° de línea: es el orden del
+         libro y el que el operador tiene en la cabeza. */
+      const suyas = [
+        ...new Set([
+          ...l.trozas
+            .map((t) => t.consumidaEn)
+            .filter((x): x is NonNullable<typeof x> => Boolean(x) && x!.deletedAt == null && x!.status !== "anulado")
+            .map((x) => x.id),
+          ...(l.produccionEntryId ? [l.produccionEntryId] : []),
+        ]),
+      ]
+        .map((id) => porCorrida.get(id))
+        .filter((x): x is NonNullable<typeof x> => Boolean(x) && x!.deletedAt == null && x!.status !== "anulado")
+        .map(verCorrida)
+        .sort((a, b) => a.lineNo - b.lineNo);
       return {
         ...l,
+        corridas: suyas,
         trozas: l.trozas.map(({ consumidaEn, ...t }) => ({
           ...t,
           volumenM3: num(t.volumenM3),
@@ -166,20 +220,11 @@ export class ForestLoteAserrioDB {
               ? consumidaEn.id
               : null,
         })),
-        produccion: c
-          ? {
-              id: c.id,
-              lineNo: c.lineNo,
-              entryDate: c.entryDate,
-              productType: c.productType,
-              quantity: num(c.quantity),
-              unit: c.unit,
-              status: c.status,
-              viva: c.deletedAt == null && c.status !== "anulado",
-              despachadoQty: despachado.get(c.id) ?? 0,
-              reprocesadoQty: reprocesado.get(c.id) ?? 0,
-            }
-          : null,
+        /* La que CERRÓ el lote, anulada incluida: `alertasDeLote` avisa
+           justamente del lote que apunta a una corrida muerta. Misma forma que
+           las de arriba — dos serializaciones de lo mismo divergen a la primera
+           columna nueva. */
+        produccion: c ? verCorrida(c) : null,
         piezas: l.trozas.length,
         volumenM3: Math.round(l.trozas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
       };

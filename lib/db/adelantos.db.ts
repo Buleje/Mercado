@@ -1,11 +1,13 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import {
   PREFIJO_ADELANTO,
   normalizarBusquedaCodigo,
   siguienteCodigo,
 } from "@/lib/adelantos/codigo-operacion";
+import { resumirPersona, type ResumenPersona } from "@/lib/adelantos/saldo-persona";
 import {
   etiquetaEgreso,
   etiquetaIngreso,
@@ -46,7 +48,44 @@ export type DbBeneficiario = {
    * el manual el mismo día. Además, desde otra computadora no se veía nada.
    */
   ultimoRecordatorio?: string | null;
+  /** (330) Identidad oficial, traída de RENIEC/SUNAT al tipear el documento. */
+  tipoDocumento?: string | null;
+  razonSocial?: string | null;
+  direccion?: string | null;
+  departamento?: string | null;
+  provincia?: string | null;
+  distrito?: string | null;
+  email?: string | null;
+  estadoSunat?: string | null;
+  condicionSunat?: string | null;
+  verificadoEn?: string | null;
+  banco?: string | null;
+  cuentaBancaria?: string | null;
+  cci?: string | null;
+  /** Baja lógica: se deja de ofrecer sin borrar su historial. */
+  activo: boolean;
   createdAt: string;
+};
+
+export type DbGestion = {
+  id: string;
+  beneficiarioId: string;
+  beneficiarioNombre?: string;
+  fecha: string;
+  tipo: string;
+  nota?: string | null;
+  fechaPrometida?: string | null;
+  montoPrometido?: number | null;
+  usuario?: string | null;
+};
+
+export type GestionInput = {
+  beneficiarioId: string;
+  tipo: string;
+  nota?: string;
+  fechaPrometida?: string | null;
+  montoPrometido?: number | null;
+  usuario?: string;
 };
 
 export type RecurrenteFrecuencia = "semanal" | "quincenal" | "mensual";
@@ -113,6 +152,8 @@ export type DbAdelanto = {
   montoAdelantado: number;
   moneda: string;
   fechaAdelanto: string;
+  /** (332) Cuándo se acordó devolverlo. */
+  fechaVencimiento?: string | null;
   status: AdelantoStatus;
   saldoPendiente: number;
   totalEntregado: number;
@@ -137,16 +178,60 @@ const INCLUDE_FULL = {
 
 type AdelantoRow = Prisma.AdelantoGetPayload<{ include: typeof INCLUDE_FULL }>;
 
-function mapBeneficiario(b: {
+type BeneficiarioRow = {
   id: string; nombre: string; documento: string | null; telefono: string | null;
   notas: string | null; limiteCredito?: Prisma.Decimal | number | null;
   ultimoRecordatorio?: Date | null; createdAt: Date;
-}): DbBeneficiario {
+  tipoDocumento?: string | null; razonSocial?: string | null; direccion?: string | null;
+  departamento?: string | null; provincia?: string | null; distrito?: string | null;
+  email?: string | null; estadoSunat?: string | null; condicionSunat?: string | null;
+  verificadoEn?: Date | null; banco?: string | null; cuentaBancaria?: string | null;
+  cci?: string | null; activo?: boolean;
+};
+
+function mapBeneficiario(b: BeneficiarioRow): DbBeneficiario {
   return {
     id: b.id, nombre: b.nombre, documento: b.documento, telefono: b.telefono,
     notas: b.notas, limiteCredito: b.limiteCredito != null ? Number(b.limiteCredito) : null,
     ultimoRecordatorio: iso(b.ultimoRecordatorio),
+    tipoDocumento: b.tipoDocumento ?? null,
+    razonSocial: b.razonSocial ?? null,
+    direccion: b.direccion ?? null,
+    departamento: b.departamento ?? null,
+    provincia: b.provincia ?? null,
+    distrito: b.distrito ?? null,
+    email: b.email ?? null,
+    estadoSunat: b.estadoSunat ?? null,
+    condicionSunat: b.condicionSunat ?? null,
+    verificadoEn: iso(b.verificadoEn),
+    banco: b.banco ?? null,
+    cuentaBancaria: b.cuentaBancaria ?? null,
+    cci: b.cci ?? null,
+    /* Los registros anteriores a la 330 no traen la columna en memoria: se
+       asumen activos, que es lo que eran. */
+    activo: b.activo ?? true,
     createdAt: b.createdAt.toISOString(),
+  };
+}
+
+/** Los campos opcionales de la ficha, normalizados: "" y "   " son NULL. */
+function camposFicha(data: BeneficiarioInput) {
+  const t = (v?: string | null) => (v == null ? undefined : v.trim() || null);
+  return {
+    tipoDocumento: t(data.tipoDocumento),
+    razonSocial: t(data.razonSocial),
+    direccion: t(data.direccion),
+    departamento: t(data.departamento),
+    provincia: t(data.provincia),
+    distrito: t(data.distrito),
+    email: t(data.email),
+    estadoSunat: t(data.estadoSunat),
+    condicionSunat: t(data.condicionSunat),
+    verificadoEn: data.verificadoEn === undefined ? undefined : data.verificadoEn ? new Date(data.verificadoEn) : null,
+    banco: t(data.banco),
+    cuentaBancaria: t(data.cuentaBancaria),
+    cci: t(data.cci),
+    activo: data.activo,
   };
 }
 
@@ -164,6 +249,7 @@ function mapAdelanto(row: AdelantoRow): DbAdelanto {
     montoAdelantado,
     moneda: row.moneda,
     fechaAdelanto: row.fechaAdelanto.toISOString(),
+    fechaVencimiento: iso(row.fechaVencimiento),
     status: row.status as AdelantoStatus,
     saldoPendiente,
     totalEntregado: Math.round((montoAdelantado - saldoPendiente) * 100) / 100,
@@ -189,7 +275,27 @@ function mapAdelanto(row: AdelantoRow): DbAdelanto {
 
 // ── Inputs ───────────────────────────────────────────────────────────────────
 export type BeneficiarioInput = {
-  nombre: string; documento?: string; telefono?: string; notas?: string; limiteCredito?: number | null;
+  nombre: string;
+  documento?: string;
+  telefono?: string;
+  notas?: string;
+  limiteCredito?: number | null;
+  /** (330) Los que llegan de RENIEC/SUNAT o se cargan a mano. */
+  tipoDocumento?: string | null;
+  razonSocial?: string | null;
+  direccion?: string | null;
+  departamento?: string | null;
+  provincia?: string | null;
+  distrito?: string | null;
+  email?: string | null;
+  estadoSunat?: string | null;
+  condicionSunat?: string | null;
+  /** ISO: cuándo se contrastó contra el padrón oficial. */
+  verificadoEn?: string | null;
+  banco?: string | null;
+  cuentaBancaria?: string | null;
+  cci?: string | null;
+  activo?: boolean;
 };
 
 export type EntregaPactadaInput = {
@@ -202,6 +308,8 @@ export type AdelantoCreateInput = {
   montoAdelantado: number;
   moneda?: string;
   fechaAdelanto?: string;
+  /** (332) Cuándo se acordó devolverlo; ISO. */
+  fechaVencimiento?: string | null;
   notas?: string;
   comprobanteUrl?: string;
   /** N° del talonario de papel que firmó la persona (ADR-329). */
@@ -278,23 +386,108 @@ async function siguienteCodigoDeTenant(tenantId: string): Promise<string> {
 // ── DB ───────────────────────────────────────────────────────────────────────
 export const AdelantosDB = {
   // ── Beneficiarios ──
-  async listBeneficiarios(tenantId: string): Promise<(DbBeneficiario & { totalAdelantado: number; saldoPendiente: number; adelantosAbiertos: number })[]> {
+  async listBeneficiarios(tenantId: string): Promise<(DbBeneficiario & ResumenPersona)[]> {
     const rows = await prisma.adelantoBeneficiario.findMany({
       where: { tenantId },
       orderBy: { nombre: "asc" },
-      include: { adelantos: { select: { montoAdelantado: true, saldoPendiente: true, status: true } } },
+      include: {
+        adelantos: { select: { montoAdelantado: true, saldoPendiente: true, status: true, fechaAdelanto: true } },
+      },
     });
-    return rows.map((b) => {
-      const totalAdelantado = b.adelantos.reduce((s, a) => s + toNum(a.montoAdelantado), 0);
-      const saldoPendiente = b.adelantos.reduce((s, a) => s + toNum(a.saldoPendiente), 0);
-      const adelantosAbiertos = b.adelantos.filter((a) => a.status === "ABIERTO").length;
-      return {
-        ...mapBeneficiario(b),
-        totalAdelantado: Math.round(totalAdelantado * 100) / 100,
-        saldoPendiente: Math.round(saldoPendiente * 100) / 100,
-        adelantosAbiertos,
-      };
+    /**
+     * El resumen sale de `resumirPersona`, que excluye los CANCELADOS y define
+     * `saldoPendiente` como la suma de los ABIERTOS — la MISMA cuenta que hace
+     * el guard de crédito de `create`. Antes acá se sumaba todo: la pantalla
+     * mostraba deudas de adelantos cancelados y decía «sin margen» sobre gente
+     * que no debía nada, mientras el backend la dejaba pasar.
+     */
+    return rows.map((b) => ({
+      ...mapBeneficiario(b),
+      ...resumirPersona(
+        b.adelantos.map((a) => ({
+          montoAdelantado: toNum(a.montoAdelantado),
+          saldoPendiente: toNum(a.saldoPendiente),
+          status: a.status,
+          fechaAdelanto: a.fechaAdelanto,
+        })),
+      ),
+    }));
+  },
+
+  /**
+   * La bitácora de cobranza del tenant.
+   *
+   * Se traen TODAS las gestiones recientes de una sola vez y la pantalla las
+   * indexa por persona: una consulta por fila sería N+1 sobre una lista que se
+   * abre todos los días.
+   */
+  async listGestiones(tenantId: string, opts?: { desde?: Date; limite?: number }): Promise<DbGestion[]> {
+    const rows = await prisma.adelantoGestion.findMany({
+      where: { tenantId, ...(opts?.desde ? { fecha: { gte: opts.desde } } : {}) },
+      orderBy: { fecha: "desc" },
+      take: opts?.limite ?? 500,
+      include: { beneficiario: { select: { nombre: true } } },
     });
+    return rows.map((g) => ({
+      id: g.id,
+      beneficiarioId: g.beneficiarioId,
+      beneficiarioNombre: g.beneficiario?.nombre,
+      fecha: g.fecha.toISOString(),
+      tipo: g.tipo,
+      nota: g.nota,
+      fechaPrometida: iso(g.fechaPrometida),
+      montoPrometido: g.montoPrometido == null ? null : toNum(g.montoPrometido),
+      usuario: g.usuario,
+    }));
+  },
+
+  /**
+   * Anota una gestión. Además actualiza `ultimoRecordatorio`, que es la columna
+   * que mira el cron: si no, el aviso automático saldría igual el mismo día en
+   * que alguien acaba de llamar por teléfono.
+   */
+  async createGestion(tenantId: string, data: GestionInput): Promise<DbGestion | null> {
+    const benef = await prisma.adelantoBeneficiario.findFirst({
+      where: { id: data.beneficiarioId, tenantId },
+      select: { id: true, nombre: true },
+    });
+    if (!benef) return null;
+
+    const g = await prisma.adelantoGestion.create({
+      data: {
+        tenantId,
+        beneficiarioId: data.beneficiarioId,
+        tipo: data.tipo,
+        nota: data.nota?.trim() || null,
+        fechaPrometida: data.fechaPrometida ? new Date(data.fechaPrometida) : null,
+        montoPrometido: data.montoPrometido != null && data.montoPrometido > 0 ? data.montoPrometido : null,
+        usuario: data.usuario?.trim() || null,
+      },
+    });
+
+    /* Sólo los contactos cuentan como «se le recordó»: anotar «no contesta» no
+       es haberle llegado, y silenciar el cron por eso lo dejaría sin aviso. */
+    if (data.tipo !== "NO_CONTESTA" && data.tipo !== "OTRO") {
+      await prisma.adelantoBeneficiario
+        .updateMany({ where: { id: data.beneficiarioId, tenantId }, data: { ultimoRecordatorio: new Date() } })
+        .catch((err) =>
+          logger.error("[adelantos.db] createGestion: no se pudo actualizar ultimoRecordatorio", {
+            error: String(err),
+          }),
+        );
+    }
+
+    return {
+      id: g.id,
+      beneficiarioId: g.beneficiarioId,
+      beneficiarioNombre: benef.nombre,
+      fecha: g.fecha.toISOString(),
+      tipo: g.tipo,
+      nota: g.nota,
+      fechaPrometida: iso(g.fechaPrometida),
+      montoPrometido: g.montoPrometido == null ? null : toNum(g.montoPrometido),
+      usuario: g.usuario,
+    };
   },
 
   async createBeneficiario(tenantId: string, data: BeneficiarioInput): Promise<DbBeneficiario> {
@@ -306,6 +499,7 @@ export const AdelantosDB = {
         telefono: data.telefono?.trim() || null,
         notas: data.notas?.trim() || null,
         limiteCredito: data.limiteCredito != null && data.limiteCredito > 0 ? data.limiteCredito : null,
+        ...camposFicha(data),
       },
     });
     return mapBeneficiario(b);
@@ -387,7 +581,27 @@ export const AdelantosDB = {
       where: { id: data.beneficiarioId, tenantId },
       select: { nombre: true, limiteCredito: true },
     });
-    if (benef?.limiteCredito != null) {
+    /**
+     * La persona tiene que existir EN ESTE TENANT.
+     *
+     * Esta búsqueda ya filtraba por `tenantId`, pero el resultado sólo se usaba
+     * para el tope de crédito: si venía `null` el código seguía derecho y creaba
+     * el adelanto con el `beneficiarioId` crudo del body. La FK del schema es de
+     * una sola columna (`beneficiarioId → AdelantoBeneficiario.id`, sin
+     * `tenantId` compuesto), así que Postgres aceptaba el id de un beneficiario
+     * de OTRO tenant. Consecuencias medidas: el 201 y todos los GET siguientes
+     * devolvían la ficha completa de esa persona ajena —documento, dirección,
+     * banco, CCI— porque `INCLUDE_FULL` trae la relación entera; y como la FK es
+     * `onDelete: Restrict`, el otro tenant quedaba sin poder borrar a su propio
+     * beneficiario por un adelanto que no puede ver.
+     *
+     * El endpoint ya esperaba este error: su catch de negocio dice «persona
+     * inexistente → 400 claro». Faltaba tirarlo.
+     */
+    if (!benef) {
+      throw new Error("Esa persona no existe en este negocio. Elegila de la lista de beneficiarios.");
+    }
+    if (benef.limiteCredito != null) {
       const limite = Number(benef.limiteCredito);
       const abiertos = await prisma.adelanto.aggregate({
         where: { tenantId, beneficiarioId: data.beneficiarioId, status: "ABIERTO" },
@@ -412,6 +626,7 @@ export const AdelantosDB = {
         montoAdelantado: monto,
         moneda: data.moneda ?? "PEN",
         fechaAdelanto: data.fechaAdelanto ? new Date(data.fechaAdelanto) : new Date(),
+        fechaVencimiento: data.fechaVencimiento ? new Date(data.fechaVencimiento) : null,
         status: "ABIERTO",
         saldoPendiente: monto, // arranca con saldo completo a favor del negocio
         codigoOperacion: await siguienteCodigoDeTenant(tenantId),
@@ -658,6 +873,7 @@ export const AdelantosDB = {
         telefono: data.telefono?.trim() || null,
         notas: data.notas?.trim() || null,
         limiteCredito: data.limiteCredito != null && data.limiteCredito > 0 ? data.limiteCredito : null,
+        ...camposFicha(data),
       },
     });
     const row = await prisma.adelantoBeneficiario.findFirst({ where: { id, tenantId } });
@@ -685,6 +901,17 @@ export const AdelantosDB = {
   },
 
   async createRecurrente(tenantId: string, data: RecurrenteInput): Promise<DbRecurrente> {
+    // Mismo cuidado que en `create()`: la FK del schema no lleva `tenantId`, así
+    // que sin este chequeo se puede dejar programado un adelanto recurrente
+    // contra el beneficiario de otro negocio —y su nombre viaja en cada lectura
+    // de la lista por el `include` de abajo.
+    const benef = await prisma.adelantoBeneficiario.findFirst({
+      where: { id: data.beneficiarioId, tenantId },
+      select: { id: true },
+    });
+    if (!benef) {
+      throw new Error("Esa persona no existe en este negocio. Elegila de la lista de beneficiarios.");
+    }
     const proxima = nextProxima(data.frecuencia, data.diaMes ?? null, new Date());
     const row = await prisma.adelantoRecurrente.create({
       data: {

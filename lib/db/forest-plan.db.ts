@@ -11,7 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import {
-  censusVolume, computeBalance, computeAprovechamiento, detectAnomalias, projectSaldo, computeCosteo,
+  censusVolume, computeBalance, computeAprovechamiento, cruzarEspecies, detectAnomalias, projectSaldo, computeCosteo,
   estaFueraDePlazo,
   type BalanceMovement, type BalanceSpeciesInput, type CosteoSpeciesInput,
 } from "@/lib/forestal/loth-constants";
@@ -567,23 +567,26 @@ export class ForestPlanDB {
     // Sólo si el plan declara especies; match case-insensitive. Sin query extra:
     // reusa `entries` + `speciesRows` ya cargados. T7 ya frena el despacho; esto
     // surfacea además la tala/trozado de una especie fuera del plan en el informe.
-    const autorizadasSet = new Set(speciesRows.map((s) => s.speciesCommon.trim().toLowerCase()));
-    const especiesNoAutorizadas =
+    // El cruce va por CLAVE canónica, no por string: el plan copia el nombre de
+    // la resolución («Tornillo (Cedrelinga catenaeformis)») y el libro asienta
+    // el común («Tornillo»). Compararlos literalmente acusaba de infracción a
+    // un titular que estaba en regla, le dejaba el saldo POA intacto habiendo
+    // talado y le mostraba la rentabilidad en cero.
+    const cruce =
       speciesRows.length > 0
-        ? [
-            ...new Set(
-              entries
-                .map((e) => e.speciesCommon?.trim())
-                .filter((s): s is string => !!s)
-                .filter((s) => !autorizadasSet.has(s.toLowerCase())),
-            ),
-          ]
-        : [];
+        ? cruzarEspecies(
+            entries.map((e) => e.speciesCommon?.trim()).filter((s): s is string => !!s),
+            speciesRows.map((s) => s.speciesCommon),
+          )
+        : { autorizadas: new Map<string, string>(), sinAutorizar: [], ambiguas: [] };
+    const especiesNoAutorizadas = cruce.sinAutorizar;
+    /** Parecidas pero escritas distinto: es nomenclatura, no infracción. */
+    const especiesAmbiguas = cruce.ambiguas;
 
     return {
       hasPlan: !!plan,
       plan: plan ? { id: plan.id, planNumber: plan.planNumber ?? null, titularName: plan.titularName, estado: plan.estado, vigenciaHasta: plan.vigenciaHasta, costos } : null,
-      aprovechamiento, balance, anomalias, projection, lateCount, costeo, citesEspecies, especiesNoAutorizadas,
+      aprovechamiento, balance, anomalias, projection, lateCount, costeo, citesEspecies, especiesNoAutorizadas, especiesAmbiguas,
     };
   }
 

@@ -927,6 +927,23 @@ export class ForestCtpDB {
    * Van los BORRADOS también: el índice tampoco los filtra, y un código
    * propuesto que revienta contra un paquete borrado es igual de inservible.
    */
+  /**
+   * TODOS los códigos de paquete en uso, plegados a minúsculas.
+   *
+   * Distinto de `codigosDePaquete`, que trae los últimos 200 para proponer el
+   * siguiente en la pantalla: acá se necesita la lista completa para saber si
+   * un código del archivo choca con uno existente. Son cadenas cortas; traer
+   * cinco mil no pesa nada al lado de perder una línea del libro.
+   */
+  static async codigosDePaqueteEnUso(tenantId: string): Promise<Set<string>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.forestCtpPaquete.findMany({
+      where: { tenantId },
+      select: { codigo: true },
+    });
+    return new Set(filas.map((f) => f.codigo.trim().toLowerCase()));
+  }
+
   static async codigosDePaquete(tenantId: string, limite = 200): Promise<string[]> {
     if (!tenantId) throw new Error("tenantId is required");
     const filas = await prisma.forestCtpPaquete.findMany({
@@ -1200,10 +1217,25 @@ export class ForestCtpDB {
    *
    * Se listan sólo las corridas con `disponible > 0`: un producto agotado no es
    * un producto disponible con cero, es uno que ya no está.
+   *
+   * ⚠️ **No se filtra por período, y es a propósito.** Lo disponible es una FOTO
+   * del depósito, no un movimiento del mes: un paquete aserrado en 2024 que
+   * nadie despachó sigue estando hoy en la pila. Con el filtro puesto, un libro
+   * abierto en "últimos 3 meses" mostraba 4 de 40 paquetes y el KPI declaraba
+   * 8.9 m³ en vez de 34.7 — el dueño veía un depósito casi vacío que en la
+   * realidad estaba lleno. El período sigue mandándose para acotar por fecha
+   * cuando alguien lo pide EXPLÍCITAMENTE (`soloDelPeriodo`).
    */
   static async productosDisponibles(
     tenantId: string,
-    opts: { fromDate?: Date; toDate?: Date; especie?: string; producto?: string } = {},
+    opts: {
+      fromDate?: Date;
+      toDate?: Date;
+      especie?: string;
+      producto?: string;
+      /** Acotar a lo producido en el período. Por omisión se ve TODO lo que hay. */
+      soloDelPeriodo?: boolean;
+    } = {},
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     const where: Prisma.ForestCtpEntryWhereInput = {
@@ -1215,7 +1247,7 @@ export class ForestCtpDB {
          todavía no dijo qué salió (ADR-340). */
       quantity: { not: null },
     };
-    if (opts.fromDate || opts.toDate) {
+    if (opts.soloDelPeriodo && (opts.fromDate || opts.toDate)) {
       where.entryDate = {
         ...(opts.fromDate ? { gte: opts.fromDate } : {}),
         ...(opts.toDate ? { lte: opts.toDate } : {}),
@@ -2086,20 +2118,34 @@ export class ForestCtpDB {
    * deduplica por `fecha|producto|especie|cantidad` (evita re-crear + el estado
    * parcial de re-importar, donde I2 rechazaría los consumos ya atribuidos).
    */
-  static async existingProduccionKeys(tenantId: string): Promise<Set<string>> {
+  /**
+   * CUÁNTAS corridas hay de cada clave, no si hay alguna.
+   *
+   * Un depósito tiene ocho paquetes armados iguales —misma fecha, especie,
+   * producto, volumen y hasta el mismo código de lote— y eso no es un error de
+   * carga: son ocho bultos. Con un `Set` el importador declaraba UNO y perdía
+   * siete (en el inventario real del aserradero fueron 6 filas y 0.489 m³ que
+   * nunca llegaron a la base, sin un solo error en pantalla).
+   *
+   * Contando, la idempotencia se mantiene: si el archivo trae ocho y la base ya
+   * tiene ocho, no se crea ninguna; si tiene tres, se crean las cinco que
+   * faltan.
+   */
+  static async existingProduccionKeys(tenantId: string): Promise<Map<string, number>> {
     if (!tenantId) throw new Error("tenantId is required");
     const rows = await prisma.forestCtpEntry.findMany({
       where: { tenantId, section: "produccion", deletedAt: null, status: "registrado" },
       select: { entryDate: true, productType: true, speciesCommon: true, quantity: true, codigoProducto: true, materiaPrimaRef: true },
     });
-    const claves = new Set<string>();
+    const claves = new Map<string, number>();
+    const sumar = (k: string) => claves.set(k, (claves.get(k) ?? 0) + 1);
     for (const r of rows) {
-      claves.add(produccionKey(r.entryDate, r.productType, r.speciesCommon, r.quantity, r.codigoProducto, r.materiaPrimaRef));
+      sumar(produccionKey(r.entryDate, r.productType, r.speciesCommon, r.quantity, r.codigoProducto, r.materiaPrimaRef));
       /* Sólo las corridas SIN paquete ni lote aportan además su clave vieja: son
          las que se importaron antes y no se pueden distinguir de otra igual. Una
          corrida que sí tiene código no bloquea a un paquete distinto. */
       if (!r.codigoProducto && !r.materiaPrimaRef) {
-        claves.add(produccionKeyBase(r.entryDate, r.productType, r.speciesCommon, r.quantity));
+        sumar(produccionKeyBase(r.entryDate, r.productType, r.speciesCommon, r.quantity));
       }
     }
     return claves;

@@ -26,6 +26,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { CtpInvariantError, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 import { metaDeLote } from "@/lib/forestal/lote-metricas";
+import { agruparPiezasPorLoteAserrio } from "@/lib/forestal/lotes-aserrio";
 
 const CACHE_PREFIX = "forest-lote";
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
@@ -76,6 +77,22 @@ export interface TrazabilidadLote {
     quantity: number;
     guias: string[];
     sinOrigen: boolean;
+    /** Los lotes de aserrío (ADR-334) cuyas piezas comió esta corrida. */
+    lotesAserrio: string[];
+  }[];
+  /**
+   * Las PIEZAS que entraron a la sierra, agrupadas por lote de aserrío.
+   *
+   * La cadena por GTF prueba de qué documento vino la madera; esto prueba **qué
+   * palos** — que es lo que un fiscalizador cuenta en la pila y lo que la EUDR
+   * pide para el due diligence. Sin esto el certificado saltaba de la guía a la
+   * corrida sin decir qué hubo en el medio.
+   */
+  lotesDeAserrio: {
+    code: string | null;
+    piezas: number;
+    volumenM3: number;
+    codigos: string[];
   }[];
 }
 
@@ -701,7 +718,7 @@ export class ForestLoteDB {
     if (!lote) return null;
 
     const corridaIds = lote.miembros.map((m) => m.produccionEntryId);
-    const [consumos, guias] = await Promise.all([
+    const [consumos, guias, piezas] = await Promise.all([
       corridaIds.length
         ? prisma.forestCtpConsumo.groupBy({
             by: ["ctpEntryId"],
@@ -715,6 +732,22 @@ export class ForestLoteDB {
             select: { ctpEntryId: true, woodEntry: { select: { gtfNumber: true } } },
           })
         : Promise.resolve([]),
+      /* Las piezas que comieron estas corridas (ADR-326/334). El lote de aserrío
+         viaja por la troza, no por la corrida: una corrida puede tragarse dos
+         lotes y un lote puede repartirse en dos corridas. */
+      corridaIds.length
+        ? prisma.woodEntryTroza.findMany({
+            where: { tenantId, consumidaEnId: { in: corridaIds } },
+            select: {
+              consumidaEnId: true,
+              codificacion: true,
+              codigoPlanta: true,
+              volumenM3: true,
+              loteAserrio: { select: { code: true } },
+            },
+            orderBy: { orden: "asc" },
+          })
+        : Promise.resolve([]),
     ]);
     const conOrigen = new Set(consumos.filter((c) => c._count._all > 0).map((c) => c.ctpEntryId));
 
@@ -724,7 +757,27 @@ export class ForestLoteDB {
       quantity: Number(m.quantity),
       guias: guias.filter((g) => g.ctpEntryId === m.produccionEntryId).map((g) => g.woodEntry.gtfNumber),
       sinOrigen: !conOrigen.has(m.produccionEntryId),
+      lotesAserrio: [
+        ...new Set(
+          piezas
+            .filter((p) => p.consumidaEnId === m.produccionEntryId && p.loteAserrio?.code)
+            .map((p) => p.loteAserrio!.code),
+        ),
+      ],
     }));
+
+    /* El agrupado es puro y se testea aparte: la rama «pieza CON lote» todavía
+       no existe en ningún tenant (todos los consumos son anteriores a ADR-334),
+       así que sin test quedaría sin verificar hasta que alguien asierre el
+       primer lote — y para entonces el certificado ya se habría emitido. */
+    const lotesDeAserrio = agruparPiezasPorLoteAserrio(
+      piezas.map((p) => ({
+        codificacion: p.codificacion,
+        codigoPlanta: p.codigoPlanta,
+        volumenM3: p.volumenM3 == null ? null : Number(p.volumenM3),
+        loteAserrioCode: p.loteAserrio?.code ?? null,
+      })),
+    );
 
     const motivo: TrazabilidadLote["motivo"] =
       corridas.length === 0 ? "sin_miembros" : corridas.some((c) => c.sinOrigen) ? "corrida_sin_origen" : "ok";
@@ -734,6 +787,7 @@ export class ForestLoteDB {
       totalCantidad: r4(corridas.reduce((a, c) => a + c.quantity, 0)),
       motivo,
       corridas,
+      lotesDeAserrio,
     };
   }
 
