@@ -6497,6 +6497,183 @@ model ForestCuentaMov {
   @@index([deletedAt])
 }
 
+// ─── Registro Nacional de Plantaciones Forestales — RNPF (ADR-380) ────────────
+// Formato Único para la Inscripción/Actualización de Plantaciones (Lineamientos
+// RNPF-SERFOR, base legal D.S. N°020-2015-MINAGRI). Relacional a propósito
+// (no KV): 1 trámite → N bloques → N vértices + N especies por bloque — la
+// misma forma que exige el Anexo N°01 oficial (`serfor-osinfor-compliance`).
+model ForestPlantacionTramite {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Correlativo NUESTRO ("RPF-2026-0001") — SOLO administrativo. Nunca
+  /// confundir con `codigoPlantacionSerfor` (el que emite la ARFFS al
+  /// inscribir, Anexo N°02): ese jamás se inventa, sólo se transcribe.
+  codigoInterno          String
+  codigoPlantacionSerfor String?
+
+  tipoTramite String @default("inscripcion") // inscripcion | actualizacion
+  estado      String @default("borrador") // borrador | en_elaboracion | completo | pendiente_documentos | listo_presentar
+
+  // ── 1.1 Titular de la plantación ───────────────────────────────────────
+  titularTipoPersona          String? // natural | juridica
+  titularTipoDocumento        String?
+  titularNumeroDocumento      String?
+  titularRazonSocial          String?
+  titularApellidoPaterno      String?
+  titularApellidoMaterno      String?
+  titularNombres              String?
+  titularTelefonoFijo         String?
+  titularCelular              String?
+  titularEmail                String?
+  titularDepartamento         String?
+  titularProvincia            String?
+  titularDistrito              String?
+  titularTipoVia              String?
+  titularDireccion            String?
+  titularNumero                String?
+  titularDocumentoAutorizaUso String?
+
+  // ── 1.2 Representante legal (opcional) ─────────────────────────────────
+  repTiene           Boolean @default(false)
+  repTipoDocumento   String?
+  repNumeroDocumento String?
+  repApellidoPaterno String?
+  repApellidoMaterno String?
+  repNombres         String?
+  repTelefonoFijo    String?
+  repCelular         String?
+  repEmail           String?
+  repDepartamento    String?
+  repProvincia       String?
+  repDistrito        String?
+  repTipoVia         String?
+  repDireccion       String?
+  repNumero          String?
+
+  // ── 2.1 Datos del predio ────────────────────────────────────────────────
+  predioNombre       String?
+  predioAreaTotalHa  Decimal? @db.Decimal(12, 4)
+  predioDepartamento String?
+  predioProvincia    String?
+  predioDistrito     String?
+  predioSectorAnexo  String?
+  predioZonaUtm      String?
+  predioEste         Decimal? @db.Decimal(12, 3)
+  predioNorte        Decimal? @db.Decimal(12, 3)
+  predioDatum        String   @default("WGS84")
+
+  // ── Titularidad del predio ──────────────────────────────────────────────
+  titularidadTipo               String? // propietario | inversionista | posesionario | otro
+  titularidadTipoPersona        String? // natural | juridica
+  titularidadDocumentoTipo      String?
+  titularidadDocumentoNumero    String?
+  titularidadNombre             String?
+  titularidadDocAcreditaTipo    String?
+  titularidadDocAcreditaNumero  String?
+  titularidadInscripcionSunarp  String?
+  titularidadDocAutorizaUso     String?
+  posesionarioNombre            String?
+  posesionarioDocumentoAcredita String?
+  posesionarioAniosConduccion   Int?
+
+  // ── Título habilitante / contrato (D.S. 020-2015-MINAGRI, Título VII/VIII) ─
+  tituloHabilitanteTiene  Boolean @default(false)
+  tituloHabilitanteTipo   String? // cesion_uso_agroforestal | concesion_plantaciones
+  tituloHabilitanteCodigo String?
+
+  // ── Declaración jurada (Ley 27444 art. 34) ──────────────────────────────
+  djLugar         String?
+  djFecha         DateTime?
+  djTitularNombre String?
+  djDni           String?
+  djAceptado      Boolean   @default(false)
+  djAceptadoAt    DateTime?
+
+  /// Documentación sustentatoria: punteros al Drive, mismo patrón que
+  /// `ForestParty.adjuntos` — [{ categoria, clasificacion, documentId?, rotulo? }].
+  documentosJson Json?
+
+  notas String?
+
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([tenantId, codigoInterno])
+  @@index([tenantId, estado])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@index([deletedAt])
+}
+
+/// Bloque/unidad de plantación (Sección 8 del Anexo N°01). Un trámite puede
+/// declarar varios — no todo predio se planta de una vez ni de forma uniforme.
+model ForestPlantacionBloque {
+  id           String @id @default(cuid())
+  tenantId     String
+  plantacionId String
+
+  numero       Int
+  nombre       String?
+  superficieHa Decimal? @db.Decimal(12, 4)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([tenantId, plantacionId])
+  @@index([deletedAt])
+}
+
+/// Vértice UTM del polígono del bloque, en el orden en que se camina el
+/// perímetro (columna "orden" — el mapa y la tabla oficial lo exigen así).
+model ForestPlantacionVertice {
+  id       String @id @default(cuid())
+  tenantId String
+  bloqueId String
+
+  orden   Int
+  zonaUtm String?
+  este    Decimal @db.Decimal(12, 3)
+  norte   Decimal @db.Decimal(12, 3)
+
+  @@index([tenantId, bloqueId, orden])
+}
+
+/// Especie forestal instalada en un bloque (Sección 9). `cites` NUNCA resta
+/// score — es legal con permiso (mismo criterio que el CTP, §6 del skill
+/// `serfor-osinfor-compliance`); sólo dispara el aviso de información adicional.
+model ForestPlantacionEspecie {
+  id       String @id @default(cuid())
+  tenantId String
+  bloqueId String
+
+  nombreComun      String
+  nombreCientifico String?
+  tipoVegetativo   String? // material de propagación
+  cantidad         Int?
+  finalidad        String?
+  mesInstalacion   Int?
+  anioInstalacion  Int?
+  observaciones    String?
+
+  cites            Boolean @default(false)
+  citesProcedencia String? // procedencia de semillas/material de propagación
+
+  // Sólo en actualización: cómo sigue la plantación ya inscrita.
+  situacionActual    String?
+  produccionCantidad Decimal? @db.Decimal(14, 4)
+  produccionUnidad   String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([tenantId, bloqueId])
+  @@index([deletedAt])
+}
+
 // ─── Especialización AGRÍCOLA · Cacao (ADR-128) ────────────────────────────────
 // Acopio & beneficio de cacao en grano. Alineado a NTP 208.040 (cosecha/beneficio),
 // NTP-ISO 2451 (clasificación por defectos), NTP-ISO 1114 (prueba de corte),

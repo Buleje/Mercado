@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Building2, FileText, Inbox, Stamp } from "@buleje/design-system/icons";
+import { AlertCircle, Building2, FileText, Inbox, Stamp, TreePine } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import { useForestTramites } from "@/hooks/use-forest-tramites";
 import { formatoPorId } from "@/lib/forestal/tramites-catalogo";
@@ -23,9 +23,10 @@ import type { CtpReportFicha } from "@/lib/forestal/ctp-print-shared";
 import TramiteFormulario, { type AutollenadoTramite } from "./TramiteFormulario";
 import TramitesCatalogo from "./TramitesCatalogo";
 import TramitesExpediente from "./TramitesExpediente";
+import PlantacionesModule from "./PlantacionesModule";
 
 const MODULE_ID = "forestal-tramites";
-type Vista = "catalogo" | "expediente";
+type Vista = "catalogo" | "expediente" | "plantaciones";
 
 const GRUPOS: LibroGroup[] = [
   {
@@ -34,6 +35,7 @@ const GRUPOS: LibroGroup[] = [
     views: [
       { key: "catalogo", label: "Formatos", icon: FileText, hint: "Elegí el trámite y llenalo" },
       { key: "expediente", label: "Expediente", icon: Inbox, hint: "Qué se presentó y en qué estado está" },
+      { key: "plantaciones", label: "Plantaciones", icon: TreePine, hint: "Registro RNPF — inscripción y actualización" },
     ],
   },
 ];
@@ -114,7 +116,7 @@ export default function ForestalTramites() {
       view={vista}
       onView={(v) => {
         setVista(v as Vista);
-        if (v === "expediente") setFormatoId(null);
+        if (v === "expediente" || v === "plantaciones") setFormatoId(null);
       }}
       alerts={esperando.length > 0 ? { expediente: esperando.length } : undefined}
     >
@@ -140,7 +142,9 @@ export default function ForestalTramites() {
         </p>
       )}
 
-      {vista === "catalogo" && !formato && <TramitesCatalogo tramites={tramites} onElegir={abrirFormato} />}
+      {vista === "catalogo" && !formato && (
+        <TramitesCatalogo tramites={tramites} onElegir={abrirFormato} onAbrirPlantaciones={() => setVista("plantaciones")} />
+      )}
 
       {vista === "catalogo" && formato && (
         <TramiteFormulario
@@ -164,6 +168,8 @@ export default function ForestalTramites() {
           onBorrar={(id) => void borrar(id)}
         />
       )}
+
+      {vista === "plantaciones" && <PlantacionesModule />}
     </LibroChrome>
   );
 }

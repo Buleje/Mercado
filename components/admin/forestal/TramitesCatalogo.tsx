@@ -23,6 +23,7 @@ import {
   PenLine,
   ShieldAlert,
   Stamp,
+  TreePine,
   UserCog,
   type LucideIcon,
 } from "@buleje/design-system/icons";
@@ -68,9 +69,14 @@ const ORDEN_AUTORIDAD: AutoridadTramite[] = ["arffs", "serfor", "osinfor", "otra
 export default function TramitesCatalogo({
   tramites,
   onElegir,
+  onAbrirPlantaciones,
 }: {
   tramites: TramiteRegistro[];
   onElegir: (formatoId: string) => void;
+  /** Abre el Registro de Plantación Forestal (RNPF) — un módulo propio, no un
+   *  `FormatoTramite` más: la ficha estructurada del Anexo N°01 no entra en el
+   *  motor de oficios/cartas (ADR-380). */
+  onAbrirPlantaciones: () => void;
 }) {
   const usados = (id: string) => tramites.filter((t) => t.formatoId === id).length;
   const destacado = FORMATOS_TRAMITE.find((f) => f.id === DESTACADO);
@@ -78,6 +84,8 @@ export default function TramitesCatalogo({
 
   return (
     <div className="space-y-6">
+      <RegistroPlantacionCard onClick={onAbrirPlantaciones} />
+
       {destacado && <Hero formato={destacado} usados={usados(destacado.id)} onElegir={onElegir} />}
 
       {ORDEN_AUTORIDAD.map((aut) => {
@@ -111,6 +119,40 @@ export default function TramitesCatalogo({
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Registro de Plantación Forestal (RNPF) — la tarjeta de entrada al módulo
+ * nuevo (ADR-380). No es una card más del grid de oficios: es un trámite
+ * distinto (ficha estructurada, no una carta), así que lleva su propio look
+ * — mismo lenguaje visual que el Hero, tono verde vivero en vez del teal de
+ * marca, para que se distinga de un vistazo de "esto es SOLICITAR algo" vs
+ * "esto es REGISTRAR una plantación entera".
+ */
+function RegistroPlantacionCard({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex w-full items-center gap-4 rounded-2xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[var(--data-success-500)] hover:shadow-[var(--shadow-md)] dark:bg-[var(--data-success-500)]/10"
+    >
+      <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+        <TreePine className="h-7 w-7" aria-hidden="true" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-success-500)]/15 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+          Registro Nacional de Plantaciones Forestales
+        </span>
+        <span className="font-display mt-1.5 block text-2xl leading-snug text-[var(--text-primary)]">
+          Registro de Plantación Forestal
+        </span>
+        <span className="mt-1 block text-sm text-[var(--text-secondary)]">
+          Inscripción o actualización ante SERFOR — titular, predio, bloques y especies, hasta generar el Formato Nº 01.
+        </span>
+      </span>
+      <ArrowRight className="h-5 w-5 shrink-0 text-[var(--data-success-700)] transition-transform group-hover:translate-x-1 dark:text-[var(--data-success-500)]" aria-hidden="true" />
+    </button>
   );
 }
 

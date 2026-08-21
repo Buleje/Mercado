@@ -54,6 +54,8 @@ export type CtpAuditEntity =
   | "ForestCubicacion"
   /** Trámite/oficio presentado a la autoridad (ADR-308). */
   | "ForestTramite"
+  /** Registro de Plantación Forestal — RNPF (ADR-380). */
+  | "ForestPlantacionTramite"
   /** Parte del directorio forestal: proveedor/destinatario/transportista/conductor (ADR-317). */
   | "ForestParty"
   /** Vehículo del directorio forestal (ADR-317). */
@@ -174,6 +176,12 @@ export type CtpAuditAction =
   | "ctp_tramite_create"
   | "ctp_tramite_update"
   | "ctp_tramite_delete"
+  // Registro de Plantación Forestal — RNPF (ADR-380): lo que se declaró ante
+  // SERFOR/ARFFS para inscribir o actualizar una plantación es parte del
+  // expediente, mismo criterio que los trámites/oficios.
+  | "ctp_plantacion_create"
+  | "ctp_plantacion_update"
+  | "ctp_plantacion_delete"
   // Directorio forestal (ADR-317): quién le compra, quién le vende y quién
   // transporta es parte del expediente — un fiscalizador cruza esas identidades
   // contra las guías, así que cambiarlas deja rastro.
