@@ -39,6 +39,7 @@ import { SeccionResumen, TablaGrupos } from "./resumen-tabla";
 import ResumenComparar from "./ResumenComparar";
 import ResumenMeta from "./ResumenMeta";
 import ResumenReparto from "./ResumenReparto";
+import ResumenTrozas from "./ResumenTrozas";
 import { useCubicacionesGuardadas } from "@/hooks/use-cubicaciones-guardadas";
 
 /** Botón de acción de la cabecera: mismo alto y peso que los filtros del admin. */
@@ -242,7 +243,7 @@ export default function CubicacionResumenes() {
         <span className="text-sm text-[var(--text-tertiary)]">
           {vista === "panorama" && "Qué tengo y qué me dice el lote."}
           {vista === "tablas" && "El detalle, partido como lo pida el cliente."}
-          {vista === "rolliza" && "De qué troza salió cada pieza."}
+          {vista === "rolliza" && "El patio de trozas y de qué troza salió cada pieza."}
           {vista === "metas" && "Qué buscabas y si mejoraste."}
         </span>
       </div>
@@ -343,7 +344,12 @@ export default function CubicacionResumenes() {
       )}
 
       {/* ── Rolliza ─────────────────────────────────────────────────────────── */}
-      {ver("rolliza") && <ResumenReparto rows={rows} precioDe={precioDe} />}
+      {ver("rolliza") && (
+        <>
+          <ResumenTrozas />
+          <ResumenReparto rows={rows} precioDe={precioDe} />
+        </>
+      )}
 
       {/* ── Metas ───────────────────────────────────────────────────────────── */}
       {ver("metas") && (

@@ -24,6 +24,37 @@ export interface TrozaCubicada {
   especie?: string;
   /** m³ Smalian de ESTA troza. */
   m3: number;
+  /** Categoría por diámetro forzada a mano — `undefined` = la decide `d1` (ver `tipoDeTroza`). */
+  tipo?: TipoTroza;
+}
+
+/**
+ * Categoría por diámetro MENOR (d1): es el que limita qué se puede sacar de
+ * la troza, igual criterio que la cinta diamétrica del patio. Umbrales de
+ * referencia (pedido de Brandon 2026-08-20) — el override manual existe
+ * porque el negocio clasifica por cliente, no sólo por cinta.
+ */
+export const DIAMETRO_DELGADA_MAX_CM = 25;
+export const DIAMETRO_MEDIA_MAX_CM = 40;
+
+export type TipoTroza = "Delgada" | "Media" | "Gruesa";
+export const ORDEN_TIPO_TROZA: readonly TipoTroza[] = ["Delgada", "Media", "Gruesa"];
+export const TIPOS_TROZA: { valor: TipoTroza; label: string; hint: string }[] = [
+  { valor: "Delgada", label: "Delgada", hint: `Ø menor < ${DIAMETRO_DELGADA_MAX_CM} cm` },
+  { valor: "Media", label: "Media", hint: `Ø menor ${DIAMETRO_DELGADA_MAX_CM}-${DIAMETRO_MEDIA_MAX_CM} cm` },
+  { valor: "Gruesa", label: "Gruesa", hint: `Ø menor > ${DIAMETRO_MEDIA_MAX_CM} cm` },
+];
+
+export function clasificarTrozaPorDiametro(d1: number): TipoTroza {
+  if (d1 < DIAMETRO_DELGADA_MAX_CM) return "Delgada";
+  if (d1 <= DIAMETRO_MEDIA_MAX_CM) return "Media";
+  return "Gruesa";
+}
+
+/** Tipo efectivo de una troza: el forzado a mano gana, si no la categoría por
+ *  diámetro — single source, mismo patrón que `tipoDePieza` de la aserrada. */
+export function tipoDeTroza(t: Pick<TrozaCubicada, "d1" | "tipo">): TipoTroza {
+  return t.tipo ?? clasificarTrozaPorDiametro(t.d1);
 }
 
 const r4 = (n: number) => Math.round(n * 10000) / 10000;

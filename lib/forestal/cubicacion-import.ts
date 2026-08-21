@@ -33,7 +33,7 @@ export interface ResultadoImport {
 
 type Campo = "cantidad" | "espesor" | "ancho" | "largo" | "especie" | "uEspesor" | "uAncho" | "uLargo";
 
-const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+export const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
 /** Sinónimos de cada encabezado, como los escribe un maderero. */
 const ALIAS: Record<Campo, string[]> = {
@@ -58,7 +58,7 @@ function normalizarUnidad(v: Celda, def: Unidad): Unidad {
 }
 
 /** Un número tolerante: "1.234,5" (formato peruano), "2 1/2" y basura → null. */
-function aNumero(v: Celda): number | null {
+export function aNumero(v: Celda): number | null {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
   let s = String(v ?? "").trim();
   if (s === "") return null;
@@ -76,7 +76,7 @@ function aNumero(v: Celda): number | null {
 }
 
 /** Especie del archivo → nombre canónico si se parece a uno conocido. */
-function normalizarEspecie(v: Celda): string | undefined {
+export function normalizarEspecie(v: Celda): string | undefined {
   const s = String(v ?? "").trim();
   if (!s) return undefined;
   const clave = sinAcentos(s);

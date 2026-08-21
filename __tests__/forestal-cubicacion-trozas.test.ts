@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
-  compararConGtf, cubicarTroza, partirEnTrozas, totalesTrozas,
+  clasificarTrozaPorDiametro, compararConGtf, cubicarTroza, partirEnTrozas, tipoDeTroza, totalesTrozas,
 } from "@/lib/forestal/cubicacion-trozas";
 
 describe("cubicarTroza (Smalian)", () => {
@@ -75,5 +75,21 @@ describe("totales y comparación contra la GTF", () => {
 
   it("sin m³ de guía no hay comparación (null, no división por cero)", () => {
     expect(compararConGtf(9.5, 0)).toBeNull();
+  });
+});
+
+describe("categoría por diámetro (tipo de troza)", () => {
+  it("clasifica por el diámetro MENOR: delgada, media, gruesa", () => {
+    expect(clasificarTrozaPorDiametro(20)).toBe("Delgada");
+    expect(clasificarTrozaPorDiametro(24.9)).toBe("Delgada");
+    expect(clasificarTrozaPorDiametro(25)).toBe("Media");
+    expect(clasificarTrozaPorDiametro(40)).toBe("Media");
+    expect(clasificarTrozaPorDiametro(40.1)).toBe("Gruesa");
+    expect(clasificarTrozaPorDiametro(80)).toBe("Gruesa");
+  });
+
+  it("tipoDeTroza: el forzado a mano gana sobre la categoría derivada", () => {
+    expect(tipoDeTroza({ d1: 80 })).toBe("Gruesa");
+    expect(tipoDeTroza({ d1: 80, tipo: "Delgada" })).toBe("Delgada");
   });
 });

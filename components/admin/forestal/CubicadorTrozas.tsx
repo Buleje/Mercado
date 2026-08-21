@@ -12,14 +12,16 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Check, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Table, Trash2, AlertTriangle,
+  Check, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Table, Trash2, AlertTriangle, Upload,
 } from "@buleje/design-system/icons";
 import { detectarComando, ESPECIES_MADERA, mejoresNumeros, PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import {
   compararConGtf, cubicarTroza, partirEnTrozas, totalesTrozas, type TrozaCubicada,
 } from "@/lib/forestal/cubicacion-trozas";
+import type { TrozaImportada } from "@/lib/forestal/cubicacion-trozas-import";
 import { loadConfig } from "@/lib/forestal/cubicador-config";
 import { useVozContinua } from "./hooks/useVozContinua";
+import ImportarTrozasModal from "./ImportarTrozasModal";
 
 interface Fila extends TrozaCubicada {
   sospechosa?: boolean;
@@ -57,6 +59,7 @@ export default function CubicadorTrozas() {
   const [manual, setManual] = useState({ d1: "", d2: "", largo: "" });
   const [gtfM3, setGtfM3] = useState("");
   const [paused, setPaused] = useState(false);
+  const [importando, setImportando] = useState(false);
   const idRef = useRef(0);
   const carryRef = useRef<number[]>([]);
   const pausedRef = useRef(false);
@@ -116,6 +119,10 @@ export default function CubicadorTrozas() {
   const borrar = (id: string) => { persist(rows.filter((r) => r.id !== id)); if (lastAdded?.id === id) setLastAdded(null); };
   const deshacer = () => { if (lastAdded) borrar(lastAdded.id); };
   const limpiar = () => { persist([]); setLastAdded(null); carryRef.current = []; };
+  /** El import SUMA al patio, nunca reemplaza (mismo criterio que la aserrada). */
+  const agregarImportadas = (nuevas: TrozaImportada[]) => {
+    persist([...rows, ...nuevas.map(({ filaOrigen: _filaOrigen, ...t }) => t)]);
+  };
 
   const editar = (id: string, campo: "d1" | "d2" | "largo", valor: number) => {
     persist(rows.map((r) => {
@@ -136,6 +143,10 @@ export default function CubicadorTrozas() {
   const totales = useMemo(() => totalesTrozas(rows), [rows]);
   const cmpGtf = useMemo(() => compararConGtf(totales.m3, Number(gtfM3) || 0), [totales.m3, gtfM3]);
   const sospechosas = rows.filter((r) => r.sospechosa).length;
+  const especiesActuales = useMemo(
+    () => [...new Set(rows.map((r) => r.especie?.trim()).filter((e): e is string => !!e))],
+    [rows],
+  );
 
   // Caption en vivo agrupado en tríos, como el cubicador de aserrada.
   const liveGroups = useMemo(() => {
@@ -251,12 +262,17 @@ export default function CubicadorTrozas() {
           <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <Table className="h-4 w-4 text-[var(--accent)]" /> Trozas del patio ({rows.length})
           </h3>
-          {rows.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={exportarCSV} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">CSV</button>
-              <button type="button" onClick={limpiar} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/12">Vaciar</button>
-            </div>
-          )}
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => setImportando(true)} className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
+              <Upload className="h-3.5 w-3.5" /> Importar
+            </button>
+            {rows.length > 0 && (
+              <>
+                <button type="button" onClick={exportarCSV} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">CSV</button>
+                <button type="button" onClick={limpiar} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/12">Vaciar</button>
+              </>
+            )}
+          </div>
         </div>
 
         {sospechosas > 0 && (
@@ -333,6 +349,15 @@ export default function CubicadorTrozas() {
           <Ref label="Fórmula" value="Smalian" hint="promedio de áreas × largo" />
         </div>
       </div>
+
+      {importando && (
+        <ImportarTrozasModal
+          filasActuales={rows.length}
+          especiesActuales={especiesActuales}
+          onAgregar={agregarImportadas}
+          onCerrar={() => setImportando(false)}
+        />
+      )}
     </div>
   );
 }
