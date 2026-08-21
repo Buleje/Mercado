@@ -28,6 +28,8 @@ const flete = (over: Partial<Flete> = {}): Flete => ({
   transportistaId: "t1",
   transportistaNombre: "Transportes Selva EIRL",
   conductorId: null,
+  conductorNombre: null,
+  tipoTransporte: "publico",
   proveedorId: null,
   proveedorNombre: null,
   volumenM3: 30,

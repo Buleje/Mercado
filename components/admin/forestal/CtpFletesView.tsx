@@ -27,10 +27,12 @@ import {
   costoPorM3,
   porProveedor,
   porTransportista,
+  type CandidatoFlete,
   type CuentaFletes,
   type Flete,
 } from "@/lib/forestal/fletes";
 import CtpFleteModal from "./CtpFleteModal";
+import CtpFletesCandidatosBanner from "./CtpFletesCandidatosBanner";
 import CtpCuentaCorriente from "./CtpCuentaCorriente";
 import { Btn, IconAction, TablaSkeleton, VistaHeader } from "./ctp-shared";
 
@@ -42,9 +44,13 @@ const fecha = (iso: string) =>
   new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" });
 
 export default function CtpFletesView({ period }: { period: CtpPeriod }) {
-  const { fletes, resumen, cargando, error, guardar, marcarPago, eliminar } = useFletesForestales(period);
+  const { fletes, candidatos, resumen, cargando, error, guardar, marcarPago, eliminar } = useFletesForestales(period);
   const [pestaña, setPestaña] = useState<Pestaña>("viajes");
-  const [editando, setEditando] = useState<{ flete: Flete | null } | null>(null);
+  const [editando, setEditando] = useState<{ flete: Flete | null; prellenado?: CandidatoFlete | null } | null>(null);
+  // Resto de un "Anotar las N" en curso: lo que falta después del que está
+  // abierto ahora mismo. `colaInfo` guarda el total y el fletero para el "2 de 3".
+  const [cola, setCola] = useState<CandidatoFlete[]>([]);
+  const [colaInfo, setColaInfo] = useState<{ total: number; nombre: string } | null>(null);
   const [ocupado, setOcupado] = useState<string | null>(null);
 
   const cuentasTransportista = useMemo(() => porTransportista(fletes), [fletes]);
@@ -58,6 +64,39 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
       setOcupado(null);
     }
   }
+
+  /** Abre el modal para UN viaje suelto — corta cualquier cola que hubiera quedado a medias. */
+  function abrirIndividual(payload: { flete: Flete | null; prellenado?: CandidatoFlete | null }) {
+    setColaInfo(null);
+    setCola([]);
+    setEditando(payload);
+  }
+
+  /** "Anotar las N": encadena el modal para cada guía del mismo fletero, una tras otra. */
+  function anotarGrupo(items: CandidatoFlete[]) {
+    if (items.length === 0) return;
+    const [primero, ...resto] = items;
+    setColaInfo({ total: items.length, nombre: primero.transportistaNombre ?? "Sin transportista" });
+    setCola(resto);
+    setEditando({ flete: null, prellenado: primero });
+  }
+
+  /** Se llama tras guardar CON ÉXITO cuando hay una cola activa: pasa a la
+   *  siguiente guía o cierra si ya no queda ninguna. */
+  function avanzarCola() {
+    setCola((prev) => {
+      if (prev.length === 0) {
+        setEditando(null);
+        setColaInfo(null);
+        return prev;
+      }
+      const [siguiente, ...resto] = prev;
+      setEditando({ flete: null, prellenado: siguiente });
+      return resto;
+    });
+  }
+
+  const progreso = colaInfo ? { actual: colaInfo.total - cola.length, total: colaInfo.total, grupo: colaInfo.nombre } : undefined;
 
   return (
     <div className="space-y-3">
@@ -105,7 +144,7 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
         meta={period.label}
         hint="El viaje que trae la madera y el que se lleva el producto. Un flete sin monto no vale 0: queda pendiente de cerrar."
       >
-        <Btn size="sm" variant="primary" onClick={() => setEditando({ flete: null })}>
+        <Btn size="sm" variant="primary" onClick={() => abrirIndividual({ flete: null })}>
           <Plus className="h-4 w-4" />
           Anotar viaje
         </Btn>
@@ -145,6 +184,12 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
         </p>
       )}
 
+      <CtpFletesCandidatosBanner
+        candidatos={candidatos}
+        onAnotar={(c) => abrirIndividual({ flete: null, prellenado: c })}
+        onAnotarGrupo={anotarGrupo}
+      />
+
       {cargando ? (
         <TablaSkeleton />
       ) : pestaña === "cuenta" ? (
@@ -153,7 +198,7 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
         <ListaViajes
           fletes={fletes}
           ocupado={ocupado}
-          onEditar={(f) => setEditando({ flete: f })}
+          onEditar={(f) => abrirIndividual({ flete: f })}
           onPago={(f) => void conBloqueo(f.id, () => marcarPago(f.id, f.estadoPago === "pagado" ? "pendiente" : "pagado"))}
           onBorrar={(f) => {
             if (!window.confirm(`¿Borrar el viaje del ${fecha(f.fecha)}? El gasto deja de contarse en el período.`)) return;
@@ -178,11 +223,19 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
 
       {editando && (
         <CtpFleteModal
+          key={editando.flete?.id ?? editando.prellenado?.gtfNumber ?? "nuevo"}
           flete={editando.flete}
+          prellenado={editando.prellenado}
+          progreso={progreso}
           onGuardar={async (input) => {
             await guardar(input);
           }}
-          onClose={() => setEditando(null)}
+          onGuardado={colaInfo ? avanzarCola : undefined}
+          onClose={() => {
+            setEditando(null);
+            setCola([]);
+            setColaInfo(null);
+          }}
         />
       )}
     </div>

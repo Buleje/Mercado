@@ -11,7 +11,9 @@ import { ESTADOS_PAGO, fleteInputSchema, type EstadoPago } from "@/lib/forestal/
 /**
  * /api/admin/forestal/fletes — los viajes del CTP (ADR-318).
  *
- * GET    lista (`desde`, `hasta` ISO · `estadoPago` · `gtf`)
+ * GET    lista (`desde`, `hasta` ISO · `estadoPago` · `gtf`) · `?candidatos=1`
+ *        trae las guías de ingreso con transportista/placa que aún no tienen
+ *        su viaje anotado (ADR-318 addendum, Brandon 2026-08-20)
  * POST   alta/edición (`id` para editar)
  * PATCH  marca pagado/pendiente
  * DELETE baja lógica (`?id=`)
@@ -47,6 +49,19 @@ export const GET = withApiHandler("forestal-fletes-get", async (req: NextRequest
   const sp = req.nextUrl.searchParams;
   const estadoRaw = (sp.get("estadoPago") ?? "").trim();
   const estadoPago = (ESTADOS_PAGO as readonly string[]).includes(estadoRaw) ? (estadoRaw as EstadoPago) : undefined;
+
+  if (sp.get("candidatos") === "1") {
+    try {
+      const candidatos = await ForestFleteDB.candidatosSinAnotar(auth.tenantId, {
+        desde: fecha(sp.get("desde")),
+        hasta: fecha(sp.get("hasta")),
+      });
+      return NextResponse.json({ candidatos });
+    } catch (err) {
+      logger.error("[fletes.GET candidatos] failed", { error: String(err), tenantId: auth.tenantId });
+      return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    }
+  }
 
   try {
     const fletes = await ForestFleteDB.listar(auth.tenantId, {

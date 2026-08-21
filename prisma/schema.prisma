@@ -6416,6 +6416,16 @@ model ForestFlete {
   transportistaId     String?
   transportistaNombre String?
   conductorId         String?
+  /// Snapshot del nombre del conductor: viene del directorio o, cuando el viaje
+  /// se anota desde la guía (ADR-318 addendum), del casillero de la GTF — un
+  /// conductor que no está en la libreta igual queda con su nombre en el viaje.
+  conductorNombre     String?
+
+  /// `privado` = vehículo propio del titular (mismo vocabulario que el
+  /// casillero "tipo de transporte" de la GTF, `ctp-gtf-datos.ts`) — no genera
+  /// deuda con un tercero. `publico` = transportista de tercero, a quien se le
+  /// paga un flete.
+  tipoTransporte String @default("privado")
 
   /// De quién era la carga. Sirve para saber qué fletes se le descuentan.
   proveedorId     String?
@@ -6442,6 +6452,7 @@ model ForestFlete {
   @@index([tenantId, fecha(sort: Desc)])
   @@index([tenantId, estadoPago])
   @@index([tenantId, gtfNumber])
+  @@index([tenantId, tipoTransporte])
   @@index([deletedAt])
 }
 

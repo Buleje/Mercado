@@ -5,7 +5,9 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { normalizarPlaca } from "@/lib/forestal/directorio";
-import type { EstadoPago, Flete, FleteInput, Pagador, TipoFlete } from "@/lib/forestal/fletes";
+import { candidatoDesdeIngreso, type CandidatoFlete } from "@/lib/forestal/fletes";
+import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
+import type { EstadoPago, Flete, FleteInput, Pagador, TipoFlete, TipoTransporte } from "@/lib/forestal/fletes";
 
 /**
  * ForestFleteDB — los viajes que traen la madera y se llevan el producto (ADR-318).
@@ -49,6 +51,8 @@ function aFlete(r: FleteRow): Flete {
     transportistaId: r.transportistaId,
     transportistaNombre: r.transportistaNombre,
     conductorId: r.conductorId,
+    conductorNombre: r.conductorNombre,
+    tipoTransporte: (r.tipoTransporte as TipoTransporte) ?? "privado",
     proveedorId: r.proveedorId,
     proveedorNombre: r.proveedorNombre,
     volumenM3: r.volumenM3 == null ? null : Number(r.volumenM3),
@@ -106,6 +110,8 @@ export const ForestFleteDB = {
       transportistaId: vacioANull(input.transportistaId),
       transportistaNombre: vacioANull(input.transportistaNombre),
       conductorId: vacioANull(input.conductorId),
+      conductorNombre: vacioANull(input.conductorNombre),
+      tipoTransporte: input.tipoTransporte ?? "privado",
       proveedorId: vacioANull(input.proveedorId),
       proveedorNombre: vacioANull(input.proveedorNombre),
       volumenM3: input.volumenM3 == null ? null : new Prisma.Decimal(input.volumenM3),
@@ -141,6 +147,50 @@ export const ForestFleteDB = {
     });
     this.invalidar(tenantId);
     return aFlete(row);
+  },
+
+  /**
+   * Guías de ingreso del período que YA traen transportista/placa en la GTF
+   * pero todavía no tienen su viaje anotado en Fletes — la bandeja de "esto ya
+   * está en el libro, faltás vos" (Brandon, 2026-08-20).
+   *
+   * Vigentes solamente (`rechazado`/`anulado` no trajeron nada de verdad) y sin
+   * un `ForestFlete` que ya use ese `gtfNumber` — anotar dos veces el mismo
+   * viaje inflaría la deuda con el transportista.
+   */
+  async candidatosSinAnotar(tenantId: string, opts: { desde?: Date; hasta?: Date } = {}): Promise<CandidatoFlete[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const { entries } = await WoodEntriesDB.list(tenantId, {
+      fromDate: opts.desde,
+      toDate: opts.hasta,
+      limit: 500,
+    });
+    const vigentes = entries.filter((e) => e.status !== "rechazado" && e.status !== "anulado" && e.gtfNumber);
+    if (vigentes.length === 0) return [];
+
+    const anotados = await prisma.forestFlete.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        gtfNumber: { in: [...new Set(vigentes.map((e) => e.gtfNumber as string))] },
+      },
+      select: { gtfNumber: true },
+    });
+    const yaAnotados = new Set(anotados.map((f) => f.gtfNumber));
+
+    const candidatos: CandidatoFlete[] = [];
+    for (const e of vigentes) {
+      if (yaAnotados.has(e.gtfNumber)) continue;
+      const c = candidatoDesdeIngreso({
+        gtfNumber: e.gtfNumber,
+        entryDate: e.entryDate,
+        providerName: e.providerName,
+        volumeM3: e.volumeM3 as unknown as string | number | null,
+        gtfDatos: e.gtfDatos,
+      });
+      if (c) candidatos.push(c);
+    }
+    return candidatos;
   },
 
   /** Marca pagado/pendiente sin abrir el formulario entero. */

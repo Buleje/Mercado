@@ -9,13 +9,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { resumirFletes, type EstadoPago, type Flete, type FleteInput } from "@/lib/forestal/fletes";
+import { resumirFletes, type CandidatoFlete, type EstadoPago, type Flete, type FleteInput } from "@/lib/forestal/fletes";
 
 /** Con el token CSRF: sin él el servidor rechaza la mutación con 403. */
 const jsonConCsrf = () => csrfHeaders({ "Content-Type": "application/json" });
 
 export function useFletesForestales(period: { from: string | null; to: string | null }) {
   const [fletes, setFletes] = useState<Flete[]>([]);
+  const [candidatos, setCandidatos] = useState<CandidatoFlete[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,9 +41,27 @@ export function useFletesForestales(period: { from: string | null; to: string | 
     }
   }, [desde, hasta]);
 
+  /** Guías con transportista/placa que todavía no tienen su viaje anotado
+   *  (ADR-318 addendum). Es un aviso, no el dato principal: si falla, no tapa
+   *  la lista de fletes con un error ajeno — sólo se queda sin bandeja. */
+  const cargarCandidatos = useCallback(async () => {
+    try {
+      const qs = new URLSearchParams({ candidatos: "1" });
+      if (desde) qs.set("desde", desde);
+      if (hasta) qs.set("hasta", hasta);
+      const r = await fetch(`/api/admin/forestal/fletes?${qs}`, { credentials: "include", cache: "no-store" });
+      if (!r.ok) return;
+      const j = (await r.json()) as { candidatos?: CandidatoFlete[] };
+      setCandidatos(j.candidatos ?? []);
+    } catch (e) {
+      console.error("[fletes] no se pudieron leer los candidatos", String(e));
+    }
+  }, [desde, hasta]);
+
   useEffect(() => {
     void cargar();
-  }, [cargar]);
+    void cargarCandidatos();
+  }, [cargar, cargarCandidatos]);
 
   const guardar = useCallback(async (input: FleteInput & { id?: string }): Promise<Flete> => {
     const r = await fetch("/api/admin/forestal/fletes", {
@@ -58,6 +77,8 @@ export function useFletesForestales(period: { from: string | null; to: string | 
     setFletes((prev) =>
       [flete, ...prev.filter((f) => f.id !== flete.id)].sort((a, b) => b.fecha.localeCompare(a.fecha)),
     );
+    // La guía recién anotada sale de la bandeja de "sin flete anotado".
+    if (flete.gtfNumber) setCandidatos((prev) => prev.filter((c) => c.gtfNumber !== flete.gtfNumber));
     return flete;
   }, []);
 
@@ -86,5 +107,5 @@ export function useFletesForestales(period: { from: string | null; to: string | 
 
   const resumen = useMemo(() => resumirFletes(fletes), [fletes]);
 
-  return { fletes, resumen, cargando, error, cargar, guardar, marcarPago, eliminar };
+  return { fletes, candidatos, resumen, cargando, error, cargar, guardar, marcarPago, eliminar };
 }

@@ -22,6 +22,7 @@
  */
 
 import { z } from "zod";
+import { leerGtfDatos } from "./ctp-gtf-datos";
 
 // ── Vocabulario ─────────────────────────────────────────────────────────────
 
@@ -52,6 +53,21 @@ export const PAGADOR_HINT: Record<Pagador, string> = {
 export const ESTADOS_PAGO = ["pendiente", "pagado"] as const;
 export type EstadoPago = (typeof ESTADOS_PAGO)[number];
 
+/**
+ * Quién puso el vehículo. Mismo vocabulario que el casillero "tipo de
+ * transporte" de la GTF de salida (`ctp-gtf-datos.ts`, `vehiculo.tipoTransporte`)
+ * — un solo par de palabras para la misma pregunta en toda la app.
+ * `privado` = vehículo propio del titular: no genera deuda con un tercero.
+ * `publico` = transportista de tercero: es el que se le paga un flete.
+ */
+export const TIPOS_TRANSPORTE = ["privado", "publico"] as const;
+export type TipoTransporte = (typeof TIPOS_TRANSPORTE)[number];
+
+export const TIPO_TRANSPORTE_LABEL: Record<TipoTransporte, string> = {
+  privado: "Propio",
+  publico: "Flete (tercero)",
+};
+
 // ── Forma que viaja al cliente ──────────────────────────────────────────────
 
 export interface Flete {
@@ -65,6 +81,9 @@ export interface Flete {
   transportistaId: string | null;
   transportistaNombre: string | null;
   conductorId: string | null;
+  /** Snapshot del nombre: del directorio o, si se anotó desde la guía, de la GTF. */
+  conductorNombre: string | null;
+  tipoTransporte: TipoTransporte;
   proveedorId: string | null;
   proveedorNombre: string | null;
   volumenM3: number | null;
@@ -90,6 +109,8 @@ export const fleteInputSchema = z.object({
   transportistaId: texto(40).optional().nullable(),
   transportistaNombre: texto(200).optional(),
   conductorId: texto(40).optional().nullable(),
+  conductorNombre: texto(200).optional(),
+  tipoTransporte: z.enum(TIPOS_TRANSPORTE).default("privado"),
   proveedorId: texto(40).optional().nullable(),
   proveedorNombre: texto(200).optional(),
   volumenM3: z.number().nonnegative().max(9999).optional().nullable(),
@@ -233,6 +254,59 @@ function agrupar(lista: Flete[], clave: (f: Flete) => string, nombre: (f: Flete)
   return [...mapa.values()]
     .map((c) => ({ ...c, total: Math.round(c.total * 100) / 100, pendiente: Math.round(c.pendiente * 100) / 100 }))
     .sort((a, b) => b.pendiente - a.pendiente || b.total - a.total || a.nombre.localeCompare(b.nombre, "es"));
+}
+
+// ── Desde la guía: la fila del ingreso ya trae el viaje ────────────────────
+
+/** Lo mínimo de un `WoodEntry` que hace falta para proponer el viaje. */
+export interface IngresoParaFlete {
+  gtfNumber: string | null;
+  entryDate: string | Date;
+  providerName: string | null;
+  volumeM3: string | number | null;
+  /** JSON crudo — se lee con `leerGtfDatos`, nunca se confía a ciegas. */
+  gtfDatos: unknown;
+}
+
+/** Un viaje propuesto desde la guía: todavía no es un `Flete`, falta el monto. */
+export interface CandidatoFlete {
+  gtfNumber: string;
+  fecha: string;
+  proveedorNombre: string | null;
+  volumenM3: number | null;
+  placa: string | null;
+  transportistaNombre: string | null;
+  conductorNombre: string | null;
+  tipoTransporte: TipoTransporte;
+}
+
+/**
+ * El viaje que ya está escrito en la guía, listo para proponer.
+ *
+ * Brandon (2026-08-20): "cada guía que ingresa ya tiene volumen y
+ * transportista, conductor — quiero que se clasifique [por fletero], sin
+ * volver a tipearlo." La guía de ingreso guarda ese bloque en `gtfDatos`
+ * (mismo esquema que la GTF de salida, ADR-336): acá se traduce a un borrador
+ * de flete. `null` si la guía no tiene ni transportista ni placa cargados —
+ * proponer un viaje vacío no ahorra nada.
+ */
+export function candidatoDesdeIngreso(e: IngresoParaFlete): CandidatoFlete | null {
+  if (!e.gtfNumber) return null;
+  const d = leerGtfDatos(e.gtfDatos);
+  const transportista = d.transportista.nombre.trim() || null;
+  const placa = d.vehiculo.placa.trim() || null;
+  if (!transportista && !placa) return null;
+  const fecha = typeof e.entryDate === "string" ? e.entryDate : e.entryDate.toISOString();
+  return {
+    gtfNumber: e.gtfNumber,
+    fecha: fecha.slice(0, 10),
+    proveedorNombre: (e.providerName ?? "").trim() || null,
+    volumenM3: e.volumeM3 == null ? null : Number(e.volumeM3),
+    placa,
+    transportistaNombre: transportista,
+    conductorNombre: d.vehiculo.conductor.trim() || null,
+    tipoTransporte: d.vehiculo.tipoTransporte,
+  };
 }
 
 /**
