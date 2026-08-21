@@ -24,6 +24,7 @@ import {
   ShieldAlert,
   Stamp,
   TreePine,
+  Truck,
   UserCog,
   type LucideIcon,
 } from "@buleje/design-system/icons";
@@ -36,7 +37,7 @@ import {
   type AutoridadTramite,
   type FormatoTramite,
 } from "@/lib/forestal/tramites-catalogo";
-import type { TramiteRegistro } from "@/lib/forestal/tramites-registro";
+import { contarPorEstado, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
 
 const ICONOS: Record<string, LucideIcon> = {
   Stamp,
@@ -47,6 +48,7 @@ const ICONOS: Record<string, LucideIcon> = {
   ShieldAlert,
   Globe,
   PenLine,
+  Truck,
 };
 
 const iconoDe = (id: string): LucideIcon => ICONOS[ICONO_TRAMITE[id] ?? ""] ?? FileText;
@@ -81,9 +83,13 @@ export default function TramitesCatalogo({
   const usados = (id: string) => tramites.filter((t) => t.formatoId === id).length;
   const destacado = FORMATOS_TRAMITE.find((f) => f.id === DESTACADO);
   const resto = FORMATOS_TRAMITE.filter((f) => f.id !== DESTACADO);
+  const porEstado = contarPorEstado(tramites);
+  const enCurso = porEstado.presentado + porEstado.observado;
 
   return (
     <div className="space-y-6">
+      <TirasResumen total={FORMATOS_TRAMITE.length} guardados={tramites.length} enCurso={enCurso} resueltos={porEstado.resuelto} />
+
       <RegistroPlantacionCard onClick={onAbrirPlantaciones} />
 
       {destacado && <Hero formato={destacado} usados={usados(destacado.id)} onElegir={onElegir} />}
@@ -123,36 +129,42 @@ export default function TramitesCatalogo({
 }
 
 /**
- * Registro de Plantación Forestal (RNPF) — la tarjeta de entrada al módulo
- * nuevo (ADR-380). No es una card más del grid de oficios: es un trámite
- * distinto (ficha estructurada, no una carta), así que lleva su propio look
- * — mismo lenguaje visual que el Hero, tono verde vivero en vez del teal de
- * marca, para que se distinga de un vistazo de "esto es SOLICITAR algo" vs
- * "esto es REGISTRAR una plantación entera".
+ * Tira de resumen: cuántos formatos hay y qué tan viva está la carpeta. Sin
+ * esto el módulo abría directo en la pieza héroe — vistosa, pero sin decir
+ * nada de lo que ya se hizo. Un número por dato, no una tabla: es la entrada
+ * al catálogo, no el expediente (eso ya lo tiene su propia pestaña).
  */
-function RegistroPlantacionCard({ onClick }: { onClick: () => void }) {
+function TirasResumen({
+  total,
+  guardados,
+  enCurso,
+  resueltos,
+}: {
+  total: number;
+  guardados: number;
+  enCurso: number;
+  resueltos: number;
+}) {
+  const items: { label: string; value: number; tono: "neutral" | "info" | "success" }[] = [
+    { label: "formatos disponibles", value: total, tono: "neutral" },
+    { label: "guardados en el expediente", value: guardados, tono: "neutral" },
+    { label: "en curso ante la autoridad", value: enCurso, tono: "info" },
+    { label: "resueltos", value: resueltos, tono: "success" },
+  ];
+  const TONO: Record<string, string> = {
+    neutral: "text-[var(--text-primary)]",
+    info: "text-[var(--data-info-700)] dark:text-[var(--data-info-500)]",
+    success: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+  };
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group flex w-full items-center gap-4 rounded-2xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[var(--data-success-500)] hover:shadow-[var(--shadow-md)] dark:bg-[var(--data-success-500)]/10"
-    >
-      <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-        <TreePine className="h-7 w-7" aria-hidden="true" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-success-500)]/15 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-          Registro Nacional de Plantaciones Forestales
-        </span>
-        <span className="font-display mt-1.5 block text-2xl leading-snug text-[var(--text-primary)]">
-          Registro de Plantación Forestal
-        </span>
-        <span className="mt-1 block text-sm text-[var(--text-secondary)]">
-          Inscripción o actualización ante SERFOR — titular, predio, bloques y especies, hasta generar el Formato Nº 01.
-        </span>
-      </span>
-      <ArrowRight className="h-5 w-5 shrink-0 text-[var(--data-success-700)] transition-transform group-hover:translate-x-1 dark:text-[var(--data-success-500)]" aria-hidden="true" />
-    </button>
+    <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
+      {items.map((it) => (
+        <div key={it.label} className="flex items-baseline gap-1.5">
+          <span className={`font-display text-xl leading-none tabular-nums ${TONO[it.tono]}`}>{it.value}</span>
+          <span className="text-xs text-[var(--text-tertiary)]">{it.label}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -211,6 +223,40 @@ function Hero({
         </div>
         <Icono className="h-20 w-20 shrink-0 text-white/95 drop-shadow transition-transform group-hover:scale-110" aria-hidden="true" />
       </div>
+    </button>
+  );
+}
+
+/**
+ * Registro de Plantación Forestal (RNPF) — la tarjeta de entrada al módulo
+ * nuevo (ADR-380). No es una card más del grid de oficios: es un trámite
+ * distinto (ficha estructurada, no una carta), así que lleva su propio look
+ * — mismo lenguaje visual que el Hero, tono verde vivero en vez del teal de
+ * marca, para que se distinga de un vistazo de "esto es SOLICITAR algo" vs
+ * "esto es REGISTRAR una plantación entera".
+ */
+function RegistroPlantacionCard({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex w-full items-center gap-4 rounded-2xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[var(--data-success-500)] hover:shadow-[var(--shadow-md)] dark:bg-[var(--data-success-500)]/10"
+    >
+      <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+        <TreePine className="h-7 w-7" aria-hidden="true" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-success-500)]/15 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+          Registro Nacional de Plantaciones Forestales
+        </span>
+        <span className="font-display mt-1.5 block text-2xl leading-snug text-[var(--text-primary)]">
+          Registro de Plantación Forestal
+        </span>
+        <span className="mt-1 block text-sm text-[var(--text-secondary)]">
+          Inscripción o actualización ante SERFOR — titular, predio, bloques y especies, hasta generar el Formato Nº 01.
+        </span>
+      </span>
+      <ArrowRight className="h-5 w-5 shrink-0 text-[var(--data-success-700)] transition-transform group-hover:translate-x-1 dark:text-[var(--data-success-500)]" aria-hidden="true" />
     </button>
   );
 }

@@ -63,6 +63,7 @@ export const ICONO_TRAMITE: Record<string, string> = {
   "descargo-osinfor": "ShieldAlert",
   "constancia-cites": "Globe",
   "carta-generica": "PenLine",
+  "relacion-guias-serfor": "Truck",
 };
 
 export type TipoCampo = "texto" | "textarea" | "numero" | "fecha";
@@ -113,6 +114,27 @@ export interface FormatoTramite {
   cuerpo: (d: DatosTramite) => string[];
   /** Aviso al operador antes de imprimir (qué cotejar, qué firmar). */
   advertencia?: string;
+  /**
+   * Este trámite lleva el editor de guías (`TramiteRelacionGuias`) además de los
+   * `campos` sueltos: una tabla de GTF —emitidas y anuladas— con su lista de
+   * trozas, que viaja en `datos.guiasJson` (ADR-364). El campo NO está en
+   * `campos` a propósito: tiene forma propia, no un input de texto.
+   */
+  tablaGuias?: boolean;
+  /**
+   * Este trámite lleva N° de documento propio, correlativo por año
+   * ("001-2026"), asignado SOLO cuando pasa a "Presentado" y nunca reasignado
+   * después (`construirTramite`, ADR-364 ronda 3, Brandon 2026-08-20) — el
+   * talonario real no vuelve a numerar un oficio ya presentado.
+   */
+  correlativo?: boolean;
+  /**
+   * Carpeta propia del Drive para este formato — si no se declara, cae en la
+   * carpeta genérica `CARPETA_TRAMITES` de `TramiteFormulario`. Separar
+   * "Relación de guías" del resto evita que se pierda entre otros ocho
+   * formatos cuando SERFOR pide "mandame las que presentaste este año".
+   */
+  carpetaDrive?: string;
 }
 
 const v = (d: DatosTramite, k: string, fallback = "—"): string => {
@@ -163,7 +185,26 @@ const CAMPOS_COMUNES: CampoTramite[] = [
     hint: "La ciudad que va antes de la fecha (\"Pucallpa, 29 de julio de 2026\")",
     grupo: "firma",
   },
+  {
+    id: "membreteEmpresa",
+    label: "Empresa que emite (membrete)",
+    tipo: "texto",
+    autollenado: "ficha",
+    hint: "Sale arriba del papel. Trae la razón social de tu Ficha CTP — cambiala sólo si ESTE documento lo firma otra empresa",
+    grupo: "firma",
+  },
 ];
+
+/**
+ * Ronda 8 (Brandon: "que el RUC/código/registro también se puedan editar"):
+ * `membreteRuc/CodigoCtp/RegistroArffs/Direccion` viven SOLO como override
+ * tocable en el papel (`tramites-print.ts`, mismo mecanismo genérico de
+ * `datos[id]` que cualquier campo del catálogo) — deliberadamente NO se
+ * suman acá como `CampoTramite`: son identidad legal que casi nunca cambia
+ * por documento, y volverlos un input siempre visible en los nueve formatos
+ * sería ruido por un dato que se toca una vez cada mil. La Ficha CTP sigue
+ * siendo el default; tocar el papel sólo lo pisa PARA ESE documento.
+ */
 
 /** Etiquetas de las secciones del formulario, en el orden en que se llenan. */
 export const GRUPOS_CAMPO: { id: "destino" | "datos" | "firma"; label: string; hint: string }[] = [
@@ -467,7 +508,86 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "El plazo para descargar es corto y se cuenta desde la notificación: verificá la fecha del acta antes de presentar. La carpeta de fiscalización del Libro CTP arma la evidencia del período.",
   },
 
-  // ── 7. Constancia / permiso CITES ────────────────────────────────────────
+  // ── 7. Relación de guías de transporte forestal emitidas ──────────────────
+  {
+    id: "relacion-guias-serfor",
+    nombre: "Relación de guías de transporte forestal emitidas",
+    autoridad: "serfor",
+    proposito:
+      "Informar a SERFOR (Sede Puerto Bermúdez, editable) las GTF que emitió el titular en el período —y las anuladas, si las hay— con su lista de trozas, para que la Sede las registre en el SNIFFS",
+    asunto: "Remito relación de guías de transporte forestal emitidas para su registro en el SNIFFS",
+    baseLegal: [
+      "RDE N° D000025-2023-MIDAGRI-SERFOR-DE — formato del Libro de Operaciones de CTP",
+      "Ley N° 29763 — Ley Forestal y de Fauna Silvestre",
+      "Ley N° 27444 — Ley del Procedimiento Administrativo General",
+    ],
+    tablaGuias: true,
+    correlativo: true,
+    carpetaDrive: "Relación de guías SERFOR (CTP)",
+    campos: [
+      {
+        id: "destinatarioCargo",
+        label: "Dirigido a (cargo)",
+        tipo: "texto",
+        requerido: true,
+        placeholder: "Administrador Técnico Forestal y de Fauna Silvestre",
+        hint: "El cargo de quien recibe en la Sede, no el nombre",
+        grupo: "destino",
+      },
+      {
+        id: "destinatarioEntidad",
+        label: "Entidad / sede",
+        tipo: "texto",
+        requerido: true,
+        placeholder: "SERFOR — Sede Puerto Bermúdez",
+        hint: "Cambialo si tu titular reporta a otra sede: es un sugerido, no un dato fijo",
+        grupo: "destino",
+      },
+      {
+        id: "entidadNombre",
+        label: "Comunidad / titular que solicita",
+        tipo: "texto",
+        requerido: true,
+        autollenado: "ficha",
+        hint: "Razón social del titular ante SERFOR",
+      },
+      { id: "entidadRuc", label: "RUC", tipo: "texto", autollenado: "ficha" },
+      {
+        id: "entidadRepresentante",
+        label: "Jefe / representante legal",
+        tipo: "texto",
+        requerido: true,
+        autollenado: "ficha",
+        hint: "Quien encabeza la solicitud ante la autoridad",
+      },
+      { id: "periodoDesde", label: "Período — desde", tipo: "fecha", requerido: true },
+      { id: "periodoHasta", label: "Período — hasta", tipo: "fecha", requerido: true },
+      {
+        id: "serieGtfInforme",
+        label: "Serie de GTF",
+        tipo: "texto",
+        autollenado: "libro",
+        hint: "La serie del talonario que amparan estas guías",
+      },
+      { id: "observaciones", label: "Observaciones", tipo: "textarea" },
+      ...CAMPOS_COMUNES.filter((c) => c.grupo === "firma"),
+    ],
+    anexos: [
+      "Anexo 1: Relación de guías de transporte forestal emitidas, con su lista de trozas",
+      "Anexo 2: Relación de guías anuladas (si las hubiera), con su lista de trozas",
+      "Copias de las guías físicas del talonario correspondiente",
+    ],
+    cuerpo: (d) => [
+      `Que, en mi calidad de ${v(d, "entidadRepresentante", "representante legal")} de ${v(d, "entidadNombre", "el titular")}${d.entidadRuc?.trim() ? `, con RUC ${v(d, "entidadRuc")}` : ""}, pongo en conocimiento de su Despacho la relación de Guías de Transporte Forestal y Lista de Trozas emitidas.`,
+      "Adjunto el anexo con el detalle de las guías correspondientes al período.",
+      d.observaciones?.trim() ? `Observaciones: ${v(d, "observaciones")}.` : "",
+      "Solicito a su Despacho disponer el registro de las guías detalladas en el Sistema Nacional de Información y Fiscalización Forestal y de Fauna Silvestre (SNIFFS), conforme a la información que se declara.",
+    ],
+    advertencia:
+      "El SNIFFS no tiene un canal para que el titular registre directamente: por eso esta relación se presenta en mesa de partes para que la Sede la suba al sistema. Verificá cada N° de guía contra tu talonario físico y marcá como anuladas sólo las que de verdad no se usaron.",
+  },
+
+  // ── 8. Constancia / permiso CITES ────────────────────────────────────────
   {
     id: "constancia-cites",
     nombre: "Constancia o permiso CITES",
@@ -506,7 +626,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "El permiso CITES es previo al embarque y el trámite tiene plazos propios: iniciá con anticipación. El expediente EUDR del Libro CTP sirve para acreditar la cadena.",
   },
 
-  // ── 8. Oficio o carta genérica ───────────────────────────────────────────
+  // ── 9. Oficio o carta genérica ───────────────────────────────────────────
   {
     id: "carta-generica",
     nombre: "Carta u oficio a la autoridad",

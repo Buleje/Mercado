@@ -15,9 +15,23 @@
  * ver cómo quedaba. En pantallas chicas el papel pasa a una pestaña.
  */
 
-import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, ArrowLeft, Check, FileDown, FileText, Save, SlidersHorizontal } from "@buleje/design-system/icons";
-import { imprimirTramite } from "@/lib/forestal/tramites-print";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Check,
+  Eye,
+  FileDown,
+  FileText,
+  HardDrive,
+  Loader2,
+  Maximize2,
+  Save,
+  SlidersHorizontal,
+} from "@buleje/design-system/icons";
+import { buildTramiteHtml, imprimirTramite, TRAMITE_PREVIEW_CSS } from "@/lib/forestal/tramites-print";
+import { archivarEnDrive } from "@/lib/forestal/ctp-archivar-documento";
+import { nombreArchivoTramite, tramiteDocumentoAPdf } from "@/lib/forestal/tramites-documento-pdf";
 import {
   AUTORIDADES,
   GRUPOS_CAMPO,
@@ -26,11 +40,31 @@ import {
   type DatosTramite,
   type FormatoTramite,
 } from "@/lib/forestal/tramites-catalogo";
-import { ESTADOS_TRAMITE, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
+import type { TramiteRegistro } from "@/lib/forestal/tramites-registro";
 import type { CtpReportFicha } from "@/lib/forestal/ctp-print-shared";
-import { Btn, Field, I } from "./ctp-shared";
+import {
+  gtfDuplicadaEntreRelaciones,
+  parseGuiasInforme,
+  periodoDesdeSugerido,
+  relacionesDelFormato,
+} from "@/lib/forestal/tramites-relacion-guias";
+import {
+  borrarLogoTramite,
+  guardarLogoTramite,
+  leerArchivoLogo,
+  leerLogoTramite,
+  LOGO_MAX_BYTES,
+  type LogoTramite,
+} from "@/lib/forestal/tramites-logo";
+import { Btn } from "./ctp-shared";
+import TramiteArchivadorOffscreen, { type TramiteArchivadorHandle } from "./TramiteArchivadorOffscreen";
+import TramiteCamposPanel from "./TramiteCamposPanel";
+import TramiteDocumentoModal from "./TramiteDocumentoModal";
 import TramitePreview from "./TramitePreview";
 import type { GuardarTramiteInput } from "@/hooks/use-forest-tramites";
+
+/** Carpeta del Drive donde se archivan los trámites — distinta de la de guías GTF. */
+const CARPETA_TRAMITES = "Trámites y Oficios (CTP)";
 
 /** Lo que el sistema puede completar solo: identidad + datos del libro. */
 export interface AutollenadoTramite {
@@ -69,6 +103,16 @@ function sugerido(campoId: string, auto: AutollenadoTramite): string {
       return auto.despachosCount != null ? String(auto.despachosCount) : "";
     case "especie":
       return auto.especieCites ?? "";
+    case "entidadNombre":
+      return f.razonSocial ?? "";
+    case "entidadRuc":
+      return f.ruc ?? "";
+    case "entidadRepresentante":
+      return f.representante ?? "";
+    case "serieGtfInforme":
+      return auto.serieGtf ?? "";
+    case "membreteEmpresa":
+      return f.razonSocial ?? "";
     default:
       return "";
   }
@@ -78,6 +122,7 @@ export default function TramiteFormulario({
   formato,
   auto,
   existente,
+  tramites,
   onGuardar,
   onCerrar,
 }: {
@@ -85,6 +130,9 @@ export default function TramiteFormulario({
   auto: AutollenadoTramite;
   /** Si se abrió desde el expediente: se edita ese trámite. */
   existente?: TramiteRegistro | null;
+  /** Todo el expediente del tenant — sólo se usa en formatos con `correlativo`
+   *  (continuidad de período, historial, duplicados cruzados; ADR-364 ronda 4). */
+  tramites: TramiteRegistro[];
   onGuardar: (input: GuardarTramiteInput) => Promise<TramiteRegistro | null>;
   onCerrar: () => void;
 }) {
@@ -101,8 +149,37 @@ export default function TramiteFormulario({
    * iba sin id. Se adopta el que devolvió el servidor.
    */
   const [idGuardado, setIdGuardado] = useState<string | null>(existente?.id ?? null);
+  /** N° de documento correlativo (ADR-364 ronda 3) — `null` hasta el primer
+   *  "Presentado"; lo asigna el servidor, acá sólo se refleja. */
+  const [numeroDocumento, setNumeroDocumento] = useState<string | null>(existente?.numeroDocumento ?? null);
   /** Móvil: el papel no cabe al lado, va en su propia pestaña. */
   const [panelMovil, setPanelMovil] = useState<"formulario" | "documento">("formulario");
+  const [modalDocumento, setModalDocumento] = useState(false);
+  const [archivando, setArchivando] = useState(false);
+  const archivadorRef = useRef<TramiteArchivadorHandle>(null);
+  /** Logo del membrete (ADR-364 ronda 6) — por tenant, no por trámite: se
+   *  sube una vez y queda para todos los documentos que se emitan después. */
+  const [logo, setLogo] = useState<LogoTramite | null>(() => leerLogoTramite());
+
+  async function onLogoArchivo(file?: File) {
+    if (!file) return;
+    if (file.size > LOGO_MAX_BYTES) {
+      setAviso("La imagen pesa demasiado — probá con una más liviana.");
+      return;
+    }
+    try {
+      const leido = await leerArchivoLogo(file);
+      guardarLogoTramite(leido);
+      setLogo(leido);
+    } catch (err) {
+      setAviso(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  function onLogoQuitar() {
+    borrarLogoTramite();
+    setLogo(null);
+  }
 
   // Al abrir: lo guardado (si se edita) o lo que el sistema puede completar.
   useEffect(() => {
@@ -122,6 +199,9 @@ export default function TramiteFormulario({
 
   const set = (id: string, valor: string) => setDatos((p) => ({ ...p, [id]: valor }));
   const faltantes = useMemo(() => faltantesDelTramite(formato, datos), [formato, datos]);
+  // `guiasJson` no es un campo de `formato.campos` (tiene forma propia, ver
+  // TramiteRelacionGuias): se exige aparte, sin sumar al conteo de "obligatorios".
+  const sinGuias = Boolean(formato.tablaGuias) && parseGuiasInforme(datos.guiasJson).length === 0;
   const requeridos = useMemo(() => formato.campos.filter((c) => c.requerido), [formato]);
   const listos = requeridos.length - faltantes.length;
   const autoridad = AUTORIDADES[formato.autoridad];
@@ -129,12 +209,89 @@ export default function TramiteFormulario({
     () => formato.campos.filter((c) => c.autollenado && (datos[c.id] ?? "").trim()).length,
     [formato, datos],
   );
+  // Sólo los grupos que este formato realmente usa, para numerar sin huecos
+  // ("1, 2, 4" si un grupo no aplica se lee como que falta el 3).
+  const gruposVisibles = useMemo(
+    () => GRUPOS_CAMPO.filter((g) => formato.campos.some((c) => (c.grupo ?? "datos") === g.id)),
+    [formato],
+  );
+
+  // Continuidad de período + historial + duplicados cruzados (ADR-364 ronda 4)
+  // — sólo tiene sentido en formatos con correlativo, que son los que se
+  // presentan período tras período sin poder solaparse.
+  const relacionesFormato = useMemo(
+    () => (formato.correlativo ? relacionesDelFormato(tramites, formato.id) : []),
+    [tramites, formato],
+  );
+  const idActual = idGuardado ?? existente?.id ?? null;
+  const otrasRelaciones = useMemo(
+    () => relacionesFormato.filter((t) => t.id !== idActual),
+    [relacionesFormato, idActual],
+  );
+  const sugerenciaPeriodo = useMemo(() => periodoDesdeSugerido(otrasRelaciones), [otrasRelaciones]);
+  const duplicadosCruzados = useMemo(
+    () => (formato.tablaGuias ? gtfDuplicadaEntreRelaciones(parseGuiasInforme(datos.guiasJson), otrasRelaciones) : []),
+    [formato, datos.guiasJson, otrasRelaciones],
+  );
+
+  /** Carpeta del Drive: la propia del formato si declara una, si no la genérica. */
+  const carpetaDrive = formato.carpetaDrive ?? CARPETA_TRAMITES;
 
   function imprimir() {
     try {
-      imprimirTramite({ formato, datos, ficha: auto.ficha });
+      imprimirTramite({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo });
     } catch (err) {
       setAviso(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  /**
+   * "Vista previa en pestaña" — la MISMA ventana imprimible de `imprimir()`,
+   * pero sin esperar a que el trámite esté completo: Brandon la pidió para
+   * mirar el borrador a medio llenar, no sólo el documento listo para
+   * presentar. `imprimirTramite` ya abre sin disparar el diálogo de impresión
+   * (el usuario decide desde ahí), así que reusarla tal cual alcanza.
+   */
+  function verEnPestana() {
+    try {
+      imprimirTramite({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo });
+    } catch (err) {
+      setAviso(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  /**
+   * Guarda el PDF del trámite en el Drive, como ya hacen las GTF y el informe
+   * ARFFS del Libro CTP: se fotografía el documento (offscreen, mismo patrón
+   * que `CtpArchivadorAuto`) y sube a una carpeta propia, con el asunto y la
+   * autoridad como etiquetas — así se busca desde el Drive sin volver acá.
+   * `carpetaDrive`: cada formato puede declarar la suya (`FormatoTramite.carpetaDrive`)
+   * para no perderse entre los otros ocho — si no declara, cae en la genérica.
+   */
+  async function guardarEnDrive() {
+    setArchivando(true);
+    setAviso(null);
+    try {
+      const body = buildTramiteHtml({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo });
+      const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
+<style>${TRAMITE_PREVIEW_CSS}html{background:#fff}.aviso{display:none}</style></head><body>${body}</body></html>`;
+      const doc = await archivadorRef.current?.capturar(html);
+      if (!doc) throw new Error("No se pudo preparar el documento para el PDF.");
+      const pdf = await tramiteDocumentoAPdf(doc);
+      const nombreBase = `${formato.nombre}${numeroDocumento ? ` N° ${numeroDocumento}` : ""} — ${auto.ficha?.razonSocial ?? "CTP"} — ${new Date().toISOString().slice(0, 10)}`;
+      const nombre = nombreArchivoTramite(nombreBase);
+      await archivarEnDrive({
+        archivo: pdf,
+        nombreArchivo: nombre,
+        carpeta: carpetaDrive,
+        etiquetas: [autoridad.corto, formato.nombre],
+        descripcion: asuntoDe(formato, datos),
+      });
+      setAviso(`Guardado en el Drive · carpeta "${carpetaDrive}".`);
+    } catch (err) {
+      setAviso(err instanceof Error ? err.message : String(err));
+    } finally {
+      setArchivando(false);
     }
   }
 
@@ -158,32 +315,77 @@ export default function TramiteFormulario({
       setIdGuardado(guardado.id);
       setEstado(guardado.estado);
       setFechaPresentacion(guardado.fechaPresentacion ?? "");
+      const numeroNuevo = !numeroDocumento && guardado.numeroDocumento;
+      setNumeroDocumento(guardado.numeroDocumento);
       setAviso(
-        idGuardado || existente
-          ? "Cambios guardados en el expediente."
-          : "Guardado en el expediente: ya podés seguirlo desde ahí.",
+        numeroNuevo
+          ? `Guardado y numerado como N° ${guardado.numeroDocumento} — ya podés presentarlo.`
+          : idGuardado || existente
+            ? "Cambios guardados en el expediente."
+            : "Guardado en el expediente: ya podés seguirlo desde ahí.",
       );
     }
   }
 
-  const campoInput = (c: (typeof formato.campos)[number]) =>
-    c.tipo === "textarea" ? (
-      <textarea
-        rows={3}
-        className={`${I} h-auto py-2`}
-        value={datos[c.id] ?? ""}
-        placeholder={c.placeholder}
-        onChange={(e) => set(c.id, e.target.value)}
-      />
-    ) : (
-      <input
-        type={c.tipo === "numero" ? "number" : c.tipo === "fecha" ? "date" : "text"}
-        className={I}
-        value={datos[c.id] ?? ""}
-        placeholder={c.placeholder}
-        onChange={(e) => set(c.id, e.target.value)}
-      />
-    );
+  // Panel de campos: se muestra en la columna del formulario O adentro del
+  // modal — NUNCA los dos a la vez (`TramiteRelacionGuias`, adentro, siembra
+  // su estado desde `value` una sola vez al montar; dos copias vivas
+  // divergirían en cuanto se edite una). El modal lo pide sólo cuando está
+  // abierto; acá se oculta mientras tanto.
+  const panelCampos = (
+    <TramiteCamposPanel
+      formato={formato}
+      datos={datos}
+      setDatos={setDatos}
+      set={set}
+      gruposVisibles={gruposVisibles}
+      sugerenciaPeriodo={sugerenciaPeriodo}
+      relacionesFormato={relacionesFormato}
+      idActual={idActual}
+      duplicadosCruzados={duplicadosCruzados}
+      existente={existente}
+      estado={estado}
+      setEstado={setEstado}
+      expediente={expediente}
+      setExpediente={setExpediente}
+      fechaPresentacion={fechaPresentacion}
+      setFechaPresentacion={setFechaPresentacion}
+      notas={notas}
+      setNotas={setNotas}
+      logo={logo}
+      onLogoArchivo={onLogoArchivo}
+      onLogoQuitar={onLogoQuitar}
+    />
+  );
+
+  // Mismas acciones que la barra inferior de la página — el modal es una
+  // superficie completa de edición, así que necesita poder guardar/imprimir
+  // sin volver acá (Brandon 2026-08-20: "las opciones de editar en la misma página").
+  const barraAcciones = (
+    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+      <p className="text-sm text-[var(--text-tertiary)]">
+        {faltantes.length > 0
+          ? `Falta: ${faltantes.map((f) => f.label).join(", ")}${sinGuias ? " · agregá al menos una guía" : ""}`
+          : sinGuias
+            ? "Agregá al menos una guía en la tabla antes de imprimir."
+            : "El documento sale con tu membrete; la firma va a mano."}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Btn variant="secondary" disabled={guardando} onClick={() => void guardar()}>
+          <Save className="h-4 w-4" />
+          {guardando ? "Guardando…" : idGuardado || existente ? "Guardar cambios" : "Guardar en expediente"}
+        </Btn>
+        <Btn variant="secondary" disabled={archivando} onClick={() => void guardarEnDrive()}>
+          {archivando ? <Loader2 className="h-4 w-4 animate-spin" /> : <HardDrive className="h-4 w-4" />}
+          {archivando ? "Guardando…" : "PDF al Drive"}
+        </Btn>
+        <Btn variant="dark" disabled={faltantes.length > 0 || sinGuias} onClick={imprimir}>
+          <FileDown className="h-4 w-4" />
+          Imprimir / PDF
+        </Btn>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
@@ -194,9 +396,25 @@ export default function TramiteFormulario({
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <span className="inline-flex items-center gap-2 rounded-full bg-[var(--surface-raised)]/80 px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
-              {autoridad.label}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[var(--surface-raised)]/80 px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                {autoridad.label}
+              </span>
+              {/* Correlativo: se asigna sólo al primer "Presentado" (ADR-364
+                  ronda 3) — antes de eso, avisa que todavía no tiene número
+                  en vez de mostrar un chip vacío. */}
+              {formato.correlativo && (
+                numeroDocumento ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[length:var(--ts-2xs)] font-black text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                    N° {numeroDocumento}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--rule-base)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]" title="Se asigna solo al guardar con estado Presentado">
+                    Sin N° — se asigna al presentar
+                  </span>
+                )
+              )}
+            </div>
             <h3 className="font-display mt-2 text-2xl leading-tight text-[var(--text-primary)]">{formato.nombre}</h3>
             <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">{formato.proposito}</p>
           </div>
@@ -274,78 +492,63 @@ export default function TramiteFormulario({
       {/* `pb-20`: la barra de acciones es sticky y sin esto tapaba el último
           campo (el firmante quedaba detrás del botón de imprimir). */}
       <div className="grid gap-4 pb-20 xl:grid-cols-[minmax(0,1fr)_28rem]">
-        {/* ── Columna 1: los campos, en tres bloques ── */}
+        {/* ── Columna 1: los campos — oculta mientras el modal la usa (ver
+            `panelCampos` arriba: nunca dos copias vivas a la vez). ── */}
         <div className={`space-y-4 ${panelMovil === "documento" ? "max-xl:hidden" : ""}`}>
-          {GRUPOS_CAMPO.map((g) => {
-            const campos = formato.campos.filter((c) => (c.grupo ?? "datos") === g.id);
-            if (campos.length === 0) return null;
-            return (
-              <section key={g.id} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-                <div className="mb-3 flex flex-wrap items-baseline gap-x-2 border-b-2 border-[var(--rule-soft)] pb-2">
-                  <h4 className="text-sm font-bold uppercase tracking-wide text-[var(--text-primary)]">{g.label}</h4>
-                  <p className="text-xs text-[var(--text-tertiary)]">{g.hint}</p>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {campos.map((c) => (
-                    <Field key={c.id} label={c.label} required={c.requerido} hint={c.hint}>
-                      {campoInput(c)}
-                    </Field>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-
-          {/* Seguimiento: lo que convierte un papel en expediente. */}
-          <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
-            <div className="mb-3 flex flex-wrap items-baseline gap-x-2 border-b-2 border-[var(--rule-soft)] pb-2">
-              <h4 className="text-sm font-bold uppercase tracking-wide text-[var(--text-primary)]">Seguimiento</h4>
-              <p className="text-xs text-[var(--text-tertiary)]">Para saber después qué pasó con este trámite</p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Field label="Estado">
-                <select className={I} value={estado} onChange={(e) => setEstado(e.target.value)}>
-                  {ESTADOS_TRAMITE.map((e) => (
-                    <option key={e.key} value={e.key}>{e.label}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Expediente de la autoridad" hint="El número con el que se pregunta después">
-                <input type="text" className={I} value={expediente} onChange={(e) => setExpediente(e.target.value)} />
-              </Field>
-              <Field label="Fecha de presentación" hint="Sin fecha no se puede contar el plazo">
-                <input type="date" className={I} value={fechaPresentacion} onChange={(e) => setFechaPresentacion(e.target.value)} />
-              </Field>
-              <Field label="Notas internas">
-                <input type="text" className={I} value={notas} onChange={(e) => setNotas(e.target.value)} />
-              </Field>
-            </div>
-          </section>
+          {!modalDocumento && panelCampos}
         </div>
 
         {/* ── Columna 2: el papel, pegado mientras se hace scroll ── */}
         <div className={panelMovil === "formulario" ? "max-xl:hidden" : ""}>
-          <TramitePreview formato={formato} datos={datos} ficha={auto.ficha} className="xl:sticky xl:top-4" />
+          <TramitePreview
+            formato={formato}
+            datos={datos}
+            ficha={auto.ficha}
+            numeroDocumento={numeroDocumento}
+            logo={logo}
+            onCampoChange={set}
+            className="xl:sticky xl:top-4"
+            acciones={
+              <>
+                <button
+                  type="button"
+                  onClick={verEnPestana}
+                  title="Ver en una pestaña nueva"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
+                >
+                  <Eye className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalDocumento(true)}
+                  title="Ver en grande"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </button>
+              </>
+            }
+          />
         </div>
       </div>
 
+      <TramiteDocumentoModal
+        open={modalDocumento}
+        onClose={() => setModalDocumento(false)}
+        formato={formato}
+        datos={datos}
+        ficha={auto.ficha}
+        numeroDocumento={numeroDocumento}
+        logo={logo}
+        editor={modalDocumento ? panelCampos : null}
+        footer={barraAcciones}
+        onCampoChange={set}
+      />
+      <TramiteArchivadorOffscreen handleRef={archivadorRef} />
+
       {/* Acciones: pegadas al pie, siempre alcanzables. */}
-      <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-4 py-3 backdrop-blur">
-        <p className="text-sm text-[var(--text-tertiary)]">
-          {faltantes.length > 0
-            ? `Falta: ${faltantes.map((f) => f.label).join(", ")}`
-            : "El documento sale con tu membrete; la firma va a mano."}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Btn variant="secondary" disabled={guardando} onClick={() => void guardar()}>
-            <Save className="h-4 w-4" />
-            {guardando ? "Guardando…" : idGuardado || existente ? "Guardar cambios" : "Guardar en expediente"}
-          </Btn>
-          <Btn variant="dark" disabled={faltantes.length > 0} onClick={imprimir}>
-            <FileDown className="h-4 w-4" />
-            Imprimir / PDF
-          </Btn>
-        </div>
+      <div className="sticky bottom-0 z-10 -mx-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur">
+        {barraAcciones}
       </div>
     </div>
   );

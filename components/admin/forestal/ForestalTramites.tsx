@@ -14,11 +14,12 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Building2, FileText, Inbox, Stamp, TreePine } from "@buleje/design-system/icons";
+import { AlertCircle, Building2, CalendarClock, FileText, Inbox, Stamp, TreePine } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import { useForestTramites } from "@/hooks/use-forest-tramites";
-import { formatoPorId } from "@/lib/forestal/tramites-catalogo";
+import { FORMATOS_TRAMITE, formatoPorId } from "@/lib/forestal/tramites-catalogo";
 import { tramitesSinRespuesta, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
+import { avisoPlazoRelacion, relacionesDelFormato } from "@/lib/forestal/tramites-relacion-guias";
 import type { CtpReportFicha } from "@/lib/forestal/ctp-print-shared";
 import TramiteFormulario, { type AutollenadoTramite } from "./TramiteFormulario";
 import TramitesCatalogo from "./TramitesCatalogo";
@@ -94,6 +95,22 @@ export default function ForestalTramites() {
   const esperando = useMemo(() => tramitesSinRespuesta(tramites, new Date()), [tramites]);
   const fichaFloja = !auto.ficha?.razonSocial || !auto.ficha?.ruc;
 
+  /**
+   * Plazo vencido (ADR-364 ronda 4): formatos con correlativo se presentan
+   * período tras período — si pasaron 15+ días desde que terminó el último
+   * período declarado sin uno nuevo, avisa acá arriba, ANTES de que el
+   * operador tenga que abrir el formato para descubrirlo.
+   */
+  const avisosPlazo = useMemo(() => {
+    const hoy = new Date();
+    return FORMATOS_TRAMITE.filter((f) => f.correlativo)
+      .map((f) => {
+        const aviso = avisoPlazoRelacion(relacionesDelFormato(tramites, f.id), hoy);
+        return aviso ? { formato: f, aviso } : null;
+      })
+      .filter((x): x is { formato: (typeof FORMATOS_TRAMITE)[number]; aviso: NonNullable<ReturnType<typeof avisoPlazoRelacion>> } => x !== null);
+  }, [tramites]);
+
   const abrirFormato = useCallback((id: string) => {
     setFormatoId(id);
     setEditando(null);
@@ -142,6 +159,23 @@ export default function ForestalTramites() {
         </p>
       )}
 
+      {/* Plazo vencido (ADR-364 ronda 4): el siguiente tramo de un formato con
+          correlativo quedó sin declarar hace 15+ días. */}
+      {vista === "catalogo" && !formato && avisosPlazo.map(({ formato: f, aviso }) => (
+        <button
+          key={f.id}
+          type="button"
+          onClick={() => abrirFormato(f.id)}
+          className="flex w-full items-start gap-3 rounded-2xl border-2 border-[var(--data-warning-500)]/50 bg-[var(--data-warning-50)] p-4 text-left text-sm text-[var(--data-warning-700)] transition-colors hover:border-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
+        >
+          <CalendarClock className="mt-0.5 h-5 w-5 shrink-0" />
+          <span>
+            <strong>{f.nombre}</strong>: la última {aviso.numeroDocumento ? `(N° ${aviso.numeroDocumento}) ` : ""}
+            cubrió hasta el {aviso.periodoHasta} — pasaron {aviso.dias} días sin declarar el siguiente tramo. Tocá para abrirlo.
+          </span>
+        </button>
+      ))}
+
       {vista === "catalogo" && !formato && (
         <TramitesCatalogo tramites={tramites} onElegir={abrirFormato} onAbrirPlantaciones={() => setVista("plantaciones")} />
       )}
@@ -151,6 +185,7 @@ export default function ForestalTramites() {
           formato={formato}
           auto={auto}
           existente={editando}
+          tramites={tramites}
           onGuardar={guardar}
           onCerrar={() => {
             setFormatoId(null);

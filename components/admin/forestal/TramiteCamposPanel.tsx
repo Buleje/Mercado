@@ -1,0 +1,271 @@
+"use client";
+
+/**
+ * TramiteCamposPanel — los campos del trámite (grupos + guías + seguimiento),
+ * extraído de `TramiteFormulario` (ADR-364 ronda 5, Brandon 2026-08-20:
+ * "quiero poder editar en la misma página que veo el documento"). Se usa DOS
+ * veces — en la columna del formulario y dentro de `TramiteDocumentoModal` —
+ * pero NUNCA montado dos veces a la vez (`TramiteFormulario` decide cuál de
+ * las dos lo muestra): `TramiteRelacionGuias` siembra su estado desde `value`
+ * una sola vez al montar, así que dos copias vivas a la vez divergirían en
+ * cuanto se edite una — ver `TramiteFormulario` para el guard.
+ *
+ * Sin estado propio: todo (`datos`, `estado`, `expediente`…) vive en el padre.
+ */
+
+import { useRef, type Dispatch, type SetStateAction } from "react";
+import { ImageIcon } from "@buleje/design-system/icons";
+import { ESTADOS_TRAMITE, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
+import type { DatosTramite, FormatoTramite } from "@/lib/forestal/tramites-catalogo";
+import type { GtfDuplicada } from "@/lib/forestal/tramites-relacion-guias";
+import type { LogoTramite } from "@/lib/forestal/tramites-logo";
+import { Field, I } from "./ctp-shared";
+import TramiteEntidadPicker from "./TramiteEntidadPicker";
+import TramiteHistorialRelaciones from "./TramiteHistorialRelaciones";
+import TramiteRelacionGuias from "./TramiteRelacionGuias";
+
+/**
+ * Logo del membrete (ADR-364 ronda 6): botón-preview grande, igual patrón que
+ * `Anexo04Campos.ImagenGuardada` — una caja de 20px de alto no deja juzgar un
+ * logo. Vive acá (no en `tramites-logo.ts`, que es sólo lectura/escritura de
+ * localStorage) porque es puramente presentacional.
+ */
+function LogoMembrete({
+  logo,
+  onArchivo,
+  onQuitar,
+}: {
+  logo: LogoTramite | null;
+  onArchivo: (f?: File) => void;
+  onQuitar: () => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        ref={ref}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          onArchivo(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => ref.current?.click()}
+        title={logo ? "Cambiar logo" : "Subir logo"}
+        aria-label={logo ? "Cambiar logo del membrete" : "Subir logo del membrete"}
+        className={`flex h-11 w-16 items-center justify-center overflow-hidden rounded-xl border-2 bg-[var(--surface-raised)] p-1 transition ${logo ? "border-[var(--data-success-500)]/50" : "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
+      >
+        {logo ? (
+          // eslint-disable-next-line @next/next/no-img-element -- dataURL local, no pasa por el optimizador
+          <img src={logo.src} alt="Logo del membrete" className="max-h-full max-w-full object-contain" />
+        ) : (
+          <ImageIcon className="h-5 w-5" />
+        )}
+      </button>
+      <div className="flex flex-col gap-0.5">
+        <span className="text-xs font-bold text-[var(--text-primary)]">Logo del membrete</span>
+        <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+          <span>Va arriba de la hoja, al lado de la razón social</span>
+          {logo && (
+            <button type="button" onClick={onQuitar} className="font-bold underline hover:text-[var(--data-error-700)]">
+              Quitar
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Cabecera de cada bloque del formulario ("1 · A quién va", "2 · Qué se pide"…).
+ * Chip numerado (el orden en que se llena) + texto normal: la jerarquía se
+ * nota por PESO, no por mayúscula-espaciada (Brandon 2026-08-20).
+ */
+export function SeccionHeader({
+  numero,
+  titulo,
+  hint,
+  aside,
+}: {
+  numero: number;
+  titulo: string;
+  hint?: string;
+  aside?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b-2 border-[var(--rule-soft)] pb-3">
+      <div className="flex items-center gap-2.5">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-sm font-black text-[var(--accent-ink)] dark:text-[var(--accent)]">
+          {numero}
+        </span>
+        <div className="min-w-0">
+          <h4 className="text-base font-bold leading-tight text-[var(--text-primary)]">{titulo}</h4>
+          {hint && <p className="text-xs text-[var(--text-tertiary)]">{hint}</p>}
+        </div>
+      </div>
+      {aside}
+    </div>
+  );
+}
+
+export default function TramiteCamposPanel({
+  formato,
+  datos,
+  setDatos,
+  set,
+  gruposVisibles,
+  sugerenciaPeriodo,
+  relacionesFormato,
+  idActual,
+  duplicadosCruzados,
+  existente,
+  estado,
+  setEstado,
+  expediente,
+  setExpediente,
+  fechaPresentacion,
+  setFechaPresentacion,
+  notas,
+  setNotas,
+  logo,
+  onLogoArchivo,
+  onLogoQuitar,
+}: {
+  formato: FormatoTramite;
+  datos: DatosTramite;
+  setDatos: Dispatch<SetStateAction<DatosTramite>>;
+  set: (id: string, valor: string) => void;
+  gruposVisibles: { id: string; label: string; hint: string }[];
+  sugerenciaPeriodo: string | null;
+  relacionesFormato: TramiteRegistro[];
+  idActual: string | null;
+  duplicadosCruzados: GtfDuplicada[];
+  existente?: TramiteRegistro | null;
+  estado: string;
+  setEstado: (v: string) => void;
+  expediente: string;
+  setExpediente: (v: string) => void;
+  fechaPresentacion: string;
+  setFechaPresentacion: (v: string) => void;
+  notas: string;
+  setNotas: (v: string) => void;
+  /** Logo del membrete (ADR-364 ronda 6) — vive por tenant, no en `datos`. */
+  logo: LogoTramite | null;
+  onLogoArchivo: (f?: File) => void;
+  onLogoQuitar: () => void;
+}) {
+  const campoInput = (c: FormatoTramite["campos"][number]) =>
+    c.tipo === "textarea" ? (
+      <textarea
+        rows={3}
+        className={`${I} h-auto py-2`}
+        value={datos[c.id] ?? ""}
+        placeholder={c.placeholder}
+        onChange={(e) => set(c.id, e.target.value)}
+      />
+    ) : (
+      <input
+        type={c.tipo === "numero" ? "number" : c.tipo === "fecha" ? "date" : "text"}
+        className={I}
+        value={datos[c.id] ?? ""}
+        placeholder={c.placeholder}
+        onChange={(e) => set(c.id, e.target.value)}
+      />
+    );
+
+  return (
+    <div className="space-y-4">
+      {gruposVisibles.map((g, i) => {
+        const campos = formato.campos.filter((c) => (c.grupo ?? "datos") === g.id);
+        const tieneEntidad = campos.some((c) => c.id === "entidadNombre");
+        return (
+          <section key={g.id} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+            <SeccionHeader
+              numero={i + 1}
+              titulo={g.label}
+              hint={g.hint}
+              aside={
+                tieneEntidad ? (
+                  <TramiteEntidadPicker
+                    onElegir={(e) =>
+                      setDatos((p) => ({ ...p, entidadNombre: e.nombre, entidadRuc: e.ruc, entidadRepresentante: e.representante }))
+                    }
+                  />
+                ) : undefined
+              }
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              {campos.map((c) => (
+                <Field
+                  key={c.id}
+                  label={c.label}
+                  required={c.requerido}
+                  hint={
+                    // Continuidad de período (ADR-364 ronda 4): sólo se
+                    // muestra si el campo todavía está vacío.
+                    c.id === "periodoDesde" && sugerenciaPeriodo && !datos.periodoDesde?.trim()
+                      ? `Sugerido: ${sugerenciaPeriodo} (día siguiente a tu última relación presentada)`
+                      : c.hint
+                  }
+                >
+                  {campoInput(c)}
+                </Field>
+              ))}
+            </div>
+            {g.id === "firma" && (
+              <div className="mt-4 border-t-2 border-[var(--rule-soft)] pt-4">
+                <LogoMembrete logo={logo} onArchivo={onLogoArchivo} onQuitar={onLogoQuitar} />
+              </div>
+            )}
+          </section>
+        );
+      })}
+
+      {formato.correlativo && <TramiteHistorialRelaciones relaciones={relacionesFormato} idActual={idActual} />}
+
+      {formato.tablaGuias && (
+        <TramiteRelacionGuias
+          key={existente?.id ?? formato.id}
+          numero={gruposVisibles.length + 1}
+          value={datos.guiasJson ?? ""}
+          onChange={(json) => set("guiasJson", json)}
+          periodoDesde={datos.periodoDesde}
+          periodoHasta={datos.periodoHasta}
+          duplicadosCruzados={duplicadosCruzados}
+        />
+      )}
+
+      {/* Seguimiento: lo que convierte un papel en expediente. */}
+      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+        <SeccionHeader
+          numero={gruposVisibles.length + (formato.tablaGuias ? 2 : 1)}
+          titulo="Seguimiento"
+          hint="Para saber después qué pasó con este trámite"
+        />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Field label="Estado">
+            <select className={I} value={estado} onChange={(e) => setEstado(e.target.value)}>
+              {ESTADOS_TRAMITE.map((e) => (
+                <option key={e.key} value={e.key}>{e.label}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Expediente de la autoridad" hint="El número con el que se pregunta después">
+            <input type="text" className={I} value={expediente} onChange={(e) => setExpediente(e.target.value)} />
+          </Field>
+          <Field label="Fecha de presentación" hint="Sin fecha no se puede contar el plazo">
+            <input type="date" className={I} value={fechaPresentacion} onChange={(e) => setFechaPresentacion(e.target.value)} />
+          </Field>
+          <Field label="Notas internas">
+            <input type="text" className={I} value={notas} onChange={(e) => setNotas(e.target.value)} />
+          </Field>
+        </div>
+      </section>
+    </div>
+  );
+}

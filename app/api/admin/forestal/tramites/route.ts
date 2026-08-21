@@ -35,8 +35,11 @@ const saveSchema = z.object({
   autoridad: autoridadEnum,
   asunto: z.string().trim().max(300).optional(),
   // Los valores del formulario: claves cortas, textos acotados. El tope real lo
-  // vuelve a aplicar `construirTramite` (el KV es un JSON compartido).
-  datos: z.record(z.string().trim().max(60), z.string().max(4000)).optional(),
+  // vuelve a aplicar `construirTramite` (el KV es un JSON compartido). 20 000 —
+  // no 4 000 — porque `guiasJson` (ADR-364, relación de guías + trozas) es un
+  // array serializado: el mismo tope que `tramites-registro.ts`, o esta validación
+  // rechaza en silencio lo que el otro lado sí aceptaría.
+  datos: z.record(z.string().trim().max(60), z.string().max(20_000)).optional(),
   estado: estadoEnum.optional(),
   expedienteAutoridad: z.string().trim().max(80).nullish(),
   fechaPresentacion: fechaSolo.nullish(),

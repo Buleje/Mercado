@@ -48,11 +48,18 @@ export const ForestTramitesDB = {
 
     const list = await this.list(tenantId);
     const existente = input.id ? list.find((t) => t.id === input.id) : undefined;
-    const registro = construirTramite({
-      ...input,
-      createdAt: existente?.createdAt,
-      createdBy: existente?.createdBy ?? user,
-    });
+    const registro = construirTramite(
+      {
+        ...input,
+        createdAt: existente?.createdAt,
+        createdBy: existente?.createdBy ?? user,
+        // El cliente nunca manda numeroDocumento — se preserva del registro
+        // existente (si ya tenía uno asignado) para que `construirTramite`
+        // sepa que NO tiene que sacar un correlativo nuevo.
+        numeroDocumento: existente?.numeroDocumento,
+      },
+      list,
+    );
 
     const next = existente
       ? list.map((t) => (t.id === registro.id ? registro : t))

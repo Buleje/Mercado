@@ -179,8 +179,8 @@ describe("expediente", () => {
   });
 
   it("acota los datos del formulario (el KV es un JSON compartido)", () => {
-    const t = construirTramite({ ...base, datos: { campo: "x".repeat(9000) } });
-    expect(t.datos.campo.length).toBe(4000);
+    const t = construirTramite({ ...base, datos: { campo: "x".repeat(25_000) } });
+    expect(t.datos.campo.length).toBe(20_000);
   });
 
   it("genera un id estable y legible desde el formato", () => {
@@ -188,6 +188,48 @@ describe("expediente", () => {
     expect(t.id).toMatch(/^tra-visado-talonario-gtf-\d+$/);
     // Mismo input ⇒ mismo id: el registro es reproducible.
     expect(construirTramite(base).id).toBe(t.id);
+  });
+});
+
+describe("correlativo (numeroDocumento, ADR-364 ronda 3)", () => {
+  const base = { formatoId: "relacion-guias-serfor", autoridad: "serfor" as const, ahora: "2026-08-20T10:00:00.000Z" };
+
+  it("un formato sin `correlativo: true` nunca asigna número", () => {
+    const t = construirTramite({ formatoId: "visado-talonario-gtf", autoridad: "arffs", estado: "presentado", ahora: base.ahora });
+    expect(t.numeroDocumento).toBeNull();
+  });
+
+  it("un borrador no recibe número (se asigna recién al presentar)", () => {
+    const t = construirTramite(base);
+    expect(t.numeroDocumento).toBeNull();
+  });
+
+  it("el primer presentado del año saca 001-2026", () => {
+    const t = construirTramite({ ...base, estado: "presentado" });
+    expect(t.numeroDocumento).toBe("001-2026");
+  });
+
+  it("el siguiente continúa el correlativo, ignorando otros formatos y borradores", () => {
+    const existentes = [
+      construirTramite({ ...base, id: "a", estado: "presentado" }),
+      construirTramite({ formatoId: "visado-talonario-gtf", autoridad: "arffs", estado: "presentado", ahora: base.ahora, id: "b" }),
+      construirTramite({ ...base, id: "c", estado: "borrador" }),
+    ];
+    const t = construirTramite({ ...base, estado: "presentado" }, existentes);
+    expect(t.numeroDocumento).toBe("002-2026");
+  });
+
+  it("un número YA asignado nunca se reasigna, ni volviendo a presentado", () => {
+    const existentes = [construirTramite({ ...base, id: "a", estado: "presentado" })];
+    // El caller (ForestTramitesDB.save) preserva numeroDocumento del existente.
+    const t = construirTramite({ ...base, id: "a", estado: "presentado", numeroDocumento: existentes[0].numeroDocumento }, existentes);
+    expect(t.numeroDocumento).toBe(existentes[0].numeroDocumento);
+  });
+
+  it("el correlativo se resetea en un año distinto", () => {
+    const existentes = [construirTramite({ ...base, id: "a", estado: "presentado" })]; // 001-2026
+    const t = construirTramite({ ...base, estado: "presentado", ahora: "2027-01-05T00:00:00.000Z" }, existentes);
+    expect(t.numeroDocumento).toBe("001-2027");
   });
 });
 

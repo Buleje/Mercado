@@ -8,7 +8,7 @@
  * PURO: sin Prisma ni fetch — se testea sin DB.
  */
 
-import type { AutoridadTramite, DatosTramite } from "./tramites-catalogo";
+import { formatoPorId, type AutoridadTramite, type DatosTramite } from "./tramites-catalogo";
 
 /**
  * El ciclo real de un trámite en mesa de partes:
@@ -42,6 +42,13 @@ export interface TramiteRegistro {
   /** Cuándo respondió la autoridad. */
   fechaRespuesta: string | null;
   notas: string | null;
+  /**
+   * N° de documento propio, correlativo por año ("001-2026") — sólo en
+   * formatos con `correlativo: true` (ADR-364 ronda 3). `null` hasta que el
+   * trámite pasa a "Presentado" por primera vez; una vez asignado NUNCA se
+   * reasigna, ni siquiera si el trámite vuelve a "Borrador".
+   */
+  numeroDocumento: string | null;
   createdAt: string;
   createdBy: string;
   updatedAt: string;
@@ -59,6 +66,9 @@ export interface TramiteInput {
   fechaPresentacion?: string | null;
   fechaRespuesta?: string | null;
   notas?: string | null;
+  /** Preservado por el caller (`ForestTramitesDB.save`) desde el registro
+   *  existente — el cliente nunca lo manda, `construirTramite` lo asigna solo. */
+  numeroDocumento?: string | null;
   createdAt?: string;
   createdBy?: string;
   /** El ahora, inyectado: así el registro es determinista en los tests. */
@@ -85,9 +95,31 @@ const fechaSolo = (v: unknown): string | null => {
 
 const ESTADOS = new Set(ESTADOS_TRAMITE.map((e) => e.key));
 
-/** Los valores del formulario, acotados: es un JSON en KV, no un textarea infinito. */
+/**
+ * Siguiente correlativo del formato, para el AÑO de `hoy`: "NNN-YYYY", 3
+ * dígitos, se resetea cada año (un talonario real no arrastra la numeración
+ * de un año al otro). Mira sólo los `numeroDocumento` YA asignados de ese
+ * mismo formato — un trámite todavía sin número (borrador) no cuenta.
+ */
+function siguienteNumeroDocumento(existentes: TramiteRegistro[], formatoId: string, hoy: Date): string {
+  const sufijo = `-${hoy.getUTCFullYear()}`;
+  const usados = existentes
+    .filter((t) => t.formatoId === formatoId && t.numeroDocumento?.endsWith(sufijo))
+    .map((t) => Number(t.numeroDocumento!.slice(0, -sufijo.length)))
+    .filter((n) => Number.isFinite(n));
+  const siguiente = (usados.length ? Math.max(...usados) : 0) + 1;
+  return `${String(siguiente).padStart(3, "0")}${sufijo}`;
+}
+
+/**
+ * Los valores del formulario, acotados: es un JSON en KV, no un textarea
+ * infinito. `datos.guiasJson` (ADR-364, la relación de guías con su lista de
+ * trozas) es el campo más pesado: unas 60 guías con detalle de trozas rondan
+ * los 15-18 KB, así que el tope sube de 4 KB a 20 KB — sigue acotado, no es
+ * "cualquier cosa cabe".
+ */
 const MAX_CAMPOS = 40;
-const MAX_LARGO_CAMPO = 4000;
+const MAX_LARGO_CAMPO = 20_000;
 
 function limpiarDatos(datos: DatosTramite | undefined): DatosTramite {
   const out: DatosTramite = {};
@@ -120,21 +152,31 @@ function nuevoId(formatoId: string, ahora: string): string {
  * · un estado desconocido cae a `borrador`, nunca a "presentado" (no se declara
  *   presentado algo que quizá no salió de la oficina).
  */
-export function construirTramite(input: TramiteInput): TramiteRegistro {
+export function construirTramite(input: TramiteInput, existentes: TramiteRegistro[] = []): TramiteRegistro {
   const ahora = input.ahora ?? new Date().toISOString();
   const hoy = ahora.slice(0, 10);
   const estado: EstadoTramite = ESTADOS.has(input.estado as EstadoTramite)
     ? (input.estado as EstadoTramite)
     : "borrador";
+  const formatoId = texto(input.formatoId, 60);
 
   const yaSalio = estado === "presentado" || estado === "observado" || estado === "resuelto";
   const fechaPresentacion = fechaSolo(input.fechaPresentacion) ?? (yaSalio ? hoy : null);
   const fechaRespuesta = fechaSolo(input.fechaRespuesta) ?? (estado === "resuelto" ? hoy : null);
 
+  // El N° de documento se asigna UNA sola vez, al primer "Presentado" — nunca
+  // se reasigna (`opcional(input.numeroDocumento,…)` trae el que ya tenía, el
+  // caller lo preserva desde el registro existente).
+  const numeroPrevio = opcional(input.numeroDocumento, 20);
+  const necesitaNumero = Boolean(formatoPorId(formatoId)?.correlativo) && yaSalio && !numeroPrevio;
+  const numeroDocumento = necesitaNumero
+    ? siguienteNumeroDocumento(existentes, formatoId, new Date(ahora))
+    : numeroPrevio;
+
   return {
-    id: texto(input.id, 80) || nuevoId(input.formatoId, ahora),
-    formatoId: texto(input.formatoId, 60),
-    formatoNombre: texto(input.formatoNombre, 120) || texto(input.formatoId, 120),
+    id: texto(input.id, 80) || nuevoId(formatoId, ahora),
+    formatoId,
+    formatoNombre: texto(input.formatoNombre, 120) || texto(formatoId, 120),
     autoridad: input.autoridad,
     asunto: texto(input.asunto, 300),
     datos: limpiarDatos(input.datos),
@@ -143,6 +185,7 @@ export function construirTramite(input: TramiteInput): TramiteRegistro {
     fechaPresentacion,
     fechaRespuesta,
     notas: opcional(input.notas, 2000),
+    numeroDocumento,
     createdAt: input.createdAt ?? ahora,
     createdBy: texto(input.createdBy, 80) || "unknown",
     updatedAt: ahora,
