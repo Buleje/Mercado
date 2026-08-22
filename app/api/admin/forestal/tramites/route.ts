@@ -44,6 +44,7 @@ const saveSchema = z.object({
   expedienteAutoridad: z.string().trim().max(80).nullish(),
   fechaPresentacion: fechaSolo.nullish(),
   fechaRespuesta: fechaSolo.nullish(),
+  fechaLimite: fechaSolo.nullish(),
   notas: z.string().trim().max(2000).nullish(),
 });
 
@@ -112,6 +113,7 @@ export const POST = withApiHandler("forestal-tramites-post", async (req: NextReq
         expedienteAutoridad: parsed.data.expedienteAutoridad ?? undefined,
         fechaPresentacion: parsed.data.fechaPresentacion ?? undefined,
         fechaRespuesta: parsed.data.fechaRespuesta ?? undefined,
+        fechaLimite: parsed.data.fechaLimite ?? undefined,
         notas: parsed.data.notas ?? undefined,
       },
       auth.username ?? "unknown",

@@ -41,6 +41,18 @@ export interface TramiteRegistro {
   fechaPresentacion: string | null;
   /** Cuándo respondió la autoridad. */
   fechaRespuesta: string | null;
+  /**
+   * Fecha límite real para presentar ESTE trámite (date-only), cuando responde
+   * a una notificación con plazo propio (ej. descargo ante supervisión: el
+   * plazo corre desde `fechaNotificacion` del formato, no desde hoy).
+   *
+   * SIEMPRE la tipea el operador — el catálogo no inventa un número de días
+   * por formato (regla de honestidad legal del módulo, `tramites-catalogo.ts`):
+   * cada TUPA/norma sectorial cuenta distinto y el sistema no lo sabe. Lo que
+   * el sistema SÍ hace es avisar con anticipación una vez que el operador
+   * cargó la fecha real (`tramitesPorVencer`, T-3 por defecto).
+   */
+  fechaLimite: string | null;
   notas: string | null;
   /**
    * N° de documento propio, correlativo por año ("001-2026") — sólo en
@@ -65,6 +77,7 @@ export interface TramiteInput {
   expedienteAutoridad?: string | null;
   fechaPresentacion?: string | null;
   fechaRespuesta?: string | null;
+  fechaLimite?: string | null;
   notas?: string | null;
   /** Preservado por el caller (`ForestTramitesDB.save`) desde el registro
    *  existente — el cliente nunca lo manda, `construirTramite` lo asigna solo. */
@@ -184,6 +197,7 @@ export function construirTramite(input: TramiteInput, existentes: TramiteRegistr
     expedienteAutoridad: opcional(input.expedienteAutoridad, 80),
     fechaPresentacion,
     fechaRespuesta,
+    fechaLimite: fechaSolo(input.fechaLimite),
     notas: opcional(input.notas, 2000),
     numeroDocumento,
     createdAt: input.createdAt ?? ahora,
@@ -215,6 +229,38 @@ export function tramitesSinRespuesta(
     .filter((t) => t.estado === "presentado" || t.estado === "observado")
     .filter((t) => (diasDesdePresentacion(t, hoy) ?? 0) >= dias)
     .sort((a, b) => (a.fechaPresentacion ?? "").localeCompare(b.fechaPresentacion ?? ""));
+}
+
+/**
+ * Días que faltan hasta `fechaLimite` (negativo = ya venció). Ese límite lo
+ * carga el operador con la fecha real de SU caso (la que dice la notificación
+ * o su TUPA) — acá sólo se cuenta la resta, nunca se inventa el plazo.
+ */
+export function diasHastaLimite(t: TramiteRegistro, hoy: Date): number | null {
+  if (!t.fechaLimite) return null;
+  const d = new Date(`${t.fechaLimite}T00:00:00.000Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  const hoyUtc = Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate());
+  return Math.floor((d.getTime() - hoyUtc) / 86_400_000);
+}
+
+/**
+ * Los que vencen pronto o ya vencieron: el aviso que tiene que llegar ANTES
+ * del plazo, no 15 días después (a diferencia de `tramitesSinRespuesta`, que
+ * mira hacia atrás desde que se presentó). Sólo entran los que siguen vivos
+ * (ni resueltos ni desistidos) — un trámite resuelto no "vence" más.
+ */
+export function tramitesPorVencer(
+  lista: TramiteRegistro[],
+  hoy: Date,
+  diasAntes = 3,
+): (TramiteRegistro & { diasRestantes: number })[] {
+  return lista
+    .filter((t) => t.estado !== "resuelto" && t.estado !== "desistido" && t.fechaLimite)
+    .map((t) => ({ t, dias: diasHastaLimite(t, hoy) }))
+    .filter((x): x is { t: TramiteRegistro; dias: number } => x.dias !== null && x.dias <= diasAntes)
+    .sort((a, b) => a.dias - b.dias)
+    .map(({ t, dias }) => ({ ...t, diasRestantes: dias }));
 }
 
 /** Conteo por estado para los chips de la bandeja. */

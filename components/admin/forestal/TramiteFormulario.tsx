@@ -140,6 +140,7 @@ export default function TramiteFormulario({
   const [estado, setEstado] = useState<string>(existente?.estado ?? "borrador");
   const [expediente, setExpediente] = useState(existente?.expedienteAutoridad ?? "");
   const [fechaPresentacion, setFechaPresentacion] = useState(existente?.fechaPresentacion ?? "");
+  const [fechaLimite, setFechaLimite] = useState(existente?.fechaLimite ?? "");
   const [notas, setNotas] = useState(existente?.notas ?? "");
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -209,6 +210,17 @@ export default function TramiteFormulario({
     () => formato.campos.filter((c) => c.autollenado && (datos[c.id] ?? "").trim()).length,
     [formato, datos],
   );
+  /** Cuenta regresiva de la fecha límite (si el operador la cargó) — el aviso
+   *  T-3 vive en el shell (`ForestalTramites`), esto es sólo el chip visible
+   *  mientras se está EDITANDO este trámite puntual. */
+  const diasHastaLimite = useMemo(() => {
+    if (!fechaLimite.trim() || estado === "resuelto" || estado === "desistido") return null;
+    const d = new Date(`${fechaLimite}T00:00:00.000Z`);
+    if (Number.isNaN(d.getTime())) return null;
+    const hoy = new Date();
+    const hoyUtc = Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate());
+    return Math.floor((d.getTime() - hoyUtc) / 86_400_000);
+  }, [fechaLimite, estado]);
   // Sólo los grupos que este formato realmente usa, para numerar sin huecos
   // ("1, 2, 4" si un grupo no aplica se lee como que falta el 3).
   const gruposVisibles = useMemo(
@@ -308,6 +320,7 @@ export default function TramiteFormulario({
       estado,
       expedienteAutoridad: expediente.trim() || null,
       fechaPresentacion: fechaPresentacion.trim() || null,
+      fechaLimite: fechaLimite.trim() || null,
       notas: notas.trim() || null,
     });
     setGuardando(false);
@@ -315,6 +328,7 @@ export default function TramiteFormulario({
       setIdGuardado(guardado.id);
       setEstado(guardado.estado);
       setFechaPresentacion(guardado.fechaPresentacion ?? "");
+      setFechaLimite(guardado.fechaLimite ?? "");
       const numeroNuevo = !numeroDocumento && guardado.numeroDocumento;
       setNumeroDocumento(guardado.numeroDocumento);
       setAviso(
@@ -350,6 +364,8 @@ export default function TramiteFormulario({
       setExpediente={setExpediente}
       fechaPresentacion={fechaPresentacion}
       setFechaPresentacion={setFechaPresentacion}
+      fechaLimite={fechaLimite}
+      setFechaLimite={setFechaLimite}
       notas={notas}
       setNotas={setNotas}
       logo={logo}
@@ -409,10 +425,30 @@ export default function TramiteFormulario({
                     N° {numeroDocumento}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--rule-base)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]" title="Se asigna solo al guardar con estado Presentado">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--rule-base)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]" title="Se asigna solo al guardar con estado Presentado">
                     Sin N° — se asigna al presentar
                   </span>
                 )
+              )}
+              {/* Cuenta regresiva de la fecha límite que cargó el operador —
+                  el sistema no inventa el plazo, sólo cuenta lo que ya le
+                  dijeron (ADR próximo: plazos por trámite). */}
+              {diasHastaLimite !== null && (
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-black ${
+                    diasHastaLimite < 0
+                      ? "bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                      : diasHastaLimite <= 3
+                        ? "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                        : "bg-[var(--surface-raised)]/80 text-[var(--text-secondary)]"
+                  }`}
+                >
+                  {diasHastaLimite < 0
+                    ? `Venció hace ${Math.abs(diasHastaLimite)} ${Math.abs(diasHastaLimite) === 1 ? "día" : "días"}`
+                    : diasHastaLimite === 0
+                      ? "Vence hoy"
+                      : `Vence en ${diasHastaLimite} ${diasHastaLimite === 1 ? "día" : "días"}`}
+                </span>
               )}
             </div>
             <h3 className="font-display mt-2 text-2xl leading-tight text-[var(--text-primary)]">{formato.nombre}</h3>
@@ -442,7 +478,7 @@ export default function TramiteFormulario({
             )}
           </p>
           {autollenados > 0 && (
-            <p className="text-xs text-[var(--text-tertiary)]">
+            <p className="text-xs text-[var(--text-secondary)]">
               {autollenados} {autollenados === 1 ? "campo llenado" : "campos llenados"} con tus datos del Libro
             </p>
           )}

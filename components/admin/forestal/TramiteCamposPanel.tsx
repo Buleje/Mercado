@@ -130,6 +130,8 @@ export default function TramiteCamposPanel({
   setExpediente,
   fechaPresentacion,
   setFechaPresentacion,
+  fechaLimite,
+  setFechaLimite,
   notas,
   setNotas,
   logo,
@@ -152,6 +154,8 @@ export default function TramiteCamposPanel({
   setExpediente: (v: string) => void;
   fechaPresentacion: string;
   setFechaPresentacion: (v: string) => void;
+  fechaLimite: string;
+  setFechaLimite: (v: string) => void;
   notas: string;
   setNotas: (v: string) => void;
   /** Logo del membrete (ADR-364 ronda 6) — vive por tenant, no en `datos`. */
@@ -260,6 +264,12 @@ export default function TramiteCamposPanel({
           </Field>
           <Field label="Fecha de presentación" hint="Sin fecha no se puede contar el plazo">
             <input type="date" className={I} value={fechaPresentacion} onChange={(e) => setFechaPresentacion(e.target.value)} />
+          </Field>
+          <Field
+            label="Fecha límite para responder"
+            hint="Sólo si ESTE trámite responde a una notificación con plazo (ej. descargo). Poné la fecha real de tu caso — el sistema no la inventa — y avisa 3 días antes"
+          >
+            <input type="date" className={I} value={fechaLimite} onChange={(e) => setFechaLimite(e.target.value)} />
           </Field>
           <Field label="Notas internas">
             <input type="text" className={I} value={notas} onChange={(e) => setNotas(e.target.value)} />

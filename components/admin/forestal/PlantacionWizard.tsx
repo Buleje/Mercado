@@ -14,7 +14,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, AlertTriangle, ArrowLeft, Check, CheckCircle2, Circle, Loader2 } from "@buleje/design-system/icons";
-import { PageTitle } from "@buleje/design-system";
 import { useForestPlantaciones } from "@/hooks/use-forest-plantaciones";
 import { ESTADOS_PLANTACION } from "@/lib/forestal/plantacion-catalogo";
 import {
@@ -179,10 +178,26 @@ export default function PlantacionWizard({
         className="relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] p-5"
         style={{ background: "linear-gradient(135deg, var(--accent-soft) 0%, var(--surface-raised) 60%)" }}
       >
+        {/* Mismo patrón que la cabecera de `TramiteFormulario` (vista Formatos):
+            chip de identidad + N°/código, título editorial, botón de volver —
+            para que ir y volver entre las dos pantallas de detalle del módulo
+            no se sienta como cambiar de sistema. */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <PageTitle as="h2" className="text-xl sm:text-2xl">Registro Nacional de Plantaciones Forestales</PageTitle>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">Inscripción / Actualización de Plantación Forestal</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[var(--surface-raised)]/80 px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                RNPF · SERFOR
+              </span>
+              {registro && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[length:var(--ts-2xs)] font-black text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                  {registro.codigoInterno}
+                </span>
+              )}
+            </div>
+            <h3 className="font-display mt-2 text-2xl leading-tight text-[var(--text-primary)]">Registro de Plantación Forestal</h3>
+            <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
+              {datos.tipoTramite === "actualizacion" ? "Actualización" : "Inscripción"} ante SERFOR — titular, predio, bloques y especies, hasta el Formato N°01.
+            </p>
           </div>
           <Btn variant="secondary" onClick={onCerrar}>
             <ArrowLeft className="h-4 w-4" />
@@ -231,8 +246,8 @@ export default function PlantacionWizard({
         </div>
 
         {registro && (
-          <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-            Código interno: <span className="font-mono font-bold text-[var(--text-secondary)]">{registro.codigoInterno}</span> — uso administrativo interno, no es el código oficial SERFOR.
+          <p className="mt-3 text-xs text-[var(--text-secondary)]">
+            El código de arriba es de <span className="font-bold text-[var(--text-primary)]">uso administrativo interno</span> — no es el código oficial que asigna SERFOR al inscribir.
           </p>
         )}
 
@@ -247,7 +262,7 @@ export default function PlantacionWizard({
           {resumen.areaBloquesHa.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha | {resumen.numBloques} bloques | {resumen.numEspecies} especies | {resumen.totalPlantas.toLocaleString("es-PE")} plantas
         </p>
 
-        <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-[var(--text-tertiary)]">
+        <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
           {soloLectura ? (
             "Modo solo lectura"
           ) : estadoGuardado === "guardando" ? (

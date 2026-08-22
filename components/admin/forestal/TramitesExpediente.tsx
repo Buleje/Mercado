@@ -20,6 +20,7 @@ import { AUTORIDADES, type AutoridadTramite } from "@/lib/forestal/tramites-cata
 import {
   contarPorEstado,
   diasDesdePresentacion,
+  diasHastaLimite,
   ESTADOS_TRAMITE,
   tramitesSinRespuesta,
   type EstadoTramite,
@@ -159,6 +160,7 @@ export default function TramitesExpediente({
             const dias = diasDesdePresentacion(t, hoy);
             const s = sello(t.fechaPresentacion);
             const atrasado = (t.estado === "presentado" || t.estado === "observado") && (dias ?? 0) >= 15;
+            const limite = t.estado !== "resuelto" && t.estado !== "desistido" ? diasHastaLimite(t, hoy) : null;
             return (
               <motion.li
                 key={t.id}
@@ -183,6 +185,24 @@ export default function TramitesExpediente({
                     {atrasado && (
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                         <Clock className="h-3.5 w-3.5" /> {dias} días sin respuesta
+                      </span>
+                    )}
+                    {limite !== null && (
+                      <span
+                        className={`inline-flex items-center gap-1 text-xs font-bold ${
+                          limite < 0
+                            ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                            : limite <= 3
+                              ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                              : "text-[var(--text-tertiary)]"
+                        }`}
+                      >
+                        <Clock className="h-3.5 w-3.5" />
+                        {limite < 0
+                          ? `Venció hace ${Math.abs(limite)} ${Math.abs(limite) === 1 ? "día" : "días"}`
+                          : limite === 0
+                            ? "Vence hoy"
+                            : `Vence en ${limite} ${limite === 1 ? "día" : "días"}`}
                       </span>
                     )}
                   </div>

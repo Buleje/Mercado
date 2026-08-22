@@ -30,6 +30,7 @@ export interface GuardarTramiteInput {
   expedienteAutoridad?: string | null;
   fechaPresentacion?: string | null;
   fechaRespuesta?: string | null;
+  fechaLimite?: string | null;
   notas?: string | null;
 }
 

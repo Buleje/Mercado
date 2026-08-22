@@ -17,8 +17,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Building2, CalendarClock, FileText, Inbox, Stamp, TreePine } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import { useForestTramites } from "@/hooks/use-forest-tramites";
+import { useForestPlantaciones } from "@/hooks/use-forest-plantaciones";
 import { FORMATOS_TRAMITE, formatoPorId } from "@/lib/forestal/tramites-catalogo";
-import { tramitesSinRespuesta, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
+import { tramitesPorVencer, tramitesSinRespuesta, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
 import { avisoPlazoRelacion, relacionesDelFormato } from "@/lib/forestal/tramites-relacion-guias";
 import type { CtpReportFicha } from "@/lib/forestal/ctp-print-shared";
 import TramiteFormulario, { type AutollenadoTramite } from "./TramiteFormulario";
@@ -47,6 +48,16 @@ export default function ForestalTramites() {
   const [editando, setEditando] = useState<TramiteRegistro | null>(null);
   const [auto, setAuto] = useState<AutollenadoTramite>({ ficha: null });
   const { tramites, cargando, error, setError, recargar, guardar, borrar } = useForestTramites();
+  /** Sólo para el aviso "listo para presentar" — Plantaciones tiene su propio
+   *  motor (ADR-380, ficha estructurada, no un `FormatoTramite`) y no vive en
+   *  `tramites`; acá se lee aparte para no dejarlo huérfano fuera de esa vista. */
+  const { listado: plantaciones, recargar: recargarPlantaciones } = useForestPlantaciones();
+  /** Sin esto el aviso queda con la foto de cuando montó el shell: volver de
+   *  Plantaciones tras marcar "listo para presentar" no lo mostraba hasta
+   *  recargar la página entera (probado en vivo, no a ojo). */
+  useEffect(() => {
+    if (vista === "catalogo") void recargarPlantaciones();
+  }, [vista, recargarPlantaciones]);
 
   /**
    * Autollenado: la Ficha CTP es el membrete y el Libro tiene el resto (la serie
@@ -93,6 +104,23 @@ export default function ForestalTramites() {
 
   const formato = formatoId ? formatoPorId(formatoId) : null;
   const esperando = useMemo(() => tramitesSinRespuesta(tramites, new Date()), [tramites]);
+  /**
+   * Vencen pronto o ya vencieron (T-3 por defecto) — mira la fecha límite que
+   * el OPERADOR cargó por trámite, no un aviso genérico de 15 días para todo.
+   * Arriba del catálogo, como los demás avisos: antes de que haga falta abrir
+   * el expediente para descubrirlo.
+   */
+  const porVencer = useMemo(() => tramitesPorVencer(tramites, new Date()), [tramites]);
+  /**
+   * Plantaciones "listo para presentar" que nadie tocó desde ahí (ALTO
+   * IMPACTO #3 de la priorización 2026-08-22): sin este aviso, un registro
+   * que ya está listo se queda huérfano hasta que alguien entra a la pestaña
+   * Plantaciones por su cuenta a revisar.
+   */
+  const plantacionesListas = useMemo(
+    () => plantaciones.filter((p) => p.estado === "listo_presentar"),
+    [plantaciones],
+  );
   const fichaFloja = !auto.ficha?.razonSocial || !auto.ficha?.ruc;
 
   /**
@@ -145,6 +173,52 @@ export default function ForestalTramites() {
             Cerrar
           </button>
         </div>
+      )}
+
+      {/* Vencen pronto o ya vencieron (T-3): el aviso que tiene que llegar ANTES
+          del plazo, no un genérico de 15 días para todo. Primero que el de la
+          Ficha CTP — un plazo legal pesa más que un membrete incompleto. */}
+      {vista === "catalogo" && !formato && porVencer.map((t) => (
+        <button
+          key={t.id}
+          type="button"
+          onClick={() => abrirExpediente(t)}
+          className={`flex w-full items-start gap-3 rounded-2xl border-2 p-4 text-left text-sm transition-colors ${
+            t.diasRestantes < 0
+              ? "border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] text-[var(--data-error-700)] hover:border-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"
+              : "border-[var(--data-warning-500)]/50 bg-[var(--data-warning-50)] text-[var(--data-warning-700)] hover:border-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
+          }`}
+        >
+          <CalendarClock className="mt-0.5 h-5 w-5 shrink-0" />
+          <span>
+            <strong>{t.formatoNombre}</strong>{t.expedienteAutoridad ? ` (${t.expedienteAutoridad})` : ""}:{" "}
+            {t.diasRestantes < 0
+              ? `venció hace ${Math.abs(t.diasRestantes)} ${Math.abs(t.diasRestantes) === 1 ? "día" : "días"}`
+              : t.diasRestantes === 0
+                ? "vence hoy"
+                : `vence en ${t.diasRestantes} ${t.diasRestantes === 1 ? "día" : "días"}`}
+            . Tocá para abrirlo.
+          </span>
+        </button>
+      ))}
+
+      {/* Plantaciones "listo para presentar" que se quedaron huérfanas fuera de
+          su pestaña (Plantaciones es un motor aparte, ADR-380 — no entra en
+          `tramites`, así que necesita su propio aviso acá arriba). */}
+      {vista === "catalogo" && !formato && plantacionesListas.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setVista("plantaciones")}
+          className="flex w-full items-start gap-3 rounded-2xl border-2 border-[var(--data-success-500)]/50 bg-[var(--data-success-50)] p-4 text-left text-sm text-[var(--data-success-700)] transition-colors hover:border-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]"
+        >
+          <TreePine className="mt-0.5 h-5 w-5 shrink-0" />
+          <span>
+            {plantacionesListas.length === 1
+              ? <><strong>{plantacionesListas[0].codigoInterno}</strong> está lista para presentar ante SERFOR</>
+              : <><strong>{plantacionesListas.length} registros de plantación</strong> están listos para presentar ante SERFOR</>}
+            . Tocá para abrir Plantaciones.
+          </span>
+        </button>
       )}
 
       {/* Sin membrete la autoridad observa el documento: se avisa una vez, arriba
