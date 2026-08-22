@@ -511,20 +511,28 @@ export const LoyaltyDB = {
   },
   /** Redeem points (returns false if insufficient) */
   async redeemPoints(tenantId: string, phone: string, points: number) {
+    if (points <= 0) return false;
     const normalized = normalizePhone(phone);
-    // TD-116: check + decremento en UNA tx RLS (cierra doble-canje concurrente).
+    // FIX 2026-08-22: el `findFirst` + `updateMany` con el valor calculado
+    // (`c.loyaltyPoints - points`) tenía una carrera real bajo READ COMMITTED
+    // sin lock de fila — dos canjes concurrentes del mismo teléfono (doble
+    // clic en caja, o dos terminales POS con el mismo cliente) podían leer el
+    // MISMO saldo antes de que ninguno commitee, los dos pasar el check, y el
+    // segundo pisar el saldo dejándolo negativo. Ahora la condición de saldo
+    // vive en el WHERE del propio UPDATE (Prisma lo traduce a un solo
+    // statement atómico: `SET points = points - $1 WHERE ... AND points >=
+    // $1`) — el segundo canje concurrente pierde la carrera con `count: 0` en
+    // vez de escribir un saldo inválido. Mismo patrón que `loyalty.db.ts`
+    // (ahí con SQL crudo; acá alcanza con Prisma nativo).
     const ok = await withRlsTx(tenantId, async (tx) => {
-      const c = await tx.customer.findFirst({ where: { phone: normalized, tenantId } });
-      if (!c || c.loyaltyPoints < points) return false;
-      await tx.customer.updateMany({
-        where: { phone: normalized, tenantId },
-        data: { loyaltyPoints: c.loyaltyPoints - points },
+      const result = await tx.customer.updateMany({
+        where: { phone: normalized, tenantId, loyaltyPoints: { gte: points } },
+        data: { loyaltyPoints: { decrement: points } },
       });
-      if (points > 0) {
-        await tx.loyaltyTransaction.create({
-          data: { customerId: normalized, tenantId, amount: -points, reason: "redemption" },
-        });
-      }
+      if (result.count === 0) return false;
+      await tx.loyaltyTransaction.create({
+        data: { customerId: normalized, tenantId, amount: -points, reason: "redemption" },
+      });
       return true;
     });
     if (ok) invalidateByPrefix(loyaltyCachePrefix(tenantId, normalized));
