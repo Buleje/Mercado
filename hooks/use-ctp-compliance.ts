@@ -12,6 +12,7 @@ import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period"
 import { ctpComplianceScore, parseCitesPermiso, type CtpComplianceCounts } from "@/lib/forestal/ctp-compliance";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import { diasParaVencer, estadoVencimiento } from "@/lib/forestal/ctp-ficha-types";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 import type { WoodEntryStats } from "@/components/admin/forestal/ctp-shared";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { logger } from "@/lib/logger";
@@ -22,7 +23,18 @@ interface SaldosSummary {
   porEspecie: { especie: string; cites: boolean }[];
 }
 
-const norm = (x: string | null | undefined) => (x ?? "").trim().toLowerCase();
+/**
+ * FIX 2026-08-22: antes `(x ?? "").trim().toLowerCase()` — sin quitar tildes.
+ * El match CITES ya es por substring («tolerante a tipeo», ver más abajo) así
+ * que el paréntesis del científico no rompía nada (el permiso "Caoba
+ * (Swietenia macrophylla)" SÍ contiene "caoba"), pero un permiso cargado como
+ * "Ishpingo" contra un ingreso "Ishpíngo" (tilde de más/de menos, típico al
+ * tipear en dos formularios distintos) sí fallaba: ninguno es substring del
+ * otro con un carácter distinto. `claveEspecie` (misma fuente que LOTH) quita
+ * tildes además del paréntesis — sólo puede ACOTAR falsos "sin permiso", nunca
+ * ocultar un permiso que de verdad falta.
+ */
+const norm = claveEspecie;
 
 export interface CtpComplianceData {
   counts: CtpComplianceCounts;
