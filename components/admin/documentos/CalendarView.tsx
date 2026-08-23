@@ -17,7 +17,7 @@ const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 function urgencyClass(days: number): string {
   if (days < 0) return "bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/25 dark:text-[var(--data-error-500)] border-[var(--data-error-500)]/30";
   if (days <= 7) return "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/25 dark:text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30";
-  if (days <= 30) return "bg-amber-400/15 text-amber-700 dark:bg-amber-500/25 dark:text-amber-400 border-amber-400/30";
+  if (days <= 30) return "bg-[var(--data-warning-500)]/8 text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)] border-[var(--data-warning-500)]/15";
   return "bg-primary/12 text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/25 border-primary/25";
 }
 
@@ -144,7 +144,7 @@ export function CalendarView({ docs, onOpenDoc }: { docs: DbDocument[]; onOpenDo
       <div className="mt-4 flex flex-wrap items-center gap-3 text-[length:var(--ts-2xs,11px)] font-semibold text-[var(--text-tertiary)]">
         <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-500)]" /> Vencido</span>
         <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]" /> ≤ 7 días</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-amber-400" /> ≤ 30 días</span>
+        <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]/50" /> ≤ 30 días</span>
         <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-primary" /> Futuro</span>
         {noExpiryCount > 0 && <span className="ml-auto">{noExpiryCount} sin fecha de vencimiento</span>}
       </div>

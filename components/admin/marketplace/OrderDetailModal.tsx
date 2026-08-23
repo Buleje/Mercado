@@ -43,12 +43,12 @@ const STATUS_META: Record<
   string,
   { label: string; dot: string; chip: string; text: string }
 > = {
-  pendiente:  { label: "Pendiente",  dot: "bg-amber-500",   chip: "bg-amber-500/15 border-amber-500/30",   text: "text-amber-700 dark:text-amber-300" },
-  confirmado: { label: "Confirmado", dot: "bg-emerald-500", chip: "bg-emerald-500/15 border-emerald-500/30", text: "text-emerald-700 dark:text-emerald-300" },
-  preparando: { label: "Preparando", dot: "bg-violet-500",  chip: "bg-violet-500/15 border-violet-500/30",   text: "text-[var(--data-info)]" },
-  en_camino:  { label: "En camino",  dot: "bg-blue-500",    chip: "bg-blue-500/15 border-blue-500/30",       text: "text-blue-700 dark:text-blue-300" },
-  entregado:  { label: "Entregado",  dot: "bg-emerald-600", chip: "bg-emerald-500/15 border-emerald-500/30", text: "text-emerald-700 dark:text-emerald-300" },
-  cancelado:  { label: "Cancelado",  dot: "bg-rose-500",    chip: "bg-rose-500/15 border-rose-500/30",       text: "text-[var(--data-error)]" },
+  pendiente:  { label: "Pendiente",  dot: "bg-[var(--data-warning)]", chip: "bg-[var(--data-warning)]/15 border-[var(--data-warning)]/30", text: "text-[var(--data-warning)]" },
+  confirmado: { label: "Confirmado", dot: "bg-[var(--data-success)]", chip: "bg-[var(--data-success)]/15 border-[var(--data-success)]/30", text: "text-[var(--data-success)]" },
+  preparando: { label: "Preparando", dot: "bg-[var(--data-info)]",    chip: "bg-[var(--data-info)]/15 border-[var(--data-info)]/30",       text: "text-[var(--data-info)]" },
+  en_camino:  { label: "En camino",  dot: "bg-[var(--data-info)]",    chip: "bg-[var(--data-info)]/15 border-[var(--data-info)]/30",       text: "text-[var(--data-info)]" },
+  entregado:  { label: "Entregado",  dot: "bg-[var(--data-success)]", chip: "bg-[var(--data-success)]/15 border-[var(--data-success)]/30", text: "text-[var(--data-success)]" },
+  cancelado:  { label: "Cancelado",  dot: "bg-[var(--data-error)]",   chip: "bg-[var(--data-error)]/15 border-[var(--data-error)]/30",     text: "text-[var(--data-error)]" },
 };
 
 export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChangeStatus }: Props) {
@@ -290,13 +290,13 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
                       </span>
                     </div>
                     {order.discountAmount ? (
-                      <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
+                      <div className="flex justify-between text-sm text-[var(--data-success)]">
                         <span className="font-bold">Descuento</span>
                         <span className="font-bold tabular-nums">−{fmtCurrency(order.discountAmount)}</span>
                       </div>
                     ) : null}
                     {order.couponDiscount ? (
-                      <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
+                      <div className="flex justify-between text-sm text-[var(--data-success)]">
                         <span className="font-bold">Cupón</span>
                         <span className="font-bold tabular-nums">−{fmtCurrency(order.couponDiscount)}</span>
                       </div>
@@ -347,7 +347,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
                 <button
                   type="button"
                   onClick={() => onWhatsApp(order)}
-                  className="h-11 px-4 rounded-xl inline-flex items-center gap-2 bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 transition-colors"
+                  className="h-11 px-4 rounded-xl inline-flex items-center gap-2 bg-[var(--data-success)] text-white text-sm font-extrabold hover:opacity-90 transition-colors"
                 >
                   <MessageCircle className="h-4 w-4" />
                   WhatsApp

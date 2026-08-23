@@ -11,9 +11,9 @@ type Props = {
 
 function urgencyColor(stock: number | undefined): string {
   if (stock === undefined || stock === null) return "bg-gray-100 text-[var(--text-secondary)]";
-  if (stock <= 0) return "bg-red-100 text-[var(--data-error-700)] dark:bg-red-900/30 dark:text-red-400";
-  if (stock <= 2) return "bg-red-50 text-[var(--data-error-600)] dark:bg-red-900/20 dark:text-red-400";
-  return "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400";
+  if (stock <= 0) return "bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/25 dark:text-[var(--data-error-500)]";
+  if (stock <= 2) return "bg-[var(--data-error-500)]/8 text-[var(--data-error-600)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]";
+  return "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/20 dark:text-[var(--data-warning-500)]";
 }
 
 export function VendorLowStockList({ products }: Props) {

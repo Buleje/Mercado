@@ -334,8 +334,31 @@ const WHITELIST_PATTERNS: Array<{ file: RegExp; allowedRules: string[] }> = [
   // POSPaymentModal usa el morado de marca de Yape (text-purple-*) como
   // identificador del metodo de pago — NO es decorativo, es la convencion de
   // marca que el cajero reconoce de un vistazo (Yape=morado, Plin=cyan). Mismo
-  // criterio que AdminSidebar con colores categoriales.
-  { file: /admin[\\/]pos[\\/]POSPaymentModal\.tsx$/, allowedRules: ["no-decorative-text-color"] },
+  // criterio que AdminSidebar con colores categoriales. Tambien tiene el mapa
+  // de colores de billetes/monedas peruanos (S/200 indigo, S/100 verde, S/50
+  // violeta, S/20 naranja, S/10 celeste, S/5 amarillo, S/.50 ambar) — imitan
+  // el color real del billete/moneda a propósito, para que el cajero lo
+  // reconozca de un vistazo; forzarlos a tokens semánticos (success/warning/
+  // error/info) rompería ese mnemonico visual sin ganar nada.
+  { file: /admin[\\/]pos[\\/]POSPaymentModal\.tsx$/, allowedRules: ["no-decorative-text-color", "ds-no-decorative-color-admin"] },
+  // Colores por TIPO DE ARCHIVO (PDF=rojo/Adobe, Excel=verde, Word=azul,
+  // PowerPoint=naranja, zip=ambar, audio=esmeralda, video=violeta,
+  // imagen=rosa, correo=celeste) — imitan a propósito el color de marca real
+  // de cada extensión para que el usuario reconozca el tipo de archivo de un
+  // vistazo. NO son decorativos, son la convención categorial establecida en
+  // todo el hub de Documentos (mismo criterio que POSPaymentModal arriba).
+  { file: /admin[\\/]documentos[\\/]archivo-visual\.tsx$/, allowedRules: ["ds-no-decorative-color-admin"] },
+  { file: /admin[\\/]unified[\\/]DocumentosModule\.tsx$/, allowedRules: ["ds-no-decorative-color-admin"] },
+  { file: /admin[\\/]documentos[\\/]DocumentosModule\.tsx$/, allowedRules: ["ds-no-decorative-color-admin"] },
+  // ZONE_PALETTE: hash determinístico zona→color de avatar (6 paletas) para
+  // distinguir zonas de reparto de un vistazo — asignación categorial
+  // arbitraria, no un estado semántico (success/warning/error/info).
+  { file: /admin[\\/]delivery-partners[\\/]tabs[\\/]RepartidoresTab\.tsx$/, allowedRules: ["ds-no-decorative-color-admin"] },
+  // PRESETS de StampModal: paleta de "elegí el color de tu sello" (RECIBIDO,
+  // CONFIDENCIAL, BORRADOR, URGENTE, etc.) — 8 sellos necesitan 8 colores
+  // distinguibles, más de los 4 tokens semánticos disponibles. Es un color
+  // picker, no un badge de estado.
+  { file: /admin[\\/]documentos[\\/]StampModal\.tsx$/, allowedRules: ["ds-no-decorative-color-admin"] },
 ];
 
 function isAdminPath(file: string): boolean {

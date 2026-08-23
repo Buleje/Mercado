@@ -333,7 +333,7 @@ export default function DocumentosModule() {
           label="Espacio usado"
           value={formatBytes(totalSize)}
           icon={HardDrive}
-          tint="text-blue-500"
+          tint="text-[var(--data-info)]"
           progress={usagePct}
         />
         <StatBlock

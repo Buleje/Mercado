@@ -229,7 +229,7 @@ const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "assistant", label: "Asistente IA", icon: Sparkles, color: "text-[var(--accent)]" },
   { id: "favorites", label: "Favoritos", icon: Star, color: "text-amber-500" },
   { id: "recent", label: "Recientes", icon: Clock, color: "text-slate-500" },
-  { id: "expiring", label: "Por vencer", icon: AlarmClock, color: "text-red-500" },
+  { id: "expiring", label: "Por vencer", icon: AlarmClock, color: "text-[var(--data-warning)]" },
   { id: "calendar", label: "Calendario", icon: CalendarDays, color: "text-primary" },
   { id: "activity", label: "Actividad", icon: History, color: "text-[var(--accent)]" },
   { id: "enlaces", label: "Enlaces", icon: Link2, color: "text-[var(--accent)]" },
@@ -2806,7 +2806,7 @@ function DocCard({
         <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="h-7 w-7 rounded-full flex items-center justify-center bg-white/85 backdrop-blur-sm text-[var(--text-tertiary)] hover:text-primary" aria-label="Descargar">
           <Download className="h-3.5 w-3.5" />
         </button>
-        <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="h-7 w-7 rounded-full flex items-center justify-center bg-white/85 backdrop-blur-sm text-[var(--text-tertiary)] hover:text-red-500" aria-label="Eliminar">
+        <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="h-7 w-7 rounded-full flex items-center justify-center bg-white/85 backdrop-blur-sm text-[var(--text-tertiary)] hover:text-[var(--data-error)]" aria-label="Eliminar">
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>

@@ -214,7 +214,7 @@ export function UnifiedSupportInbox() {
                       "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full w-fit",
                       item.status === "resolved"
                         ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
-                        : "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400",
+                        : "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/25 dark:text-[var(--data-warning-500)]",
                     ].join(" ")}
                   >
                     {item.status === "resolved" ? "Resuelto" : "Pendiente"}

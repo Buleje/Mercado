@@ -182,13 +182,13 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                 </div>
               </div>
             ) : success ? (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 text-center">
-                <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white mb-3">
+              <div className="bg-[var(--data-success)]/10 border border-[var(--data-success)]/30 rounded-2xl p-8 text-center">
+                <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--data-success)] text-white mb-3">
                   <Check className="h-7 w-7" />
                 </span>
-                <p className="text-lg font-extrabold text-emerald-900">¡Documento generado!</p>
-                <p className="text-sm text-emerald-700 mt-1">{success}</p>
-                <p className="text-xs text-emerald-600 mt-2">Ya aparece en tu lista de documentos.</p>
+                <p className="text-lg font-extrabold text-[var(--data-success)]">¡Documento generado!</p>
+                <p className="text-sm text-[var(--data-success)] mt-1">{success}</p>
+                <p className="text-xs text-[var(--data-success)] mt-2">Ya aparece en tu lista de documentos.</p>
                 {/* Generar y mandar es el mismo trámite: la cotización se hace
                     PARA mandarla. Va el PDF, no un enlace. */}
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
@@ -256,7 +256,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                     <label key={f.name} className="block">
                       <span className="text-xs font-bold text-slate-700">
                         {f.label}
-                        {f.required && <span className="text-red-500"> *</span>}
+                        {f.required && <span className="text-[var(--data-error)]"> *</span>}
                       </span>
                       {f.type === "textarea" ? (
                         <textarea
