@@ -38,6 +38,17 @@ export default function CtpAnalisis() {
   const [reorden, setReorden] = useState<ReordenProyeccion[] | null>(null);
   const [tendencias, setTendencias] = useState<TendenciaMes[] | null>(null);
   const [loading, setLoading] = useState(true);
+  /**
+   * FIX 2026-08-22: el guard de carga era `loading && !reorden` — `reorden` se
+   * setea con el primer `await r1.json()`, pero `tendencias` recién con el
+   * SEGUNDO `await r2.json()` unas líneas más abajo. Entre uno y otro, React
+   * ya podía renderizar con `tendencias` todavía en `null`: el Resumen y los
+   * gráficos de tendencia (ambos con guard `tendencias &&`) desaparecían un
+   * instante y volvían a aparecer solos. Mismo patrón que
+   * LothCompliancePanel, acá sin verdicto falso pero sí un parpadeo real.
+   * `ready` cubre TODO `load()`, no sólo el primer fetch.
+   */
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -52,7 +63,7 @@ export default function CtpAnalisis() {
       setReorden((await r1.json()).reorden ?? []);
       setTendencias((await r2.json()).tendencias ?? []);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
-    finally { setLoading(false); }
+    finally { setLoading(false); setReady(true); }
   }, []);
   useEffect(() => { void load(); }, [load]);
 
@@ -117,7 +128,7 @@ export default function CtpAnalisis() {
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
-      {loading && !reorden && <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Calculando…</p></div>}
+      {loading && !ready && <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Calculando…</p></div>}
 
       {/* Resumen ejecutivo: tramo reciente vs tramo previo (mitades del rango cargado). */}
       {resumen && (
