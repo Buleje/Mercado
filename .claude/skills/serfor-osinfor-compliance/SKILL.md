@@ -135,11 +135,21 @@ bloquea EMITIR, nunca guardar).
 - **Origen legal del ingreso** = la **GTF con la que entró la materia prima** (`WoodEntry.gtfNumber`).
   Sin GTF válida no hay ingreso legal → nunca crear un ingreso sin exigirla.
 - **Digital:** existe aplicativo SERFOR de emisión/registro de GTF (opera en varias regiones).
-  Si algún día se integra: la GTF de salida del despacho debe llevar **serie + correlativo
-  autorizado por la ARFFS**, no texto libre.
-
-**Gap conocido (feature candidata):** hoy la GTF de salida es texto libre en `despacho.gtfNumber`.
-Formalizarla (serie/correlativo/formato imprimible) = subir al estándar SERFOR.
+- **✅ Serie + correlativo YA FORMALIZADO (verificado 2026-08-23, no re-litigar):** la GTF de
+  salida del CTP **no** es texto libre — `ForestCtpDespachoDB.emitirGtf` (ADR-137, cierre de
+  período ADR-139) asigna `{serie}-{correlativo:6}` desde la **serie autorizada por la ARFFS**
+  (`ForestCtpFichaDB.gtfSerie`), con lock (`FOR UPDATE`) sobre los despachos del tenant,
+  derivado del máximo correlativo existente, idempotente, auditado (`ctp_gtf_emitir`), y
+  bloqueado si el período está cerrado. Wireado en `CtpGuiaDeLineaModal.tsx` +
+  `app/api/admin/forestal/ctp/route.ts`. El **formato imprimible** (`ctp-gtf-print.ts`) ya cita
+  artículo por artículo la **RDE 122-2015-SERFOR-DE** (Arial/A4/prenumerada/talonario visado/
+  original+2 copias) y declara explícitamente que NO reemplaza el talonario oficial de la
+  ARFFS. El LO-TH tiene su propio gemelo maduro (`ForestGtfDB`/`LothGtfView`, ADR-305 R6,
+  ADR-371-373 "hoja de casilleros"). Ver `[[loth-seis-secciones-rde264-verificado]]`.
+- **Gap REAL pendiente (no el de arriba):** LOTH↔GTF desconectados — "Cargar trozas
+  despachadas" puede marcar una troza "no está en el libro" pese a tener despacho registrado
+  (2ª fuente de verdad divergente entre `despachablesResueltos` y `GtfForm`). Ver ronda 5 de
+  `[[loth-blindaje-2026-07-20]]`.
 
 ---
 
