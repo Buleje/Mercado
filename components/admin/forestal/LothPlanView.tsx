@@ -15,7 +15,7 @@ import {
 import { CardTitle, StatCard } from "@buleje/design-system";
 import { analizarPoa, defaultPoaConfig, CATEGORIA_COLOR, CATEGORIA_LABEL, type PoaAnalisis, type PoaConfig } from "@/lib/forestal/loth-poa";
 import { printLothPoa } from "@/lib/forestal/loth-poa-print";
-import { mismaEspecie } from "@/lib/forestal/loth-constants";
+import { claveEspecie, mismaEspecie } from "@/lib/forestal/loth-constants";
 import LothPoaPanel from "./LothPoaPanel";
 import LothCensoImportModal from "./LothCensoImportModal";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -146,11 +146,11 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
    * la especie se cuenta entera en una fila.
    */
   const fichasEspecie = useMemo<FichaEspecie[]>(() => {
-    const bal = new Map((balance?.rows ?? []).map((r) => [normSp(r.species), r]));
-    const sp = new Map(species.map((e) => [normSp(e.speciesCommon), e]));
+    const bal = new Map((balance?.rows ?? []).map((r) => [claveEspecie(r.species), r]));
+    const sp = new Map(species.map((e) => [claveEspecie(e.speciesCommon), e]));
     return controlRows.map((r) => {
-      const b = bal.get(normSp(r.species));
-      const e = sp.get(normSp(r.species));
+      const b = bal.get(claveEspecie(r.species));
+      const e = sp.get(claveEspecie(r.species));
       const num = (v: string | null | undefined) => (v == null || v === "" ? null : Number(v));
       return {
         species: r.species,
@@ -183,7 +183,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   const noAutorizadas = controlRows.filter((r) => r.flags.includes("no_autorizada"));
   const okCount = controlRows.filter((r) => r.tone === "ok").length;
   // Nombres autorizados (normalizados) — el censo y el croquis marcan lo que cae fuera.
-  const authorizedSet = useMemo(() => new Set(species.map((s) => normSp(s.speciesCommon))), [species]);
+  const authorizedSet = useMemo(() => new Set(species.map((s) => claveEspecie(s.speciesCommon))), [species]);
 
   /**
    * El POA cruza el censo con el DMC de cada especie: cuántos árboles se pueden
@@ -727,7 +727,7 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
     });
   }, [trees, q, estadoFilter, catFilter, categorias]);
   // Un árbol cuya especie NO está autorizada en el plan = tala potencialmente ilegal.
-  const outOfPlan = (name: string) => authorizedSpecies.size > 0 && !authorizedSpecies.has(normSp(name));
+  const outOfPlan = (name: string) => authorizedSpecies.size > 0 && !authorizedSpecies.has(claveEspecie(name));
   const { confirm } = useConfirm();
 
   async function add(e: React.FormEvent) {
@@ -1038,14 +1038,12 @@ interface ControlRow {
   flags: ControlFlag[]; tone: ControlTone;
 }
 
-const normSp = (s: string) => s.trim().toLowerCase();
-
 function buildControlRows(species: Species[], trees: Tree[], balance: Balance | null): ControlRow[] {
-  const spMap = new Map(species.map((s) => [normSp(s.speciesCommon), s]));
-  const balMap = new Map((balance?.rows ?? []).map((r) => [normSp(r.species), r]));
+  const spMap = new Map(species.map((s) => [claveEspecie(s.speciesCommon), s]));
+  const balMap = new Map((balance?.rows ?? []).map((r) => [claveEspecie(r.species), r]));
   const groups = new Map<string, { name: string; count: number; vol: number; georref: number; talado: number; cites: boolean }>();
   for (const t of trees) {
-    const key = normSp(t.speciesCommon);
+    const key = claveEspecie(t.speciesCommon);
     const g = groups.get(key) ?? { name: t.speciesCommon, count: 0, vol: 0, georref: 0, talado: 0, cites: false };
     g.count += 1;
     g.vol += Number(t.volumenEstimadoM3 ?? 0);
@@ -1253,7 +1251,7 @@ function CensusMap({ trees, authorizedSpecies }: { trees: Tree[]; authorizedSpec
   // por estado, y borde rojo punteado para especies fuera del plan autorizado.
   const speciesList = Array.from(new Set(pts.map((p) => p.t.speciesCommon)));
   const colorFor = (name: string) => `hsl(${Math.round((speciesList.indexOf(name) * 360) / Math.max(1, speciesList.length))} 60% 45%)`;
-  const fuera = (name: string) => authorizedSpecies.size > 0 && !authorizedSpecies.has(normSp(name));
+  const fuera = (name: string) => authorizedSpecies.size > 0 && !authorizedSpecies.has(claveEspecie(name));
   const opacityFor = (e: string) => (e === "talado" ? 0.5 : e === "descartado" ? 0.28 : 1);
 
   const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);

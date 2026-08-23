@@ -25,6 +25,7 @@ import {
   type PoaAnalisis,
   type PoaConfig,
 } from "@/lib/forestal/loth-poa";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 
 const CELL = "px-3 py-2 text-sm";
 const NUM = `${CELL} text-right font-mono tabular-nums`;
@@ -57,7 +58,13 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
   const alertas = useMemo(() => ordenarAlertas(analisis.alertas), [analisis.alertas]);
 
   const setDmc = (especie: string, valor: string) => {
-    const key = especie.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+    // FIX 2026-08-22: la clave tiene que ser la MISMA que lee `dmcParaEspecie`
+    // (`normEspecie` → `claveEspecie`) — antes esta normalización local no
+    // quitaba el científico entre paréntesis, así que un override para
+    // "Tornillo (Cedrelinga catenaeformis)" se guardaba bajo una clave que
+    // `dmcParaEspecie` nunca iba a buscar: el override se perdía en silencio,
+    // el DMC volvía siempre al oficial/general.
+    const key = claveEspecie(especie);
     const next = { ...config.dmcOverrides };
     const cm = Number(valor);
     if (!valor.trim() || !Number.isFinite(cm) || cm <= 0) delete next[key];

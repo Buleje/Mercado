@@ -20,6 +20,8 @@
  * panel del POA, el censo y la lámina imprimible.
  */
 
+import { claveEspecie } from "./loth-constants";
+
 /** DMC general para las especies no listadas (RJ 458-2002-INRENA). */
 export const DMC_GENERAL_CM = 41;
 
@@ -45,14 +47,19 @@ export const DMC_OFICIAL: Record<string, number> = {
   caoba: 75,
 };
 
-/** Normaliza un nombre común para comparar ("Azúcar Huayo" → "azucar huayo"). */
+/**
+ * Normaliza un nombre común para comparar ("Azúcar Huayo" → "azucar huayo").
+ *
+ * FIX 2026-08-22: delega en `claveEspecie` (`loth-constants.ts`) — antes NO
+ * quitaba el científico entre paréntesis, así que un árbol censado como
+ * «Tornillo» nunca matcheaba contra la especie autorizada del plan, escrita
+ * como figura en la resolución: «Tornillo (Cedrelinga catenaeformis)». Mismo
+ * bug que [[loth-clave-especie-plan-vs-libro]] (censado 0.00 falso, «fuera del
+ * plan» falso), reaparecido acá porque el POA tiene su propia normalización
+ * en vez de usar la única fuente.
+ */
 export function normEspecie(nombre: string): string {
-  return String(nombre ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return claveEspecie(nombre);
 }
 
 /**
