@@ -17,6 +17,7 @@ import { saldosDeCorridas } from "./forest-ctp-saldo-corrida";
 import { WoodEntriesDB } from "./wood-entries.db";
 import { agruparMovimiento, pasoParaBarras, type MovimientoDelLibro } from "@/lib/forestal/movimiento-libro";
 import { RENDIMIENTO_TOPE_PCT, topeDeclarableM3 } from "@/lib/forestal/produccion-paquetes";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
 export type CtpSection = (typeof CTP_SECTIONS)[number];
@@ -41,9 +42,17 @@ function dateRange(opts: { fromDate?: Date; toDate?: Date }): Prisma.DateTimeFil
  * Clave de agrupación por especie. Normaliza para que "Shihuahuaco",
  * "shihuahuaco " y "SHIHUAHUACO" (WoodEntry vs. ForestCtpEntry, tipeados a
  * mano en formularios distintos) caigan en el mismo balance.
+ *
+ * FIX 2026-08-22: delega en `claveEspecie` (misma fuente que LOTH) — la
+ * versión anterior no quitaba tildes, así que "Ishpingo" (WoodEntry) e
+ * "Ishpíngo" (ForestCtpEntry, mismo caso que el comentario de arriba
+ * describe) caían en DOS baldes separados. Con `especiesEnNegativo` restando
+ * hasta 25 puntos del score de cumplimiento, un typo de tilde entre las dos
+ * tablas podía inventar un "saldo negativo" falso — el ingreso de uno se
+ * contaba aparte del consumo del otro.
  */
 function speciesKey(raw: string | null | undefined): string {
-  return (raw ?? "").trim().toLowerCase().replace(/\s+/g, " ") || "—";
+  return claveEspecie(raw) || "—";
 }
 
 /**
