@@ -901,3 +901,22 @@ export function asuntoDe(formato: FormatoTramite, datos: DatosTramite): string {
 export function cuerpoDe(formato: FormatoTramite, datos: DatosTramite): string[] {
   return formato.cuerpo(datos).map((p) => p.trim()).filter(Boolean);
 }
+
+/**
+ * Los datos de un trámite ya presentado, listos para arrancar uno NUEVO
+ * (Duplicar): destinatario/entidad/firma se repiten casi siempre, así que
+ * copiarlos ahorra re-tipear. Se excluyen las FECHAS y la tabla de guías
+ * (`guiasJson`, ADR-364): son propias del período viejo, y arrastrarlas
+ * declararía hoy un dato de otro mes sin que el operador lo note. Los demás
+ * campos (incluso identificadores puntuales como un N° de GTF) quedan tal
+ * cual — el operador los revisa antes de guardar, como con cualquier copia.
+ */
+export function datosParaDuplicar(formato: FormatoTramite, datos: DatosTramite): DatosTramite {
+  const fechaIds = new Set(formato.campos.filter((c) => c.tipo === "fecha").map((c) => c.id));
+  const seed: DatosTramite = {};
+  for (const [k, val] of Object.entries(datos)) {
+    if (fechaIds.has(k) || k === "guiasJson") continue;
+    seed[k] = val;
+  }
+  return seed;
+}

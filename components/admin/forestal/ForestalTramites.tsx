@@ -18,7 +18,7 @@ import { AlertCircle, Building2, CalendarClock, FileText, Inbox, Stamp, TreePine
 import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import { useForestTramites } from "@/hooks/use-forest-tramites";
 import { useForestPlantaciones } from "@/hooks/use-forest-plantaciones";
-import { FORMATOS_TRAMITE, formatoPorId } from "@/lib/forestal/tramites-catalogo";
+import { FORMATOS_TRAMITE, datosParaDuplicar, formatoPorId, type DatosTramite } from "@/lib/forestal/tramites-catalogo";
 import { tramitesPorVencer, tramitesSinRespuesta, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
 import { avisoPlazoRelacion, relacionesDelFormato } from "@/lib/forestal/tramites-relacion-guias";
 import type { CtpReportFicha } from "@/lib/forestal/ctp-print-shared";
@@ -46,6 +46,12 @@ export default function ForestalTramites() {
   const [vista, setVista] = useState<Vista>("catalogo");
   const [formatoId, setFormatoId] = useState<string | null>(null);
   const [editando, setEditando] = useState<TramiteRegistro | null>(null);
+  const [seedDatos, setSeedDatos] = useState<DatosTramite | null>(null);
+  /** Fuerza un montaje FRESCO del formulario en cada apertura (editar,
+   *  duplicar o uno nuevo): sin esto, pasar de un trámite a otro sin pasar
+   *  por el catálogo reutilizaría la instancia y arrastraría estado interno
+   *  (estado/N° de documento) del trámite anterior. */
+  const [instancia, setInstancia] = useState(0);
   const [auto, setAuto] = useState<AutollenadoTramite>({ ficha: null });
   const { tramites, cargando, error, setError, recargar, guardar, borrar } = useForestTramites();
   /** Sólo para el aviso "listo para presentar" — Plantaciones tiene su propio
@@ -142,12 +148,29 @@ export default function ForestalTramites() {
   const abrirFormato = useCallback((id: string) => {
     setFormatoId(id);
     setEditando(null);
+    setSeedDatos(null);
+    setInstancia((n) => n + 1);
     setVista("catalogo");
   }, []);
 
   const abrirExpediente = useCallback((t: TramiteRegistro) => {
     setFormatoId(t.formatoId);
     setEditando(t);
+    setSeedDatos(null);
+    setInstancia((n) => n + 1);
+    setVista("catalogo");
+  }, []);
+
+  /** "Duplicar" desde el Expediente: un trámite NUEVO con los datos del viejo
+   *  ya cargados (sin fechas ni tabla de guías, ver `datosParaDuplicar`) —
+   *  nunca edita al original. */
+  const duplicarExpediente = useCallback((t: TramiteRegistro) => {
+    const formatoDe = formatoPorId(t.formatoId);
+    if (!formatoDe) return;
+    setFormatoId(t.formatoId);
+    setEditando(null);
+    setSeedDatos(datosParaDuplicar(formatoDe, t.datos ?? {}));
+    setInstancia((n) => n + 1);
     setVista("catalogo");
   }, []);
 
@@ -256,14 +279,17 @@ export default function ForestalTramites() {
 
       {vista === "catalogo" && formato && (
         <TramiteFormulario
+          key={instancia}
           formato={formato}
           auto={auto}
           existente={editando}
+          seedDatos={seedDatos}
           tramites={tramites}
           onGuardar={guardar}
           onCerrar={() => {
             setFormatoId(null);
             setEditando(null);
+            setSeedDatos(null);
           }}
         />
       )}
@@ -274,6 +300,7 @@ export default function ForestalTramites() {
           cargando={cargando}
           onRecargar={() => void recargar()}
           onAbrir={abrirExpediente}
+          onDuplicar={duplicarExpediente}
           onBorrar={(id) => void borrar(id)}
         />
       )}

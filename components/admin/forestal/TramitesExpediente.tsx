@@ -14,7 +14,7 @@
 
 import { useMemo, useState } from "react";
 import { m as motion } from "framer-motion";
-import { Clock, Inbox, RefreshCw, Trash2 } from "@buleje/design-system/icons";
+import { Clock, Copy, Inbox, RefreshCw, Search, Trash2 } from "@buleje/design-system/icons";
 import { staggerContainer, staggerChild } from "@/components/ui-system/motion";
 import { AUTORIDADES, type AutoridadTramite } from "@/lib/forestal/tramites-catalogo";
 import {
@@ -56,6 +56,9 @@ const TONO: Record<string, { chip: string; activo: string; barra: string }> = {
 
 const tonoDe = (estado: string) => TONO[ESTADOS_TRAMITE.find((e) => e.key === estado)?.tono ?? "muted"];
 
+/** Sin tildes ni mayúsculas: "relación"/"relacion" tienen que dar el mismo resultado. */
+const sinTildes = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 /** Día y mes cortos, para el sello de la izquierda. */
 const sello = (iso: string | null): { dia: string; mes: string } => {
   if (!iso) return { dia: "—", mes: "" };
@@ -80,25 +83,49 @@ export default function TramitesExpediente({
   cargando,
   onRecargar,
   onAbrir,
+  onDuplicar,
   onBorrar,
 }: {
   tramites: TramiteRegistro[];
   cargando: boolean;
   onRecargar: () => void;
   onAbrir: (t: TramiteRegistro) => void;
+  /** Abre un trámite NUEVO con los datos de éste ya cargados (menos fechas y
+   *  tabla de guías, que son del período viejo — ver `datosParaDuplicar`). */
+  onDuplicar: (t: TramiteRegistro) => void;
   onBorrar: (id: string) => void;
 }) {
   const [filtro, setFiltro] = useState<EstadoTramite | "">("");
+  const [busqueda, setBusqueda] = useState("");
   const porEstado = useMemo(() => contarPorEstado(tramites), [tramites]);
   const hoy = useMemo(() => new Date(), []);
   const esperando = useMemo(() => tramitesSinRespuesta(tramites, hoy), [tramites, hoy]);
-  const visibles = useMemo(
-    () => (filtro ? tramites.filter((t) => t.estado === filtro) : tramites),
-    [tramites, filtro],
-  );
+  const visibles = useMemo(() => {
+    const porEstadoFiltrados = filtro ? tramites.filter((t) => t.estado === filtro) : tramites;
+    const q = sinTildes(busqueda.trim());
+    if (!q) return porEstadoFiltrados;
+    return porEstadoFiltrados.filter((t) =>
+      [t.formatoNombre, t.asunto, t.expedienteAutoridad, t.notas].some((campo) => campo && sinTildes(campo).includes(q)),
+    );
+  }, [tramites, filtro, busqueda]);
 
   return (
     <div className="space-y-4">
+      {/* Buscador: por nombre de formato, asunto, N° de expediente o notas —
+          con 14 formatos y trámites que se repiten (la Relación de guías se
+          presenta todos los meses), encontrar "el de julio" a ojo deja de
+          alcanzar antes de llegar a la vista de estados. */}
+      <div className="flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5">
+        <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
+        <input
+          type="text"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar por formato, asunto o N° de expediente…"
+          className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
+        />
+      </div>
+
       {/* Estados = filtro. Un chip con un número que no se puede tocar es un cartel. */}
       <div className="flex flex-wrap items-center gap-2">
         <Chip label="Todos" count={tramites.length} activo={filtro === ""} tono="muted" onClick={() => setFiltro("")} />
@@ -144,12 +171,14 @@ export default function TramitesExpediente({
         <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-12 text-center">
           <Inbox className="mx-auto mb-3 h-10 w-10 text-[var(--text-tertiary)] opacity-40" aria-hidden="true" />
           <p className="font-display text-xl text-[var(--text-primary)]">
-            {filtro ? "Ningún trámite en ese estado" : "Todavía no hay trámites guardados"}
+            {busqueda.trim() ? "Ningún trámite coincide con la búsqueda" : filtro ? "Ningún trámite en ese estado" : "Todavía no hay trámites guardados"}
           </p>
           <p className="mx-auto mt-1 max-w-md text-sm text-[var(--text-tertiary)]">
-            {filtro
-              ? "Probá con otro estado o mirá todos."
-              : "Elegí un formato en «Formatos», llenalo y guardalo: acá queda el rastro de qué presentaste, cuándo y ante quién."}
+            {busqueda.trim()
+              ? "Probá con otra palabra o borrá la búsqueda."
+              : filtro
+                ? "Probá con otro estado o mirá todos."
+                : "Elegí un formato en «Formatos», llenalo y guardalo: acá queda el rastro de qué presentaste, cuándo y ante quién."}
           </p>
         </div>
       ) : (
@@ -218,6 +247,15 @@ export default function TramitesExpediente({
 
                 <div className="flex shrink-0 flex-col justify-center gap-2 p-4">
                   <Btn variant="secondary" size="sm" onClick={() => onAbrir(t)}>Abrir</Btn>
+                  <Btn
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => onDuplicar(t)}
+                    title="Abrir un trámite nuevo con estos mismos datos"
+                    aria-label={`Duplicar el trámite ${t.formatoNombre}`}
+                  >
+                    <Copy className="h-3.5 w-3.5" /> Duplicar
+                  </Btn>
                   <Btn
                     variant="danger"
                     size="sm"

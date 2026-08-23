@@ -125,6 +125,7 @@ export default function TramiteFormulario({
   formato,
   auto,
   existente,
+  seedDatos,
   tramites,
   onGuardar,
   onCerrar,
@@ -133,6 +134,11 @@ export default function TramiteFormulario({
   auto: AutollenadoTramite;
   /** Si se abrió desde el expediente: se edita ese trámite. */
   existente?: TramiteRegistro | null;
+  /** Si se abrió con "Duplicar": los datos de partida de un trámite viejo
+   *  (ya sin fechas ni tabla de guías, ver `datosParaDuplicar`). Se ignora
+   *  si `existente` está presente — no tiene sentido duplicar Y editar a
+   *  la vez. */
+  seedDatos?: DatosTramite | null;
   /** Todo el expediente del tenant — sólo se usa en formatos con `correlativo`
    *  (continuidad de período, historial, duplicados cruzados; ADR-364 ronda 4). */
   tramites: TramiteRegistro[];
@@ -185,10 +191,15 @@ export default function TramiteFormulario({
     setLogo(null);
   }
 
-  // Al abrir: lo guardado (si se edita) o lo que el sistema puede completar.
+  // Al abrir: lo guardado (si se edita), lo de un trámite viejo (si se
+  // duplica) o lo que el sistema puede completar solo.
   useEffect(() => {
     if (existente) {
       setDatos(existente.datos ?? {});
+      return;
+    }
+    if (seedDatos) {
+      setDatos(seedDatos);
       return;
     }
     const base: DatosTramite = {};
@@ -199,7 +210,7 @@ export default function TramiteFormulario({
     setDatos(base);
     // `auto` cambia con el período; re-llenar al vuelo pisaría lo tipeado.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formato.id, existente]);
+  }, [formato.id, existente, seedDatos]);
 
   const set = (id: string, valor: string) => setDatos((p) => ({ ...p, [id]: valor }));
   const faltantes = useMemo(() => faltantesDelTramite(formato, datos), [formato, datos]);
