@@ -39,7 +39,7 @@ import {
   Building2,
   Loader2,
   Phone,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { setCurrentPlan } from "@/lib/billing/plan-tiers";
 import {

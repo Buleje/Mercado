@@ -50,7 +50,7 @@ import {
   X,
   CheckCircle,
   Tag,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 

@@ -24,7 +24,7 @@ import {
   ChevronRight,
   Receipt,
   User,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { SectionTitle, CardTitle } from "@buleje/design-system";
 import type { MarketplaceOrderDetail } from "./hooks/use-marketplace-orders";
 import { cn } from "@/lib/utils";

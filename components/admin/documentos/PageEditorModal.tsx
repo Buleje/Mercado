@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, RotateCw, Trash2, ChevronLeft, ChevronRight, Loader2, Save, FileText } from "lucide-react";
+import { X, RotateCw, Trash2, ChevronLeft, ChevronRight, Loader2, Save, FileText } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { fetchPageCount, editPages } from "@/hooks/use-documents";
 import type { DbDocument } from "@/lib/types/documents";

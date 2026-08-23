@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Tag, X, Pencil, Trash2, Check, Loader2 } from "lucide-react";
+import { Tag, X, Pencil, Trash2, Check, Loader2 } from "@buleje/design-system/icons";
 import { fetchTags, renameDocTag, deleteDocTag } from "@/hooks/use-documents";
 
 type TagRow = { tag: string; count: number };

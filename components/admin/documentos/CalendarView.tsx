@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, CalendarDays, AlarmClock } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, AlarmClock } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import type { DbDocument } from "@/lib/types/documents";

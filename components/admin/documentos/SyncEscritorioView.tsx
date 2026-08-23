@@ -23,7 +23,7 @@ import {
   Monitor,
   RefreshCw,
   Trash2,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";

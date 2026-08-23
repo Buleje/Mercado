@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { FileText, HardDrive, AlarmClock, Receipt, Tag as TagIcon, TrendingUp, FileSpreadsheet } from "lucide-react";
+import { FileText, HardDrive, AlarmClock, Receipt, Tag as TagIcon, TrendingUp, FileSpreadsheet } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { BulejeDonutChart } from "@/components/ui-system/charts";
 import VelocidadDrive from "@/components/admin/documentos/VelocidadDrive";

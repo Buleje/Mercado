@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Stamp, Loader2 } from "lucide-react";
+import { X, Stamp, Loader2 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { stampDoc } from "@/hooks/use-documents";

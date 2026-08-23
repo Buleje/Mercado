@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { FolderInput, Folder, X, Check, CornerUpLeft } from "lucide-react";
+import { FolderInput, Folder, X, Check, CornerUpLeft } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenAll } from "@/lib/documentos/folder-tree";

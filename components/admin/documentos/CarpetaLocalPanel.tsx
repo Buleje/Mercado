@@ -17,7 +17,7 @@ import { useMemo, useState } from "react";
 import {
   AlertTriangle, Check, FolderOpen, HardDriveDownload, HardDriveUpload, Link2Off,
   Loader2, Lock, Pause, Play, RefreshCw, Trash2, TriangleAlert, Info,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";

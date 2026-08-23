@@ -26,7 +26,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   MessageCircle, X, Search, User, Link2, Copy, Check, Send, Loader2, PenLine, FileWarning,
   Paperclip, Share2, AlertCircle, Lock,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocument } from "@/lib/types/documents";
 import { createShare } from "@/hooks/use-documents";

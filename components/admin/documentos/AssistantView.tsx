@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Send, FileText, Loader2, User, Bot, PenLine, Share2, CheckCircle2, History, Plus, X, RefreshCw } from "lucide-react";
+import { Sparkles, Send, FileText, Loader2, User, Bot, PenLine, Share2, CheckCircle2, History, Plus, X, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { askDocAssistantStream, type DocAssistantAnswer } from "@/hooks/use-documents";
 

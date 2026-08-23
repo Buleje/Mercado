@@ -1,6 +1,6 @@
 import {
   Folder, FileText, Scale, Receipt, Building2, Wrench, ShieldCheck, Landmark, Package, Camera,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /**

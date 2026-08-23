@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { X, Sparkles, ChevronRight, FileText, Check, User, Search, MessageCircle } from "lucide-react";
+import { X, Sparkles, ChevronRight, FileText, Check, User, Search, MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { fetchTemplates, generateFromTemplate } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentTemplate } from "@/lib/types/documents";

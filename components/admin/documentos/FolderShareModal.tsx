@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { FolderArchive, X, Link2, Copy, Check, Loader2, MessageCircle, Lock } from "lucide-react";
+import { FolderArchive, X, Link2, Copy, Check, Loader2, MessageCircle, Lock } from "@buleje/design-system/icons";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 import { csrfHeaders } from "@/lib/csrf-client";
 

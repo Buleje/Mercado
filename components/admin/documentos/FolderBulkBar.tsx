@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Loader2, Palette, Smile, Tag, Trash2, X } from "lucide-react";
+import { Check, Loader2, Palette, Smile, Tag, Trash2, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { FOLDER_COLORS } from "./folder-visuals";
 import { ConfirmarBorrarCarpetas, type BorradoCarpetas } from "./ConfirmarBorrarCarpetas";

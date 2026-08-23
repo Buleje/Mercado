@@ -446,6 +446,18 @@ export {
   GlassWater,
   SearchX,
 
+  // ── Additional pass 7 (documentos DS sweep 2026-08-23) ──
+  CornerUpLeft,
+  FileWarning,
+  FolderX,
+  ImagePlus,
+  HardDriveDownload,
+  HardDriveUpload,
+  Link2Off,
+  TriangleAlert,
+  FolderSync,
+  NotebookText,
+
   // ── Types ────────────────────────────────────────────────────
   type LucideIcon,
   type LucideProps,

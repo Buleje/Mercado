@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Check, Ban } from "lucide-react";
+import { X, Check, Ban } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 import { FOLDER_COLORS, FOLDER_ICON_OPTIONS, FolderGlyph } from "./folder-visuals";

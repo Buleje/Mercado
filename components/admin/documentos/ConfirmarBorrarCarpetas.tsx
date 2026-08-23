@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, X, FolderX, FileWarning, Loader2, Undo2 } from "lucide-react";
+import { Trash2, X, FolderX, FileWarning, Loader2, Undo2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export interface BorradoCarpetas {

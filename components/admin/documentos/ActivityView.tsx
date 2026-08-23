@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Upload, Eye, Download, Pencil, Trash2, RotateCcw, Share2, Ban, PenTool, FileText, FolderInput, Tag, History, Loader2, User, Sparkles, ScanLine, Stamp, Link2, Combine, MessageCircle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocumentActivity, DocAction } from "@/lib/types/documents";
 import { fetchRecentActivity } from "@/hooks/use-documents";

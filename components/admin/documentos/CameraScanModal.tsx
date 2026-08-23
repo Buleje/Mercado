@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { X, Camera, Image as ImageIcon, FileText, Loader2, Trash2 } from "lucide-react";
+import { X, Camera, Image as ImageIcon, FileText, Loader2, Trash2 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { scanToPdf } from "@/hooks/use-documents";
 
