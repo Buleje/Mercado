@@ -1,17 +1,20 @@
 "use client";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
-import { useState, useMemo } from "react";
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { useEffect, useMemo, useState } from "react";
 import {
   Star, Download, Eye,
   Coins, HelpCircle, TrendingDown,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
-import type { Product as BaseProduct } from "@/types/erp";
+import type { BCGProduct } from "@/app/api/analytics/bcg/route";
 
 /* ── Types ── */
 type Quadrant = "estrella" | "vaca" | "interrogante" | "perro";
-type Product = Omit<BaseProduct, "id"> & { id: number; quadrant: Quadrant; revenue: number; growth: number; marketShare: number; units: number };
+/** `productId` renombrado a `id` para calzar con el resto del componente
+ *  (celdas, detalle, exportar) que ya hablaba de `id` antes de conectarse
+ *  a datos reales. */
+type Product = Omit<BCGProduct, "productId"> & { id: number };
 
 /* ── Config ── */
 const Q_CONFIG: Record<Quadrant, { label: string; Icon: LucideIcon; color: string; bg: string; desc: string }> = {
@@ -21,31 +24,57 @@ const Q_CONFIG: Record<Quadrant, { label: string; Icon: LucideIcon; color: strin
   perro: { label: "Perros", Icon: TrendingDown, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-canvas)]/20 border-[var(--rule-base)]", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
 };
 
-/* ── Seed Data ── */
-const PRODUCTS: Product[] = [];
-
 const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
 
-// Pre-computed dot positions (module-level to avoid impure calls during render)
-const DOT_POSITIONS = new Map<number, { x: number; y: number }>();
-PRODUCTS.forEach(p => {
-  const x = p.quadrant === "estrella" || p.quadrant === "vaca" ? 10 + Math.random() * 35 : 55 + Math.random() * 35;
-  const y = p.quadrant === "estrella" || p.quadrant === "interrogante" ? 10 + Math.random() * 35 : 55 + Math.random() * 35;
-  DOT_POSITIONS.set(p.id, { x, y });
-});
-
 export default function BCGMatrixTab() {
+  const [PRODUCTS, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedQ, setSelectedQ] = useState<Quadrant | "todas">("todas");
   const [detail, setDetail] = useState<Product | null>(null);
+
+  useEffect(() => {
+    fetch("/api/analytics/bcg", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: BCGProduct[]) => setProducts(d.map((p) => ({ ...p, id: p.productId }))))
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Posición del punto en el mapa: determinística por producto (no `Math.random`
+  // en cada render, si no los puntos "bailan" cada vez que el componente
+  // vuelve a pintar), pero recalculada cuando llegan datos nuevos.
+  const DOT_POSITIONS = useMemo(() => {
+    const map = new Map<number, { x: number; y: number }>();
+    let seed = 0;
+    const rand = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    PRODUCTS.forEach(p => {
+      const x = p.quadrant === "estrella" || p.quadrant === "vaca" ? 10 + rand() * 35 : 55 + rand() * 35;
+      const y = p.quadrant === "estrella" || p.quadrant === "interrogante" ? 10 + rand() * 35 : 55 + rand() * 35;
+      map.set(p.id, { x, y });
+    });
+    return map;
+  }, [PRODUCTS]);
 
   const grouped = useMemo(() => {
     const g: Record<Quadrant, Product[]> = { estrella: [], vaca: [], interrogante: [], perro: [] };
     PRODUCTS.forEach(p => g[p.quadrant].push(p));
     return g;
-  }, []);
+  }, [PRODUCTS]);
 
   const filtered = selectedQ === "todas" ? PRODUCTS : PRODUCTS.filter(p => p.quadrant === selectedQ);
   const totalRevenue = PRODUCTS.reduce((s, p) => s + p.revenue, 0);
+
+  if (loading) return <LoadingState />;
+
+  if (PRODUCTS.length === 0) {
+    return (
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
+        <Star className="mx-auto h-8 w-8 text-[var(--text-tertiary)]" />
+        <p className="mt-3 text-sm font-semibold text-[var(--text-secondary)]">Todavía no hay ventas suficientes para armar la matriz</p>
+        <p className="mt-1 text-xs text-[var(--text-tertiary)]">Compara los últimos 30 días contra los 30 anteriores — vuelve cuando tengas ventas registradas en ambos períodos.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3 sm:space-y-6">
