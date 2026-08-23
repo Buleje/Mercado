@@ -31,7 +31,7 @@ import {
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { buildTramiteHtml, imprimirTramite, TRAMITE_PREVIEW_CSS } from "@/lib/forestal/tramites-print";
-import { archivarEnDrive } from "@/lib/forestal/ctp-archivar-documento";
+import { archivarEnDrive, existeEnDrive } from "@/lib/forestal/ctp-archivar-documento";
 import { nombreArchivoTramite, tramiteDocumentoAPdf } from "@/lib/forestal/tramites-documento-pdf";
 import {
   AUTORIDADES,
@@ -276,33 +276,45 @@ export default function TramiteFormulario({
   }
 
   /**
-   * Guarda el PDF del trámite en el Drive, como ya hacen las GTF y el informe
-   * ARFFS del Libro CTP: se fotografía el documento (offscreen, mismo patrón
-   * que `CtpArchivadorAuto`) y sube a una carpeta propia, con el asunto y la
-   * autoridad como etiquetas — así se busca desde el Drive sin volver acá.
-   * `carpetaDrive`: cada formato puede declarar la suya (`FormatoTramite.carpetaDrive`)
-   * para no perderse entre los otros ocho — si no declara, cae en la genérica.
+   * Arma el PDF del trámite y lo sube al Drive, como ya hacen las GTF y el
+   * informe ARFFS del Libro CTP: se fotografía el documento (offscreen, mismo
+   * patrón que `CtpArchivadorAuto`) y sube a una carpeta propia, con el asunto
+   * y la autoridad como etiquetas. `carpetaDrive`: cada formato puede declarar
+   * la suya (`FormatoTramite.carpetaDrive`) para no perderse entre los demás
+   * — si no declara, cae en la genérica.
+   *
+   * Deduplica por NOMBRE exacto (`existeEnDrive`, mismo criterio que el
+   * archivado automático de las GTF): llamarla dos veces el mismo día sin
+   * cambiar de estado no dobla el archivo — la comparten el botón manual y
+   * el guardado automático al presentar.
    */
+  async function archivarDocumentoActual(): Promise<string> {
+    const nombreBase = `${formato.nombre}${numeroDocumento ? ` N° ${numeroDocumento}` : ""} — ${auto.ficha?.razonSocial ?? "CTP"} — ${new Date().toISOString().slice(0, 10)}`;
+    const nombre = nombreArchivoTramite(nombreBase);
+    if (await existeEnDrive(nombre)) {
+      return `Ya estaba en el Drive · carpeta "${carpetaDrive}".`;
+    }
+    const body = buildTramiteHtml({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo });
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
+<style>${TRAMITE_PREVIEW_CSS}html{background:#fff}.aviso{display:none}</style></head><body>${body}</body></html>`;
+    const doc = await archivadorRef.current?.capturar(html);
+    if (!doc) throw new Error("No se pudo preparar el documento para el PDF.");
+    const pdf = await tramiteDocumentoAPdf(doc);
+    await archivarEnDrive({
+      archivo: pdf,
+      nombreArchivo: nombre,
+      carpeta: carpetaDrive,
+      etiquetas: [autoridad.corto, formato.nombre],
+      descripcion: asuntoDe(formato, datos),
+    });
+    return `Guardado en el Drive · carpeta "${carpetaDrive}".`;
+  }
+
   async function guardarEnDrive() {
     setArchivando(true);
     setAviso(null);
     try {
-      const body = buildTramiteHtml({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo });
-      const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
-<style>${TRAMITE_PREVIEW_CSS}html{background:#fff}.aviso{display:none}</style></head><body>${body}</body></html>`;
-      const doc = await archivadorRef.current?.capturar(html);
-      if (!doc) throw new Error("No se pudo preparar el documento para el PDF.");
-      const pdf = await tramiteDocumentoAPdf(doc);
-      const nombreBase = `${formato.nombre}${numeroDocumento ? ` N° ${numeroDocumento}` : ""} — ${auto.ficha?.razonSocial ?? "CTP"} — ${new Date().toISOString().slice(0, 10)}`;
-      const nombre = nombreArchivoTramite(nombreBase);
-      await archivarEnDrive({
-        archivo: pdf,
-        nombreArchivo: nombre,
-        carpeta: carpetaDrive,
-        etiquetas: [autoridad.corto, formato.nombre],
-        descripcion: asuntoDe(formato, datos),
-      });
-      setAviso(`Guardado en el Drive · carpeta "${carpetaDrive}".`);
+      setAviso(await archivarDocumentoActual());
     } catch (err) {
       setAviso(err instanceof Error ? err.message : String(err));
     } finally {
@@ -334,13 +346,24 @@ export default function TramiteFormulario({
       setFechaLimite(guardado.fechaLimite ?? "");
       const numeroNuevo = !numeroDocumento && guardado.numeroDocumento;
       setNumeroDocumento(guardado.numeroDocumento);
-      setAviso(
-        numeroNuevo
-          ? `Guardado y numerado como N° ${guardado.numeroDocumento} — ya podés presentarlo.`
-          : idGuardado || existente
-            ? "Cambios guardados en el expediente."
-            : "Guardado en el expediente: ya podés seguirlo desde ahí.",
-      );
+      let mensaje = numeroNuevo
+        ? `Guardado y numerado como N° ${guardado.numeroDocumento} — ya podés presentarlo.`
+        : idGuardado || existente
+          ? "Cambios guardados en el expediente."
+          : "Guardado en el expediente: ya podés seguirlo desde ahí.";
+
+      // El documento sale de acá cuando pasa a "Presentado": se archiva solo,
+      // sin que el operador tenga que acordarse de apretar "PDF al Drive"
+      // aparte. Con campos faltantes o sin guías el papel sale roto — mismo
+      // gate que ya bloquea "Imprimir / PDF" — así que ahí no se archiva solo.
+      if (guardado.estado === "presentado" && faltantes.length === 0 && !sinGuias) {
+        try {
+          mensaje = `${mensaje} ${await archivarDocumentoActual()}`;
+        } catch (err) {
+          mensaje = `${mensaje} No se pudo archivar en el Drive: ${err instanceof Error ? err.message : String(err)}`;
+        }
+      }
+      setAviso(mensaje);
     }
   }
 
