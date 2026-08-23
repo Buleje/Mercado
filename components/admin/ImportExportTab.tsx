@@ -1,10 +1,11 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Upload, Download, FileText, CheckCircle, AlertTriangle, Loader2, Package, Users, ShoppingCart, Truck, DollarSign } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import type { ActivityEntry } from "@/app/api/activity-log/route";
 
 type ExportModule = { id: string; label: string; icon: React.ElementType };
 type ImportRecord = { id: string; module: string; filename: string; records: number; status: "success" | "partial" | "error"; date: string; errors: number };
@@ -19,9 +20,28 @@ const EXPORT_MODULES: ExportModule[] = [
   { id: "gastos", label: "Gastos", icon: FileText },
 ];
 
-const IMPORT_HISTORY: ImportRecord[] = [];
-
 function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
+
+/** El historial no tiene tabla propia — se reconstruye del audit log real
+ *  (`logActivity("Importar", ...)` en cada endpoint de importación, hoy sólo
+ *  `/api/products/import`). El detail es texto libre por diseño del audit
+ *  log genérico; acá se parsea el único formato que los endpoints escriben. */
+const HISTORY_RE = /^Importaci[oó]n Excel "([^"]*)":\s*(\d+)\s+creados,\s*(\d+)\s+errores/;
+function parseImportRecord(entry: ActivityEntry): ImportRecord | null {
+  const m = HISTORY_RE.exec(entry.detail);
+  if (!m) return null;
+  const records = Number(m[2]);
+  const errors = Number(m[3]);
+  return {
+    id: entry.id,
+    module: entry.entity,
+    filename: m[1] || "(sin nombre)",
+    records,
+    errors,
+    status: errors === 0 ? "success" : records > 0 ? "partial" : "error",
+    date: entry.createdAt,
+  };
+}
 
 // Fetch real data and return CSV rows per module
 async function fetchModuleData(moduleId: string): Promise<Record<string, unknown>[]> {
@@ -125,6 +145,18 @@ export default function ImportExportTab() {
   const [importResult, setImportResult] = useState<{ success: boolean; count: number; errors: number; message?: string } | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [history, setHistory] = useState<ImportRecord[] | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  useEffect(() => {
+    if (view !== "history" || history !== null) return;
+    setHistoryLoading(true);
+    fetch("/api/activity-log?action=Importar&limit=50", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((d: { items: ActivityEntry[] }) => setHistory(d.items.map(parseImportRecord).filter((r): r is ImportRecord => r != null)))
+      .catch(() => setHistory([]))
+      .finally(() => setHistoryLoading(false));
+  }, [view, history]);
 
   const handleExport = async (moduleId: string, format: "csv" | "excel") => {
     setExporting(`${moduleId}-${format}`);
@@ -174,6 +206,7 @@ export default function ImportExportTab() {
       const count = Number(data?.created ?? 0);
       const errs = Array.isArray(data?.errors) ? data.errors.length : Number(data?.errors ?? 0);
       setImportResult({ success: true, count, errors: errs });
+      setHistory(null); // fuerza refetch la próxima vez que se abra "Historial"
     } catch {
       setImportResult({ success: false, count: 0, errors: 0, message: "Error de red al importar. Intenta de nuevo." });
     } finally {
@@ -311,6 +344,15 @@ export default function ImportExportTab() {
       )}
 
       {view === "history" && (
+        historyLoading ? (
+          <LoadingState />
+        ) : !history || history.length === 0 ? (
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8 text-center">
+            <FileText className="mx-auto h-8 w-8 text-[var(--text-tertiary)]" />
+            <p className="mt-3 text-sm font-semibold text-[var(--text-secondary)]">Todavía no importaste ningún archivo</p>
+            <p className="mt-1 text-xs text-[var(--text-tertiary)]">Cuando importes, cada corrida queda registrada acá.</p>
+          </div>
+        ) : (
         <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-y-hidden overflow-x-auto">
           <table className="w-full min-w-150 text-sm">
             <thead><tr className="bg-[var(--surface-alt)] dark:bg-surface text-left">
@@ -321,7 +363,7 @@ export default function ImportExportTab() {
               <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
             </tr></thead>
             <tbody>
-              {IMPORT_HISTORY.map(r => (
+              {history.map(r => (
                 <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <td className="px-2 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center gap-2"><FileText className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" /><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-48">{r.filename}</span></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{r.module}</td>
@@ -337,6 +379,7 @@ export default function ImportExportTab() {
             </tbody>
           </table>
         </div>
+        )
       )}
     </div>
   );
