@@ -145,4 +145,5 @@ export const VALID_TABS: readonly Tab[] = [
   "forestal-herramientas",
   "forestal-tramites",
   "cacao-acopio",
+  "mi-perfil",
 ] as const;
