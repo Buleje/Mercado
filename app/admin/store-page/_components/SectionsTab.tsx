@@ -262,7 +262,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
       {/* Drawer de vista previa en vivo del storefront (Brandon 2026-06-26).
           Muestra /t/{slug}; se recarga al guardar. */}
       {showPreview && (
-        <div className="fixed inset-y-0 right-0 z-40 flex w-full max-w-[480px] flex-col border-l-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-2xl">
+        <div className="fixed inset-y-0 right-0 z-40 flex w-full max-w-[480px] flex-col border-l-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
           <div className="flex items-center justify-between gap-2 border-b border-[var(--rule-soft)] px-3 py-2">
             <span className="truncate text-xs font-bold text-[var(--text-secondary)]">Vista previa · /t/{slug} · se actualiza al guardar</span>
             <div className="flex shrink-0 items-center gap-1">

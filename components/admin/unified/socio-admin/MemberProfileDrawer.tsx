@@ -102,7 +102,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-[var(--color-card)] w-full max-w-md h-full shadow-2xl overflow-y-auto"
+        className="bg-white dark:bg-[var(--color-card)] w-full max-w-md h-full shadow-[var(--shadow-xl)] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

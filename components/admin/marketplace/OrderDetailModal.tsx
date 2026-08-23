@@ -97,7 +97,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
           "flex flex-col overflow-hidden",
           "bg-[var(--surface-raised)] text-[var(--text-primary)]",
           "rounded-t-3xl sm:rounded-3xl",
-          "border-2 border-[var(--rule-base)] shadow-2xl",
+          "border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)]",
         )}
         onClick={(e) => e.stopPropagation()}
       >

@@ -88,7 +88,7 @@ export function KeyboardShortcutsHelp({ open, onClose, sections = DEFAULT_SECTIO
           className={cn(
             "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50",
             "max-w-2xl w-[calc(100vw-2rem)] max-h-[85vh]",
-            "bg-[var(--surface-canvas)] rounded-xl shadow-2xl border border-[var(--rule-base)] flex flex-col outline-none",
+            "bg-[var(--surface-canvas)] rounded-xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] flex flex-col outline-none",
           )}
         >
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0">

@@ -422,7 +422,7 @@ export default function GiftCardsAdminModule() {
           onClick={() => setIssuedCode(null)}
         >
           <div
-            className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-md p-5"
+            className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-md p-5"
             onClick={(e) => e.stopPropagation()}
           >
             <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">

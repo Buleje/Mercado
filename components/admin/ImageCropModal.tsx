@@ -105,7 +105,7 @@ export default function ImageCropModal({
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 dark">
       <button type="button" aria-label="Cerrar" onClick={onCancel} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div role="dialog" aria-modal="true" aria-label="Ajustar imagen" className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#16181d] p-4 shadow-2xl">
+      <div role="dialog" aria-modal="true" aria-label="Ajustar imagen" className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#16181d] p-4 shadow-[var(--shadow-xl)]">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-sm font-bold text-white">Ajustar imagen</p>
           <button type="button" onClick={onCancel} aria-label="Cerrar" className="rounded-md p-1 text-gray-400 transition-colors hover:bg-white/10 hover:text-white">

@@ -355,7 +355,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
             role="dialog"
             aria-label="Dictado por voz"
             onClick={(e) => e.stopPropagation()}
-            className="w-full sm:max-w-xl bg-[var(--surface-raised)] rounded-3xl shadow-2xl border-2 border-[var(--rule-base)] overflow-hidden flex flex-col max-h-[85vh]"
+            className="w-full sm:max-w-xl bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] border-2 border-[var(--rule-base)] overflow-hidden flex flex-col max-h-[85vh]"
           >
             {/* Header */}
             <header className="px-5 sm:px-6 py-4 flex items-start justify-between gap-3 border-b border-[var(--rule-soft)]">

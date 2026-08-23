@@ -733,7 +733,7 @@ function BoostModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-2xl overflow-hidden"
+        className="w-full max-w-lg rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
       >
         <header className="flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)]">
           <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-secondary)]/15 text-[var(--brand-secondary)] shrink-0">

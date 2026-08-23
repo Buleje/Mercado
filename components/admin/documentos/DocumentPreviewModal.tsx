@@ -236,7 +236,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
           sin comerle ancho al documento. */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex h-[96vh] w-full max-w-[1800px] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-2xl"
+        className="flex h-[96vh] w-full max-w-[1800px] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
         {/* Header — en un celular los botones bajan a una segunda línea en vez
             de aplastar el nombre del archivo hasta partirlo letra por letra. */}

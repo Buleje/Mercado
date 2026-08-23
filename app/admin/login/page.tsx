@@ -397,7 +397,7 @@ export default function AdminLoginPage() {
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
             Iniciar sesión
           </p>
-          <SectionTitle className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
+          <SectionTitle className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-tight text-[var(--text-primary)] leading-[1.02]">
             Bienvenido
             <br />
             <span className="italic font-serif text-[var(--accent)]">
@@ -739,7 +739,7 @@ function DashboardPreview() {
         />
 
         {/* Card principal con shadow profunda */}
-        <div className="relative rounded-[28px] bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-2xl overflow-hidden">
+        <div className="relative rounded-[28px] bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden">
           {/* Header del dashboard mock */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--rule-soft)]">
             <div className="flex items-center gap-2">
@@ -772,7 +772,7 @@ function DashboardPreview() {
                 +18%
               </span>
             </div>
-            <p className="text-5xl font-black tracking-[-0.04em] tabular-nums leading-none text-[var(--text-primary)]">
+            <p className="text-5xl font-black tracking-tighter tabular-nums leading-none text-[var(--text-primary)]">
               S/ <span className="text-[var(--accent)]">2,887</span>
             </p>
             <p className="mt-2 text-sm text-[var(--text-secondary)]">

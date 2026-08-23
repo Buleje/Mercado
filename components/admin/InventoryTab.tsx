@@ -2207,7 +2207,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         });
         return (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && setShowPicker(false)}>
-            <div className="bg-[var(--surface-raised)] w-full sm:max-w-4xl sm:rounded-2xl rounded-t-2xl overflow-hidden max-h-[92dvh] flex flex-col border border-[var(--rule-base)] shadow-2xl">
+            <div className="bg-[var(--surface-raised)] w-full sm:max-w-4xl sm:rounded-2xl rounded-t-2xl overflow-hidden max-h-[92dvh] flex flex-col border border-[var(--rule-base)] shadow-[var(--shadow-xl)]">
               <div className="flex items-start gap-3 px-5 sm:px-6 py-5 border-b-2 border-[var(--rule-soft)] sticky top-0 bg-[var(--surface-raised)] z-10">
                 <span aria-hidden className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <PackagePlus className="h-6 w-6" strokeWidth={2.1} />

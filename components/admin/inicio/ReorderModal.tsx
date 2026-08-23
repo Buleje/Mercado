@@ -139,7 +139,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
               className={cn(
                 "pointer-events-auto w-full max-w-2xl max-h-[85vh] flex flex-col",
                 "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]",
-                "shadow-2xl shadow-black/20",
+                "shadow-[var(--shadow-xl)] shadow-black/20",
                 "overflow-hidden",
               )}
             >

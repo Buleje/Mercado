@@ -496,7 +496,7 @@ function HslPopover({ value, onChange, onClose }: { value: string; onChange: (he
     </div>
   );
   return (
-    <div className="absolute left-0 top-full z-30 mt-1.5 w-56 rounded-xl border border-white/15 bg-[#1b1e25] p-3 shadow-2xl" onMouseLeave={onClose}>
+    <div className="absolute left-0 top-full z-30 mt-1.5 w-56 rounded-xl border border-white/15 bg-[#1b1e25] p-3 shadow-[var(--shadow-xl)]" onMouseLeave={onClose}>
       <div className="mb-2 flex items-center gap-2">
         <span className="h-7 w-7 rounded-md border border-white/20" style={{ background: hex }} />
         <input value={hex} onChange={(e) => { const v = e.target.value; if (/^#[0-9a-fA-F]{6}$/.test(v)) { const c = hexToHsl(v); setH(c.h); setS(c.s); setL(c.l); onChange(v); } }} className={cn(INPUT_CLASS, "flex-1")} maxLength={7} aria-label="Hex" />
@@ -2868,7 +2868,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     <div className="fixed inset-0 z-[100] flex flex-col bg-[#0c0d10] text-gray-200">
       {/* #17 Onboarding guiado (Lote K) — tarjeta de pasos, abajo a la derecha */}
       {tourStep !== null && TOUR_STEPS[tourStep] && (
-        <div className="fixed bottom-5 right-5 z-[115] w-full max-w-xs rounded-2xl border border-[var(--accent-soft)]/40 bg-[#16181d] p-4 shadow-2xl">
+        <div className="fixed bottom-5 right-5 z-[115] w-full max-w-xs rounded-2xl border border-[var(--accent-soft)]/40 bg-[#16181d] p-4 shadow-[var(--shadow-xl)]">
           <div className="mb-1 flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-soft)]"><Sparkles className="h-3.5 w-3.5" /> Tour · {tourStep + 1}/{TOUR_STEPS.length}</span>
             <button type="button" onClick={closeTour} aria-label="Saltar tour" className="rounded-md p-1 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>
@@ -2898,7 +2898,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       {showShortcuts && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <button type="button" aria-label="Cerrar" onClick={() => setShowShortcuts(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div role="dialog" aria-modal="true" aria-label="Atajos de teclado" className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#16181d] p-4 shadow-2xl">
+          <div role="dialog" aria-modal="true" aria-label="Atajos de teclado" className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#16181d] p-4 shadow-[var(--shadow-xl)]">
             <div className="mb-3 flex items-center justify-between">
               <p className="inline-flex items-center gap-2 text-sm font-bold text-white"><Keyboard className="h-4 w-4" /> Atajos de teclado</p>
               <button type="button" onClick={() => setShowShortcuts(false)} aria-label="Cerrar" className="rounded-md p-1 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>
@@ -3154,7 +3154,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       <div className="flex flex-1 min-h-0">
         {/* #7.4 Modo Focus: botón flotante para volver */}
         {focusMode && (
-          <button type="button" onClick={() => setFocusMode(false)} className="fixed left-1/2 top-3 z-[115] -translate-x-1/2 rounded-full bg-[#16181d] px-4 py-1.5 text-xs font-bold text-white shadow-2xl ring-1 ring-white/10 transition-opacity hover:opacity-90">
+          <button type="button" onClick={() => setFocusMode(false)} className="fixed left-1/2 top-3 z-[115] -translate-x-1/2 rounded-full bg-[#16181d] px-4 py-1.5 text-xs font-bold text-white shadow-[var(--shadow-xl)] ring-1 ring-white/10 transition-opacity hover:opacity-90">
             Salir de Focus · Esc
           </button>
         )}
@@ -4323,7 +4323,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   options={[
                     { value: "none", label: "Sin", preview: <span className="h-6 w-9 rounded bg-white" /> },
                     { value: "soft", label: "Suave", preview: <span className="h-6 w-9 rounded bg-white shadow-md" /> },
-                    { value: "deep", label: "Profunda", preview: <span className="h-6 w-9 rounded bg-white shadow-2xl" /> },
+                    { value: "deep", label: "Profunda", preview: <span className="h-6 w-9 rounded bg-white shadow-[var(--shadow-xl)]" /> },
                   ]} />
                 <StylePicker label="Animaciones" value={draft.animations} onChange={(v) => patch("animations", v)} cols={3}
                   options={[
@@ -4848,7 +4848,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   if (!deviceFrame) return frameEl;
                   const isMobile = viewport === "mobile";
                   return (
-                    <div className={cn("relative w-full bg-gray-900 shadow-2xl ring-1 ring-white/10", isMobile ? "rounded-[2.75rem] p-3" : "rounded-[2rem] p-3.5")}>
+                    <div className={cn("relative w-full bg-gray-900 shadow-[var(--shadow-xl)] ring-1 ring-white/10", isMobile ? "rounded-[2.75rem] p-3" : "rounded-[2rem] p-3.5")}>
                       {isMobile && <div className="absolute left-1/2 top-3 z-10 h-5 w-28 -translate-x-1/2 rounded-b-2xl bg-gray-900" aria-hidden />}
                       <div className={cn("overflow-hidden", isMobile ? "rounded-[2rem]" : "rounded-[1.25rem]")}>{frameEl}</div>
                     </div>

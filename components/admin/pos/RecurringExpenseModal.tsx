@@ -232,7 +232,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
       onClick={(e) => { if (e.target === e.currentTarget && !submitting) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape" && !submitting) onClose(); }}
     >
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-3xl my-8 overflow-hidden border border-[var(--rule-base)]">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-3xl my-8 overflow-hidden border border-[var(--rule-base)]">
         {/* ── Header ── */}
         <header className={cn("px-5 sm:px-6 py-4 border-b border-[var(--rule-base)] flex items-center gap-3", colorCls.bg)}>
           <span className={cn("inline-flex items-center justify-center h-12 w-12 rounded-xl ring-1", colorCls.iconBg, colorCls.border)}>

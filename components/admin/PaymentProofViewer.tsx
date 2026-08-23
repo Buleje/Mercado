@@ -334,7 +334,7 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
           <img
             src={proof.imageUrl}
             alt="Comprobante de pago ampliado"
-            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-[var(--shadow-xl)]"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

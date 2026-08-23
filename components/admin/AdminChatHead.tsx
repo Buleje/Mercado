@@ -233,7 +233,7 @@ export default function AdminChatHead() {
 
       {/* ── Bandeja completa (la abre el ícono del nav) ── */}
       {openList && !active && (
-        <div className="fixed bottom-4 right-4 z-50 flex max-h-[70vh] w-[330px] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base,#e5e7eb)] bg-[var(--surface-canvas,#fff)] shadow-2xl shadow-black/25 motion-safe:animate-[slideUp_0.25s_ease-out]">
+        <div className="fixed bottom-4 right-4 z-50 flex max-h-[70vh] w-[330px] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base,#e5e7eb)] bg-[var(--surface-canvas,#fff)] shadow-[var(--shadow-xl)] shadow-black/25 motion-safe:animate-[slideUp_0.25s_ease-out]">
           <div className="flex shrink-0 items-center justify-between border-b border-[var(--rule-soft,#f0f0f0)] bg-[var(--surface-raised,#fafafa)] px-3.5 py-2.5">
             <p className="text-sm font-black text-[var(--text-primary,#111)]">
               Chats con clientes
@@ -321,7 +321,7 @@ export default function AdminChatHead() {
         <div
           role="dialog"
           aria-label={`Chat con ${active.customerName}`}
-          className="fixed bottom-4 right-4 z-50 flex h-[440px] w-[330px] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base,#e5e7eb)] bg-[var(--surface-canvas,#fff)] shadow-2xl shadow-black/30 motion-safe:animate-[slideUp_0.25s_ease-out]"
+          className="fixed bottom-4 right-4 z-50 flex h-[440px] w-[330px] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base,#e5e7eb)] bg-[var(--surface-canvas,#fff)] shadow-[var(--shadow-xl)] shadow-black/30 motion-safe:animate-[slideUp_0.25s_ease-out]"
         >
           {/* Header */}
           <div className="flex shrink-0 items-center gap-2 border-b border-[var(--rule-soft,#f0f0f0)] bg-[var(--surface-raised,#fafafa)] px-3 py-2.5">
