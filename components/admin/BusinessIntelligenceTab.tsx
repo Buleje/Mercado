@@ -50,8 +50,8 @@ function kpisATarjetas(k: KpisResponse): KpiCard[] {
 }
 
 const SEV_META: Record<Anomalia["severity"], { bg: string; text: string }> = {
-  alto: { bg: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50", text: "text-[var(--data-error-500)]" },
-  medio: { bg: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50", text: "text-[var(--data-warning-500)]" },
+  alto: { bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border-[var(--data-error-500)]/30 dark:border-[var(--data-error-500)]/30", text: "text-[var(--data-error-500)]" },
+  medio: { bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15 border-[var(--data-warning-500)]/30 dark:border-[var(--data-warning-500)]/30", text: "text-[var(--data-warning-500)]" },
   bajo: { bg: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", text: "text-[var(--data-success-500)]" },
 };
 
