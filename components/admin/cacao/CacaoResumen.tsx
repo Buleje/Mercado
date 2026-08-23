@@ -13,7 +13,7 @@ import {
   AlertCircle, Download, RefreshCw, Calendar, Beaker, Percent, Banknote,
   Trees, Stethoscope, ClipboardList,
 } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import { CardTitle, StatCard } from "@buleje/design-system";
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
 import { PLAGA_LABEL, type CacaoPlaga } from "@/lib/cacao/cacao-sanidad";
 import { printCacaoReporte } from "@/lib/cacao/cacao-reporte";
@@ -181,7 +181,7 @@ export default function CacaoResumen() {
       {/* Campo — tu chacra (integra el módulo de manejo de campo) */}
       {campo && campo.parcelas > 0 && (
         <div>
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Trees className="h-4 w-4 text-[var(--accent)]" />Campo — tu chacra</h3>
+          <CardTitle as="h3" className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Trees className="h-4 w-4 text-[var(--accent)]" />Campo — tu chacra</CardTitle>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard label="Secciones" value={String(campo.parcelas)} subValue={`${n1(campo.areaHa)} ha`} icon={Trees} emphasis="neutral" />
             <StatCard label="Cosecha propia" value={campoTot ? `${n0(campoTot.cosechaKg)} kg` : "—"} subValue={campoTot?.rendKgHa != null ? `${n1(campoTot.rendKgHa)} kg/ha` : "sin cosecha"} icon={Scale} emphasis="neutral" />
@@ -264,7 +264,7 @@ function CacaoResultado({
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
       <div className="mb-3 flex items-center gap-2">
         <Banknote className="h-4 w-4 text-[var(--accent)]" aria-hidden />
-        <h3 className="text-sm font-bold text-[var(--text-primary)]">Resultado del cacao</h3>
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Resultado del cacao</CardTitle>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 sm:items-center">
         <div>
@@ -358,7 +358,7 @@ function Mini({ icon: Icon, label, value, hint, tone }: { icon: typeof Leaf; lab
 function Panel({ icon: Icon, title, children }: { icon: typeof Leaf; title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Icon className="h-4 w-4 text-[var(--accent)]" />{title}</h3>
+      <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Icon className="h-4 w-4 text-[var(--accent)]" />{title}</CardTitle>
       <div className="space-y-2">{children}</div>
     </div>
   );
