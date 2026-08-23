@@ -40,13 +40,9 @@ export interface PaymentApproval {
   id: string;
   /**
    * tenantId del tenant dueño de la conversación que generó esta approval.
-<<<<<<< Updated upstream
    * CONTRACT PHASE (2026-05-11): la columna es NOT NULL en DB tras 0 rows
    * legacy. Todos los callers pasan tenantId obligatorio desde
    * Conversation.tenantId.
-=======
-   * Contract phase completada (multi-tenant-contract-audit): NOT NULL en DB.
->>>>>>> Stashed changes
    */
   tenantId: string;
   conversationId: string | null;
