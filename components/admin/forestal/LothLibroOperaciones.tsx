@@ -33,6 +33,7 @@ import {
   Coins,
   Scissors,
   Upload,
+  Info,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
@@ -43,7 +44,7 @@ import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";
 import { printLothInforme } from "@/lib/forestal/loth-informe-print";
 import { printTrozaLabels } from "@/lib/forestal/loth-labels";
 import {
-  LOTH_SECTIONS,
+  LOTH_SECTION_GROUPS,
   PLAZO_REGISTRO_DIAS,
   diasDeRegistro,
   estaFueraDePlazo,
@@ -200,6 +201,41 @@ const LOTH_GROUPS: LibroGroup[] = [
 const LOTH_VIEW_KEYS = LOTH_GROUPS.flatMap((g) => g.views.map((v) => v.key));
 /** Las mismas claves, tipadas: es lo que valida la vista que pide la URL. */
 const LOTH_VIEW_KEYS_TIPADAS = LOTH_VIEW_KEYS as LothView[];
+
+/** Un chip de sub-tab de sección, agrupado bajo su rótulo bosque/transformación. */
+function SectionChip({
+  meta,
+  active,
+  count,
+  onClick,
+}: {
+  meta: { index: number; short: string };
+  active: boolean;
+  count: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 rounded-xl border-2 px-3.5 py-2 text-sm font-bold transition ${
+        active
+          ? "border-[var(--data-success-600)] bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
+      }`}
+    >
+      <span className="grid h-5 w-5 place-items-center rounded-md bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] tabular-nums">
+        {meta.index}
+      </span>
+      {meta.short}
+      {count > 0 && (
+        <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
 
 export default function LothLibroOperaciones() {
   const [section, setSection] = useState<LothSection>("tala");
@@ -757,35 +793,36 @@ export default function LothLibroOperaciones() {
         </div>
       )}
 
-      {/* Sub-tabs de las 6 secciones */}
-      <div className="flex flex-wrap gap-2">
-        {LOTH_SECTIONS.map((s) => {
-          const m = SECTION_META[s];
-          const active = s === section;
-          const st = statBy.get(s);
-          return (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setSection(s)}
-              className={`inline-flex items-center gap-2 rounded-xl border-2 px-3.5 py-2 text-sm font-bold transition ${
-                active
-                  ? "border-[var(--data-success-600)] bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
-              }`}
-            >
-              <span className="grid h-5 w-5 place-items-center rounded-md bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] tabular-nums">
-                {m.index}
-              </span>
-              {m.short}
-              {st && st.count > 0 && (
-                <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">
-                  {st.count}
+      {/* Sub-tabs de las 6 secciones, agrupadas: bosque (RDE 264-2019 §1-3) vs
+          transformación en el propio TH (§4-6) — dos momentos del MISMO libro,
+          no dos libros. Ver `LOTH_SECTION_GROUPS` en loth-constants. */}
+      <div className="flex flex-col gap-2.5">
+        {LOTH_SECTION_GROUPS.map((g) => (
+          <div key={g.key}>
+            <div className="mb-1.5 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+              {g.label}
+              {g.key === "transformacion" && (
+                <span
+                  title="Obligatorio en el LO-TH (RDE 264-2019) solo si el titular transforma su propia madera. Si toda la troza sale con GTF a un CTP aparte, estas 3 secciones quedan en cero — es correcto, no falta nada."
+                  className="grid h-3.5 w-3.5 cursor-help place-items-center text-[var(--text-tertiary)]"
+                >
+                  <Info className="h-3.5 w-3.5" />
                 </span>
               )}
-            </button>
-          );
-        })}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {g.sections.map((s) => (
+                <SectionChip
+                  key={s}
+                  meta={SECTION_META[s]}
+                  active={s === section}
+                  count={statBy.get(s)?.count ?? 0}
+                  onClick={() => setSection(s)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* KPIs — adaptados a la sección (evita mostrar métricas que no aplican:

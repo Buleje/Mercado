@@ -14,6 +14,20 @@ export const LOTH_SECTIONS = [
 
 export type LothSection = (typeof LOTH_SECTIONS)[number];
 
+/**
+ * Las 6 secciones son UN libro (RDE 264-2019), pero registran dos momentos
+ * distintos del aprovechamiento — se agrupan solo para la navegación, no para
+ * el dato: **bosque** (tumba/troceo/salida de trozas en rollo) y
+ * **transformación en el propio TH** (consumo/producto/despacho de lo que el
+ * titular asierra sin tener una planta CTP aparte registrada). Un titular que
+ * despacha TODA su troza a un CTP externo deja el segundo grupo en cero — eso
+ * es correcto, no un bug. Ver skill `serfor-osinfor-compliance` §1/§3.
+ */
+export const LOTH_SECTION_GROUPS: { key: string; label: string; sections: LothSection[] }[] = [
+  { key: "bosque", label: "Operación de bosque", sections: ["tala", "trozado", "despacho_troza"] },
+  { key: "transformacion", label: "Transformación en el TH", sections: ["consumo_troza", "producto_terminado", "despacho_producto"] },
+];
+
 // ─── Plazo de registro (SINGLE SOURCE) ─────────────────────────────────────
 
 /**
