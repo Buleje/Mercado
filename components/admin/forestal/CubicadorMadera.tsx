@@ -10,7 +10,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   cubicarPieza, mejoresNumeros, detectarComando, ESPECIES_MADERA,
@@ -964,6 +964,43 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const limpiarFiltros = useCallback(() => { setFiltroEspecie(""); setFiltroTipo(""); setBusqueda(""); }, []);
 
   /**
+   * Ventaneo de la tabla (memoria `cubicador-freeze-lotes-grandes`): con
+   * 700+ filas × ~10 controles cada una, montar la tabla ENTERA de una crea
+   * miles de nodos DOM en un solo commit de React y cuelga el tab —
+   * confirmado con un CPU profile real (no supuesto), no un problema de
+   * re-render (por eso memoizar la fila no alcanzaba). Por debajo del umbral
+   * se sigue rindiendo TODO, sin costo de ventaneo, para el caso común.
+   *
+   * Es SEGURO para selección por arrastre y navegación por teclado porque
+   * ambas trabajan por posición (`fila`/`col`), no por ref de DOM
+   * (`seleccion-celdas.tsx`/`celdas-excel.tsx`): el gesto de mouse ya estaba
+   * limitado a lo que se ve en pantalla, y `enfocarCelda`/`filasDe` ya
+   * toleran una fila ausente (no revientan, sólo no mueven el foco esa vez)
+   * — el sobremontaje generoso hace que eso casi nunca pase en uso normal.
+   */
+  const UMBRAL_VIRTUALIZACION = 150;
+  const SOBREMONTAJE = 20; // filas de más montadas arriba/abajo del área visible
+  const virtualizarTabla = filasVisibles.length > UMBRAL_VIRTUALIZACION;
+  const [altoFila, setAltoFila] = useState(44);
+  const [scrollTopTabla, setScrollTopTabla] = useState(0);
+  const primeraFilaRef = useRef<HTMLTableRowElement | null>(null);
+  useEffect(() => {
+    if (!virtualizarTabla) return;
+    const h = primeraFilaRef.current?.getBoundingClientRect().height;
+    if (h && Math.abs(h - altoFila) > 1) setAltoFila(h);
+  }, [virtualizarTabla, altoFila]);
+  const altoContenedorTabla = virtualizarTabla ? Math.min(600, filasVisibles.length * altoFila) : null;
+  const inicioVentana = virtualizarTabla
+    ? Math.max(0, Math.floor(scrollTopTabla / altoFila) - SOBREMONTAJE)
+    : 0;
+  const finVentana = virtualizarTabla
+    ? Math.min(filasVisibles.length, Math.ceil((scrollTopTabla + (altoContenedorTabla ?? 0)) / altoFila) + SOBREMONTAJE)
+    : filasVisibles.length;
+  const filasEnVentana = virtualizarTabla ? filasVisibles.slice(inicioVentana, finVentana) : filasVisibles;
+  const colchonSuperior = virtualizarTabla ? inicioVentana * altoFila : 0;
+  const colchonInferior = virtualizarTabla ? (filasVisibles.length - finVentana) * altoFila : 0;
+
+  /**
    * Teclado de la tabla. `data-fila` es la posición VISIBLE (no el índice del lote):
    * con un filtro puesto, las flechas tienen que moverse por lo que se ve.
    */
@@ -1573,7 +1610,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               </button>
             </div>
             <div className="overflow-x-auto rounded-lg border border-[var(--accent)]/20 bg-[var(--surface-raised)]">
-              <table className="w-full min-w-[460px] text-sm">
+              <DataTable className="w-full min-w-[460px] text-sm">
                 <thead>
                   <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
                     <th className="px-3 py-2">{ETIQUETA_DIMENSION[dimResumen].replace("Por ", "")}</th>
@@ -1613,7 +1650,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     {conValor && <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">S/ {soles(resumen.total.valor)}</td>}
                   </tr>
                 </tfoot>
-              </table>
+              </DataTable>
             </div>
           </div>
         )}
@@ -1670,10 +1707,15 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 </>
               )}
             </div>
-            <div data-grilla={GRILLA_TABLA} className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-            <table className="w-full min-w-[960px] text-sm">
+            <div
+              data-grilla={GRILLA_TABLA}
+              className="overflow-x-auto rounded-xl border border-[var(--rule-base)]"
+              style={virtualizarTabla ? { maxHeight: altoContenedorTabla ?? undefined, overflowY: "auto" } : undefined}
+              onScroll={virtualizarTabla ? (e) => setScrollTopTabla(e.currentTarget.scrollTop) : undefined}
+            >
+            <DataTable className="w-full min-w-[960px] text-sm">
               <thead>
-                <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                <tr className={`bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] ${virtualizarTabla ? "sticky top-0 z-10" : ""}`}>
                   {/* El tilde manda: lo marcado es lo que se lleva el papel. */}
                   <th className="w-10 px-2 py-2 text-center" title="Marcá las piezas que van al PDF y al Anexo 04">
                     <input
@@ -1721,7 +1763,13 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     </td>
                   </tr>
                 )}
-                {filasVisibles.map(({ r, indice }, pos) => {
+                {virtualizarTabla && colchonSuperior > 0 && (
+                  <tr aria-hidden="true">
+                    <td colSpan={13} style={{ height: colchonSuperior, padding: 0, border: 0 }} />
+                  </tr>
+                )}
+                {filasEnVentana.map(({ r, indice }, i) => {
+                  const pos = inicioVentana + i;
                   const leyendo = readingId === r.id;
                   const editando = editingId === r.id;
                   const rowCls = leyendo
@@ -1741,6 +1789,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   <tr
                     key={r.id}
                     id={`cub-row-${r.id}`}
+                    ref={i === 0 ? primeraFilaRef : undefined}
                     /* El arrastre se extiende a nivel FILA y no celda por celda:
                        el asa se baja por cualquier parte de la fila, y repetir
                        el handler en once `<td>` sólo multiplicaba el trabajo. */
@@ -1823,6 +1872,11 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   </tr>
                   );
                 })}
+                {virtualizarTabla && colchonInferior > 0 && (
+                  <tr aria-hidden="true">
+                    <td colSpan={13} style={{ height: colchonInferior, padding: 0, border: 0 }} />
+                  </tr>
+                )}
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-[var(--rule-base)] bg-primary/10 font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
@@ -1832,7 +1886,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   <td />
                 </tr>
               </tfoot>
-            </table>
+            </DataTable>
           </div>
           </>
         )}
