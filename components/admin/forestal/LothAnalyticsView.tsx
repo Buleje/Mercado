@@ -23,12 +23,13 @@ import {
   RefreshCw, AlertTriangle, TrendingUp, Gauge, Coins, CalendarClock,
   Calculator, Save, Download, Ban, TreePine,
 } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   construirFlujo, rankingRentabilidad, veredictoLibro, type CosteoRowRaw,
 } from "@/lib/forestal/loth-analitica";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { FlujoPanel, Kpi, RankingPanel, VeredictoBanner, fm } from "./loth-analitica-piezas";
 
 interface Funnel {
@@ -170,19 +171,26 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
     });
   }, [data]);
 
-  /** Cuadro por especie: rendimiento y saldo eran dos tablas con la misma clave. */
+  /**
+   * Cuadro por especie: rendimiento y saldo eran dos tablas con la misma clave
+   * — pero el plan escribe «Tornillo (Cedrelinga catenaeformis)» y el libro
+   * solo «Tornillo». Cruzarlas por string exacto (antes) daba DOS filas para
+   * la misma especie: la del libro con Movilizado 0, la del plan con
+   * Talado/Trozado 0. Cruzar por `claveEspecie` (mismo criterio que
+   * `computeBalance`) las funde en una fila con todos los datos.
+   */
   const porEspecie = useMemo(() => {
     if (!data) return [];
-    const saldo = new Map((data.balance?.rows ?? []).map((r) => [r.species, r]));
-    const nombres = new Set<string>([
-      ...data.aprovechamiento.bySpecies.map((s) => s.species),
-      ...(data.balance?.rows ?? []).map((r) => r.species),
-    ]);
-    return [...nombres].map((species) => {
-      const ap = data.aprovechamiento.bySpecies.find((s) => s.species === species);
-      const ba = saldo.get(species);
+    const saldo = new Map((data.balance?.rows ?? []).map((r) => [claveEspecie(r.species), r]));
+    const aprov = new Map(data.aprovechamiento.bySpecies.map((s) => [claveEspecie(s.species), s]));
+    const claves = new Set<string>([...saldo.keys(), ...aprov.keys()]);
+    return [...claves].map((clave) => {
+      const ap = aprov.get(clave);
+      const ba = saldo.get(clave);
       return {
-        species,
+        // Preferí el nombre del plan (trae el científico entre paréntesis, más
+        // completo); si la especie no está en el plan, el del libro alcanza.
+        species: ba?.species ?? ap?.species ?? clave,
         cites: ap?.cites ?? false,
         taladoM3: ap?.taladoM3 ?? 0,
         trozadoM3: ap?.trozadoM3 ?? 0,
@@ -308,7 +316,7 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
             <CardTitle as="h3" className="text-sm text-[var(--text-primary)]">Cuadro por especie</CardTitle>
             <span className="text-xs text-[var(--text-tertiary)]">— lo talado, lo que rindió y cuánto queda autorizado</span>
           </div>
-          <table className="w-full text-sm">
+          <DataTable className="w-full text-sm">
             <thead className="bg-[var(--surface-sunken)] text-left">
               <tr>
                 <Th>Especie</Th>
@@ -344,7 +352,7 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         </section>
       )}
 
