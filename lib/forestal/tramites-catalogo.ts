@@ -69,6 +69,8 @@ export const ICONO_TRAMITE: Record<string, string> = {
   "reposicion-talonario-gtf": "FileWarning",
   "paralizacion-temporal": "Pause",
   "renovacion-registro-ctp": "RotateCcw",
+  "informe-regencia": "ClipboardCheck",
+  "remision-libro-th": "FileStack",
 };
 
 export type TipoCampo = "texto" | "textarea" | "numero" | "fecha";
@@ -857,7 +859,77 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
     advertencia: "Iniciá el trámite con anticipación: operar con el registro vencido puede generar observaciones aunque la planta siga funcionando igual.",
   },
 
-  // ── 14. Oficio o carta genérica ───────────────────────────────────────────
+  // ── 14. Informe periódico de regencia forestal (Título Habilitante) ──────
+  {
+    id: "informe-regencia",
+    nombre: "Informe periódico de regencia forestal",
+    autoridad: "arffs",
+    proposito: "El informe que el regente forestal presenta sobre el avance del aprovechamiento del título habilitante bajo su responsabilidad técnica",
+    asunto: "Remito informe periódico de regencia forestal",
+    baseLegal: [
+      "Ley N° 29763 — Ley Forestal y de Fauna Silvestre",
+      "D.S. N° 018-2015-MINAGRI — Reglamento para la Gestión Forestal",
+    ],
+    campos: [
+      ...CAMPOS_COMUNES,
+      { id: "regenteNombre", label: "Regente forestal", tipo: "texto", requerido: true, hint: "Nombre y N° de registro o habilitación profesional" },
+      { id: "tituloHabilitanteRegencia", label: "Título habilitante", tipo: "texto", requerido: true },
+      { id: "periodoRegencia", label: "Período que se informa", tipo: "texto", requerido: true, placeholder: "Julio-agosto 2026" },
+      {
+        id: "avanceAprovechamiento",
+        label: "Avance del aprovechamiento",
+        tipo: "textarea",
+        requerido: true,
+        hint: "Talado/trozado/movilizado del período — lo ves en Resumen y Analítica del Libro de Títulos Habilitantes",
+      },
+      { id: "incidenciasRegencia", label: "Incidencias u observaciones técnicas", tipo: "textarea" },
+    ],
+    anexos: [
+      "Resumen del aprovechamiento del período (Libro de Títulos Habilitantes)",
+      "Constancia de habilitación profesional vigente del regente",
+    ],
+    cuerpo: (d) => [
+      `Que, en mi calidad de regente forestal (${v(d, "regenteNombre")}) del título habilitante ${v(d, "tituloHabilitanteRegencia")}, remito el presente informe correspondiente al período ${v(d, "periodoRegencia")}.`,
+      `Avance del aprovechamiento: ${v(d, "avanceAprovechamiento")}.`,
+      d.incidenciasRegencia?.trim() ? `Incidencias u observaciones técnicas del período: ${v(d, "incidenciasRegencia")}.` : "No se presentaron incidencias técnicas dignas de mención en el período.",
+      "Adjunto el resumen del aprovechamiento y quedo a disposición para la verificación que su Autoridad estime necesaria.",
+    ],
+    advertencia: "La periodicidad exacta de la regencia (mensual, trimestral…) la fija tu Plan de Manejo o el TUPA de tu ARFFS: confirmala antes de presentar.",
+  },
+
+  // ── 15. Remisión del Libro de Operaciones del Título Habilitante ─────────
+  {
+    id: "remision-libro-th",
+    nombre: "Remisión del Libro de Operaciones del Título Habilitante",
+    autoridad: "arffs",
+    proposito: "La carta que acompaña la información del período del Libro de Operaciones de tu título habilitante (LO-TH)",
+    asunto: "Remito información del Libro de Operaciones del Título Habilitante",
+    baseLegal: [
+      "RDE N° 264-2019-MINAGRI-SERFOR-DE — formato del Libro de Operaciones de los Títulos Habilitantes",
+      "Ley N° 29763 — Ley Forestal y de Fauna Silvestre",
+    ],
+    campos: [
+      ...CAMPOS_COMUNES,
+      { id: "tituloHabilitanteRemision", label: "Título habilitante", tipo: "texto", requerido: true },
+      { id: "periodoRemisionTh", label: "Período que se remite", tipo: "texto", requerido: true },
+      { id: "taladoPeriodoM3", label: "Talado del período (m³)", tipo: "texto", hint: "Lo ves en Resumen del Libro de Títulos Habilitantes" },
+      { id: "movilizadoPeriodoM3", label: "Movilizado del período (m³)", tipo: "texto" },
+      { id: "observacionesRemisionTh", label: "Observaciones", tipo: "textarea" },
+    ],
+    anexos: [
+      "Libro de Operaciones del período en formato oficial (LO-TH)",
+      "Balance de extracción por especie del período",
+    ],
+    cuerpo: (d) => [
+      `Que, en cumplimiento de lo dispuesto por la RDE N° 264-2019-MINAGRI-SERFOR-DE, remito la información contenida en el Libro de Operaciones del título habilitante ${v(d, "tituloHabilitanteRemision")} correspondiente al período ${v(d, "periodoRemisionTh")}.`,
+      `En dicho período se registró un volumen talado de ${v(d, "taladoPeriodoM3", "0.00")} m³${d.movilizadoPeriodoM3?.trim() ? ` y un volumen movilizado de ${v(d, "movilizadoPeriodoM3")} m³` : ""}, con el detalle que consta en el Libro adjunto.`,
+      d.observacionesRemisionTh?.trim() ? `Observaciones: ${v(d, "observacionesRemisionTh")}.` : "",
+      "La documentación de origen legal y las guías de transporte forestal emitidas se encuentran a disposición de su Autoridad en nuestras instalaciones.",
+    ],
+    advertencia: "Adjuntá el Libro en formato oficial: se descarga desde el Libro de Títulos Habilitantes.",
+  },
+
+  // ── 16. Oficio o carta genérica ───────────────────────────────────────────
   {
     id: "carta-generica",
     nombre: "Carta u oficio a la autoridad",
