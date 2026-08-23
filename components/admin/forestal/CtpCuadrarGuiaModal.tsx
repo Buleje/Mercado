@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, Loader2, Scale } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
@@ -283,14 +284,14 @@ export default function CtpCuadrarGuiaModal({
 
             {asientos.map((a) => (
               <section key={a.entryId} className="rounded-xl border border-[var(--rule-base)]">
-                <h3 className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
+                <CardTitle as="h3" className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
                   <span className="text-sm font-bold text-[var(--text-primary)]">
                     {a.descuadre.especie ?? "Sin especie"}
                   </span>
                   {a.libroNro != null && (
                     <span className="text-xs text-[var(--text-tertiary)]">asiento N° {a.libroNro}</span>
                   )}
-                </h3>
+                </CardTitle>
                 <div className="space-y-3 p-3">
                   <div className="flex flex-wrap gap-2">
                     <Testigo

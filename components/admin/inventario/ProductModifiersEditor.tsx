@@ -14,6 +14,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { CardTitle } from "@buleje/design-system";
 import {
   X, Plus, Trash2, BookOpen, Camera, Loader2, AlertTriangle, Check,
   Sliders, Upload, Star,
@@ -177,7 +178,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
             {!loading && groups.length === 0 && (
               <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center bg-white dark:bg-card">
                 <Sliders className="h-10 w-10 mx-auto text-[var(--text-tertiary)] mb-3" />
-                <h3 className="text-sm font-bold text-[var(--text-primary)] mb-1">Aún no hay adicionales</h3>
+                <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)] mb-1">Aún no hay adicionales</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] max-w-md mx-auto leading-snug">
                   Agregá un grupo (ej. <em>Cremas</em>, <em>Tamaño</em>, <em>Toppings</em>) o importá uno listo desde el catálogo global.
                 </p>

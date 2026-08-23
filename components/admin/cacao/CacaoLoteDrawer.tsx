@@ -23,6 +23,7 @@ import {
   ExternalLink,
   MessageCircle,
 } from "@buleje/design-system/icons";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import {
   ESTADO_PAGO_LABEL,
@@ -227,9 +228,9 @@ export default function CacaoLoteDrawer({
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                 Ficha de lote
               </p>
-              <h2 className="font-mono text-base font-extrabold text-[var(--text-primary)]">
+              <SectionTitle as="h2" className="font-mono text-base font-extrabold text-[var(--text-primary)]">
                 {lote?.loteCode ?? "…"}
-              </h2>
+              </SectionTitle>
             </div>
           </div>
           <button
@@ -503,9 +504,9 @@ function Section({
 }) {
   return (
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4">
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+      <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
         <Icon className="h-4 w-4 text-[var(--accent)]" /> {title}
-      </h3>
+      </CardTitle>
       <div className="space-y-1.5">{children}</div>
     </div>
   );

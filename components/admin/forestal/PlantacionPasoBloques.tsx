@@ -10,6 +10,7 @@
 
 import { useMemo } from "react";
 import { AlertTriangle, Plus } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { validarPlantacion, type BloqueInput, type PlantacionInput } from "@/lib/forestal/plantacion-tramite";
 import PlantacionBloqueCard from "./PlantacionBloqueCard";
 
@@ -80,7 +81,7 @@ export default function PlantacionPasoBloques({
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="font-display text-xl leading-tight text-[var(--text-primary)]">Bloques de plantación</h3>
+            <CardTitle as="h3" className="font-display text-xl leading-tight text-[var(--text-primary)]">Bloques de plantación</CardTitle>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
               {bloques.length} {bloques.length === 1 ? "bloque" : "bloques"} · {numEspecies} {numEspecies === 1 ? "especie" : "especies"} ·{" "}
               {superficieBloques.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha declaradas en bloques

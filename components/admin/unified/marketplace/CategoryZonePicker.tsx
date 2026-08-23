@@ -254,9 +254,9 @@ function CustomCategoryEditor({
       />
       <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] shadow-2xl">
         <header className="flex items-center justify-between px-6 py-4 border-b-2 border-[var(--rule-base)] sticky top-0 bg-[var(--surface-canvas)] z-10">
-          <h3 className="text-lg font-extrabold text-[var(--text-primary)]">
+          <CardTitle as="h3" className="text-lg font-extrabold text-[var(--text-primary)]">
             {initial ? "Editar categoría propia" : "Nueva categoría propia"}
-          </h3>
+          </CardTitle>
           <button
             type="button"
             onClick={onClose}

@@ -29,6 +29,7 @@ import {
   Save,
   SlidersHorizontal,
 } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { buildTramiteHtml, imprimirTramite, TRAMITE_PREVIEW_CSS } from "@/lib/forestal/tramites-print";
 import { archivarEnDrive } from "@/lib/forestal/ctp-archivar-documento";
 import { nombreArchivoTramite, tramiteDocumentoAPdf } from "@/lib/forestal/tramites-documento-pdf";
@@ -451,7 +452,7 @@ export default function TramiteFormulario({
                 </span>
               )}
             </div>
-            <h3 className="font-display mt-2 text-2xl leading-tight text-[var(--text-primary)]">{formato.nombre}</h3>
+            <CardTitle as="h3" className="font-display mt-2 text-2xl leading-tight text-[var(--text-primary)]">{formato.nombre}</CardTitle>
             <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">{formato.proposito}</p>
           </div>
           <Btn variant="secondary" onClick={onCerrar}>

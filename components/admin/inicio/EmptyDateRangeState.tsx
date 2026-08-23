@@ -15,6 +15,7 @@
  */
 
 import { useCallback } from "react";
+import { CardTitle } from "@buleje/design-system";
 import { Calendar, ArrowRight, type LucideIcon } from "@buleje/design-system/icons";
 import {
   type DateRange,
@@ -131,9 +132,9 @@ export default function EmptyDateRangeState({
         </div>
 
         {/* Headline */}
-        <h3 className="text-[length:clamp(1.25rem,2.5vw,1.625rem)] font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+        <CardTitle as="h3" className="text-[length:clamp(1.25rem,2.5vw,1.625rem)] font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {headline}
-        </h3>
+        </CardTitle>
 
         {/* Descripción */}
         <p className="mt-3 text-[length:var(--ts-base)] font-medium text-[var(--text-secondary)] leading-relaxed">

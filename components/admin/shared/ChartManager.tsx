@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { Plus, X, LayoutGrid } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import AdminModal from "./AdminModal";
 
@@ -160,9 +161,9 @@ export default function ChartManager({ moduleId, charts, className, emptyState }
           return (
             <Fragment key={chart.id}>
               {showSectionHeader && !chartIsEmpty && (
-                <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] mt-4 -mb-1 tracking-tight">
+                <SectionTitle as="h2" className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] mt-4 -mb-1 tracking-tight">
                   {chart.section}
-                </h2>
+                </SectionTitle>
               )}
               {/* El gráfico vacío se OCULTA (hidden), no se desmonta: sigue
                   fetcheando y reaparece si llegan datos. */}

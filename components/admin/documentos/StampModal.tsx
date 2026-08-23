@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, Stamp, Loader2 } from "lucide-react";
+import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { stampDoc } from "@/hooks/use-documents";
 import type { DbDocument } from "@/lib/types/documents";
@@ -45,9 +46,9 @@ export function StampModal({ doc, onClose, onDone }: { doc: DbDocument; onClose:
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div className="w-full max-w-[28rem] rounded-2xl bg-white dark:bg-[var(--color-card)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+          <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
             <Stamp className="h-5 w-5 text-primary" /> Poner sello
-          </h3>
+          </CardTitle>
           <button onClick={onClose} className="rounded-lg p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
         </div>
         <p className="mb-3 text-xs text-[var(--text-secondary)]">

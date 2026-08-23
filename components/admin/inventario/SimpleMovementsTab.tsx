@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { SectionTitle } from "@buleje/design-system";
 import {
   ArrowDownCircle, ArrowUpCircle, Download, Loader2, Package,
   Search, RefreshCw, ArrowLeftRight,
@@ -455,7 +456,7 @@ function RegisterMovementModal({ products, onClose, onSaved }: { products: Produ
       <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
           <div>
-            <h2 className="text-lg font-bold leading-tight text-[var(--text-primary)]">Registrar movimiento</h2>
+            <SectionTitle as="h2" className="text-lg font-bold leading-tight text-[var(--text-primary)]">Registrar movimiento</SectionTitle>
             <p className="text-xs text-[var(--text-tertiary)]">Entrada o salida de stock con motivo</p>
           </div>
           <button onClick={onClose} aria-label="Cerrar" className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-5 w-5" /></button>

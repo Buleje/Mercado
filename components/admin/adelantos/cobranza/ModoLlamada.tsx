@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { SectionTitle } from "@buleje/design-system";
 import {
   ChevronLeft,
   ChevronRight,
@@ -91,7 +92,7 @@ export default function ModoLlamada({
             {d.nombre.charAt(0).toUpperCase()}
           </span>
           <div>
-            <h2 className="text-3xl font-extrabold text-[var(--text-primary)]">{d.nombre}</h2>
+            <SectionTitle as="h2" className="text-3xl font-extrabold text-[var(--text-primary)]">{d.nombre}</SectionTitle>
             {d.telefono && <p className="mt-1 text-xl tabular-nums text-[var(--text-secondary)]">{d.telefono}</p>}
           </div>
 

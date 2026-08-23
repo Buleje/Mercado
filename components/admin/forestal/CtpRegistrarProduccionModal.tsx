@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Boxes, Gauge, Loader2, Plus, Trash2 } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { PRESENTACIONES_LOCTP, TIPOS_PRODUCTO_SALIDA, presentacionSugerida } from "@/lib/forestal/loctp-catalogos";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
@@ -87,10 +88,10 @@ function Bloque({
 }) {
   return (
     <section className="rounded-xl border border-[var(--rule-base)]">
-      <h3 className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
+      <CardTitle as="h3" className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
         <span className="text-sm font-bold text-[var(--text-primary)]">{titulo}</span>
         {meta && <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{meta}</span>}
-      </h3>
+      </CardTitle>
       <div className="p-3">{children}</div>
     </section>
   );

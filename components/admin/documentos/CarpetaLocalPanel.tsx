@@ -18,6 +18,7 @@ import {
   AlertTriangle, Check, FolderOpen, HardDriveDownload, HardDriveUpload, Link2Off,
   Loader2, Lock, Pause, Play, RefreshCw, Trash2, TriangleAlert, Info,
 } from "lucide-react";
+import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { useCarpetaLocal } from "@/hooks/use-carpeta-local";
@@ -105,10 +106,10 @@ export default function CarpetaLocalPanel({
   if (!c.vinculo) {
     return (
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <h3 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
           <FolderOpen className="h-5 w-5 text-primary" aria-hidden="true" />
           Vincular una carpeta de tu PC
-        </h3>
+        </CardTitle>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
           Elegís una carpeta del escritorio y queda emparejada con el drive: lo que edites, agregues o borres de
           un lado pasa al otro. No hay que instalar nada — sincroniza mientras tengas el panel abierto.
@@ -144,7 +145,7 @@ export default function CarpetaLocalPanel({
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+          <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
             <FolderOpen className="h-5 w-5 text-primary" aria-hidden="true" />
             <span className="truncate">{c.vinculo.nombre}</span>
             {c.vinculo.pausado && (
@@ -152,7 +153,7 @@ export default function CarpetaLocalPanel({
                 en pausa
               </span>
             )}
-          </h3>
+          </CardTitle>
           <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
             Emparejada con <strong className="font-bold text-[var(--text-secondary)]">{nombreDestino}</strong> ·
             última vez: {hace(c.vinculo.ultimaSync)}

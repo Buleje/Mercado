@@ -13,6 +13,7 @@
  */
 
 import { AlertTriangle, CheckCircle2, Info, XCircle } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import type { ImageValidationResult } from "@/lib/image-validator";
 
@@ -142,9 +143,9 @@ export function ImageRequirementsGuide({ className }: { className?: string }) {
     >
       <div className="flex items-center gap-2 mb-3">
         <Info className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.75} />
-        <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="text-sm font-semibold text-[var(--text-primary)]">
           Requisitos de foto de producto
-        </h3>
+        </CardTitle>
       </div>
       <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
         {items.map((item) => (

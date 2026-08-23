@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ShieldCheck, CheckCircle, AlertCircle, Loader2 } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import {
   SUNAT_BLOCKER_LABEL,
   type SunatModoOficialState,
@@ -55,7 +56,7 @@ export default function SunatModoOficialCard() {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-extrabold text-[var(--text-primary)]">Modo SUNAT Oficial</h3>
+            <CardTitle as="h3" className="text-base font-extrabold text-[var(--text-primary)]">Modo SUNAT Oficial</CardTitle>
             <span
               className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)]"
               style={

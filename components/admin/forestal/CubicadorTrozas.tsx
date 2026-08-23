@@ -14,6 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Table, Trash2, AlertTriangle, Upload,
 } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { detectarComando, ESPECIES_MADERA, mejoresNumeros, PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import {
   compararConGtf, cubicarTroza, partirEnTrozas, totalesTrozas, type TrozaCubicada,
@@ -172,9 +173,9 @@ export default function CubicadorTrozas() {
     <div className="space-y-4">
       {/* Panel de voz */}
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Ruler className="h-4 w-4 text-[var(--accent)]" /> Cubicador de trozas (rolliza · Smalian)
-        </h3>
+        </CardTitle>
         {voz.supported ? (
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
             <button
@@ -259,9 +260,9 @@ export default function CubicadorTrozas() {
       {/* Tabla + comparación con la GTF */}
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <Table className="h-4 w-4 text-[var(--accent)]" /> Trozas del patio ({rows.length})
-          </h3>
+          </CardTitle>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => setImportando(true)} className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
               <Upload className="h-3.5 w-3.5" /> Importar

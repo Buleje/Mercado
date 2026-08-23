@@ -28,6 +28,7 @@ import {
   Check as CheckIcon,
   Trash2,
 } from "@buleje/design-system/icons";
+import { SectionTitle, CardTitle } from "@buleje/design-system";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { usePOSSound } from "./usePOSSound";
@@ -1086,9 +1087,9 @@ export default function PuntoCompraView() {
             {/* El rótulo decía «Artículos para Comprar» sobre un bloque de
                 gastos fijos: combustible, internet y alquiler no son artículos,
                 y el propio subtítulo lo desmentía. */}
-            <h2 className="text-base font-extrabold text-[var(--text-primary)] truncate">
+            <SectionTitle as="h2" className="text-base font-extrabold text-[var(--text-primary)] truncate">
               Gastos fijos del negocio
-            </h2>
+            </SectionTitle>
             <p className="text-sm text-[var(--text-secondary)]">
               Lo que se paga todos los meses: alquiler, servicios, combustible. Tocá una tarjeta para registrar el pago del período.
             </p>
@@ -2227,7 +2228,7 @@ export default function PuntoCompraView() {
           <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-extrabold text-[var(--text-primary)]">Nuevo proveedor</h3>
+                <CardTitle as="h3" className="text-lg font-extrabold text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                   Se guarda en tu lista de proveedores y se selecciona en esta orden.
                 </p>

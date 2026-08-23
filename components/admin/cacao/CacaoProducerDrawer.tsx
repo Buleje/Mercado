@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   HandCoins,
 } from "@buleje/design-system/icons";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -296,9 +297,9 @@ export default function CacaoProducerDrawer({
                 Productor {producer?.codigo ? `· ${producer.codigo}` : ""}
                 {inactive && " · inactivo"}
               </p>
-              <h2 className="text-base font-extrabold text-[var(--text-primary)]">
+              <SectionTitle as="h2" className="text-base font-extrabold text-[var(--text-primary)]">
                 {producer?.nombre ?? "…"}
-              </h2>
+              </SectionTitle>
             </div>
           </div>
           <button
@@ -382,7 +383,7 @@ export default function CacaoProducerDrawer({
               {/* Perfil / edición */}
               <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4">
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-[var(--text-primary)]">Perfil</h3>
+                  <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Perfil</CardTitle>
                   {!editing ? (
                     <button
                       type="button"
@@ -555,9 +556,9 @@ export default function CacaoProducerDrawer({
 
               {/* Historial de lotes */}
               <div>
-                <h3 className="mb-2 text-sm font-bold text-[var(--text-primary)]">
+                <CardTitle as="h3" className="mb-2 text-sm font-bold text-[var(--text-primary)]">
                   Historial de lotes ({lotes.length})
-                </h3>
+                </CardTitle>
                 <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)]">
                   {lotes.length === 0 ? (
                     <p className="p-4 text-center text-[var(--text-tertiary)]">
@@ -636,9 +637,9 @@ export default function CacaoProducerDrawer({
               <HandCoins className="h-6 w-6" />
             </span>
             <div className="min-w-0">
-              <h3 className="text-base font-bold text-[var(--text-primary)]">
+              <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
                 Registrar pago — lote {payLote.loteCode}
-              </h3>
+              </CardTitle>
               <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
                 Debido S/ {n2(payLote.totalPagado)} · pagado S/ {n2(payLote.montoPagado)} · saldo S/{" "}
                 {n2(loteSaldo(payLote))}

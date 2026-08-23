@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot } from "recharts";
 import { TrendingUp, TrendingDown, Minus, ArrowUp, ArrowDown, Activity } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT } from "@/lib/cacao/cacao-precio-regional";
 import CacaoChartPresent from "./CacaoChartPresent";
 
@@ -177,10 +178,10 @@ export default function CacaoPriceChart({
   const content = (presentBtn: ReactNode) => (
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Activity className="h-4 w-4 text-[var(--accent)]" />
           {title}
-        </h3>
+        </CardTitle>
         <div className="flex flex-wrap items-center gap-2">
           {canSol && (
             <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Field } from "@/components/admin/shared/Field";
+import { SectionTitle } from "@buleje/design-system";
 import {
   AlertTriangle, CheckCircle, Clock, Download, Loader2,
   Search, ShieldCheck, Plus, X, Trash2, TrendingDown,
@@ -266,7 +267,7 @@ function RegisterBatchModal({ products, onClose, onSaved }: { products: Product[
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
-          <div><h2 className="text-lg font-bold leading-tight text-[var(--text-primary)]">Registrar lote</h2><p className="text-xs text-[var(--text-tertiary)]">Mercadería con fecha de vencimiento</p></div>
+          <div><SectionTitle as="h2" className="text-lg font-bold leading-tight text-[var(--text-primary)]">Registrar lote</SectionTitle><p className="text-xs text-[var(--text-tertiary)]">Mercadería con fecha de vencimiento</p></div>
           <button onClick={onClose} aria-label="Cerrar" className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-5 w-5" /></button>
         </div>
         <div className="space-y-4 p-6">

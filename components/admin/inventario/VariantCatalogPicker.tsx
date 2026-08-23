@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { CardTitle } from "@buleje/design-system";
 import {
   Loader2, Check, Image as ImageIcon, ChevronDown, ChevronRight,
   CheckSquare, Square, Plus,
@@ -311,7 +312,7 @@ function TemplateRow({
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-bold text-[var(--text-primary)]">{template.name}</h3>
+              <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{template.name}</CardTitle>
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
                 {template.category}
               </span>

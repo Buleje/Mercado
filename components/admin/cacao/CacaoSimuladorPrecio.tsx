@@ -10,6 +10,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { FlaskConical, TrendingUp, TrendingDown, Minus, Info } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT } from "@/lib/cacao/cacao-precio-regional";
 
 const PRESETS = [-10, -5, 5, 10];
@@ -67,7 +68,7 @@ export default function CacaoSimuladorPrecio({
       <div className="mb-1 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <FlaskConical className="h-4 w-4 text-[var(--accent)]" />
-          <h3 className="text-sm font-bold text-[var(--text-primary)]">Simulador de escenarios</h3>
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Simulador de escenarios</CardTitle>
         </div>
         <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-700)]">
           Simulación

@@ -24,6 +24,7 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
@@ -197,10 +198,10 @@ export default function SyncEscritorioView({
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--text-primary)]">
+            <SectionTitle as="h2" className="flex items-center gap-2 text-lg font-bold text-[var(--text-primary)]">
               <FolderSync className="h-5 w-5 text-primary" aria-hidden="true" />
               Tu carpeta de la PC, acá
-            </h2>
+            </SectionTitle>
             <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
               Elegís una carpeta de Windows y todo lo que pongas ahí aparece en Documentación. Lo que subís
               desde el panel o el celular baja a la carpeta. Si borrás un archivo en la PC va a la papelera del
@@ -246,9 +247,9 @@ export default function SyncEscritorioView({
 
       {/* ── Equipos ── */}
       <section className="space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <CardTitle as="h3" className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
           Equipos conectados
-        </h3>
+        </CardTitle>
         {cargando && equipos.length === 0 ? (
           <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
             <Loader2 className="h-4 w-4 animate-spin" /> Viendo si hay alguno…
@@ -323,7 +324,7 @@ export default function SyncEscritorioView({
 
       {/* ── Conectar una PC ── */}
       <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
-        <h3 className="text-sm font-bold text-[var(--text-primary)]">Conectar una PC</h3>
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Conectar una PC</CardTitle>
         <ol className="mt-3 space-y-4 text-sm text-[var(--text-secondary)]">
           <li>
             <p className="font-bold text-[var(--text-primary)]">1 · Generá la clave</p>
@@ -395,9 +396,9 @@ export default function SyncEscritorioView({
       {/* ── Claves ── */}
       {claves.length > 0 && (
         <section className="space-y-2">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <CardTitle as="h3" className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
             Claves activas
-          </h3>
+          </CardTitle>
           <ul className="space-y-2">
             {claves.map((k) => (
               <li

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { m } from "framer-motion";
+import { SectionTitle } from "@buleje/design-system";
 import {
   AlertTriangle,
   Package,
@@ -201,9 +202,9 @@ export default function MorningBriefingCard() {
       <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         Para hoy · <span className="capitalize">{fecha}</span>
       </p>
-      <h2 className="mt-1 max-w-[34ch] text-2xl font-extrabold leading-tight tracking-tight text-[var(--text-primary)] sm:text-[1.75rem]">
+      <SectionTitle as="h2" className="mt-1 max-w-[34ch] text-2xl font-extrabold leading-tight tracking-tight text-[var(--text-primary)] sm:text-[1.75rem]">
         Tenés {tasks.length} {tasks.length === 1 ? "cosa" : "cosas"} por resolver
-      </h2>
+      </SectionTitle>
       <p className="mt-1.5 text-sm font-medium text-[var(--text-secondary)]">
         Ayer vendiste{" "}
         <span className="font-bold tabular-nums text-[var(--text-primary)]">

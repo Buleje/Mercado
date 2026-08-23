@@ -27,6 +27,7 @@ import {
   Volume2,
   VolumeX,
 } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import POSCustomerSearch from "./POSCustomerSearch";
 import POSSplitPayment from "./POSSplitPayment";
@@ -625,7 +626,7 @@ export default function POSPaymentModal({
                 <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <Banknote className="h-4 w-4" />
                 </span>
-                <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Pago</h3>
+                <CardTitle as="h3" className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Pago</CardTitle>
               </div>
               <div className="px-4 py-3 space-y-3 min-w-0">
 
@@ -1119,7 +1120,7 @@ export default function POSPaymentModal({
                 <span className="h-8 w-8 rounded-full bg-[var(--data-success-500)]/15 flex items-center justify-center text-[var(--data-success-500)]">
                   <User className="h-4 w-4" />
                 </span>
-                <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Cliente</h3>
+                <CardTitle as="h3" className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Cliente</CardTitle>
                 {isFiado && <span className="ml-auto text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-error-500)] uppercase">Requerido</span>}
               </div>
               <div className="px-4 py-3 space-y-3 min-w-0">
@@ -1268,7 +1269,7 @@ export default function POSPaymentModal({
                 <span className="h-8 w-8 rounded-full bg-[var(--data-warning-500)]/15 flex items-center justify-center text-[var(--data-warning-500)]">
                   <Receipt className="h-4 w-4" />
                 </span>
-                <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Comprobante</h3>
+                <CardTitle as="h3" className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Comprobante</CardTitle>
               </div>
               <div className="px-4 py-3 space-y-3 min-w-0">
 

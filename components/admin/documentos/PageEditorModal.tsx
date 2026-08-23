@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X, RotateCw, Trash2, ChevronLeft, ChevronRight, Loader2, Save, FileText } from "lucide-react";
+import { CardTitle } from "@buleje/design-system";
 import { fetchPageCount, editPages } from "@/hooks/use-documents";
 import type { DbDocument } from "@/lib/types/documents";
 
@@ -55,7 +56,7 @@ export function PageEditorModal({ doc, onClose, onDone }: { doc: DbDocument; onC
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div className="flex max-h-[90vh] w-full max-w-[46rem] flex-col overflow-hidden rounded-2xl bg-white dark:bg-[var(--color-card)] shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-[var(--rule-base)] p-4">
-          <h3 className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><FileText className="h-5 w-5 text-primary" /> Editar páginas</h3>
+          <CardTitle as="h3" className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><FileText className="h-5 w-5 text-primary" /> Editar páginas</CardTitle>
           <button onClick={onClose} className="rounded-lg p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
         </div>
 

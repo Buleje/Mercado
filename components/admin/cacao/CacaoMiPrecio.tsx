@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot, Legend } from "recharts";
 import { LineChart as LineIcon, TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import CacaoChartPresent from "./CacaoChartPresent";
 import { COMPRA_LOCAL_PCT } from "@/lib/cacao/cacao-precio-regional";
 
@@ -111,7 +112,7 @@ export default function CacaoMiPrecio({
     <>
       <div className="mb-1 flex items-center gap-2">
         <LineIcon className="h-4 w-4 text-[var(--accent)]" />
-        <h3 className="text-sm font-bold text-[var(--text-primary)]">Mi precio en el tiempo · S//kg</h3>
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Mi precio en el tiempo · S//kg</CardTitle>
       </div>
       <p className="mb-4 text-xs text-[var(--text-tertiary)]">A cómo compraste en chacra y a cómo vendiste, mes a mes, contra el mercado local (≈{COMPRA_LOCAL_PCT}% del precio oficial).</p>
 

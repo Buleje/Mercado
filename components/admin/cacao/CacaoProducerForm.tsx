@@ -186,7 +186,7 @@ function Section({ icon: Icon, title, children }: { icon: typeof Users; title: s
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--surface-sunken)] text-[var(--accent)]"><Icon className="h-4 w-4" /></span>
-        <h3 className="text-sm font-bold text-[var(--text-primary)]">{title}</h3>
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{title}</CardTitle>
       </div>
       {children}
     </section>

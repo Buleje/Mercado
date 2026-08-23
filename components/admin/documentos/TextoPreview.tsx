@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { CardTitle } from "@buleje/design-system";
 import { Loader2 } from "@buleje/design-system/icons";
 import { formatoTextoDe, leerPlano, type DocumentoTexto } from "@/lib/documentos/texto-docx";
 import { descargarArchivo, descargarTexto } from "@/lib/documentos/archivo-remoto";
@@ -117,7 +118,7 @@ export default function TextoPreview({ url, mimeType, nombre, miniaturaUrl }: {
         {bloques.map((b) => {
           const estilo = `${b.negrita ? "font-bold " : ""}${b.cursiva ? "italic " : ""}`;
           if (b.tipo === "titulo") {
-            return <h3 key={b.id} className={`text-lg font-bold text-[var(--text-primary)] ${estilo}`}>{b.texto}</h3>;
+            return <CardTitle as="h3" key={b.id} className={`text-lg font-bold text-[var(--text-primary)] ${estilo}`}>{b.texto}</CardTitle>;
           }
           if (b.tipo === "subtitulo") {
             return <h4 key={b.id} className={`text-base font-bold text-[var(--text-primary)] ${estilo}`}>{b.texto}</h4>;

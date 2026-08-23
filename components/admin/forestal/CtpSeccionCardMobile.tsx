@@ -11,6 +11,7 @@
  */
 
 import { AlertCircle, Boxes, Calendar, FileText, Link2, PackagePlus, Truck } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import type { CtpEntry, CtpSection } from "./CtpSectionViews";
@@ -61,7 +62,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[length:var(--ts-2xs)] font-mono font-bold text-[var(--text-tertiary)]">#{e.lineNo}</span>
-            <h3 className="truncate text-base font-bold text-[var(--text-primary)]">{e.speciesCommon ?? "—"}</h3>
+            <CardTitle as="h3" className="truncate text-base font-bold text-[var(--text-primary)]">{e.speciesCommon ?? "—"}</CardTitle>
             {e.cites && (
               <span className="shrink-0 rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>
             )}

@@ -41,6 +41,7 @@ import {
   Edit3,
   Trash2,
 } from "@buleje/design-system/icons";
+import { SectionTitle, CardTitle } from "@buleje/design-system";
 import { getCategoryIcon } from "@/lib/expense-icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -238,9 +239,9 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
             <SelectedIcon className={cn("h-6 w-6", colorCls.text)} strokeWidth={2} />
           </span>
           <div className="flex-1 min-w-0">
-            <h2 id="recurring-expense-title" className="text-lg font-extrabold text-[var(--text-primary)]">
+            <SectionTitle as="h2" id="recurring-expense-title" className="text-lg font-extrabold text-[var(--text-primary)]">
               Nuevo gasto recurrente
-            </h2>
+            </SectionTitle>
             <p className="text-sm text-[var(--text-secondary)] truncate">
               Configurá un pago fijo (alquiler, internet, etc.) para registrarlo en 1 click cuando llegue la fecha.
             </p>
@@ -592,10 +593,10 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
 function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
     <section className="space-y-3">
-      <h3 className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+      <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
         <span className="text-[var(--text-tertiary)]">{icon}</span>
         {title}
-      </h3>
+      </CardTitle>
       <div className="space-y-3">{children}</div>
     </section>
   );

@@ -11,6 +11,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { Gauge, Percent, Download } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 
 /** Totales de lo que ya está cubicado en las otras herramientas (localStorage). */
@@ -98,9 +99,9 @@ export default function CalculadoraRendimiento() {
 
   return (
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-      <h3 className="mb-1 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+      <CardTitle as="h3" className="mb-1 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
         <Gauge className="h-4 w-4 text-[var(--accent)]" /> Coeficiente de rendimiento
-      </h3>
+      </CardTitle>
       <p className="mb-3 text-xs text-[var(--text-tertiary)]">
         Cuánto producto salió de la troza consumida — el porcentaje que va en cada registro de transformación del Libro CTP.
       </p>

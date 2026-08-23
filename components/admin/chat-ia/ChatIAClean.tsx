@@ -37,6 +37,7 @@ import {
   Check,
   ArrowRight,
 } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -591,9 +592,9 @@ function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
       <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/15 mb-5">
         <Sparkles className="h-7 w-7 text-[color:var(--data-success)]" />
       </span>
-      <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight mb-2">
+      <SectionTitle as="h2" className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight mb-2">
         Asistente de tu negocio
-      </h2>
+      </SectionTitle>
       <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-xl">
         Te ayudo a entender qué pasa en tu negocio, qué hacer ahora y cómo vender más.
         Respondo con ejemplos fáciles y datos reales — sin adornos.

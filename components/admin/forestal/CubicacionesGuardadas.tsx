@@ -11,6 +11,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Calculator, Copy, FileText, Loader2, Search, Table, Trash2, X } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { filtrarCubicaciones, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 
@@ -81,9 +82,9 @@ export default function CubicacionesGuardadas({
   return (
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <FileText className="h-4 w-4 text-[var(--accent)]" /> Cubicaciones guardadas ({lista.length})
-        </h3>
+        </CardTitle>
         <button type="button" onClick={onCerrar} aria-label="Cerrar el historial" className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
           <X className="h-3.5 w-3.5" />
         </button>

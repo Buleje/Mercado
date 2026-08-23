@@ -20,6 +20,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle, Download, FileText, Upload, X } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
 import { logger } from "@/lib/logger";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -370,7 +371,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
       >
         <div className="flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-5">
           <div>
-            <h2 className="text-lg font-extrabold text-[var(--text-primary)]">Importar el libro</h2>
+            <SectionTitle as="h2" className="text-lg font-extrabold text-[var(--text-primary)]">Importar el libro</SectionTitle>
             <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
               El Excel que baja del SNIFFS, o la plantilla. Reconozco las cinco secciones por sus columnas.
             </p>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { X, Camera, Image as ImageIcon, FileText, Loader2, Trash2 } from "lucide-react";
+import { CardTitle } from "@buleje/design-system";
 import { scanToPdf } from "@/hooks/use-documents";
 
 /**
@@ -78,7 +79,7 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div className="flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl bg-white dark:bg-[var(--color-card)] shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-[var(--rule-base)] p-4">
-          <h3 className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><Camera className="h-5 w-5 text-primary" /> Escanear a PDF</h3>
+          <CardTitle as="h3" className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><Camera className="h-5 w-5 text-primary" /> Escanear a PDF</CardTitle>
           <button onClick={onClose} className="rounded-lg p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
         </div>
 

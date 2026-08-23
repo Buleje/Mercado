@@ -14,6 +14,7 @@
  */
 
 import { useState } from "react";
+import { SectionTitle } from "@buleje/design-system";
 import { AlertTriangle, Loader2, Undo2, X, type LucideIcon } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
@@ -135,7 +136,7 @@ export default function MovementDetailModal({
       <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
           <div className="min-w-0">
-            <h2 className="truncate text-lg font-bold leading-tight text-[var(--text-primary)]">{m.productName}</h2>
+            <SectionTitle as="h2" className="truncate text-lg font-bold leading-tight text-[var(--text-primary)]">{m.productName}</SectionTitle>
             <p className="text-sm text-[var(--text-secondary)]">
               {fecha.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
               {" · "}

@@ -20,6 +20,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Mic, MicOff, X, Check, Loader2, Plus, HelpCircle, Lock, Sparkles,
 } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { comandoDe, resolverDictado, separarPedidos, type LineaDictada } from "@/lib/pos/voz-parser";
@@ -373,7 +374,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                   <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">
                     Dictado por voz
                   </p>
-                  <h2 className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] leading-tight">
+                  <SectionTitle as="h2" className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] leading-tight">
                     {isListening
                       ? "Escuchando…"
                       : processing
@@ -381,7 +382,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                         : items.length > 0
                           ? "Productos reconocidos"
                           : 'Decí los productos que necesitás'}
-                  </h2>
+                  </SectionTitle>
                 </div>
               </div>
               <button

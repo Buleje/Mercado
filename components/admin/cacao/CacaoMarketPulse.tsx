@@ -10,6 +10,7 @@
  */
 import { useMemo } from "react";
 import { Activity, TrendingUp, TrendingDown, Minus, Clock } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { computeMarketStats, type PricePointLike } from "@/lib/cacao/cacao-lecturas";
 import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT } from "@/lib/cacao/cacao-precio-regional";
 import CacaoChartPresent from "./CacaoChartPresent";
@@ -71,10 +72,10 @@ export default function CacaoMarketPulse({
   return (
     <div className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Activity className="h-4 w-4 text-[var(--accent)]" />
           Pulso del mercado · sesión de hoy
-        </h3>
+        </CardTitle>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
             <Clock className="h-3.5 w-3.5" /> dato {hora(asOf)}

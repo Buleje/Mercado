@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, Trash2, X } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
 import { logger } from "@/lib/logger";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -99,7 +100,7 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
         className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
         <div className="flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-5">
-          <h2 className="text-lg font-extrabold text-[var(--text-primary)]">Vaciar el Libro de Operaciones</h2>
+          <SectionTitle as="h2" className="text-lg font-extrabold text-[var(--text-primary)]">Vaciar el Libro de Operaciones</SectionTitle>
           <button
             onClick={onClose}
             aria-label="Cerrar"

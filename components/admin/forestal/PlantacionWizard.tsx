@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, AlertTriangle, ArrowLeft, Check, CheckCircle2, Circle, Loader2 } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { useForestPlantaciones } from "@/hooks/use-forest-plantaciones";
 import { ESTADOS_PLANTACION } from "@/lib/forestal/plantacion-catalogo";
 import {
@@ -194,7 +195,7 @@ export default function PlantacionWizard({
                 </span>
               )}
             </div>
-            <h3 className="font-display mt-2 text-2xl leading-tight text-[var(--text-primary)]">Registro de Plantación Forestal</h3>
+            <CardTitle as="h3" className="font-display mt-2 text-2xl leading-tight text-[var(--text-primary)]">Registro de Plantación Forestal</CardTitle>
             <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
               {datos.tipoTramite === "actualizacion" ? "Actualización" : "Inscripción"} ante SERFOR — titular, predio, bloques y especies, hasta el Formato N°01.
             </p>

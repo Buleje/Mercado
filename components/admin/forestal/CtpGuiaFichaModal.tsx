@@ -15,6 +15,7 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, FileText, Loader2, PackageCheck, Scale } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import { completitudFicha, seccionesDeGuia, type LineaConGuia } from "@/lib/forestal/guia-ficha";
@@ -47,10 +48,10 @@ const n4 = (v: unknown) => {
 function Seccion({ titulo, rango, children }: { titulo: string; rango?: string; children: React.ReactNode }) {
   return (
     <section className="rounded-xl border border-[var(--rule-base)]">
-      <h3 className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
+      <CardTitle as="h3" className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
         <span className="text-sm font-bold text-[var(--text-primary)]">{titulo}</span>
         {rango && <span className="text-xs text-[var(--text-tertiary)]">{rango}</span>}
-      </h3>
+      </CardTitle>
       <div className="p-3">{children}</div>
     </section>
   );

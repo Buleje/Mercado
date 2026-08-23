@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Loader2,
 } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 /**
@@ -86,7 +87,7 @@ export default function SalesChannelsAnalyticsPanel() {
     <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-4">
       <header className="flex items-center gap-2">
         <BarChart3 className="h-5 w-5 text-[var(--accent)]" />
-        <h2 className="text-base font-extrabold text-[var(--text-primary)]">Rendimiento por canal</h2>
+        <SectionTitle as="h2" className="text-base font-extrabold text-[var(--text-primary)]">Rendimiento por canal</SectionTitle>
       </header>
 
       {loading ? (

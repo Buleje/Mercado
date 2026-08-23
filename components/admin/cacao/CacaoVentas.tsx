@@ -22,7 +22,7 @@ import {
   Loader2,
   Leaf,
 } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import { CardTitle, StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -453,9 +453,9 @@ export default function CacaoVentas() {
                     <Wallet className="h-6 w-6" />
                   </span>
                   <div className="min-w-0">
-                    <h3 className="text-base font-bold text-[var(--text-primary)]">
+                    <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
                       Registrar cobro · {cobro.ventaCode}
-                    </h3>
+                    </CardTitle>
                     <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
                       Total de la venta:{" "}
                       <b className="text-[var(--text-secondary)]">S/ {n2(cobro.totalPen)}</b>.
@@ -522,9 +522,9 @@ export default function CacaoVentas() {
                 <AlertTriangle className="h-6 w-6" />
               </span>
               <div className="min-w-0">
-                <h3 className="text-base font-bold text-[var(--text-primary)]">
+                <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
                   Anular venta {items.find((v) => v.id === annulId)?.ventaCode ?? ""}
-                </h3>
+                </CardTitle>
                 <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
                   Sale de los ingresos y el cacao vuelve al inventario disponible.{" "}
                   <strong className="text-[var(--text-secondary)]">No se borra</strong> — queda en

@@ -2,6 +2,7 @@
 
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminCard from "@/components/admin/shared/AdminCard";
+import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 /**
  * ForecastingDashboard.tsx
@@ -771,9 +772,9 @@ function PanelCard({
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)]">
         <div className="flex items-center gap-2">
           <span className="text-primary">{icon}</span>
-          <h3 className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {title}
-          </h3>
+          </CardTitle>
         </div>
         {headerExtra}
       </div>

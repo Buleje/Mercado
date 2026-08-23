@@ -19,7 +19,7 @@ import {
   CalendarClock,
   Printer,
 } from "@buleje/design-system/icons";
-import { LoadingState, ErrorAlert } from "@buleje/design-system";
+import { LoadingState, ErrorAlert, CardTitle } from "@buleje/design-system";
 import { Btn } from "./ctp-shared";
 import { estaFueraDePlazo, type LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { resumirPeriodo } from "@/lib/forestal/loth-cierre-resumen";
@@ -145,7 +145,7 @@ export default function LothCierrePanel({
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="mb-1 flex items-center gap-2">
           <Lock className="h-4 w-4 text-[var(--accent-dark)] dark:text-[var(--accent)]" />
-          <h3 className="text-sm font-bold text-[var(--text-primary)]">Cerrar un período</h3>
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Cerrar un período</CardTitle>
         </div>
         <p className="mb-3 text-sm text-[var(--text-tertiary)]">
           Cerrar el mes vuelve sus líneas <b className="text-[var(--text-secondary)]">inmutables</b>: no se podrán registrar ni anular hasta reabrirlo. Es lo que exige OSINFOR de un libro de operaciones.
@@ -257,9 +257,9 @@ export default function LothCierrePanel({
       <div>
         <div className="mb-2 flex items-center gap-2">
           <CalendarClock className="h-4 w-4 text-[var(--text-tertiary)]" />
-          <h3 className="text-sm font-bold text-[var(--text-primary)]">
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
             Períodos cerrados <span className="text-[var(--text-tertiary)]">({activos.length} {activos.length === 1 ? "activo" : "activos"})</span>
-          </h3>
+          </CardTitle>
         </div>
         {(cierres ?? []).length === 0 ? (
           <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">

@@ -19,6 +19,7 @@
 
 import { useEffect, useState } from "react";
 import { AlertCircle, Boxes, Copy, Loader2, PackageOpen, TreePine } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { ModalBody } from "./ctp-shared";
@@ -97,10 +98,10 @@ function Dato({ label, valor, fuerte }: { label: string; valor: string; fuerte?:
 function Bloque({ titulo, meta, children }: { titulo: string; meta?: string; children: React.ReactNode }) {
   return (
     <section className="rounded-xl border border-[var(--rule-base)]">
-      <h3 className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
+      <CardTitle as="h3" className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
         <span className="text-sm font-bold text-[var(--text-primary)]">{titulo}</span>
         {meta && <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{meta}</span>}
-      </h3>
+      </CardTitle>
       <div className="p-3">{children}</div>
     </section>
   );

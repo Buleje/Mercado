@@ -209,7 +209,7 @@ function Hero({
           <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
             El más pedido · {AUTORIDADES[formato.autoridad].corto}
           </span>
-          <h2 className="font-display mt-3 text-3xl leading-tight">{formato.nombre}</h2>
+          <SectionTitle as="h2" className="font-display mt-3 text-3xl leading-tight">{formato.nombre}</SectionTitle>
           <p className="mt-2 text-base text-white/85">{formato.proposito}</p>
           <p className="mt-4 inline-flex items-center gap-2 text-sm font-bold">
             Llenar y presentar

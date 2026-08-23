@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   RefreshCw, AlertCircle, TrendingUp, TrendingDown, Minus, Sparkles, Clock, MapPin, AlertTriangle, ShoppingCart, ListChecks, Coins, LineChart, Newspaper, Gauge, Calendar, Activity, Bell, Printer, MessageCircle, Download, Layers, Zap, Info,
 } from "@buleje/design-system/icons";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { mesNombre, type AdvisorResult } from "@/lib/cacao/cacao-advisor";
 import { printCacaoAsesor, asesorTexto } from "@/lib/cacao/cacao-asesor-informe";
 import { downloadCacaoAsesorPDF } from "@/lib/cacao/cacao-asesor-pdf";
@@ -118,7 +119,7 @@ export default function CacaoAsesor() {
                   <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest" style={{ color: cfg.accent }}>Recomendación</span>
                   <span className="rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider" style={{ background: cfg.ring, color: "white" }}>señal {a.fuerza}</span>
                 </div>
-                <h2 className="mt-0.5 text-xl font-extrabold" style={{ color: cfg.text }}>{a.titulo}</h2>
+                <SectionTitle as="h2" className="mt-0.5 text-xl font-extrabold" style={{ color: cfg.text }}>{a.titulo}</SectionTitle>
                 <p className="mt-1.5 text-sm leading-relaxed" style={{ color: cfg.text }}>{a.resumen}</p>
                 {a.signal === "vender" && a.metrics.pos52 != null && a.metrics.pos52 <= 40 && (
                   <p className="mt-1.5 text-xs leading-relaxed" style={{ color: cfg.accent }}>
@@ -179,7 +180,7 @@ export default function CacaoAsesor() {
 
           {/* Narrativa IA */}
           <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10 p-5">
-            <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--accent)]"><Sparkles className="h-4 w-4" /> Lectura de la IA</h3>
+            <CardTitle as="h3" className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--accent)]"><Sparkles className="h-4 w-4" /> Lectura de la IA</CardTitle>
             {data?.narrative ? (
               <p className="text-sm leading-relaxed text-[var(--text-primary)]">{data.narrative}</p>
             ) : (
@@ -456,7 +457,7 @@ export default function CacaoAsesor() {
 function Card({ icon: Icon, title, children }: { icon: typeof MapPin; title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Icon className="h-4 w-4 text-[var(--accent)]" /> {title}</h3>
+      <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Icon className="h-4 w-4 text-[var(--accent)]" /> {title}</CardTitle>
       {children}
     </div>
   );

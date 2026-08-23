@@ -208,7 +208,7 @@ function Section({ icon: Icon, title, hint, children }: { icon: typeof Leaf; tit
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--surface-sunken)] text-[var(--accent)]"><Icon className="h-4 w-4" /></span>
-        <h3 className="text-sm font-bold text-[var(--text-primary)]">{title}</h3>
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{title}</CardTitle>
         {hint && <span className="text-xs text-[var(--text-tertiary)]">· {hint}</span>}
       </div>
       {children}

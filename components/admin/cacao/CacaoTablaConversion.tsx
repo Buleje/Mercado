@@ -10,6 +10,7 @@
  */
 import { useMemo, useState } from "react";
 import { Table } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT, ANCLA_CC_LABEL } from "@/lib/cacao/cacao-precio-regional";
 import CacaoChartPresent from "./CacaoChartPresent";
 
@@ -108,10 +109,10 @@ export default function CacaoTablaConversion({
     <div className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <Table className="h-4 w-4 text-[var(--accent)]" />
             Tabla de conversión del cacao
-          </h3>
+          </CardTitle>
           <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Equivalente de compra local ({COMPRA_LOCAL_PCT}% del oficial, calibrado con {ANCLA_CC_LABEL}) según la variación internacional. Tocá una fila para fijarla como base.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

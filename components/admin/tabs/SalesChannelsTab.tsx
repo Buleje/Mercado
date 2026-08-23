@@ -22,6 +22,7 @@ import {
   Tag,
   Share2,
 } from "@buleje/design-system/icons";
+import { PageTitle, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import { EMPTY_SALES_CHANNELS, type SalesChannelsConfig } from "@/lib/types/sales-channels";
@@ -130,9 +131,9 @@ export default function SalesChannelsTab() {
           <Share2 className="h-6 w-6" />
         </span>
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)]">
+          <PageTitle as="h1" className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)]">
             Canales de venta
-          </h1>
+          </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
             Conectá tu tienda con TikTok Shop, Meta (Facebook + Instagram) y Google Analytics. Pegá
             tus IDs de píxel/medición y se activan los eventos en tu tienda — incluida la conversión
@@ -309,7 +310,7 @@ function ChannelCard({
           >
             <Brand className="h-5 w-5" />
           </span>
-          <h2 className="text-base font-extrabold text-[var(--text-primary)]">{name}</h2>
+          <SectionTitle as="h2" className="text-base font-extrabold text-[var(--text-primary)]">{name}</SectionTitle>
         </div>
         <span
           className={cn(

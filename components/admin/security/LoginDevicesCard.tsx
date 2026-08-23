@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Monitor, Smartphone, MapPin, Clock, ShieldCheck, KeyRound, X } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 
@@ -115,7 +116,7 @@ export default function LoginDevicesCard() {
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="flex items-center gap-2">
         <ShieldCheck className="h-5 w-5 text-[var(--accent)]" aria-hidden />
-        <h3 className="text-base font-bold text-[var(--text-primary)]">Dispositivos y accesos</h3>
+        <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Dispositivos y accesos</CardTitle>
       </div>
       <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
         Desde dónde entraste a tu panel. Si ves un acceso que no reconocés, cambiá tu contraseña.

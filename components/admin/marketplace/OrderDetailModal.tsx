@@ -25,6 +25,7 @@ import {
   Receipt,
   User,
 } from "lucide-react";
+import { SectionTitle, CardTitle } from "@buleje/design-system";
 import type { MarketplaceOrderDetail } from "./hooks/use-marketplace-orders";
 import { cn } from "@/lib/utils";
 
@@ -44,10 +45,10 @@ const STATUS_META: Record<
 > = {
   pendiente:  { label: "Pendiente",  dot: "bg-amber-500",   chip: "bg-amber-500/15 border-amber-500/30",   text: "text-amber-700 dark:text-amber-300" },
   confirmado: { label: "Confirmado", dot: "bg-emerald-500", chip: "bg-emerald-500/15 border-emerald-500/30", text: "text-emerald-700 dark:text-emerald-300" },
-  preparando: { label: "Preparando", dot: "bg-violet-500",  chip: "bg-violet-500/15 border-violet-500/30",   text: "text-violet-700 dark:text-violet-300" },
+  preparando: { label: "Preparando", dot: "bg-violet-500",  chip: "bg-violet-500/15 border-violet-500/30",   text: "text-[var(--data-info)]" },
   en_camino:  { label: "En camino",  dot: "bg-blue-500",    chip: "bg-blue-500/15 border-blue-500/30",       text: "text-blue-700 dark:text-blue-300" },
   entregado:  { label: "Entregado",  dot: "bg-emerald-600", chip: "bg-emerald-500/15 border-emerald-500/30", text: "text-emerald-700 dark:text-emerald-300" },
-  cancelado:  { label: "Cancelado",  dot: "bg-rose-500",    chip: "bg-rose-500/15 border-rose-500/30",       text: "text-rose-700 dark:text-rose-300" },
+  cancelado:  { label: "Cancelado",  dot: "bg-rose-500",    chip: "bg-rose-500/15 border-rose-500/30",       text: "text-[var(--data-error)]" },
 };
 
 export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChangeStatus }: Props) {
@@ -104,13 +105,13 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
         <header className="relative shrink-0 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 pt-5 pb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Pedido marketplace
               </p>
               <div className="mt-1 flex items-center gap-2">
-                <h2 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                <SectionTitle as="h2" className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
                   #{orderShortId}
-                </h2>
+                </SectionTitle>
                 {order && (
                   <button
                     type="button"
@@ -161,7 +162,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
                 {statusMeta.label}
               </span>
               <div className="text-right">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Total</p>
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Total</p>
                 <p className="text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">
                   {fmtCurrency(order.total)}
                 </p>
@@ -183,10 +184,10 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
             <>
               {/* ── Cliente ────────────────────────────── */}
               <section>
-                <h3 className="mb-3 flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+                <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   <User className="h-3.5 w-3.5" />
                   Cliente
-                </h3>
+                </CardTitle>
                 <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
                   <div className="flex items-center gap-3">
                     <div className="h-12 w-12 shrink-0 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center text-base font-extrabold">
@@ -236,13 +237,13 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
 
               {/* ── Productos ──────────────────────────── */}
               <section>
-                <h3 className="mb-3 flex items-center justify-between text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+                <CardTitle as="h3" className="mb-3 flex items-center justify-between text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   <span className="flex items-center gap-2">
                     <Package className="h-3.5 w-3.5" />
                     Productos
                   </span>
                   <span className="text-[var(--text-secondary)]">{order.items.length} ítem{order.items.length !== 1 ? "s" : ""}</span>
-                </h3>
+                </CardTitle>
                 <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] overflow-hidden">
                   <ul className="divide-y-2 divide-[var(--rule-base)]">
                     {order.items.map((it) => (
@@ -264,7 +265,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
                             {it.name}
                           </p>
                           <div className="mt-0.5 flex items-center gap-1.5">
-                            <span className="inline-flex h-5 items-center rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-1.5 text-[11px] font-extrabold tabular-nums">
+                            <span className="inline-flex h-5 items-center rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-1.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums">
                               ×{it.quantity}
                             </span>
                             <span className="text-xs font-semibold text-[var(--text-secondary)] tabular-nums">
@@ -313,15 +314,15 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
               {/* ── Cancelación si aplica ──────────────── */}
               {order.status === "cancelado" && order.cancelReason && (
                 <section className="rounded-2xl border-2 border-rose-400/50 bg-rose-500/10 p-4">
-                  <h3 className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.1em] text-rose-700 dark:text-rose-300 mb-2">
+                  <CardTitle as="h3" className="flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--data-error)] mb-2">
                     <Receipt className="h-3.5 w-3.5" />
                     Motivo de cancelación
-                  </h3>
-                  <p className="text-sm font-semibold text-rose-900 dark:text-rose-100">
+                  </CardTitle>
+                  <p className="text-sm font-semibold text-[var(--data-error)]">
                     {order.cancelReason}
                   </p>
                   {order.cancelledAt && (
-                    <p className="mt-1 text-xs font-bold text-rose-700 dark:text-rose-400">
+                    <p className="mt-1 text-xs font-bold text-[var(--data-error)]">
                       {new Date(order.cancelledAt).toLocaleString("es-PE")}
                     </p>
                   )}

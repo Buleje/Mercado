@@ -18,6 +18,7 @@ import {
   Pause,
   Timer,
 } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 
 /**
@@ -299,9 +300,9 @@ export function ChartPresentationModal({
               Presentación · {activeIdx + 1} de {items.length}
               {autoplay && <span className="ml-2">· Modo TV</span>}
             </p>
-            <h2 className="font-display text-xl sm:text-2xl tracking-tight text-[var(--text-primary)] leading-tight truncate">
+            <SectionTitle as="h2" className="font-display text-xl sm:text-2xl tracking-tight text-[var(--text-primary)] leading-tight truncate">
               {activeItem.title}
-            </h2>
+            </SectionTitle>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">

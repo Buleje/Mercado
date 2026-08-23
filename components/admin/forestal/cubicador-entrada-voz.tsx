@@ -17,6 +17,7 @@ import {
   Calculator, FileSpreadsheet, Settings, Mic, MicOff, Volume2, VolumeX,
   AlertTriangle, Lock, Unlock, X, Check, RotateCcw, Plus, Layers,
 } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import {
   numerosPorPieza, DIMENSIONES, ESPECIES_MADERA,
   type PiezaCubicada, type MedidasFijas,
@@ -94,9 +95,9 @@ export default function PanelEntradaVoz({
   return (
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Calculator className="h-4 w-4 text-[var(--accent)]" /> Cubicador de madera por voz
-        </h3>
+        </CardTitle>
         <div className="flex items-center gap-2">
           <button type="button" onClick={onImportar} title="Importar un Excel/CSV de piezas al lote" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]">
             <FileSpreadsheet className="h-3.5 w-3.5" /> Importar Excel
