@@ -25,6 +25,7 @@ import type { CtpReportFicha } from "@/lib/forestal/ctp-print-shared";
 import TramiteFormulario, { type AutollenadoTramite } from "./TramiteFormulario";
 import TramitesCatalogo from "./TramitesCatalogo";
 import TramitesExpediente from "./TramitesExpediente";
+import TramiteAvisoWhatsApp from "./TramiteAvisoWhatsApp";
 import PlantacionesModule from "./PlantacionesModule";
 
 const MODULE_ID = "forestal-tramites";
@@ -200,7 +201,12 @@ export default function ForestalTramites() {
 
       {/* Vencen pronto o ya vencieron (T-3): el aviso que tiene que llegar ANTES
           del plazo, no un genérico de 15 días para todo. Primero que el de la
-          Ficha CTP — un plazo legal pesa más que un membrete incompleto. */}
+          Ficha CTP — un plazo legal pesa más que un membrete incompleto. El
+          botón de WhatsApp manda el mismo listado para que el aviso no
+          dependa de entrar a mirar el panel. */}
+      {vista === "catalogo" && !formato && porVencer.length > 0 && (
+        <div className="flex justify-end"><TramiteAvisoWhatsApp porVencer={porVencer} /></div>
+      )}
       {vista === "catalogo" && !formato && porVencer.map((t) => (
         <button
           key={t.id}
