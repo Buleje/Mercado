@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertCircle, Clock, RefreshCw } from "@buleje/design-system/icons";
 import { bucketsAntiguedad } from "@/lib/forestal/ctp-saldos-analisis";
 
@@ -162,7 +162,7 @@ export default function CtpPatioAging() {
         </ul>
       )}
 
-      <table className="w-full text-sm">
+      <DataTable className="w-full text-sm">
         <thead className="bg-[var(--surface-sunken)] text-left">
           <tr>
             <Th>Especie</Th><Th>GTF</Th>
@@ -187,7 +187,7 @@ export default function CtpPatioAging() {
             );
           })}
         </tbody>
-      </table>
+      </DataTable>
       {valorParcial && <p className="px-4 py-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">* Valor parcial: algunas guías no tienen costo cargado (factura pendiente).</p>}
     </div>
   );

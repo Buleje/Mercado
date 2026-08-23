@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { CardTitle, SuccessAlert, WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
+import { CardTitle, SuccessAlert, WarningAlert, ErrorAlert, LoadingState, DataTable } from "@buleje/design-system";
 import {
   AlertCircle,
   Banknote,
@@ -271,7 +271,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                 <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Sin guías atribuidas. Usá &quot;Editar atribución&quot; para declarar de dónde salió.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <DataTable className="w-full text-sm">
                     <thead className="bg-[var(--surface-sunken)] text-left">
                       <tr>
                         <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Guía GTF</th>
@@ -304,7 +304,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                         );
                       })}
                     </tbody>
-                  </table>
+                  </DataTable>
                 </div>
               )}
             </section>

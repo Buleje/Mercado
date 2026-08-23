@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { ArrowDownRight, Boxes, PackageOpen, Target, Truck, AlertTriangle } from "@buleje/design-system/icons";
 import type { CadenaLote, MetaEspecie } from "@/lib/forestal/ctp-cadena-lote";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
@@ -144,7 +144,7 @@ function MetaRendimiento({ meta }: { meta: MetaEspecie[] }) {
         <span className="ml-auto text-xs text-[var(--text-tertiary)]">1 m³ ≈ {pt(PT_POR_M3)} pt</span>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm hoja-grilla">
+        <DataTable className="w-full text-sm hoja-grilla">
           <thead>
             <tr className="border-b border-[var(--rule-soft)]">
               <ThMeta izq>Especie</ThMeta>
@@ -178,7 +178,7 @@ function MetaRendimiento({ meta }: { meta: MetaEspecie[] }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </div>
     </div>
   );

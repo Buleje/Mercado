@@ -12,6 +12,7 @@
  * la guía— y por eso el encabezado dice cuál está activa y se puede volver.
  */
 
+import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown } from "@buleje/design-system/icons";
 import type { TrozaImportada } from "@/lib/forestal/trozas-import";
 import type { CampoOrden, DireccionOrden } from "@/lib/forestal/trozas-recepcion";
@@ -94,7 +95,7 @@ export default function CtpPiezasTabla({
 }: Props) {
   return (
     <div className="max-h-[26rem] overflow-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
-      <table className="w-full min-w-[860px] text-sm">
+      <DataTable className="w-full min-w-[860px] text-sm">
         <caption className="sr-only">
           Piezas declaradas por la guía, con su recepción, código de planta y fecha de llegada
         </caption>
@@ -207,7 +208,7 @@ export default function CtpPiezasTabla({
             );
           })}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }

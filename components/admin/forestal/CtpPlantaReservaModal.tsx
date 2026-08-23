@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { Loader2, Truck } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
@@ -122,7 +123,7 @@ export default function CtpPlantaReservaModal({ titulo, corridas, onClose, onDes
         )}
 
         {filas.length > 0 && (
-          <table className="w-full border-collapse text-sm">
+          <DataTable className="w-full border-collapse text-sm">
             <thead className="sticky top-0 z-10 bg-[var(--surface-raised)]">
               <tr className="border-b-2 border-[var(--rule-base)] text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 <th className="w-10 py-2">
@@ -177,7 +178,7 @@ export default function CtpPlantaReservaModal({ titulo, corridas, onClose, onDes
                 );
               })}
             </tbody>
-          </table>
+          </DataTable>
         )}
       </div>
 

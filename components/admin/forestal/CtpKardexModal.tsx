@@ -13,7 +13,7 @@ import { useCallback, useEffect, useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { MODAL_BODY } from "./ctp-shared";
 import { AlertCircle, ArrowDownRight, ArrowUpRight, Scale } from "@buleje/design-system/icons";
-import { LoadingState } from "@buleje/design-system";
+import { LoadingState, DataTable } from "@buleje/design-system";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 
 interface Mov { fecha: string; tipo: "ingreso" | "consumo"; doc: string; entra: number; sale: number; saldo: number }
@@ -58,7 +58,7 @@ export default function CtpKardexModal({ especie, period, onClose }: { especie: 
             </div>
 
             <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-              <table className="w-full text-sm">
+              <DataTable className="w-full text-sm">
                 <thead className="bg-[var(--surface-sunken)] text-left">
                   <tr>
                     <th className="px-3 py-2.5 font-bold text-[var(--text-primary)]">Fecha</th>
@@ -94,7 +94,7 @@ export default function CtpKardexModal({ especie, period, onClose }: { especie: 
                     </tr>
                   </tfoot>
                 )}
-              </table>
+              </DataTable>
               {k.movimientos.length === 0 && <div className="p-8 text-center text-sm text-[var(--text-tertiary)]">Sin movimientos de {especie} en {period.label}.</div>}
             </div>
             </div>

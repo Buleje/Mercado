@@ -16,6 +16,7 @@
  * decidir nada por su cuenta es una fila que no se desincroniza de los KPIs.
  */
 
+import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, Boxes, FileText, Link2, PackagePlus, Paperclip, Scale, Truck, X as XIcon } from "@buleje/design-system/icons";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
@@ -202,7 +203,7 @@ export default function CtpEntriesTabla({
       {/* ── Desktop: tabla (≥640px). El `hidden` a <640px gana sobre la
              auto-conversión genérica del shell, dejando lugar a las cards. ── */}
       <div className="hidden overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
               <Th className="w-12 text-right">#</Th>
@@ -357,7 +358,7 @@ export default function CtpEntriesTabla({
               </tr>
             </tfoot>
           )}
-        </table>
+        </DataTable>
       </div>
 
       {/* ── Mobile: cards a medida (<640px) ── */}

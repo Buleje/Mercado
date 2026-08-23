@@ -31,6 +31,7 @@ import {
   ThumbsDown,
   TreePine,
 } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import type { CtpSort, CtpSortField } from "@/hooks/use-ctp-ingresos";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
@@ -170,7 +171,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
             guias.length > 12 ? "max-h-[75vh] overflow-y-auto" : ""
           }`}
         >
-          <table className="w-full text-sm">
+          <DataTable className="w-full text-sm">
             <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left">
               <tr>
                 <Th className="w-10">
@@ -247,7 +248,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                 </tr>
               </tfoot>
             )}
-          </table>
+          </DataTable>
         </div>
         <div
           aria-hidden

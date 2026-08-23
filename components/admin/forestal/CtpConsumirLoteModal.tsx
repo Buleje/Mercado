@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import {
   AlertTriangle,
   CalendarDays,
@@ -297,7 +298,7 @@ export default function CtpConsumirLoteModal({
           <div className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Consumo por guía · lo que va a la Sección 2 del libro
           </div>
-          <table className="w-full text-sm">
+          <DataTable className="w-full text-sm">
             <tbody className="divide-y divide-[var(--rule-soft)]">
               {porGuia.map((g) => {
                 const cupo = cupos.find((c) => c.woodEntryId === g.woodEntryId);
@@ -332,7 +333,7 @@ export default function CtpConsumirLoteModal({
                 </tr>
               )}
             </tbody>
-          </table>
+          </DataTable>
         </div>
 
         {/* Pieza por pieza: es lo que se cuenta en la pila. Con la lupa y el

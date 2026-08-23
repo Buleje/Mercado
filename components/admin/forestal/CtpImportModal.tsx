@@ -18,6 +18,7 @@
  */
 
 import { useRef, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { MODAL_BODY } from "./ctp-shared";
 import {
@@ -501,7 +502,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
             )}
 
             <div className="max-h-[46vh] overflow-y-auto rounded-2xl border-2 border-[var(--rule-base)]">
-              <table className="w-full text-sm">
+              <DataTable className="w-full text-sm">
                 <thead className="sticky top-0 bg-[var(--surface-sunken)] text-left">
                   <tr>
                     {isCombined && <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Registro</th>}
@@ -522,7 +523,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3">

@@ -20,6 +20,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { ChevronRight, FileText, Printer } from "@buleje/design-system/icons";
 import {
   bloquesDeGuia,
@@ -161,7 +162,7 @@ export default function CtpGuiaSerforHoja({
         {/* ── (37) El detalle, con la cabecera agrupada del papel ───────── */}
         {productos.length > 0 && (
           <div className="mt-4 overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 <tr>
                   <th rowSpan={2} className="px-3 py-2 font-bold">(37a) Nombre científico</th>
@@ -210,7 +211,7 @@ export default function CtpGuiaSerforHoja({
                   </tr>
                 </tfoot>
               )}
-            </table>
+            </DataTable>
           </div>
         )}
 
@@ -220,7 +221,7 @@ export default function CtpGuiaSerforHoja({
             <div className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Lista de trozas · {trozas.length} registro{trozas.length === 1 ? "" : "s"}
             </div>
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 <tr>
                   <th className="px-3 py-1.5 font-bold">Especie</th>
@@ -243,7 +244,7 @@ export default function CtpGuiaSerforHoja({
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         )}
       </div>

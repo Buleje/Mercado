@@ -14,7 +14,7 @@
 
 import { useMemo, useState } from "react";
 import { CalendarDays, Loader2, PlusCircle } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { armarJornadas } from "@/lib/forestal/consumo-en-jornadas";
 import type { BloqueDistribuido } from "@/lib/forestal/cubicacion-reparto";
 import type { ResumenJornadas } from "@/lib/forestal/registrar-jornadas";
@@ -88,7 +88,7 @@ export default function CtpJornadasDelTurno({
       {reparto.aviso && <p className="text-sm text-[var(--text-secondary)]">{reparto.aviso}</p>}
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[34rem] text-sm">
+        <DataTable className="w-full min-w-[34rem] text-sm">
           <thead>
             <tr className="text-left text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
               <th className="py-1 pr-2 font-bold">Día</th>
@@ -115,7 +115,7 @@ export default function CtpJornadasDelTurno({
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       {resumen && (

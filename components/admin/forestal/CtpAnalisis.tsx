@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import {
   AlertCircle,
   AlertTriangle,
@@ -158,7 +158,7 @@ export default function CtpAnalisis() {
           {reorden.length === 0 ? (
             <div className="p-8 text-center text-sm text-[var(--text-tertiary)]">Sin materia prima ni consumo registrado.</div>
           ) : (
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] text-left">
                 <tr>
                   <th className="px-4 py-3 font-bold text-[var(--text-primary)]">Especie</th>
@@ -183,7 +183,7 @@ export default function CtpAnalisis() {
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           )}
         </div>
       )}

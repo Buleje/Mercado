@@ -13,7 +13,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertTriangle, CalendarClock, Check, Hash, Loader2, PackageCheck, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { URL_TROZAS_RECEPCION, escribirDelPatio } from "@/lib/forestal/patio-cola";
@@ -257,7 +257,7 @@ export default function CtpRecepcionTrozas({
       </ul>
 
       <div className="hidden overflow-x-auto @3xl:block">
-        <table className="w-full text-sm hoja-grilla">
+        <DataTable className="w-full text-sm hoja-grilla">
           <thead>
             <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               <th className="px-3 py-2 font-bold">Codificación</th>
@@ -343,7 +343,7 @@ export default function CtpRecepcionTrozas({
               );
             })}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       {error && (
