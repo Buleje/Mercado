@@ -15,12 +15,17 @@
 import { m as motion } from "framer-motion";
 import {
   ArrowRight,
+  ArrowUpCircle,
+  Ban,
   BookOpen,
   Building2,
   Compass,
   FileText,
+  FileWarning,
   Globe,
+  Pause,
   PenLine,
+  RotateCcw,
   ShieldAlert,
   Stamp,
   TreePine,
@@ -49,6 +54,11 @@ const ICONOS: Record<string, LucideIcon> = {
   Globe,
   PenLine,
   Truck,
+  Ban,
+  ArrowUpCircle,
+  FileWarning,
+  Pause,
+  RotateCcw,
 };
 
 const iconoDe = (id: string): LucideIcon => ICONOS[ICONO_TRAMITE[id] ?? ""] ?? FileText;

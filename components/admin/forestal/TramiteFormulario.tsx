@@ -114,6 +114,8 @@ function sugerido(campoId: string, auto: AutollenadoTramite): string {
       return auto.serieGtf ?? "";
     case "membreteEmpresa":
       return f.razonSocial ?? "";
+    case "codigoRegistroCtp":
+      return f.codigoCtp ?? "";
     default:
       return "";
   }

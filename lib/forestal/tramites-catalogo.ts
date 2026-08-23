@@ -64,6 +64,11 @@ export const ICONO_TRAMITE: Record<string, string> = {
   "constancia-cites": "Globe",
   "carta-generica": "PenLine",
   "relacion-guias-serfor": "Truck",
+  "anulacion-gtf": "Ban",
+  "ampliacion-volumen-autorizado": "ArrowUpCircle",
+  "reposicion-talonario-gtf": "FileWarning",
+  "paralizacion-temporal": "Pause",
+  "renovacion-registro-ctp": "RotateCcw",
 };
 
 export type TipoCampo = "texto" | "textarea" | "numero" | "fecha";
@@ -626,7 +631,233 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "El permiso CITES es previo al embarque y el trámite tiene plazos propios: iniciá con anticipación. El expediente EUDR del Libro CTP sirve para acreditar la cadena.",
   },
 
-  // ── 9. Oficio o carta genérica ───────────────────────────────────────────
+  // ── 9. Anulación de guía de transporte forestal ───────────────────────────
+  {
+    id: "anulacion-gtf",
+    nombre: "Comunicación de anulación de guía de transporte forestal",
+    autoridad: "arffs",
+    proposito: "Dejar constancia formal de que una GTF del talonario autorizado quedó anulada, para que no figure como guía sin rendir",
+    asunto: "Comunico la anulación de Guía de Transporte Forestal",
+    baseLegal: [
+      "Ley N° 29763 — Ley Forestal y de Fauna Silvestre",
+      "D.S. N° 018-2015-MINAGRI — Reglamento para la Gestión Forestal",
+      "Ley N° 27444 — Ley del Procedimiento Administrativo General",
+    ],
+    campos: [
+      ...CAMPOS_COMUNES,
+      { id: "numeroGtfAnulada", label: "N° de GTF anulada", tipo: "texto", requerido: true, placeholder: "001-0000123" },
+      { id: "fechaEmisionOriginal", label: "Fecha de emisión original", tipo: "fecha" },
+      {
+        id: "motivoAnulacion",
+        label: "Motivo de la anulación",
+        tipo: "texto",
+        requerido: true,
+        placeholder: "Error de llenado / deterioro del formato / guía no utilizada",
+      },
+      { id: "fechaAnulacion", label: "Fecha de anulación", tipo: "fecha", requerido: true },
+      {
+        id: "guiaReemplazo",
+        label: "N° de guía de reemplazo (si la hay)",
+        tipo: "texto",
+        hint: "Dejalo vacío si esta guía no se reemplazó por otra",
+      },
+    ],
+    anexos: [
+      "Ejemplar físico de la guía anulada (inutilizado con el sello «ANULADO»)",
+      "Extracto del Libro de Operaciones donde consta la anulación",
+    ],
+    cuerpo: (d) => [
+      `Que, comunico a su Despacho la anulación de la Guía de Transporte Forestal N° ${v(d, "numeroGtfAnulada")}${d.fechaEmisionOriginal?.trim() ? `, emitida el ${v(d, "fechaEmisionOriginal")}` : ""}, correspondiente al talonario autorizado a mi cargo.`,
+      `Motivo de la anulación: ${v(d, "motivoAnulacion")}.`,
+      d.guiaReemplazo?.trim()
+        ? `El transporte que amparaba quedó respaldado por la Guía N° ${v(d, "guiaReemplazo")}.`
+        : "La presente guía no amparó movilización alguna de producto forestal.",
+      `La anulación quedó asentada en el Libro de Operaciones con fecha ${v(d, "fechaAnulacion")}, conforme se acredita en el extracto que se adjunta.`,
+      "Solicito a su Despacho tener presente la anulación de la guía referida para efectos del control del talonario a mi cargo.",
+    ],
+    advertencia:
+      "El formato físico anulado se conserva inutilizado, nunca se destruye: es lo primero que pide un puesto de control o una fiscalización si preguntan por ese número.",
+  },
+
+  // ── 10. Ampliación de volumen autorizado (Plan de Manejo / POA) ───────────
+  {
+    id: "ampliacion-volumen-autorizado",
+    nombre: "Solicitud de ampliación de volumen autorizado",
+    autoridad: "arffs",
+    proposito: "Pedir el incremento del volumen autorizado por especie en el Plan de Manejo Forestal (POA) del título habilitante",
+    asunto: "Solicito ampliación del volumen autorizado en el Plan de Manejo Forestal",
+    baseLegal: [
+      "Ley N° 29763 — Ley Forestal y de Fauna Silvestre",
+      "D.S. N° 018-2015-MINAGRI — Reglamento para la Gestión Forestal",
+      "Ley N° 27444 — Ley del Procedimiento Administrativo General",
+    ],
+    campos: [
+      ...CAMPOS_COMUNES,
+      {
+        id: "tituloHabilitante",
+        label: "Título habilitante / N° de resolución",
+        tipo: "texto",
+        requerido: true,
+        hint: "El que aprueba el Plan de Manejo vigente",
+      },
+      { id: "especieAmpliar", label: "Especie", tipo: "texto", requerido: true },
+      {
+        id: "volumenAutorizadoActual",
+        label: "Volumen autorizado actual (m³)",
+        tipo: "texto",
+        requerido: true,
+        hint: "Lo ves en Control → Balance del Libro de Títulos Habilitantes",
+      },
+      { id: "volumenAdicional", label: "Volumen adicional solicitado (m³)", tipo: "texto", requerido: true },
+      {
+        id: "sustentoTecnico",
+        label: "Sustento técnico",
+        tipo: "textarea",
+        requerido: true,
+        hint: "Censo forestal adicional, corrección de área, saldo de otra parcela del mismo plan…",
+      },
+    ],
+    anexos: [
+      "Informe técnico o censo forestal que sustenta el volumen adicional",
+      "Copia de la resolución que aprueba el Plan de Manejo Forestal vigente",
+      "Plano o mapa actualizado del área, si el sustento lo requiere",
+    ],
+    cuerpo: (d) => [
+      `Que, siendo titular del título habilitante ${v(d, "tituloHabilitante")}, solicito la ampliación del volumen autorizado para la especie ${v(d, "especieAmpliar")} en el Plan de Manejo Forestal vigente.`,
+      `El volumen actualmente autorizado para dicha especie es de ${v(d, "volumenAutorizadoActual")} m³, y solicito su ampliación en ${v(d, "volumenAdicional")} m³ adicionales.`,
+      `Sustento técnico del pedido: ${v(d, "sustentoTecnico")}.`,
+      "Adjunto la documentación técnica que sustenta el volumen adicional solicitado y quedo a disposición para la verificación de campo que su Autoridad considere necesaria.",
+      "Por lo expuesto, solicito a su Despacho disponer la evaluación y aprobación de la ampliación de volumen requerida.",
+    ],
+    advertencia:
+      "El TUPA de tu ARFFS fija si esto se tramita como modificación del Plan de Manejo o como un procedimiento propio de ampliación: confirmalo antes de presentar.",
+  },
+
+  // ── 11. Reposición de talonario de GTF por pérdida o deterioro ────────────
+  {
+    id: "reposicion-talonario-gtf",
+    nombre: "Solicitud de reposición de talonario de GTF por pérdida o deterioro",
+    autoridad: "arffs",
+    proposito: "Pedir un talonario nuevo cuando el vigente se perdió, fue robado o quedó inutilizable, con declaración jurada del hecho",
+    asunto: "Solicito reposición de talonario de Guías de Transporte Forestal por pérdida o deterioro",
+    baseLegal: [
+      "Ley N° 29763 — Ley Forestal y de Fauna Silvestre",
+      "D.S. N° 018-2015-MINAGRI — Reglamento para la Gestión Forestal",
+      "Ley N° 27444 — Ley del Procedimiento Administrativo General (declaración jurada)",
+    ],
+    campos: [
+      ...CAMPOS_COMUNES,
+      { id: "serieExtraviada", label: "Serie del talonario afectado", tipo: "texto", requerido: true },
+      { id: "rangoNumeros", label: "Rango de números afectados", tipo: "texto", requerido: true, placeholder: "001-0000150 al 001-0000200" },
+      {
+        id: "circunstancia",
+        label: "Circunstancia",
+        tipo: "texto",
+        requerido: true,
+        placeholder: "Pérdida / robo / deterioro por agua o fuego",
+      },
+      { id: "fechaHecho", label: "Fecha en que ocurrió", tipo: "fecha", requerido: true },
+      {
+        id: "denunciaPolicial",
+        label: "N° de denuncia policial",
+        tipo: "texto",
+        hint: "Si el hecho fue robo o pérdida, cotejá con tu ARFFS si la exige",
+      },
+    ],
+    anexos: [
+      "Denuncia policial, si el hecho fue robo o pérdida (según lo exija el TUPA)",
+      "Guías ya utilizadas del talonario afectado, si quedó alguna disponible",
+      "Declaración jurada de las circunstancias del hecho",
+    ],
+    cuerpo: (d) => [
+      `Que, declaro bajo juramento que el talonario de Guías de Transporte Forestal serie ${v(d, "serieExtraviada")}, correspondiente al rango ${v(d, "rangoNumeros")}, resultó ${v(d, "circunstancia")} el ${v(d, "fechaHecho")}.`,
+      d.denunciaPolicial?.trim()
+        ? `El hecho fue puesto en conocimiento de la autoridad policial mediante denuncia N° ${v(d, "denunciaPolicial")}, cuya copia se adjunta.`
+        : "",
+      "Los números del rango afectado quedan inutilizados para todo efecto: ninguna guía con esos correlativos ampara transporte alguno desde la fecha señalada.",
+      "Por lo expuesto, solicito a su Despacho disponer la reposición de un nuevo talonario, dejando constancia de la inutilización del rango declarado.",
+    ],
+    advertencia: "Cotejá en el TUPA de tu ARFFS si exige la denuncia policial como requisito obligatorio (no solo recomendado) antes de presentar.",
+  },
+
+  // ── 12. Paralización temporal de operaciones ──────────────────────────────
+  {
+    id: "paralizacion-temporal",
+    nombre: "Comunicación de paralización temporal de operaciones",
+    autoridad: "arffs",
+    proposito: "Avisar que la planta deja de operar por un período, para que la ausencia de registros en el Libro no se lea como una omisión",
+    asunto: "Comunico paralización temporal de operaciones del Centro de Transformación Primaria",
+    baseLegal: [
+      "Ley N° 29763 — Ley Forestal y de Fauna Silvestre",
+      "D.S. N° 018-2015-MINAGRI — Reglamento para la Gestión Forestal",
+    ],
+    campos: [
+      ...CAMPOS_COMUNES,
+      { id: "fechaInicioParalizacion", label: "Fecha de inicio", tipo: "fecha", requerido: true },
+      {
+        id: "fechaFinParalizacion",
+        label: "Fecha estimada de reinicio",
+        tipo: "fecha",
+        hint: "Dejalo vacío si todavía no hay fecha cierta",
+      },
+      {
+        id: "motivoParalizacion",
+        label: "Motivo",
+        tipo: "textarea",
+        requerido: true,
+        placeholder: "Mantenimiento de maquinaria / falta de materia prima / causa de fuerza mayor",
+      },
+    ],
+    anexos: ["Documento que sustenta el motivo, si corresponde (informe técnico, parte policial, informe de siniestro)"],
+    cuerpo: (d) => [
+      `Que, comunico a su Despacho la paralización temporal de las operaciones de nuestro Centro de Transformación Primaria a partir del ${v(d, "fechaInicioParalizacion")}.`,
+      `Motivo: ${v(d, "motivoParalizacion")}.`,
+      d.fechaFinParalizacion?.trim()
+        ? `Estimamos reiniciar operaciones el ${v(d, "fechaFinParalizacion")}; comunicaremos oportunamente cualquier variación de esta fecha.`
+        : "Comunicaremos la fecha de reinicio de operaciones en cuanto se determine.",
+      "Durante el período señalado no se registrarán movimientos en el Libro de Operaciones por ausencia de actividad, lo que ponemos en conocimiento de su Autoridad para evitar cualquier observación por vacío de registro.",
+    ],
+  },
+
+  // ── 13. Renovación de registro del CTP ────────────────────────────────────
+  {
+    id: "renovacion-registro-ctp",
+    nombre: "Solicitud de renovación de registro del CTP",
+    autoridad: "arffs",
+    proposito: "Pedir la renovación del registro del Centro de Transformación Primaria antes de que venza, para no operar con el registro caduco",
+    asunto: "Solicito renovación del registro del Centro de Transformación Primaria",
+    baseLegal: [
+      "Ley N° 29763 — Ley Forestal y de Fauna Silvestre",
+      "D.S. N° 018-2015-MINAGRI — Reglamento para la Gestión Forestal",
+      "Ley N° 27444 — Ley del Procedimiento Administrativo General",
+    ],
+    campos: [
+      ...CAMPOS_COMUNES,
+      { id: "codigoRegistroCtp", label: "Código de registro del CTP", tipo: "texto", requerido: true, autollenado: "ficha" },
+      { id: "fechaVencimientoRegistro", label: "Fecha de vencimiento del registro vigente", tipo: "fecha", requerido: true },
+      {
+        id: "cambiosDesdeElRegistro",
+        label: "Cambios desde el último registro",
+        tipo: "textarea",
+        hint: "Maquinaria, capacidad, dirección — o «ninguno» si sigue igual",
+      },
+    ],
+    anexos: [
+      "Copia de la resolución de registro vigente",
+      "Vigencia de poder del representante legal",
+      "Comprobante de pago por derecho de trámite (según TUPA)",
+    ],
+    cuerpo: (d) => [
+      `Que, siendo titular del Centro de Transformación Primaria con código de registro ${v(d, "codigoRegistroCtp")}, cuyo registro vence el ${v(d, "fechaVencimientoRegistro")}, solicito a su Despacho disponer su renovación.`,
+      d.cambiosDesdeElRegistro?.trim()
+        ? `Desde el último registro, se produjeron los siguientes cambios: ${v(d, "cambiosDesdeElRegistro")}.`
+        : "No se han producido cambios en la planta desde el último registro.",
+      "Adjunto la documentación que sustenta la vigencia de nuestra operación y quedo a disposición para la inspección que su Autoridad estime necesaria.",
+    ],
+    advertencia: "Iniciá el trámite con anticipación: operar con el registro vencido puede generar observaciones aunque la planta siga funcionando igual.",
+  },
+
+  // ── 14. Oficio o carta genérica ───────────────────────────────────────────
   {
     id: "carta-generica",
     nombre: "Carta u oficio a la autoridad",
