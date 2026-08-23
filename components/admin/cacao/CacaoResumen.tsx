@@ -81,6 +81,16 @@ export default function CacaoResumen() {
   const [campoTot, setCampoTot] = useState<CampoTotales | null>(null);
   const [ventas, setVentas] = useState<VentasStats | null>(null);
   const [loading, setLoading] = useState(true);
+  /**
+   * FIX 2026-08-22: el guard era `loading && !stats` — `stats` es el PRIMERO
+   * de 7 `await .json()` secuenciales en la misma `load()` (trends, inv,
+   * campo, campoSan, campoTot y ventas vienen después). En esa ventana React
+   * ya podía renderizar con las otras 6 secciones todavía en `null`: el
+   * Resumen se pintaba incompleto un instante y se completaba solo. Mismo
+   * patrón que `CtpAnalisis`/`LothCompliancePanel` (misma sesión), acá con
+   * más pasos de por medio. `ready` cubre las 7 await, no sólo la primera.
+   */
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rango, setRango] = useState<string>("all");
 
@@ -111,11 +121,11 @@ export default function CacaoResumen() {
       setCampoTot(rca.ok ? (await rca.json()).totales ?? null : null);
       setVentas(rv.ok ? (await rv.json()).stats ?? null : null);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
-    finally { setLoading(false); }
+    finally { setLoading(false); setReady(true); }
   }, [rango]);
   useEffect(() => { load(); }, [load]);
 
-  if (loading && !stats) return <div className="p-12 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando resumen…</p></div>;
+  if (loading && !ready) return <div className="p-12 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando resumen…</p></div>;
   if (error) return <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>No se pudo cargar el resumen:</strong> {error}</div></div>;
   if (!stats) return null;
 

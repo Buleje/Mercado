@@ -105,6 +105,14 @@ export default function CacaoInventario() {
     stale: false,
   });
   const [loading, setLoading] = useState(true);
+  /**
+   * FIX 2026-08-22: guard era `loading && !inv` — `inv` es el primer
+   * `await .json()` de tres en la misma `load()`; `precioMeta` arranca en
+   * `{ stale: false }`, así que en la ventana antes de que el segundo fetch
+   * resuelva, un precio en verdad viejo se mostraba como "fresco" por un
+   * instante. Mismo patrón que CtpAnalisis/CacaoResumen (misma sesión).
+   */
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAjuste, setShowAjuste] = useState(false);
 
@@ -135,6 +143,7 @@ export default function CacaoInventario() {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
+      setReady(true);
     }
   }, []);
   useEffect(() => {
@@ -156,7 +165,7 @@ export default function CacaoInventario() {
     }
   }
 
-  if (loading && !inv)
+  if (loading && !ready)
     return (
       <div className="p-12 text-center text-[var(--text-tertiary)]">
         <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
