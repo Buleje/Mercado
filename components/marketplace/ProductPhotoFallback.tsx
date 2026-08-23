@@ -82,37 +82,16 @@ const NAME_HINTS: Array<[RegExp, LucideIcon]> = [
   [/almuerzo|men[uú]|combo|plato|ceviche|tallarin|pasta|arroz chaufa|guiso/i, ChefHat],
 ];
 
-// Brandon 2026-07-06 (audit inicio + grid ofertas) — variedad tonal determinística
-// por nombre: el grid de "sin foto" antes se veía monótono (todo el mismo tinte
-// teal). Cada tile toma una de 4 variantes derivadas del nombre → mosaico con
-// vida, sin hex hardcodeados (solo tokens de marca: teal --accent + coral
-// --data-warning). El CÍRCULO del ícono ahora sigue el tinte del fondo (los
-// tiles corales tenían glifo teal, incoherente) para que cada tile sea cohesivo.
-type TileVariant = { grad: string; circle: string };
-const TILE_VARIANTS: TileVariant[] = [
-  {
-    grad: "from-[var(--accent)]/10 via-[var(--surface-canvas)] to-[var(--accent)]/4",
-    circle: "bg-[var(--accent)]/12 text-[var(--accent)] ring-[var(--accent)]/15",
-  },
-  {
-    grad: "from-[var(--accent)]/5 via-[var(--surface-canvas)] to-[var(--accent)]/12",
-    circle: "bg-[var(--accent)]/12 text-[var(--accent)] ring-[var(--accent)]/15",
-  },
-  {
-    grad: "from-[var(--data-warning-500)]/8 via-[var(--surface-canvas)] to-[var(--accent)]/6",
-    circle: "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-600)] ring-[var(--data-warning-500)]/18",
-  },
-  {
-    grad: "from-[var(--accent)]/8 via-[var(--surface-canvas)] to-[var(--data-warning-500)]/7",
-    circle: "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-600)] ring-[var(--data-warning-500)]/18",
-  },
-];
-function variantFor(seed?: string | null): TileVariant {
-  const s = seed ?? "";
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return TILE_VARIANTS[h % TILE_VARIANTS.length];
-}
+// Brandon 2026-07-07 (audit ofertas): UN SOLO tinte consistente. Antes había 4
+// variantes tonales (teal + coral) derivadas del nombre → el grid se veía
+// "rosa/verde alternado", incompleto y poco cuidado (los tonos no comunican
+// categoría). Ahora TODOS los tiles comparten el mismo fondo neutro suave y el
+// mismo círculo de marca; la variedad la aporta el ÍCONO por categoría (que sí
+// comunica), no el color. Solo tokens, sin hex.
+const TILE = {
+  grad: "from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]",
+  circle: "bg-[var(--accent)]/10 text-[var(--accent)] ring-[var(--accent)]/15",
+};
 
 /** Elige el ícono más específico: categoría explícita → nombre → default. */
 function iconFor(category?: string | null, name?: string | null): LucideIcon {
@@ -138,16 +117,15 @@ export function ProductPhotoFallback({
   showName?: boolean;
 }) {
   const Icon = iconFor(category, name);
-  const variant = variantFor(name ?? category);
   const circleSize = size === "sm" ? "h-11 w-11" : "h-16 w-16";
   const glyph = size === "sm" ? "h-5 w-5" : "h-8 w-8";
   return (
     <div
-      className={`absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-3 bg-linear-to-br ${variant.grad}`}
+      className={`absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-3 bg-linear-to-br ${TILE.grad}`}
       aria-label={name ? `${name} — sin foto` : "Producto sin foto"}
     >
       <span
-        className={`inline-flex ${circleSize} items-center justify-center rounded-full ring-1 ring-inset ${variant.circle}`}
+        className={`inline-flex ${circleSize} items-center justify-center rounded-full ring-1 ring-inset ${TILE.circle}`}
         aria-hidden
       >
         <Icon className={glyph} strokeWidth={1.5} />
