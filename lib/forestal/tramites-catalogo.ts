@@ -71,6 +71,8 @@ export const ICONO_TRAMITE: Record<string, string> = {
   "renovacion-registro-ctp": "RotateCcw",
   "informe-regencia": "ClipboardCheck",
   "remision-libro-th": "FileStack",
+  "recurso-administrativo": "Scale",
+  "ampliacion-plazo": "CalendarClock",
 };
 
 export type TipoCampo = "texto" | "textarea" | "numero" | "fecha";
@@ -929,7 +931,97 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
     advertencia: "Adjuntá el Libro en formato oficial: se descarga desde el Libro de Títulos Habilitantes.",
   },
 
-  // ── 16. Oficio o carta genérica ───────────────────────────────────────────
+  // ── 16. Recurso de reconsideración o apelación ────────────────────────────
+  {
+    id: "recurso-administrativo",
+    nombre: "Recurso de reconsideración o apelación",
+    autoridad: "arffs",
+    proposito: "Impugnar una resolución de la autoridad — reconsideración ante quien la emitió, o apelación ante su superior jerárquico",
+    asunto: "Interpongo recurso administrativo",
+    baseLegal: [
+      "Ley N° 27444 — Ley del Procedimiento Administrativo General (TUO, D.S. N° 004-2019-JUS), arts. 219 (reconsideración) y 220 (apelación)",
+    ],
+    campos: [
+      ...CAMPOS_COMUNES,
+      {
+        id: "tipoRecurso",
+        label: "Tipo de recurso",
+        tipo: "texto",
+        requerido: true,
+        placeholder: "Reconsideración / Apelación",
+        hint: "Reconsideración: la resuelve la MISMA autoridad, con nueva prueba. Apelación: la eleva al superior jerárquico, sin necesidad de prueba nueva.",
+      },
+      {
+        id: "resolucionImpugnada",
+        label: "Resolución que se impugna",
+        tipo: "texto",
+        requerido: true,
+        placeholder: "Resolución Directoral N° 018-2026-GOB.REG.UCAYALI-DRFFS",
+      },
+      { id: "fechaNotificacionResolucion", label: "Fecha de notificación de la resolución", tipo: "fecha", requerido: true },
+      {
+        id: "fundamentos",
+        label: "Fundamentos del recurso",
+        tipo: "textarea",
+        requerido: true,
+        hint: "Qué está mal de la resolución y por qué (hecho, norma o prueba nueva que la autoridad no evaluó)",
+      },
+      {
+        id: "pedidoRecurso",
+        label: "Lo que se pide",
+        tipo: "textarea",
+        requerido: true,
+        placeholder: "Se revoque / se modifique / se deje sin efecto la resolución impugnada",
+      },
+    ],
+    anexos: [
+      "Copia de la resolución impugnada",
+      "Cargo de notificación (acredita que el recurso se presenta dentro del plazo)",
+      "Nueva prueba, si el recurso es de reconsideración",
+    ],
+    cuerpo: (d) => [
+      `Que, habiendo sido notificado el ${v(d, "fechaNotificacionResolucion")} con la ${v(d, "resolucionImpugnada")}, y dentro del plazo legal, interpongo recurso de ${v(d, "tipoRecurso")} contra la citada resolución.`,
+      `Fundamentos: ${v(d, "fundamentos")}.`,
+      `Petitorio: ${v(d, "pedidoRecurso")}.`,
+      "Adjunto la documentación que sustenta lo expuesto y solicito se tenga por interpuesto el presente recurso dentro del plazo legal.",
+    ],
+    advertencia:
+      "El plazo para interponer el recurso es de 15 días hábiles perentorios desde la notificación (art. 216 TUO Ley 27444): vencido, el acto queda firme y ya no se puede recurrir. La reconsideración exige nueva prueba, salvo que la resolución la haya emitido un órgano de instancia única.",
+  },
+
+  // ── 17. Solicitud de ampliación de plazo ──────────────────────────────────
+  {
+    id: "ampliacion-plazo",
+    nombre: "Solicitud de ampliación de plazo",
+    autoridad: "otra",
+    proposito: "Pedir más tiempo para presentar un descargo, informe o documentación antes de que venza el plazo",
+    asunto: "Solicito ampliación de plazo",
+    baseLegal: ["Ley N° 27444 — Ley del Procedimiento Administrativo General (TUO, D.S. N° 004-2019-JUS), art. 136.3 — prórroga"],
+    campos: [
+      ...CAMPOS_COMUNES,
+      { id: "expedientePlazo", label: "Expediente o notificación que fija el plazo", tipo: "texto", requerido: true },
+      { id: "plazoOriginal", label: "Plazo original que vence", tipo: "fecha", requerido: true },
+      { id: "plazoSolicitado", label: "Nueva fecha solicitada", tipo: "fecha", requerido: true },
+      {
+        id: "motivoAmpliacion",
+        label: "Motivo",
+        tipo: "textarea",
+        requerido: true,
+        placeholder: "Volumen de documentación / gestión ante un tercero / causa de fuerza mayor",
+      },
+    ],
+    anexos: ["Documento que sustenta el motivo, si corresponde"],
+    cuerpo: (d) => [
+      `Que, en el marco del expediente ${v(d, "expedientePlazo")}, cuyo plazo vence el ${v(d, "plazoOriginal")}, solicito a su Despacho la ampliación de dicho plazo hasta el ${v(d, "plazoSolicitado")}.`,
+      `Motivo de la solicitud: ${v(d, "motivoAmpliacion")}.`,
+      "La presente solicitud se formula dentro del plazo original, conforme al artículo 136 de la Ley N° 27444, sin que el vencimiento haya sido causado por hecho imputable al administrado.",
+      "Quedo a la espera de la resolución que corresponda.",
+    ],
+    advertencia:
+      "La prórroga se concede UNA sola vez y hay que pedirla ANTES de que venza el plazo original (art. 136.3 TUO Ley 27444) — presentada el mismo día del vencimiento o después, ya no cabe.",
+  },
+
+  // ── 18. Oficio o carta genérica ───────────────────────────────────────────
   {
     id: "carta-generica",
     nombre: "Carta u oficio a la autoridad",

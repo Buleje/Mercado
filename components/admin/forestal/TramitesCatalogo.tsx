@@ -19,6 +19,7 @@ import {
   Ban,
   BookOpen,
   Building2,
+  CalendarClock,
   ClipboardCheck,
   Compass,
   FileStack,
@@ -28,6 +29,7 @@ import {
   Pause,
   PenLine,
   RotateCcw,
+  Scale,
   ShieldAlert,
   Stamp,
   TreePine,
@@ -63,6 +65,8 @@ const ICONOS: Record<string, LucideIcon> = {
   RotateCcw,
   ClipboardCheck,
   FileStack,
+  Scale,
+  CalendarClock,
 };
 
 const iconoDe = (id: string): LucideIcon => ICONOS[ICONO_TRAMITE[id] ?? ""] ?? FileText;
