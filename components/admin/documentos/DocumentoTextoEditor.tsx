@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft, Check, Download, FileText, Loader2, Plus, Printer, Redo2, Save, Undo2,
 } from "@buleje/design-system/icons";
+import { LoadingState } from "@buleje/design-system";
 import { imprimirTexto } from "@/lib/documentos/documentos-print";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -303,10 +304,7 @@ export default function DocumentoTextoEditor({
   }
   if (estado === "cargando") {
     return (
-      <div className="p-16 text-center text-[var(--text-tertiary)]">
-        <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-        <p className="mt-2 text-sm">Abriendo el documento…</p>
-      </div>
+      <LoadingState message="Abriendo el documento…" />
     );
   }
 

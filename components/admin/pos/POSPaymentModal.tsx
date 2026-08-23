@@ -27,7 +27,7 @@ import {
   Volume2,
   VolumeX,
 } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import POSCustomerSearch from "./POSCustomerSearch";
 import POSSplitPayment from "./POSSplitPayment";
@@ -223,9 +223,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
       {/* Lista */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <div className="flex items-center justify-center h-48 text-[var(--text-tertiary)] dark:text-muted">
-            <Loader2 className="h-7 w-7 animate-spin" />
-          </div>
+          <LoadingState message={null} size="lg" className="h-48 py-0" />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-[var(--text-tertiary)] dark:text-muted gap-2">
             <User className="h-10 w-10 opacity-40" />

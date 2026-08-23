@@ -22,7 +22,7 @@ import {
   Tag,
   Share2,
 } from "@buleje/design-system/icons";
-import { PageTitle, SectionTitle } from "@buleje/design-system";
+import { PageTitle, SectionTitle, LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import { EMPTY_SALES_CHANNELS, type SalesChannelsConfig } from "@/lib/types/sales-channels";
@@ -114,9 +114,7 @@ export default function SalesChannelsTab() {
 
   if (loading) {
     return (
-      <div className="p-10 text-center">
-        <Loader2 className="h-6 w-6 animate-spin mx-auto text-[var(--text-tertiary)]" />
-      </div>
+      <LoadingState message={null} className="py-10" />
     );
   }
 

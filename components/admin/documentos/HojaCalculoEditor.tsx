@@ -18,6 +18,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, Download, Loader2, Printer, Save, Table } from "@buleje/design-system/icons";
+import { LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { leerXlsxConFormato, numeroALetra, type HojaFormato } from "@/lib/documentos/xlsx-formato";
 import { abrirPaquete, guardarCambios } from "@/lib/documentos/xlsx-escritura";
@@ -116,10 +117,7 @@ export default function HojaCalculoEditor({
   }
   if (estado === "cargando" || !inicial) {
     return (
-      <div className="p-16 text-center text-[var(--text-tertiary)]">
-        <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-        <p className="mt-2 text-sm">Abriendo la planilla…</p>
-      </div>
+      <LoadingState message="Abriendo la planilla…" />
     );
   }
 

@@ -11,8 +11,8 @@
  * otro rango. Un solo control = un solo período para todo el libro.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart3, Loader2, RefreshCw, AlertCircle } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { BarChart3, RefreshCw, AlertCircle } from "@buleje/design-system/icons";
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 
 interface Aggregate {
@@ -115,9 +115,7 @@ export default function SpeciesAggregateChart({ period }: { period: CtpPeriod })
       {/* Bar chart horizontal */}
       <div className="space-y-2">
         {loading && !data && (
-          <div className="flex items-center justify-center py-10 text-[var(--text-tertiary)]">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
+          <LoadingState message={null} className="py-10" />
         )}
 
         {!loading && top.length === 0 && (

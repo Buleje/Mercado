@@ -11,7 +11,7 @@ import CtpCadenaLote from "./CtpCadenaLote";
 import type { CadenaLote } from "@/lib/forestal/ctp-cadena-lote";
 import { useCallback, useEffect, useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { CardTitle, SuccessAlert, WarningAlert, ErrorAlert } from "@buleje/design-system";
+import { CardTitle, SuccessAlert, WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
 import {
   AlertCircle, Ban, CheckCircle2, Layers, Link2, Loader2, Lock, Pencil,
   Printer, RefreshCw, Tag, Truck, Unlock,
@@ -191,7 +191,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
       icon={Layers}
     >
       <div className={`space-y-4 ${MODAL_BODY}`}>
-        {loading && <div className="p-8 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando lote…</p></div>}
+        {loading && <LoadingState message="Cargando lote…" className="py-8" />}
         {error && (
           <ErrorAlert title="Error" description={error} action={<Btn variant="secondary" size="sm" onClick={() => void load()}><RefreshCw className="h-3.5 w-3.5" /> Reintentar</Btn>} />
         )}

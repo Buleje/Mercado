@@ -17,7 +17,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { UNIT_LABELS } from "./ctp-section-shared";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { CardTitle, SuccessAlert, WarningAlert, ErrorAlert } from "@buleje/design-system";
+import { CardTitle, SuccessAlert, WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
 import {
   AlertCircle,
   Banknote,
@@ -180,10 +180,7 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
     >
       <div className={`space-y-4 ${MODAL_BODY}`}>
         {loading && (
-          <div className="p-8 text-center text-[var(--text-tertiary)]">
-            <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-            <p className="mt-2 text-sm">Reconstruyendo la cadena de custodia…</p>
-          </div>
+          <LoadingState message="Reconstruyendo la cadena de custodia…" className="py-8" />
         )}
         {error && (
           <ErrorAlert
