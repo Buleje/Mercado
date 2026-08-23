@@ -1,4 +1,5 @@
 import "server-only";
+import { prisma } from "@/lib/prisma";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { construirTramite, type TramiteInput, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
@@ -57,6 +58,10 @@ export const ForestTramitesDB = {
         // existente (si ya tenía uno asignado) para que `construirTramite`
         // sepa que NO tiene que sacar un correlativo nuevo.
         numeroDocumento: existente?.numeroDocumento,
+        // Ídem para el sello del aviso automático: sólo `construirTramite`
+        // decide si sigue valiendo (comparando contra la fechaLimite previa).
+        avisoVencimientoEnviadoEn: existente?.avisoVencimientoEnviadoEn,
+        fechaLimiteAnterior: existente?.fechaLimite,
       },
       list,
     );
@@ -103,5 +108,43 @@ export const ForestTramitesDB = {
       user,
     });
     return true;
+  },
+
+  /**
+   * Sella el aviso automático de vencimiento (cron `tramites-vencimiento`)
+   * para que no se repita mañana. No es un acto administrativo del usuario
+   * — es bookkeeping del sistema — así que no pasa por `auditCtp`.
+   */
+  async marcarAvisoVencimientoEnviado(
+    tenantId: string,
+    ids: string[],
+    ahora: string = new Date().toISOString(),
+  ): Promise<void> {
+    if (!tenantId || ids.length === 0) return;
+    const list = await this.list(tenantId);
+    const idSet = new Set(ids);
+    const next = list.map((t) => (idSet.has(t.id) ? { ...t, avisoVencimientoEnviadoEn: ahora } : t));
+    await PlatformSettingsDB.set(`${KEY_PREFIX}${tenantId}`, next, "cron");
+  },
+
+  /**
+   * Todos los tenants con algo en el expediente, para el cron de avisos
+   * (no hay tabla Prisma que listar `DISTINCT tenantId`: el KV vive en
+   * `PlatformSetting`, así que se lee por prefijo de clave).
+   */
+  async listAllTenants(): Promise<{ tenantId: string; tramites: TramiteRegistro[] }[]> {
+    const rows = await prisma.platformSetting.findMany({
+      where: { key: { startsWith: KEY_PREFIX } },
+      select: { key: true, value: true },
+    });
+    return rows.map((r) => {
+      const tenantId = r.key.slice(KEY_PREFIX.length);
+      const raw = Array.isArray(r.value) ? (r.value as unknown[]) : [];
+      const tramites = raw.filter(
+        (t): t is TramiteRegistro =>
+          !!t && typeof t === "object" && typeof (t as TramiteRegistro).id === "string" && typeof (t as TramiteRegistro).formatoId === "string",
+      );
+      return { tenantId, tramites };
+    });
   },
 };

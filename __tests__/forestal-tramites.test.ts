@@ -19,10 +19,12 @@ import {
   construirTramite,
   contarPorEstado,
   diasDesdePresentacion,
+  tramitesPorVencer,
   tramitesSinRespuesta,
   type TramiteRegistro,
 } from "@/lib/forestal/tramites-registro";
 import { buildTramiteHtml } from "@/lib/forestal/tramites-print";
+import { mensajeAvisoTramites } from "@/lib/forestal/tramites-aviso-mensaje";
 
 const FICHA = {
   razonSocial: "Maderera San Martín SAC",
@@ -268,5 +270,76 @@ describe("seguimiento", () => {
       tramite({ estado: "presentado" }),
     ];
     expect(contarPorEstado(lista)).toMatchObject({ borrador: 1, presentado: 2, observado: 0 });
+  });
+});
+
+describe("aviso de vencimiento (cron tramites-vencimiento)", () => {
+  const tramite = (over: Partial<TramiteRegistro>): TramiteRegistro => ({
+    ...construirTramite({ formatoId: "f", autoridad: "arffs", ahora: "2026-08-01T00:00:00.000Z" }),
+    ...over,
+  });
+
+  it("entra el que vence en 3 días o menos, el más urgente primero", () => {
+    const hoy = new Date("2026-08-20T00:00:00Z");
+    const lista = [
+      tramite({ id: "a", fechaLimite: "2026-08-25" }), // 5 días, fuera de ventana
+      tramite({ id: "b", fechaLimite: "2026-08-22" }), // 2 días
+      tramite({ id: "c", fechaLimite: "2026-08-18" }), // ya venció
+      tramite({ id: "d", fechaLimite: null }), // sin plazo, no entra
+    ];
+    const porVencer = tramitesPorVencer(lista, hoy);
+    expect(porVencer.map((t) => t.id)).toEqual(["c", "b"]);
+    expect(porVencer.find((t) => t.id === "c")?.diasRestantes).toBe(-2);
+  });
+
+  it("un resuelto o desistido no vence más, aunque tenga fechaLimite vieja", () => {
+    const hoy = new Date("2026-08-20T00:00:00Z");
+    const lista = [
+      tramite({ id: "a", estado: "resuelto", fechaLimite: "2026-08-18" }),
+      tramite({ id: "b", estado: "desistido", fechaLimite: "2026-08-18" }),
+    ];
+    expect(tramitesPorVencer(lista, hoy)).toEqual([]);
+  });
+
+  it("el sello del aviso sigue valiendo si la fechaLimite no cambió", () => {
+    const t = construirTramite({
+      formatoId: "f",
+      autoridad: "arffs",
+      fechaLimite: "2026-08-25",
+      avisoVencimientoEnviadoEn: "2026-08-20T08:50:00.000Z",
+      fechaLimiteAnterior: "2026-08-25",
+    });
+    expect(t.avisoVencimientoEnviadoEn).toBe("2026-08-20T08:50:00.000Z");
+  });
+
+  it("el sello se resetea si el operador movió la fechaLimite: es un vencimiento nuevo", () => {
+    const t = construirTramite({
+      formatoId: "f",
+      autoridad: "arffs",
+      fechaLimite: "2026-09-01",
+      avisoVencimientoEnviadoEn: "2026-08-20T08:50:00.000Z",
+      fechaLimiteAnterior: "2026-08-25",
+    });
+    expect(t.avisoVencimientoEnviadoEn).toBeNull();
+  });
+
+  it("un trámite recién creado no trae sello", () => {
+    const t = construirTramite({ formatoId: "f", autoridad: "arffs", fechaLimite: "2026-08-25" });
+    expect(t.avisoVencimientoEnviadoEn).toBeNull();
+  });
+
+  it("el mensaje de WhatsApp lista formato, expediente y cuándo vence — sin inventar plazos", () => {
+    const hoy = new Date("2026-08-20T00:00:00Z");
+    const porVencer = tramitesPorVencer(
+      [
+        tramite({ id: "a", formatoNombre: "Carta u oficio a la autoridad", expedienteAutoridad: "EXP-2026-018", fechaLimite: "2026-08-22" }),
+        tramite({ id: "b", formatoNombre: "Descargo ante una supervisión", expedienteAutoridad: null, fechaLimite: "2026-08-18" }),
+      ],
+      hoy,
+    );
+    const msg = mensajeAvisoTramites(porVencer);
+    expect(msg).toContain("Trámites que vencen pronto (2)");
+    expect(msg).toContain("Carta u oficio a la autoridad (EXP-2026-018) — vence en 2 días");
+    expect(msg).toContain("Descargo ante una supervisión — venció hace 2 días");
   });
 });

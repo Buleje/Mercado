@@ -61,6 +61,14 @@ export interface TramiteRegistro {
    * reasigna, ni siquiera si el trámite vuelve a "Borrador".
    */
   numeroDocumento: string | null;
+  /**
+   * Cuándo salió el aviso automático de "vence pronto" por WhatsApp (cron
+   * `tramites-vencimiento`) para el `fechaLimite` ACTUAL — se resetea solo si
+   * `fechaLimite` cambia (mismo patrón que `expiryReminderSentAt` en
+   * documentos). Sin esto el cron mandaría el mismo aviso todos los días de
+   * la ventana, no una vez por vencimiento.
+   */
+  avisoVencimientoEnviadoEn: string | null;
   createdAt: string;
   createdBy: string;
   updatedAt: string;
@@ -82,6 +90,10 @@ export interface TramiteInput {
   /** Preservado por el caller (`ForestTramitesDB.save`) desde el registro
    *  existente — el cliente nunca lo manda, `construirTramite` lo asigna solo. */
   numeroDocumento?: string | null;
+  /** Ídem: el sello del aviso automático y el `fechaLimite` que tenía ANTES,
+   *  para decidir si el sello sigue valiendo o hay que resetearlo. */
+  avisoVencimientoEnviadoEn?: string | null;
+  fechaLimiteAnterior?: string | null;
   createdAt?: string;
   createdBy?: string;
   /** El ahora, inyectado: así el registro es determinista en los tests. */
@@ -186,6 +198,13 @@ export function construirTramite(input: TramiteInput, existentes: TramiteRegistr
     ? siguienteNumeroDocumento(existentes, formatoId, new Date(ahora))
     : numeroPrevio;
 
+  // El sello del aviso automático sólo sigue valiendo si el plazo NO cambió;
+  // si el operador movió la fecha límite, es un vencimiento nuevo y merece
+  // avisar de nuevo (mismo criterio que `expiryReminderSentAt` en documentos).
+  const fechaLimite = fechaSolo(input.fechaLimite);
+  const avisoVencimientoEnviadoEn =
+    fechaLimite === (input.fechaLimiteAnterior ?? null) ? opcional(input.avisoVencimientoEnviadoEn, 40) : null;
+
   return {
     id: texto(input.id, 80) || nuevoId(formatoId, ahora),
     formatoId,
@@ -197,9 +216,10 @@ export function construirTramite(input: TramiteInput, existentes: TramiteRegistr
     expedienteAutoridad: opcional(input.expedienteAutoridad, 80),
     fechaPresentacion,
     fechaRespuesta,
-    fechaLimite: fechaSolo(input.fechaLimite),
+    fechaLimite,
     notas: opcional(input.notas, 2000),
     numeroDocumento,
+    avisoVencimientoEnviadoEn,
     createdAt: input.createdAt ?? ahora,
     createdBy: texto(input.createdBy, 80) || "unknown",
     updatedAt: ahora,
