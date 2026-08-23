@@ -825,6 +825,28 @@ export class ForestLothDB {
   }
 
   /**
+   * Códigos de troza REGISTRADOS en el libro (sección Trozado), sin importar si
+   * ya se despacharon o consumieron (T2: toda troza despachada/consumida debe
+   * existir en Trozado — así que Trozado solo alcanza y sobra como fuente).
+   *
+   * Para la validación GTF ↔ Libro (`GtfForm`): antes se usaba
+   * `availableSource(tenantId, "despacho_troza")`, que a propósito EXCLUYE las
+   * trozas ya despachadas (es el picker para crear un despacho nuevo) — así que
+   * toda troza cargada con "Cargar trozas despachadas" (`despachablesResueltos`,
+   * que trae justamente las YA despachadas) se marcaba "no está en el libro"
+   * por construcción. Esta consulta no excluye nada: es la fuente correcta.
+   */
+  static async trozaCodesRegistrados(tenantId: string): Promise<string[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await prisma.forestLothEntry.findMany({
+      where: { tenantId, deletedAt: null, status: "registrado", section: "trozado", trozaCode: { not: null } },
+      select: { trozaCode: true },
+      distinct: ["trozaCode"],
+    });
+    return rows.map((r) => r.trozaCode).filter((c): c is string => !!c);
+  }
+
+  /**
    * Ítems seleccionables para la sección (flujo data-driven, ADR-127):
    *  - tala            → censo del plan con árboles `en_pie`
    *  - trozado         → talas registradas (árboles tumbados) listos para trozar

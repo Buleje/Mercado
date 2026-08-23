@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, FileText, Plus, Printer, Ban, Loader2, Search, Trash2, Truck, LogIn } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
@@ -312,7 +313,7 @@ export default function LothGtfView({
 
       {!loading && (
         <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          <table className="w-full text-sm">
+          <DataTable className="w-full text-sm">
             <thead className="bg-[var(--surface-sunken)] text-left">
               <tr>{["N° GTF", "Fecha", "Tipo", "Titular", "Destino", "Vol. m³", "Estado", "Acciones"].map((h, i) => <th key={i} className={`px-4 py-2.5 font-bold text-[var(--text-primary)] ${i === 5 ? "text-right" : ""}`}>{h}</th>)}</tr>
             </thead>
@@ -362,7 +363,7 @@ export default function LothGtfView({
               ))}
               {gtfs.length === 0 && <tr><td colSpan={8} className="px-4 py-10 text-center text-[var(--text-tertiary)]"><FileText className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin GTF emitidas. Hacé click en &quot;Emitir GTF&quot;.</td></tr>}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       )}
       {!loading && filtradas.length > 0 && (
@@ -484,15 +485,20 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
   const [libroErr, setLibroErr] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/forestal/loth?available=despacho_troza", { credentials: "include" })
+    // OJO: NO usar `?available=despacho_troza` acá — esa fuente EXCLUYE a
+    // propósito las trozas ya despachadas (es el picker para crear un despacho
+    // nuevo), y "Cargar trozas despachadas" abajo carga justamente las YA
+    // despachadas → toda troza cargada daba "no está en el libro". `trozaCodes`
+    // trae TODAS las registradas en Trozado, despachadas o no.
+    fetch("/api/admin/forestal/loth?trozaCodes=1", { credentials: "include" })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
       .then((j) => {
         const codes = new Set<string>(
-          ((j.items ?? []) as Array<{ code?: string | null }>)
-            .map((x) => x.code?.trim() ?? "")
+          ((j.codes ?? []) as Array<string | null>)
+            .map((x) => x?.trim() ?? "")
             .filter(Boolean)
         );
         setCodesInLibro(codes);
@@ -546,10 +552,13 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
     } catch { /* best-effort: si falla, el usuario carga manual */ }
   }
   const totalVol = items.reduce((a, i) => a + Number(i.volumeM3 ?? 0), 0);
+  // Sin estos tres, un puesto de control no puede cruzar quién transporta la
+  // madera contra este registro interno (mismo requisito que exige el backend).
+  const hasMissingRequired = !f.transportista.trim() || !f.conductor.trim() || !f.placaVehiculo.trim();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems) return;
+    if (busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems || hasMissingRequired) return;
     setBusy(true); setErr(null);
     try {
       const body: Record<string, unknown> = { items };
@@ -583,10 +592,10 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
         <Field label="Titular"><input value={f.titularName} onChange={(e) => set("titularName", e.target.value)} className={I} /></Field>
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Field label="Transportista"><input value={f.transportista} onChange={(e) => set("transportista", e.target.value)} className={I} /></Field>
+        <Field label="Transportista *"><input value={f.transportista} onChange={(e) => set("transportista", e.target.value)} className={I} /></Field>
         <Field label="Doc. transportista"><input value={f.transportistaDoc} onChange={(e) => set("transportistaDoc", e.target.value)} className={I} /></Field>
-        <Field label="Conductor"><input value={f.conductor} onChange={(e) => set("conductor", e.target.value)} className={I} /></Field>
-        <Field label="Placa vehículo"><input value={f.placaVehiculo} onChange={(e) => set("placaVehiculo", e.target.value)} placeholder="ABC-123" className={I} /></Field>
+        <Field label="Conductor *"><input value={f.conductor} onChange={(e) => set("conductor", e.target.value)} className={I} /></Field>
+        <Field label="Placa vehículo *"><input value={f.placaVehiculo} onChange={(e) => set("placaVehiculo", e.target.value)} placeholder="ABC-123" className={I} /></Field>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Origen"><input value={f.origen} onChange={(e) => set("origen", e.target.value)} placeholder="PC 12 — bosque" className={I} /></Field>
@@ -611,7 +620,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
         </div>
         {items.length > 0 && (
           <div className="mt-3 overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="text-left text-xs text-[var(--text-tertiary)]"><tr><th className="py-1">Código</th><th>Especie</th><th className="text-right">Ø may</th><th className="text-right">Ø men</th><th className="text-right">Long.</th><th className="text-right">Vol. m³</th><th></th></tr></thead>
               <tbody>
                 {items.map((x, i) => (
@@ -634,7 +643,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
                 ))}
                 <tr className="border-t-2 border-[var(--rule-base)] font-bold"><td colSpan={5} className="py-1.5 text-right">Volumen total</td><td className="text-right font-mono tabular-nums text-[var(--data-success-700)]">{totalVol.toFixed(4)}</td><td></td></tr>
               </tbody>
-            </table>
+            </DataTable>
           </div>
         )}
       </div>
@@ -643,10 +652,13 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
         <span className="text-xs font-semibold text-[var(--text-tertiary)]">
           {items.length} {items.length === 1 ? "ítem" : "ítems"} · <span className="font-mono tabular-nums">{totalVol.toFixed(4)}</span> m³
           {items.length === 0 && <span className="ml-2 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">— agregá al menos una troza</span>}
+          {items.length > 0 && hasMissingRequired && (
+            <span className="ml-2 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">— completá transportista, conductor y placa</span>
+          )}
         </span>
         <div className="flex gap-2">
           <button type="button" onClick={onClose} className="h-11 rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />} Emitir GTF</button>
+          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems || hasMissingRequired} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />} Emitir GTF</button>
         </div>
       </div>
     </form>

@@ -34,11 +34,13 @@ const createSchema = z.object({
   titularName: z.string().trim().max(200).nullable().optional(),
   tituloHabilitante: z.string().trim().max(120).nullable().optional(),
   parcelaCorta: z.string().trim().max(120).nullable().optional(),
-  transportista: z.string().trim().max(200).nullable().optional(),
+  // Sin estos tres, un puesto de control no puede cruzar quién transporta la
+  // madera contra este registro interno — el gap que dejaba la ronda QA.
+  transportista: z.string().trim().min(1, "El transportista es obligatorio").max(200),
   transportistaDoc: z.string().trim().max(20).nullable().optional(),
-  conductor: z.string().trim().max(200).nullable().optional(),
+  conductor: z.string().trim().min(1, "El conductor es obligatorio").max(200),
   conductorLicencia: z.string().trim().max(40).nullable().optional(),
-  placaVehiculo: z.string().trim().max(20).nullable().optional(),
+  placaVehiculo: z.string().trim().min(1, "La placa del vehículo es obligatoria").max(20),
   origen: z.string().trim().max(200).nullable().optional(),
   destino: z.string().trim().max(200).nullable().optional(),
   items: z.array(itemSchema).min(1).max(500),

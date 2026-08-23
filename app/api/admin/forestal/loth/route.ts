@@ -100,6 +100,10 @@ export const GET = withApiHandler("forestal-loth-get", async (req: NextRequest) 
       return NextResponse.json({ items: await ForestLothDB.despachablesResueltos(auth.tenantId) });
     }
 
+    if (url.searchParams.get("trozaCodes") === "1") {
+      return NextResponse.json({ codes: await ForestLothDB.trozaCodesRegistrados(auth.tenantId) });
+    }
+
     const availableFor = url.searchParams.get("available");
     if (availableFor && (LOTH_SECTIONS as readonly string[]).includes(availableFor)) {
       const items = await ForestLothDB.availableSource(
