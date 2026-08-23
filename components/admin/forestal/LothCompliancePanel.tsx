@@ -81,6 +81,19 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
   const [gtfsFantasma, setGtfsFantasma] = useState<string[]>([]);
   const [citesPermisos, setCitesPermisos] = useState<LothCitesPermiso[]>([]);
   const [loading, setLoading] = useState(true);
+  /**
+   * FIX 2026-08-22: antes el guard de carga usaba `anomalias === null`, que se
+   * limpia apenas resuelve el PRIMER `Promise.all` (analytics/carátula/CITES).
+   * El cruce de guías (`gtfsFantasma`) es un SEGUNDO bloque `await` más abajo
+   * en la misma función — entre uno y otro, React ya renderizaba el veredicto
+   * con `gtfsFantasma` todavía en su `[]` inicial: un 100/100 "el libro
+   * resiste una fiscalización" falso, que un operador podía leer literal en
+   * la mitad de segundo que tarda esa segunda llamada. `ready` sólo se prende
+   * al final de TODA `load()` (ambos bloques) — la primera carga espera
+   * completa; un "Recargar" posterior no vuelve a bloquear con el spinner
+   * (ready ya quedó en true), muestra el dato viejo hasta que llega el nuevo.
+   */
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reportError, setReportError] = useState<string | null>(null);
 
@@ -134,6 +147,7 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
+      setReady(true);
     }
   }, []);
 
@@ -141,7 +155,7 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
     void load();
   }, [load, reloadSignal]);
 
-  if (loading && anomalias === null) return <LoadingState message="Calculando cumplimiento del libro..." />;
+  if (loading && !ready) return <LoadingState message="Calculando cumplimiento del libro..." />;
   if (error && anomalias === null) {
     return (
       <ErrorAlert
