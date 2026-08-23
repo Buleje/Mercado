@@ -8,12 +8,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DataTable } from "@buleje/design-system";
-import { AlertTriangle, FileText, Plus, Printer, Ban, Loader2, Search, Trash2, Truck, LogIn } from "@buleje/design-system/icons";
+import { AlertTriangle, FileText, Plus, Printer, Ban, Loader2, Search, ShieldCheck, Trash2, Truck, LogIn } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
 import { documentoGtfLoth, type LothGtfCaratula, type LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
+import VerificarGtfSerfor from "./VerificarGtfSerfor";
 
 interface GtfItem {
   code?: string | null; species?: string | null; scientific?: string | null; cites?: boolean;
@@ -477,6 +478,11 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
   const [it, setIt] = useState({ code: "", species: "", diamMayorM: "", diamMenorM: "", lengthM: "" });
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   const setItem = (k: keyof typeof it, v: string) => setIt((p) => ({ ...p, [k]: v }));
+  // Verificación SERFOR (informativa, ADR-312): esta GTF interna no tiene hoy
+  // dónde guardar el sello (ForestGtf no trae esas columnas), así que confirma
+  // en el momento y no se persiste — igual que el resto del form, que tampoco
+  // valida contra la GTF oficial más allá de esto.
+  const [selloSerfor, setSelloSerfor] = useState<{ numeroRegistro: string; verificadoEn: string } | null>(null);
 
   // ── Validación GTF ↔ Libro de Operaciones ──────────────────────────────
   // codesInLibro: set de códigos registrados en el libro (sección trozado/despacho).
@@ -597,6 +603,26 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
         <Field label="Conductor *"><input value={f.conductor} onChange={(e) => set("conductor", e.target.value)} className={I} /></Field>
         <Field label="Placa vehículo *"><input value={f.placaVehiculo} onChange={(e) => set("placaVehiculo", e.target.value)} placeholder="ABC-123" className={I} /></Field>
       </div>
+
+      <VerificarGtfSerfor
+        gtfNumber={f.gtfNumber}
+        onSello={setSelloSerfor}
+        onGuiaVerificada={(g) => {
+          // Lo que la guía trae y el operador todavía no tipeó se copia; lo
+          // tipeado no se pisa. SERFOR no publica un nombre de conductor
+          // separado del transportista, así que ese campo sigue manual.
+          setF((p) => ({
+            ...p,
+            gtfNumber: p.gtfNumber.trim() || g.gtfNumber || p.gtfNumber,
+            titularName: p.titularName.trim() || g.titular || p.titularName,
+            transportista: p.transportista.trim() || g.transportista || p.transportista,
+            transportistaDoc: p.transportistaDoc.trim() || g.transportistaDni || p.transportistaDoc,
+            conductorLicencia: p.conductorLicencia.trim() || g.licenciaConducir || p.conductorLicencia,
+            placaVehiculo: p.placaVehiculo.trim() || g.placa || p.placaVehiculo,
+          }));
+        }}
+      />
+
       <div className="grid grid-cols-2 gap-3">
         <Field label="Origen"><input value={f.origen} onChange={(e) => set("origen", e.target.value)} placeholder="PC 12 — bosque" className={I} /></Field>
         <Field label="Destino"><input value={f.destino} onChange={(e) => set("destino", e.target.value)} placeholder="CTP / aserradero" className={I} /></Field>
@@ -654,6 +680,11 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
           {items.length === 0 && <span className="ml-2 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">— agregá al menos una troza</span>}
           {items.length > 0 && hasMissingRequired && (
             <span className="ml-2 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">— completá transportista, conductor y placa</span>
+          )}
+          {selloSerfor && (
+            <span className="ml-2 inline-flex items-center gap-1 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+              <ShieldCheck className="h-3.5 w-3.5" /> verificada en SERFOR ({selloSerfor.numeroRegistro})
+            </span>
           )}
         </span>
         <div className="flex gap-2">

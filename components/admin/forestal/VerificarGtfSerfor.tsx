@@ -1,13 +1,14 @@
 "use client";
 
 /**
- * Verificación de la GTF de salida contra SERFOR (ADR-312).
- *
- * La guía de salida la emite ESTE centro, así que SERFOR no la carga: la
- * verifica. Lo que importa no es llenar campos sino que el documento exista y
- * esté vigente — un despacho amparado por una guía anulada es exactamente lo
- * que una fiscalización busca. El sello (N° de constancia + cuándo se verificó)
- * viaja con la línea: una guía activa hoy puede estar anulada mañana.
+ * Verificación de una GTF de salida contra SERFOR (ADR-312). Compartido entre
+ * el Libro CTP y el Libro TH: en los dos, la guía de salida la emite ESTE
+ * libro, así que SERFOR no la carga — la verifica. Lo que importa no es
+ * llenar campos sino que el documento exista y esté vigente: un despacho
+ * amparado por una guía anulada es exactamente lo que una fiscalización
+ * busca. El sello (N° de constancia + cuándo se verificó) viaja con la línea
+ * cuando el consumidor lo persiste: una guía activa hoy puede estar anulada
+ * mañana.
  */
 
 import { useState } from "react";
@@ -20,7 +21,7 @@ export interface SelloSerfor {
   verificadoEn: string;
 }
 
-export default function CtpVerificarGtfSerfor({
+export default function VerificarGtfSerfor({
   gtfNumber,
   onGuiaVerificada,
   onSello,

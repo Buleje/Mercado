@@ -46,7 +46,7 @@ import CtpListaProductosTab from "./CtpListaProductosTab";
 import CtpCubicarProductoModal from "./CtpCubicarProductoModal";
 import CtpProductosStockModal from "./CtpProductosStockModal";
 import CtpTrozasDespachoModal from "./CtpTrozasDespachoModal";
-import CtpVerificarGtfSerfor, { type SelloSerfor } from "./CtpVerificarGtfSerfor";
+import VerificarGtfSerfor, { type SelloSerfor } from "./VerificarGtfSerfor";
 import { logger } from "@/lib/logger";
 import { Btn, ModalFooter, parseCitesPermiso } from "./ctp-shared";
 
@@ -606,7 +606,7 @@ export default function CtpDespachoGuiaModal({
               onGuardarEnLibreta={guardarEnLibreta}
               llevaCites={especiesCites.length > 0}
               slotVerificacion={
-                <CtpVerificarGtfSerfor
+                <VerificarGtfSerfor
                   gtfNumber={gtfNumber}
                   onSello={setSello}
                   onGuiaVerificada={(g) => {

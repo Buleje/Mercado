@@ -15,7 +15,7 @@ import { consultarGtfEnSerfor } from "@/lib/forestal/serfor-gtf-fetch";
  *
  * Consulta la guía en la base de SERFOR (consulta pública del SNIFFS, la misma
  * que hay detrás del QR impreso en la GTF) y devuelve sus datos para precargar
- * el ingreso.
+ * el ingreso, o para verificar una guía que este libro mismo emitió.
  *
  * Sale a la red desde el SERVIDOR, no desde el navegador: el sitio de SERFOR no
  * manda CORS, así que un fetch del cliente moriría; y de paso el timeout, el
@@ -38,8 +38,15 @@ export async function GET(req: NextRequest) {
     if (rl) return rl;
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;
-    const habilitado = await isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro");
-    if (!habilitado) return NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
+    // Ambos libros emiten su propia GTF de salida y la verifican acá — CTP
+    // desde su despacho, LO-TH desde el suyo (ForestGtf).
+    const [ctpHabilitado, lothHabilitado] = await Promise.all([
+      isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro"),
+      isSpecializationEnabled(auth.tenantId, "spec:forestal:loth-libro"),
+    ]);
+    if (!ctpHabilitado && !lothHabilitado) {
+      return NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
+    }
 
     const parsed = Query.safeParse({ numeroRegistro: req.nextUrl.searchParams.get("numeroRegistro") ?? "" });
     if (!parsed.success) {
