@@ -150,13 +150,10 @@ function EmptyChartPrestamos({ message }: { message: string }) {
 }
 
 // ── Sparkline KPI Card (mejora #1) ───────────────────────────────────────────
-
-function genSparkData(base: number): { v: number }[] {
-  const seed = Math.abs(base) || 100;
-  return Array.from({ length: 6 }, (_, i) => ({
-    v: Math.max(0, seed * (0.65 + Math.sin(i + seed * 0.01) * 0.2 + Math.cos(i * 1.5) * 0.15) * (1 + i * 0.04)),
-  }));
-}
+// El sparkline sólo se pinta cuando hay una serie mensual REAL detrás (ver
+// `areaData`/`spark1`/`spark2` más abajo) — mostrar ruido sintético como si
+// fuera tendencia real viola la regla de no presentar un derivado como dato
+// real. Sin `sparkData`, la tarjeta se ve igual pero sin el trazo decorativo.
 
 function SparklineKPICard({
   title, value, sub, accentColor, iconColor, valueColor, icon: Icon, sparkData,
@@ -171,7 +168,8 @@ function SparklineKPICard({
   /** Valor numérico — default neutro; usa warning/error sólo si es crítico. */
   valueColor?: string;
   icon: React.ElementType;
-  sparkData: { v: number }[];
+  /** Serie mensual real (6 puntos). Omitir si no hay un histórico real disponible. */
+  sparkData?: { v: number }[];
 }) {
   const gradId = `sp-${title.replace(/\W+/g, "")}`;
   const resolvedIconColor = iconColor ?? "var(--text-secondary)";
@@ -184,19 +182,21 @@ function SparklineKPICard({
       </div>
       <p className="text-2xl font-extrabold font-mono leading-tight" style={{ color: resolvedValueColor }}>{value}</p>
       {sub && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{sub}</p>}
-      <div className="absolute bottom-0 right-0 w-20 h-10 opacity-40 pointer-events-none">
-        <ResponsiveContainer minWidth={0} width={80} height={40}>
-          <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={accentColor} stopOpacity={0.35} />
-                <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <Area type="monotone" dataKey="v" stroke={accentColor} strokeWidth={1.5} fill={`url(#${gradId})`} dot={false} />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+      {sparkData && sparkData.length > 0 && (
+        <div className="absolute bottom-0 right-0 w-20 h-10 opacity-40 pointer-events-none">
+          <ResponsiveContainer minWidth={0} width={80} height={40}>
+            <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={accentColor} stopOpacity={0.35} />
+                  <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area type="monotone" dataKey="v" stroke={accentColor} strokeWidth={1.5} fill={`url(#${gradId})`} dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
@@ -262,21 +262,29 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
   const totalDados = resumen?.totalDados ?? prestamos.filter(p => p.direccion === "DADO").reduce((s, p) => s + p.monto, 0);
   const totalRecibidos = resumen?.totalRecibidos ?? prestamos.filter(p => p.direccion === "RECIBIDO").reduce((s, p) => s + p.monto, 0);
   const maxDireccion = Math.max(totalDados, totalRecibidos, 1);
-  // Sparkline data (mejora 1)
-  const spark1 = genSparkData(totalDados); const spark2 = genSparkData(totalRecibidos);
-  const spark3 = genSparkData(porCobrar); const spark4 = genSparkData(cuotasVencidas * 200);
-  const spark5 = genSparkData(moraAcumulada); const spark6 = genSparkData(tasaRecuperacion * 50);
 
-  // Area chart: cobros vs nuevos prestamos (6 meses)
-  const areaData: { mes: string; cobrado: number; nuevos: number }[] = [];
+  // Area chart: cobros vs nuevos prestamos (6 meses) + split por dirección
+  // para los sparklines de Dados/Recibidos (mismo dato, sin recalcular).
+  const areaData: { mes: string; cobrado: number; nuevos: number; nuevosDados: number; nuevosRecibidos: number }[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(); d.setMonth(d.getMonth() - i);
     const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const label = d.toLocaleDateString("es-PE", { month: "short" });
     const cobrado = activosAll.reduce((s, p) => s + p.cuotas.filter(c => c.pagadoEn && c.pagadoEn.startsWith(mesKey)).reduce((ss, c) => ss + (c.montoPagado || c.monto), 0), 0);
-    const nuevos = prestamos.filter(p => p.createdAt.startsWith(mesKey)).reduce((s, p) => s + p.monto, 0);
-    areaData.push({ mes: label, cobrado, nuevos });
+    const prestamosDelMes = prestamos.filter(p => p.createdAt.startsWith(mesKey));
+    const nuevos = prestamosDelMes.reduce((s, p) => s + p.monto, 0);
+    const nuevosDados = prestamosDelMes.filter(p => p.direccion === "DADO").reduce((s, p) => s + p.monto, 0);
+    const nuevosRecibidos = prestamosDelMes.filter(p => p.direccion === "RECIBIDO").reduce((s, p) => s + p.monto, 0);
+    areaData.push({ mes: label, cobrado, nuevos, nuevosDados, nuevosRecibidos });
   }
+
+  // Sparklines: sólo para las 2 métricas que son flujo mensual real (altas
+  // nuevas por dirección, ya agregadas arriba). El resto de las tarjetas
+  // (por cobrar/vencidas/mora/recuperación) son saldos o ratios puntuales
+  // sin una serie mensual fiel y barata de construir — se muestran sin
+  // sparkline en vez de fabricar una tendencia (antes: ruido seno/coseno).
+  const spark1 = areaData.map(m => ({ v: m.nuevosDados }));
+  const spark2 = areaData.map(m => ({ v: m.nuevosRecibidos }));
 
   // Top 5 deudores (horizontal bar)
   const deudorMap = new Map<string, number>();
@@ -330,10 +338,10 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <SparklineKPICard title="Dados" value={formatCurrency(totalDados)} sub={`${resumen?.activosDados ?? prestamos.filter(p=>p.direccion==="DADO"&&p.status==="ACTIVO").length} activos`} accentColor="var(--text-tertiary)" iconColor="var(--text-secondary)" icon={ArrowUpFromLine} sparkData={spark1} />
           <SparklineKPICard title="Recibidos" value={formatCurrency(totalRecibidos)} sub={`${resumen?.activosRecibidos ?? prestamos.filter(p=>p.direccion==="RECIBIDO"&&p.status==="ACTIVO").length} activos`} accentColor="var(--accent)" iconColor="var(--text-secondary)" icon={ArrowDownToLine} sparkData={spark2} />
-          <SparklineKPICard title="Por cobrar" value={formatCurrency(resumen?.saldoDados ?? porCobrar)} accentColor="var(--text-tertiary)" iconColor="var(--text-secondary)" icon={DollarSign} sparkData={spark3} />
-          <SparklineKPICard title="Cuotas vencidas" value={String(cuotasVencidas)} valueColor={cuotasVencidas > 0 ? "var(--data-warning)" : undefined} accentColor="var(--text-tertiary)" iconColor={cuotasVencidas > 0 ? "var(--data-warning)" : "var(--text-secondary)"} icon={XCircle} sparkData={spark4} />
-          <SparklineKPICard title="Mora acumulada" value={formatCurrency(moraAcumulada)} valueColor={moraAcumulada > 0 ? "var(--data-warning)" : undefined} accentColor="var(--text-tertiary)" iconColor={moraAcumulada > 0 ? "var(--data-warning)" : "var(--text-secondary)"} icon={AlertTriangle} sparkData={spark5} />
-          <SparklineKPICard title="Recuperación" value={`${tasaRecuperacion.toFixed(1)}%`} accentColor="var(--accent)" iconColor="var(--text-secondary)" icon={TrendingUp} sparkData={spark6} />
+          <SparklineKPICard title="Por cobrar" value={formatCurrency(resumen?.saldoDados ?? porCobrar)} accentColor="var(--text-tertiary)" iconColor="var(--text-secondary)" icon={DollarSign} />
+          <SparklineKPICard title="Cuotas vencidas" value={String(cuotasVencidas)} valueColor={cuotasVencidas > 0 ? "var(--data-warning)" : undefined} accentColor="var(--text-tertiary)" iconColor={cuotasVencidas > 0 ? "var(--data-warning)" : "var(--text-secondary)"} icon={XCircle} />
+          <SparklineKPICard title="Mora acumulada" value={formatCurrency(moraAcumulada)} valueColor={moraAcumulada > 0 ? "var(--data-warning)" : undefined} accentColor="var(--text-tertiary)" iconColor={moraAcumulada > 0 ? "var(--data-warning)" : "var(--text-secondary)"} icon={AlertTriangle} />
+          <SparklineKPICard title="Recuperación" value={`${tasaRecuperacion.toFixed(1)}%`} accentColor="var(--accent)" iconColor="var(--text-secondary)" icon={TrendingUp} />
         </div>
       </m.div>
 
