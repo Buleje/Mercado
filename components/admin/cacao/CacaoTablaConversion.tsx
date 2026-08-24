@@ -10,7 +10,7 @@
  */
 import { useMemo, useState } from "react";
 import { Table } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT, ANCLA_CC_LABEL } from "@/lib/cacao/cacao-precio-regional";
 import CacaoChartPresent from "./CacaoChartPresent";
 
@@ -138,7 +138,7 @@ export default function CacaoTablaConversion({
         <p className="py-10 text-center text-sm text-[var(--text-tertiary)]">Sin datos de precio o tipo de cambio para este rango.</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-          <table className="w-full min-w-[760px] border-collapse text-sm">
+          <DataTable className="w-full min-w-[760px] border-collapse text-sm">
             <thead>
               <tr className="bg-[var(--accent)] text-left text-white">
                 <Th>Fecha</Th>
@@ -177,7 +177,7 @@ export default function CacaoTablaConversion({
                 );
               })}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       )}
       <p className="mt-2.5 text-[length:var(--ts-2xs)] leading-relaxed text-[var(--text-tertiary)]">

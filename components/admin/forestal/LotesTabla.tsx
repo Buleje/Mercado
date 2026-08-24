@@ -11,6 +11,7 @@
  * Es la misma data que las cards y el mismo click: sólo cambia la forma.
  */
 
+import { DataTable } from "@buleje/design-system";
 import { ChevronLeft, ChevronRight, Tag } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { RENDIMIENTO_REF_ASERRADA } from "@/lib/forestal/ctp-rendimiento";
@@ -107,7 +108,7 @@ export default function LotesTabla({
           acá NO va el degradé de borde que sí llevan los cuadros SERFOR —esos
           sí optan por quedarse como tabla, porque son el formato oficial. */}
       <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead>
             <tr className="border-b-2 border-[var(--rule-base)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               <th className="px-3 py-2.5 font-bold">Código</th>
@@ -196,7 +197,7 @@ export default function LotesTabla({
               <td className="px-3 py-2.5" colSpan={2} />
             </tr>
           </tfoot>
-        </table>
+        </DataTable>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

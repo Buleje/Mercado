@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Coins, TrendingUp, TrendingDown, Award, Wallet, RefreshCw, Calculator } from "@buleje/design-system/icons";
-import { StatCard, LoadingState, ErrorAlert, WarningAlert } from "@buleje/design-system";
+import { StatCard, LoadingState, ErrorAlert, WarningAlert, DataTable } from "@buleje/design-system";
 import { Btn } from "./ctp-shared";
 import type { CosteoRow, LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { buildTraceOperations } from "@/lib/forestal/loth-trace";
@@ -174,7 +174,7 @@ export default function LothRentabilidadPanel({
         <ArbolesTabla filas={arboles} resumen={resArboles} maxAbs={maxAbsArbol} />
       ) : (
       <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
               <Th>Especie</Th>
@@ -210,7 +210,7 @@ export default function LothRentabilidadPanel({
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </div>
       )}
 
@@ -314,7 +314,7 @@ function ArbolesTabla({
       </div>
 
       <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
               <Th>Árbol</Th>
@@ -368,7 +368,7 @@ function ArbolesTabla({
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div className="space-y-1 text-xs text-[var(--text-tertiary)]">

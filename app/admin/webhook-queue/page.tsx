@@ -16,6 +16,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import AdminTabShell from "@/app/admin/_components/_shared/AdminTabShell";
 import AdminEmptyState from "@/app/admin/_components/_shared/AdminEmptyState";
 import { ADMIN_TOKENS } from "@/app/admin/_components/_shared/admin-tokens";
+import { DataTable } from "@buleje/design-system";
 
 interface QueueItem {
   id: string;
@@ -215,7 +216,7 @@ export default function WebhookQueuePage() {
         ) : (
           <div className={`overflow-hidden ${ADMIN_TOKENS.card}`}>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <DataTable className="w-full text-sm">
                 <thead className="bg-[var(--surface-sunken)]/60">
                   <tr>
                     {["Estado", "Tipo de evento", "Intentos", "Próximo retry", "Creado", "Último error", ""].map(
@@ -275,7 +276,7 @@ export default function WebhookQueuePage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           </div>
         )}

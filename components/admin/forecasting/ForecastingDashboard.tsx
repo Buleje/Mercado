@@ -2,7 +2,7 @@
 
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminCard from "@/components/admin/shared/AdminCard";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 /**
  * ForecastingDashboard.tsx
@@ -608,7 +608,7 @@ export default function ForecastingDashboard() {
             {state.reorder.length > 0 && (
               /* Tabla responsive — scroll horizontal en mobile */
               <div className="overflow-x-auto -mx-1">
-                <table className="w-full min-w-[540px] text-xs">
+                <DataTable className="w-full min-w-[540px] text-xs">
                   <thead>
                     <tr className="border-b border-[var(--rule-soft)]">
                       <th className="text-left py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Producto</th>
@@ -692,7 +692,7 @@ export default function ForecastingDashboard() {
                       );
                     })}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             )}
           </PanelCard>

@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   RefreshCw,
@@ -235,7 +235,7 @@ export default function CashflowRollingTable() {
       {/* Data table: 1 columna fija "Concepto" + 13 columnas semana */}
       {data && data.weeks.length > 0 && (
         <div className="overflow-x-auto -mx-1 px-1 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)]">
-          <table className="w-full min-w-[1100px] text-sm border-collapse">
+          <DataTable className="w-full min-w-[1100px] text-sm border-collapse">
             <thead>
               <tr className="border-b border-[var(--rule-base)] dark:border-white/10">
                 <th
@@ -328,7 +328,7 @@ export default function CashflowRollingTable() {
                 );
               })}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       )}
 

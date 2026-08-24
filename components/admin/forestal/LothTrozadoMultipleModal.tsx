@@ -12,6 +12,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, Loader2, Plus, Scissors, Trash2, X } from "@buleje/design-system/icons";
 import { smalianVolume, type LothEntryDTO } from "@/lib/forestal/loth-constants";
 
@@ -163,7 +164,7 @@ export default function LothTrozadoMultipleModal({
               {arbol && (
                 <>
                   <div className="overflow-x-auto rounded-xl border-2 border-[var(--rule-base)]">
-                    <table className="w-full text-sm">
+                    <DataTable className="w-full text-sm">
                       <thead className="bg-[var(--surface-sunken)] text-left">
                         <tr>
                           <th className="px-3 py-2 font-bold">Troza</th>
@@ -235,7 +236,7 @@ export default function LothTrozadoMultipleModal({
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                    </DataTable>
                   </div>
 
                   <button

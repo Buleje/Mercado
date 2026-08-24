@@ -18,7 +18,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Loader2, PackageOpen, Search } from "@buleje/design-system/icons";
-import { EmptyState } from "@buleje/design-system";
+import { DataTable, EmptyState } from "@buleje/design-system";
 import EspecieFoto from "./EspecieFoto";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
 
@@ -159,7 +159,7 @@ export default function CtpTrozasBuscador() {
           {/* Desktop: tabla. Mobile: tarjetas — la grilla de 6 columnas es
               ilegible en un teléfono, que es donde se usa en el patio. */}
           <div className="hidden overflow-x-auto sm:block">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   <th className="px-4 py-2 font-bold">Código troza</th>
@@ -230,7 +230,7 @@ export default function CtpTrozasBuscador() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
 
           <ul className="divide-y divide-[var(--rule-soft)] sm:hidden">

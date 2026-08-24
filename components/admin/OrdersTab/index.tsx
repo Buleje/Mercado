@@ -1,6 +1,6 @@
 "use client";
 
-import { PageTitle } from "@buleje/design-system";
+import { DataTable, PageTitle } from "@buleje/design-system";
 import { useState } from "react";
 import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer, Package, DollarSign, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -368,7 +368,7 @@ export default function OrdersTab() {
         <p className="text-xs text-[var(--text-secondary)] mb-4">
           {new Date().toLocaleString("es-PE", { timeZone: "America/Lima" })} · {activeOrders.length} pedidos · S/{total.toFixed(2)} total
         </p>
-        <table className="w-full text-xs border-collapse">
+        <DataTable className="w-full text-xs border-collapse">
           <thead>
             <tr className="border-b-2 border-gray-900">
               <th className="text-left py-1 pr-2">ID</th>
@@ -391,7 +391,7 @@ export default function OrdersTab() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       {/* Modals */}

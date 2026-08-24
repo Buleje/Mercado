@@ -11,6 +11,7 @@
  * lo que hay en el patio.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { Download, Layers, PackageOpen, RefreshCw } from "@buleje/design-system/icons";
 import type { TrozaCubicada } from "@/lib/forestal/cubicacion-trozas";
 import {
@@ -70,7 +71,7 @@ function TablaTrozas({ primeraCol, grupos, total, caption, compacta }: {
   const TH = `${compacta ? "px-2" : "px-3"} py-2 text-left align-bottom text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]`;
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-      <table className={`w-full text-sm ${compacta ? "min-w-[380px]" : "min-w-[480px]"}`}>
+      <DataTable className={`w-full text-sm ${compacta ? "min-w-[380px]" : "min-w-[480px]"}`}>
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr className="bg-[var(--surface-sunken)]">
@@ -93,7 +94,7 @@ function TablaTrozas({ primeraCol, grupos, total, caption, compacta }: {
             <td className="px-3 py-2.5 text-[length:var(--ts-2xs)] uppercase tracking-wide">100%</td>
           </tr>
         </tfoot>
-      </table>
+      </DataTable>
     </div>
   );
 }

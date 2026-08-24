@@ -2,7 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { AlertTriangle, ArrowDownRight, Check, ClipboardList, FileText, Loader2, PackageCheck, PackageOpen, Pencil, Scissors, Search } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import CtpRetrozarModal, { type TrozaParaCortar } from "./CtpRetrozarModal";
 import CtpRecepcionTrozas from "./CtpRecepcionTrozas";
 import CtpDocumentoVisor from "./CtpDocumentoVisor";
@@ -417,7 +417,7 @@ export default function CtpTrozasDeIngreso({
           ingreso: en una tablet a 768px el modal deja ~700px y `sm:` (640px)
           mostraba igual la tabla, apretada. */}
       <div className="hidden overflow-x-auto @4xl:block">
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               <th className="px-4 py-2 font-bold">Codificación</th>
@@ -522,7 +522,7 @@ export default function CtpTrozasDeIngreso({
               );
             })}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <ul className="divide-y divide-[var(--rule-soft)] @4xl:hidden">

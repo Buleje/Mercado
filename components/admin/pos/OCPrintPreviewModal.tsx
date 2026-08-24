@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { AlertTriangle } from "@buleje/design-system/icons";
 import { useCallback } from "react";
 
@@ -180,7 +180,7 @@ export default function OCPrintPreviewModal({
           </div>
 
           {/* Tabla de items */}
-          <table className="w-full text-sm">
+          <DataTable className="w-full text-sm">
             <thead>
               <tr className="border-b-2 border-[var(--rule-base)]">
                 <th className="text-left py-2 font-semibold text-[var(--text-secondary)]">Producto</th>
@@ -205,7 +205,7 @@ export default function OCPrintPreviewModal({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
 
           {/* Totales */}
           <div className="border-t-2 border-[var(--rule-base)] pt-3 space-y-1">

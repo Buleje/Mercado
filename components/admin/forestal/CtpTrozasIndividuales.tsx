@@ -15,6 +15,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { Download, Loader2, PackageOpen, Search } from "@buleje/design-system/icons";
 import { LABEL_BLOQUEO, motivoBloqueo } from "@/lib/forestal/consumo-trozas";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -164,7 +165,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
       </div>
 
       <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <table className="w-full min-w-[1000px] text-sm">
+        <DataTable className="w-full min-w-[1000px] text-sm">
           <caption className="sr-only">Trozas del período, una fila por pieza</caption>
           <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
             <tr>
@@ -228,7 +229,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
               <td className={TD} colSpan={2} />
             </tr>
           </tfoot>
-        </table>
+        </DataTable>
       </div>
     </div>
   );

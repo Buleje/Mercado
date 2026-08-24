@@ -1,5 +1,5 @@
 "use client";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, SectionTitle } from "@buleje/design-system";
 import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -370,7 +370,7 @@ function Top10Clientes({ refreshKey, reportEmpty = true }: { refreshKey: number;
       {customers.length === 0 ? (
         <p className="text-sm text-[var(--text-tertiary)] text-center py-8">No hay datos de clientes disponibles</p>
       ) : (
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--rule-base)] text-left">
               <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs">#</th>
@@ -405,7 +405,7 @@ function Top10Clientes({ refreshKey, reportEmpty = true }: { refreshKey: number;
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       )}
     </div>
   );

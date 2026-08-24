@@ -11,6 +11,7 @@
  */
 
 import { useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, CheckCircle, Download } from "@buleje/design-system/icons";
 import { TITULO_FORMATO } from "@/lib/forestal/ctp-formatos-serfor";
 import { reporteACsv, tituloDelReporte, type ReporteImport } from "@/lib/forestal/ctp-reporte-import";
@@ -78,7 +79,7 @@ export default function ReporteDeImport({
           archivo. Con la sección al lado, se cuadra de un vistazo. */}
       {escrito && reporte.creados.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-[var(--data-success)]/30">
-          <table className="w-full text-base">
+          <DataTable className="w-full text-base">
             <thead className="bg-[var(--data-success)]/10 text-sm">
               <tr>
                 <th className="px-3 py-2 text-left font-bold text-[var(--text-secondary)]">Sección</th>
@@ -101,7 +102,7 @@ export default function ReporteDeImport({
                 </td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       )}
 

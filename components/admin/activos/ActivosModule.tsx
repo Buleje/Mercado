@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { Field } from "@/components/admin/shared/Field";
 import { generateContractPDF } from "@/lib/assets-contract";
@@ -864,10 +864,10 @@ function ImportModal({ onClose, onDone }: { knownTypes: string[]; onClose: () =>
         <textarea value={text} onChange={e => { setText(e.target.value); parse(e.target.value); }} rows={6} className={cn(FIELD, "mt-2 font-mono")} placeholder={"Oruga D6, oruga, PUC-123, 180, hora, 8\nCamión Volquete, camion, ABC-456, 90, viaje, 6"} />
         {rows && rows.length > 0 && (
           <div className="mt-3 max-h-48 overflow-y-auto rounded-xl border border-[var(--rule-base)]">
-            <table className="w-full text-xs">
+            <DataTable className="w-full text-xs">
               <thead className="sticky top-0 bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"><tr><th className="px-2 py-1.5 text-left font-bold">Nombre</th><th className="px-2 py-1.5 text-left font-bold">Categoría</th><th className="px-2 py-1.5 text-right font-bold">Tarifa</th></tr></thead>
               <tbody>{rows.map((r, i) => <tr key={i} className="border-t border-[var(--rule-soft)]"><td className="px-2 py-1.5 font-bold text-[var(--text-primary)]">{r.name}</td><td className="px-2 py-1.5 text-[var(--text-secondary)]">{typeLabel(r.type)}</td><td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.hourlyRate != null ? fmt(r.hourlyRate) : "—"}</td></tr>)}</tbody>
-            </table>
+            </DataTable>
           </div>
         )}
         <div className="mt-6 flex items-center gap-3">

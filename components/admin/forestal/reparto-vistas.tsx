@@ -11,6 +11,7 @@
  */
 
 import { useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, ChevronRight, FileText, Plus } from "@buleje/design-system/icons";
 import { ETIQUETA_DIMENSION, type DimensionResumen } from "@/lib/forestal/cubicacion-resumen";
 import {
@@ -226,7 +227,7 @@ export function BloqueEspecie({
             )}
           </div>
           <div className="overflow-x-auto">
-            <table aria-label={`Faltante por distribuir de ${e.especie}`} className="w-full min-w-[520px] text-base">
+            <DataTable aria-label={`Faltante por distribuir de ${e.especie}`} className="w-full min-w-[520px] text-base">
               <thead>
                 <tr className="border-b-2 border-[var(--data-warning-500)]/40 text-left text-sm font-bold uppercase tracking-wide text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                   <th scope="col" className="px-3 py-2.5">{etiquetaCol}</th>
@@ -256,7 +257,7 @@ export function BloqueEspecie({
                   <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtM3(e.rollizaFaltanteM3)}</td>
                 </tr>
               </tfoot>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}
@@ -334,7 +335,7 @@ function JornadaBloque({
       )}
       {dia.grupos.length === 0 ? null : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[500px] text-sm">
+          <DataTable className="w-full min-w-[500px] text-sm">
             <thead>
               <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
                 <th scope="col" className="w-24 px-3 py-2.5" title="Tildá la línea cuando ya la distribuiste y la pasaste al Libro de Operaciones">Distribuido</th>
@@ -380,7 +381,7 @@ function JornadaBloque({
                 <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtM3(dia.m3)}</td>
               </tr>
             </tfoot>
-          </table>
+          </DataTable>
         </div>
       )}
     </div>

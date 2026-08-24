@@ -9,7 +9,7 @@
  * en la otra y el libro dejaría de leerse como un solo documento.
  */
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 
 export const n4 = (n: number) =>
@@ -83,7 +83,7 @@ export function Cuadro({
           derecha — sin el degradé el borde se lee como el fin del cuadro. */}
       <div className="relative">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm hoja-grilla">{children}</table>
+          <DataTable className="w-full text-sm hoja-grilla">{children}</DataTable>
         </div>
         <div
           aria-hidden

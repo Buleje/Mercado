@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { Download, Layers, Loader2, Search, X } from "@buleje/design-system/icons";
 import {
   diasParada,
@@ -249,7 +249,7 @@ export default function CtpTrozasLista({
           {/* Desktop: tabla. Mobile: tarjetas — nueve columnas no entran en el
               teléfono que se usa en el patio. */}
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="border-b-2 border-[var(--rule-base)]">
                 <tr>
                   <th className={`${TH} w-9`}>
@@ -338,7 +338,7 @@ export default function CtpTrozasLista({
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
 
           <ul className="divide-y divide-[var(--rule-soft)] md:hidden">

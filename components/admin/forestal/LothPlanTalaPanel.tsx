@@ -13,7 +13,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertTriangle, Printer, TreePine } from "@buleje/design-system/icons";
 import {
   metaDeDias,
@@ -120,7 +120,7 @@ export default function LothPlanTalaPanel({
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <DataTable className="w-full text-sm">
             <thead className="border-b-2 border-[var(--rule-base)]">
               <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
                 <th className="px-2 py-2 w-8">#</th>
@@ -148,7 +148,7 @@ export default function LothPlanTalaPanel({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       )}
 

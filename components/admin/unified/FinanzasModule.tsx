@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
@@ -907,7 +907,7 @@ function FinanzasDashboard() {
             <p className="text-sm font-bold text-[var(--text-primary)]">Resumen Fiscal — {mesCapitalized}</p>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--rule-base)]">
                   <th className="text-left py-2 text-xs font-bold text-[var(--text-tertiary)]">Concepto</th>
@@ -941,7 +941,7 @@ function FinanzasDashboard() {
                   </td>
                 </tr>
               </tfoot>
-            </table>
+            </DataTable>
           </div>
           <p className="text-xs text-[var(--text-tertiary)] mt-3 italic">
             Referencia aproximada — consulte con su contador

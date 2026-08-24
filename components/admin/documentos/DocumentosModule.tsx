@@ -28,6 +28,7 @@ import {
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
   CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Link2, Copy,
 } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
@@ -2165,7 +2166,7 @@ export default function DocumentosModule() {
             </div>
           ) : (
             <div className="bg-white border border-[var(--rule-base)] rounded-2xl overflow-hidden">
-              <table className="w-full text-sm">
+              <DataTable className="w-full text-sm">
                 <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                   <tr>
                     <th className="text-left px-3 py-3 w-10">
@@ -2268,7 +2269,7 @@ export default function DocumentosModule() {
                     );
                   })}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           )}
         </div>

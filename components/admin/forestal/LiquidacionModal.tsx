@@ -6,6 +6,7 @@
  * a impresión, PDF o WhatsApp. Reusa el precio por especie del cubicador.
  */
 import { useEffect, useMemo, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { Download, MessageCircle, Printer, Receipt } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
@@ -106,7 +107,7 @@ export default function LiquidacionModal({
 
         {/* Preview del desglose por especie */}
         <div className="mt-4 overflow-x-auto rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10">
-          <table className="w-full min-w-[420px] text-sm">
+          <DataTable className="w-full min-w-[420px] text-sm">
             <thead>
               <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
                 <th className="px-3 py-2">Especie</th>
@@ -136,7 +137,7 @@ export default function LiquidacionModal({
                 {conValor && <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">S/ {soles(liq.total)}</td>}
               </tr>
             </tfoot>
-          </table>
+          </DataTable>
         </div>
         {!conValor && (
           <p className="mt-2 text-xs text-[var(--text-tertiary)]">Poné un precio (general o por especie) en el cubicador para ver los montos.</p>

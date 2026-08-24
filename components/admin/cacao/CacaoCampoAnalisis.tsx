@@ -8,7 +8,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, AlertCircle, TrendingUp, Scale, Coins, Trees, Trophy, Calendar } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import { DataTable, StatCard } from "@buleje/design-system";
 
 interface Seccion {
   id: string; codigo: string; nombre: string | null; variedad: string | null;
@@ -96,7 +96,7 @@ export default function CacaoCampoAnalisis({ onOpenParcela }: { onOpenParcela: (
       )}
 
       <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)]">
-        <table className="w-full min-w-[820px] text-sm">
+        <DataTable className="w-full min-w-[820px] text-sm">
           <thead>
             <tr className="border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] text-left text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
               <th className="px-3 py-2 font-bold">Sección</th>
@@ -144,7 +144,7 @@ export default function CacaoCampoAnalisis({ onOpenParcela }: { onOpenParcela: (
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </div>
       <p className="text-xs text-[var(--text-tertiary)]">Ingresos = valor de los lotes de acopio generados por las cosechas de la sección. Costos = labores con costo (posteadas a Finanzas). Tocá una fila para ver la sección. Las cosechas sin precio no suman a ingresos (se cuentan como “sin valorar”). Próxima cosecha = estimado a partir del historial de cada sección (pasá el mouse sobre el valor para ver el método); con menos de 2 años de datos no se proyecta.</p>
     </div>

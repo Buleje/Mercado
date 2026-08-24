@@ -9,6 +9,7 @@
  * recién ahí confirma. Nada se agrega a ciegas.
  */
 import { useCallback, useRef, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, Check, Download, FileSpreadsheet, Loader2, Upload } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
@@ -156,7 +157,7 @@ export default function ImportarCubicacionModal({
             {resultado.piezas.length > 0 ? (
               <>
                 <div className="max-h-56 overflow-auto rounded-xl border border-[var(--rule-base)]">
-                  <table className="w-full min-w-[420px] text-sm">
+                  <DataTable className="w-full min-w-[420px] text-sm">
                     <thead className="sticky top-0 bg-[var(--surface-sunken)]">
                       <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
                         <th className="px-3 py-2">Cant.</th><th className="px-3 py-2">Medida</th><th className="px-3 py-2">Especie</th><th className="px-3 py-2 text-right">Pie tablar</th>
@@ -175,7 +176,7 @@ export default function ImportarCubicacionModal({
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </DataTable>
                 </div>
               </>
             ) : resultado.errores.length > 0 ? null : (

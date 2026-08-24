@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { CheckCircle, Clock, DollarSign, Star, Trophy, Users } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
@@ -171,7 +171,7 @@ export function RankingTab() {
             </p>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                   <th className="px-6 py-4 w-16">#</th>
@@ -274,7 +274,7 @@ export function RankingTab() {
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}

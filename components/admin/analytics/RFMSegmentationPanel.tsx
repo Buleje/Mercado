@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import {
   Crown, Heart, AlertTriangle, XCircle, Sparkles, User,
 } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import type { Customer, Sale } from "@/types/erp";
 
@@ -193,7 +194,7 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
 
       {/* Table */}
       <div className="overflow-auto max-h-80 rounded-xl border border-[var(--rule-base)] ">
-        <table className="w-full text-xs">
+        <DataTable className="w-full text-xs">
           <thead>
             <tr className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
               <th className="text-left px-3 py-2 font-semibold text-[var(--text-secondary)]">Cliente</th>
@@ -251,7 +252,7 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
               );
             })}
           </tbody>
-        </table>
+        </DataTable>
         {visible.length > 100 && (
           <p className="text-center text-xs text-[var(--text-tertiary)] py-2">
             Mostrando 100 de {visible.length} clientes

@@ -16,7 +16,7 @@
  * sobre superficie oscura quedaba casi negro y la columna no se leía.
  */
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { History } from "@buleje/design-system/icons";
 import { Th, n2 } from "../ctp-section-shared";
 import type { Concil } from "@/hooks/use-ctp-saldos";
@@ -59,7 +59,7 @@ export default function TablaConciliacion({
           existencia final. Así el saldo cuadra con el stock heredado.
         </p>
       </div>
-      <table className="w-full text-sm">
+      <DataTable className="w-full text-sm">
         <thead className="bg-[var(--surface-sunken)] text-left">
           <tr>
             <Th>Especie</Th>
@@ -122,7 +122,7 @@ export default function TablaConciliacion({
             {onKardex && <td />}
           </tr>
         </tfoot>
-      </table>
+      </DataTable>
     </div>
   );
 }

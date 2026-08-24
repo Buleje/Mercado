@@ -22,6 +22,7 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "@buleje/design-system/icons";
 import {
   FILAS_POR_PAGINA,
@@ -67,7 +68,7 @@ export function TablaCtp({
 }) {
   return (
     <div className={`overflow-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] ${altoMax ?? ""} ${className}`}>
-      <table className="w-full text-sm">{children}</table>
+      <DataTable className="w-full text-sm">{children}</DataTable>
     </div>
   );
 }

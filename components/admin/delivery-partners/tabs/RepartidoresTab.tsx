@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertCircle, CheckCircle, ChevronDown, Download, Edit2, MapPin, MessageCircle, Phone, Plus, Save, Search, Star, Trash2, Truck, Users, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
@@ -705,7 +705,7 @@ export function RepartidoresTab() {
       ) : (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <DataTable className="w-full">
               <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-3 py-4 w-10">
@@ -840,7 +840,7 @@ export function RepartidoresTab() {
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
           {filtered.length === 0 && (
             <div className="px-6 py-10 text-center">

@@ -13,7 +13,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import {
   CheckCircle,
   Clock,
@@ -260,7 +260,7 @@ export default function FichaPersonaModal({
         ) : (
           <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
             {/* min-w-[560px] es clase muerta acá (memoria min-width-utilities-muertas). */}
-            <table className="w-full text-base" style={{ minWidth: 560 }}>
+            <DataTable className="w-full text-base" style={{ minWidth: 560 }}>
               <thead className="bg-[var(--surface-sunken)] text-sm text-[var(--text-tertiary)]">
                 <tr className="text-left">
                   <th className="px-3 py-2 font-bold">Fecha</th>
@@ -297,7 +297,7 @@ export default function FichaPersonaModal({
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         )
       ) : suyos.length === 0 ? (

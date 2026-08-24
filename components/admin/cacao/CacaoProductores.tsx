@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Users, Plus, Search, RefreshCw, Coins, Scale, Award, Download, AlertCircle, Trophy, AlertTriangle, Link2,
 } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import { DataTable, StatCard } from "@buleje/design-system";
 import CacaoProducerForm from "./CacaoProducerForm";
 import CacaoProducerDrawer from "./CacaoProducerDrawer";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
@@ -140,7 +140,7 @@ export default function CacaoProductores() {
 
       {/* Tabla */}
       <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
               <Th>Productor</Th><Th>Sector</Th><Th className="text-right">Kg comprados</Th><Th className="text-right">A pagar</Th>
@@ -167,7 +167,7 @@ export default function CacaoProductores() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
         {loading && producers.length === 0 ? (
           <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
         ) : view.length === 0 && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, AlertTriangle, BarChart3, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -144,7 +144,7 @@ export function QuotationComparator({ orders, suppliers }: {
           <p className="text-sm text-[var(--text-tertiary)] dark:text-muted text-center py-6">Necesitas al menos 2 OCs para comparar</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   <th className="text-left py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
@@ -200,7 +200,7 @@ export function QuotationComparator({ orders, suppliers }: {
                   </td>
                 </tr>
               </tbody>
-            </table>
+            </DataTable>
 
             {/* Savings */}
             {savings > 0 && (
@@ -282,7 +282,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
               <th className="text-left py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Proveedor</th>
@@ -333,7 +333,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
               );
             })}
           </tbody>
-        </table>
+        </DataTable>
       </div>
     </div>
   );

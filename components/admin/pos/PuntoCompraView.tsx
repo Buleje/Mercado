@@ -28,7 +28,7 @@ import {
   Check as CheckIcon,
   Trash2,
 } from "@buleje/design-system/icons";
-import { SectionTitle, CardTitle } from "@buleje/design-system";
+import { SectionTitle, CardTitle, DataTable } from "@buleje/design-system";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { usePOSSound } from "./usePOSSound";
@@ -1542,7 +1542,7 @@ export default function PuntoCompraView() {
             /* Vista lista */
             <div className="overflow-x-auto -mx-1">
             <div className="border border-[var(--rule-base)] rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
+              <DataTable className="w-full text-sm">
                 <thead className="bg-[var(--surface-sunken)]">
                   <tr>
                     <th className="text-left p-3 font-medium text-[var(--text-secondary)]">
@@ -1606,7 +1606,7 @@ export default function PuntoCompraView() {
                     );
                   })}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
             </div>
           )}

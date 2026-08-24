@@ -10,6 +10,7 @@
  */
 
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Plus } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import {
   type ColumnaOrden,
@@ -73,7 +74,7 @@ export default function TablaAdelantos({
             entre 640-999px (tablet, o desktop angosto con sidebar) la tabla se apretaba
             en vez de forzar el scroll horizontal del wrapper. Bajo 640px no importa:
             .admin-mobile-cards la convierte en cards (globals.css). */}
-        <table className="w-full text-base" style={{ minWidth: 1000 }}>
+        <DataTable className="w-full text-base" style={{ minWidth: 1000 }}>
           <thead className="bg-[var(--surface-sunken)] text-sm text-[var(--text-tertiary)]">
             <tr>
               {th("codigo", "Código")}
@@ -173,7 +174,7 @@ export default function TablaAdelantos({
               );
             })}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       {/* Sin paginador cuando todo entra en una página: un control que nunca

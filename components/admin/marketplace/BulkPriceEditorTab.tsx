@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState } from "@buleje/design-system";
+import { DataTable, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import {
@@ -336,7 +336,7 @@ export default function BulkPriceEditorTab() {
 
       {/* Tabla */}
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-        <table className="min-w-full text-sm">
+        <DataTable className="min-w-full text-sm">
           <thead>
             <tr className="bg-[var(--surface-canvas)] border-b border-[var(--rule-base)]">
               <th className="px-4 py-3 text-left">
@@ -462,7 +462,7 @@ export default function BulkPriceEditorTab() {
               })
             )}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <p className="text-xs text-[var(--text-tertiary)]">

@@ -12,6 +12,7 @@
  */
 
 import React, { memo, useMemo } from "react";
+import { DataTable } from "@buleje/design-system";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import {
   BulejeComposedChart,
@@ -386,7 +387,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
           ]}
         >
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <DataTable className="min-w-full text-sm">
               <thead>
                 <tr>
                   <th className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2 pr-3">
@@ -443,7 +444,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </DashboardSection>
       ),

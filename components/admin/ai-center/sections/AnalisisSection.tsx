@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { BusinessData, Product } from "../ai-center.types";
 import { Field } from "@/components/admin/shared/Field";
@@ -91,7 +92,7 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
   return (
     <div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--rule-base)]">
               <th className="text-left py-3 pr-4 text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
@@ -170,7 +171,7 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
               );
             })}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       {hasMore && (

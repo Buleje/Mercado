@@ -11,6 +11,7 @@
  * tarjeta, así que no pueden discrepar.
  */
 
+import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, ArrowDown, TreePine } from "@buleje/design-system/icons";
 import type { TraceFila } from "@/lib/forestal/loth-trace-tabla";
 import { FLAG_LABEL, FLAG_TONE } from "@/lib/forestal/loth-arbol";
@@ -82,7 +83,7 @@ export default function LothTraceTabla({
 
   return (
     <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <table className="w-full border-collapse">
+      <DataTable className="w-full border-collapse">
         <thead className="sticky top-0 z-10 bg-[var(--surface-canvas)]">
           <tr className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
             {onSeleccionar && <th className={`${CELL} w-10`}><span className="sr-only">Seleccionar</span></th>}
@@ -112,7 +113,7 @@ export default function LothTraceTabla({
             <Fila key={f.tree} f={f} nav={nav} seleccionada={seleccion?.has(f.tree)} onSeleccionar={onSeleccionar} />
           ))}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }

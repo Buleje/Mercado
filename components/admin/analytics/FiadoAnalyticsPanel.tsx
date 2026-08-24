@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   PieChart,
@@ -420,7 +420,7 @@ export default function FiadoAnalyticsPanel() {
           Top deudores
         </h4>
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <DataTable className="w-full text-xs">
             <thead>
               <tr className="border-b border-[var(--rule-base)]">
                 <th className="text-left py-2 text-[var(--text-tertiary)] font-medium">Cliente</th>
@@ -462,7 +462,7 @@ export default function FiadoAnalyticsPanel() {
                 </tr>
               )}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </div>
     </div>

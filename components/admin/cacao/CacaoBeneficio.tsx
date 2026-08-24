@@ -23,7 +23,7 @@ import {
   Thermometer,
 } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
-import { StatCard } from "@buleje/design-system";
+import { DataTable, StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -426,7 +426,7 @@ export default function CacaoBeneficio() {
 
       {/* Tabla */}
       <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
               <Th>Lote</Th>
@@ -578,7 +578,7 @@ export default function CacaoBeneficio() {
               </tr>
             </tfoot>
           )}
-        </table>
+        </DataTable>
         {loading && items.length === 0 ? (
           <div className="p-8 text-center text-[var(--text-tertiary)]">
             <RefreshCw className="mx-auto h-6 w-6 animate-spin" />

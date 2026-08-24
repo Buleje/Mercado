@@ -14,7 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Table, Trash2, AlertTriangle, Upload,
 } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { detectarComando, ESPECIES_MADERA, mejoresNumeros, PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import {
   compararConGtf, cubicarTroza, partirEnTrozas, totalesTrozas, type TrozaCubicada,
@@ -287,7 +287,7 @@ export default function CubicadorTrozas() {
           <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Todavía no cubicaste trozas. Dictá o cargá la primera.</p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-            <table className="w-full min-w-[640px] text-sm">
+            <DataTable className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
                   <th className="px-3 py-2">#</th><th className="px-3 py-2">Ø menor (cm)</th><th className="px-3 py-2">Ø mayor (cm)</th>
@@ -318,7 +318,7 @@ export default function CubicadorTrozas() {
                   <td />
                 </tr>
               </tfoot>
-            </table>
+            </DataTable>
           </div>
         )}
 

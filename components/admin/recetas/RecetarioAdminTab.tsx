@@ -1,6 +1,6 @@
 'use client';
 
-import { LoadingState } from "@buleje/design-system";
+import { DataTable, LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
 
@@ -320,7 +320,7 @@ export default function RecetarioAdminTab() {
       ) : (
         <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--rule-soft)] text-left">
                   <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Receta</th>
@@ -385,7 +385,7 @@ export default function RecetarioAdminTab() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}

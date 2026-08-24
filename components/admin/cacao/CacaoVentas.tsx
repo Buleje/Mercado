@@ -22,7 +22,7 @@ import {
   Loader2,
   Leaf,
 } from "@buleje/design-system/icons";
-import { CardTitle, StatCard } from "@buleje/design-system";
+import { CardTitle, DataTable, StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -312,7 +312,7 @@ export default function CacaoVentas() {
       </div>
 
       <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
               <Th>Venta</Th>
@@ -393,7 +393,7 @@ export default function CacaoVentas() {
               );
             })}
           </tbody>
-        </table>
+        </DataTable>
         {loading && items.length === 0 ? (
           <div className="p-8 text-center text-[var(--text-tertiary)]">
             <RefreshCw className="mx-auto h-6 w-6 animate-spin" />

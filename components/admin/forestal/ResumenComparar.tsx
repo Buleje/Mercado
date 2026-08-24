@@ -8,6 +8,7 @@
  * tablar se paga menos, hay que mirar la mezcla antes de culpar al mercado.
  */
 import { useMemo, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { ArrowLeftRight, Loader2, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
@@ -76,7 +77,7 @@ export default function ResumenComparar({ rows, precioDe, conValor, dim, guardad
             {lecturaComparacion(comp)}
           </p>
           <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-            <table className="w-full min-w-[520px] text-sm">
+            <DataTable className="w-full min-w-[520px] text-sm">
               <caption className="sr-only">Este lote contra la cubicación guardada</caption>
               <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
                 <tr>
@@ -115,7 +116,7 @@ export default function ResumenComparar({ rows, precioDe, conValor, dim, guardad
                   {conValor && <td className={`${TD} ${NUM} ${tono(comp.total.deltaValor)}`}>S/ {fmtSolesSigno(comp.total.deltaValor)}</td>}
                 </tr>
               </tfoot>
-            </table>
+            </DataTable>
           </div>
           {conValor && (
             <p className="mt-2 text-sm text-[var(--text-tertiary)]">

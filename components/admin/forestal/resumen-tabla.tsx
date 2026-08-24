@@ -11,7 +11,7 @@
  */
 
 import type { ReactNode } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import type { LucideIcon } from "@buleje/design-system/icons";
 import type { GrupoResumen, ResumenLote } from "@/lib/forestal/cubicacion-resumen";
 import { fmtM3, fmtPct, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
@@ -122,7 +122,7 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
   const TD = `${compacta ? "px-2" : "px-3"} ${TD_BASE}`;
   return (
     <div className={`overflow-x-auto rounded-xl border border-[var(--rule-base)] ${larga ? "max-h-[70vh] overflow-y-auto" : ""}`}>
-      <table className={`w-full text-sm ${compacta ? "min-w-[400px]" : "min-w-[480px]"}`}>
+      <DataTable className={`w-full text-sm ${compacta ? "min-w-[400px]" : "min-w-[480px]"}`}>
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
           <tr>
@@ -183,7 +183,7 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
             )}
           </tr>
         </tfoot>
-      </table>
+      </DataTable>
     </div>
   );
 }

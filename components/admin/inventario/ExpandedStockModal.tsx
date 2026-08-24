@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { useMemo, useState } from "react";
 import { X, Search, ArrowUpDown, ArrowUp, ArrowDown, Package, AlertTriangle, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -157,7 +157,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
 
         {/* Table */}
         <div className="flex-1 overflow-auto">
-          <table className="w-full text-sm">
+          <DataTable className="w-full text-sm">
             <thead className="sticky top-0 bg-gray-50 dark:bg-surface z-10">
               <tr className="text-left">
                 <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-12">#</th>
@@ -286,7 +286,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                 );
               })}
             </tbody>
-          </table>
+          </DataTable>
 
           {filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)]">

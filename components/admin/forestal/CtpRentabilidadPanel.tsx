@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { CardTitle, StatCard } from "@buleje/design-system";
+import { CardTitle, DataTable, StatCard } from "@buleje/design-system";
 import { PanelSkeleton } from "./ctp-shared";
 import { AlertCircle, Award, CheckCircle2, Coins, Loader2, Sparkles, TrendingDown, TrendingUp, Wallet } from "@buleje/design-system/icons";
 import { BulejeWaterfallChart, type WaterfallStep } from "@/components/ui-system/charts";
@@ -180,7 +180,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
         <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <CardTitle as="h3" className="mb-2 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Margen por producto</CardTitle>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="text-left text-xs uppercase text-[var(--text-tertiary)]"><tr><th className="py-1.5 pr-2 font-bold">Producto</th><th className="py-1.5 px-2 text-right font-bold">Ventas</th><th className="py-1.5 px-2 text-right font-bold">COGS</th><th className="py-1.5 px-2 text-right font-bold">Margen</th><th className="py-1.5 pl-2 text-right font-bold">%</th></tr></thead>
               <tbody>
                 {ranked.map((p, i) => (
@@ -201,7 +201,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}

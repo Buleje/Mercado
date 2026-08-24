@@ -15,6 +15,7 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, Check, Users } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -133,7 +134,7 @@ export default function DescuentoPlanillaModal({
           </div>
 
           <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)]">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] text-left">
                 <tr>
                   <th className="px-3 py-2 font-bold text-[var(--text-secondary)]">Persona</th>
@@ -179,7 +180,7 @@ export default function DescuentoPlanillaModal({
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[var(--surface-sunken)] px-4 py-3">

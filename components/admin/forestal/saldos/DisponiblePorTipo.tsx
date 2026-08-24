@@ -13,6 +13,7 @@
  */
 
 import { useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { History } from "@buleje/design-system/icons";
 import {
   filasDeAserrada,
@@ -155,7 +156,7 @@ export default function DisponiblePorTipo({
           {/* ── El detalle, con cuánto se usó de cada una ────────────────── */}
           {panel === "detalle" && (
           <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-            <table className="w-full text-base">
+            <DataTable className="w-full text-base">
               <thead className="bg-[var(--surface-sunken)] text-sm">
                 <tr>
                   <th className="px-3 py-2 text-left font-bold text-[var(--text-secondary)]">
@@ -256,7 +257,7 @@ export default function DisponiblePorTipo({
                   {vista === "trozas" && onKardex && <td />}
                 </tr>
               </tfoot>
-            </table>
+            </DataTable>
           </div>
           )}
         </>

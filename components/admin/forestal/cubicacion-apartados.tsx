@@ -7,6 +7,7 @@
  * `lib/forestal/cubicacion-apartados.ts`) — este componente sólo pinta lo que
  * esa lib ya calculó.
  */
+import { DataTable } from "@buleje/design-system";
 import { Layers, Undo2, Printer, Volume2 } from "@buleje/design-system/icons";
 import type { ApartadoResumen, NombresApartado, TotalPiezas } from "@/lib/forestal/cubicacion-apartados";
 
@@ -111,7 +112,7 @@ export default function ApartadosPanel({
         <p className="py-3 text-center text-sm text-[var(--text-tertiary)]">Todavía no cerraste ningún apartado.</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-[var(--accent)]/20 bg-[var(--surface-raised)]">
-          <table className="w-full min-w-[460px] text-sm">
+          <DataTable className="w-full min-w-[460px] text-sm">
             <thead>
               <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
                 <th className="px-3 py-2">Apartado</th>
@@ -181,7 +182,7 @@ export default function ApartadosPanel({
                 <td />
               </tr>
             </tfoot>
-          </table>
+          </DataTable>
         </div>
       )}
     </div>

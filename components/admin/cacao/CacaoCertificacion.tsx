@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ShieldCheck, Leaf, Globe, Award, FileCheck, Search, RefreshCw, AlertCircle, CheckCircle2, AlertTriangle, MapPin,
 } from "@buleje/design-system/icons";
-import { CardTitle, StatCard } from "@buleje/design-system";
+import { CardTitle, DataTable, StatCard } from "@buleje/design-system";
 
 interface PStats { kg: number; pagado: number; lotes: number }
 interface Producer {
@@ -144,7 +144,7 @@ export default function CacaoCertificacion() {
 
       {/* Tabla */}
       <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr><Th>Productor</Th><Th>Certificación</Th><Th>Geolocalización</Th><Th className="text-right">Kg acopiado</Th><Th className="text-right">Estado export</Th></tr>
           </thead>
@@ -177,7 +177,7 @@ export default function CacaoCertificacion() {
               );
             })}
           </tbody>
-        </table>
+        </DataTable>
         {loading && producers.length === 0 ? (
           <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
         ) : view.length === 0 && (

@@ -11,6 +11,7 @@
  * que decide si hace falta otra troza o si sobra respaldo.
  */
 
+import { DataTable } from "@buleje/design-system";
 import type { Distribucion } from "@/lib/forestal/cubicacion-reparto";
 import { fmtM3, fmtPct, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 
@@ -92,7 +93,7 @@ export function DiferenciaDistribucion({ dist }: { dist: Distribucion }) {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-        <table className="w-full min-w-[620px] text-base">
+        <DataTable className="w-full min-w-[620px] text-base">
           <caption className="sr-only">Lo distribuido contra lo que falta, por tipo</caption>
           <thead className="border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
             <tr>
@@ -138,7 +139,7 @@ export function DiferenciaDistribucion({ dist }: { dist: Distribucion }) {
               <td className={`${TD} ${NUM}`}>{fmtM3(tot.m3Falta)}</td>
             </tr>
           </tfoot>
-        </table>
+        </DataTable>
       </div>
     </div>
   );

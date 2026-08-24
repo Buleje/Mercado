@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Thermometer, Loader2, X, Plus, RotateCw, Check } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -202,7 +202,7 @@ export default function CacaoBitacoraModal({ beneficioId, loteCode, onClose, onC
                 Sin registros. Anotá el día 1 abajo (temperatura de la masa al voltear).
               </p>
             ) : (
-              <table className="w-full text-sm">
+              <DataTable className="w-full text-sm">
                 <thead className="bg-[var(--surface-sunken)] text-left text-xs text-[var(--text-tertiary)]">
                   <tr>
                     <th className="px-3 py-2 font-bold">Día</th>
@@ -235,7 +235,7 @@ export default function CacaoBitacoraModal({ beneficioId, loteCode, onClose, onC
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </DataTable>
             )}
           </div>
 

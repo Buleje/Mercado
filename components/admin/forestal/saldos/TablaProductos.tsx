@@ -19,7 +19,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { PackageCheck, Truck, ArrowUpDown } from "@buleje/design-system/icons";
 import { Btn } from "../ctp-shared";
 import { Th, Td, n2 } from "../ctp-section-shared";
@@ -115,7 +115,7 @@ export default function TablaProductos({
           <p className="text-sm">Sin productos transformados todavía.</p>
         </div>
       ) : (
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
               <Orden col="producto">Producto · Especie</Orden>
@@ -174,7 +174,7 @@ export default function TablaProductos({
               {onDespachar && <td />}
             </tr>
           </tfoot>
-        </table>
+        </DataTable>
       )}
     </div>
   );

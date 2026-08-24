@@ -10,6 +10,7 @@
  * contenedor scrollea de verdad, las cabeceras ordenan, y hay `table-fixed`.
  */
 
+import { DataTable } from "@buleje/design-system";
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "@buleje/design-system/icons";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { cn } from "@/lib/utils";
@@ -88,7 +89,7 @@ export default function HistorialTabla({
           convierte toda `<table>` en tarjetas (`useMobileTableCards` +
           `.admin-mobile-cards` en globals.css). */}
       <div className="max-h-[38rem] overflow-auto rounded-xl">
-        <table className="w-full min-w-[880px] table-fixed text-sm">
+        <DataTable className="w-full min-w-[880px] table-fixed text-sm">
           <colgroup>
             <col style={{ width: "8.5rem" }} />
             <col style={{ width: "11rem" }} />
@@ -239,7 +240,7 @@ export default function HistorialTabla({
               <td />
             </tr>
           </tfoot>
-        </table>
+        </DataTable>
       </div>
 
       {visibles < totalFilas && (

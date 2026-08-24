@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Target, Loader2, TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -161,7 +161,7 @@ export default function RFMTab() {
               )}
             </div>
             <div className="overflow-x-auto max-h-[28rem] overflow-y-auto">
-              <table className="w-full min-w-[520px] text-sm">
+              <DataTable className="w-full min-w-[520px] text-sm">
                 <thead className="bg-[var(--surface-sunken)] sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] uppercase">Cliente</th>
@@ -185,7 +185,7 @@ export default function RFMTab() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           </div>
         </>

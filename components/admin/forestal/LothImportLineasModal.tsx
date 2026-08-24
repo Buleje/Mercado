@@ -12,6 +12,7 @@
  */
 
 import { useMemo, useRef, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, CheckCircle2, FileUp, Loader2, Upload, X } from "@buleje/design-system/icons";
 import { parseImportLineas, type FilaImport } from "@/lib/forestal/loth-import-lineas";
 import { SECTION_META } from "./LothEntryForm";
@@ -184,7 +185,7 @@ export default function LothImportLineasModal({
                   </div>
 
                   <div className="max-h-[38vh] overflow-auto rounded-xl border-2 border-[var(--rule-base)]">
-                    <table className="w-full text-xs">
+                    <DataTable className="w-full text-xs">
                       <thead className="sticky top-0 bg-[var(--surface-sunken)]">
                         <tr className="text-left">
                           <th className="px-2 py-2 font-bold">Asentar</th>
@@ -213,7 +214,7 @@ export default function LothImportLineasModal({
                           />
                         ))}
                       </tbody>
-                    </table>
+                    </DataTable>
                   </div>
                 </>
               )}

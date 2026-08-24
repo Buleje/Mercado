@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState } from "react";
 import {
@@ -190,7 +190,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                 Verificar cantidades recibidas
               </p>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <DataTable className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-secondary)] dark:text-muted">
                       <th className="text-left py-2 px-2">Producto</th>
@@ -270,7 +270,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                       );
                     })}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             </>
           )}
@@ -283,7 +283,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                 Ajustar precios segun factura
               </p>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <DataTable className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-secondary)] dark:text-muted">
                       <th className="text-left py-2 px-2">Producto</th>
@@ -338,7 +338,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                         );
                       })}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
               <div className="text-right">
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Total factura:</p>

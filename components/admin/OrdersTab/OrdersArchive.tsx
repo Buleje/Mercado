@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Search, MapPin, Trash2 } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import { activateProps } from "@/components/admin/shared/a11y";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { cn } from "@/lib/utils";
@@ -75,7 +76,7 @@ export function OrdersArchive({
             <>
               {/* Desktop table */}
               <div className="hidden sm:block rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
-                <table className="w-full text-sm">
+                <DataTable className="w-full text-sm">
                   <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
                     <tr>
                       <th className="text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
@@ -128,7 +129,7 @@ export function OrdersArchive({
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
 
               {/* Mobile cards */}

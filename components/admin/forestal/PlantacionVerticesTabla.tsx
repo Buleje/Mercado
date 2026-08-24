@@ -7,6 +7,7 @@
  * viendo el resultado de un polígono ya dibujado.
  */
 
+import { DataTable } from "@buleje/design-system";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "@buleje/design-system/icons";
 import { vertexCode } from "@/lib/forestal/loth-utm";
 import type { VerticeBloque } from "@/lib/forestal/plantacion-cartografia";
@@ -55,7 +56,7 @@ export default function PlantacionVerticesTabla({
         <p className="px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">Sin vértices todavía.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+          <DataTable className="w-full border-collapse text-sm">
             <thead>
               <tr className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
                 <th className="border-b border-[var(--rule-base)] px-2 py-1.5 text-left font-bold">Punto</th>
@@ -141,7 +142,7 @@ export default function PlantacionVerticesTabla({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       )}
       {!soloLectura && (

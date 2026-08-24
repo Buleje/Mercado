@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Camera,
@@ -403,7 +403,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
 
               {/* Items table */}
               <div className="border border-[var(--rule-base)] rounded-xl overflow-hidden">
-                <table className="w-full text-sm">
+                <DataTable className="w-full text-sm">
                   <thead>
                     <tr className="bg-[var(--surface-sunken)]">
                       <th className="text-left px-3 py-2 text-xs font-medium text-[var(--text-tertiary)]">
@@ -484,7 +484,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
 
                 {/* Total row */}
                 <div className="flex items-center justify-between px-3 py-2.5 bg-[var(--surface-sunken)] border-t border-[var(--rule-base)]">

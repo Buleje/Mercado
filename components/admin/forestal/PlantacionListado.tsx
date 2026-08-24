@@ -27,6 +27,7 @@ import {
   Trash2,
   TreePine,
 } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import { staggerContainer, staggerChild } from "@/components/ui-system/motion";
 import { useForestPlantaciones } from "@/hooks/use-forest-plantaciones";
 import { ESTADOS_PLANTACION, type EstadoPlantacion } from "@/lib/forestal/plantacion-catalogo";
@@ -171,7 +172,7 @@ export default function PlantacionListado({
       ) : (
         <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] admin-mobile-cards">
           <div className="max-h-[38rem] overflow-auto">
-            <table className="w-full min-w-[960px] text-sm">
+            <DataTable className="w-full min-w-[960px] text-sm">
               <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
                 <tr className="text-left">
                   <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Código interno</th>
@@ -208,7 +209,7 @@ export default function PlantacionListado({
                   </motion.tr>
                 ))}
               </motion.tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}
