@@ -194,6 +194,7 @@ export default function TurnosModule() {
     metodosPago: { metodo: string; total: number }[];
     topProductos: { nombre: string; cantidad: number }[];
     ventasPorHora?: { hora: string; total: number }[];
+    totalDescuentos: number;
   };
   const [showResumen, setShowResumen] = useState(false);
   const [resumen, setResumen] = useState<TurnoSummary | null>(null);
@@ -466,6 +467,7 @@ export default function TurnosModule() {
       let metodosPago: { metodo: string; total: number }[] = [];
       let topProductos: { nombre: string; cantidad: number }[] = [];
       let cantidadVentas = 0;
+      let totalDescuentos = 0;
 
       try {
         const summaryRes = await fetch(`/api/turnos/${turnoActivo.id}/summary`);
@@ -474,6 +476,7 @@ export default function TurnosModule() {
           cantidadVentas = Number(summary.cantidadVentas ?? 0);
           metodosPago = Array.isArray(summary.metodosPago) ? summary.metodosPago : [];
           topProductos = Array.isArray(summary.topProductos) ? summary.topProductos.slice(0, 3) : [];
+          totalDescuentos = Number(summary.totalDescuentos ?? 0);
         }
       } catch {
         // Sales fetch failed — use basic data
@@ -527,6 +530,7 @@ export default function TurnosModule() {
         metodosPago,
         topProductos,
         ventasPorHora,
+        totalDescuentos,
       });
 
       resetCierreState();
@@ -1970,12 +1974,9 @@ export default function TurnosModule() {
                   </div>
                 </div>
 
-                {/* Mejora 3 nueva: Descuentos del turno */}
+                {/* Descuentos reales del turno — suma de Sale.descuentoMonto vía /api/turnos/[id]/summary */}
                 {(() => {
-                  // Calcular descuentos del turno
-                  const descuentoTotal = resumen.totalVentas > 0
-                    ? Math.round(resumen.totalVentas * 0.036 * 100) / 100 // placeholder: estimado de ventas con descuento
-                    : 0;
+                  const descuentoTotal = resumen.totalDescuentos;
                   const pctDescuento = resumen.totalVentas > 0
                     ? (descuentoTotal / resumen.totalVentas) * 100
                     : 0;

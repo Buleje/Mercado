@@ -76,6 +76,7 @@ export async function GET(
         total: true,
         payment: true,
         createdAt: true,
+        descuentoMonto: true,
         items: {
           select: { name: true, quantity: true },
         },
@@ -87,10 +88,12 @@ export async function GET(
     const payMap = new Map<string, number>();
     const prodMap = new Map<string, number>();
     let totalVendido = 0;
+    let totalDescuentos = 0;
 
     for (const s of sales) {
       const totalNum = Number(s.total);
       totalVendido += totalNum;
+      totalDescuentos += s.descuentoMonto ? Number(s.descuentoMonto) : 0;
       const method = (s.payment ?? "efectivo").toLowerCase();
       payMap.set(method, (payMap.get(method) ?? 0) + totalNum);
 
@@ -115,6 +118,7 @@ export async function GET(
       turnoId: turno.id,
       cantidadVentas: sales.length,
       totalVendido: Math.round(totalVendido * 100) / 100,
+      totalDescuentos: Math.round(totalDescuentos * 100) / 100,
       metodosPago,
       topProductos,
       periodo: {
