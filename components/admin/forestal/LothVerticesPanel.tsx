@@ -12,7 +12,7 @@
 
 import { useMemo, useState } from "react";
 import { ClipboardCopy, Check, Clipboard, FileSpreadsheet, Globe, Printer } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import { polygonAreaHa } from "@/lib/forestal/loth-geo";
 import {
@@ -156,7 +156,7 @@ export default function LothVerticesPanel({ vertices, censoCount, onPrintPlano, 
       ) : (
         <>
           <div className="max-h-[280px] overflow-auto">
-            <table className="w-full border-collapse text-sm">
+            <DataTable className="w-full border-collapse text-sm">
               <thead className="sticky top-0 bg-[var(--surface-canvas)]">
                 <tr className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
                   <th className="border-b-2 border-[var(--rule-base)] px-3 py-2 text-left font-bold">Vértice</th>
@@ -177,7 +177,7 @@ export default function LothVerticesPanel({ vertices, censoCount, onPrintPlano, 
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
           <footer className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t-2 border-[var(--rule-base)] px-4 py-2.5 text-xs font-semibold text-[var(--text-secondary)]">
             <span>

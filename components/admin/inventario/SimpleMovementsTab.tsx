@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import {
   ArrowDownCircle, ArrowUpCircle, Download, Loader2, Package,
   Search, RefreshCw, ArrowLeftRight,
@@ -276,7 +276,7 @@ export default function SimpleMovementsTab() {
       {/* Ledger */}
       <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <DataTable className="w-full text-sm">
             <thead className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
               <tr>
                 {["Cuándo", "Producto", "Movimiento", "Cantidad", "Stock"].map((h, i) => (
@@ -352,7 +352,7 @@ export default function SimpleMovementsTab() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         </div>
         {filtered.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2.5 text-sm text-[var(--text-secondary)]">

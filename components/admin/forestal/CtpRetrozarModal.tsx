@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { DataTable } from "@buleje/design-system";
 import { Scissors, Plus, Trash2, Loader2, AlertTriangle, Check } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { calcularRetrozado, volumenHuber, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
@@ -156,7 +157,7 @@ export default function CtpRetrozarModal({
           </Field>
 
           <div className="sm:col-span-12 overflow-x-auto">
-            <table className="w-full min-w-[46rem] text-sm">
+            <DataTable className="w-full min-w-[46rem] text-sm">
               <thead>
                 <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   <th className="py-2 pr-2 font-bold">Código</th>
@@ -227,7 +228,7 @@ export default function CtpRetrozarModal({
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
 
           <div className="sm:col-span-12">

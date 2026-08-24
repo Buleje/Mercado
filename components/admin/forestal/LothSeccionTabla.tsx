@@ -13,6 +13,7 @@
  *  · el vínculo de **subsanación**: qué línea corrige a cuál.
  */
 
+import { DataTable } from "@buleje/design-system";
 import { Ban, Copy, Eye, PencilLine, Share2 } from "@buleje/design-system/icons";
 import { IconAction } from "./ctp-shared";
 import {
@@ -83,7 +84,7 @@ export default function LothSeccionTabla({
 
   return (
     <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <table className="w-full text-sm">
+      <DataTable className="w-full text-sm">
         <thead className="bg-[var(--surface-sunken)]">
           <tr>
             <th className={`${TH} w-10`}>
@@ -234,7 +235,7 @@ export default function LothSeccionTabla({
             </tr>
           </tfoot>
         )}
-      </table>
+      </DataTable>
     </div>
   );
 }

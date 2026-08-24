@@ -11,7 +11,7 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, CheckCircle2, TrendingUp } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { ZAFRA_ESTADO_LABEL, ZAFRA_ESTADO_TONE, type ZafraAnalisis } from "@/lib/forestal/loth-zafra";
 
 const TONE_CLASS = {
@@ -101,7 +101,7 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
         {zafra.meses.length > 0 && (
           <>
           <div className="overflow-x-auto rounded-xl border-2 border-[var(--rule-base)]">
-            <table className="w-full border-collapse text-sm">
+            <DataTable className="w-full border-collapse text-sm">
               <thead className="bg-[var(--surface-canvas)]">
                 <tr className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
                   <th className="px-3 py-2 text-left font-bold">Mes</th>
@@ -125,7 +125,7 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
           {hayOcultos && (
             <button

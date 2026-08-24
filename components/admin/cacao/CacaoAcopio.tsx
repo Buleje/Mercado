@@ -26,7 +26,7 @@ import {
   Trees,
   Ban,
 } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import { DataTable, StatCard } from "@buleje/design-system";
 import LibroChrome, { type LibroAction } from "@/components/admin/shared/libro-chrome";
 import { IconAction, TablaSkeleton } from "@/components/admin/shared/module-primitives";
 import CacaoLoteCardMobile from "./CacaoLoteCardMobile";
@@ -593,7 +593,7 @@ export default function CacaoAcopio() {
               automática `.admin-mobile-cards` dejaba tarjetas de 120px de ancho
               con la fecha partida en tres líneas. */}
           <div className="hidden overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] text-left">
                 <tr>
                   <Th>Lote</Th>
@@ -744,7 +744,7 @@ export default function CacaoAcopio() {
                   </tr>
                 </tfoot>
               )}
-            </table>
+            </DataTable>
           </div>
 
           {/* Móvil: una card por lote (dual-render del DS). */}

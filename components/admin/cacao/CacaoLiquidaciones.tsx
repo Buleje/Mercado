@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   HandCoins, Coins, Users, Search, RefreshCw, Download, AlertCircle, CheckCircle2, MessageCircle, Loader2, Clock, ChevronDown, Printer,
 } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import { DataTable, StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { openPrintable } from "@/lib/cacao/cacao-print";
@@ -139,7 +139,7 @@ export default function CacaoLiquidaciones() {
                 </div>
                 {isOpen && (
                   <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2">
-                    <table className="w-full text-sm">
+                    <DataTable className="w-full text-sm">
                       <thead><tr className="text-left text-xs text-[var(--text-tertiary)]"><th className="py-1 font-bold">Lote</th><th className="py-1 font-bold">Fecha</th><th className="py-1 text-right font-bold">Kg</th><th className="py-1 text-right font-bold">Debido</th><th className="py-1 text-right font-bold">Abonado</th><th className="py-1 text-right font-bold">Saldo</th></tr></thead>
                       <tbody>
                         {g.lotes.map((l) => (
@@ -153,7 +153,7 @@ export default function CacaoLiquidaciones() {
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                    </DataTable>
                   </div>
                 )}
               </li>

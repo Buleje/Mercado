@@ -12,7 +12,7 @@ import {
   FileText, Plus, TreePine, ShieldAlert, ShieldCheck, Upload, Trash2, Loader2, AlertCircle,
   Printer, MapPin, TrendingUp, Scale, Ban, AlertTriangle, CheckCircle2, Pencil, Check, X, Search,
 } from "@buleje/design-system/icons";
-import { CardTitle, StatCard } from "@buleje/design-system";
+import { CardTitle, DataTable, StatCard } from "@buleje/design-system";
 import { analizarPoa, defaultPoaConfig, CATEGORIA_COLOR, CATEGORIA_LABEL, type PoaAnalisis, type PoaConfig } from "@/lib/forestal/loth-poa";
 import { printLothPoa } from "@/lib/forestal/loth-poa-print";
 import { claveEspecie, mismaEspecie } from "@/lib/forestal/loth-constants";
@@ -1328,12 +1328,12 @@ function Panel({ title, action, children }: { title: string; action?: React.Reac
 function Table({ head, children }: { head: string[]; children: React.ReactNode }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <DataTable className="w-full text-sm">
         <thead className="bg-[var(--surface-sunken)] text-left">
           <tr>{head.map((h, i) => <th key={i} className={`px-4 py-2 font-bold text-[var(--text-primary)] ${i >= 2 ? "text-right" : ""}`}>{h}</th>)}</tr>
         </thead>
         <tbody>{children}</tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }

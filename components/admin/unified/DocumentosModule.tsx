@@ -27,6 +27,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { DataTable } from "@buleje/design-system";
 import {
   Upload,
   Search,
@@ -441,7 +442,7 @@ export default function DocumentosModule() {
             </div>
           ) : (
             <div className="bg-white border border-[var(--rule-base)] rounded-2xl overflow-hidden">
-              <table className="w-full text-sm">
+              <DataTable className="w-full text-sm">
                 <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                   <tr>
                     <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Nombre</th>
@@ -483,7 +484,7 @@ export default function DocumentosModule() {
                     );
                   })}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           )}
         </div>

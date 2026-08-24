@@ -1,6 +1,6 @@
 'use client';
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 
 import { useState, useEffect, useCallback } from 'react';
 import { Field } from '@/components/admin/shared/Field';
@@ -483,7 +483,7 @@ export default function ConteoFisicoWizard() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <DataTable className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--rule-base)]">
                       <th className="text-left py-2 px-2 text-[var(--text-secondary)] font-medium">Producto</th>
@@ -515,7 +515,7 @@ export default function ConteoFisicoWizard() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             )}
           </div>

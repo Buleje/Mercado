@@ -11,6 +11,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, Check, Loader2, Table, Upload, XCircle } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import {
@@ -121,7 +122,7 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
               </div>
 
               <div className="max-h-[320px] overflow-auto rounded-xl border-2 border-[var(--rule-base)]">
-                <table className="w-full border-collapse text-sm">
+                <DataTable className="w-full border-collapse text-sm">
                   <thead className="sticky top-0 bg-[var(--surface-canvas)]">
                     <tr className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
                       <th className="px-2 py-2 text-left font-bold">#</th>
@@ -169,7 +170,7 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
               {res.filas.length > 200 && (
                 <p className="text-center text-xs text-[var(--text-tertiary)]">Mostrando 200 de {res.filas.length} filas.</p>

@@ -11,7 +11,7 @@ import CtpCadenaLote from "./CtpCadenaLote";
 import type { CadenaLote } from "@/lib/forestal/ctp-cadena-lote";
 import { useCallback, useEffect, useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { CardTitle, SuccessAlert, WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
+import { CardTitle, DataTable, SuccessAlert, WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
 import {
   AlertCircle, Ban, CheckCircle2, Layers, Link2, Loader2, Lock, Pencil,
   Printer, RefreshCw, Tag, Truck, Unlock,
@@ -238,7 +238,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <DataTable className="w-full text-sm">
                     <thead className="bg-[var(--surface-sunken)] text-left"><tr><th className="px-3 py-2 font-bold text-[var(--text-primary)]">Corrida</th><th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">Cantidad</th><th className="px-3 py-2 font-bold text-[var(--text-primary)]">Lote de aserrío</th><th className="px-3 py-2 font-bold text-[var(--text-primary)]">Guías GTF de ingreso</th></tr></thead>
                     <tbody>
                       {traza.corridas.map((c) => (
@@ -259,7 +259,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
                       ))}
                       {traza.corridas.length === 0 && <tr><td colSpan={4} className="px-3 py-6 text-center text-sm text-[var(--text-tertiary)]">Lote vacío. Editá para agregar corridas.</td></tr>}
                     </tbody>
-                  </table>
+                  </DataTable>
                 </div>
               )}
             </section>
@@ -279,7 +279,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
                   </span>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <DataTable className="w-full text-sm">
                     <thead className="bg-[var(--surface-sunken)] text-left">
                       <tr>
                         <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Lote de aserrío</th>
@@ -302,7 +302,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </DataTable>
                 </div>
               </section>
             )}

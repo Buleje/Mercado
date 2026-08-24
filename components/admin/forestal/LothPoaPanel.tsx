@@ -16,7 +16,7 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, Check, Info, Loader2, Printer, Save, Settings2, TreePine, XCircle } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import {
   CATEGORIA_COLOR,
   CATEGORIA_LABEL,
@@ -165,7 +165,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
 
       {/* Cuadro por especie */}
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
+        <DataTable className="w-full border-collapse">
           <thead>
             <tr className="bg-[var(--surface-canvas)] text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
               <th className={`${CELL} text-left font-bold`}>Especie</th>
@@ -234,7 +234,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
               </tr>
             </tfoot>
           )}
-        </table>
+        </DataTable>
       </div>
 
       {/* Alertas */}
