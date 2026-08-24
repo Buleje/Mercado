@@ -23,7 +23,7 @@
  * TiendasHeroAds (banners v2 F3).
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, ArrowRight } from "@buleje/design-system/icons";
@@ -53,20 +53,49 @@ function trackBanner(event: "impression" | "click", ids: string[]) {
   }
 }
 
-// Slide de marca por si el slot está vacío — la home nunca queda sin portada.
+// Slides de marca curados (Brandon 2026-07-06 audit inicio) — la home nunca
+// queda sin portada y, aunque el superadmin cargue 1 solo banner, el hero
+// ROTA con propuestas de valor de marca (antes se veía un banner estático).
+// Se usan como fallback (slot vacío) y como relleno cuando hay <2 banners.
 const FALLBACK_BANNERS: PromoBanner[] = [
   {
-    id: "home-hero-fallback",
+    id: "home-hero-brand-mercado",
     type: "classic",
     title: `Tu mercado de ${BRAND_GEO.city}, a domicilio`,
-    subtitle: "Bodegas, restaurantes y farmacias de tu zona. Paga con Yape, Plin o efectivo.",
+    subtitle: "Bodegas, restaurantes y farmacias de tu zona en un solo lugar.",
     imageUrl: null,
     ctaHref: "/tiendas",
     ctaLabel: "Ver tiendas",
     bgFrom: "#00A0A0",
     bgTo: "#0d3b3b",
     active: true,
-    order: 0,
+    order: 90,
+  },
+  {
+    id: "home-hero-brand-pagos",
+    type: "classic",
+    title: "Paga como quieras: Yape, Plin o efectivo",
+    subtitle: "Sin complicaciones. Elegí, pedí y paga contra entrega o al toque.",
+    imageUrl: null,
+    ctaHref: "/tiendas",
+    ctaLabel: "Pedir ahora",
+    bgFrom: "#007575",
+    bgTo: "#0d3b3b",
+    active: true,
+    order: 91,
+  },
+  {
+    id: "home-hero-brand-vender",
+    type: "classic",
+    title: "¿Tenés una tienda? Vendé en Buleje",
+    subtitle: "Sumá tu negocio y llegá a más vecinos con delivery propio.",
+    imageUrl: null,
+    ctaHref: "/negocios",
+    ctaLabel: "Abrir mi tienda",
+    bgFrom: "#ff6b5b",
+    bgTo: "#c93b2c",
+    active: true,
+    order: 92,
   },
 ];
 
@@ -128,7 +157,7 @@ function CompactPromoCard({ banner }: { banner: PromoBanner }) {
  * cards anchas en una sola fila, la siguiente asomando, con auto-scroll suave
  * (pausa al hover) + flechas en desktop. Reemplaza la grilla 2x2 del layout row.
  */
-function PromoRow({ slides }: { slides: PromoBanner[] }) {
+function PromoRow({ slides, extraCard }: { slides: PromoBanner[]; extraCard?: ReactNode }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
 
@@ -167,6 +196,17 @@ function PromoRow({ slides }: { slides: PromoBanner[] }) {
         aria-label="Promociones"
         className="flex gap-3 overflow-x-auto scroll-smooth [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
       >
+        {/* Card extra (ej. "Invita a un vecino") — va PRIMERA para máxima
+            visibilidad, con la misma silueta que las promos (Brandon 2026-07-06). */}
+        {extraCard && (
+          <div
+            data-promo-card
+            role="listitem"
+            className="w-[70vw] shrink-0 [scroll-snap-align:start] sm:w-[52%] md:w-[38%] lg:w-[29%] xl:w-[23%]"
+          >
+            {extraCard}
+          </div>
+        )}
         {slides.map((b) => (
           <div
             key={b.id}
@@ -214,6 +254,9 @@ interface Props {
    *  pintan en el primer byte (sin cascada hidratar→fetch→pintar) y se omite el
    *  fetch client. Si no, cae al fetch client (modo legacy). */
   initialBanners?: PromoBanner[];
+  /** Card extra a inyectar como PRIMER cuadro de la fila (solo layout "row").
+   *  Ej. "Invita a un vecino" en /tiendas. Brandon 2026-07-06. */
+  extraCard?: ReactNode;
 }
 
 export default function HomeHeroBanner({
@@ -221,6 +264,7 @@ export default function HomeHeroBanner({
   zone = null,
   initialBanners,
   layout = "carousel",
+  extraCard,
 }: Props) {
   const hasInitial = !!initialBanners && initialBanners.length > 0;
   const [banners, setBanners] = useState<PromoBanner[] | null>(
@@ -265,7 +309,17 @@ export default function HomeHeroBanner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slot, zone]);
 
-  const slides = banners ?? [];
+  // Brandon 2026-07-06 (audit inicio): en el Inicio (carousel), si el slot trae
+  // <2 banners, completamos con slides de marca para que el hero SIEMPRE rote y
+  // se sienta vivo (antes: 1 banner estático). En /tiendas (row) no se toca.
+  const configured = banners ?? [];
+  const slides =
+    layout === "carousel" && configured.length < 2
+      ? [
+          ...configured,
+          ...FALLBACK_BANNERS.filter((b) => !configured.some((s) => s.id === b.id)),
+        ]
+      : configured;
   const count = slides.length;
 
   const go = useCallback(
@@ -324,7 +378,7 @@ export default function HomeHeroBanner({
   // Layout "row" (/tiendas): carrusel en una sola fila de promos anchas (ref
   // Betano) — auto-scroll suave + flechas, la siguiente asoma. Sin dots.
   if (layout === "row") {
-    return <PromoRow slides={slides} />;
+    return <PromoRow slides={slides} extraCard={extraCard} />;
   }
 
   return (

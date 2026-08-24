@@ -34,7 +34,13 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export default function InvitaVecinoCard() {
+export default function InvitaVecinoCard({
+  variant = "section",
+}: {
+  /** "section" = bloque full-width bajo el grid (default). "banner" = card
+   *  compacta para la fila de promos del banner de arriba (Brandon 2026-07-06). */
+  variant?: "section" | "banner";
+}) {
   const { customer } = useCustomer();
   const phone = customer?.phone;
   const [code, setCode] = useState<string | null>(null);
@@ -80,6 +86,61 @@ export default function InvitaVecinoCard() {
       })
       .catch(() => setCopied(false));
   }, [message]);
+
+  // ── Variante "banner": card compacta para la fila de promos de arriba.
+  // Misma silueta que CompactPromoCard (h-210/280, rounded-2xl, gradiente de
+  // marca + texto blanco) para que se integre como "otro cuadro" del banner.
+  if (variant === "banner") {
+    return (
+      <div
+        className="group relative flex h-[210px] flex-col justify-between overflow-hidden rounded-2xl border border-[var(--rule-soft)] p-4 text-white shadow-sm sm:h-[280px] sm:p-5"
+        style={{ background: "linear-gradient(135deg, var(--accent), #0d3b3b)" }}
+      >
+        <div className="relative z-10">
+          <span
+            aria-hidden
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm"
+          >
+            <Gift className="h-5 w-5" strokeWidth={2} />
+          </span>
+          <p className="mt-2.5 text-base font-extrabold leading-tight drop-shadow sm:text-lg">
+            {code ? "Invita y ganan los dos" : "Invita a un vecino"}
+          </p>
+          <p className="mt-1 text-[length:var(--ts-xs)] font-medium leading-snug opacity-90 line-clamp-2 drop-shadow sm:text-sm">
+            {code
+              ? `Cada vecino que haga su primer pedido = ${REWARD_POINTS} puntos para los dos.`
+              : "Compártelo por WhatsApp. Inicia sesión y gana puntos por cada uno."}
+          </p>
+          {code && count > 0 && (
+            <p className="mt-2 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold opacity-95">
+              <Users className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+              Ya invitaste a {count} {count === 1 ? "vecino" : "vecinos"}
+            </p>
+          )}
+        </div>
+        <div className="relative z-10 flex gap-2">
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-10 flex-[3] items-center justify-center gap-1.5 rounded-xl bg-white px-3 text-[length:var(--ts-xs)] font-extrabold text-[var(--accent)] transition-transform hover:-translate-y-0.5 active:scale-[0.98] sm:text-sm"
+          >
+            <WhatsAppIcon className="h-4 w-4" />
+            Invitar
+          </a>
+          <button
+            type="button"
+            onClick={copy}
+            aria-label="Copiar link de invitación"
+            className="inline-flex h-10 flex-[2] items-center justify-center gap-1.5 rounded-xl border border-white/45 bg-white/10 px-2 text-[length:var(--ts-xs)] font-bold text-white transition-colors hover:bg-white/20 sm:text-sm"
+          >
+            {copied ? <Check className="h-4 w-4" strokeWidth={2.5} /> : <Copy className="h-4 w-4" strokeWidth={2.25} />}
+            {copied ? "¡Listo!" : "Copiar"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">

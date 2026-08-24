@@ -138,7 +138,7 @@ const DEFAULT_FILTERS: DealsFilters = {
 function HonestNotice({ source }: { source: "deals" | "lowest" }) {
   if (source === "deals") return null;
   return (
-    <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+    <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
       <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4 sm:p-5 flex items-start gap-3">
         <div aria-hidden className="shrink-0 mt-0.5 h-2 w-2 rounded-full bg-[var(--accent)]" />
         <div className="text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -310,7 +310,7 @@ export default function OfertasClient() {
       <ExplorarTracker pageName="marketplace_ofertas" />
 
       {error && (
-        <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <div className="rounded-2xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-4 text-sm text-[var(--data-error-500)]">
             {error}
           </div>
@@ -360,7 +360,7 @@ export default function OfertasClient() {
               <SectionDivider />
               <ExplorarErrorBoundary section="deals-by-store">
                 <RevealOnScroll>
-                  <DealsByStore stores={stores} />
+                  <DealsByStore stores={stores} source={source} />
                 </RevealOnScroll>
               </ExplorarErrorBoundary>
             </>

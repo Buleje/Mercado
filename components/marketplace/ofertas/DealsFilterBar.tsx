@@ -17,7 +17,7 @@ const CATEGORY_TABS: { id: DealCategory | "todas"; label: string }[] = [
   { id: "frescos", label: "Frescos" },
   { id: "bebidas", label: "Bebidas" },
   { id: "limpieza", label: "Limpieza" },
-  { id: "lacteos", label: "Lacteos" },
+  { id: "lacteos", label: "Lácteos" },
   { id: "farmacia", label: "Farmacia" },
 ];
 
@@ -25,7 +25,7 @@ const SORT_OPTIONS: { id: DealSortKey; label: string }[] = [
   { id: "discount_desc", label: "Mayor descuento" },
   { id: "price_asc", label: "Precio menor" },
   { id: "ends_soon", label: "Termina pronto" },
-  { id: "popular", label: "Mas popular" },
+  { id: "popular", label: "Más popular" },
 ];
 
 const DISCOUNT_OPTIONS: { value: DealMinDiscount | 0; label: string }[] = [
@@ -52,7 +52,7 @@ export default function DealsFilterBar({ filters, onFiltersChange }: DealsFilter
     <div
       role="group"
       aria-label="Filtros de ofertas"
-      className="sticky top-16 z-30 backdrop-blur-md bg-[var(--surface-canvas)]/85 border-b border-[var(--rule-soft)] py-3"
+      className="sticky top-16 z-30 backdrop-blur-md bg-[var(--surface-canvas)]/95 border-b border-[var(--rule-base)] shadow-[0_4px_16px_-8px_rgba(0,0,0,0.12)] py-3"
     >
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3">

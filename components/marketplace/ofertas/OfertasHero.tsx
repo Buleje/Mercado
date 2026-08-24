@@ -47,7 +47,7 @@ export default function OfertasHero({ dealCount, maxDiscount, storeCount, source
 
   return (
     <section className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
-      <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-6 sm:px-6 sm:pt-12 sm:pb-8 lg:px-8">
+      <div className="mx-auto max-w-[1600px] px-4 pt-8 pb-6 sm:px-6 sm:pt-12 sm:pb-8 lg:px-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl">
             <p className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent-ink)] dark:text-[var(--accent)]">
@@ -61,7 +61,7 @@ export default function OfertasHero({ dealCount, maxDiscount, storeCount, source
             <p className="mt-2 max-w-xl text-[length:var(--ts-sm)] leading-relaxed text-[var(--text-secondary)] sm:text-base">
               {isDeals
                 ? "Descuentos reales de las bodegas y comercios de tu barrio. Delivery rápido, pago con Yape, Plin o efectivo."
-                : "Los precios más bajos del marketplace, ordenados de menor a mayor. Sin descuentos inventados."}
+                : "Los mejores precios del marketplace de tu barrio, ordenados de menor a mayor."}
             </p>
           </div>
 
