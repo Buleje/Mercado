@@ -152,9 +152,21 @@ try {
   const tokens = (tokensIn || 0) + (tokensOut || 0);
   const success =
     parsed.success ?? (parsed.stop_reason ? parsed.stop_reason === "completed" : null);
-  const agent = parsed.agent_type ?? parsed.agent_name ?? parsed.agent ?? "unknown";
+  // `agent_type` puede venir como string VACÍO (?? no cae al fallback con "")
+  // → 95 líneas {"agent":""} en el jsonl + bucket "" en los agregados.
+  const agent =
+    [parsed.agent_type, parsed.agent_name, parsed.agent, parsed.subagent_type]
+      .map((v) => (typeof v === "string" ? v.trim() : ""))
+      .find(Boolean) || "unknown";
   const durationMs = parsed.duration_ms ?? tx?.durationMs ?? null;
   const toolUses = parsed.tool_uses ?? tx?.toolUses ?? null;
+
+  // Payload fantasma (sin nombre, sin transcript legible, sin tokens): descartar
+  // la línea y dejar muestra del raw en el errors.log para diagnóstico.
+  if (agent === "unknown" && !tx && !tokens && durationMs == null) {
+    logErr("payload sin datos, línea descartada", raw.slice(0, 400));
+    process.exit(0);
+  }
 
   const entry = {
     ts: new Date().toISOString(),

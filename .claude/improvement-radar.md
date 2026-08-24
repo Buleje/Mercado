@@ -311,3 +311,6 @@ Mostrando top 3. Para crear skill: usá `/luis` o decí "crea skill para X".
 - **Sugerencia:** Files [components/superadmin/banners/BannerImageAdjuster.tsx, components/superadmin/banners/BannerPreviewStudio.tsx] are always edited together. Consider creating a skill that pre-loads all 2 files.
 - **Last seen:** 2026-04-27T01:43:48.118Z
 
+
+### [pending] Sweep fire-and-forget → after() en app/api/** (2026-07-17)
+El patrón `.catch(() => {})` de la casa MUERE en Vercel serverless (lambda congelada al responder). Ya mordió: webhook WhatsApp perdía TODOS los mensajes entrantes en prod (fix b58a2f34). Grep `\.catch\(` en routes con side-effects post-respuesta (notificaciones, logs de actividad, envíos) y envolver en `after()` de next/server los críticos.
