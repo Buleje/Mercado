@@ -214,24 +214,45 @@ export default function TramiteCamposPanel({
   onLogoArchivo: (f?: File) => void;
   onLogoQuitar: () => void;
 }) {
-  const campoInput = (c: FormatoTramite["campos"][number]) =>
-    c.tipo === "textarea" ? (
-      <textarea
-        rows={3}
-        className={`${I} h-auto py-2`}
-        value={datos[c.id] ?? ""}
-        placeholder={c.placeholder}
-        onChange={(e) => set(c.id, e.target.value)}
-      />
-    ) : (
-      <input
-        type={c.tipo === "numero" ? "number" : c.tipo === "fecha" ? "date" : "text"}
-        className={I}
-        value={datos[c.id] ?? ""}
-        placeholder={c.placeholder}
-        onChange={(e) => set(c.id, e.target.value)}
-      />
-    );
+  const campoInput = (c: FormatoTramite["campos"][number]) => (
+    <>
+      {c.tipo === "textarea" ? (
+        <textarea
+          rows={3}
+          className={`${I} h-auto py-2`}
+          value={datos[c.id] ?? ""}
+          placeholder={c.placeholder}
+          onChange={(e) => set(c.id, e.target.value)}
+        />
+      ) : (
+        <input
+          type={c.tipo === "numero" ? "number" : c.tipo === "fecha" ? "date" : "text"}
+          className={I}
+          value={datos[c.id] ?? ""}
+          placeholder={c.placeholder}
+          onChange={(e) => set(c.id, e.target.value)}
+        />
+      )}
+      {/* Ejemplos elegibles (Brandon 2026-08-25: "opciones de dónde y cómo se
+          perdió") — tocar uno REEMPLAZA el campo con el texto completo; son
+          puntos de partida para adaptar, no el hecho ya declarado. */}
+      {c.sugerencias && c.sugerencias.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {c.sugerencias.map((s) => (
+            <button
+              key={s.label}
+              type="button"
+              onClick={() => set(c.id, s.texto)}
+              title={s.texto}
+              className="rounded-full border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </>
+  );
 
   return (
     <div className="space-y-4">

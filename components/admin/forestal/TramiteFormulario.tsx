@@ -162,6 +162,11 @@ export default function TramiteFormulario({
   /** N° de documento correlativo (ADR-364 ronda 3) — `null` hasta el primer
    *  "Presentado"; lo asigna el servidor, acá sólo se refleja. */
   const [numeroDocumento, setNumeroDocumento] = useState<string | null>(existente?.numeroDocumento ?? null);
+  /** Código interno para identificar y buscar el trámite (Brandon 2026-08-25)
+   *  — a diferencia de `numeroDocumento`, lo asigna el servidor desde el
+   *  primer guardado (no espera a "Presentado"); `null` en un borrador que
+   *  todavía no se guardó ni una vez. */
+  const [codigoInterno, setCodigoInterno] = useState<string | null>(existente?.codigoInterno ?? null);
   /** Móvil: el papel no cabe al lado, va en su propia pestaña. */
   const [panelMovil, setPanelMovil] = useState<"formulario" | "documento">("formulario");
   const [modalDocumento, setModalDocumento] = useState(false);
@@ -357,6 +362,7 @@ export default function TramiteFormulario({
       setFechaLimite(guardado.fechaLimite ?? "");
       const numeroNuevo = !numeroDocumento && guardado.numeroDocumento;
       setNumeroDocumento(guardado.numeroDocumento);
+      setCodigoInterno(guardado.codigoInterno);
       let mensaje = numeroNuevo
         ? `Guardado y numerado como N° ${guardado.numeroDocumento} — ya podés presentarlo.`
         : idGuardado || existente
@@ -453,6 +459,17 @@ export default function TramiteFormulario({
               <span className="inline-flex items-center gap-2 rounded-full bg-[var(--surface-raised)]/80 px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
                 {autoridad.label}
               </span>
+              {/* Código propio para identificar y buscar el trámite (Brandon
+                  2026-08-25) — lo asigna el servidor desde el primer
+                  guardado, no es el N° oficial ante la autoridad. */}
+              {codigoInterno && (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-raised)]/80 px-2.5 py-1 font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]"
+                  title="Código interno — para identificarlo y buscarlo en el Expediente, no es el N° oficial ante la autoridad"
+                >
+                  {codigoInterno}
+                </span>
+              )}
               {/* Correlativo: se asigna sólo al primer "Presentado" (ADR-364
                   ronda 3) — antes de eso, avisa que todavía no tiene número
                   en vez de mostrar un chip vacío. */}

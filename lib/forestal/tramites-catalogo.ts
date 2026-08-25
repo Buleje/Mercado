@@ -97,6 +97,16 @@ export interface CampoTramite {
    */
   autollenado?: "ficha" | "libro";
   /**
+   * Ejemplos elegibles para arrancar un campo de redacción libre (Brandon
+   * 2026-08-25: "opciones de dónde y cómo se perdió, ejemplos") — la UI los
+   * muestra como chips cortos debajo del campo; tocar uno REEMPLAZA el valor
+   * actual por el `texto` completo (no lo inserta a la fuerza) para que el
+   * operador lo termine de ajustar a su caso real. Son puntos de partida, no
+   * el hecho: el sistema no sabe qué pasó, el operador tiene que declararlo
+   * y revisarlo antes de firmar.
+   */
+  sugerencias?: { label: string; texto: string }[];
+  /**
    * Sección del formulario. Trece campos en una grilla plana se leen como un
    * trámite del Estado; en tres bloques (a quién va · qué se pide · quién firma)
    * se llena sin perder el hilo. Default: `datos`.
@@ -1078,8 +1088,42 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
         tipo: "textarea",
         requerido: true,
         placeholder: "Extravío / robo / asalto en ruta — contá el hecho tal como pasó, sin suposiciones",
+        sugerencias: [
+          {
+            label: "Extravío en tránsito",
+            texto: "Se extravió durante el transporte, posiblemente cayó del vehículo en un tramo de trocha o carretera sin pavimentar.",
+          },
+          {
+            label: "Hurto (sin violencia)",
+            texto: "Fue sustraída sin violencia, junto con otros documentos y efectos personales que se encontraban en el vehículo.",
+          },
+          {
+            label: "Asalto en ruta",
+            texto: "El vehículo fue interceptado en ruta por personas desconocidas, quienes sustrajeron la documentación junto con otros bienes.",
+          },
+          {
+            label: "Extravío en el patio/almacén",
+            texto: "Se extravió en el patio de acopio o almacén del CTP; pese a la búsqueda, no se pudo ubicar.",
+          },
+          {
+            label: "Accidente de tránsito",
+            texto: "El vehículo sufrió un accidente de tránsito y la documentación se perdió o resultó dañada en el siniestro.",
+          },
+        ],
       },
-      { id: "lugarHechoGtf", label: "Lugar del hecho", tipo: "texto", requerido: true, hint: "Dirección, km de carretera o referencia del lugar" },
+      {
+        id: "lugarHechoGtf",
+        label: "Lugar del hecho",
+        tipo: "texto",
+        requerido: true,
+        hint: "Dirección, km de carretera o referencia del lugar",
+        sugerencias: [
+          { label: "Km de carretera", texto: "Km ___ de la carretera ___, en el trayecto de ___ a ___" },
+          { label: "Patio/almacén del CTP", texto: "Patio de acopio / almacén del CTP" },
+          { label: "Domicilio del transportista", texto: "Domicilio del transportista o chofer" },
+          { label: "Vía pública", texto: "Vía pública, a la altura de ___" },
+        ],
+      },
       { id: "fechaHoraHechoGtf", label: "Fecha y hora aproximada", tipo: "fecha", requerido: true },
       {
         id: "personaACargoGtf",

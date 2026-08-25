@@ -8,7 +8,7 @@
  * PURO: sin Prisma ni fetch — se testea sin DB.
  */
 
-import { formatoPorId, type AutoridadTramite, type DatosTramite } from "./tramites-catalogo";
+import { AUTORIDADES, formatoPorId, type AutoridadTramite, type DatosTramite } from "./tramites-catalogo";
 
 /**
  * El ciclo real de un trámite en mesa de partes:
@@ -26,6 +26,17 @@ export const ESTADOS_TRAMITE: { key: EstadoTramite; label: string; tono: "muted"
 
 export interface TramiteRegistro {
   id: string;
+  /**
+   * Código interno para identificar y buscar ESTE trámite (Brandon
+   * 2026-08-25: "un código de cada documento que diga qué documento es para
+   * identificar y luego buscarlo") — `{AUTORIDAD}-{AAAA}-{correlativo}`, ej.
+   * "ARFFS-2026-014". Se asigna UNA vez al crear el borrador (a diferencia de
+   * `numeroDocumento`, que espera al primer "Presentado") y nunca se
+   * reasigna: es la referencia propia de Brandon para ubicar el expediente,
+   * no un número oficial ante la autoridad — por eso NO sale impreso en el
+   * papel (`tramites-print.ts` no lo lee).
+   */
+  codigoInterno: string;
   /** Id del formato del catálogo (`visado-talonario-gtf`, …). */
   formatoId: string;
   /** Copia del nombre: si mañana se renombra el formato, el expediente viejo
@@ -76,6 +87,9 @@ export interface TramiteRegistro {
 
 export interface TramiteInput {
   id?: string;
+  /** Preservado por el caller desde el registro existente — el cliente nunca
+   *  lo manda, `construirTramite` lo asigna solo la primera vez. */
+  codigoInterno?: string;
   formatoId: string;
   formatoNombre?: string;
   autoridad: AutoridadTramite;
@@ -137,6 +151,23 @@ function siguienteNumeroDocumento(existentes: TramiteRegistro[], formatoId: stri
 }
 
 /**
+ * Siguiente código interno para la autoridad de `hoy`: "SIGLA-AAAA-NNN", 3
+ * dígitos, correlativo GLOBAL a todos los formatos de esa autoridad (no por
+ * formato, a diferencia de `numeroDocumento`) — es la libreta de Brandon
+ * para ubicar "el ARFFS-2026-014", no el talonario oficial ante la autoridad.
+ */
+function siguienteCodigoInterno(existentes: TramiteRegistro[], autoridad: AutoridadTramite, hoy: Date): string {
+  const sigla = (AUTORIDADES[autoridad]?.corto ?? "TRAM").toUpperCase().replace(/[^A-Z0-9]/g, "") || "TRAM";
+  const prefijo = `${sigla}-${hoy.getUTCFullYear()}-`;
+  const usados = existentes
+    .filter((t) => t.codigoInterno?.startsWith(prefijo))
+    .map((t) => Number(t.codigoInterno!.slice(prefijo.length)))
+    .filter((n) => Number.isFinite(n));
+  const siguiente = (usados.length ? Math.max(...usados) : 0) + 1;
+  return `${prefijo}${String(siguiente).padStart(3, "0")}`;
+}
+
+/**
  * Los valores del formulario, acotados: es un JSON en KV, no un textarea
  * infinito. `datos.guiasJson` (ADR-364, la relación de guías con su lista de
  * trozas) es el campo más pesado: unas 60 guías con detalle de trozas rondan
@@ -189,6 +220,10 @@ export function construirTramite(input: TramiteInput, existentes: TramiteRegistr
   const fechaPresentacion = fechaSolo(input.fechaPresentacion) ?? (yaSalio ? hoy : null);
   const fechaRespuesta = fechaSolo(input.fechaRespuesta) ?? (estado === "resuelto" ? hoy : null);
 
+  // El código interno se asigna al crear el borrador (no espera a
+  // "Presentado", a diferencia de `numeroDocumento`) y nunca se reasigna.
+  const codigoInterno = texto(input.codigoInterno, 30) || siguienteCodigoInterno(existentes, input.autoridad, new Date(ahora));
+
   // El N° de documento se asigna UNA sola vez, al primer "Presentado" — nunca
   // se reasigna (`opcional(input.numeroDocumento,…)` trae el que ya tenía, el
   // caller lo preserva desde el registro existente).
@@ -207,6 +242,7 @@ export function construirTramite(input: TramiteInput, existentes: TramiteRegistr
 
   return {
     id: texto(input.id, 80) || nuevoId(formatoId, ahora),
+    codigoInterno,
     formatoId,
     formatoNombre: texto(input.formatoNombre, 120) || texto(formatoId, 120),
     autoridad: input.autoridad,

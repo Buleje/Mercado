@@ -54,6 +54,10 @@ export const ForestTramitesDB = {
         ...input,
         createdAt: existente?.createdAt,
         createdBy: existente?.createdBy ?? user,
+        // Mismo criterio que numeroDocumento: se preserva del registro
+        // existente para que `construirTramite` no saque uno nuevo en cada
+        // edición.
+        codigoInterno: existente?.codigoInterno,
         // El cliente nunca manda numeroDocumento — se preserva del registro
         // existente (si ya tenía uno asignado) para que `construirTramite`
         // sepa que NO tiene que sacar un correlativo nuevo.

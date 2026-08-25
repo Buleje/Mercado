@@ -235,6 +235,41 @@ describe("correlativo (numeroDocumento, ADR-364 ronda 3)", () => {
   });
 });
 
+describe("código interno (codigoInterno, para buscar el trámite — Brandon 2026-08-25)", () => {
+  const base = { formatoId: "relacion-guias-serfor", autoridad: "serfor" as const, ahora: "2026-08-20T10:00:00.000Z" };
+
+  it("un borrador YA saca código — no espera a Presentado como numeroDocumento", () => {
+    const t = construirTramite(base);
+    expect(t.codigoInterno).toBe("SERFOR-2026-001");
+  });
+
+  it("el correlativo es GLOBAL por autoridad, no por formato", () => {
+    const a = construirTramite({ ...base, id: "a" }); // SERFOR-2026-001
+    const b = construirTramite({ formatoId: "constancia-cites", autoridad: "serfor" as const, ahora: base.ahora, id: "b" }, [a]); // otro formato, misma autoridad → SERFOR-2026-002
+    const t = construirTramite({ ...base }, [a, b]);
+    expect(t.codigoInterno).toBe("SERFOR-2026-003");
+  });
+
+  it("distintas autoridades no comparten correlativo", () => {
+    const existentes = [construirTramite({ ...base, id: "a" })]; // SERFOR-2026-001
+    const t = construirTramite({ formatoId: "visado-talonario-gtf", autoridad: "arffs", ahora: base.ahora }, existentes);
+    expect(t.codigoInterno).toBe("ARFFS-2026-001");
+  });
+
+  it("un código YA asignado nunca se reasigna al editar", () => {
+    const existentes = [construirTramite({ ...base, id: "a" })];
+    // El caller (ForestTramitesDB.save) preserva codigoInterno del existente.
+    const t = construirTramite({ ...base, id: "a", estado: "presentado", codigoInterno: existentes[0].codigoInterno }, existentes);
+    expect(t.codigoInterno).toBe(existentes[0].codigoInterno);
+  });
+
+  it("se resetea en un año distinto", () => {
+    const existentes = [construirTramite({ ...base, id: "a" })]; // SERFOR-2026-001
+    const t = construirTramite({ ...base, ahora: "2027-01-05T00:00:00.000Z" }, existentes);
+    expect(t.codigoInterno).toBe("SERFOR-2027-001");
+  });
+});
+
 describe("seguimiento", () => {
   const tramite = (over: Partial<TramiteRegistro>): TramiteRegistro => ({
     ...construirTramite({ formatoId: "f", autoridad: "arffs", ahora: "2026-07-01T00:00:00.000Z" }),

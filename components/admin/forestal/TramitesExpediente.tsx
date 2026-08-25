@@ -105,7 +105,9 @@ export default function TramitesExpediente({
     const q = sinTildes(busqueda.trim());
     if (!q) return porEstadoFiltrados;
     return porEstadoFiltrados.filter((t) =>
-      [t.formatoNombre, t.asunto, t.expedienteAutoridad, t.notas].some((campo) => campo && sinTildes(campo).includes(q)),
+      [t.codigoInterno, t.formatoNombre, t.asunto, t.expedienteAutoridad, t.notas].some(
+        (campo) => campo && sinTildes(campo).includes(q),
+      ),
     );
   }, [tramites, filtro, busqueda]);
 
@@ -121,7 +123,7 @@ export default function TramitesExpediente({
           type="text"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Buscar por formato, asunto o N° de expediente…"
+          placeholder="Buscar por código, formato, asunto o N° de expediente…"
           className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
         />
       </div>
@@ -205,6 +207,14 @@ export default function TramitesExpediente({
 
                 <div className="min-w-0 flex-1 p-4">
                   <div className="flex flex-wrap items-center gap-2">
+                    {t.codigoInterno && (
+                      <span
+                        className="rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]"
+                        title="Código interno — para identificarlo y buscarlo, no es el N° oficial ante la autoridad"
+                      >
+                        {t.codigoInterno}
+                      </span>
+                    )}
                     <span className={`inline-flex h-6 items-center rounded-full border-2 px-2.5 text-xs font-bold ${tono.activo}`}>
                       {meta?.label ?? t.estado}
                     </span>

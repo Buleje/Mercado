@@ -281,10 +281,21 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
   const direccionValor = (datos.membreteDireccion ?? "").trim() || (membreteEsPropio ? ficha?.direccion || "" : "");
   const ubicacionTexto = membreteEsPropio ? [ficha?.distrito, ficha?.provincia, ficha?.region].filter(Boolean).join(", ") : "";
 
+  // "Código de CTP" y "Registro ARFFS" son de un CTP registrado, no de
+  // cualquier razón social: invitar a llenarlos en modo edición cuando el
+  // membrete ya es de un tercero (ej. una comunidad nativa del Directorio)
+  // pide un dato que esa parte probablemente no tiene (Brandon 2026-08-25:
+  // "veo en encabezado sale código de CTP para rellenar y es directorio de
+  // CCNN, ese campo no debe estar"). El RUC y la dirección sí se siguen
+  // invitando: son datos que cualquier entidad puede tener.
   const linea2 = [
     rucValor || editable ? `RUC ${campoSpan(editable, "membreteRuc", rucValor, !rucValor)}` : "",
-    codigoValor || editable ? `Código de CTP ${campoSpan(editable, "membreteCodigoCtp", codigoValor, !codigoValor)}` : "",
-    registroValor || editable ? `Registro ARFFS ${campoSpan(editable, "membreteRegistroArffs", registroValor, !registroValor)}` : "",
+    codigoValor || (editable && membreteEsPropio)
+      ? `Código de CTP ${campoSpan(editable, "membreteCodigoCtp", codigoValor, !codigoValor)}`
+      : "",
+    registroValor || (editable && membreteEsPropio)
+      ? `Registro ARFFS ${campoSpan(editable, "membreteRegistroArffs", registroValor, !registroValor)}`
+      : "",
   ].filter(Boolean);
   const linea3 = [
     direccionValor || editable ? campoSpan(editable, "membreteDireccion", direccionValor, !direccionValor) : "",
