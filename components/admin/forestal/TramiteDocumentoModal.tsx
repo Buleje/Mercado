@@ -52,6 +52,7 @@ export default function TramiteDocumentoModal({
   datos,
   ficha,
   numeroDocumento,
+  codigoInterno,
   logo,
   editor,
   footer,
@@ -64,6 +65,8 @@ export default function TramiteDocumentoModal({
   ficha: CtpReportFicha | null;
   /** N° de documento correlativo, si el formato lo lleva (ADR-364 ronda 3). */
   numeroDocumento?: string | null;
+  /** Código interno para identificar y buscar el trámite (Brandon 2026-08-25/26). */
+  codigoInterno?: string | null;
   /** Logo del membrete (ADR-364 ronda 6) — por tenant, no por trámite. */
   logo?: LogoTramite | null;
   /** El panel de campos editable (`TramiteCamposPanel`) — `null` mientras el
@@ -85,7 +88,7 @@ export default function TramiteDocumentoModal({
 
   const html = open
     ? (() => {
-        const body = buildTramiteHtml({ formato, datos, ficha, numeroDocumento: numeroDocumento ?? undefined, logo, editable });
+        const body = buildTramiteHtml({ formato, datos, ficha, numeroDocumento: numeroDocumento ?? undefined, codigoInterno: codigoInterno ?? undefined, logo, editable });
         return `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <style>${TRAMITE_PREVIEW_CSS}
   html{background:#fff}

@@ -63,6 +63,36 @@ export async function carpetaDelExpediente(nombre = CARPETA_GUIAS): Promise<stri
 }
 
 /**
+ * Carpeta anidada por ruta ("Trámites y Oficios (CTP)/ARFFS"), creando cada
+ * nivel que falte en UNA sola llamada (`createFolderTree`, ADR-306 — el mismo
+ * camino que ya usa el import masivo del Drive). Idempotente: volver a pedir
+ * la misma ruta reusa lo que ya existe, nunca duplica la carpeta.
+ *
+ * Brandon 2026-08-26: "quiero que se guarde... en mi página de archivos, que
+ * se haga una carpeta bien ordenada" — antes TODOS los formatos de trámites
+ * caían en una única carpeta plana; esto permite organizarlos por autoridad
+ * sin un POST por nivel.
+ */
+export async function carpetaAnidada(ruta: string[]): Promise<string | null> {
+  const path = ruta.map((s) => s.trim()).filter(Boolean).join("/");
+  if (!path) return null;
+  try {
+    const r = await fetch("/api/admin/documents/folders/tree", {
+      method: "POST",
+      credentials: "include",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ rutas: [path] }),
+    });
+    if (!r.ok) return null;
+    const { idPorRuta = {} } = (await r.json()) as { idPorRuta?: Record<string, string> };
+    return idPorRuta[path] ?? null;
+  } catch (err) {
+    logger.warn("[ctp-archivar] carpeta anidada no disponible", { error: String(err) });
+    return null;
+  }
+}
+
+/**
  * ¿Ese papel ya está en el expediente? Se pregunta por NOMBRE exacto, que es lo
  * que identifica a la guía. Sin esto, validar dos veces el mismo ingreso —o
  * re-validar tras una corrección— dejaría dos PDF idénticos en la carpeta, y
@@ -89,7 +119,15 @@ export interface ArchivarDocumento {
   archivo: Blob;
   /** Nombre completo con extensión: "GTF 019-0000003.pdf". */
   nombreArchivo: string;
+  /** Nombre de la carpeta (o etiqueta a mostrar, si ya se resolvió `folderId`). */
   carpeta?: string;
+  /**
+   * Id de carpeta YA resuelto (ej. por `carpetaAnidada`) — si se pasa, se usa
+   * tal cual y NO se busca/crea una carpeta plana por `carpeta`. `undefined`
+   * mantiene el comportamiento de siempre (resolver `carpeta` como carpeta
+   * raíz); `null` explícito sube a la raíz del Drive a propósito.
+   */
+  folderId?: string | null;
   etiquetas?: string[];
   /** Lo que el documento es, en una línea. Entra al texto buscable del Drive. */
   descripcion?: string;
@@ -116,7 +154,7 @@ export async function archivarEnDrive(o: ArchivarDocumento): Promise<ResultadoAr
   }
 
   const carpetaNombre = o.carpeta ?? CARPETA_GUIAS;
-  const folderId = await carpetaDelExpediente(carpetaNombre);
+  const folderId = o.folderId !== undefined ? o.folderId : await carpetaDelExpediente(carpetaNombre);
 
   const fd = new FormData();
   // El Blob viaja como File para que el servidor conserve el NOMBRE: la

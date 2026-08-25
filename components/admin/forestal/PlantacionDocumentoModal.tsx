@@ -91,7 +91,7 @@ export default function PlantacionDocumentoModal({
     try {
       const doc = await archivadorRef.current?.capturar(html);
       if (!doc) throw new Error("El documento todavía no terminó de dibujarse.");
-      const pdf = await tramiteDocumentoAPdf(doc);
+      const pdf = await tramiteDocumentoAPdf(doc, codigoInterno);
       const url = URL.createObjectURL(pdf);
       const a = document.createElement("a");
       a.href = url;
@@ -111,7 +111,7 @@ export default function PlantacionDocumentoModal({
     try {
       const doc = await archivadorRef.current?.capturar(html);
       if (!doc) throw new Error("El documento todavía no terminó de dibujarse.");
-      const pdf = await tramiteDocumentoAPdf(doc);
+      const pdf = await tramiteDocumentoAPdf(doc, codigoInterno);
       await archivarEnDrive({
         archivo: pdf,
         nombreArchivo: nombreArchivo(),

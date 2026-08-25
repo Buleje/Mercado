@@ -20,6 +20,7 @@ import {
   AlertCircle,
   ArrowLeft,
   Check,
+  Download,
   Eye,
   FileDown,
   FileText,
@@ -31,7 +32,7 @@ import {
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { buildTramiteHtml, imprimirTramite, TRAMITE_PREVIEW_CSS } from "@/lib/forestal/tramites-print";
-import { archivarEnDrive, existeEnDrive } from "@/lib/forestal/ctp-archivar-documento";
+import { archivarEnDrive, carpetaAnidada, existeEnDrive } from "@/lib/forestal/ctp-archivar-documento";
 import { nombreArchivoTramite, tramiteDocumentoAPdf } from "@/lib/forestal/tramites-documento-pdf";
 import {
   AUTORIDADES,
@@ -171,6 +172,7 @@ export default function TramiteFormulario({
   const [panelMovil, setPanelMovil] = useState<"formulario" | "documento">("formulario");
   const [modalDocumento, setModalDocumento] = useState(false);
   const [archivando, setArchivando] = useState(false);
+  const [descargando, setDescargando] = useState(false);
   const archivadorRef = useRef<TramiteArchivadorHandle>(null);
   /** Logo del membrete (ADR-364 ronda 6) — por tenant, no por trámite: se
    *  sube una vez y queda para todos los documentos que se emitan después. */
@@ -265,12 +267,22 @@ export default function TramiteFormulario({
     [formato, datos.guiasJson, otrasRelaciones],
   );
 
-  /** Carpeta del Drive: la propia del formato si declara una, si no la genérica. */
-  const carpetaDrive = formato.carpetaDrive ?? CARPETA_TRAMITES;
+  /**
+   * Carpeta del Drive: los formatos con carpeta propia (`FormatoTramite.
+   * carpetaDrive`, ej. "Relación de guías SERFOR") van sueltos, tal como ya
+   * estaban — separarlos evita que se pierdan entre los demás. Los que caen
+   * en la genérica se organizan por AUTORIDAD dentro de ella (Brandon
+   * 2026-08-26: "que se haga una carpeta bien ordenada y bien hecha") — antes
+   * los 22 formatos sin carpeta propia se apilaban todos juntos en una única
+   * carpeta plana. `carpetaRuta` es la ruta real (para `carpetaAnidada`);
+   * `carpetaDrive` es el texto que se muestra en los avisos.
+   */
+  const carpetaRuta = formato.carpetaDrive ? [formato.carpetaDrive] : [CARPETA_TRAMITES, autoridad.corto];
+  const carpetaDrive = carpetaRuta.join(" / ");
 
   function imprimir() {
     try {
-      imprimirTramite({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo });
+      imprimirTramite({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo, codigoInterno: codigoInterno ?? undefined });
     } catch (err) {
       setAviso(err instanceof Error ? err.message : String(err));
     }
@@ -285,41 +297,56 @@ export default function TramiteFormulario({
    */
   function verEnPestana() {
     try {
-      imprimirTramite({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo });
+      imprimirTramite({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo, codigoInterno: codigoInterno ?? undefined });
     } catch (err) {
       setAviso(err instanceof Error ? err.message : String(err));
     }
   }
 
+  /** El nombre de archivo del trámite actual — barato, sin fotografiar nada;
+   *  sirve tanto para deduplicar en el Drive como para el `<a download>`. */
+  function nombreDocumentoActual(): string {
+    const nombreBase = `${formato.nombre}${numeroDocumento ? ` N° ${numeroDocumento}` : ""} — ${auto.ficha?.razonSocial?.trim() || "CTP"} — ${new Date().toISOString().slice(0, 10)}`;
+    return nombreArchivoTramite(nombreBase);
+  }
+
   /**
-   * Arma el PDF del trámite y lo sube al Drive, como ya hacen las GTF y el
-   * informe ARFFS del Libro CTP: se fotografía el documento (offscreen, mismo
-   * patrón que `CtpArchivadorAuto`) y sube a una carpeta propia, con el asunto
-   * y la autoridad como etiquetas. `carpetaDrive`: cada formato puede declarar
-   * la suya (`FormatoTramite.carpetaDrive`) para no perderse entre los demás
-   * — si no declara, cae en la genérica.
-   *
-   * Deduplica por NOMBRE exacto (`existeEnDrive`, mismo criterio que el
-   * archivado automático de las GTF): llamarla dos veces el mismo día sin
-   * cambiar de estado no dobla el archivo — la comparten el botón manual y
-   * el guardado automático al presentar.
+   * Arma el PDF de verdad del trámite actual — se fotografía el documento
+   * (offscreen, mismo patrón que `CtpArchivadorAuto`) y se pagina a A4, con
+   * el código interno estampado en el pie de cada hoja. Único lugar donde se
+   * arma: lo comparten "Descargar PDF" y "PDF al Drive" para que nunca diverjan.
    */
-  async function archivarDocumentoActual(): Promise<string> {
-    const nombreBase = `${formato.nombre}${numeroDocumento ? ` N° ${numeroDocumento}` : ""} — ${auto.ficha?.razonSocial ?? "CTP"} — ${new Date().toISOString().slice(0, 10)}`;
-    const nombre = nombreArchivoTramite(nombreBase);
-    if (await existeEnDrive(nombre)) {
-      return `Ya estaba en el Drive · carpeta "${carpetaDrive}".`;
-    }
-    const body = buildTramiteHtml({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo });
+  async function armarPdfActual(): Promise<Blob> {
+    const body = buildTramiteHtml({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo, codigoInterno: codigoInterno ?? undefined });
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <style>${TRAMITE_PREVIEW_CSS}html{background:#fff}.aviso{display:none}</style></head><body>${body}</body></html>`;
     const doc = await archivadorRef.current?.capturar(html);
     if (!doc) throw new Error("No se pudo preparar el documento para el PDF.");
-    const pdf = await tramiteDocumentoAPdf(doc);
+    return tramiteDocumentoAPdf(doc, codigoInterno ?? undefined);
+  }
+
+  /**
+   * Sube el PDF al Drive, como ya hacen las GTF y el informe ARFFS del Libro
+   * CTP, con el asunto y la autoridad como etiquetas.
+   *
+   * Deduplica por NOMBRE exacto (`existeEnDrive`, mismo criterio que el
+   * archivado automático de las GTF) ANTES de fotografiar el documento: llamarla
+   * dos veces el mismo día sin cambiar de estado no dobla el archivo ni rehace
+   * el PDF de balde — la comparten el botón manual y el guardado automático
+   * al presentar.
+   */
+  async function archivarDocumentoActual(): Promise<string> {
+    const nombre = nombreDocumentoActual();
+    if (await existeEnDrive(nombre)) {
+      return `Ya estaba en el Drive · carpeta "${carpetaDrive}".`;
+    }
+    const pdf = await armarPdfActual();
+    const folderId = await carpetaAnidada(carpetaRuta);
     await archivarEnDrive({
       archivo: pdf,
       nombreArchivo: nombre,
       carpeta: carpetaDrive,
+      folderId,
       etiquetas: [autoridad.corto, formato.nombre],
       descripcion: asuntoDe(formato, datos),
     });
@@ -335,6 +362,27 @@ export default function TramiteFormulario({
       setAviso(err instanceof Error ? err.message : String(err));
     } finally {
       setArchivando(false);
+    }
+  }
+
+  /** Descarga el PDF de verdad al dispositivo — sin pasar por el diálogo de
+   *  impresión del navegador ni por el Drive (Brandon 2026-08-26: "quiero una
+   *  opción para descargar en PDF el documento"). Mismo PDF que se archiva. */
+  async function descargarPdf() {
+    setDescargando(true);
+    setAviso(null);
+    try {
+      const pdf = await armarPdfActual();
+      const url = URL.createObjectURL(pdf);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nombreDocumentoActual();
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch (err) {
+      setAviso(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDescargando(false);
     }
   }
 
@@ -437,6 +485,14 @@ export default function TramiteFormulario({
         <Btn variant="secondary" disabled={archivando} onClick={() => void guardarEnDrive()}>
           {archivando ? <Loader2 className="h-4 w-4 animate-spin" /> : <HardDrive className="h-4 w-4" />}
           {archivando ? "Guardando…" : "PDF al Drive"}
+        </Btn>
+        <Btn
+          variant="secondary"
+          disabled={descargando || faltantes.length > 0 || sinGuias}
+          onClick={() => void descargarPdf()}
+        >
+          {descargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {descargando ? "Armando…" : "Descargar PDF"}
         </Btn>
         <Btn variant="dark" disabled={faltantes.length > 0 || sinGuias} onClick={imprimir}>
           <FileDown className="h-4 w-4" />
@@ -595,6 +651,7 @@ export default function TramiteFormulario({
             datos={datos}
             ficha={auto.ficha}
             numeroDocumento={numeroDocumento}
+            codigoInterno={codigoInterno}
             logo={logo}
             onCampoChange={set}
             className="xl:sticky xl:top-4"
@@ -629,6 +686,7 @@ export default function TramiteFormulario({
         datos={datos}
         ficha={auto.ficha}
         numeroDocumento={numeroDocumento}
+        codigoInterno={codigoInterno}
         logo={logo}
         editor={modalDocumento ? panelCampos : null}
         footer={barraAcciones}

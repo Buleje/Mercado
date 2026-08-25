@@ -52,6 +52,11 @@ const TRAMITE_CSS = `
   .membrete .linea2{margin-top:4px;font-size:11.5px;color:#5c6864}
   .membrete .linea2 span+span:before{content:" · ";color:#c3cec8}
   .doc-tipo{display:inline-block;margin-top:16px;padding:5px 12px;border-radius:20px;background:#eaf3ee;color:#0f5132;font-size:12px;font-weight:700}
+  /* Código del expediente (Brandon 2026-08-26): reemplaza la vieja marca de
+     agua genérica ("Generado por sistema Buleje CTP") por el dato que de
+     verdad sirve — el código con el que se busca ESTE documento puntual. */
+  .doc-codigo{margin-top:7px;font-size:10.5px;color:#8b968f;font-variant-numeric:tabular-nums}
+  .doc-codigo span{color:#a8b2ac}
   /* Ronda 7 (Brandon 2026-08-20: "mejora el diseño de la hoja... mejor
      formato"): destinatario y meta pasan de líneas sueltas a una ficha con
      fondo propio — el mismo lenguaje visual que ya usa \`.id\` en los otros
@@ -72,7 +77,6 @@ const TRAMITE_CSS = `
   .firma-uno .linea{border-top:1.5px solid #9aa39e;padding-top:7px;font-weight:700;font-size:13px;color:#26332c}
   .lugar{margin-top:28px;font-size:12.5px;color:#444}
   .aviso{margin-top:18px;padding:10px 13px;border-left:3px solid #b45309;border-radius:0 8px 8px 0;background:#fffbeb;color:#7c2d12;font-size:11.5px}
-  .doc-pie{margin-top:30px;padding-top:10px;border-top:1px solid #eef2f0;font-size:10px;color:#a2ada6}
   @media print{.aviso{display:none}}
   /* Campos rellenables (ADR-364 ronda 7): un subrayado punteado avisa "esto
      se toca" sin que la hoja impresa se vea con líneas de formulario — el
@@ -131,6 +135,14 @@ export interface TramitePrintOpts {
    * ninguna marca de edición.
    */
   editable?: boolean;
+  /**
+   * Código propio del expediente (ADR-364, Brandon 2026-08-26: "que cada
+   * documento tenga un código... para identificar y luego buscarlo") — se
+   * imprime junto al tipo de documento para que el papel sea buscable en el
+   * Expediente aunque se haya separado de su carpeta. NO es el N° oficial
+   * ante la autoridad (ese es `numeroDocumento`).
+   */
+  codigoInterno?: string;
 }
 
 /**
@@ -316,9 +328,8 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
       </div>
     </div>
   </div>
-  <div class="doc-tipo">${esc(formato.nombre)}${o.numeroDocumento ? ` N° ${esc(o.numeroDocumento)}` : ""} · ${esc(autoridad.corto)}</div>`;
-
-  const pie = `<div class="doc-pie">Generado el ${esc(hoyLargo())} · sistema Buleje CTP${o.numeroDocumento ? ` · N° ${esc(o.numeroDocumento)}` : ""}</div>`;
+  <div class="doc-tipo">${esc(formato.nombre)}${o.numeroDocumento ? ` N° ${esc(o.numeroDocumento)}` : ""} · ${esc(autoridad.corto)}</div>
+  ${o.codigoInterno ? `<div class="doc-codigo">Código ${esc(o.codigoInterno)} <span>— para identificar y buscar este documento, no es el N° oficial</span></div>` : ""}`;
 
   return `${membrete}
   ${destinatario}
@@ -328,8 +339,7 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
   ${tablaGuias}
   ${anexos}
   ${legal}
-  ${aviso}
-  ${pie}`;
+  ${aviso}`;
 }
 
 /** Abre el documento en una ventana imprimible (guardar como PDF). */

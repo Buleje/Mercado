@@ -17,8 +17,16 @@ const HOJA_MM = { ancho: 210, alto: 297 };
 /**
  * El `<body>` del documento (ya renderizado en un iframe fuera de pantalla),
  * como Blob PDF paginado a A4.
+ *
+ * `codigo` (Brandon 2026-08-26: "en cada documento tenga un código número de
+ * código de Hoja"): se estampa en el pie de CADA hoja del PDF, no sólo en el
+ * cuerpo del documento — si un trámite de varias páginas se archiva o se
+ * imprime y las hojas se separan físicamente, cada una sigue diciendo de qué
+ * documento es. Se estampa aunque sea una sola página: es el dato que
+ * reemplaza la vieja marca de agua genérica ("Generado por sistema Buleje
+ * CTP"), que no servía para identificar NADA en concreto.
  */
-export async function tramiteDocumentoAPdf(doc: Document): Promise<Blob> {
+export async function tramiteDocumentoAPdf(doc: Document, codigo?: string): Promise<Blob> {
   const cuerpo = doc.body;
   if (!cuerpo) throw new Error("El documento no tiene contenido que exportar.");
 
@@ -47,10 +55,11 @@ export async function tramiteDocumentoAPdf(doc: Document): Promise<Blob> {
     if (i > 0) pdf.addPage();
     pdf.addImage(trozo.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, HOJA_MM.ancho, alto / pxPorMm, undefined, "FAST");
 
-    if (paginas > 1) {
+    const pie = [codigo, `Hoja ${i + 1} de ${paginas}`].filter(Boolean).join(" · ");
+    if (pie) {
       pdf.setFontSize(7);
       pdf.setTextColor(120, 120, 120);
-      pdf.text(`Página ${i + 1} de ${paginas}`, HOJA_MM.ancho / 2, HOJA_MM.alto - 6, { align: "center" });
+      pdf.text(pie, HOJA_MM.ancho / 2, HOJA_MM.alto - 6, { align: "center" });
     }
   }
 
