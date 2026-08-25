@@ -22,7 +22,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { documentoAPdf, nombreArchivo } from "@/lib/forestal/ctp-documento-pdf";
-import { archivarEnDrive, existeEnDrive } from "@/lib/forestal/ctp-archivar-documento";
+import { archivarEnDrive, carpetaAnidada, existeEnDrive } from "@/lib/forestal/ctp-archivar-documento";
 import { procesarCola, type ResumenArchivado } from "@/lib/forestal/ctp-cola-archivado";
 
 export type { ResumenArchivado } from "@/lib/forestal/ctp-cola-archivado";
@@ -36,6 +36,10 @@ export interface GuiaParaArchivar {
   pieCorrido?: string;
   etiquetas: string[];
   descripcion: string;
+  /** Ruta de carpeta anidada (ej. `["Guías forestales (GTF)", "2026", "08"]`,
+   *  Brandon 2026-08-26: "organizá también las GTF"). Sin esto cae a la raíz
+   *  de `CARPETA_GUIAS` — mismo default de siempre. */
+  carpetaRuta?: string[];
 }
 
 /** Ancho del lienzo: el mismo del visor, para que la hoja mida lo que mide. */
@@ -76,11 +80,13 @@ export default function CtpArchivadorAuto({
       existe: (papel) => existeEnDrive(nombreArchivo(papel.nombre, "pdf")),
       guardar: async (papel) => {
         const d = await dibujar(papel);
+        const folderId = papel.carpetaRuta ? await carpetaAnidada(papel.carpetaRuta) : undefined;
         await archivarEnDrive({
           archivo: await documentoAPdf(d, { pieCorrido: papel.pieCorrido }),
           nombreArchivo: nombreArchivo(papel.nombre, "pdf"),
           etiquetas: papel.etiquetas,
           descripcion: papel.descripcion,
+          folderId,
         });
       },
     }).then((r) => {

@@ -14,6 +14,7 @@
  */
 
 import { documentoHtml } from "./ctp-documento-print";
+import { CARPETA_GUIAS } from "./ctp-archivar-documento";
 import { CSS_GTF_SERFOR, documentoGtfSerfor, trozasDesdeSerfor } from "./ctp-gtf-desde-serfor";
 import { CSS_GTF_OFICIAL, fechaGtf } from "./ctp-gtf-formato";
 import { CSS_LISTA_TROZAS, htmlListaTrozas } from "./ctp-lista-trozas";
@@ -45,6 +46,7 @@ export interface IngresoConGuia {
 export function metaArchivado(e: IngresoConGuia, nombreDoc: string): {
   etiquetas: string[];
   descripcion: string;
+  carpetaRuta: string[];
 } {
   const g = (e.serforGtf ?? null) as GtfSerfor | null;
   const numero = g?.gtfNumber ?? e.gtfNumber;
@@ -60,7 +62,21 @@ export function metaArchivado(e: IngresoConGuia, nombreDoc: string): {
       `${nombreDoc} — ${g?.titular ?? e.providerName}. ` +
       `Ingreso al libro N° ${e.libroNro ?? "s/n"}${e.entryDate ? ` del ${e.entryDate.slice(0, 10)}` : ""}` +
       `${e.volumeM3 ? `, ${e.volumeM3} m³` : ""}${e.speciesCommonName ? ` de ${e.speciesCommonName}` : ""}.`,
+    carpetaRuta: carpetaGuiaPorFecha(e.entryDate),
   };
+}
+
+/**
+ * Carpeta anidada por año/mes del ingreso (Brandon 2026-08-26: "organizá
+ * también las GTF" — la misma carpeta plana que ya tenía trámites). Sin
+ * fecha (no debería pasar en un ingreso validado) cae a la raíz de
+ * `CARPETA_GUIAS`, para no perder el documento por un dato ausente.
+ */
+function carpetaGuiaPorFecha(entryDate?: string): string[] {
+  const fecha = (entryDate ?? "").slice(0, 10);
+  const [anio, mes] = fecha.split("-");
+  if (!anio || !mes) return [CARPETA_GUIAS];
+  return [CARPETA_GUIAS, anio, mes];
 }
 
 export interface HojaDeIngreso {

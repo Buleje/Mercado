@@ -12,7 +12,7 @@
 
 import { useCallback, useState, type RefObject } from "react";
 import { documentoAPdf, nombreArchivo } from "@/lib/forestal/ctp-documento-pdf";
-import { archivarEnDrive } from "@/lib/forestal/ctp-archivar-documento";
+import { archivarEnDrive, carpetaAnidada } from "@/lib/forestal/ctp-archivar-documento";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import type { DbDocument } from "@/lib/types/documents";
@@ -22,6 +22,9 @@ export interface MetaArchivado {
   etiquetas?: string[];
   descripcion?: string;
   carpeta?: string;
+  /** Ruta de carpeta anidada — gana sobre `carpeta` si se pasan las dos
+   *  (Brandon 2026-08-26: "organizá también las GTF"). */
+  carpetaRuta?: string[];
 }
 
 /** Lo que el visor le pasa al hook: la hoja y dónde está dibujada. */
@@ -95,12 +98,14 @@ export function useDocumentoAcciones({
     setDrive({ estado: "guardando" });
     try {
       const meta = onArchivar(doc);
+      const folderId = meta.carpetaRuta ? await carpetaAnidada(meta.carpetaRuta) : undefined;
       const r = await archivarEnDrive({
         archivo: await armarPdf(),
         nombreArchivo: nombreArchivo(doc.archivo ?? doc.nombre, "pdf"),
         etiquetas: meta.etiquetas,
         descripcion: meta.descripcion,
         carpeta: meta.carpeta,
+        folderId,
       });
       setDrive({ estado: "listo", detalle: r.carpeta, aviso: r.sinEtiquetas, documentId: r.documentId });
       return r.documentId;
