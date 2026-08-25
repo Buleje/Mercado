@@ -56,6 +56,32 @@ export function esRolValido(v: string): v is RolParte {
   return (ROLES_PARTE as readonly string[]).includes(v);
 }
 
+// ── Categoría ───────────────────────────────────────────────────────────────
+
+/**
+ * Qué tipo de entidad es un proveedor — decide qué pide "Según el papel" en
+ * el modal: una CCNN extrae con título habilitante/plan de manejo, un
+ * aserradero/CTP tiene su propio Código de CTP, una empresa genérica no
+ * necesita ninguno de los dos.
+ */
+export const CATEGORIAS_PARTE = ["empresa", "ccnn", "aserradero"] as const;
+export type CategoriaParte = (typeof CATEGORIAS_PARTE)[number];
+
+export const CATEGORIA_LABEL: Record<CategoriaParte, string> = {
+  empresa: "Empresa",
+  ccnn: "CCNN",
+  aserradero: "Aserradero / CTP",
+};
+
+export function esCategoriaValida(v: string): v is CategoriaParte {
+  return (CATEGORIAS_PARTE as readonly string[]).includes(v);
+}
+
+/** Sin categoría guardada (partes de antes de este campo) se trata como CCNN: es el comportamiento histórico, todos los campos visibles. */
+export function categoriaEfectiva(c: CategoriaParte | null | undefined): CategoriaParte {
+  return c ?? "ccnn";
+}
+
 // ── Documentos ──────────────────────────────────────────────────────────────
 
 export const DOC_TIPOS = ["RUC", "DNI", "CE", "PASAPORTE"] as const;
@@ -178,6 +204,9 @@ const texto = (max: number) => z.string().trim().max(max);
 export const parteInputSchema = z.object({
   roles: z.array(z.enum(ROLES_PARTE)).min(1, "Elegí al menos un rol").max(4),
   nombre: texto(200).min(2, "El nombre es obligatorio"),
+  categoria: z.enum(CATEGORIAS_PARTE).optional().nullable(),
+  /** Código de CTP de la parte, cuando ella misma es otro aserradero/CTP. */
+  codigoCtp: texto(60).optional(),
   docTipo: z.enum(DOC_TIPOS).optional(),
   docNumero: texto(20).optional(),
   direccion: texto(250).optional(),
@@ -232,6 +261,9 @@ export interface Parte {
   id: string;
   roles: RolParte[];
   nombre: string;
+  categoria: CategoriaParte | null;
+  /** Código de CTP de la parte, cuando ella misma es otro aserradero/CTP. */
+  codigoCtp: string | null;
   docTipo: DocTipo | null;
   docNumero: string | null;
   direccion: string | null;

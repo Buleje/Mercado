@@ -16,10 +16,12 @@
 import { useMemo, useState } from "react";
 import { Share2, Loader2, Pencil, Plus, Search, Trash2, Truck, Users } from "@buleje/design-system/icons";
 import {
+  CATEGORIA_LABEL,
   ROLES_PARTE,
   ROL_DESCRIPCION,
   ROL_LABEL,
   ROL_PLURAL,
+  categoriaEfectiva,
   direccionCompleta,
   faltantesParaGuia,
   filtrarPartes,
@@ -242,10 +244,15 @@ function ListaPartes({
                 {p.docNumero && (
                   <span className="font-mono text-xs text-[var(--text-tertiary)]">{p.docTipo} {p.docNumero}</span>
                 )}
+                {rol === "proveedor" && (
+                  <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
+                    {CATEGORIA_LABEL[categoriaEfectiva(p.categoria)]}
+                  </span>
+                )}
                 {!p.activo && <span className="text-xs font-bold text-[var(--text-tertiary)]">dado de baja</span>}
               </div>
               <span className="block truncate text-xs text-[var(--text-tertiary)]">
-                {[direccionCompleta(p) || null, p.tituloHabilitante, p.licencia ? `Lic. ${p.licencia}` : null]
+                {[direccionCompleta(p) || null, p.codigoCtp ? `CTP ${p.codigoCtp}` : null, p.tituloHabilitante, p.licencia ? `Lic. ${p.licencia}` : null]
                   .filter(Boolean)
                   .join(" · ") || "Sin dirección cargada"}
               </span>

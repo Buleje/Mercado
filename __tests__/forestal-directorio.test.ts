@@ -31,6 +31,8 @@ const parte = (over: Partial<Parte> = {}): Parte => ({
   id: "p1",
   roles: ["destinatario"],
   nombre: "Maderera del Oriente SAC",
+  categoria: null,
+  codigoCtp: null,
   docTipo: "RUC",
   docNumero: "20512345678",
   zona: null,

@@ -15,6 +15,7 @@ import {
   normalizarDocumento,
   normalizarNombre,
   normalizarPlaca,
+  type CategoriaParte,
   type DocTipo,
   type Parte,
   type ParteInput,
@@ -87,6 +88,8 @@ function aParte(r: ParteRow): Parte {
     id: r.id,
     roles: (r.roles as RolParte[]) ?? [],
     nombre: r.nombre,
+    categoria: (r.categoria as CategoriaParte | null) ?? null,
+    codigoCtp: r.codigoCtp,
     docTipo: (r.docTipo as DocTipo | null) ?? null,
     docNumero: r.docNumero,
     direccion: r.direccion,
@@ -204,6 +207,8 @@ export const ForestDirectorioDB = {
 
     const campos = {
       nombre: normalizarNombre(input.nombre),
+      categoria: input.categoria ?? null,
+      codigoCtp: vacioANull(input.codigoCtp),
       docTipo: docNumero ? docTipo : null,
       docNumero,
       direccion: vacioANull(input.direccion),

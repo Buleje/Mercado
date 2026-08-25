@@ -6291,6 +6291,14 @@ model ForestParty {
   registroMtc       String?
   /// Licencia de conducir — sólo aplica al conductor. Es lo que pide el control.
   licencia          String?
+  /// Qué tipo de entidad es (empresa · ccnn · aserradero) — decide qué campos
+  /// de "Según el papel" pide el modal. `null` se trata como "ccnn": las
+  /// partes cargadas antes de este campo siguen mostrando todos los datos que
+  /// ya tenían, nada queda oculto por default.
+  categoria         String?
+  /// Código de CTP de la parte, cuando ELLA es otro aserradero/CTP (no el
+  /// propio — el nuestro vive en `ForestCtpFicha.codigoRegistro`).
+  codigoCtp         String?
   /// Título habilitante con el que el proveedor extrae (permiso, concesión…).
   tituloHabilitante String?
   /// Resolución que aprueba el plan de manejo — casillero (8) de la GTF.

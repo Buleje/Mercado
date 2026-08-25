@@ -13,12 +13,16 @@ import { useState } from "react";
 import { Download, Loader2, Save, Users } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import {
+  CATEGORIAS_PARTE,
+  CATEGORIA_LABEL,
   DOC_TIPOS,
   ROLES_PARTE,
   ROL_DESCRIPCION,
   ROL_LABEL,
+  categoriaEfectiva,
   fuenteAutocompletado,
   motivoDocInvalido,
+  type CategoriaParte,
   type DocTipo,
   type Parte,
   type ParteInput,
@@ -32,11 +36,13 @@ import CtpParteAdjuntos from "./CtpParteAdjuntos";
 type Borrador = ParteInput & { id?: string };
 
 function aBorrador(p: Parte | null, rolInicial: RolParte): Borrador {
-  if (!p) return { roles: [rolInicial], nombre: "", docTipo: "RUC" };
+  if (!p) return { roles: [rolInicial], nombre: "", categoria: "ccnn", docTipo: "RUC" };
   return {
     id: p.id,
     roles: p.roles.length ? p.roles : [rolInicial],
     nombre: p.nombre,
+    categoria: categoriaEfectiva(p.categoria),
+    codigoCtp: p.codigoCtp ?? "",
     docTipo: p.docTipo ?? "RUC",
     docNumero: p.docNumero ?? "",
     direccion: p.direccion ?? "",
@@ -143,6 +149,7 @@ export default function CtpParteModal({
   const esTransportista = b.roles.includes("transportista");
   const esConductor = b.roles.includes("conductor");
   const esProveedor = b.roles.includes("proveedor");
+  const categoriaProveedor = categoriaEfectiva(b.categoria as CategoriaParte | null | undefined);
 
   /**
    * «Según el papel» sólo aparece para ciertos roles, y con los números fijos el
@@ -262,21 +269,56 @@ export default function CtpParteModal({
             )}
             {esProveedor && (
               <>
-                <Field label="Título habilitante" span={4} hint="Permiso, concesión o plantación con la que extrae">
-                  <input type="text" className={I} value={b.tituloHabilitante ?? ""} onChange={(e) => set({ tituloHabilitante: e.target.value })} />
-                </Field>
-                {/* Los tres casilleros que la guía pide del titular y que, sin
-                    esto, había que tipear en cada guía: (8) resolución, (9)
-                    plan de manejo y (2) autoridad. */}
-                <Field label="N° de resolución" span={4} hint="Casillero (8) de la GTF">
-                  <input type="text" className={I} value={b.resolucion ?? ""} onChange={(e) => set({ resolucion: e.target.value })} />
-                </Field>
-                <Field label="Plan de manejo" span={4} hint="Casillero (9) — ej. DEMA, PMFI">
-                  <input type="text" className={I} value={b.planManejo ?? ""} onChange={(e) => set({ planManejo: e.target.value })} />
-                </Field>
-                <Field label="ARFFS competente" span={6} hint="Casillero (2) — la autoridad regional del titular">
-                  <input type="text" className={I} value={b.arffs ?? ""} onChange={(e) => set({ arffs: e.target.value })} />
-                </Field>
+                <div className="sm:col-span-12">
+                  <span className="mb-1.5 block text-xs font-bold text-[var(--text-secondary)]">Categoría</span>
+                  <div className="flex flex-wrap gap-2">
+                    {CATEGORIAS_PARTE.map((cat) => {
+                      const on = categoriaProveedor === cat;
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() => set({ categoria: cat })}
+                          className={`inline-flex h-10 items-center rounded-xl border-2 px-3.5 text-sm font-bold transition-colors ${
+                            on
+                              ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
+                          }`}
+                        >
+                          {CATEGORIA_LABEL[cat]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                    Decide qué pide este bloque: una CCNN extrae con título habilitante, un aserradero tiene su propio Código de CTP.
+                  </p>
+                </div>
+                {categoriaProveedor === "ccnn" && (
+                  <>
+                    <Field label="Título habilitante" span={4} hint="Permiso, concesión o plantación con la que extrae">
+                      <input type="text" className={I} value={b.tituloHabilitante ?? ""} onChange={(e) => set({ tituloHabilitante: e.target.value })} />
+                    </Field>
+                    {/* Los tres casilleros que la guía pide del titular y que, sin
+                        esto, había que tipear en cada guía: (8) resolución, (9)
+                        plan de manejo y (2) autoridad. */}
+                    <Field label="N° de resolución" span={4} hint="Casillero (8) de la GTF">
+                      <input type="text" className={I} value={b.resolucion ?? ""} onChange={(e) => set({ resolucion: e.target.value })} />
+                    </Field>
+                    <Field label="Plan de manejo" span={4} hint="Casillero (9) — ej. DEMA, PMFI">
+                      <input type="text" className={I} value={b.planManejo ?? ""} onChange={(e) => set({ planManejo: e.target.value })} />
+                    </Field>
+                    <Field label="ARFFS competente" span={6} hint="Casillero (2) — la autoridad regional del titular">
+                      <input type="text" className={I} value={b.arffs ?? ""} onChange={(e) => set({ arffs: e.target.value })} />
+                    </Field>
+                  </>
+                )}
+                {categoriaProveedor === "aserradero" && (
+                  <Field label="Código de CTP" span={6} hint="El código que le dio ARFFS a SU planta, no la nuestra">
+                    <input type="text" className={`${I} font-mono`} value={b.codigoCtp ?? ""} onChange={(e) => set({ codigoCtp: e.target.value })} />
+                  </Field>
+                )}
                 <Field label="Representante legal" span={6} hint="El que firma; cuelga del (7)">
                   <input type="text" className={I} value={b.representante ?? ""} onChange={(e) => set({ representante: e.target.value })} />
                 </Field>

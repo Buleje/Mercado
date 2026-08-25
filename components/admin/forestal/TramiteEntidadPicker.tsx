@@ -46,6 +46,8 @@ export interface EntidadElegida {
   distrito: string;
   telefono: string;
   email: string;
+  /** Código de CTP de la parte, cuando ella misma es otro aserradero/CTP. */
+  codigoCtp: string;
 }
 
 const inputCls =
@@ -75,6 +77,7 @@ export default function TramiteEntidadPicker({ onElegir }: { onElegir: (e: Entid
       distrito: p.distrito ?? "",
       telefono: p.telefono ?? "",
       email: p.email ?? "",
+      codigoCtp: p.codigoCtp ?? "",
     });
     setAbierto(false);
     setQ("");

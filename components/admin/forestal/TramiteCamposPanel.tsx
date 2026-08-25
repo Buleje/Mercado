@@ -34,6 +34,7 @@ const CAMPO_A_EMISOR: Record<string, keyof EntidadElegida> = {
   entidadNombre: "nombre",
   entidadRuc: "docNumero",
   entidadRepresentante: "representante",
+  entidadCodigoCtp: "codigoCtp",
   firmante: "nombre",
   firmanteDni: "docNumero",
   membreteEmpresa: "nombre",
