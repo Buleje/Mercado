@@ -72,9 +72,13 @@ export default function TablaAdelantos({
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         {/* min-w-[1000px] es clase muerta acá (memoria min-width-utilities-muertas) —
             entre 640-999px (tablet, o desktop angosto con sidebar) la tabla se apretaba
-            en vez de forzar el scroll horizontal del wrapper. Bajo 640px no importa:
-            .admin-mobile-cards la convierte en cards (globals.css). */}
-        <DataTable className="w-full text-base" style={{ minWidth: 1000 }}>
+            en vez de forzar el scroll horizontal del wrapper. `.tabla-min-w-1000`
+            (globals.css) hace lo mismo que un `style={{minWidth:1000}}` pero SÓLO
+            desde 640px — un inline sin media query rompía `.admin-mobile-cards`
+            bajo 640px: el ancho nunca bajaba de 1000px y cada valor de la tarjeta
+            quedaba empujado fuera de la pantalla (Brandon 2026-08-26: "se ve
+            desbordada"). */}
+        <DataTable className="w-full text-base tabla-min-w-1000">
           <thead className="bg-[var(--surface-sunken)] text-sm text-[var(--text-tertiary)]">
             <tr>
               {th("codigo", "Código")}
@@ -101,8 +105,16 @@ export default function TablaAdelantos({
                   className="cursor-pointer transition-colors hover:bg-[var(--surface-sunken)]/50"
                 >
                   {/* El código, en su propia columna y ordenable: es como se
-                      identifica el adelanto por teléfono. */}
-                  <td className="px-3 py-2.5">
+                      identifica el adelanto por teléfono. `sm:whitespace-nowrap`
+                      SÓLO desde 640px — sin esto "ADL-2026-0022" partía en tres
+                      líneas y el algoritmo de columnas de la tabla le sacaba
+                      todo el ancho a esta celda para dárselo a otra (Brandon
+                      2026-08-26: "se ve desbordada"). Plano (sin `sm:`) rompía
+                      la tarjeta mobile: el código y "recibo XXX" son DOS spans
+                      hermanos que `.admin-mobile-cards` pone en fila, y forzar
+                      nowrap en los dos a la vez los hacía superponerse en una
+                      pantalla angosta. */}
+                  <td className="sm:whitespace-nowrap px-3 py-2.5">
                     <span className="block font-mono text-sm font-bold text-[var(--text-primary)]">
                       {a.codigoOperacion ?? "—"}
                     </span>
@@ -112,7 +124,7 @@ export default function TablaAdelantos({
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className="sm:whitespace-nowrap px-3 py-2.5">
                     <span className="block font-bold text-[var(--text-primary)]">{a.beneficiario?.nombre ?? "—"}</span>
                     {a.beneficiario?.telefono && (
                       <span className="block text-xs tabular-nums text-[var(--text-tertiary)]">{a.beneficiario.telefono}</span>
@@ -135,8 +147,10 @@ export default function TablaAdelantos({
                     )}
                   </td>
                   {/* El motivo con el que se dio la plata: antes había que abrir
-                      el adelanto para verlo, uno por uno. */}
-                  <td className="max-w-[220px] px-3 py-2.5">
+                      el adelanto para verlo, uno por uno. 170px (no 220) para
+                      no ser la columna más ancha de la tabla — el nombre completo
+                      sigue en el `title` al pasar el mouse. */}
+                  <td className="max-w-[170px] px-3 py-2.5">
                     <span className="block truncate text-sm text-[var(--text-secondary)]" title={a.notas ?? undefined}>
                       {a.notas || <span className="text-[var(--text-tertiary)]">—</span>}
                     </span>
