@@ -601,6 +601,19 @@ async function guardCodigoPlantaUnico(
   }
 }
 
+/**
+ * ¿Esta línea (corrida que consumió una troza, despacho que la sacó) sigue
+ * VIVA — activa y no anulada? Una troza que apunta a una línea muerta está
+ * libre en la práctica, aunque la columna todavía la referencie. Compartido
+ * entre T1 (`marcarTrozasConsumidas`) y T2 (`trozasNoDespachables`): las dos
+ * caras del mismo hecho —consumida vs. despachada— no pueden divergir en qué
+ * cuenta como "todavía tomada", o una troza queda contada dos veces en el
+ * libro (auditoría 2026-08-25).
+ */
+export function vivaLinea(l: { status: string; deletedAt: Date | null } | null): boolean {
+  return Boolean(l && l.status === "registrado" && !l.deletedAt);
+}
+
 export class WoodEntriesDB {
   /**
    * Crea un nuevo ingreso de madera al CTP.
@@ -1703,6 +1716,13 @@ export class WoodEntriesDB {
             // trozas que la pantalla ya mostraba libres — y esa asimetría es
             // peor que el bug original: el operador la tilda y no puede guardar.
             consumidaEn: { select: { status: true, deletedAt: true } },
+            // Espejo de T2 (auditoría 2026-08-25): sin esto, una troza ya
+            // despachada en rollo —o cuya guía de ingreso se anuló/rechazó
+            // después— podía volver a marcarse "consumida" acá y quedar
+            // contada dos veces en el libro oficial.
+            despachadaEnId: true,
+            despachadaEn: { select: { status: true, deletedAt: true } },
+            entry: { select: { status: true, deletedAt: true } },
             _count: { select: { retrozos: true } },
           },
         });
@@ -1711,25 +1731,20 @@ export class WoodEntriesDB {
             pedidas: ids.length, encontradas: candidatas.length,
           });
         }
-        // Las MISMAS reglas que `motivoBloqueo()` del cliente. Si divergieran, lo
-        // que la pantalla deja elegir la base lo rechazaría (o peor: al revés).
         /** Tomada por OTRA corrida que sigue viva. Si esa corrida se anuló o se
          *  borró, la pieza está libre aunque la columna todavía la apunte. */
         const tomadaPorOtra = (t: (typeof candidatas)[number]) =>
-          Boolean(
-            t.consumidaEnId &&
-              t.consumidaEnId !== ctpEntryId &&
-              t.consumidaEn &&
-              t.consumidaEn.status === "registrado" &&
-              !t.consumidaEn.deletedAt,
-          );
+          Boolean(t.consumidaEnId && t.consumidaEnId !== ctpEntryId && vivaLinea(t.consumidaEn));
         const malas = candidatas.filter(
           (t) =>
             tomadaPorOtra(t) ||
+            vivaLinea(t.despachadaEn) ||
             t.noRecepcionada ||
             t.descarte ||
             t._count.retrozos > 0 ||
-            !(Number(t.volumenM3 ?? 0) > 0),
+            !(Number(t.volumenM3 ?? 0) > 0) ||
+            Boolean(t.entry.deletedAt) ||
+            ["anulado", "rechazado"].includes(t.entry.status),
         );
         if (malas.length > 0) {
           throw new CtpInvariantError(
@@ -1788,13 +1803,10 @@ export class WoodEntriesDB {
       _count: { retrozos: number };
     },
   >(candidatas: readonly T[], despachoEntryId: string | null): T[] {
-    /** Tomada por una línea que sigue VIVA (una corrida u otro despacho). */
-    const viva = (l: { status: string; deletedAt: Date | null } | null) =>
-      Boolean(l && l.status === "registrado" && !l.deletedAt);
     return candidatas.filter(
       (t) =>
-        viva(t.consumidaEn) ||
-        (t.despachadaEnId !== despachoEntryId && viva(t.despachadaEn)) ||
+        vivaLinea(t.consumidaEn) ||
+        (t.despachadaEnId !== despachoEntryId && vivaLinea(t.despachadaEn)) ||
         t.noRecepcionada ||
         t.descarte ||
         t._count.retrozos > 0 ||

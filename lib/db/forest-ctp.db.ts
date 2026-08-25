@@ -629,37 +629,6 @@ export class ForestCtpDB {
     user: string,
   ) {
     if (!tenantId) throw new Error("tenantId is required");
-    const actual = await prisma.forestCtpEntry.findFirst({
-      where: { id, tenantId, deletedAt: null },
-      select: {
-        id: true, section: true, status: true, lineNo: true, entryDate: true,
-        quantity: true, unit: true, volumeInputM3: true, productType: true,
-        presentacion: true, observations: true,
-        paquetes: { select: { codigo: true } },
-      },
-    });
-    if (!actual) throw new CtpInvariantError("Esa corrida no existe.", "LINEA_NO_EDITABLE");
-    if (actual.section !== "produccion") {
-      throw new CtpInvariantError("Sólo una corrida de producción declara producción.", "SECCION_INVALIDA");
-    }
-    if (actual.status !== "registrado") {
-      throw new CtpInvariantError(`Esa corrida está ${actual.status}.`, "LINEA_NO_EDITABLE");
-    }
-    if (actual.quantity == null) {
-      throw new CtpInvariantError(
-        `La corrida #${actual.lineNo} todavía no declaró producción: declarala primero.`,
-        "LINEA_NO_EDITABLE",
-      );
-    }
-    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, actual.entryDate);
-    if (cerrado) {
-      throw new CtpInvariantError(
-        `El período ${cerrado.label} está cerrado: no se puede ampliar una corrida de un mes cerrado.`,
-        "PERIODO_CERRADO",
-        { periodKey: cerrado.periodKey },
-      );
-    }
-
     const nuevos = campos.paquetes ?? [];
     if (nuevos.length === 0) {
       throw new CtpInvariantError("No hay paquetes que agregar.", "CANTIDAD_INVALIDA");
@@ -669,71 +638,116 @@ export class ForestCtpDB {
       throw new CtpInvariantError("Los paquetes que se agregan no suman volumen.", "CANTIDAD_INVALIDA");
     }
 
-    /* El código de paquete es lo que se busca en la pila y lo que se cita en la
-       guía de salida: no puede repetirse ni contra los que ya están. */
-    const yaEstan = new Set(actual.paquetes.map((p) => p.codigo.trim().toLowerCase()));
-    const choque = nuevos.find((p) => yaEstan.has(p.codigo.trim().toLowerCase()));
-    if (choque) {
-      throw new CtpInvariantError(
-        `El código de paquete «${choque.codigo}» ya está en esta corrida.`,
-        "PAQUETE_DUPLICADO",
-      );
-    }
-    /* Y contra el resto de la planta, que es el alcance real del índice. */
-    await ForestCtpDB.assertCodigosLibres(tenantId, nuevos.map((p) => p.codigo));
-    const repetido = nuevos.find((p, i) => nuevos.findIndex((q) => q.codigo.trim() === p.codigo.trim()) !== i);
-    if (repetido) {
-      throw new CtpInvariantError(
-        `El código de paquete «${repetido.codigo}» viene dos veces.`,
-        "PAQUETE_DUPLICADO",
-      );
-    }
-
-    const total = r4(Number(actual.quantity) + suma);
-
-    /* El tope, sobre el TOTAL: dos tandas del 40 % son 80 % entre las dos, y el
-       techo existe justo para que eso no pase (ADR-358). */
-    const entrada = Number(actual.volumeInputM3 ?? 0);
-    if (entrada > 0 && (actual.unit ?? "m3") === "m3") {
-      const tope = topeDeclarableM3(entrada);
-      if (total > tope + 0.001) {
+    // Lock + lectura + escritura de `quantity` en UNA transacción (auditoría
+    // 2026-08-25): dos operadores ampliando la MISMA corrida a la vez leían
+    // el mismo `quantity` viejo y el que escribía último pisaba al otro —
+    // los paquetes de los dos quedaban creados, pero el total declarado sólo
+    // reflejaba uno. Mismo patrón que `setConsumos`/`setOrigenes`.
+    const entry = await prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<
+        {
+          id: string; section: string; status: string; lineNo: number; entryDate: Date;
+          quantity: Prisma.Decimal | null; unit: string | null; volumeInputM3: Prisma.Decimal | null;
+          productType: string | null; presentacion: string | null;
+        }[]
+      >`
+        SELECT "id", "section", "status", "lineNo", "entryDate", "quantity", "unit",
+               "volumeInputM3", "productType", "presentacion"
+        FROM "ForestCtpEntry"
+        WHERE "id" = ${id} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        FOR UPDATE
+      `;
+      if (locked.length === 0) throw new CtpInvariantError("Esa corrida no existe.", "LINEA_NO_EDITABLE");
+      const actual = locked[0];
+      if (actual.section !== "produccion") {
+        throw new CtpInvariantError("Sólo una corrida de producción declara producción.", "SECCION_INVALIDA");
+      }
+      if (actual.status !== "registrado") {
+        throw new CtpInvariantError(`Esa corrida está ${actual.status}.`, "LINEA_NO_EDITABLE");
+      }
+      if (actual.quantity == null) {
         throw new CtpInvariantError(
-          `Con ${entrada.toFixed(4)} m³ de materia prima el tope (${RENDIMIENTO_TOPE_PCT} %) permite ` +
-            `${tope.toFixed(4)} m³ en total. Esta corrida ya declaró ${r4(Number(actual.quantity))} y estás ` +
-            `agregando ${suma}: quedan ${r4(Math.max(0, tope - Number(actual.quantity)))} m³.`,
-          "RENDIMIENTO_SOBRE_TOPE",
+          `La corrida #${actual.lineNo} todavía no declaró producción: declarala primero.`,
+          "LINEA_NO_EDITABLE",
         );
       }
-    }
+      const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, actual.entryDate);
+      if (cerrado) {
+        throw new CtpInvariantError(
+          `El período ${cerrado.label} está cerrado: no se puede ampliar una corrida de un mes cerrado.`,
+          "PERIODO_CERRADO",
+          { periodKey: cerrado.periodKey },
+        );
+      }
 
-    const rendimiento =
-      entrada > 0 && (actual.unit ?? "m3") === "m3"
-        ? Math.round((total / entrada) * 10000) / 100
-        : null;
+      const paquetesActuales = await tx.forestCtpPaquete.findMany({ where: { ctpEntryId: id, tenantId }, select: { codigo: true } });
 
-    const entry = await prisma.forestCtpEntry.update({
-      where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
-      data: {
-        quantity: total,
-        rendimientoPct: rendimiento,
-        ...(campos.observations?.trim() ? { observations: campos.observations.trim() } : {}),
-        paquetes: {
-          create: nuevos.map((p) => ({
-            tenantId,
-            codigo: p.codigo.trim(),
-            productType: p.productType?.trim() || actual.productType || null,
-            presentacion: p.presentacion?.trim() || actual.presentacion || null,
-            cantidad: Math.max(0, Math.round(p.cantidad)),
-            unit: actual.unit ?? "m3",
-            volumenM3: p.volumenM3,
-            espesorCm: p.espesorCm ?? null,
-            anchoCm: p.anchoCm ?? null,
-            largoM: p.largoM ?? null,
-            observations: p.observations?.trim() || null,
-            createdBy: user,
-          })),
+      /* El código de paquete es lo que se busca en la pila y lo que se cita en la
+         guía de salida: no puede repetirse ni contra los que ya están. */
+      const yaEstan = new Set(paquetesActuales.map((p) => p.codigo.trim().toLowerCase()));
+      const choque = nuevos.find((p) => yaEstan.has(p.codigo.trim().toLowerCase()));
+      if (choque) {
+        throw new CtpInvariantError(
+          `El código de paquete «${choque.codigo}» ya está en esta corrida.`,
+          "PAQUETE_DUPLICADO",
+        );
+      }
+      /* Y contra el resto de la planta, que es el alcance real del índice. */
+      await ForestCtpDB.assertCodigosLibres(tenantId, nuevos.map((p) => p.codigo));
+      const repetido = nuevos.find((p, i) => nuevos.findIndex((q) => q.codigo.trim() === p.codigo.trim()) !== i);
+      if (repetido) {
+        throw new CtpInvariantError(
+          `El código de paquete «${repetido.codigo}» viene dos veces.`,
+          "PAQUETE_DUPLICADO",
+        );
+      }
+
+      const total = r4(Number(actual.quantity) + suma);
+
+      /* El tope, sobre el TOTAL: dos tandas del 40 % son 80 % entre las dos, y el
+         techo existe justo para que eso no pase (ADR-358). */
+      const entrada = Number(actual.volumeInputM3 ?? 0);
+      if (entrada > 0 && (actual.unit ?? "m3") === "m3") {
+        const tope = topeDeclarableM3(entrada);
+        if (total > tope + 0.001) {
+          throw new CtpInvariantError(
+            `Con ${entrada.toFixed(4)} m³ de materia prima el tope (${RENDIMIENTO_TOPE_PCT} %) permite ` +
+              `${tope.toFixed(4)} m³ en total. Esta corrida ya declaró ${r4(Number(actual.quantity))} y estás ` +
+              `agregando ${suma}: quedan ${r4(Math.max(0, tope - Number(actual.quantity)))} m³.`,
+            "RENDIMIENTO_SOBRE_TOPE",
+          );
+        }
+      }
+
+      const rendimiento =
+        entrada > 0 && (actual.unit ?? "m3") === "m3"
+          ? Math.round((total / entrada) * 10000) / 100
+          : null;
+
+      return tx.forestCtpEntry.update({
+        where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
+        data: {
+          quantity: total,
+          rendimientoPct: rendimiento,
+          ...(campos.observations?.trim() ? { observations: campos.observations.trim() } : {}),
+          paquetes: {
+            create: nuevos.map((p) => ({
+              tenantId,
+              codigo: p.codigo.trim(),
+              productType: p.productType?.trim() || actual.productType || null,
+              presentacion: p.presentacion?.trim() || actual.presentacion || null,
+              cantidad: Math.max(0, Math.round(p.cantidad)),
+              unit: actual.unit ?? "m3",
+              volumenM3: p.volumenM3,
+              espesorCm: p.espesorCm ?? null,
+              anchoCm: p.anchoCm ?? null,
+              largoM: p.largoM ?? null,
+              observations: p.observations?.trim() || null,
+              createdBy: user,
+            })),
+          },
         },
-      },
+      });
     });
     auditCtp({
       tenantId,
@@ -741,8 +755,8 @@ export class ForestCtpDB {
       entity: "ForestCtpEntry",
       entityId: id,
       detail:
-        `Amplió la corrida #${actual.lineNo}: +${nuevos.length} paquete(s) · +${suma} ` +
-        `(total ${total}${rendimiento != null ? ` · rendimiento ${rendimiento}%` : ""})`,
+        `Amplió la corrida #${entry.lineNo}: +${nuevos.length} paquete(s) · +${suma} ` +
+        `(total ${Number(entry.quantity)}${entry.rendimientoPct != null ? ` · rendimiento ${Number(entry.rendimientoPct)}%` : ""})`,
       user,
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* best-effort */ }
