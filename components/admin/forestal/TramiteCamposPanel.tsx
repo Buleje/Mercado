@@ -20,9 +20,47 @@ import type { DatosTramite, FormatoTramite } from "@/lib/forestal/tramites-catal
 import type { GtfDuplicada } from "@/lib/forestal/tramites-relacion-guias";
 import type { LogoTramite } from "@/lib/forestal/tramites-logo";
 import { Field, I } from "./ctp-shared";
-import TramiteEntidadPicker from "./TramiteEntidadPicker";
+import TramiteEntidadPicker, { type EntidadElegida } from "./TramiteEntidadPicker";
 import TramiteHistorialRelaciones from "./TramiteHistorialRelaciones";
 import TramiteRelacionGuias from "./TramiteRelacionGuias";
+
+/**
+ * Qué campo de un `FormatoTramite` llena cada dato de un emisor elegido, por
+ * el id de campo tal como aparece en `tramites-catalogo.ts`. Single source
+ * (2026-08-25): un formato nuevo que use alguno de estos ids recibe el picker
+ * solo con agregar el campo — no hay que tocar este componente.
+ */
+const CAMPO_A_EMISOR: Record<string, keyof EntidadElegida> = {
+  entidadNombre: "nombre",
+  entidadRuc: "docNumero",
+  entidadRepresentante: "representante",
+  firmante: "nombre",
+  firmanteDni: "docNumero",
+  membreteEmpresa: "nombre",
+};
+
+/** Los `datos` que hay que pisar en el formulario para aplicar el emisor
+ *  elegido a ESTOS campos — sólo los que el grupo realmente tiene, y sólo
+ *  cuando el emisor trae ese dato (RUC en un campo de RUC, DNI en uno de DNI). */
+function datosDeEmisor(campos: FormatoTramite["campos"], e: EntidadElegida): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const c of campos) {
+    if (c.id === "lugar") {
+      if (e.provincia || e.region) out.lugar = e.provincia || e.region;
+      continue;
+    }
+    if (c.id === "entidadRuc" || c.id === "firmanteDni") {
+      // El campo de RUC sólo se llena con un RUC, y el de DNI sólo con un DNI
+      // — cruzarlos imprimiría un documento que no es el que dice la etiqueta.
+      const tipoQueVale = c.id === "entidadRuc" ? "RUC" : "DNI";
+      if (e.docTipo === tipoQueVale && e.docNumero) out[c.id] = e.docNumero;
+      continue;
+    }
+    const rol = CAMPO_A_EMISOR[c.id];
+    if (rol && e[rol]) out[c.id] = String(e[rol]);
+  }
+  return out;
+}
 
 /**
  * Logo del membrete (ADR-364 ronda 6): botón-preview grande, igual patrón que
@@ -186,7 +224,7 @@ export default function TramiteCamposPanel({
     <div className="space-y-4">
       {gruposVisibles.map((g, i) => {
         const campos = formato.campos.filter((c) => (c.grupo ?? "datos") === g.id);
-        const tieneEntidad = campos.some((c) => c.id === "entidadNombre");
+        const camposDeEmisor = campos.filter((c) => c.id in CAMPO_A_EMISOR || c.id === "lugar");
         return (
           <section key={g.id} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
             <SeccionHeader
@@ -194,11 +232,9 @@ export default function TramiteCamposPanel({
               titulo={g.label}
               hint={g.hint}
               aside={
-                tieneEntidad ? (
+                camposDeEmisor.length > 0 ? (
                   <TramiteEntidadPicker
-                    onElegir={(e) =>
-                      setDatos((p) => ({ ...p, entidadNombre: e.nombre, entidadRuc: e.ruc, entidadRepresentante: e.representante }))
-                    }
+                    onElegir={(e) => setDatos((p) => ({ ...p, ...datosDeEmisor(camposDeEmisor, e) }))}
                   />
                 ) : undefined
               }
