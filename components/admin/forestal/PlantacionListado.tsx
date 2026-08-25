@@ -156,7 +156,7 @@ export default function PlantacionListado({
       ) : visibles.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
           <TreePine className="h-10 w-10 text-[var(--text-tertiary)] opacity-40" aria-hidden="true" />
-          <p className="font-display text-xl text-[var(--text-primary)]">
+          <p className="text-xl font-bold text-[var(--text-primary)]">
             {filtro ? "Ningún registro en ese estado" : "Todavía no registraste ninguna plantación"}
           </p>
           <p className="mx-auto max-w-sm text-sm text-[var(--text-tertiary)]">

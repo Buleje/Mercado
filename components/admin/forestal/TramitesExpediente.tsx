@@ -170,7 +170,7 @@ export default function TramitesExpediente({
       {visibles.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-12 text-center">
           <Inbox className="mx-auto mb-3 h-10 w-10 text-[var(--text-tertiary)] opacity-40" aria-hidden="true" />
-          <p className="font-display text-xl text-[var(--text-primary)]">
+          <p className="text-xl font-bold text-[var(--text-primary)]">
             {busqueda.trim() ? "Ningún trámite coincide con la búsqueda" : filtro ? "Ningún trámite en ese estado" : "Todavía no hay trámites guardados"}
           </p>
           <p className="mx-auto mt-1 max-w-md text-sm text-[var(--text-tertiary)]">
@@ -235,7 +235,7 @@ export default function TramitesExpediente({
                       </span>
                     )}
                   </div>
-                  <p className="font-display mt-1.5 text-lg leading-snug text-[var(--text-primary)]">{t.formatoNombre}</p>
+                  <p className="mt-1.5 text-lg font-bold leading-snug text-[var(--text-primary)]">{t.formatoNombre}</p>
                   {t.asunto && <p className="text-sm text-[var(--text-secondary)]">{t.asunto}</p>}
                   <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
                     {t.expedienteAutoridad ? `Expediente ${t.expedienteAutoridad} · ` : ""}

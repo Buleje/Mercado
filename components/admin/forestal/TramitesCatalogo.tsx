@@ -73,11 +73,21 @@ const iconoDe = (id: string): LucideIcon => ICONOS[ICONO_TRAMITE[id] ?? ""] ?? F
 
 /** Caja del ícono por tono de autoridad — el color dice a quién va sin leer. */
 const TONO_ICONO: Record<string, string> = {
-  accent: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
-  info: "bg-[var(--data-info-50)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]",
+  accent: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-inset ring-primary/25",
+  info: "bg-[var(--data-info-50)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)] ring-1 ring-inset ring-[var(--data-info-500)]/25",
   warning:
-    "bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]",
-  muted: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+    "bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)] ring-1 ring-inset ring-[var(--data-warning-500)]/25",
+  muted: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] ring-1 ring-inset ring-[var(--rule-base)]",
+};
+
+/** Franja superior por tono — la misma idea del ícono, ahora en el borde de
+ *  la card: se lee el grupo antes que el título, incluso en la vista mobile
+ *  donde las cards se apilan una debajo de otra. */
+const TONO_FRANJA: Record<string, string> = {
+  accent: "before:bg-[var(--accent)]",
+  info: "before:bg-[var(--data-info-500)]",
+  warning: "before:bg-[var(--data-warning-500)]",
+  muted: "before:bg-[var(--rule-strong)]",
 };
 
 /** El que se pide una y otra vez: se lleva la pieza héroe. */
@@ -227,7 +237,7 @@ function Hero({
           <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
             El más pedido · {AUTORIDADES[formato.autoridad].corto}
           </span>
-          <SectionTitle as="h2" className="font-display mt-3 text-3xl leading-tight">{formato.nombre}</SectionTitle>
+          <SectionTitle as="h2" className="mt-3 text-3xl font-bold leading-tight tracking-tight">{formato.nombre}</SectionTitle>
           <p className="mt-2 text-base text-white/85">{formato.proposito}</p>
           <p className="mt-4 inline-flex items-center gap-2 text-sm font-bold">
             Llenar y presentar
@@ -267,7 +277,7 @@ function RegistroPlantacionCard({ onClick }: { onClick: () => void }) {
         <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-success-500)]/15 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
           Registro Nacional de Plantaciones Forestales
         </span>
-        <span className="font-display mt-1.5 block text-2xl leading-snug text-[var(--text-primary)]">
+        <span className="mt-1.5 block text-2xl font-bold leading-snug tracking-tight text-[var(--text-primary)]">
           Registro de Plantación Forestal
         </span>
         <span className="mt-1 block text-sm text-[var(--text-secondary)]">
@@ -300,16 +310,16 @@ function Card({
     </>
   );
   const base =
-    "group w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-left transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)]";
+    `group relative w-full overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-left transition-all before:absolute before:inset-x-0 before:top-0 before:h-1 before:content-[''] hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)] ${TONO_FRANJA[tono]}`;
 
   if (ancha) {
     return (
       <button type="button" onClick={() => onElegir(formato.id)} className={`${base} flex items-center gap-4`}>
-        <span className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${TONO_ICONO[tono]}`}>
+        <span className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 ${TONO_ICONO[tono]}`}>
           <Icono className="h-6 w-6" aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="font-display block text-xl leading-snug text-[var(--text-primary)]">{formato.nombre}</span>
+          <span className="block text-xl font-bold leading-snug tracking-tight text-[var(--text-primary)]">{formato.nombre}</span>
           <span className="block text-sm text-[var(--text-secondary)]">{formato.proposito}</span>
         </span>
         <span className="hidden shrink-0 items-center gap-3 text-xs text-[var(--text-tertiary)] sm:flex">
@@ -322,10 +332,10 @@ function Card({
 
   return (
     <button type="button" onClick={() => onElegir(formato.id)} className={`${base} flex h-full flex-col items-start gap-3`}>
-      <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${TONO_ICONO[tono]}`}>
+      <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 ${TONO_ICONO[tono]}`}>
         <Icono className="h-5 w-5" aria-hidden="true" />
       </span>
-      <span className="font-display text-xl leading-snug text-[var(--text-primary)]">{formato.nombre}</span>
+      <span className="text-xl font-bold leading-snug tracking-tight text-[var(--text-primary)]">{formato.nombre}</span>
       <span className="text-sm text-[var(--text-secondary)]">{formato.proposito}</span>
       <span className="mt-auto flex w-full items-center justify-between pt-2 text-xs text-[var(--text-tertiary)]">
         <span>{pie}</span>
