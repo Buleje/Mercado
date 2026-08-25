@@ -106,6 +106,50 @@ export function parsearFilasTrozas(matriz: Celda[][]): ResultadoImportTrozas {
   return { trozas, errores };
 }
 
+/** Una troza tal como la devuelve el OCR de la foto (sin cubicar todavía). */
+export interface TrozaOcrRaw {
+  d1: number;
+  d2: number;
+  largo: number;
+  especie: string;
+  /** La IA marcó ese número como ambiguo/dudoso al leer la letra manuscrita. */
+  incierto: boolean;
+}
+
+/**
+ * Convierte lo que devolvió la foto (OCR con IA) al MISMO formato que el
+ * import de Excel: se recubica acá por Smalian (nunca se confía en un m³
+ * que "diga" la IA) y una fila `incierto` entra igual que una `sospechosa`
+ * por medida rara — el operador la ve resaltada y decide, la IA nunca
+ * corrige sola. Mismo criterio de `parsearFilasTrozas`, misma vista previa.
+ */
+export function interpretarOcrTrozas(trozas: TrozaOcrRaw[]): ResultadoImportTrozas {
+  const errores: { fila: number; motivo: string }[] = [];
+  const out: TrozaImportada[] = [];
+
+  trozas.forEach((t, i) => {
+    const filaNro = i + 1;
+    if (!(t.d1 > 0 && t.largo > 0)) {
+      errores.push({ fila: filaNro, motivo: "No se pudo leer el diámetro o el largo de esta fila en la foto." });
+      return;
+    }
+    const d2 = t.d2 > 0 ? t.d2 : t.d1;
+    const especie = normalizarEspecie(t.especie);
+    out.push({
+      id: `ocr-t-${Date.now()}-${contador++}`,
+      d1: t.d1,
+      d2,
+      largo: t.largo,
+      especie,
+      m3: cubicarTroza(t.d1, t.largo, d2),
+      filaOrigen: filaNro,
+      sospechosa: t.incierto || t.largo > LARGO_MAX_M || t.d1 < DIAMETRO_MIN_CM || d2 < DIAMETRO_MIN_CM,
+    });
+  });
+
+  return { trozas: out, errores };
+}
+
 /** Encabezado + filas de ejemplo para la plantilla descargable. */
 export const PLANTILLA_TROZAS: { headers: string[]; ejemplo: (string | number)[][] } = {
   headers: ["Especie", "D1 (cm)", "D2 (cm)", "Largo (m)"],

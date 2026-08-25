@@ -188,6 +188,59 @@ export function parsearFilasImportadas(matriz: Celda[][]): ResultadoImport {
   return { piezas, errores, columnas };
 }
 
+/** Una pieza tal como la devuelve el OCR de la foto (sin cubicar todavía). */
+export interface PiezaOcrRaw {
+  cantidad: number;
+  /** Pulgadas. */
+  espesor: number;
+  /** Pulgadas. */
+  ancho: number;
+  /** Pies. */
+  largo: number;
+  especie: string;
+  /** La IA marcó ese número como ambiguo/dudoso al leer la letra manuscrita. */
+  incierto: boolean;
+}
+
+let contadorOcr = 0;
+
+/**
+ * Convierte lo que devolvió la foto (OCR con IA) al MISMO formato que el
+ * import de Excel: se recubica acá (nunca se confía en un pie tablar que
+ * "diga" la IA) y una fila `incierto` entra igual que una `sospechosa` por
+ * medida rara — el operador la ve resaltada y decide, la IA nunca corrige
+ * sola. El modelo ya devuelve espesor/ancho en pulgadas y largo en pies
+ * (se lo pide el prompt), así que acá se trata igual que una fila de Excel
+ * en unidades comerciales.
+ */
+export function interpretarOcrPiezas(piezas: PiezaOcrRaw[]): ResultadoImport {
+  const errores: { fila: number; motivo: string }[] = [];
+  const out: PiezaImportada[] = [];
+
+  piezas.forEach((p, i) => {
+    const filaNro = i + 1;
+    if (!(p.espesor > 0 && p.ancho > 0 && p.largo > 0)) {
+      errores.push({ fila: filaNro, motivo: "No se pudo leer el espesor, ancho o largo de esta fila en la foto." });
+      return;
+    }
+    const cantidad = p.cantidad > 0 ? Math.round(p.cantidad) : 1;
+    const especie = normalizarEspecie(p.especie);
+    const base = { cantidad, espesor: p.espesor, ancho: p.ancho, largo: p.largo, uEspesor: "pulg" as Unidad, uAncho: "pulg" as Unidad, uLargo: "pies" as Unidad };
+    const { pieTablar, m3 } = cubicarPieza(base);
+    out.push({
+      id: `ocr-p-${Date.now()}-${contadorOcr++}`,
+      ...base,
+      especie,
+      pieTablar,
+      m3,
+      filaOrigen: filaNro,
+      sospechosa: p.incierto || medidaSospechosa(p.espesor, p.ancho, p.largo),
+    });
+  });
+
+  return { piezas: out, errores, columnas: { cantidad: null, espesor: null, ancho: null, largo: null, especie: null, uEspesor: null, uAncho: null, uLargo: null } };
+}
+
 /** Encabezado + una fila de ejemplo para la plantilla descargable. */
 export const PLANTILLA_IMPORT: { headers: string[]; ejemplo: (string | number)[][] } = {
   headers: ["Especie", "Cantidad", "Espesor", "Ancho", "Largo"],

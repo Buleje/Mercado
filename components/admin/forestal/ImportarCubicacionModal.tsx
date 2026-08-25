@@ -1,23 +1,33 @@
 "use client";
 
 /**
- * ImportarCubicacionModal — trae un Excel/CSV de piezas y lo suma al lote.
- *
- * El operario elige su archivo (columnas Especie · Espesor · Ancho · Largo, en
- * cualquier orden), ve un PREVIEW de lo que se va a agregar —cuántas piezas,
- * el pie tablar total, y las filas que no se pudieron leer con su motivo— y
+ * ImportarCubicacionModal — trae piezas desde un Excel/CSV o desde una FOTO
+ * de la planilla escrita a mano, y las suma al lote. Los dos caminos
+ * terminan en el MISMO preview: el operario ve qué se va a agregar —y en el
+ * caso de la foto, la foto misma al lado para cotejar letra por letra— y
  * recién ahí confirma. Nada se agrega a ciegas.
  */
 import { useCallback, useRef, useState } from "react";
 import { DataTable } from "@buleje/design-system";
-import { AlertTriangle, Check, Download, FileSpreadsheet, Loader2, Upload } from "@buleje/design-system/icons";
+import { AlertTriangle, Camera, Check, Download, FileSpreadsheet, Loader2, Sparkles, Upload } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
-import { parsearFilasImportadas, PLANTILLA_IMPORT, type PiezaImportada, type ResultadoImport } from "@/lib/forestal/cubicacion-import";
+import { parsearFilasImportadas, interpretarOcrPiezas, PLANTILLA_IMPORT, type PiezaImportada, type ResultadoImport } from "@/lib/forestal/cubicacion-import";
 import { leerArchivoAFilas } from "@/lib/forestal/cubicacion-import-file";
 import { descargarPlantillaImport } from "@/lib/forestal/cubicador-export";
 
 const fmtPt = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function leerComoDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result));
+    fr.onerror = () => reject(new Error("No se pudo leer la imagen"));
+    fr.readAsDataURL(file);
+  });
+}
 
 export default function ImportarCubicacionModal({
   onAgregar, onCerrar, filasActuales = 0,
@@ -28,10 +38,13 @@ export default function ImportarCubicacionModal({
   /** Filas que YA tiene el lote — se muestra que la importación se suma a ellas. */
   filasActuales?: number;
 }) {
+  const [modo, setModo] = useState<"excel" | "foto">("excel");
   const [resultado, setResultado] = useState<ResultadoImport | null>(null);
   const [nombreArchivo, setNombreArchivo] = useState("");
   const [cargando, setCargando] = useState(false);
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
+  const [advertenciaIA, setAdvertenciaIA] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const procesar = useCallback(async (file: File) => {
@@ -44,6 +57,32 @@ export default function ImportarCubicacionModal({
       setResultado(parsearFilasImportadas(filas));
     } catch (e) {
       setErrorGeneral(`No se pudo leer el archivo: ${e instanceof Error ? e.message : String(e)}. Probá con un .xlsx o .csv.`);
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
+  const procesarFoto = useCallback(async (file: File) => {
+    setCargando(true);
+    setErrorGeneral(null);
+    setResultado(null);
+    setAdvertenciaIA(null);
+    setNombreArchivo(file.name);
+    try {
+      const dataUrl = await leerComoDataUrl(file);
+      setFotoUrl(dataUrl);
+      const r = await fetch("/api/admin/forestal/cubicacion-ocr/aserrada", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({ image: dataUrl }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
+      setResultado(interpretarOcrPiezas(j.piezas ?? []));
+      if (j.advertencia) setAdvertenciaIA(String(j.advertencia));
+    } catch (e) {
+      setErrorGeneral(e instanceof Error ? e.message : String(e));
     } finally {
       setCargando(false);
     }
@@ -72,9 +111,9 @@ export default function ImportarCubicacionModal({
       open
       onClose={onCerrar}
       variant="wide"
-      title="Importar cubicación desde Excel"
-      description="Especie · Cantidad · Espesor · Ancho · Largo"
-      icon={FileSpreadsheet}
+      title={modo === "excel" ? "Importar cubicación desde Excel" : "Escanear planilla de cubicación"}
+      description={modo === "excel" ? "Especie · Cantidad · Espesor · Ancho · Largo" : "Foto de la planilla llenada a mano, leída con IA"}
+      icon={modo === "excel" ? FileSpreadsheet : Camera}
       // El pie vivía `sticky` DENTRO del scroll con un `-mx-5` calzado a mano al
       // padding del cuerpo: cualquier cambio de padding lo descuadraba. Con la
       // prop `footer` de AdminModal queda fuera del scroll y sin compensaciones.
@@ -100,10 +139,26 @@ export default function ImportarCubicacionModal({
       }
     >
       <div className={MODAL_BODY}>
+        <SegmentedControl
+          value={modo}
+          onChange={(v) => { setModo(v); setResultado(null); setErrorGeneral(null); setAdvertenciaIA(null); setFotoUrl(null); setNombreArchivo(""); }}
+          label="Origen de las piezas"
+          className="mb-3"
+          options={[
+            { value: "excel", label: "Desde Excel", icon: <FileSpreadsheet className="h-4 w-4" /> },
+            { value: "foto", label: "Desde foto", icon: <Camera className="h-4 w-4" /> },
+          ]}
+        />
 
-        <p className="mb-3 text-sm text-[var(--text-secondary)]">
-          El archivo tiene que tener las columnas <b>Especie · Cantidad · Espesor · Ancho · Largo</b> (Cantidad opcional; por defecto 1). El espesor y el ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad. La plantilla trae, al lado, un <b>resumen en vivo</b> (piezas · pie tablar · m³ · especies distintas) que se calcula solo mientras vas llenando — para ver qué se va a importar sin salir del Excel.
-        </p>
+        {modo === "excel" ? (
+          <p className="mb-3 text-sm text-[var(--text-secondary)]">
+            El archivo tiene que tener las columnas <b>Especie · Cantidad · Espesor · Ancho · Largo</b> (Cantidad opcional; por defecto 1). El espesor y el ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad. La plantilla trae, al lado, un <b>resumen en vivo</b> (piezas · pie tablar · m³ · especies distintas) que se calcula solo mientras vas llenando — para ver qué se va a importar sin salir del Excel.
+          </p>
+        ) : (
+          <p className="mb-3 text-sm text-[var(--text-secondary)]">
+            Sacale una foto (o subí una) a la planilla de cubicación escrita a mano — cantidad, espesor, ancho y largo por fila. La IA lee la letra y arma la lista; <b>vos la revisás</b> contra la foto antes de sumarla al lote. Las filas donde la IA no estuvo segura salen resaltadas.
+          </p>
+        )}
 
         {filasActuales > 0 && (
           <p className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--accent)]/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-[var(--accent)]">
@@ -113,6 +168,7 @@ export default function ImportarCubicacionModal({
         )}
 
         {/* Elegir archivo */}
+        {modo === "excel" ? (
         <div className="flex flex-wrap items-center gap-2">
           <input
             ref={inputRef}
@@ -129,14 +185,47 @@ export default function ImportarCubicacionModal({
           </button>
           {nombreArchivo && <span className="truncate text-xs text-[var(--text-tertiary)]">{nombreArchivo}</span>}
         </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-3">
+            <label className={`inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95 ${cargando ? "pointer-events-none opacity-70" : ""}`}>
+              {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />} Tomar o elegir foto
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                disabled={cargando}
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void procesarFoto(f); e.target.value = ""; }}
+              />
+            </label>
+            {nombreArchivo && <span className="truncate text-xs text-[var(--text-tertiary)]">{nombreArchivo}</span>}
+          </div>
+        )}
 
         {cargando && (
           <p className="mt-4 flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
-            <Loader2 className="h-4 w-4 animate-spin" /> Leyendo el archivo…
+            <Loader2 className="h-4 w-4 animate-spin" /> {modo === "excel" ? "Leyendo el archivo…" : "Leyendo la foto con IA…"}
           </p>
         )}
         {/* El error del archivo va en el pie (fijo): repetirlo acá lo dejaba
             fuera de vista justo cuando la vista previa empujaba el scroll. */}
+
+        {modo === "foto" && fotoUrl && !cargando && (
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2">
+            {/* eslint-disable-next-line @next/next/no-img-element -- data URL local, no vale la pena Next/Image */}
+            <img src={fotoUrl} alt="Foto de la planilla escaneada" className="h-28 w-28 shrink-0 rounded-lg border border-[var(--rule-base)] object-cover" />
+            <p className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
+              <Sparkles className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
+              Cotejá cada fila de abajo contra esta foto antes de confirmar.
+            </p>
+          </div>
+        )}
+
+        {advertenciaIA && !cargando && (
+          <p className="mt-3 flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {advertenciaIA}
+          </p>
+        )}
 
         {/* Preview */}
         {resultado && !cargando && (
@@ -180,7 +269,9 @@ export default function ImportarCubicacionModal({
                 </div>
               </>
             ) : resultado.errores.length > 0 ? null : (
-              <p className="py-4 text-center text-sm text-[var(--text-tertiary)]">El archivo no tiene piezas para importar.</p>
+              <p className="py-4 text-center text-sm text-[var(--text-tertiary)]">
+                {modo === "excel" ? "El archivo no tiene piezas para importar." : "No se identificó ninguna pieza en la foto."}
+              </p>
             )}
           </div>
         )}

@@ -26,6 +26,7 @@ import { PLAZO_REGISTRO_DIAS, estaFueraDePlazo } from "@/lib/forestal/ctp-compli
 import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
 import { calcularRetrozado, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
 import type { CambioRecepcion } from "@/lib/forestal/recepcion-trozas";
+import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
 
@@ -1188,6 +1189,57 @@ export class WoodEntriesDB {
         _count: { select: { retrozos: true } },
       },
     });
+  }
+
+  /**
+   * El patio, ya en la forma que necesita un picker de consumo
+   * (`TrozaConsumible`, `lib/forestal/consumo-trozas.ts`) — mismo mapeo que
+   * antes vivía SOLO en `GET /api/admin/forestal/trozas/patio`, movido acá
+   * para que un segundo llamador (el planificador de consumo) no reinvente el
+   * whitelist. Dos copias del mismo mapeo es la clase de bug que ya dejó un
+   * campo afuera del JSON una vez — una sola fuente, todos los que necesiten
+   * "qué hay disponible en el patio" pasan por acá.
+   */
+  static async trozasComoConsumibles(
+    tenantId: string,
+    opts: { limite?: number; loteId?: string } = {},
+  ): Promise<TrozaConsumible[]> {
+    const filas = await WoodEntriesDB.trozasDelPatio(tenantId, opts);
+    const consumido = await WoodEntriesDB.consumidoPorIngreso(tenantId, filas.map((t) => t.woodEntryId));
+    const num = (v: unknown) => (v == null ? null : Number(v));
+    return filas.map((t) => ({
+      id: t.id,
+      woodEntryId: t.woodEntryId,
+      codificacion: t.codificacion,
+      codigoPlanta: t.codigoPlanta,
+      parcela: t.parcela,
+      especieComun: t.especieComun,
+      especieCientifica: t.especieCientifica,
+      dimensiones: t.dimensiones,
+      d1Cm: num(t.d1Cm),
+      d2Cm: num(t.d2Cm),
+      largoM: num(t.largoM),
+      volumenM3: num(t.volumenM3),
+      gtfNumber: t.entry.gtfNumber,
+      proveedor: t.entry.providerName,
+      fechaIngreso: t.entry.entryDate as unknown as string,
+      fechaRecepcion: t.fechaRecepcion as unknown as string | null,
+      guiaRecepcionada: t.entry.status === "validado" || Boolean(t.entry.fechaRecepcion) || Boolean(t.fechaRecepcion),
+      permiso: t.entry.originCode,
+      resolucion: t.entry.originSourceNumber,
+      guiaVolumenM3: num(t.entry.volumeM3),
+      guiaConsumidoM3: consumido.get(t.woodEntryId) ?? 0,
+      consumidaEnId:
+        t.consumidaEn && t.consumidaEn.status === "registrado" && !t.consumidaEn.deletedAt ? t.consumidaEnId : null,
+      despachadaEnId:
+        t.despachadaEn && t.despachadaEn.status === "registrado" && !t.despachadaEn.deletedAt ? t.despachadaEnId : null,
+      noRecepcionada: t.noRecepcionada,
+      trozaOrigenId: t.trozaOrigenId,
+      descarte: t.descarte,
+      retrozos: t._count.retrozos,
+      loteAserrioId: t.loteAserrioId,
+      loteAserrioCode: t.loteAserrio?.code ?? null,
+    }));
   }
 
   /**
