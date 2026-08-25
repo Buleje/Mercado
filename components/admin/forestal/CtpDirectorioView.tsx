@@ -178,6 +178,7 @@ export default function CtpDirectorioView() {
         <CtpParteModal
           parte={editando.valor}
           rolInicial={esVehiculos ? "destinatario" : (pestaña as RolParte)}
+          existentes={dir.partes}
           onGuardar={async (input) => {
             await dir.guardarParte(input);
           }}

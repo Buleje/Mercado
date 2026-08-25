@@ -9,7 +9,7 @@
  * lo que va en la guía y lo que nadie recuerda de memoria.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Download, Loader2, Save, Users } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import {
@@ -23,6 +23,7 @@ import {
   fuenteAutocompletado,
   motivoDocInvalido,
   motivoRepresentanteDniInvalido,
+  normalizarDocumento,
   type CategoriaParte,
   type DocTipo,
   type Parte,
@@ -72,12 +73,17 @@ function aBorrador(p: Parte | null, rolInicial: RolParte): Borrador {
 export default function CtpParteModal({
   parte,
   rolInicial,
+  existentes = [],
   onGuardar,
   onClose,
 }: {
   /** `null` = alta. */
   parte: Parte | null;
   rolInicial: RolParte;
+  /** El resto de la libreta — para avisar si el documento ya es de otra ficha
+   *  (el problema #1 que este módulo existe para evitar: "MADERERA DEL
+   *  ORIENTE SAC" y "Maderera del Oriente" como dos filas distintas). */
+  existentes?: Parte[];
   onGuardar: (input: Borrador) => Promise<void>;
   onClose: () => void;
 }) {
@@ -91,6 +97,24 @@ export default function CtpParteModal({
   const docMal = motivoDocInvalido(docTipo, b.docNumero ?? "");
   const dniRepresentanteMal = motivoRepresentanteDniInvalido(b.representanteDni ?? "");
   const set = (v: Partial<Borrador>) => setB((p) => ({ ...p, ...v }));
+
+  /**
+   * Otra ficha con el MISMO documento — el problema #1 que este módulo existe
+   * para evitar ("MADERERA DEL ORIENTE SAC" y "Maderera del Oriente" como dos
+   * filas). Al AGREGAR, el servidor ya fusiona los roles solo (mismo criterio
+   * que la placa del vehículo); acá sólo se avisa, sin bloquear. Al EDITAR una
+   * ficha existente hacia un documento que YA es de otra, no hay fusión del
+   * lado del servidor — ahí sí bloquea, como el duplicado de placa.
+   */
+  const docNorm = normalizarDocumento(b.docNumero ?? "");
+  const coincide = useMemo(
+    () =>
+      docNorm && !docMal
+        ? (existentes.find((p) => p.docTipo === docTipo && normalizarDocumento(p.docNumero ?? "") === docNorm && p.id !== b.id) ?? null)
+        : null,
+    [existentes, docTipo, docNorm, docMal, b.id],
+  );
+  const coincideBloquea = Boolean(coincide && b.id);
 
   function alternarRol(rol: RolParte) {
     const tiene = b.roles.includes(rol);
@@ -143,6 +167,10 @@ export default function CtpParteModal({
       setError(dniRepresentanteMal);
       return;
     }
+    if (coincideBloquea && coincide) {
+      setError(`Ese documento ya lo tiene ${coincide.nombre}. Editá esa ficha en vez de repetir el documento acá.`);
+      return;
+    }
     setEstado("guardando");
     setError(null);
     try {
@@ -179,9 +207,14 @@ export default function CtpParteModal({
       icon={Users}
       variant="info"
       footer={
-        <ModalFooter error={error} aviso={aviso} atajo>
+        <ModalFooter
+          error={error}
+          aviso={aviso}
+          nota={coincide && !coincideBloquea ? `Ese documento ya es de ${coincide.nombre} — al guardar se combina con esa ficha, no se crea una nueva.` : undefined}
+          atajo
+        >
           <Btn variant="ghost" onClick={cerrar}>Cancelar</Btn>
-          <Btn variant="primary" disabled={estado === "guardando"} onClick={() => void guardar()}>
+          <Btn variant="primary" disabled={estado === "guardando" || coincideBloquea} onClick={() => void guardar()}>
             {estado === "guardando" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Guardar
           </Btn>
@@ -221,10 +254,15 @@ export default function CtpParteModal({
               ))}
             </select>
           </Field>
-          <Field label="N° de documento" span={4} hint={docMal ?? undefined}>
+          <Field
+            label="N° de documento"
+            span={4}
+            hint={docMal ?? (coincideBloquea ? "Ya es de otra ficha" : coincide ? "Ya existe — se va a combinar" : undefined)}
+          >
             <input
               type="text"
-              className={`${I} font-mono`}
+              aria-invalid={coincideBloquea ? true : undefined}
+              className={`${I} font-mono ${coincideBloquea ? "border-[var(--data-error-500)]" : ""}`}
               value={b.docNumero ?? ""}
               onChange={(e) => set({ docNumero: e.target.value })}
             />
