@@ -26,6 +26,8 @@ export interface PactadaParaCobranza {
 export interface AdelantoParaCobranza {
   beneficiarioId: string;
   saldoPendiente: number;
+  /** PEN si no viene — mismo default que el resto del módulo (shared.tsx). */
+  moneda?: string | null;
   fechaAdelanto: string | Date;
   /** (332) Cuándo se acordó devolverlo, si se acordó algo. */
   fechaVencimiento?: string | Date | null;
@@ -47,6 +49,13 @@ export interface DeudorCobranza {
   nombre: string;
   telefono: string | null;
   saldo: number;
+  /**
+   * La deuda de esta fila es de UNA moneda — si la persona debe en PEN y en
+   * USD a la vez, son dos filas (dos `DeudorCobranza`, mismo `id`), nunca una
+   * suma cruzada. El `id` sigue siendo el beneficiarioId puro: lo que cambia
+   * por fila es la moneda, no la persona.
+   */
+  moneda: string;
   /** Días de atraso. Positivo = ya se pasó; negativo = todavía falta. */
   dias: number;
   base: BaseDeAtraso;
@@ -85,6 +94,8 @@ export function deudoresDeCobranza(
   const porPersona = new Map<
     string,
     {
+      beneficiarioId: string;
+      moneda: string;
       nombre: string;
       telefono: string | null;
       saldo: number;
@@ -102,10 +113,20 @@ export function deudoresDeCobranza(
     if (a.status && a.status !== "ABIERTO") continue;
     if (!(a.saldoPendiente > 0)) continue;
 
-    const k = a.beneficiarioId;
+    /**
+     * Por persona Y por moneda: sumar S/ y US$ del mismo beneficiario en un
+     * solo saldo fue el bug que encontró la auditoría de esta sesión — una
+     * persona con un adelanto en cada moneda mostraba "debe S/ 250" sumando
+     * 200 soles + 50 dólares como si fueran la misma unidad. Si alguien debe
+     * en las dos monedas, son dos filas — nunca una suma cruzada.
+     */
+    const moneda = a.moneda || "PEN";
+    const k = `${a.beneficiarioId}::${moneda}`;
     const acc =
       porPersona.get(k) ??
       {
+        beneficiarioId: a.beneficiarioId,
+        moneda,
         nombre: a.beneficiario?.nombre ?? "—",
         telefono: a.beneficiario?.telefono ?? null,
         saldo: 0,
@@ -138,7 +159,7 @@ export function deudoresDeCobranza(
     porPersona.set(k, acc);
   }
 
-  return [...porPersona.entries()].map(([id, d]) => {
+  return [...porPersona.values()].map((d) => {
     /**
      * Orden de preferencia: la cuota pactada incumplida (el compromiso más
      * fino), después la fecha de devolución del adelanto, y recién al final la
@@ -151,10 +172,11 @@ export function deudoresDeCobranza(
     const base: BaseDeAtraso = d.pactadaMasVieja ? "pactada" : d.vencimientoMasViejo ? "vencimiento" : "antiguedad";
     const dias = referencia ? Math.floor((ahora - referencia.getTime()) / DIA) : 0;
     return {
-      id,
+      id: d.beneficiarioId,
       nombre: d.nombre,
       telefono: d.telefono,
       saldo: d.saldo,
+      moneda: d.moneda,
       dias,
       base,
       pactadasVencidas: d.pactadasVencidas,

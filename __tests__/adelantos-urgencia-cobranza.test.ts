@@ -104,6 +104,34 @@ describe("a quién hay que cobrarle", () => {
     expect(deudoresDeCobranza([adelanto({ saldoPendiente: 0 })], HOY)).toHaveLength(0);
     expect(deudoresDeCobranza([adelanto({ status: "CERRADO" })], HOY)).toHaveLength(0);
   });
+
+  /**
+   * EL BUG que encontró la auditoría de esta sesión: la misma persona con un
+   * adelanto en soles y otro en dólares se sumaba en un solo `saldo`, como si
+   * 200 PEN + 50 USD fueran 250 de la misma unidad. Dos monedas son dos filas.
+   */
+  it("la misma persona con dos monedas da DOS filas, no una suma cruzada", () => {
+    const d = deudoresDeCobranza(
+      [
+        adelanto({ saldoPendiente: 200, moneda: "PEN" }),
+        adelanto({ saldoPendiente: 50, moneda: "USD", fechaAdelanto: diasAtras(3) }),
+      ],
+      HOY,
+    );
+    expect(d).toHaveLength(2);
+    const pen = d.find((x) => x.moneda === "PEN")!;
+    const usd = d.find((x) => x.moneda === "USD")!;
+    expect(pen.saldo).toBe(200);
+    expect(usd.saldo).toBe(50);
+    // Las dos filas son la MISMA persona: mismo id, para que anotar una
+    // gestión o llamarla no dependa de en qué moneda debe.
+    expect(pen.id).toBe(usd.id);
+  });
+
+  it("sin moneda cae a PEN, como el resto del módulo (shared.tsx)", () => {
+    const [d] = deudoresDeCobranza([adelanto({ moneda: undefined })], HOY);
+    expect(d.moneda).toBe("PEN");
+  });
 });
 
 describe("el orden de la lista", () => {

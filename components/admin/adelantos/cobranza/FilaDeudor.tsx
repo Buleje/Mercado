@@ -11,8 +11,8 @@
  */
 
 import { AlertTriangle, MessageCircle, NotebookPen, Phone } from "@buleje/design-system/icons";
-import { formatCurrency } from "@/lib/currency";
 import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
+import { fmtMon } from "../shared";
 import {
   diasSinGestion,
   etiquetaGestion,
@@ -132,7 +132,7 @@ export default function FilaDeudor({
 
       <span className="shrink-0 text-right">
         <span className="block text-lg font-extrabold tabular-nums text-[var(--data-warning)]">
-          {formatCurrency(d.saldo)}
+          {fmtMon(d.saldo, d.moneda)}
         </span>
       </span>
 

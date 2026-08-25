@@ -35,7 +35,17 @@ import {
 import { armarMensaje, guardarPlantillas, leerPlantillas, type Plantillas } from "@/lib/adelantos/plantillas-cobranza";
 import { deudoresDeCobranza, ordenarPorUrgencia, type DeudorCobranza } from "@/lib/adelantos/urgencia-cobranza";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
-import { EmptyState, SkeletonGrid, sinTildes } from "../shared";
+import { EmptyState, SkeletonGrid, sinTildes, fmtMon, sumByMoneda, fmtMonedas } from "../shared";
+
+/**
+ * Fila = persona + moneda: `deudoresDeCobranza` puede devolver DOS filas para
+ * la misma persona si debe en soles Y en dólares (nunca los mezcla en un solo
+ * saldo — era el bug que encontró la auditoría de esta sesión). `d.id` sigue
+ * siendo el beneficiarioId puro para las acciones sobre la PERSONA (anotar
+ * gestión, llamar); esta clave es sólo para lo que sí necesita distinguir la
+ * fila: la selección de la ronda y el `key` de la lista.
+ */
+const claveFila = (d: DeudorCobranza) => `${d.id}::${d.moneda}`;
 import ProximosVencimientos from "./ProximosVencimientos";
 import FilaDeudor from "./FilaDeudor";
 import AnotarGestion from "./AnotarGestion";
@@ -106,20 +116,24 @@ export default function CobranzaView({
   }, [adelantos]);
 
   const totales = useMemo(() => {
-    const porTramo = Object.fromEntries(TRAMOS.map((t) => [t.id, { total: 0, n: 0 }])) as Record<
+    const porTramo = Object.fromEntries(TRAMOS.map((t) => [t.id, { total: {} as Record<string, number>, n: 0 }])) as Record<
       TramoId,
-      { total: number; n: number }
+      { total: Record<string, number>; n: number }
     >;
     for (const d of deudores) {
       const t = porTramo[tramoDe(d.dias)];
-      t.total += d.saldo;
+      t.total[d.moneda] = (t.total[d.moneda] ?? 0) + d.saldo;
       t.n += 1;
     }
     return porTramo;
   }, [deudores]);
 
-  const totalPorCobrar = deudores.reduce((s, d) => s + d.saldo, 0);
-  const vencido = deudores.filter((d) => d.dias > 0).reduce((s, d) => s + d.saldo, 0);
+  const totalPorCobrar = sumByMoneda(deudores.map((d) => ({ monto: d.saldo, moneda: d.moneda })));
+  const vencido = sumByMoneda(deudores.filter((d) => d.dias > 0).map((d) => ({ monto: d.saldo, moneda: d.moneda })));
+  /* Sólo para la proporción "% de la cartera" (sin unidad) — los montos que se
+     MUESTRAN siguen segmentados por moneda arriba. */
+  const totalPorCobrarNum = Object.values(totalPorCobrar).reduce((s, v) => s + v, 0);
+  const vencidoNum = Object.values(vencido).reduce((s, v) => s + v, 0);
   const recuperado = useMemo(() => recuperadoDelMes(adelantos, now), [adelantos, now]);
   const avance = avanceDeMeta(meta, recuperado);
   const sinTelefono = deudores.filter((d) => !d.telefono).length;
@@ -141,7 +155,7 @@ export default function CobranzaView({
     (d: DeudorCobranza) =>
       armarMensaje(plantillas[tramoDe(d.dias)], {
         nombre: d.nombre,
-        saldo: formatCurrency(d.saldo),
+        saldo: fmtMon(d.saldo, d.moneda),
         dias: d.dias,
       }),
     [plantillas],
@@ -170,7 +184,7 @@ export default function CobranzaView({
   const mandarLaRonda = async () => {
     setEnviandoRonda(true);
     try {
-      for (const d of filtrados.filter((x) => tanda.has(x.id))) {
+      for (const d of filtrados.filter((x) => tanda.has(claveFila(x)))) {
         const url = enlaceWhatsAppConTexto(d.telefono, mensajeDe(d));
         if (!url) continue;
         window.open(url, "_blank", "noopener,noreferrer");
@@ -193,7 +207,7 @@ export default function CobranzaView({
     doc.text("Lista de cobranza", 14, 18);
     doc.setFontSize(10);
     doc.text(
-      `Por cobrar: ${formatCurrency(totalPorCobrar)} · ${deudores.length} deudores · ${new Date().toLocaleDateString("es-PE")}`,
+      `Por cobrar: ${fmtMonedas(totalPorCobrar)} · ${deudores.length} deudores · ${new Date().toLocaleDateString("es-PE")}`,
       14,
       25,
     );
@@ -207,7 +221,7 @@ export default function CobranzaView({
         const p = promesas.get(d.id);
         return [
           d.nombre,
-          formatCurrency(d.saldo),
+          fmtMon(d.saldo, d.moneda),
           d.dias > 0 ? `${d.dias} días` : "al día",
           u ? `${u.tipo} ${new Date(u.fecha).toLocaleDateString("es-PE")}` : "—",
           p?.gestion.fechaPrometida ? new Date(p.gestion.fechaPrometida).toLocaleDateString("es-PE") : "—",
@@ -236,12 +250,15 @@ export default function CobranzaView({
 
       {/* ── El estado de la cartera, en una línea ─────────────────────── */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Por cobrar" valor={formatCurrency(totalPorCobrar)} pie={`${deudores.length} deudores`} tono="warning" />
+        <Kpi label="Por cobrar" valor={fmtMonedas(totalPorCobrar)} pie={`${deudores.length} deudores`} tono="warning" />
         <Kpi
           label="Vencido"
-          valor={formatCurrency(vencido)}
-          pie={totalPorCobrar > 0 ? `${Math.round((vencido / totalPorCobrar) * 100)}% de la cartera` : "—"}
-          tono={vencido > 0 ? "error" : "success"}
+          valor={fmtMonedas(vencido)}
+          /* % de la cartera: es una proporción sin unidad, no un monto — sumar los
+             números crudos de cada moneda para esta cuenta es la misma aproximación
+             que ya se acepta en todo lo demás (acá no hay tipo de cambio cargado). */
+          pie={totalPorCobrarNum > 0 ? `${Math.round((vencidoNum / totalPorCobrarNum) * 100)}% de la cartera` : "—"}
+          tono={vencidoNum > 0 ? "error" : "success"}
         />
         <Kpi
           label="Prometieron pagar"
@@ -279,7 +296,7 @@ export default function CobranzaView({
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: t.tono }} />
               {t.label} {totales[t.id].n}
-              <span className="font-semibold tabular-nums opacity-70">{formatCurrency(totales[t.id].total)}</span>
+              <span className="font-semibold tabular-nums opacity-70">{fmtMonedas(totales[t.id].total)}</span>
             </span>
           </button>
         ))}
@@ -303,7 +320,7 @@ export default function CobranzaView({
         </div>
         <button
           onClick={() => {
-            const conTelefono = filtrados.filter((d) => d.telefono).map((d) => d.id);
+            const conTelefono = filtrados.filter((d) => d.telefono).map(claveFila);
             setTanda((prev) => (prev.size >= conTelefono.length && prev.size > 0 ? new Set() : new Set(conTelefono)));
           }}
           className="h-11 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
@@ -350,16 +367,17 @@ export default function CobranzaView({
           <ul className="divide-y divide-[var(--rule-soft)]">
             {filtrados.map((d) => (
               <FilaDeudor
-                key={d.id}
+                key={claveFila(d)}
                 deudor={d}
                 promesa={promesas.get(d.id)}
                 ultima={ultimas.get(d.id)}
                 cumplimiento={cumplimientos.get(d.id) ?? null}
-                enTanda={tanda.has(d.id)}
+                enTanda={tanda.has(claveFila(d))}
                 onTanda={(v) =>
                   setTanda((prev) => {
                     const n = new Set(prev);
-                    if (v) n.add(d.id); else n.delete(d.id);
+                    const k = claveFila(d);
+                    if (v) n.add(k); else n.delete(k);
                     return n;
                   })
                 }
@@ -376,7 +394,7 @@ export default function CobranzaView({
             <p className="text-base font-semibold text-[var(--text-secondary)]">
               <strong className="text-[var(--text-primary)]">{tanda.size}</strong> en la ronda ·{" "}
               <strong className="tabular-nums text-[var(--data-warning)]">
-                {formatCurrency(filtrados.filter((d) => tanda.has(d.id)).reduce((s, d) => s + d.saldo, 0))}
+                {fmtMonedas(sumByMoneda(filtrados.filter((d) => tanda.has(claveFila(d))).map((d) => ({ monto: d.saldo, moneda: d.moneda }))))}
               </strong>{" "}
               por cobrar
             </p>

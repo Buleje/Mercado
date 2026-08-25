@@ -19,10 +19,10 @@ import {
   Phone,
   X,
 } from "@buleje/design-system/icons";
-import { formatCurrency } from "@/lib/currency";
 import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
 import { etiquetaGestion, type Gestion, type PromesaVigente } from "@/lib/adelantos/gestion-cobranza";
 import { explicarAtraso, type DeudorCobranza } from "@/lib/adelantos/urgencia-cobranza";
+import { fmtMon } from "../shared";
 
 export default function ModoLlamada({
   deudores,
@@ -96,7 +96,7 @@ export default function ModoLlamada({
             {d.telefono && <p className="mt-1 text-xl tabular-nums text-[var(--text-secondary)]">{d.telefono}</p>}
           </div>
 
-          <p className="text-5xl font-extrabold tabular-nums text-[var(--data-warning)]">{formatCurrency(d.saldo)}</p>
+          <p className="text-5xl font-extrabold tabular-nums text-[var(--data-warning)]">{fmtMon(d.saldo, d.moneda)}</p>
 
           <div className="flex flex-wrap justify-center gap-2">
             {d.dias > 0 && (

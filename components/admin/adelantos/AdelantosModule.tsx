@@ -400,7 +400,7 @@ function ResumenView({
           <ul className="divide-y divide-[var(--rule-soft)]">
             {deudores.slice(0, 5).map((d) => {
               const tramo = TRAMOS.find((t) => t.id === tramoDe(d.dias)) ?? TRAMOS[0];
-              const wa = enlaceWhatsApp(d.telefono, d.nombre, d.saldo);
+              const wa = enlaceWhatsApp(d.telefono, d.nombre, d.saldo, d.moneda);
               return (
                 <li key={d.id} className="flex items-center gap-3 py-2.5">
                   <button
@@ -420,7 +420,7 @@ function ResumenView({
                       <span className="block truncate text-sm text-[var(--text-tertiary)]">{explicarAtraso(d)}</span>
                     </span>
                   </button>
-                  <span className="shrink-0 tabular-nums text-base font-extrabold text-[var(--data-warning)]">{fmtMon(d.saldo)}</span>
+                  <span className="shrink-0 tabular-nums text-base font-extrabold text-[var(--data-warning)]">{fmtMon(d.saldo, d.moneda)}</span>
                   {wa ? (
                     <a
                       href={wa}
