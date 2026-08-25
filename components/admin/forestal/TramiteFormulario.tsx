@@ -303,10 +303,19 @@ export default function TramiteFormulario({
     }
   }
 
-  /** El nombre de archivo del trámite actual — barato, sin fotografiar nada;
-   *  sirve tanto para deduplicar en el Drive como para el `<a download>`. */
+  /**
+   * El nombre de archivo del trámite actual — barato, sin fotografiar nada;
+   * sirve tanto para deduplicar en el Drive como para el `<a download>`.
+   *
+   * Lleva el `codigoInterno` (Brandon 2026-08-26, ronda 2: "para identificar
+   * y luego buscarlo") — sin esto, buscar el código en el Drive dependía de
+   * que el documento ya estuviera indexado por OCR; en el NOMBRE, cualquier
+   * buscador de archivos (el del Drive, el del sistema operativo) lo
+   * encuentra al toque. Mismo dato que ya lleva `nombreArchivo` en
+   * `PlantacionDocumentoModal` — acá faltaba.
+   */
   function nombreDocumentoActual(): string {
-    const nombreBase = `${formato.nombre}${numeroDocumento ? ` N° ${numeroDocumento}` : ""} — ${auto.ficha?.razonSocial?.trim() || "CTP"} — ${new Date().toISOString().slice(0, 10)}`;
+    const nombreBase = `${formato.nombre}${numeroDocumento ? ` N° ${numeroDocumento}` : ""} — ${auto.ficha?.razonSocial?.trim() || "CTP"}${codigoInterno ? ` — ${codigoInterno}` : ""} — ${new Date().toISOString().slice(0, 10)}`;
     return nombreArchivoTramite(nombreBase);
   }
 
@@ -347,7 +356,7 @@ export default function TramiteFormulario({
       nombreArchivo: nombre,
       carpeta: carpetaDrive,
       folderId,
-      etiquetas: [autoridad.corto, formato.nombre],
+      etiquetas: [autoridad.corto, formato.nombre, ...(codigoInterno ? [codigoInterno] : [])],
       descripcion: asuntoDe(formato, datos),
     });
     return `Guardado en el Drive · carpeta "${carpetaDrive}".`;
@@ -411,11 +420,14 @@ export default function TramiteFormulario({
       const numeroNuevo = !numeroDocumento && guardado.numeroDocumento;
       setNumeroDocumento(guardado.numeroDocumento);
       setCodigoInterno(guardado.codigoInterno);
+      // El primer guardado es también la primera vez que existe `codigoInterno`
+      // (se asigna en la creación, no espera a "Presentado" como numeroDocumento)
+      // — el aviso lo dice de una vez en vez de un genérico "ya podés seguirlo".
       let mensaje = numeroNuevo
         ? `Guardado y numerado como N° ${guardado.numeroDocumento} — ya podés presentarlo.`
         : idGuardado || existente
           ? "Cambios guardados en el expediente."
-          : "Guardado en el expediente: ya podés seguirlo desde ahí.";
+          : `Guardado como ${guardado.codigoInterno} — ya podés identificarlo y buscarlo en el Expediente.`;
 
       // El documento sale de acá cuando pasa a "Presentado": se archiva solo,
       // sin que el operador tenga que acordarse de apretar "PDF al Drive"
