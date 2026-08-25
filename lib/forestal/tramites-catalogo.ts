@@ -73,6 +73,11 @@ export const ICONO_TRAMITE: Record<string, string> = {
   "remision-libro-th": "FileStack",
   "recurso-administrativo": "Scale",
   "ampliacion-plazo": "CalendarClock",
+  "denuncia-policial-perdida-gtf": "Siren",
+  "comunicacion-perdida-gtf-serfor": "FileX",
+  "aviso-inicio-aprovechamiento": "Axe",
+  "apertura-via-extraccion": "Route",
+  "siniestro-forestal": "Flame",
 };
 
 export type TipoCampo = "texto" | "textarea" | "numero" | "fecha";
@@ -1021,7 +1026,281 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "La prórroga se concede UNA sola vez y hay que pedirla ANTES de que venza el plazo original (art. 136.3 TUO Ley 27444) — presentada el mismo día del vencimiento o después, ya no cabe.",
   },
 
-  // ── 18. Oficio o carta genérica ───────────────────────────────────────────
+  // ── 18. Denuncia policial por pérdida de GTF y Lista de Trozas ────────────
+  {
+    id: "denuncia-policial-perdida-gtf",
+    nombre: "Denuncia policial por pérdida de GTF y Lista de Trozas",
+    autoridad: "otra",
+    proposito:
+      "El relato de hechos para presentar en la comisaría (o para completar la Denuncia Policial Digital) cuando se pierde o roban la guía y la lista de trozas de un despacho",
+    asunto: "Pongo en conocimiento la pérdida de Guía de Transporte Forestal y Lista de Trozas, y solicito registrar la denuncia",
+    baseLegal: [
+      "Constitución Política del Perú, artículo 2 inciso 20 — derecho de petición ante la autoridad competente",
+      "Código Procesal Penal, artículo 326 — facultad y obligación de denunciar",
+    ],
+    campos: [
+      {
+        id: "destinatarioCargo",
+        label: "Dirigido a (cargo)",
+        tipo: "texto",
+        requerido: true,
+        placeholder: "Comisario",
+        hint: "El comisario de turno, no un nombre propio",
+        grupo: "destino",
+      },
+      {
+        id: "destinatarioEntidad",
+        label: "Comisaría",
+        tipo: "texto",
+        requerido: true,
+        placeholder: "Comisaría PNP de (tu distrito)",
+        hint: "La más cercana al lugar del hecho — no tiene que ser la de tu domicilio",
+        grupo: "destino",
+      },
+      {
+        id: "numeroGtfPerdida",
+        label: "N° de GTF perdida",
+        tipo: "texto",
+        requerido: true,
+        placeholder: "001-0000123",
+      },
+      {
+        id: "especieProductoPerdido",
+        label: "Especie / producto que amparaba",
+        tipo: "texto",
+        requerido: true,
+        autollenado: "libro",
+      },
+      { id: "volumenAmparadoPerdido", label: "Volumen amparado (m³)", tipo: "texto", autollenado: "libro" },
+      {
+        id: "circunstanciaPerdidaGtf",
+        label: "Cómo ocurrió",
+        tipo: "textarea",
+        requerido: true,
+        placeholder: "Extravío / robo / asalto en ruta — contá el hecho tal como pasó, sin suposiciones",
+      },
+      { id: "lugarHechoGtf", label: "Lugar del hecho", tipo: "texto", requerido: true, hint: "Dirección, km de carretera o referencia del lugar" },
+      { id: "fechaHoraHechoGtf", label: "Fecha y hora aproximada", tipo: "fecha", requerido: true },
+      {
+        id: "personaACargoGtf",
+        label: "Quién tenía la documentación",
+        tipo: "texto",
+        hint: "Nombre del chofer o transportista al momento del hecho",
+      },
+      { id: "vehiculoPlacaGtf", label: "Placa del vehículo (si aplica)", tipo: "texto", placeholder: "ABC-123" },
+      ...CAMPOS_COMUNES.filter((c) => c.grupo === "firma"),
+    ],
+    anexos: [
+      "Copia de tu DNI",
+      "Copia o fotografía de la GTF, si conservás alguna (talón, foto del celular, PDF del aplicativo SERFOR)",
+      "Copia o fotografía de la Lista de Trozas, si conservás algún registro",
+    ],
+    cuerpo: (d) => [
+      `Que, mediante el presente documento pongo en conocimiento de su Despacho la pérdida de la Guía de Transporte Forestal N° ${v(d, "numeroGtfPerdida")} y su Lista de Trozas, documentos que amparaban el transporte de ${v(d, "volumenAmparadoPerdido", "un volumen de")} m³ de ${v(d, "especieProductoPerdido", "producto forestal")}.`,
+      `El hecho ocurrió el ${v(d, "fechaHoraHechoGtf")} en ${v(d, "lugarHechoGtf")}, en las siguientes circunstancias: ${v(d, "circunstanciaPerdidaGtf")}.`,
+      d.personaACargoGtf?.trim()
+        ? `Al momento del hecho, la documentación se encontraba bajo responsabilidad de ${v(d, "personaACargoGtf")}${d.vehiculoPlacaGtf?.trim() ? `, quien conducía el vehículo de placa ${v(d, "vehiculoPlacaGtf")}` : ""}.`
+        : "",
+      "Por lo expuesto, solicito a su Despacho se sirva registrar la presente denuncia y expedir el certificado o constancia de denuncia policial correspondiente, documento que pondremos en conocimiento de la autoridad forestal competente.",
+    ],
+    advertencia:
+      "Antes de ir a la comisaría, probá la Denuncia Policial Digital (gob.pe/11155 → sistemas.policia.gob.pe/denuncias_digitales): es gratis, está las 24 horas, cubre pérdida/robo de \"guía\" como categoría, y el certificado PDF que emite tiene la MISMA validez que el de comisaría. Usá este documento como guión de los hechos para esa declaración, o llevalo impreso si preferís hacer la denuncia en persona.",
+  },
+
+  // ── 19. Comunicación a SERFOR por pérdida de GTF ya emitida ──────────────
+  {
+    id: "comunicacion-perdida-gtf-serfor",
+    nombre: "Comunicación a SERFOR por pérdida de GTF ya emitida",
+    autoridad: "serfor",
+    proposito:
+      "Reportar formalmente la pérdida de una guía ya emitida y en uso (no un talonario en blanco), con el certificado de la denuncia policial adjunto y la trazabilidad de la madera hasta el Libro de Operaciones",
+    asunto: "Comunico la pérdida de Guía de Transporte Forestal ya emitida, con denuncia policial adjunta",
+    baseLegal: [
+      "Ley N° 29763 — Ley Forestal y de Fauna Silvestre",
+      "D.S. N° 018-2015-MINAGRI — Reglamento para la Gestión Forestal",
+      "Ley N° 27444 — Ley del Procedimiento Administrativo General",
+    ],
+    campos: [
+      {
+        id: "destinatarioCargo",
+        label: "Dirigido a (cargo)",
+        tipo: "texto",
+        requerido: true,
+        placeholder: "Administrador Técnico Forestal y de Fauna Silvestre",
+        hint: "El cargo de quien recibe en la Sede, no el nombre",
+        grupo: "destino",
+      },
+      {
+        id: "destinatarioEntidad",
+        label: "Entidad / sede",
+        tipo: "texto",
+        requerido: true,
+        placeholder: "SERFOR — Sede (la que corresponda a tu operación)",
+        grupo: "destino",
+      },
+      { id: "numeroGtfPerdidaSerfor", label: "N° de GTF perdida", tipo: "texto", requerido: true, placeholder: "001-0000123" },
+      { id: "fechaEmisionOriginalPerdida", label: "Fecha de emisión de la guía", tipo: "fecha" },
+      { id: "especieProductoPerdidoSerfor", label: "Especie / producto amparado", tipo: "texto", requerido: true, autollenado: "libro" },
+      { id: "volumenAmparadoPerdidoSerfor", label: "Volumen amparado (m³)", tipo: "texto", autollenado: "libro" },
+      { id: "destinoGuiaPerdida", label: "Destino que declaraba la guía", tipo: "texto" },
+      { id: "fechaHechoSerfor", label: "Fecha del hecho", tipo: "fecha", requerido: true },
+      {
+        id: "numeroDenunciaPolicialSerfor",
+        label: "N° de certificado de denuncia policial",
+        tipo: "texto",
+        requerido: true,
+        hint: "El que emite la comisaría o la Denuncia Policial Digital — es el anexo obligatorio de este trámite",
+      },
+      {
+        id: "entradaLibroRefPerdida",
+        label: "Asiento del Libro que respalda el origen",
+        tipo: "texto",
+        hint: "N° de libro del ingreso o de la corrida de la que salió esta madera — lo ves en la ficha de la operación",
+      },
+      ...CAMPOS_COMUNES.filter((c) => c.grupo === "firma"),
+    ],
+    anexos: [
+      "Certificado de denuncia policial (obligatorio — física o la Denuncia Policial Digital)",
+      "Copia del asiento del Libro de Operaciones que sustenta el origen legal de la madera transportada",
+      "Copia o fotografía de la Lista de Trozas, si se conserva algún respaldo",
+    ],
+    cuerpo: (d) => [
+      `Que, pongo en conocimiento de su Despacho la pérdida de la Guía de Transporte Forestal N° ${v(d, "numeroGtfPerdidaSerfor")}${d.fechaEmisionOriginalPerdida?.trim() ? `, emitida el ${v(d, "fechaEmisionOriginalPerdida")}` : ""}, que amparaba el transporte de ${v(d, "volumenAmparadoPerdidoSerfor", "un volumen de")} m³ de ${v(d, "especieProductoPerdidoSerfor")}${d.destinoGuiaPerdida?.trim() ? ` con destino a ${v(d, "destinoGuiaPerdida")}` : ""}.`,
+      `El hecho ocurrió el ${v(d, "fechaHechoSerfor")} y fue puesto en conocimiento de la Policía Nacional del Perú, la cual expidió el certificado de denuncia N° ${v(d, "numeroDenunciaPolicialSerfor")}, que se adjunta a la presente.`,
+      d.entradaLibroRefPerdida?.trim()
+        ? `La operación que amparaba la guía extraviada se encuentra registrada en el asiento N° ${v(d, "entradaLibroRefPerdida")} de nuestro Libro de Operaciones, donde consta el origen legal de la materia prima y su trazabilidad.`
+        : "El origen legal de la materia prima transportada consta en nuestro Libro de Operaciones, a disposición de su Autoridad para la verificación que estime pertinente.",
+      "Por lo expuesto, solicito a su Despacho tener por comunicada la pérdida de la guía referida y disponer se deje constancia de la inutilización de dicho número para todo efecto, sin perjuicio de la responsabilidad que pudiera corresponder conforme a los hechos denunciados.",
+    ],
+    advertencia:
+      "Confirmá con tu Sede si además de SERFOR corresponde copia a tu ARFFS: la guía la visa y controla el correlativo la Autoridad Regional, aunque el registro final viva en el SNIFFS. El certificado de denuncia policial es el anexo que no puede faltar — sin él, este documento sólo es un aviso, no un respaldo.",
+  },
+
+  // ── 20. Aviso de inicio de aprovechamiento / zafra ────────────────────────
+  {
+    id: "aviso-inicio-aprovechamiento",
+    nombre: "Aviso de inicio de aprovechamiento o zafra",
+    autoridad: "arffs",
+    proposito: "Comunicar que arranca la extracción del Plan Operativo Anual (POA) vigente, cuando el propio plan pide avisar antes de la primera tala",
+    asunto: "Comunico el inicio de las actividades de aprovechamiento forestal",
+    baseLegal: [
+      "Ley N° 29763 — Ley Forestal y de Fauna Silvestre",
+      "D.S. N° 018-2015-MINAGRI — Reglamento para la Gestión Forestal",
+    ],
+    campos: [
+      ...CAMPOS_COMUNES,
+      { id: "tituloHabilitanteInicio", label: "Título habilitante", tipo: "texto", requerido: true },
+      { id: "poaVigenteInicio", label: "POA / período aprobado", tipo: "texto", requerido: true, placeholder: "Campaña 2026" },
+      { id: "fechaInicioAprovechamiento", label: "Fecha de inicio", tipo: "fecha", requerido: true },
+      {
+        id: "especiesAprovechar",
+        label: "Especies programadas para esta etapa",
+        tipo: "textarea",
+        requerido: true,
+      },
+      { id: "volumenProgramadoInicio", label: "Volumen estimado (m³)", tipo: "texto" },
+      { id: "responsableCampoInicio", label: "Responsable en campo", tipo: "texto", hint: "Regente forestal o encargado de la cuadrilla" },
+    ],
+    anexos: [
+      "Copia de la resolución que aprueba el Plan Operativo Anual vigente",
+      "Cronograma de actividades del Plan",
+    ],
+    cuerpo: (d) => [
+      `Que, en el marco del Plan Operativo Anual "${v(d, "poaVigenteInicio")}" aprobado para el título habilitante ${v(d, "tituloHabilitanteInicio")}, comunico a su Despacho el inicio de las actividades de aprovechamiento forestal a partir del ${v(d, "fechaInicioAprovechamiento")}.`,
+      `Las especies programadas para esta etapa son: ${v(d, "especiesAprovechar")}${d.volumenProgramadoInicio?.trim() ? `, por un volumen estimado de ${v(d, "volumenProgramadoInicio")} m³` : ""}, conforme a lo aprobado en el Plan.`,
+      d.responsableCampoInicio?.trim()
+        ? `Las actividades de campo estarán a cargo de ${v(d, "responsableCampoInicio")}, quien reportará el avance conforme al informe periódico de regencia.`
+        : "",
+      "Ponemos en conocimiento de su Autoridad el inicio de operaciones a efectos de la programación de las visitas de supervisión que estime pertinentes.",
+    ],
+    advertencia:
+      "Cotejá en tu Plan de Manejo si el aviso de inicio es un requisito EXPRESO con plazo de anticipación, o una buena práctica sin plazo fijo: lo que obliga es lo que dice tu propio plan aprobado, no una norma genérica.",
+  },
+
+  // ── 21. Apertura de vía de extracción / camino forestal ───────────────────
+  {
+    id: "apertura-via-extraccion",
+    nombre: "Solicitud de apertura de vía de extracción",
+    autoridad: "arffs",
+    proposito: "Pedir autorización para abrir un camino o vía de extracción nueva dentro del área de aprovechamiento",
+    asunto: "Solicito autorización de apertura de vía de extracción forestal",
+    baseLegal: [
+      "Ley N° 29763 — Ley Forestal y de Fauna Silvestre",
+      "D.S. N° 018-2015-MINAGRI — Reglamento para la Gestión Forestal",
+    ],
+    campos: [
+      ...CAMPOS_COMUNES,
+      { id: "tituloHabilitanteVia", label: "Título habilitante", tipo: "texto", requerido: true },
+      { id: "ubicacionVia", label: "Ubicación de la vía", tipo: "texto", requerido: true, hint: "Coordenadas UTM o referencia del tramo dentro del área" },
+      { id: "longitudVia", label: "Longitud aproximada", tipo: "texto", placeholder: "1.2 km" },
+      {
+        id: "justificacionVia",
+        label: "Justificación",
+        tipo: "textarea",
+        requerido: true,
+        placeholder: "Acceso al bloque de aprovechamiento programado para esta campaña",
+      },
+    ],
+    anexos: [
+      "Croquis o mapa de la vía sobre el plano del Plan de Manejo",
+      "Coordenadas UTM del trazo propuesto",
+    ],
+    cuerpo: (d) => [
+      `Que, siendo titular del título habilitante ${v(d, "tituloHabilitanteVia")}, solicito a su Despacho la autorización para la apertura de una vía de extracción forestal ubicada en ${v(d, "ubicacionVia")}${d.longitudVia?.trim() ? `, con una longitud aproximada de ${v(d, "longitudVia")}` : ""}.`,
+      `La vía solicitada se justifica en lo siguiente: ${v(d, "justificacionVia")}.`,
+      "La apertura se realizará con las medidas de manejo que eviten impactos innecesarios sobre el bosque remanente, conforme a las prácticas de aprovechamiento de impacto reducido.",
+      "Adjunto el croquis de ubicación de la vía y quedo a disposición para la verificación de campo que su Autoridad considere necesaria.",
+    ],
+    advertencia:
+      "Si el trazo no figuraba en tu Plan de Manejo aprobado, puede que necesite tramitarse como una modificación del plan y no como una autorización suelta: confirmalo con tu ARFFS antes de presentar.",
+  },
+
+  // ── 22. Siniestro en el área de aprovechamiento ───────────────────────────
+  {
+    id: "siniestro-forestal",
+    nombre: "Comunicación de siniestro en el área de aprovechamiento",
+    autoridad: "arffs",
+    proposito: "Avisar formalmente un incendio, inundación o plaga que afecta el bosque bajo manejo, como sustento para un futuro ajuste del POA",
+    asunto: "Comunico siniestro en el área de aprovechamiento forestal",
+    baseLegal: [
+      "Ley N° 29763 — Ley Forestal y de Fauna Silvestre",
+      "D.S. N° 018-2015-MINAGRI — Reglamento para la Gestión Forestal",
+    ],
+    campos: [
+      ...CAMPOS_COMUNES,
+      { id: "tituloHabilitanteSiniestro", label: "Título habilitante", tipo: "texto", requerido: true },
+      {
+        id: "tipoSiniestro",
+        label: "Tipo de siniestro",
+        tipo: "texto",
+        requerido: true,
+        placeholder: "Incendio forestal / inundación / plaga / viento (windthrow)",
+      },
+      { id: "fechaSiniestro", label: "Fecha del siniestro", tipo: "fecha", requerido: true },
+      { id: "areaAfectadaHa", label: "Área afectada (ha, estimado)", tipo: "texto" },
+      { id: "especiesAfectadasSiniestro", label: "Especies con mayor incidencia", tipo: "texto" },
+      {
+        id: "accionesTomadasSiniestro",
+        label: "Acciones tomadas",
+        tipo: "textarea",
+        hint: "Control del siniestro, aviso a bomberos o Defensa Civil, medidas de contención",
+      },
+    ],
+    anexos: [
+      "Fotografías o reporte del área afectada",
+      "Constancia de bomberos, Defensa Civil u otra autoridad, si el siniestro fue reportado",
+    ],
+    cuerpo: (d) => [
+      `Que, comunico a su Despacho el siniestro ocurrido el ${v(d, "fechaSiniestro")} en el área de aprovechamiento del título habilitante ${v(d, "tituloHabilitanteSiniestro")}, consistente en: ${v(d, "tipoSiniestro")}.`,
+      `${d.areaAfectadaHa?.trim() ? `El área estimada afectada es de ${v(d, "areaAfectadaHa")} hectáreas` : "El área afectada se encuentra en evaluación"}${d.especiesAfectadasSiniestro?.trim() ? `, con mayor incidencia sobre: ${v(d, "especiesAfectadasSiniestro")}` : ""}.`,
+      d.accionesTomadasSiniestro?.trim() ? `Acciones tomadas: ${v(d, "accionesTomadasSiniestro")}.` : "",
+      "Ponemos el hecho en conocimiento de su Autoridad a efectos de que se tenga presente al momento de evaluar el cumplimiento del Plan de Manejo del período, y solicitamos disponer la verificación de campo que estime pertinente.",
+    ],
+    advertencia:
+      "Este aviso deja constancia del hecho; si el siniestro te impide cumplir el volumen o el cronograma del POA, todavía tenés que tramitar el reajuste del plan por separado — este documento es el sustento, no el pedido de ajuste en sí.",
+  },
+
+  // ── 23. Oficio o carta genérica ───────────────────────────────────────────
   {
     id: "carta-generica",
     nombre: "Carta u oficio a la autoridad",
