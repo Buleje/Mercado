@@ -10,10 +10,11 @@
  * inventario / Anular) full-width. Misma data y mismos handlers que la tabla.
  */
 
-import { AlertCircle, Boxes, Calendar, FileText, Link2, PackagePlus, Truck } from "@buleje/design-system/icons";
+import { AlertCircle, Boxes, Calendar, FileText, Link2, Paperclip, PackagePlus, Truck } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
+import { estadoDeGuia } from "@/lib/forestal/gtf-estado";
 import type { CtpEntry, CtpSection } from "./CtpSectionViews";
 import { UNIT_LABELS } from "./ctp-section-shared";
 
@@ -31,6 +32,10 @@ interface CtpSeccionCardMobileProps {
   /** Esta corrida admite más producción sobre la misma madera (ADR-365). */
   ampliable?: boolean;
   onAmpliar?: (id: string) => void;
+  /** Adjuntar los papeles que viajan con el despacho (ADR-371, solo despachos). */
+  onPapeles?: (e: CtpEntry) => void;
+  /** Abrir la guía de transporte de esa línea — borrador editable o emitida (solo despachos). */
+  onGuia?: (e: CtpEntry) => void;
 }
 
 const n4 = (v: string | null) => (v == null ? "—" : Number(v).toFixed(4));
@@ -39,7 +44,7 @@ const fmtDate = (iso: string) => {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; }
 };
 
-export default function CtpSeccionCardMobile({ entry: e, section, toProductId, onChain, onAnexo, anexoEmitido, onSendInventory, onAnnul, ampliable, onAmpliar }: CtpSeccionCardMobileProps) {
+export default function CtpSeccionCardMobile({ entry: e, section, toProductId, onChain, onAnexo, anexoEmitido, onSendInventory, onAnnul, ampliable, onAmpliar, onPapeles, onGuia }: CtpSeccionCardMobileProps) {
   const anulado = e.status === "anulado";
   const KindIcon = section === "produccion" ? Boxes : Truck;
   const rend = section === "produccion" ? evaluarRendimiento(e.productType, e.rendimientoPct != null ? Number(e.rendimientoPct) : null) : null;
@@ -178,6 +183,30 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
             >
               <FileText className="h-3.5 w-3.5" /> Anexo 04{anexoEmitido ? " ✓" : ""}
+            </button>
+          )}
+          {/* Guía de transporte y papeles del despacho — existían sólo en la
+              tabla de escritorio (auditoría 2026-08-25): sin esto, adjuntar
+              GTF/factura o abrir la guía era imposible desde el celular del
+              almacenero, que es justo para quién está pensada esta card. */}
+          {section === "despacho" && onGuia && (
+            <button
+              type="button"
+              onClick={() => onGuia(e)}
+              className={`inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border-2 px-3 text-xs font-bold ${estadoDeGuia(e.gtfNumber) === "emitida"
+                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
+            >
+              <Truck className="h-3.5 w-3.5" /> Guía{estadoDeGuia(e.gtfNumber) === "emitida" ? " ✓" : ""}
+            </button>
+          )}
+          {section === "despacho" && onPapeles && (
+            <button
+              type="button"
+              onClick={() => onPapeles(e)}
+              className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            >
+              <Paperclip className="h-3.5 w-3.5" /> Papeles
             </button>
           )}
           <button

@@ -377,6 +377,8 @@ export default function CtpEntriesTabla({
               onAnnul={onAnnul}
               ampliable={ampliables?.has(e.id)}
               onAmpliar={onAmpliar}
+              onPapeles={section === "despacho" ? onPapeles : undefined}
+              onGuia={section === "despacho" ? onGuia : undefined}
             />
           ))}
         </div>
