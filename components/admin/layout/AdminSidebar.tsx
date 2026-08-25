@@ -796,6 +796,41 @@ export const AdminSidebar = React.memo(function AdminSidebar({
 
   // Section headers keyed by the first category id in each group
 
+  /* Logo del tenant (o BulejeMark de respaldo) — un solo nodo para no
+     duplicar el ternario en el modo compacto y en el modo expandido, que
+     ahora envuelve logo+nombre en el mismo marco con borde de color
+     (Brandon 2026-08-24: el ring gris genérico no decía nada de marca). */
+  const tenantLogoNode = activeTenantLogo ? (
+    <div className={cn("relative shrink-0", isDarkTheme && "drop-shadow-md")}>
+      <Image
+        src={activeTenantLogo}
+        alt={activeTenantName ?? "Logo"}
+        width={40}
+        height={40}
+        className={cn(
+          // Brandon mayo 2026 v4: fondo blanco SIEMPRE — el logo del tenant
+          // tiene mejor contraste sobre blanco que sobre gradient
+          // verde/accent, especialmente en sidebar oscuro.
+          "h-10 w-10 rounded-xl object-contain bg-white p-0.5",
+          isDarkTheme
+            ? "ring-2 ring-[color-mix(in_oklab,var(--accent)_55%,white_20%)]"
+            : "ring-2 ring-primary/30 dark:ring-card-border",
+        )}
+      />
+    </div>
+  ) : (
+    <div className={cn(
+      // Sin logo del tenant: usamos BulejeMark sobre blanco con accent
+      // color para el icon (mantiene identidad de marca).
+      "relative h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-white ring-2",
+      isDarkTheme
+        ? "ring-[color-mix(in_oklab,var(--accent)_55%,white_20%)] text-[color:var(--accent)] shadow-[var(--shadow-md)]"
+        : "ring-primary/30 text-primary shadow-sm",
+    )}>
+      <BulejeMark size={22} strokeWidth={1.75} />
+    </div>
+  );
+
   return (
     <>
       {/* Desktop permanent sidebar — siempre desde top:0 para abarcar
@@ -825,82 +860,63 @@ export const AdminSidebar = React.memo(function AdminSidebar({
           themeClasses.headerBorder,
           effectiveCompact ? "px-3 justify-center" : "px-4"
         )}>
-          {activeTenantLogo ? (
-            <div className={cn(
-              "relative shrink-0",
-              isDarkTheme && "drop-shadow-md"
-            )}>
-              <Image
-                src={activeTenantLogo}
-                alt={activeTenantName ?? "Logo"}
-                width={40}
-                height={40}
-                className={cn(
-                  // Brandon mayo 2026 v4: fondo blanco SIEMPRE — el logo
-                  // del tenant tiene mejor contraste sobre blanco que sobre
-                  // gradient verde/accent, especialmente en sidebar oscuro.
-                  "h-10 w-10 rounded-xl object-contain bg-white p-0.5",
-                  isDarkTheme
-                    ? "ring-2 ring-white/40"
-                    : "ring-2 ring-gray-200 dark:ring-card-border",
-                )}
-              />
-            </div>
+          {effectiveCompact ? (
+            tenantLogoNode
           ) : (
+            /* Marco de identidad: logo + nombre + badges viven juntos dentro
+               de un borde acento — antes flotaban sueltos en la barra y el
+               nombre del tenant se truncaba a la mitad porque el badge de
+               industria competía por el ancho en la misma fila (Brandon
+               2026-08-24). Ahora el nombre tiene su propia fila completa y
+               los badges bajan a la segunda. */
             <div className={cn(
-              // Sin logo del tenant: usamos BulejeMark sobre blanco con
-              // accent color para el icon (mantiene identidad de marca).
-              "relative h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-white ring-2",
+              "flex min-w-0 flex-1 items-center gap-3 rounded-xl border px-2.5 py-1.5 transition-colors",
               isDarkTheme
-                ? "ring-white/40 text-[color:var(--accent)] shadow-[var(--shadow-md)]"
-                : "ring-gray-200 text-primary shadow-sm",
+                ? "border-[color-mix(in_oklab,var(--accent)_28%,transparent)] bg-[color-mix(in_oklab,var(--accent)_7%,transparent)]"
+                : "border-primary/15 bg-primary/5"
             )}>
-              <BulejeMark size={22} strokeWidth={1.75} />
-            </div>
-          )}
-          {!effectiveCompact && (
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
+              {tenantLogoNode}
+              <div className="min-w-0 flex-1">
                 <p className={cn(
-                  "font-bold text-sm leading-tight tracking-tight truncate flex-1 min-w-0",
+                  "font-bold text-sm leading-tight tracking-tight truncate",
                   isDarkTheme
                     ? "text-white"
                     : "text-[var(--text-primary)] dark:text-[var(--text-primary)]",
                 )}>
                   {activeTenantName ?? verticalConfig.branding?.sidebarTitle ?? "Buleje"}
                 </p>
-                {/* Industry badge — clickable para owner/admin */}
-                <button
-                  onClick={() => canChangeIndustry && setShowIndustryModal(true)}
-                  title={canChangeIndustry ? "Cambiar tipo de negocio" : verticalConfig.label}
-                  className={cn(
-                    "shrink-0 text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-md leading-none transition-all",
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  {/* Industry badge — clickable para owner/admin */}
+                  <button
+                    onClick={() => canChangeIndustry && setShowIndustryModal(true)}
+                    title={canChangeIndustry ? "Cambiar tipo de negocio" : verticalConfig.label}
+                    className={cn(
+                      "shrink-0 text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-md leading-none transition-all",
+                      isDarkTheme
+                        ? "bg-[color-mix(in_oklab,var(--accent)_20%,transparent)] text-[color-mix(in_oklab,var(--accent)_70%,white)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_30%,transparent)]"
+                        : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-inset ring-primary/20",
+                      canChangeIndustry && "cursor-pointer hover:opacity-80",
+                      !canChangeIndustry && "cursor-default"
+                    )}
+                  >
+                    {verticalConfig.label}
+                  </button>
+                  <span className={cn(
+                    "capitalize text-[length:var(--ts-2xs)] truncate",
+                    isDarkTheme ? "text-white/55" : "text-[var(--text-tertiary)] dark:text-muted"
+                  )}>
+                    {userName}
+                  </span>
+                  <span className={cn(
+                    "uppercase text-[length:var(--ts-2xs)] font-bold tracking-wider px-1.5 py-px rounded shrink-0",
                     isDarkTheme
-                      ? "bg-[color-mix(in_oklab,var(--accent)_20%,transparent)] text-[color-mix(in_oklab,var(--accent)_70%,white)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_30%,transparent)]"
-                      : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-inset ring-primary/20",
-                    canChangeIndustry && "cursor-pointer hover:opacity-80",
-                    !canChangeIndustry && "cursor-default"
-                  )}
-                >
-                  {verticalConfig.label}
-                </button>
+                      ? "bg-[color-mix(in_oklab,var(--accent)_14%,transparent)] text-[color-mix(in_oklab,var(--accent)_60%,white)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_25%,transparent)]"
+                      : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-inset ring-primary/20"
+                  )}>
+                    {userRole}
+                  </span>
+                </div>
               </div>
-              <p className="flex items-center gap-1.5 mt-1 leading-none">
-                <span className={cn(
-                  "capitalize text-[length:var(--ts-2xs)] truncate",
-                  isDarkTheme ? "text-white/55" : "text-[var(--text-tertiary)] dark:text-muted"
-                )}>
-                  {userName}
-                </span>
-                <span className={cn(
-                  "uppercase text-[length:var(--ts-2xs)] font-bold tracking-wider px-1.5 py-px rounded shrink-0",
-                  isDarkTheme
-                    ? "bg-[color-mix(in_oklab,var(--accent)_14%,transparent)] text-[color-mix(in_oklab,var(--accent)_60%,white)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_25%,transparent)]"
-                    : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-inset ring-primary/20"
-                )}>
-                  {userRole}
-                </span>
-              </p>
             </div>
           )}
         </div>
