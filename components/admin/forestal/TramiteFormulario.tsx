@@ -304,9 +304,28 @@ export default function TramiteFormulario({
   }
 
   /**
+   * Si el trámite todavía no se guardó ni una vez, no tiene `codigoInterno`
+   * — lo guarda en silencio ANTES de armar el PDF (Descargar / PDF al Drive):
+   * sin esto, se podía llenar el formulario entero y descargar/archivar un
+   * documento SIN código, justo lo que esta mejora existe para evitar
+   * (Brandon: "un código... para identificar y luego buscarlo"). El diálogo
+   * de impresión / "ver en pestaña" NO pasa por acá a propósito — sirven
+   * para mirar un borrador a medio llenar, y guardar de sopetón cada vez
+   * que se abre esa vista previa sería invasivo.
+   */
+  async function asegurarCodigoInterno(): Promise<string> {
+    if (codigoInterno) return codigoInterno;
+    const guardado = await onGuardar(datosParaGuardar());
+    if (!guardado) throw new Error("No se pudo guardar el trámite para asignarle un código.");
+    setIdGuardado(guardado.id);
+    setNumeroDocumento(guardado.numeroDocumento);
+    setCodigoInterno(guardado.codigoInterno);
+    return guardado.codigoInterno;
+  }
+
+  /**
    * El nombre de archivo del trámite actual — barato, sin fotografiar nada;
    * sirve tanto para deduplicar en el Drive como para el `<a download>`.
-   *
    * Lleva el `codigoInterno` (Brandon 2026-08-26, ronda 2: "para identificar
    * y luego buscarlo") — sin esto, buscar el código en el Drive dependía de
    * que el documento ya estuviera indexado por OCR; en el NOMBRE, cualquier
@@ -314,8 +333,8 @@ export default function TramiteFormulario({
    * encuentra al toque. Mismo dato que ya lleva `nombreArchivo` en
    * `PlantacionDocumentoModal` — acá faltaba.
    */
-  function nombreDocumentoActual(): string {
-    const nombreBase = `${formato.nombre}${numeroDocumento ? ` N° ${numeroDocumento}` : ""} — ${auto.ficha?.razonSocial?.trim() || "CTP"}${codigoInterno ? ` — ${codigoInterno}` : ""} — ${new Date().toISOString().slice(0, 10)}`;
+  function nombreDocumentoActual(codigo: string): string {
+    const nombreBase = `${formato.nombre}${numeroDocumento ? ` N° ${numeroDocumento}` : ""} — ${auto.ficha?.razonSocial?.trim() || "CTP"} — ${codigo} — ${new Date().toISOString().slice(0, 10)}`;
     return nombreArchivoTramite(nombreBase);
   }
 
@@ -325,13 +344,13 @@ export default function TramiteFormulario({
    * el código interno estampado en el pie de cada hoja. Único lugar donde se
    * arma: lo comparten "Descargar PDF" y "PDF al Drive" para que nunca diverjan.
    */
-  async function armarPdfActual(): Promise<Blob> {
-    const body = buildTramiteHtml({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo, codigoInterno: codigoInterno ?? undefined });
+  async function armarPdfActual(codigo: string): Promise<Blob> {
+    const body = buildTramiteHtml({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo, codigoInterno: codigo });
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <style>${TRAMITE_PREVIEW_CSS}html{background:#fff}.aviso{display:none}</style></head><body>${body}</body></html>`;
     const doc = await archivadorRef.current?.capturar(html);
     if (!doc) throw new Error("No se pudo preparar el documento para el PDF.");
-    return tramiteDocumentoAPdf(doc, codigoInterno ?? undefined);
+    return tramiteDocumentoAPdf(doc, codigo);
   }
 
   /**
@@ -345,18 +364,19 @@ export default function TramiteFormulario({
    * al presentar.
    */
   async function archivarDocumentoActual(): Promise<string> {
-    const nombre = nombreDocumentoActual();
+    const codigo = await asegurarCodigoInterno();
+    const nombre = nombreDocumentoActual(codigo);
     if (await existeEnDrive(nombre)) {
       return `Ya estaba en el Drive · carpeta "${carpetaDrive}".`;
     }
-    const pdf = await armarPdfActual();
+    const pdf = await armarPdfActual(codigo);
     const folderId = await carpetaAnidada(carpetaRuta);
     await archivarEnDrive({
       archivo: pdf,
       nombreArchivo: nombre,
       carpeta: carpetaDrive,
       folderId,
-      etiquetas: [autoridad.corto, formato.nombre, ...(codigoInterno ? [codigoInterno] : [])],
+      etiquetas: [autoridad.corto, formato.nombre, codigo],
       descripcion: asuntoDe(formato, datos),
     });
     return `Guardado en el Drive · carpeta "${carpetaDrive}".`;
@@ -381,11 +401,12 @@ export default function TramiteFormulario({
     setDescargando(true);
     setAviso(null);
     try {
-      const pdf = await armarPdfActual();
+      const codigo = await asegurarCodigoInterno();
+      const pdf = await armarPdfActual(codigo);
       const url = URL.createObjectURL(pdf);
       const a = document.createElement("a");
       a.href = url;
-      a.download = nombreDocumentoActual();
+      a.download = nombreDocumentoActual(codigo);
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch (err) {
@@ -395,10 +416,11 @@ export default function TramiteFormulario({
     }
   }
 
-  async function guardar() {
-    setGuardando(true);
-    setAviso(null);
-    const guardado = await onGuardar({
+  /** El payload de `onGuardar` — un solo lugar, lo usan `guardar()` y
+   *  `asegurarCodigoInterno()` (que guarda en silencio ANTES de armar un
+   *  PDF si el trámite todavía no se guardó ni una vez). */
+  function datosParaGuardar(): GuardarTramiteInput {
+    return {
       id: idGuardado ?? existente?.id,
       formatoId: formato.id,
       formatoNombre: formato.nombre,
@@ -410,7 +432,13 @@ export default function TramiteFormulario({
       fechaPresentacion: fechaPresentacion.trim() || null,
       fechaLimite: fechaLimite.trim() || null,
       notas: notas.trim() || null,
-    });
+    };
+  }
+
+  async function guardar() {
+    setGuardando(true);
+    setAviso(null);
+    const guardado = await onGuardar(datosParaGuardar());
     setGuardando(false);
     if (guardado) {
       setIdGuardado(guardado.id);
