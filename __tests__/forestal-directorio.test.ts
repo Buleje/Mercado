@@ -50,6 +50,7 @@ const parte = (over: Partial<Parte> = {}): Parte => ({
   planManejo: null,
   arffs: null,
   representante: null,
+  representanteDni: null,
   logo: null,
   adjuntos: [],
   notas: null,

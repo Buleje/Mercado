@@ -112,6 +112,13 @@ export function motivoDocInvalido(docTipo: DocTipo, numero: string): string | nu
   return /^[0-9A-Z]{5,20}$/.test(n) ? null : "El pasaporte tiene entre 5 y 20 caracteres.";
 }
 
+/** ¿El DNI del representante está bien formado? `null` si está vacío (opcional) o correcto. */
+export function motivoRepresentanteDniInvalido(dni: string): string | null {
+  const n = normalizarDocumento(dni);
+  if (!n) return null;
+  return /^\d{8}$/.test(n) ? null : "El DNI tiene 8 dígitos.";
+}
+
 /** Qué servicio puede completar los datos de este documento, si alguno. */
 export function fuenteAutocompletado(docTipo: DocTipo): "SUNAT" | "RENIEC" | null {
   if (docTipo === "RUC") return "SUNAT";
@@ -225,6 +232,8 @@ export const parteInputSchema = z.object({
   planManejo: texto(120).optional(),
   arffs: texto(120).optional(),
   representante: texto(160).optional(),
+  /** DNI del representante legal — Brandon 2026-08-26: "el DNI del representante legal o jefe". */
+  representanteDni: texto(15).optional(),
   notas: texto(500).optional(),
   activo: z.boolean().optional(),
   /** Data URL; se valida el formato y el peso, no el contenido de la imagen. */
@@ -282,6 +291,8 @@ export interface Parte {
   planManejo: string | null;
   arffs: string | null;
   representante: string | null;
+  /** DNI del representante legal, si es persona natural el que firma. */
+  representanteDni: string | null;
   notas: string | null;
   activo: boolean;
   usos: number;

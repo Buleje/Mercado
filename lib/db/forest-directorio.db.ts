@@ -107,6 +107,7 @@ function aParte(r: ParteRow): Parte {
     planManejo: r.planManejo,
     arffs: r.arffs,
     representante: r.representante,
+    representanteDni: r.representanteDni,
     notas: r.notas,
     activo: r.activo,
     usos: r.usos,
@@ -226,6 +227,7 @@ export const ForestDirectorioDB = {
       planManejo: vacioANull(input.planManejo),
       arffs: vacioANull(input.arffs),
       representante: vacioANull(input.representante),
+      representanteDni: vacioANull(input.representanteDni),
       notas: vacioANull(input.notas),
       ...(input.activo === undefined ? {} : { activo: input.activo }),
       // `null` explícito borra el logo; `undefined` lo deja como estaba (una

@@ -6309,6 +6309,9 @@ model ForestParty {
   arffs             String?
   /// Representante legal, el que firma. Cuelga del (7) en el formato.
   representante     String?
+  /// DNI del representante legal — Brandon 2026-08-26: "el DNI del
+  /// representante legal o jefe" para no tener que buscarlo en otro lado.
+  representanteDni  String?
   notas             String?
 
   /// Logo del titular como data URL (PNG/JPG chico, ver `LOGO_MAX_BYTES`).

@@ -22,6 +22,7 @@ import {
   categoriaEfectiva,
   fuenteAutocompletado,
   motivoDocInvalido,
+  motivoRepresentanteDniInvalido,
   type CategoriaParte,
   type DocTipo,
   type Parte,
@@ -49,6 +50,7 @@ function aBorrador(p: Parte | null, rolInicial: RolParte): Borrador {
     region: p.region ?? "",
     provincia: p.provincia ?? "",
     distrito: p.distrito ?? "",
+    zona: p.zona ?? "",
     ubigeo: p.ubigeo ?? "",
     telefono: p.telefono ?? "",
     email: p.email ?? "",
@@ -59,6 +61,7 @@ function aBorrador(p: Parte | null, rolInicial: RolParte): Borrador {
     planManejo: p.planManejo ?? "",
     arffs: p.arffs ?? "",
     representante: p.representante ?? "",
+    representanteDni: p.representanteDni ?? "",
     notas: p.notas ?? "",
     activo: p.activo,
     logo: p.logo ?? "",
@@ -86,6 +89,7 @@ export default function CtpParteModal({
   const docTipo = (b.docTipo ?? "RUC") as DocTipo;
   const fuente = fuenteAutocompletado(docTipo);
   const docMal = motivoDocInvalido(docTipo, b.docNumero ?? "");
+  const dniRepresentanteMal = motivoRepresentanteDniInvalido(b.representanteDni ?? "");
   const set = (v: Partial<Borrador>) => setB((p) => ({ ...p, ...v }));
 
   function alternarRol(rol: RolParte) {
@@ -133,6 +137,10 @@ export default function CtpParteModal({
     }
     if (docMal) {
       setError(docMal);
+      return;
+    }
+    if (dniRepresentanteMal) {
+      setError(dniRepresentanteMal);
       return;
     }
     setEstado("guardando");
@@ -247,6 +255,12 @@ export default function CtpParteModal({
           <Field label="Distrito" span={4}>
             <input type="text" className={I} value={b.distrito ?? ""} onChange={(e) => set({ distrito: e.target.value })} />
           </Field>
+          <Field label="Zona" span={6} hint="Sector o caserío — identifica el punto de llegada cuando la dirección no tiene numeración">
+            <input type="text" className={I} value={b.zona ?? ""} onChange={(e) => set({ zona: e.target.value })} />
+          </Field>
+          <Field label="Ubigeo" span={6} hint="Código INEI de 6 dígitos, si lo tenés a mano">
+            <input type="text" className={`${I} font-mono`} value={b.ubigeo ?? ""} onChange={(e) => set({ ubigeo: e.target.value })} />
+          </Field>
           <Field label="Teléfono" span={6}>
             <input type="text" className={I} value={b.telefono ?? ""} onChange={(e) => set({ telefono: e.target.value })} />
           </Field>
@@ -321,6 +335,14 @@ export default function CtpParteModal({
                 )}
                 <Field label="Representante legal" span={6} hint="El que firma; cuelga del (7)">
                   <input type="text" className={I} value={b.representante ?? ""} onChange={(e) => set({ representante: e.target.value })} />
+                </Field>
+                <Field label="DNI del representante" span={6} hint={dniRepresentanteMal ?? "El jefe de la comunidad o el gerente que firma"}>
+                  <input
+                    type="text"
+                    className={`${I} font-mono`}
+                    value={b.representanteDni ?? ""}
+                    onChange={(e) => set({ representanteDni: e.target.value })}
+                  />
                 </Field>
               </>
             )}
