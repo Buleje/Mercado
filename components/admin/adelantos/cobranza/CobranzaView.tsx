@@ -36,6 +36,14 @@ import { armarMensaje, guardarPlantillas, leerPlantillas, type Plantillas } from
 import { deudoresDeCobranza, ordenarPorUrgencia, type DeudorCobranza } from "@/lib/adelantos/urgencia-cobranza";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { EmptyState, SkeletonGrid, sinTildes, fmtMon, sumByMoneda, fmtMonedas } from "../shared";
+import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
+import CrearPersonaModal from "../personas/CrearPersonaModal";
+import ProximosVencimientos from "./ProximosVencimientos";
+import FilaDeudor from "./FilaDeudor";
+import AnotarGestion from "./AnotarGestion";
+import PlantillasModal from "./PlantillasModal";
+import MetaModal from "./MetaModal";
+import ModoLlamada from "./ModoLlamada";
 
 /**
  * Fila = persona + moneda: `deudoresDeCobranza` puede devolver DOS filas para
@@ -46,22 +54,18 @@ import { EmptyState, SkeletonGrid, sinTildes, fmtMon, sumByMoneda, fmtMonedas } 
  * fila: la selección de la ronda y el `key` de la lista.
  */
 const claveFila = (d: DeudorCobranza) => `${d.id}::${d.moneda}`;
-import ProximosVencimientos from "./ProximosVencimientos";
-import FilaDeudor from "./FilaDeudor";
-import AnotarGestion from "./AnotarGestion";
-import PlantillasModal from "./PlantillasModal";
-import MetaModal from "./MetaModal";
-import ModoLlamada from "./ModoLlamada";
 
 /** La meta vive en el navegador: es del negocio, no del sistema, y cambia mes a mes. */
 const CLAVE_META = "buleje:cobranza-meta";
 
 export default function CobranzaView({
   adelantos,
+  beneficiarios,
   loading,
   onRecordado,
 }: {
   adelantos: DbAdelanto[];
+  beneficiarios: BeneficiarioConSaldo[];
   loading: boolean;
   onGoTab: (t: string) => void;
   onRecordado?: () => void;
@@ -71,6 +75,13 @@ export default function CobranzaView({
   const [tanda, setTanda] = useState<Set<string>>(new Set());
   const [gestiones, setGestiones] = useState<Gestion[]>([]);
   const [anotando, setAnotando] = useState<DeudorCobranza | null>(null);
+  /**
+   * "Cargar teléfono" abría el mismo modal que "Anotar gestión" — que no
+   * tiene ningún campo de teléfono, así que la persona quedaba fuera de
+   * WhatsApp/llamada para siempre (auditoría de esta sesión). Ahora abre el
+   * modal real de edición de persona, que sí lo tiene.
+   */
+  const [editandoTelefono, setEditandoTelefono] = useState<BeneficiarioConSaldo | null>(null);
   const [verPlantillas, setVerPlantillas] = useState(false);
   const [verMeta, setVerMeta] = useState(false);
   const [enLlamada, setEnLlamada] = useState(false);
@@ -382,7 +393,7 @@ export default function CobranzaView({
                   })
                 }
                 onAnotar={() => setAnotando(d)}
-                onCargarTelefono={() => setAnotando(d)}
+                onCargarTelefono={() => setEditandoTelefono(beneficiarios.find((b) => b.id === d.id) ?? null)}
                 mensaje={mensajeDe(d)}
               />
             ))}
@@ -427,6 +438,17 @@ export default function CobranzaView({
           onGuardada={() => {
             setAnotando(null);
             void cargarGestiones();
+            onRecordado?.();
+          }}
+        />
+      )}
+      {editandoTelefono && (
+        <CrearPersonaModal
+          persona={editandoTelefono}
+          personasExistentes={beneficiarios}
+          onClose={() => setEditandoTelefono(null)}
+          onCreated={() => {
+            setEditandoTelefono(null);
             onRecordado?.();
           }}
         />

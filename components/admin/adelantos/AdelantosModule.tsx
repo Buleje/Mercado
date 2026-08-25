@@ -208,7 +208,15 @@ export default function AdelantosModule() {
           {tab === "personas" && (
             <PersonasView beneficiarios={beneficiarios} adelantos={adelantos} loading={loading} onChange={reload} />
           )}
-          {tab === "cobranza" && <CobranzaView adelantos={adelantos} loading={loading} onGoTab={setTab} onRecordado={() => void reload()} />}
+          {tab === "cobranza" && (
+            <CobranzaView
+              adelantos={adelantos}
+              beneficiarios={beneficiarios}
+              loading={loading}
+              onGoTab={setTab}
+              onRecordado={() => void reload()}
+            />
+          )}
           {tab === "recurrentes" && <RecurrentesView beneficiarios={beneficiarios} onChange={reload} />}
           {tab === "actividad" && <ActividadView adelantos={adelantos} loading={loading} />}
           {tab === "analisis" && <AnalisisView adelantos={adelantos} loading={loading} />}
