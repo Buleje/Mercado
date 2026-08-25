@@ -235,11 +235,19 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
   // el mismo dato — así el papel nunca se contradice a sí mismo (el riesgo
   // que ya señalaba el comentario original de la ronda 6).
   const membreteFirmaTexto = editable ? empresaMembrete : empresaReal;
+  // Cuando quien firma ES la entidad (una comunidad nativa no tiene un
+  // "representante" separado del nombre de la propia comunidad, a diferencia
+  // de una empresa con gerente), el nombre queda repetido dos veces seguidas
+  // — se lee como un renglón duplicado por error, no como dos datos. En modo
+  // edición se muestra igual (es un campo editable más, y ocultarlo
+  // confundiría), pero el papel final omite la repetición.
+  const firmaRepiteEmpresa =
+    !editable && !!firmante && firmante.toLowerCase() === empresaReal.trim().toLowerCase();
 
   const firma = `<div class="lugar">${campoSpan(editable, "lugar", lugar, false)}, ${esc(hoyLargo())}</div>
   <div class="firma-uno"><div class="linea">${campoSpan(editable, "firmante", firmante || "Firma del titular o representante legal", !firmante)}</div>
   ${dni || editable ? `<div style="color:#666;font-size:11.5px">DNI ${campoSpan(editable, "firmanteDni", dni || "12345678", !dni)}</div>` : ""}
-  ${empresaReal || editable ? `<div style="color:#666;font-size:11.5px">${campoSpan(editable, "membreteEmpresa", membreteFirmaTexto, !empresaReal)}</div>` : ""}</div>`;
+  ${(empresaReal || editable) && !firmaRepiteEmpresa ? `<div style="color:#666;font-size:11.5px">${campoSpan(editable, "membreteEmpresa", membreteFirmaTexto, !empresaReal)}</div>` : ""}</div>`;
 
   const aviso = formato.advertencia
     ? `<div class="aviso"><strong>Antes de presentar:</strong> ${esc(formato.advertencia)}</div>`
@@ -255,11 +263,23 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
   // CTP sigue siendo el default. La ubicación (distrito/provincia/región) NO
   // se hizo editable a propósito: es un compuesto de tres campos de la Ficha,
   // no un dato suelto que un documento puntual necesite pisar.
-  const rucValor = (datos.membreteRuc ?? "").trim() || ficha?.ruc || "";
-  const codigoValor = (datos.membreteCodigoCtp ?? "").trim() || ficha?.codigoCtp || "";
-  const registroValor = (datos.membreteRegistroArffs ?? "").trim() || ficha?.registroArffs || "";
-  const direccionValor = (datos.membreteDireccion ?? "").trim() || ficha?.direccion || "";
-  const ubicacionTexto = [ficha?.distrito, ficha?.provincia, ficha?.region].filter(Boolean).join(", ");
+  // El resto de la ficha (RUC, código, registro, ubicación) sólo cae de
+  // default cuando el membrete SIGUE siendo el nuestro. En cuanto el nombre
+  // pasa a ser el de otra parte —tipeado a mano en el papel, o traído del
+  // Directorio con "Usar un emisor guardado"— nuestros datos de registro no
+  // le pertenecen a ese nombre y dejan de heredarse: mostrar NUESTRO Código
+  // de CTP junto al nombre de una comunidad nativa imprime un documento que
+  // se contradice a sí mismo (Brandon 2026-08-25: "pone que número de CTP
+  // pero es comunidad nativa, no es aserradero"). El único dato que SÍ sigue
+  // viajando con un nombre ajeno es el que la propia elección trajo consigo
+  // (`membreteCodigoCtp`/`membreteDireccion`, ver `datosDeEmisor`).
+  const membreteEsPropio =
+    !empresaReal || empresaReal === (ficha?.razonSocial || ficha?.nombreCtp || "");
+  const rucValor = (datos.membreteRuc ?? "").trim() || (membreteEsPropio ? ficha?.ruc || "" : "");
+  const codigoValor = (datos.membreteCodigoCtp ?? "").trim() || (membreteEsPropio ? ficha?.codigoCtp || "" : "");
+  const registroValor = (datos.membreteRegistroArffs ?? "").trim() || (membreteEsPropio ? ficha?.registroArffs || "" : "");
+  const direccionValor = (datos.membreteDireccion ?? "").trim() || (membreteEsPropio ? ficha?.direccion || "" : "");
+  const ubicacionTexto = membreteEsPropio ? [ficha?.distrito, ficha?.provincia, ficha?.region].filter(Boolean).join(", ") : "";
 
   const linea2 = [
     rucValor || editable ? `RUC ${campoSpan(editable, "membreteRuc", rucValor, !rucValor)}` : "",

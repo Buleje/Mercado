@@ -57,6 +57,18 @@ function datosDeEmisor(campos: FormatoTramite["campos"], e: EntidadElegida): Rec
       if (e.docTipo === tipoQueVale && e.docNumero) out[c.id] = e.docNumero;
       continue;
     }
+    if (c.id === "membreteEmpresa") {
+      // El membrete es un bloque: si el nombre pasa a ser el de otra parte,
+      // su Código de CTP y dirección viajan CON el nombre — `tramites-print.ts`
+      // deja de heredar el resto de la Ficha en cuanto el nombre del membrete
+      // deja de ser el nuestro, así que sin esto un comunero elegido acá
+      // imprimía SU nombre junto al Código de CTP de NUESTRO aserradero
+      // (Brandon 2026-08-25: "pone que número de CTP pero es comunidad
+      // nativa, no es aserradero").
+      if (e.docTipo === "RUC" && e.docNumero) out.membreteRuc = e.docNumero;
+      if (e.codigoCtp) out.membreteCodigoCtp = e.codigoCtp;
+      if (e.direccion) out.membreteDireccion = e.direccion;
+    }
     const rol = CAMPO_A_EMISOR[c.id];
     if (rol && e[rol]) out[c.id] = String(e[rol]);
   }
