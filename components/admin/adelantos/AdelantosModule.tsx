@@ -26,6 +26,7 @@ import {
   Download,
   ChevronLeft,
 } from "@buleje/design-system/icons";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { AnalisisView } from "./AnalisisView";
@@ -55,12 +56,12 @@ import {
 import { descargarCsvPersonas } from "@/lib/adelantos/exportar-csv";
 import { enlaceWhatsApp } from "@/lib/adelantos/contacto";
 import {
-  bucketDe,
   deudoresDeCobranza,
   explicarAtraso,
   ordenarPorUrgencia,
   type DeudorCobranza,
 } from "@/lib/adelantos/urgencia-cobranza";
+import { TRAMOS, tramoDe } from "@/lib/adelantos/gestion-cobranza";
 import type { BeneficiarioConSaldo as BeneficiarioConSaldoBase } from "./crear-adelanto/tipos";
 import type {
   DbAdelanto,
@@ -273,9 +274,19 @@ function ResumenView({
   const adelantado = resumen.totalAdelantado;
   const liquidado = resumen.totalLiquidado;
   const pct = adelantado > 0 ? Math.min(100, Math.round((liquidado / adelantado) * 100)) : 0;
-  const abiertos = adelantos
-    .filter((a) => a.status === "ABIERTO" && a.saldoPendiente > 0)
-    .sort((a, b) => b.saldoPendiente - a.saldoPendiente);
+  const abiertos = adelantos.filter((a) => a.status === "ABIERTO" && a.saldoPendiente > 0);
+
+  /**
+   * Quién te debe — antes era la lista de ADELANTOS abiertos (una fila por
+   * cada uno, aunque sean tres de la misma persona) ordenada sólo por monto.
+   * `deudoresDeCobranza` agrupa por PERSONA y `ordenarPorUrgencia` prioriza el
+   * compromiso roto (una pactada o un vencimiento incumplido) sobre la mera
+   * antigüedad — es la misma regla que usa la pestaña Cobranza, no una nueva.
+   */
+  const deudores: DeudorCobranza[] = ordenarPorUrgencia(deudoresDeCobranza(abiertos));
+  const porTramo = TRAMOS.map((t) => ({ ...t, n: deudores.filter((d) => tramoDe(d.dias) === t.id).length })).filter(
+    (t) => t.n > 0,
+  );
 
   // Cifras segmentadas por moneda (ADR-118) — desde el listado (que trae moneda)
   const activos = adelantos.filter((a) => a.status !== "CANCELADO");
@@ -293,9 +304,17 @@ function ResumenView({
         ? { cls: "text-[var(--data-info)]", Icon: Coins, text: `Te entregaron ${fmtMonedas(excedenteMap)} de más.` }
         : { cls: "text-[var(--data-success)]", Icon: CheckCircle, text: "Todo al día — nadie te debe nada." };
 
+  /* Donut de "% recuperado": una sola dona en vez de dos categorías — el
+     resto (surface-sunken) es sólo el fondo del medidor, no una segunda
+     serie que compita en el tooltip. */
+  const donutData = [
+    { name: "Recuperado", value: pct, color: "var(--data-success)" },
+    { name: "Pendiente", value: 100 - pct, color: "var(--surface-sunken)" },
+  ];
+
   return (
     <div className="space-y-5">
-      {/* Hero saldo + barra de progreso de recuperación */}
+      {/* Hero saldo + dona de recuperación */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
           <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Saldo pendiente</p>
@@ -306,44 +325,119 @@ function ResumenView({
           </div>
         </div>
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 lg:col-span-2">
-          <div className="flex items-baseline justify-between">
-            <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Recuperación de adelantos</CardTitle>
-            <span className="text-2xl font-extrabold tabular-nums text-[var(--data-success)]">{pct}%</span>
+          <div className="flex flex-col items-center gap-5 sm:flex-row">
+            <div className="relative h-[140px] w-[140px] shrink-0">
+              <ResponsiveContainer minWidth={0} width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={donutData}
+                    dataKey="value"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={48}
+                    outerRadius={64}
+                    startAngle={90}
+                    endAngle={-270}
+                    stroke="none"
+                    isAnimationActive={false}
+                  >
+                    {donutData.map((d, i) => (
+                      <Cell key={i} fill={d.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <span className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)]">{pct}%</span>
+              </div>
+            </div>
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Recuperación de adelantos</CardTitle>
+              <p className="mt-2 text-base text-[var(--text-secondary)]">
+                Recuperaste <span className="font-bold text-[var(--text-primary)]">{fmtMonedas(liquidadoMap)}</span> de{" "}
+                <span className="font-bold text-[var(--text-primary)]">{fmtMonedas(adelantadoMap)}</span> adelantados.
+              </p>
+            </div>
           </div>
-          <div className="mt-3 h-4 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
-            <div className="h-full rounded-full bg-[var(--data-success)] transition-all" style={{ width: `${pct}%` }} />
-          </div>
-          <p className="mt-3 text-base text-[var(--text-secondary)]">
-            Recuperaste <span className="font-bold text-[var(--text-primary)]">{fmtMonedas(liquidadoMap)}</span> de{" "}
-            <span className="font-bold text-[var(--text-primary)]">{fmtMonedas(adelantadoMap)}</span> adelantados.
-          </p>
         </div>
       </div>
 
       <ProximosVencimientos adelantos={adelantos} />
 
-      {/* Quién te debe — lista accionable de adelantos abiertos */}
-      {abiertos.length > 0 && (
+      {/* Quién te debe — deudores (no adelantos sueltos) ordenados por urgencia real */}
+      {deudores.length > 0 && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <div className="mb-2 flex items-center justify-between">
-            <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Quién te debe ({abiertos.length})</CardTitle>
-            <button onClick={() => onGoTab("lista")} className="inline-flex items-center gap-1 text-base font-bold text-primary hover:underline">
+          <div className="mb-3 flex items-center justify-between">
+            <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Quién te debe ({deudores.length})</CardTitle>
+            <button onClick={() => onGoTab("cobranza")} className="inline-flex items-center gap-1 text-base font-bold text-primary hover:underline">
               Ver todos <ChevronRight className="h-4 w-4" />
             </button>
           </div>
-          <ul className="divide-y divide-[var(--rule-soft)]">
-            {abiertos.slice(0, 5).map((a) => (
-              <li key={a.id}>
-                <button onClick={() => onGoTab("lista")} className="flex w-full items-center gap-3 py-3 text-left transition-colors hover:bg-[var(--surface-sunken)]/50">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                    {(a.beneficiario?.nombre ?? "?").charAt(0).toUpperCase()}
+
+          {/* Distribución por antigüedad — mismos tramos y colores que Cobranza */}
+          {porTramo.length > 1 && (
+            <div className="mb-3">
+              <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                {porTramo.map((t) => (
+                  <div
+                    key={t.id}
+                    style={{ width: `${(t.n / deudores.length) * 100}%`, backgroundColor: t.tono }}
+                    title={`${t.label}: ${t.n}`}
+                  />
+                ))}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                {porTramo.map((t) => (
+                  <span key={t.id} className="inline-flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]">
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: t.tono }} />
+                    {t.label}: <strong className="text-[var(--text-secondary)]">{t.n}</strong>
                   </span>
-                  <span className="flex-1 text-base font-bold text-[var(--text-primary)]">{a.beneficiario?.nombre ?? "—"}</span>
-                  <span className="tabular-nums text-base font-extrabold text-[var(--data-warning)]">{fmtMon(a.saldoPendiente, a.moneda)}</span>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" />
-                </button>
-              </li>
-            ))}
+                ))}
+              </div>
+            </div>
+          )}
+
+          <ul className="divide-y divide-[var(--rule-soft)]">
+            {deudores.slice(0, 5).map((d) => {
+              const tramo = TRAMOS.find((t) => t.id === tramoDe(d.dias)) ?? TRAMOS[0];
+              const wa = enlaceWhatsApp(d.telefono, d.nombre, d.saldo);
+              return (
+                <li key={d.id} className="flex items-center gap-3 py-2.5">
+                  <button
+                    onClick={() => onGoTab("cobranza")}
+                    className="-mx-1 flex min-w-0 flex-1 items-center gap-3 rounded-lg px-1 py-1 text-left transition-colors hover:bg-[var(--surface-sunken)]/50"
+                  >
+                    <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                      {d.nombre.charAt(0).toUpperCase()}
+                      <span
+                        className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-[var(--surface-raised)]"
+                        style={{ backgroundColor: tramo.tono }}
+                        title={tramo.label}
+                      />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-base font-bold text-[var(--text-primary)]">{d.nombre}</span>
+                      <span className="block truncate text-sm text-[var(--text-tertiary)]">{explicarAtraso(d)}</span>
+                    </span>
+                  </button>
+                  <span className="shrink-0 tabular-nums text-base font-extrabold text-[var(--data-warning)]">{fmtMon(d.saldo)}</span>
+                  {wa ? (
+                    <a
+                      href={wa}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`Recordarle a ${d.nombre} por WhatsApp`}
+                      aria-label={`Recordarle a ${d.nombre} por WhatsApp`}
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                    </a>
+                  ) : (
+                    <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" />
+                  )}
+                </li>
+              );
+            })}
           </ul>
           <div className="mt-2 flex items-center justify-between border-t-2 border-[var(--rule-base)] pt-3">
             <span className="text-base font-bold text-[var(--text-secondary)]">Total por recuperar</span>

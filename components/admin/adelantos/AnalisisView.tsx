@@ -25,7 +25,7 @@ const AGING_BUCKETS = [
   { key: "0-30", label: "0-30 días", color: "var(--data-success)" },
   { key: "31-60", label: "31-60 días", color: "var(--data-info)" },
   { key: "61-90", label: "61-90 días", color: "var(--data-warning)" },
-  { key: "90+", label: "+90 días", color: "var(--data-danger)" },
+  { key: "90+", label: "+90 días", color: "var(--data-error)" },
 ] as const;
 
 function daysSince(iso: string): number {
