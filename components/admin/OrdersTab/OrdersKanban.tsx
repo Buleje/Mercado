@@ -13,7 +13,8 @@
  * Tipografía: estándar admin (text-base/text-xl font-extrabold), sin italic.
  */
 
-import { useMemo, useState, useEffect, memo } from "react";
+import { useMemo, useState, useEffect, useRef, memo } from "react";
+import { toast } from "sonner";
 import {
   Check, X as XIcon, MapPin, Bike, Clock, AlertTriangle, ShoppingBasket, ArrowRight, Store, Boxes, ChefHat, GripHorizontal,
 } from "@buleje/design-system/icons";
@@ -406,7 +407,8 @@ const OrderCard = memo(function OrderCard({
 }, areOrderCardPropsEqual);
 
 // ── Draggable wrapper ─────────────────────────────────────────────────────────
-function DraggableOrderCard(props: OrderCardProps) {
+function DraggableOrderCard(props: OrderCardProps & { shake?: boolean }) {
+  const { shake, ...cardProps } = props;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: props.order.id,
     data: { order: props.order },
@@ -420,8 +422,19 @@ function DraggableOrderCard(props: OrderCardProps) {
         "outline-none touch-none",
         isDragging ? "opacity-30 cursor-grabbing" : "cursor-grab",
       )}
+      style={shake ? { animation: "orders-kanban-shake 0.5s cubic-bezier(.36,.07,.19,.97) both" } : undefined}
     >
-      <OrderCard {...props} />
+      {shake && (
+        <style>{`
+          @keyframes orders-kanban-shake {
+            10%, 90% { transform: translateX(-2px); }
+            20%, 80% { transform: translateX(4px); }
+            30%, 50%, 70% { transform: translateX(-6px); }
+            40%, 60% { transform: translateX(6px); }
+          }
+        `}</style>
+      )}
+      <OrderCard {...cardProps} />
     </div>
   );
 }
@@ -433,6 +446,7 @@ interface KanbanColumnProps extends ColumnConfig {
   storeLon: number | null;
   nowMs: number;
   driverColor: (name: string) => string;
+  rejectedId?: string | null;
   onSelectOrder: (o: DbOrder) => void;
   onToggleSelect: (id: string) => void;
   onUpdateStatus: (id: string, status: OrderStatus) => void;
@@ -456,6 +470,7 @@ const KanbanColumn = memo(function KanbanColumn({
   storeLon,
   nowMs,
   driverColor,
+  rejectedId,
   isActiveTarget,
   onSelectOrder,
   onToggleSelect,
@@ -532,6 +547,7 @@ const KanbanColumn = memo(function KanbanColumn({
               storeLon={storeLon}
               nowMs={nowMs}
               driverColor={driverColor}
+              shake={o.id === rejectedId}
               onSelect={() => onSelectOrder(o)}
               onToggleSelect={() => onToggleSelect(o.id)}
               onUpdateStatus={(s) => onUpdateStatus(o.id, s)}
@@ -573,6 +589,14 @@ export function OrdersKanban({
 
   // ── Drag & drop state ──────────────────────────────────────────────────────
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  // Salto de estado inválido (ej. Por confirmar → Preparando): la card
+  // rebota a su columna sin este flag, y para el usuario se ve idéntico a
+  // "el drag&drop no funciona". Shake + toast avisan que fue un rechazo, no un bug.
+  const [rejectedId, setRejectedId] = useState<string | null>(null);
+  const rejectedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (rejectedTimeoutRef.current) clearTimeout(rejectedTimeoutRef.current);
+  }, []);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
@@ -591,7 +615,16 @@ export function OrdersKanban({
     const order = activeOrders.find((o) => o.id === activeId);
     if (!order || order.status === target.id) return;
     const allowed = VALID_TRANSITIONS[order.status] ?? [];
-    if (!allowed.includes(target.id as OrderStatus)) return;
+    if (!allowed.includes(target.id as OrderStatus)) {
+      const from = COLUMNS.find((c) => c.id === order.status)?.label ?? order.status;
+      toast.error(`No se puede pasar de "${from}" a "${target.label}" directo`, {
+        description: "Primero pasá por los estados intermedios del pedido.",
+      });
+      if (rejectedTimeoutRef.current) clearTimeout(rejectedTimeoutRef.current);
+      setRejectedId(activeId);
+      rejectedTimeoutRef.current = setTimeout(() => setRejectedId(null), 500);
+      return;
+    }
     onUpdateStatus(activeId, target.id as OrderStatus);
   };
 
@@ -689,6 +722,7 @@ export function OrdersKanban({
             storeLon={storeLon}
             nowMs={nowMs}
             driverColor={driverColor}
+            rejectedId={rejectedId}
             onSelectOrder={onSelectOrder}
             onToggleSelect={onToggleSelect}
             onUpdateStatus={onUpdateStatus}
@@ -714,6 +748,7 @@ export function OrdersKanban({
               storeLon={storeLon}
               nowMs={nowMs}
               driverColor={driverColor}
+              rejectedId={rejectedId}
               isActiveTarget={draggedFromOther}
               onSelectOrder={onSelectOrder}
               onToggleSelect={onToggleSelect}
