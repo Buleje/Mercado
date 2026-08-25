@@ -954,7 +954,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
     proposito: "Impugnar una resolución de la autoridad — reconsideración ante quien la emitió, o apelación ante su superior jerárquico",
     asunto: "Interpongo recurso administrativo",
     baseLegal: [
-      "Ley N° 27444 — Ley del Procedimiento Administrativo General (TUO, D.S. N° 004-2019-JUS), arts. 219 (reconsideración) y 220 (apelación)",
+      "Ley N° 27444 — Ley del Procedimiento Administrativo General (TUO, D.S. N° 006-2026-JUS), arts. 219 (reconsideración) y 220 (apelación)",
     ],
     campos: [
       ...CAMPOS_COMUNES,
@@ -1001,7 +1001,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "Adjunto la documentación que sustenta lo expuesto y solicito se tenga por interpuesto el presente recurso dentro del plazo legal.",
     ],
     advertencia:
-      "El plazo para interponer el recurso es de 15 días hábiles perentorios desde la notificación (art. 216 TUO Ley 27444): vencido, el acto queda firme y ya no se puede recurrir. La reconsideración exige nueva prueba, salvo que la resolución la haya emitido un órgano de instancia única.",
+      "El plazo para interponer el recurso es de 15 días hábiles perentorios desde la notificación (art. 218.1 TUO Ley 27444): vencido, el acto queda firme y ya no se puede recurrir. La reconsideración exige nueva prueba, salvo que la resolución la haya emitido un órgano de instancia única.",
   },
 
   // ── 17. Solicitud de ampliación de plazo ──────────────────────────────────
@@ -1011,7 +1011,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
     autoridad: "otra",
     proposito: "Pedir más tiempo para presentar un descargo, informe o documentación antes de que venza el plazo",
     asunto: "Solicito ampliación de plazo",
-    baseLegal: ["Ley N° 27444 — Ley del Procedimiento Administrativo General (TUO, D.S. N° 004-2019-JUS), art. 136.3 — prórroga"],
+    baseLegal: ["Ley N° 27444 — Ley del Procedimiento Administrativo General (TUO, D.S. N° 006-2026-JUS), art. 136.3 — prórroga"],
     campos: [
       ...CAMPOS_COMUNES,
       { id: "expedientePlazo", label: "Expediente o notificación que fija el plazo", tipo: "texto", requerido: true },
