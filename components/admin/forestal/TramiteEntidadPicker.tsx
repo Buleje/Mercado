@@ -23,13 +23,16 @@
  *      en vez de un formulario compacto aparte — Brandon: "que sea más
  *      completo, más campos y que sea un modal (ahí también guardaré logo y
  *      demás cosas)". Un solo editor de partes en toda la app, no dos.
+ *   3. Cada fila de la lista suma un lápiz para editar esa parte sin salir
+ *      del trámite (mismo modal, con sus datos ya cargados) — antes sólo se
+ *      podía editar desde Libro CTP → Gestión → Directorio.
  */
 
 import { useState } from "react";
-import { ChevronDown, Plus, Search, Users } from "@buleje/design-system/icons";
+import { ChevronDown, Pencil, Plus, Search, Users } from "@buleje/design-system/icons";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import { claveBusqueda, direccionCompleta, type DocTipo, type Parte } from "@/lib/forestal/directorio";
-import { Btn } from "./ctp-shared";
+import { Btn, IconAction } from "./ctp-shared";
 import CtpParteModal from "./CtpParteModal";
 
 export interface EntidadElegida {
@@ -52,7 +55,7 @@ export default function TramiteEntidadPicker({ onElegir }: { onElegir: (e: Entid
   const { partes, cargando, error, guardarParte } = useDirectorioForestal();
   const [abierto, setAbierto] = useState(false);
   const [q, setQ] = useState("");
-  const [creando, setCreando] = useState(false);
+  const [modal, setModal] = useState<"nuevo" | Parte | null>(null);
 
   const comunidades = partes.filter((p) => p.roles.includes("proveedor") && p.activo);
   const k = claveBusqueda(q);
@@ -111,17 +114,26 @@ export default function TramiteEntidadPicker({ onElegir }: { onElegir: (e: Entid
             ) : (
               <ul className="space-y-0.5">
                 {visibles.map((p) => (
-                  <li key={p.id}>
+                  <li key={p.id} className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => elegir(p)}
-                      className="w-full rounded-lg px-2 py-1.5 text-left text-xs transition hover:bg-[var(--surface-sunken)]"
+                      className="min-w-0 flex-1 rounded-lg px-2 py-1.5 text-left text-xs transition hover:bg-[var(--surface-sunken)]"
                     >
                       <span className="block font-bold text-[var(--text-primary)]">{p.nombre}</span>
                       <span className="block truncate text-[var(--text-tertiary)]">
                         {[p.docNumero, p.representante, direccionCompleta(p)].filter(Boolean).join(" · ") || "sin más datos"}
                       </span>
                     </button>
+                    <IconAction
+                      icon={Pencil}
+                      label={`Editar ${p.nombre}`}
+                      tone="info"
+                      onClick={() => {
+                        setModal(p);
+                        setAbierto(false);
+                      }}
+                    />
                   </li>
                 ))}
               </ul>
@@ -131,7 +143,7 @@ export default function TramiteEntidadPicker({ onElegir }: { onElegir: (e: Entid
           <button
             type="button"
             onClick={() => {
-              setCreando(true);
+              setModal("nuevo");
               setAbierto(false);
             }}
             className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
@@ -147,16 +159,17 @@ export default function TramiteEntidadPicker({ onElegir }: { onElegir: (e: Entid
 
       {/* Mismo editor completo que usa el Directorio — roles, lookup SUNAT/
           RENIEC, título habilitante, LOGO y documentos adjuntos — para no
-          tener dos formularios de "parte" en la app que puedan divergir. */}
-      {creando && (
+          tener dos formularios de "parte" en la app que puedan divergir.
+          `modal` es "nuevo" (alta) o la Parte que se está editando. */}
+      {modal && (
         <CtpParteModal
-          parte={null}
+          parte={modal === "nuevo" ? null : modal}
           rolInicial="proveedor"
           onGuardar={async (input) => {
             const parte = await guardarParte(input);
             elegir(parte);
           }}
-          onClose={() => setCreando(false)}
+          onClose={() => setModal(null)}
         />
       )}
     </div>
