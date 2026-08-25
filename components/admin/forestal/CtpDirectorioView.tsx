@@ -14,7 +14,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Share2, Loader2, Pencil, Plus, Search, Trash2, Truck, Users } from "@buleje/design-system/icons";
+import { MessageCircle, Share2, Loader2, Pencil, Plus, Search, Trash2, Truck, Users } from "@buleje/design-system/icons";
 import {
   CATEGORIA_LABEL,
   ROLES_PARTE,
@@ -27,10 +27,12 @@ import {
   filtrarPartes,
   filtrarVehiculos,
   formatearPlaca,
+  ordenarPorUso,
   type Parte,
   type RolParte,
   type Vehiculo,
 } from "@/lib/forestal/directorio";
+import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import CtpDirectorioDesdeGuias from "./CtpDirectorioDesdeGuias";
 import CtpParteModal from "./CtpParteModal";
@@ -52,6 +54,7 @@ export default function CtpDirectorioView() {
   const dir = useDirectorioForestal();
   const [pestaña, setPestaña] = useState<Pestaña>("destinatario");
   const [q, setQ] = useState("");
+  const [soloIncompletos, setSoloIncompletos] = useState(false);
   const [editando, setEditando] = useState<{ tipo: "parte"; valor: Parte | null } | { tipo: "vehiculo"; valor: Vehiculo | null } | null>(null);
   const [borrando, setBorrando] = useState<string | null>(null);
   /** Titular cuya cadena se está mirando (ADR-319). */
@@ -60,16 +63,30 @@ export default function CtpDirectorioView() {
   const esVehiculos = pestaña === "vehiculos";
   const transportistas = useMemo(() => dir.porRol("transportista"), [dir]);
 
-  const partesVisibles = useMemo(() => {
+  const partesDelRol = useMemo(() => {
     if (esVehiculos) return [];
     // Incluye las inactivas: esta vista ES la administración, y una parte dada de
     // baja tiene que poder verse para reactivarla.
-    const delRol = dir.partes.filter((p) => p.roles.includes(pestaña as RolParte));
-    return filtrarPartes(delRol, q);
-  }, [dir.partes, pestaña, q, esVehiculos]);
+    return dir.partes.filter((p) => p.roles.includes(pestaña as RolParte));
+  }, [dir.partes, pestaña, esVehiculos]);
+
+  /** Cuántas de esta pestaña le faltan datos para poder usarse en una guía. */
+  const incompletosDelRol = useMemo(
+    () => partesDelRol.filter((p) => faltantesParaGuia(p, pestaña as RolParte).length > 0).length,
+    [partesDelRol, pestaña],
+  );
+
+  const partesVisibles = useMemo(() => {
+    if (esVehiculos) return [];
+    const filtradas = filtrarPartes(partesDelRol, q);
+    // Más usadas primero — el mismo orden que ya ve el operador al elegir en
+    // una guía (dir.porRol), acá simplemente no estaba aplicado.
+    const ordenadas = ordenarPorUso(filtradas);
+    return soloIncompletos ? ordenadas.filter((p) => faltantesParaGuia(p, pestaña as RolParte).length > 0) : ordenadas;
+  }, [partesDelRol, pestaña, q, esVehiculos, soloIncompletos]);
 
   const vehiculosVisibles = useMemo(
-    () => (esVehiculos ? filtrarVehiculos(dir.vehiculos, q) : []),
+    () => (esVehiculos ? ordenarPorUso(filtrarVehiculos(dir.vehiculos, q)) : []),
     [dir.vehiculos, q, esVehiculos],
   );
 
@@ -137,15 +154,39 @@ export default function CtpDirectorioView() {
         ))}
       </div>
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-        <input
-          type="search"
-          className={`${I} pl-9`}
-          placeholder={esVehiculos ? "Buscar por placa, marca o dueño…" : "Buscar por nombre o documento…"}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+          <input
+            type="search"
+            className={`${I} pl-9`}
+            placeholder={esVehiculos ? "Buscar por placa, marca o dueño…" : "Buscar por nombre o documento…"}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
+        {/* Con los campos nuevos (DNI del representante, zona, ubigeo) la
+            libreta vieja quedó con huecos — este toggle es la forma de
+            recorrerlos uno por uno en vez de buscarlos a ojo en la lista. */}
+        {/* El botón sigue visible aunque ESTA pestaña ya no tenga incompletos
+            (soloIncompletos) — si sólo se mostrara con incompletosDelRol > 0,
+            prenderlo en una pestaña y pasar a otra completa lo dejaba
+            activado sin ningún control a la vista para apagarlo. */}
+        {!esVehiculos && (incompletosDelRol > 0 || soloIncompletos) && (
+          <button
+            type="button"
+            aria-pressed={soloIncompletos}
+            onClick={() => setSoloIncompletos((v) => !v)}
+            className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border-2 px-3 text-sm font-bold transition-colors ${
+              soloIncompletos
+                ? "border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
+            }`}
+          >
+            Sólo incompletos
+            <span className="rounded bg-[var(--surface-sunken)] px-1.5 font-mono text-xs tabular-nums">{incompletosDelRol}</span>
+          </button>
+        )}
       </div>
 
       {dir.error && (
@@ -168,6 +209,7 @@ export default function CtpDirectorioView() {
           partes={partesVisibles}
           rol={pestaña as RolParte}
           borrando={borrando}
+          vacioTexto={soloIncompletos ? "Ningún registro incompleto — la libreta está al día en este rol." : undefined}
           onTrazar={(p) => setTrazando(p.nombre)}
           onEditar={(p) => setEditando({ tipo: "parte", valor: p })}
           onBorrar={(p) => void borrar(p.id, p.nombre, "parte")}
@@ -213,6 +255,7 @@ function ListaPartes({
   partes,
   rol,
   borrando,
+  vacioTexto,
   onEditar,
   onBorrar,
   onTrazar,
@@ -220,13 +263,15 @@ function ListaPartes({
   partes: Parte[];
   rol: RolParte;
   borrando: string | null;
+  /** Override del mensaje vacío — el filtro "Sólo incompletos" no es "no hay nada". */
+  vacioTexto?: string;
   onEditar: (p: Parte) => void;
   onBorrar: (p: Parte) => void;
   /** Sólo para proveedores: abre su cadena completa. */
   onTrazar: (p: Parte) => void;
 }) {
   if (partes.length === 0) {
-    return <Vacio texto={`Todavía no hay ${ROL_PLURAL[rol].toLowerCase()} cargados. El primero se agrega acá o desde una guía.`} />;
+    return <Vacio texto={vacioTexto ?? `Todavía no hay ${ROL_PLURAL[rol].toLowerCase()} cargados. El primero se agrega acá o desde una guía.`} />;
   }
   return (
     <ul className="space-y-1.5">
@@ -277,6 +322,17 @@ function ListaPartes({
                   label="Ver todo lo que trajo y en qué terminó"
                   onClick={() => onTrazar(p)}
                   tone="accent"
+                />
+              )}
+              {p.telefono && (
+                <IconAction
+                  icon={MessageCircle}
+                  label={`Escribirle a ${p.nombre} por WhatsApp`}
+                  onClick={() => {
+                    const link = enlaceWhatsAppConTexto(p.telefono, `Hola ${p.nombre}, te escribo desde el aserradero.`);
+                    if (link) window.open(link, "_blank", "noopener,noreferrer");
+                  }}
+                  tone="success"
                 />
               )}
               <IconAction icon={Pencil} label="Editar" onClick={() => onEditar(p)} tone="info" />
