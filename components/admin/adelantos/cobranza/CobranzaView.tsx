@@ -20,6 +20,7 @@ import { CheckCircle, FileText, MessageCircle, Search, Settings2, Target } from 
 import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
+import { tenantCacheKey } from "@/lib/tenant-cache";
 import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
 import { cumplimientoDe, resumirPersona } from "@/lib/adelantos/saldo-persona";
 import {
@@ -55,7 +56,11 @@ import ModoLlamada from "./ModoLlamada";
  */
 const claveFila = (d: DeudorCobranza) => `${d.id}::${d.moneda}`;
 
-/** La meta vive en el navegador: es del negocio, no del sistema, y cambia mes a mes. */
+/**
+ * La meta vive en el navegador: es del negocio, no del sistema, y cambia mes a
+ * mes. Va con `tenantCacheKey` — sin eso, la meta de un negocio se le pega al
+ * siguiente que se abre en la misma pestaña (auditoría de esta sesión).
+ */
 const CLAVE_META = "buleje:cobranza-meta";
 
 export default function CobranzaView({
@@ -67,7 +72,6 @@ export default function CobranzaView({
   adelantos: DbAdelanto[];
   beneficiarios: BeneficiarioConSaldo[];
   loading: boolean;
-  onGoTab: (t: string) => void;
   onRecordado?: () => void;
 }) {
   const [tramo, setTramo] = useState<TramoId | "todos">("todos");
@@ -91,7 +95,7 @@ export default function CobranzaView({
 
   useEffect(() => {
     try {
-      setMeta(Number(window.localStorage.getItem(CLAVE_META)) || 0);
+      setMeta(Number(window.localStorage.getItem(tenantCacheKey(CLAVE_META))) || 0);
     } catch {
       /* sin persistencia, sin meta: la lista funciona igual */
     }
@@ -475,7 +479,7 @@ export default function CobranzaView({
           onGuardar={(m) => {
             setMeta(m);
             try {
-              window.localStorage.setItem(CLAVE_META, String(m));
+              window.localStorage.setItem(tenantCacheKey(CLAVE_META), String(m));
             } catch {
               /* sin persistencia, sin bug: la sesión igual la usa */
             }

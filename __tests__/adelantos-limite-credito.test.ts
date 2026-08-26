@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  estadoDeCredito,
-  ordenarPorRiesgoDeCredito,
-  requiereAtencion,
-  saldoParaLimite,
-} from "@/lib/adelantos/limite-credito";
+import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 
 /**
  * El tope es un número en soles (el form lo rotula "S/") — no hay tope en
@@ -84,39 +79,5 @@ describe("estadoDeCredito", () => {
     const e = estadoDeCredito(1000, 1000, 0.01);
     expect(e.estado).toBe("excede");
     expect(e.estado === "excede" && e.exceso).toBe(0.01);
-  });
-});
-
-describe("orden de la lista de personas", () => {
-  const p = (nombre: string, limiteCredito: number | null, saldoPendiente: number) => ({
-    nombre,
-    limiteCredito,
-    saldoPendiente,
-  });
-
-  /**
-   * La pregunta del mostrador es «¿a quién ya no le puedo fiar más?», y por
-   * nombre alfabético no se responde.
-   */
-  it("primero quien está más cerca de su tope", () => {
-    const orden = ordenarPorRiesgoDeCredito([
-      p("Ana", 1000, 100), // 10%
-      p("Beto", 1000, 900), // 90%
-      p("Caro", 500, 250), // 50%
-    ]);
-    expect(orden.map((x) => x.nombre)).toEqual(["Beto", "Caro", "Ana"]);
-  });
-
-  it("los que no tienen límite van al final: no hay nada que medir", () => {
-    const orden = ordenarPorRiesgoDeCredito([
-      p("SinTope", null, 99999),
-      p("ConTope", 1000, 100),
-    ]);
-    expect(orden.map((x) => x.nombre)).toEqual(["ConTope", "SinTope"]);
-  });
-
-  it("a igual uso, alfabético — para que la lista no baile entre cargas", () => {
-    const orden = ordenarPorRiesgoDeCredito([p("Zoe", 1000, 500), p("Ana", 1000, 500)]);
-    expect(orden.map((x) => x.nombre)).toEqual(["Ana", "Zoe"]);
   });
 });

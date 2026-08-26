@@ -42,7 +42,7 @@ import CrearPersonaModal from "./personas/CrearPersonaModal";
 import { sinTildes, fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, MiniStat, STATUS_BADGE } from "./shared";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
-import { estadoDeCredito, ordenarPorRiesgoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
+import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { normalizarBusquedaCodigo } from "@/lib/adelantos/codigo-operacion";
 import { descargarCsvAdelantos } from "@/lib/adelantos/exportar-csv";
 import { paginar, type ColumnaOrden, type Direccion } from "@/lib/adelantos/ordenar-lista";
@@ -212,7 +212,6 @@ export default function AdelantosModule() {
               adelantos={adelantos}
               beneficiarios={beneficiarios}
               loading={loading}
-              onGoTab={setTab}
               onRecordado={() => void reload()}
             />
           )}

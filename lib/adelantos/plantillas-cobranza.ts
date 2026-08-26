@@ -10,6 +10,7 @@
  * son de quien atiende, no del negocio, y cada bodega escribe distinto.
  */
 
+import { tenantCacheKey } from "@/lib/tenant-cache";
 import type { TramoId } from "./gestion-cobranza";
 
 export const CLAVE_PLANTILLAS = "buleje:cobranza-plantillas";
@@ -51,11 +52,16 @@ export function armarMensaje(plantilla: string, datos: DatosMensaje): string {
  *
  * Si alguien editó sólo un tramo, los otros cuatro tienen que seguir
  * funcionando: un `localStorage` a medias no puede dejar mensajes vacíos.
+ *
+ * La key lleva el slug del tenant activo (`tenantCacheKey`): sin eso, un
+ * superadmin que entra al negocio B ve las plantillas que escribió el
+ * negocio A — no es cache, es texto que sale por WhatsApp con el tono de
+ * otro dueño (auditoría de esta sesión).
  */
 export function leerPlantillas(): Plantillas {
   if (typeof window === "undefined") return PLANTILLAS_POR_DEFECTO;
   try {
-    const raw = window.localStorage.getItem(CLAVE_PLANTILLAS);
+    const raw = window.localStorage.getItem(tenantCacheKey(CLAVE_PLANTILLAS));
     if (!raw) return PLANTILLAS_POR_DEFECTO;
     const guardadas = JSON.parse(raw) as Partial<Plantillas>;
     const out = { ...PLANTILLAS_POR_DEFECTO };
@@ -71,7 +77,7 @@ export function leerPlantillas(): Plantillas {
 
 export function guardarPlantillas(p: Plantillas): void {
   try {
-    window.localStorage.setItem(CLAVE_PLANTILLAS, JSON.stringify(p));
+    window.localStorage.setItem(tenantCacheKey(CLAVE_PLANTILLAS), JSON.stringify(p));
   } catch {
     // sin persistencia, sin bug: la sesión igual las usa
   }

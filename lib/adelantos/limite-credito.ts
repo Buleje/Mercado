@@ -90,26 +90,3 @@ export function requiereAtencion(
 ): e is Extract<EstadoCredito, { estado: "excede" | "al-limite" }> {
   return e.estado === "excede" || e.estado === "al-limite";
 }
-
-/**
- * Orden de la lista de personas: primero quien está más cerca de su tope.
- *
- * Es la pregunta de quien atiende el mostrador —«¿a quién ya no le puedo fiar
- * más?»— y por nombre alfabético no se responde. Los que no tienen límite van al
- * final: no es que estén bien, es que no hay nada que medir.
- */
-export function ordenarPorRiesgoDeCredito<
-  T extends { limiteCredito?: number | null; saldoPendiente?: number | null; nombre: string },
->(personas: readonly T[]): T[] {
-  const usoDe = (p: T) => {
-    const e = estadoDeCredito(p.limiteCredito, p.saldoPendiente);
-    if (e.estado === "sin-limite") return -1;
-    return e.limite > 0 ? e.usado / e.limite : -1;
-  };
-  return [...personas].sort((a, b) => {
-    const ua = usoDe(a);
-    const ub = usoDe(b);
-    if (ua !== ub) return ub - ua;
-    return a.nombre.localeCompare(b.nombre, "es");
-  });
-}

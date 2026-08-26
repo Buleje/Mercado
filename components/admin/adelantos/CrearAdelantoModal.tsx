@@ -20,6 +20,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CalendarDays, CheckCircle2, Circle, CreditCard, Info, Landmark, RotateCcw, Tag } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
+import { tenantCacheKey } from "@/lib/tenant-cache";
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import type { AdelantoModalidad, DbAdelanto } from "@/lib/db/adelantos.db";
 import CapturaFoto from "./CapturaFoto";
@@ -60,7 +61,9 @@ const MODALIDADES = [
  * Notas rápidas: los motivos que se repiten, a un toque.
  *
  * Se guardan en el navegador porque son de quien atiende, no del negocio: cada
- * bodega usa las suyas y no vale la pena una tabla para esto.
+ * bodega usa las suyas y no vale la pena una tabla para esto — pero "las
+ * suyas" exige `tenantCacheKey`, si no un superadmin que pasa de un negocio a
+ * otro en la misma pestaña ve las notas del primero (auditoría de esta sesión).
  */
 const NOTAS_KEY = "buleje:adelantos-notas-rapidas";
 const NOTAS_POR_DEFECTO = [
@@ -74,7 +77,7 @@ const NOTAS_POR_DEFECTO = [
 function leerNotasRapidas(): string[] {
   if (typeof window === "undefined") return NOTAS_POR_DEFECTO;
   try {
-    const raw = window.localStorage.getItem(NOTAS_KEY);
+    const raw = window.localStorage.getItem(tenantCacheKey(NOTAS_KEY));
     if (!raw) return NOTAS_POR_DEFECTO;
     const arr = JSON.parse(raw);
     return Array.isArray(arr) && arr.every((x) => typeof x === "string") ? arr : NOTAS_POR_DEFECTO;
@@ -482,7 +485,7 @@ export default function CrearAdelantoModal({
             onCambiarOpciones={(nuevas) => {
               setNotasRapidas(nuevas);
               try {
-                window.localStorage.setItem(NOTAS_KEY, JSON.stringify(nuevas));
+                window.localStorage.setItem(tenantCacheKey(NOTAS_KEY), JSON.stringify(nuevas));
               } catch {
                 // sin persistencia, sin bug: la sesión igual las usa
               }
