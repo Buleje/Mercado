@@ -469,15 +469,31 @@ export const FiadosDB = {
           const currentSaldo = Number(fiado.saldo);
           const paymentAmount = Math.min(payment.monto, currentSaldo);
 
-          // Brandon perf P1 #5: update retorna el registro directamente con select.
-          // Antes: update (void) + findFirst extra = 2 queries por fiado.
-          // Ahora: 1 sola query — el update ya devuelve el saldo actualizado.
-          const updated = await tx.fiado.update({
-            where: { id: payment.fiadoId, tenantId },
+          // Audit 2026-08-26 (audit-verificado): el prefetch de arriba es UNA
+          // foto fija tomada antes del loop — usarla para cada decrement (como
+          // hacía la versión vieja) es el mismo TOCTOU que B-P0-2 ya resolvió
+          // en cobrarPorCliente: dos cobro-masivo concurrentes sobre el mismo
+          // fiado, o el mismo fiadoId repetido en `payments`, decrementaban
+          // ambos contra el saldo ORIGINAL y podían dejarlo negativo. Mismo
+          // guard v2: `updateMany` con `saldo: { gte: paymentAmount }` — si
+          // otro cobro ya consumió el saldo, count=0 y abortamos el lote
+          // entero (FiadoConflictError → 409 retryable), en vez de persistir
+          // una cuota por un monto que ya no corresponde a ninguna deuda real.
+          const guard = await tx.fiado.updateMany({
+            where: { id: payment.fiadoId, tenantId, saldo: { gte: paymentAmount } },
             data: { saldo: { decrement: paymentAmount } },
+          });
+          if (guard.count === 0) {
+            throw new FiadoConflictError(
+              `Fiado ${payment.fiadoId.slice(-6)}: el saldo cambió antes de aplicar el cobro`,
+            );
+          }
+
+          const afterDecrement = await tx.fiado.findFirst({
+            where: { id: payment.fiadoId, tenantId },
             select: { saldo: true, status: true },
           });
-          const finalSaldo = updated ? Number(updated.saldo) : 0;
+          const finalSaldo = afterDecrement ? Number(afterDecrement.saldo) : 0;
           const newStatus = finalSaldo <= 0.01 ? "PAGADO" : fiado.status;
           if (newStatus !== fiado.status) {
             await tx.fiado.update({
