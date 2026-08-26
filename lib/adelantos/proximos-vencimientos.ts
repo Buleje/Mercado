@@ -110,7 +110,15 @@ export function cuandoVence(faltan: number): string {
   return `en ${faltan} días`;
 }
 
-/** Lo que se espera cobrar en la ventana, para el titular. */
-export function totalProximo(compromisos: readonly CompromisoProximo[]): number {
-  return Math.round(compromisos.reduce((s, c) => s + c.monto, 0) * 100) / 100;
+/**
+ * Lo que se espera cobrar en la ventana, para el titular — por moneda, nunca
+ * cruzado: un compromiso en soles y otro en dólares no son la misma plata
+ * "por entrar" (auditoría de esta sesión — el total viejo sumaba los montos
+ * crudos y encima lo rotulaba con la moneda del PRIMER compromiso, sea cual
+ * fuera la del resto).
+ */
+export function totalProximo(compromisos: readonly CompromisoProximo[]): Record<string, number> {
+  const totales: Record<string, number> = {};
+  for (const c of compromisos) totales[c.moneda] = (totales[c.moneda] ?? 0) + c.monto;
+  return Object.fromEntries(Object.entries(totales).map(([m, v]) => [m, Math.round(v * 100) / 100]));
 }

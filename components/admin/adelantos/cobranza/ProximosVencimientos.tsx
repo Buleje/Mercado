@@ -19,7 +19,7 @@ import {
   type CompromisoProximo,
 } from "@/lib/adelantos/proximos-vencimientos";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
-import { fmtMon } from "../shared";
+import { fmtMon, fmtMonedas } from "../shared";
 
 /** Aviso amable, en primera persona y sin reclamo: todavía no debe nada. */
 function mensajeDeAviso(c: CompromisoProximo): string {
@@ -41,7 +41,7 @@ export default function ProximosVencimientos({ adelantos }: { adelantos: DbAdela
           Vence esta semana ({proximos.length})
         </CardTitle>
         <span className="text-base font-extrabold tabular-nums text-[var(--data-info)]">
-          {fmtMon(total, proximos[0]?.moneda)} por entrar
+          {fmtMonedas(total)} por entrar
         </span>
       </div>
       <p className="mb-3 text-sm text-[var(--text-secondary)]">

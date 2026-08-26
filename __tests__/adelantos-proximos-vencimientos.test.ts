@@ -140,7 +140,25 @@ describe("cuandoVence / totalProximo", () => {
       7,
       AHORA,
     );
-    expect(totalProximo(r)).toBe(100);
-    expect(totalProximo([])).toBe(0);
+    expect(totalProximo(r)).toEqual({ PEN: 100 });
+    expect(totalProximo([])).toEqual({});
+  });
+
+  /**
+   * EL BUG que encontró audit-verificado: un compromiso en soles y otro en
+   * dólares se sumaban en un solo número, y encima se rotulaba con la moneda
+   * del PRIMER compromiso nada más — mostrar "$ 130" cuando en realidad eran
+   * S/ 100 + $ 30.
+   */
+  it("un compromiso en soles y otro en dólares no se mezclan en un solo total", () => {
+    const r = proximosVencimientos(
+      [
+        adel({ id: "a", moneda: "PEN", fechaVencimiento: enDias(1), saldoPendiente: 100 }),
+        adel({ id: "b", moneda: "USD", fechaVencimiento: enDias(2), saldoPendiente: 30 }),
+      ],
+      7,
+      AHORA,
+    );
+    expect(totalProximo(r)).toEqual({ PEN: 100, USD: 30 });
   });
 });
