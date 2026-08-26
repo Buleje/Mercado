@@ -43,7 +43,7 @@ import { sinTildes, fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, i
 import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
-import { estadoDeCredito, ordenarPorRiesgoDeCredito, requiereAtencion } from "@/lib/adelantos/limite-credito";
+import { estadoDeCredito, ordenarPorRiesgoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { normalizarBusquedaCodigo } from "@/lib/adelantos/codigo-operacion";
 import { descargarCsvAdelantos } from "@/lib/adelantos/exportar-csv";
 import { paginar, type ColumnaOrden, type Direccion } from "@/lib/adelantos/ordenar-lista";
@@ -724,18 +724,22 @@ function PersonasView({
    * Adelantos: los cancelados no se cobran. Antes acá se sumaba todo y las dos
    * pestañas mostraban cifras distintas para la misma pregunta.
    */
+  /** Cada total ya viene por persona segmentado por moneda — mergear los mapas, no sumar números crudos. */
+  const mergear = (map: Record<string, number>, otro: Record<string, number>) => {
+    for (const [moneda, monto] of Object.entries(otro)) map[moneda] = (map[moneda] ?? 0) + monto;
+  };
   const tot = beneficiarios.reduce(
     (acc, b) => {
-      acc.adelantado += b.totalAdelantado;
-      acc.entregado += b.totalEntregado;
-      acc.porRecuperar += b.saldoPendiente;
-      acc.aFavor += b.saldoAFavor;
+      mergear(acc.adelantado, b.totalAdelantado);
+      mergear(acc.entregado, b.totalEntregado);
+      mergear(acc.porRecuperar, b.saldoPendiente);
+      mergear(acc.aFavor, b.saldoAFavor);
       return acc;
     },
-    { adelantado: 0, entregado: 0, porRecuperar: 0, aFavor: 0 },
+    { adelantado: {} as Record<string, number>, entregado: {} as Record<string, number>, porRecuperar: {} as Record<string, number>, aFavor: {} as Record<string, number> },
   );
-  const conSaldo = beneficiarios.filter((b) => b.saldoPendiente > 0).length;
-  const enRiesgo = beneficiarios.filter((b) => requiereAtencion(estadoDeCredito(b.limiteCredito, b.saldoPendiente))).length;
+  const conSaldo = beneficiarios.filter((b) => Object.values(b.saldoPendiente).some((v) => v > 0)).length;
+  const enRiesgo = beneficiarios.filter((b) => requiereAtencion(estadoDeCredito(b.limiteCredito, saldoParaLimite(b.saldoPendiente)))).length;
   const hayTopes = beneficiarios.some((b) => (b.limiteCredito ?? 0) > 0);
 
   const chip = (activo: boolean) =>
@@ -823,11 +827,11 @@ function PersonasView({
 
           {/* Totales de la cartera + export de lo filtrado */}
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
-            <span>Adelantado <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(tot.adelantado)}</strong></span>
-            <span>Devuelto <strong className="tabular-nums text-[var(--data-success)]">{formatCurrency(tot.entregado)}</strong></span>
-            <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{formatCurrency(tot.porRecuperar)}</strong></span>
-            {tot.aFavor > 0 && (
-              <span>A favor de ellos <strong className="tabular-nums text-[var(--data-info)]">{formatCurrency(tot.aFavor)}</strong></span>
+            <span>Adelantado <strong className="tabular-nums text-[var(--text-primary)]">{fmtMonedas(tot.adelantado)}</strong></span>
+            <span>Devuelto <strong className="tabular-nums text-[var(--data-success)]">{fmtMonedas(tot.entregado)}</strong></span>
+            <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{fmtMonedas(tot.porRecuperar)}</strong></span>
+            {Object.values(tot.aFavor).some((v) => v > 0) && (
+              <span>A favor de ellos <strong className="tabular-nums text-[var(--data-info)]">{fmtMonedas(tot.aFavor)}</strong></span>
             )}
             <button
               onClick={() => descargarCsvPersonas(ordenados, `personas-${new Date().toISOString().slice(0, 10)}.csv`)}

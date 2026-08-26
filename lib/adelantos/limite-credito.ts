@@ -25,8 +25,23 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 const money = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /**
+ * Qué parte de la deuda cuenta para el tope.
+ *
+ * `limiteCredito` es UN número en soles — el formulario lo rotula "S/", sin
+ * selector de moneda; no existe un tope en dólares. Compararlo contra la
+ * suma cruda de `saldoPendiente` (que ahora viene por moneda, ver
+ * saldo-persona.ts) mezclaba soles y dólares antes de decidir si alguien
+ * tiene margen (auditoría de esta sesión): una persona con S/ 200 + US$ 50
+ * podía salir "sin margen" de un tope de S/ 500 sin deber ni la mitad en
+ * soles. Este es el ÚNICO lugar que decide qué cuenta para el tope.
+ */
+export function saldoParaLimite(saldoPendiente: Record<string, number>): number {
+  return saldoPendiente.PEN ?? 0;
+}
+
+/**
  * @param limite tope de la persona (`limiteCredito`), o null si no tiene.
- * @param saldoActual lo que ya debe sin liquidar.
+ * @param saldoActual lo que ya debe sin liquidar, EN SOLES (usar `saldoParaLimite`).
  * @param montoNuevo lo que se está por adelantar ahora (0 para "sólo mirar").
  */
 export function estadoDeCredito(

@@ -25,6 +25,18 @@ export function celdaCsv(valor: string | number | null | undefined): string {
 
 const dia = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString("es-PE") : "");
 
+/**
+ * Los totales de una persona vienen por moneda (saldo-persona.ts) — nunca un
+ * número solo, para no repetir el bug de sumar soles y dólares que encontró
+ * la auditoría de esta sesión. En la celda del CSV: "S/ X.XX", o "S/ X.XX ·
+ * $ Y.YY" si la persona debe en las dos.
+ */
+const montoCsv = (m: Record<string, number>): string => {
+  const partes = Object.entries(m).filter(([, v]) => v !== 0);
+  if (partes.length === 0) return "0.00";
+  return partes.map(([moneda, v]) => (moneda === "USD" ? `$ ${v.toFixed(2)}` : `S/ ${v.toFixed(2)}`)).join(" · ");
+};
+
 const COLUMNAS = [
   "Código",
   "Recibo",
@@ -113,11 +125,11 @@ export function personasACsv(
       p.documento ?? "",
       p.telefono ?? "",
       p.limiteCredito != null ? p.limiteCredito.toFixed(2) : "",
-      p.saldoPendiente.toFixed(2),
-      p.totalAdelantado.toFixed(2),
-      p.totalEntregado.toFixed(2),
+      montoCsv(p.saldoPendiente),
+      montoCsv(p.totalAdelantado),
+      montoCsv(p.totalEntregado),
       cumplimiento == null ? "" : String(cumplimiento),
-      p.saldoAFavor.toFixed(2),
+      montoCsv(p.saldoAFavor),
       String(p.adelantosAbiertos),
       String(p.adelantosLiquidados),
       String(p.adelantosCancelados),

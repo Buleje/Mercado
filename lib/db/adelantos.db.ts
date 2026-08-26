@@ -391,7 +391,7 @@ export const AdelantosDB = {
       where: { tenantId },
       orderBy: { nombre: "asc" },
       include: {
-        adelantos: { select: { montoAdelantado: true, saldoPendiente: true, status: true, fechaAdelanto: true } },
+        adelantos: { select: { montoAdelantado: true, saldoPendiente: true, moneda: true, status: true, fechaAdelanto: true } },
       },
     });
     /**
@@ -407,6 +407,7 @@ export const AdelantosDB = {
         b.adelantos.map((a) => ({
           montoAdelantado: toNum(a.montoAdelantado),
           saldoPendiente: toNum(a.saldoPendiente),
+          moneda: a.moneda,
           status: a.status,
           fechaAdelanto: a.fechaAdelanto,
         })),
@@ -601,10 +602,20 @@ export const AdelantosDB = {
     if (!benef) {
       throw new Error("Esa persona no existe en este negocio. Elegila de la lista de beneficiarios.");
     }
-    if (benef.limiteCredito != null) {
+    /**
+     * `limiteCredito` es UN número en soles (el formulario lo rotula "S/", sin
+     * selector de moneda) — no hay tope en dólares. Antes el aggregate sumaba
+     * `saldoPendiente` de TODOS los adelantos ABIERTOS sin filtrar moneda, así
+     * que una persona con deuda en soles Y en dólares se comparaba contra el
+     * tope con una cifra que mezclaba las dos (auditoría de esta sesión). El
+     * guard sólo tiene sentido para un adelanto nuevo que también sea en
+     * soles: compararle dólares a un tope en soles no significa nada.
+     */
+    const monedaNueva = data.moneda || "PEN";
+    if (benef.limiteCredito != null && monedaNueva === "PEN") {
       const limite = Number(benef.limiteCredito);
       const abiertos = await prisma.adelanto.aggregate({
-        where: { tenantId, beneficiarioId: data.beneficiarioId, status: "ABIERTO" },
+        where: { tenantId, beneficiarioId: data.beneficiarioId, status: "ABIERTO", moneda: "PEN" },
         _sum: { saldoPendiente: true },
       });
       const actual = Number(abiertos._sum.saldoPendiente ?? 0);

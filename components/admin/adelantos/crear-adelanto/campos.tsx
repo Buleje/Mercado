@@ -27,7 +27,7 @@ import { logger } from "@/lib/logger";
 import type { estadoDeCredito } from "@/lib/adelantos/limite-credito";
 import { requiereAtencion } from "@/lib/adelantos/limite-credito";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
-import { fmtMon, inputCls } from "../shared";
+import { fmtMon, fmtMonedas, inputCls } from "../shared";
 import type { BeneficiarioConSaldo } from "./tipos";
 
 /**
@@ -268,8 +268,8 @@ export function FichaPersona({
       <dl className="space-y-1.5">
         <Fila
           label="Debe hoy"
-          valor={formatCurrency(persona.saldoPendiente)}
-          tono={persona.saldoPendiente > 0 ? "warning" : "ok"}
+          valor={fmtMonedas(persona.saldoPendiente)}
+          tono={Object.values(persona.saldoPendiente).some((v) => v > 0) ? "warning" : "ok"}
         />
         <Fila
           label="Adelantos abiertos"

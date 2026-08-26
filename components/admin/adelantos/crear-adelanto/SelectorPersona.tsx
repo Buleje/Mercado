@@ -12,11 +12,10 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, Plus, Search, UserPlus, X } from "@buleje/design-system/icons";
-import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
-import { estadoDeCredito, requiereAtencion } from "@/lib/adelantos/limite-credito";
-import { inputCls, sinTildes } from "../shared";
+import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
+import { fmtMonedas, inputCls, sinTildes } from "../shared";
 import type { BeneficiarioConSaldo } from "./tipos";
 
 const jsonHeaders = () => csrfHeaders({ "Content-Type": "application/json" });
@@ -138,8 +137,8 @@ function FilaPersona({
   elegida: boolean;
   onElegir: () => void;
 }) {
-  const credito = estadoDeCredito(persona.limiteCredito, persona.saldoPendiente);
-  const debe = persona.saldoPendiente > 0;
+  const credito = estadoDeCredito(persona.limiteCredito, saldoParaLimite(persona.saldoPendiente));
+  const debe = Object.values(persona.saldoPendiente).some((v) => v > 0);
   return (
     <button
       type="button"
@@ -171,7 +170,7 @@ function FilaPersona({
           debe ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"
         }`}
       >
-        {debe ? `debe ${formatCurrency(persona.saldoPendiente)}` : "al día"}
+        {debe ? `debe ${fmtMonedas(persona.saldoPendiente)}` : "al día"}
       </span>
     </button>
   );

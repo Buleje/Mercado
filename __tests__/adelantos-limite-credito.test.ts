@@ -3,7 +3,28 @@ import {
   estadoDeCredito,
   ordenarPorRiesgoDeCredito,
   requiereAtencion,
+  saldoParaLimite,
 } from "@/lib/adelantos/limite-credito";
+
+/**
+ * El tope es un número en soles (el form lo rotula "S/") — no hay tope en
+ * dólares. `saldoParaLimite` es el único lugar que decide qué parte de la
+ * deuda de una persona cuenta para él: sólo la de PEN, nunca una suma
+ * cruzada con USD (auditoría de esta sesión).
+ */
+describe("saldoParaLimite", () => {
+  it("toma sólo la parte en soles", () => {
+    expect(saldoParaLimite({ PEN: 200, USD: 50 })).toBe(200);
+  });
+
+  it("sin deuda en soles, es 0 aunque deba en dólares", () => {
+    expect(saldoParaLimite({ USD: 500 })).toBe(0);
+  });
+
+  it("sin deuda en ninguna moneda, es 0", () => {
+    expect(saldoParaLimite({})).toBe(0);
+  });
+});
 
 /**
  * El tope de crédito AVISA, no bloquea: es plata del dueño y él decide

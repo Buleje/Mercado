@@ -18,10 +18,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CalendarDays, CheckCircle2, Circle, CreditCard, Info, Landmark, RotateCcw, Tag } from "@buleje/design-system/icons";
-import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
-import { estadoDeCredito, requiereAtencion } from "@/lib/adelantos/limite-credito";
+import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import type { AdelantoModalidad, DbAdelanto } from "@/lib/db/adelantos.db";
 import CapturaFoto from "./CapturaFoto";
 import { Field, ModalShell, fmtMon, inputCls } from "./shared";
@@ -132,7 +131,14 @@ export default function CrearAdelantoModal({
 
   const persona = beneficiarios.find((b) => b.id === beneficiarioId);
   const montoNum = Number(monto) || 0;
-  const credito = estadoDeCredito(persona?.limiteCredito, persona?.saldoPendiente, montoNum);
+  /* El tope es en soles (el form lo rotula "S/") — un adelanto nuevo en
+     dólares no cuenta para él, igual que en el guard del backend
+     (AdelantosDB.create). */
+  const credito = estadoDeCredito(
+    persona?.limiteCredito,
+    saldoParaLimite(persona?.saldoPendiente ?? {}),
+    moneda === "PEN" ? montoNum : 0,
+  );
   const excedeTope = credito.estado === "excede";
 
   /** Cambiar de persona o de monto invalida la autorización ya confirmada. */
@@ -549,7 +555,10 @@ function PieDelFormulario({
   onClose: () => void;
   onSubmit: () => void;
 }) {
-  const quedaDebiendo = (persona?.saldoPendiente ?? 0) + monto;
+  /* Sólo el saldo previo EN ESTA MONEDA: sumarle el de otra sería la misma
+     mezcla que la auditoría de esta sesión encontró en el resto del módulo. */
+  const saldoPrevioEnEstaMoneda = persona?.saldoPendiente[moneda] ?? 0;
+  const quedaDebiendo = saldoPrevioEnEstaMoneda + monto;
 
   return (
     <div className="space-y-2.5">
@@ -582,10 +591,10 @@ function PieDelFormulario({
               <span className="hidden sm:inline"> va a quedar debiendo </span>
               <span className="sm:hidden"> queda en </span>
               <strong className="tabular-nums text-[var(--data-warning)]">{fmtMon(quedaDebiendo, moneda)}</strong>
-              {persona.saldoPendiente > 0 && (
+              {saldoPrevioEnEstaMoneda > 0 && (
                 <span className="hidden text-[var(--text-tertiary)] sm:inline">
                   {" "}
-                  ({formatCurrency(persona.saldoPendiente)} de antes)
+                  ({fmtMon(saldoPrevioEnEstaMoneda, moneda)} de antes)
                 </span>
               )}
             </span>

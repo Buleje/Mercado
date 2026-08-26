@@ -11,9 +11,10 @@
 
 import { CheckCircle, MessageCircle, Pencil, Phone, Plus, Trash2 } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/currency";
-import { estadoDeCredito, requiereAtencion } from "@/lib/adelantos/limite-credito";
+import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { cumplimientoDe } from "@/lib/adelantos/saldo-persona";
-import { enlaceWhatsApp } from "@/lib/adelantos/contacto";
+import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
+import { fmtMonedas } from "../shared";
 import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
 
 /** Hace cuánto, en la unidad en que uno lo diría en voz alta. */
@@ -41,10 +42,17 @@ export default function TarjetaPersona({
   onEliminar: () => void;
   onAdelanto: () => void;
 }) {
-  const debe = b.saldoPendiente > 0;
-  const credito = estadoDeCredito(b.limiteCredito, b.saldoPendiente);
+  const debe = Object.values(b.saldoPendiente).some((v) => v > 0);
+  const credito = estadoDeCredito(b.limiteCredito, saldoParaLimite(b.saldoPendiente));
   const cumplimiento = cumplimientoDe(b);
-  const wa = enlaceWhatsApp(b.telefono, b.nombre, b.saldoPendiente);
+  /* Mismo texto que mensajeRecordatorio (lib/adelantos/contacto.ts), pero con
+     el saldo real por moneda — esa función no sabe sumar más de una. */
+  const wa = enlaceWhatsAppConTexto(
+    b.telefono,
+    debe
+      ? `Hola ${b.nombre}, te recuerdo que tenés un saldo pendiente de ${fmtMonedas(b.saldoPendiente)} por liquidar. ¡Gracias!`
+      : `Hola ${b.nombre}, ¿cómo estás?`,
+  );
 
   return (
     <div className="relative flex flex-col rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
@@ -108,12 +116,12 @@ export default function TarjetaPersona({
       <div className="mt-3 grid grid-cols-2 gap-2 border-t-2 border-[var(--rule-soft)] pt-3">
         <div>
           <p className="text-sm font-semibold text-[var(--text-tertiary)]">Adelantado</p>
-          <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(b.totalAdelantado)}</p>
+          <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">{fmtMonedas(b.totalAdelantado)}</p>
         </div>
         <div className="text-right">
           <p className="text-sm font-semibold text-[var(--text-tertiary)]">Debe hoy</p>
           <p className={`text-base font-extrabold tabular-nums ${debe ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>
-            {formatCurrency(b.saldoPendiente)}
+            {fmtMonedas(b.saldoPendiente)}
           </p>
         </div>
       </div>
@@ -145,9 +153,9 @@ export default function TarjetaPersona({
         </p>
       )}
 
-      {b.saldoAFavor > 0 && (
+      {Object.values(b.saldoAFavor).some((v) => v > 0) && (
         <p className="mt-1.5 text-sm font-semibold text-[var(--data-info)]">
-          Te entregó {formatCurrency(b.saldoAFavor)} de más
+          Te entregó {fmtMonedas(b.saldoAFavor)} de más
         </p>
       )}
 

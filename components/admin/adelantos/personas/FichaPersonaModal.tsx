@@ -26,12 +26,12 @@ import {
   TrendingUp,
 } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/currency";
-import { estadoDeCredito, requiereAtencion } from "@/lib/adelantos/limite-credito";
+import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { cumplimientoDe } from "@/lib/adelantos/saldo-persona";
-import { enlaceWhatsApp, enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
-import { movimientosDePersona, textoEstadoDeCuenta } from "@/lib/adelantos/estado-cuenta";
+import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
+import { movimientosDePersona, saldoDeLaCuenta, textoEstadoDeCuenta } from "@/lib/adelantos/estado-cuenta";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
-import { MODALIDAD_LABEL, ModalShell, STATUS_BADGE, fmtMon } from "../shared";
+import { MODALIDAD_LABEL, ModalShell, STATUS_BADGE, fmtMon, fmtMonedas } from "../shared";
 import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
 
 const dia = (iso: string) => new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" });
@@ -65,9 +65,17 @@ export default function FichaPersonaModal({
   );
   const movimientos = useMemo(() => movimientosDePersona(suyos), [suyos]);
 
-  const credito = estadoDeCredito(persona.limiteCredito, persona.saldoPendiente);
+  const credito = estadoDeCredito(persona.limiteCredito, saldoParaLimite(persona.saldoPendiente));
   const cumplimiento = cumplimientoDe(persona);
-  const wa = enlaceWhatsApp(persona.telefono, persona.nombre, persona.saldoPendiente);
+  const debeAlgo = Object.values(persona.saldoPendiente).some((v) => v > 0);
+  /* Mismo texto que mensajeRecordatorio (lib/adelantos/contacto.ts), pero con
+     el saldo real por moneda — esa función no sabe sumar más de una. */
+  const wa = enlaceWhatsAppConTexto(
+    persona.telefono,
+    debeAlgo
+      ? `Hola ${persona.nombre}, te recuerdo que tenés un saldo pendiente de ${fmtMonedas(persona.saldoPendiente)} por liquidar. ¡Gracias!`
+      : `Hola ${persona.nombre}, ¿cómo estás?`,
+  );
   const waCuenta = enlaceWhatsAppConTexto(persona.telefono, textoEstadoDeCuenta(persona.nombre, movimientos));
 
   const exportarPdf = async () => {
@@ -87,10 +95,10 @@ export default function FichaPersonaModal({
       body: movimientos.map((m) => [
         dia(m.fecha),
         m.concepto,
-        `${m.monto >= 0 ? "+" : "−"}${formatCurrency(Math.abs(m.monto))}`,
-        formatCurrency(m.saldo),
+        `${m.monto >= 0 ? "+" : "−"}${fmtMon(Math.abs(m.monto), m.moneda)}`,
+        fmtMon(m.saldo, m.moneda),
       ]),
-      foot: [["", "", "Saldo pendiente", formatCurrency(persona.saldoPendiente)]],
+      foot: [["", "", "Saldo pendiente", fmtMonedas(saldoDeLaCuenta(movimientos))]],
     });
     doc.save(`estado-cuenta-${persona.nombre.replace(/\s+/g, "-")}.pdf`);
   };
@@ -104,9 +112,9 @@ export default function FichaPersonaModal({
       footer={
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-base text-[var(--text-secondary)]">
-            {persona.saldoPendiente > 0 ? (
+            {debeAlgo ? (
               <>
-                Te debe <strong className="tabular-nums text-[var(--data-warning)]">{formatCurrency(persona.saldoPendiente)}</strong>
+                Te debe <strong className="tabular-nums text-[var(--data-warning)]">{fmtMonedas(persona.saldoPendiente)}</strong>
                 {" en "}
                 {persona.adelantosAbiertos} adelanto{persona.adelantosAbiertos === 1 ? "" : "s"} abierto
                 {persona.adelantosAbiertos === 1 ? "" : "s"}
@@ -149,18 +157,18 @@ export default function FichaPersonaModal({
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi
           label="Debe hoy"
-          valor={formatCurrency(persona.saldoPendiente)}
-          tono={persona.saldoPendiente > 0 ? "warning" : "success"}
+          valor={fmtMonedas(persona.saldoPendiente)}
+          tono={debeAlgo ? "warning" : "success"}
           pie={`${persona.adelantosAbiertos} abierto${persona.adelantosAbiertos === 1 ? "" : "s"}`}
         />
         <Kpi
           label="Adelantado histórico"
-          valor={formatCurrency(persona.totalAdelantado)}
+          valor={fmtMonedas(persona.totalAdelantado)}
           pie={`${persona.adelantosLiquidados} liquidado${persona.adelantosLiquidados === 1 ? "" : "s"}`}
         />
         <Kpi
           label="Ya devolvió"
-          valor={formatCurrency(persona.totalEntregado)}
+          valor={fmtMonedas(persona.totalEntregado)}
           tono="success"
           pie={cumplimiento == null ? "sin historial" : `${cumplimiento}% de lo que sacó`}
         />
@@ -177,8 +185,8 @@ export default function FichaPersonaModal({
         {requiereAtencion(credito) && (
           <Aviso tono="error">{credito.aviso}</Aviso>
         )}
-        {persona.saldoAFavor > 0 && (
-          <Aviso tono="info">Te entregó {formatCurrency(persona.saldoAFavor)} de más.</Aviso>
+        {Object.values(persona.saldoAFavor).some((v) => v > 0) && (
+          <Aviso tono="info">Te entregó {fmtMonedas(persona.saldoAFavor)} de más.</Aviso>
         )}
         {persona.adelantosCancelados > 0 && (
           <Aviso tono="neutro">
@@ -289,10 +297,10 @@ export default function FichaPersonaModal({
                       }`}
                     >
                       {m.monto >= 0 ? "+" : "−"}
-                      {formatCurrency(Math.abs(m.monto))}
+                      {fmtMon(Math.abs(m.monto), m.moneda)}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-right font-bold tabular-nums text-[var(--text-primary)]">
-                      {formatCurrency(m.saldo)}
+                      {fmtMon(m.saldo, m.moneda)}
                     </td>
                   </tr>
                 ))}

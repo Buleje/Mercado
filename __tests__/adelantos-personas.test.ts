@@ -9,16 +9,18 @@ import {
 import { cumpleFiltro, ordenarPersonas, type PersonaOrdenable } from "@/lib/adelantos/ordenar-personas";
 
 const p = (x: Partial<PersonaOrdenable> & { nombre: string }): PersonaOrdenable => ({
-  totalAdelantado: 0,
-  saldoPendiente: 0,
-  totalEntregado: 0,
-  saldoAFavor: 0,
+  totalAdelantado: {},
+  saldoPendiente: {},
+  totalEntregado: {},
+  saldoAFavor: {},
   adelantosAbiertos: 0,
   adelantosLiquidados: 0,
   adelantosCancelados: 0,
   ultimoAdelanto: null,
   ...x,
 });
+/** Atajo para los tests: un saldo/monto que siempre es en soles. */
+const pen = (n: number): Record<string, number> => ({ PEN: n });
 const nombres = (xs: PersonaOrdenable[]) => xs.map((x) => x.nombre);
 
 describe("telefonoWhatsApp", () => {
@@ -153,9 +155,9 @@ describe("buscarDuplicado", () => {
 
 describe("ordenarPersonas", () => {
   const lista = [
-    p({ nombre: "Ana", saldoPendiente: 100, totalAdelantado: 1000, totalEntregado: 900, limiteCredito: 5000, ultimoAdelanto: "2026-01-01T00:00:00.000Z" }),
-    p({ nombre: "Beto", saldoPendiente: 400, totalAdelantado: 500, totalEntregado: 100, limiteCredito: 500, ultimoAdelanto: "2026-06-01T00:00:00.000Z" }),
-    p({ nombre: "Carla", saldoPendiente: 900, totalAdelantado: 900, totalEntregado: 0, ultimoAdelanto: "2026-03-01T00:00:00.000Z" }),
+    p({ nombre: "Ana", saldoPendiente: pen(100), totalAdelantado: pen(1000), totalEntregado: pen(900), limiteCredito: 5000, ultimoAdelanto: "2026-01-01T00:00:00.000Z" }),
+    p({ nombre: "Beto", saldoPendiente: pen(400), totalAdelantado: pen(500), totalEntregado: pen(100), limiteCredito: 500, ultimoAdelanto: "2026-06-01T00:00:00.000Z" }),
+    p({ nombre: "Carla", saldoPendiente: pen(900), totalAdelantado: pen(900), totalEntregado: pen(0), ultimoAdelanto: "2026-03-01T00:00:00.000Z" }),
   ];
 
   it("no muta el arreglo original", () => {
@@ -189,15 +191,15 @@ describe("ordenarPersonas", () => {
   });
 
   it("desempata alfabéticamente: dos saldos iguales no bailan entre renders", () => {
-    const empate = [p({ nombre: "Zoila", saldoPendiente: 50 }), p({ nombre: "Ana", saldoPendiente: 50 })];
+    const empate = [p({ nombre: "Zoila", saldoPendiente: pen(50) }), p({ nombre: "Ana", saldoPendiente: pen(50) })];
     expect(nombres(ordenarPersonas(empate, "saldo"))).toEqual(["Ana", "Zoila"]);
     expect(nombres(ordenarPersonas([...empate].reverse(), "saldo"))).toEqual(["Ana", "Zoila"]);
   });
 });
 
 describe("cumpleFiltro", () => {
-  const deudor = p({ nombre: "Deudor", saldoPendiente: 300, limiteCredito: 300 });
-  const alDia = p({ nombre: "Al día", saldoPendiente: 0, limiteCredito: 1000 });
+  const deudor = p({ nombre: "Deudor", saldoPendiente: pen(300), limiteCredito: 300 });
+  const alDia = p({ nombre: "Al día", saldoPendiente: {}, limiteCredito: 1000 });
 
   it("«deben» y «al día» parten la cartera sin dejar a nadie afuera", () => {
     expect(cumpleFiltro(deudor, "deben")).toBe(true);
@@ -214,5 +216,17 @@ describe("cumpleFiltro", () => {
   it("«todas» no filtra nada", () => {
     expect(cumpleFiltro(deudor, "todas")).toBe(true);
     expect(cumpleFiltro(alDia, "todas")).toBe(true);
+  });
+
+  /**
+   * El tope es en soles (el form lo rotula "S/") — deuda en dólares no cuenta
+   * para "sin margen", igual que el guard del backend (auditoría de esta
+   * sesión). "deben" sí ve la deuda en cualquier moneda: ahí no hay tope que
+   * mezclar, sólo la pregunta de si debe algo.
+   */
+  it("«sin margen» sólo mira la deuda en soles — dólares no cuentan para un tope en soles", () => {
+    const soloDolares = p({ nombre: "Solo USD", saldoPendiente: { USD: 500 }, limiteCredito: 300 });
+    expect(cumpleFiltro(soloDolares, "riesgo")).toBe(false);
+    expect(cumpleFiltro(soloDolares, "deben")).toBe(true);
   });
 });

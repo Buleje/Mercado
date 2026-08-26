@@ -17,8 +17,8 @@ describe("resumirPersona · el bug de los cancelados", () => {
       a({ status: "CANCELADO", montoAdelantado: 9000, saldoPendiente: 9000 }),
       a({ status: "CANCELADO", montoAdelantado: 250, saldoPendiente: 250 }),
     ]);
-    expect(r.saldoPendiente).toBe(0);
-    expect(r.totalAdelantado).toBe(0);
+    expect(r.saldoPendiente).toEqual({});
+    expect(r.totalAdelantado).toEqual({});
     expect(r.adelantosCancelados).toBe(2);
     expect(r.adelantosAbiertos).toBe(0);
   });
@@ -29,9 +29,9 @@ describe("resumirPersona · el bug de los cancelados", () => {
       a({ status: "LIQUIDADO", montoAdelantado: 300, saldoPendiente: 0 }),
       a({ status: "CANCELADO", montoAdelantado: 900, saldoPendiente: 900 }),
     ]);
-    expect(r.saldoPendiente).toBe(200);
-    expect(r.totalAdelantado).toBe(800); // 500 + 300, sin el cancelado
-    expect(r.totalEntregado).toBe(600); // 300 del abierto + 300 del liquidado
+    expect(r.saldoPendiente.PEN).toBe(200);
+    expect(r.totalAdelantado.PEN).toBe(800); // 500 + 300, sin el cancelado
+    expect(r.totalEntregado.PEN).toBe(600); // 300 del abierto + 300 del liquidado
     expect(r.adelantosAbiertos).toBe(1);
     expect(r.adelantosLiquidados).toBe(1);
   });
@@ -42,18 +42,18 @@ describe("resumirPersona · el bug de los cancelados", () => {
       a({ status: "ABIERTO", montoAdelantado: 500, saldoPendiente: 200 }),
       a({ status: "EXCEDIDO", montoAdelantado: 100, saldoPendiente: -50 }),
     ]);
-    expect(r.saldoPendiente).toBe(200);
-    expect(r.saldoAFavor).toBe(50);
+    expect(r.saldoPendiente.PEN).toBe(200);
+    expect(r.saldoAFavor.PEN).toBe(50);
   });
 
   it("el excedido cuenta como entregado por todo lo que cubrió, sin pasarse", () => {
     const r = resumirPersona([a({ status: "EXCEDIDO", montoAdelantado: 100, saldoPendiente: -40 })]);
-    expect(r.totalEntregado).toBe(140);
+    expect(r.totalEntregado.PEN).toBe(140);
   });
 
   it("una persona sin adelantos queda en cero, no en NaN", () => {
     const r = resumirPersona([]);
-    expect(r).toMatchObject({ totalAdelantado: 0, saldoPendiente: 0, saldoAFavor: 0, ultimoAdelanto: null });
+    expect(r).toMatchObject({ totalAdelantado: {}, saldoPendiente: {}, saldoAFavor: {}, ultimoAdelanto: null });
   });
 
   it("redondea a céntimos: tres tercios no dejan cola binaria", () => {
@@ -62,7 +62,26 @@ describe("resumirPersona · el bug de los cancelados", () => {
       a({ montoAdelantado: 33.33, saldoPendiente: 33.33 }),
       a({ montoAdelantado: 33.34, saldoPendiente: 33.34 }),
     ]);
-    expect(r.saldoPendiente).toBe(100);
+    expect(r.saldoPendiente.PEN).toBe(100);
+  });
+
+  /**
+   * EL BUG que encontró la auditoría de esta sesión: la misma persona con un
+   * adelanto en soles y otro en dólares se sumaba en un solo número, como si
+   * 200 PEN + 50 USD fueran 250 de la misma unidad.
+   */
+  it("un adelanto en soles y otro en dólares NO se mezclan en un solo total", () => {
+    const r = resumirPersona([
+      a({ status: "ABIERTO", montoAdelantado: 200, saldoPendiente: 200, moneda: "PEN" }),
+      a({ status: "ABIERTO", montoAdelantado: 50, saldoPendiente: 50, moneda: "USD" }),
+    ]);
+    expect(r.saldoPendiente).toEqual({ PEN: 200, USD: 50 });
+    expect(r.totalAdelantado).toEqual({ PEN: 200, USD: 50 });
+  });
+
+  it("sin moneda cae a PEN, como el resto del módulo (shared.tsx)", () => {
+    const r = resumirPersona([a({ status: "ABIERTO", moneda: undefined })]);
+    expect(Object.keys(r.saldoPendiente)).toEqual(["PEN"]);
   });
 });
 
@@ -92,7 +111,7 @@ describe("resumirPersona · último adelanto", () => {
   it("una fecha basura no rompe el resumen", () => {
     const r = resumirPersona([a({ fechaAdelanto: "no-es-fecha" }), a({ fechaAdelanto: null })]);
     expect(r.ultimoAdelanto).toBeNull();
-    expect(r.saldoPendiente).toBe(200);
+    expect(r.saldoPendiente).toEqual({ PEN: 200 });
   });
 });
 

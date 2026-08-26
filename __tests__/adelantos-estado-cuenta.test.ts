@@ -40,7 +40,7 @@ describe("movimientosDePersona", () => {
       adel({ id: "a", montoAdelantado: 500, entregas: [entrega("2026-03-10T12:00:00.000Z", 200)] }),
     ]);
     expect(movs.map((m) => m.saldo)).toEqual([500, 300]);
-    expect(saldoDeLaCuenta(movs)).toBe(300);
+    expect(saldoDeLaCuenta(movs)).toEqual({ PEN: 300 });
   });
 
   it("un adelanto CANCELADO no entra en la cuenta que se le manda a la persona", () => {
@@ -50,7 +50,7 @@ describe("movimientosDePersona", () => {
       adel({ id: "muerto", status: "CANCELADO", montoAdelantado: 9000, saldoPendiente: 9000 }),
     ]);
     expect(movs).toHaveLength(1);
-    expect(saldoDeLaCuenta(movs)).toBe(100);
+    expect(saldoDeLaCuenta(movs)).toEqual({ PEN: 100 });
   });
 
   it("usa el código del adelanto en el concepto, para que se pueda identificar", () => {
@@ -73,12 +73,27 @@ describe("movimientosDePersona", () => {
       adel({ id: "a", montoAdelantado: 0.1, entregas: [] }),
       adel({ id: "b", montoAdelantado: 0.2, entregas: [] }),
     ]);
-    expect(saldoDeLaCuenta(movs)).toBe(0.3);
+    expect(saldoDeLaCuenta(movs)).toEqual({ PEN: 0.3 });
   });
 
   it("sin movimientos, el saldo es 0 y no explota", () => {
     expect(movimientosDePersona([])).toEqual([]);
-    expect(saldoDeLaCuenta([])).toBe(0);
+    expect(saldoDeLaCuenta([])).toEqual({});
+  });
+
+  /**
+   * EL BUG que encontré leyendo esta misma sesión: un adelanto en soles y
+   * otro en dólares corrían sobre el MISMO acumulado, como si 500 PEN + 100
+   * USD fueran 600 de la misma plata — y esta es la única pantalla que se le
+   * manda a la persona por WhatsApp.
+   */
+  it("un adelanto en soles y otro en dólares corren en cuentas separadas", () => {
+    const movs = movimientosDePersona([
+      adel({ id: "pen", montoAdelantado: 500, moneda: "PEN", fechaAdelanto: "2026-03-01T12:00:00.000Z" }),
+      adel({ id: "usd", montoAdelantado: 100, moneda: "USD", fechaAdelanto: "2026-03-02T12:00:00.000Z" }),
+    ]);
+    expect(movs.every((m) => m.saldo < 600)).toBe(true);
+    expect(saldoDeLaCuenta(movs)).toEqual({ PEN: 500, USD: 100 });
   });
 });
 
@@ -101,5 +116,14 @@ describe("textoEstadoDeCuenta", () => {
     ]);
     expect(textoEstadoDeCuenta("Ana", movs)).toContain("Todo: −S/ 100.00");
     expect(textoEstadoDeCuenta("Ana", movs)).toContain("*Saldo pendiente: S/ 0.00*");
+  });
+
+  it("con dos monedas, el saldo final las lista separadas — nunca una suma cruzada", () => {
+    const movs = movimientosDePersona([
+      adel({ id: "pen", montoAdelantado: 200, moneda: "PEN" }),
+      adel({ id: "usd", montoAdelantado: 50, moneda: "USD" }),
+    ]);
+    const texto = textoEstadoDeCuenta("Ana", movs);
+    expect(texto).toContain("*Saldo pendiente: S/ 200.00 · $ 50.00*");
   });
 });
