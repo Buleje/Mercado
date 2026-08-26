@@ -51,7 +51,7 @@ export async function POST(
     logActivity(
       "Pago", "fiado",
       `Pago de S/${parsed.data.monto.toFixed(2)} en fiado ${id.slice(-6)} — saldo: S/${updated.saldo.toFixed(2)}`,
-      id, auth.username,
+      id, auth.username, undefined, auth.tenantId,
     ).catch((err) => logger.error("[fiados/pagar] logActivity failed", { error: String(err) }));
 
     return NextResponse.json(updated);

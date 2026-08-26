@@ -75,6 +75,8 @@ export async function POST(req: NextRequest) {
       `Beneficio "Acepta fiado" en el marketplace ${parsed.data.enabled ? "activado" : "desactivado"}`,
       storeId,
       auth.username,
+      undefined,
+      auth.tenantId,
     ).catch((err) => logger.error("[my/fiado] logActivity failed", { error: String(err) }));
 
     return NextResponse.json({ ok: true, acceptsFiado: parsed.data.enabled });

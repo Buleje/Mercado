@@ -365,6 +365,29 @@ export const FiadosDB = {
   },
 
   /**
+   * Audit 2026-08-26: el PATCH de /api/fiados/[id] sólo aceptaba `status`,
+   * así que el compromiso de pago con firma digital (que manda `descripcion`)
+   * era rechazado por Zod SIEMPRE — el cajero veía "guardado" porque el
+   * caller no revisaba la respuesta y de todos modos imprimía. Este método
+   * habilita el otro campo que ese flujo necesita escribir.
+   */
+  async updateDescripcion(tenantId: string, id: string, descripcion: string): Promise<DbFiado | null> {
+    const result = await prisma.fiado.updateMany({
+      where: { id, tenantId },
+      data: { descripcion },
+    });
+    if (result.count === 0) return null;
+    const row = await prisma.fiado.findFirst({
+      where: { id, tenantId },
+      include: { cuotas: { orderBy: { createdAt: "asc" } } },
+    }).catch((err) => {
+      logger.warn("FiadosDB.updateDescripcion: lookup failed", { fiadoId: id, err: String(err) });
+      return null;
+    });
+    return row ? mapFiado(row) : null;
+  },
+
+  /**
    * Resumen de fiados activos de un cliente. Centraliza la lógica que
    * antes vivía inline en /api/customers/[phone]/fiado-resumen (regla #1
    * CLAUDE.md). 2 queries paralelas: aggregate + oldest.

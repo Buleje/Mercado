@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     logActivity(
       "Cobro masivo", "fiado",
       `Cobro masivo de ${results.length} fiados por S/${totalCobrado.toFixed(2)}`,
-      undefined, auth.username,
+      undefined, auth.username, undefined, tenantId,
     ).catch((err) => logger.warn("[fiados/cobro-masivo] activity log failed", { err: String(err) }));
 
     return NextResponse.json({

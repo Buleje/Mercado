@@ -597,38 +597,49 @@ export default function FiadoModals({
                   </button>
                   <button
                     onClick={async () => {
-                      try {
-                        // Brandon 2026-06-17: persistir la FIRMA del compromiso. Antes
-                        // el canvas se dibujaba pero NUNCA se exportaba (toDataURL) — la
-                        // firma se perdía. Ahora exporta → sube a /api/upload → guarda
-                        // [FIRMA:url] en descripcion. Best-effort (no bloquea el guardado).
-                        let firmaNote = "";
-                        const canvas = firmaCanvasRef.current;
-                        if (canvas) {
-                          try {
-                            const dataUrl = canvas.toDataURL("image/png");
-                            const blob = await (await fetch(dataUrl)).blob();
-                            const file = new File([blob], `firma-${selected.id}.png`, { type: "image/png" });
-                            const fd = new FormData();
-                            fd.append("file", file);
-                            fd.append("folder", "general");
-                            const upRes = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
-                            if (upRes.ok) {
-                              const up = (await upRes.json()) as { url?: string };
-                              if (up.url) firmaNote = ` [FIRMA:${up.url}]`;
-                            }
-                          } catch {
-                            /* firma best-effort: el compromiso se guarda sin la imagen */
+                      // Brandon 2026-06-17: persistir la FIRMA del compromiso. Antes
+                      // el canvas se dibujaba pero NUNCA se exportaba (toDataURL) — la
+                      // firma se perdía. Ahora exporta → sube a /api/upload → guarda
+                      // [FIRMA:url] en descripcion. Best-effort (no bloquea el guardado).
+                      let firmaNote = "";
+                      const canvas = firmaCanvasRef.current;
+                      if (canvas) {
+                        try {
+                          const dataUrl = canvas.toDataURL("image/png");
+                          const blob = await (await fetch(dataUrl)).blob();
+                          const file = new File([blob], `firma-${selected.id}.png`, { type: "image/png" });
+                          const fd = new FormData();
+                          fd.append("file", file);
+                          fd.append("folder", "general");
+                          const upRes = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
+                          if (upRes.ok) {
+                            const up = (await upRes.json()) as { url?: string };
+                            if (up.url) firmaNote = ` [FIRMA:${up.url}]`;
                           }
+                        } catch {
+                          /* firma best-effort: el compromiso se guarda sin la imagen */
                         }
-                        await fetch(`/api/fiados/${selected.id}`, {
+                      }
+                      // Audit 2026-08-26: antes NO se revisaba res.ok — el PATCH podía
+                      // fallar (400 porque el schema exigía `status`) y el cajero veía
+                      // "guardado" porque igual se imprimía. Ahora sólo imprime si el
+                      // compromiso realmente quedó en la base.
+                      try {
+                        const res = await fetch(`/api/fiados/${selected.id}`, {
                           method: "PATCH",
                           headers: csrfHeaders({ "Content-Type": "application/json" }),
                           body: JSON.stringify({
                             descripcion: `${selected.descripcion ?? ""} [COMPROMISO: S/${compromisoMonto} hasta ${compromisoFecha}]${firmaNote}`.trim(),
                           }),
                         });
-                      } catch { /* ignore */ }
+                        if (!res.ok) {
+                          alert("No se pudo guardar el compromiso de pago. Intenta de nuevo antes de imprimir.");
+                          return;
+                        }
+                      } catch {
+                        alert("No se pudo guardar el compromiso de pago. Revisa tu conexión e intenta de nuevo.");
+                        return;
+                      }
                       window.print();
                     }}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
