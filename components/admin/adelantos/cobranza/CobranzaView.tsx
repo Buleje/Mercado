@@ -146,7 +146,10 @@ export default function CobranzaView({
   const totalPorCobrarNum = Object.values(totalPorCobrar).reduce((s, v) => s + v, 0);
   const vencidoNum = Object.values(vencido).reduce((s, v) => s + v, 0);
   const recuperado = useMemo(() => recuperadoDelMes(adelantos, now), [adelantos, now]);
-  const avance = avanceDeMeta(meta, recuperado);
+  /* La meta se carga en soles ("Meta del mes (S/)") — sólo lo recuperado en
+     soles cuenta para el avance. Lo mostrado en pantalla sigue siendo el
+     total real por moneda, vía fmtMonedas. */
+  const avance = avanceDeMeta(meta, recuperado.PEN ?? 0);
   const sinTelefono = deudores.filter((d) => !d.telefono).length;
   const prometieron = [...promesas.values()].filter((p) => p.estado !== "incumplio").length;
 
@@ -281,7 +284,7 @@ export default function CobranzaView({
           <p className="flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
             <Target className="h-3.5 w-3.5" aria-hidden /> Recuperado del mes
           </p>
-          <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--data-success)]">{formatCurrency(recuperado)}</p>
+          <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--data-success)]">{fmtMonedas(recuperado)}</p>
           {avance.porcentaje == null ? (
             <p className="text-sm text-[var(--text-secondary)]">Tocá para poner una meta</p>
           ) : (

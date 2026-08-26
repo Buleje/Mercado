@@ -11,7 +11,7 @@
 import { useState } from "react";
 import { formatCurrency } from "@/lib/currency";
 import { avanceDeMeta } from "@/lib/adelantos/gestion-cobranza";
-import { Field, ModalActions, ModalShell, inputCls } from "../shared";
+import { Field, ModalActions, ModalShell, fmtMonedas, inputCls } from "../shared";
 
 export default function MetaModal({
   meta,
@@ -20,12 +20,13 @@ export default function MetaModal({
   onGuardar,
 }: {
   meta: number;
-  recuperado: number;
+  /** Por moneda — la meta sólo mide contra la parte en soles (ver avanceDeMeta). */
+  recuperado: Record<string, number>;
   onClose: () => void;
   onGuardar: (m: number) => void;
 }) {
   const [valor, setValor] = useState(meta > 0 ? String(meta) : "");
-  const avance = avanceDeMeta(Number(valor) || 0, recuperado);
+  const avance = avanceDeMeta(Number(valor) || 0, recuperado.PEN ?? 0);
 
   return (
     <ModalShell
@@ -49,7 +50,7 @@ export default function MetaModal({
 
       <div className="rounded-xl bg-[var(--surface-sunken)] p-4">
         <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Este mes ya entraron</p>
-        <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--data-success)]">{formatCurrency(recuperado)}</p>
+        <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--data-success)]">{fmtMonedas(recuperado)}</p>
         {avance.porcentaje != null && (
           <>
             <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-[var(--surface-raised)]">

@@ -151,6 +151,11 @@ export type AvanceMeta = {
  * `recuperado` son las ENTREGAS del período, no los adelantos liquidados: una
  * entrega parcial también es plata que volvió, y esperar a que el adelanto
  * cierre entero hace que el tablero no se mueva en semanas.
+ *
+ * `recuperado` viene YA reducido a una sola moneda por quien llama — la meta
+ * se carga en soles (el form la rotula "S/"), así que sólo tiene sentido
+ * medirla contra lo recuperado en soles (auditoría de esta sesión: antes se
+ * comparaba contra la suma cruzada de soles + dólares).
  */
 export function avanceDeMeta(meta: number, recuperado: number): AvanceMeta {
   const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -162,19 +167,24 @@ export function avanceDeMeta(meta: number, recuperado: number): AvanceMeta {
   };
 }
 
-/** Lo entregado dentro del mes en curso, mirando las entregas una por una. */
+/**
+ * Lo entregado dentro del mes en curso, mirando las entregas una por una —
+ * separado por moneda (`Record<moneda, monto>`), nunca sumado cruzado: un
+ * adelanto en soles y otro en dólares no son la misma plata recuperada.
+ */
 export function recuperadoDelMes(
-  adelantos: readonly { entregas: readonly { fecha: string; valor: number }[] }[],
+  adelantos: readonly { moneda?: string | null; entregas: readonly { fecha: string; valor: number }[] }[],
   ahora: number = Date.now(),
-): number {
+): Record<string, number> {
   const hoy = new Date(ahora);
   const desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1).getTime();
-  let total = 0;
+  const totales: Record<string, number> = {};
   for (const a of adelantos) {
+    const moneda = a.moneda || "PEN";
     for (const e of a.entregas) {
       const t = new Date(e.fecha).getTime();
-      if (t >= desde && t <= ahora) total += e.valor;
+      if (t >= desde && t <= ahora) totales[moneda] = (totales[moneda] ?? 0) + e.valor;
     }
   }
-  return Math.round(total * 100) / 100;
+  return Object.fromEntries(Object.entries(totales).map(([m, v]) => [m, Math.round(v * 100) / 100]));
 }

@@ -122,19 +122,39 @@ describe("recuperadoDelMes", () => {
       [{ entregas: [{ fecha: enDias(-2), valor: 100 }, { fecha: enDias(-5), valor: 50 }] }],
       AHORA,
     );
-    expect(total).toBe(150);
+    expect(total).toEqual({ PEN: 150 });
   });
 
   it("deja afuera lo del mes pasado", () => {
     const mesPasado = new Date("2026-07-20T12:00:00.000Z").toISOString();
-    expect(recuperadoDelMes([{ entregas: [{ fecha: mesPasado, valor: 900 }] }], AHORA)).toBe(0);
+    expect(recuperadoDelMes([{ entregas: [{ fecha: mesPasado, valor: 900 }] }], AHORA)).toEqual({});
   });
 
   it("deja afuera lo del futuro", () => {
-    expect(recuperadoDelMes([{ entregas: [{ fecha: enDias(5), valor: 900 }] }], AHORA)).toBe(0);
+    expect(recuperadoDelMes([{ entregas: [{ fecha: enDias(5), valor: 900 }] }], AHORA)).toEqual({});
   });
 
   it("sin entregas es cero, no NaN", () => {
-    expect(recuperadoDelMes([{ entregas: [] }], AHORA)).toBe(0);
+    expect(recuperadoDelMes([{ entregas: [] }], AHORA)).toEqual({});
+  });
+
+  /**
+   * EL BUG que encontró audit-verificado: dos adelantos del mismo mes, uno en
+   * soles y otro en dólares, se sumaban en un solo total como si "100 PEN +
+   * 30 USD" fueran 130 de la misma plata.
+   */
+  it("un adelanto en soles y otro en dólares recuperan en cuentas separadas", () => {
+    const total = recuperadoDelMes(
+      [
+        { moneda: "PEN", entregas: [{ fecha: enDias(-2), valor: 100 }] },
+        { moneda: "USD", entregas: [{ fecha: enDias(-1), valor: 30 }] },
+      ],
+      AHORA,
+    );
+    expect(total).toEqual({ PEN: 100, USD: 30 });
+  });
+
+  it("sin moneda cargada, asume soles", () => {
+    expect(recuperadoDelMes([{ entregas: [{ fecha: enDias(-1), valor: 50 }] }], AHORA)).toEqual({ PEN: 50 });
   });
 });
