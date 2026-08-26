@@ -19,6 +19,7 @@ import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import { waLink } from "@/lib/whatsapp-link";
+import { tenantCacheKey } from "@/lib/tenant-cache";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 
 import dynamic from "next/dynamic";
@@ -289,7 +290,7 @@ export default function FiadosModule() {
 
   // UX: Panel width toggle (Mejora 16)
   const [isPanelWide, setIsPanelWide] = useState(() => {
-    try { return localStorage.getItem("panel-width-preference") === "wide"; } catch { return false; }
+    try { return localStorage.getItem(tenantCacheKey("panel-width-preference")) === "wide"; } catch { return false; }
   });
 
   // UX: Sortable columns (Mejora 19)
@@ -298,23 +299,27 @@ export default function FiadosModule() {
 
   // UX: Table density (Mejora 20)
   const [tableDensity, setTableDensity] = useState<"compact" | "normal" | "wide">(() => {
-    try { return (localStorage.getItem("table-density") as "compact" | "normal" | "wide") || "normal"; } catch { return "normal"; }
+    try { return (localStorage.getItem(tenantCacheKey("table-density")) as "compact" | "normal" | "wide") || "normal"; } catch { return "normal"; }
   });
 
   // Audit 2026-05-17: sub-tabs dentro del módulo Fiados.
   // Antes había 10+ widgets en una sola vista scrollable. Ahora se reparten
   // en 3 vistas con persistencia para que el dueño abra siempre donde estaba.
+  // Audit 2026-08-26: las 3 keys de acá abajo (panel-width-preference,
+  // table-density, fiados-tab) no tenían tenant-scope — un superadmin que
+  // pasa de un negocio a otro en la misma pestaña heredaba el tab/densidad/
+  // ancho del negocio anterior.
   type FiadoTab = "resumen" | "deudores" | "analisis";
   const [activeTab, setActiveTab] = useState<FiadoTab>(() => {
     try {
-      const stored = localStorage.getItem("fiados-tab") as FiadoTab | null;
+      const stored = localStorage.getItem(tenantCacheKey("fiados-tab")) as FiadoTab | null;
       if (stored === "resumen" || stored === "deudores" || stored === "analisis") return stored;
     } catch { /* localStorage bloqueado */ }
     return "resumen";
   });
   const setTab = (t: FiadoTab) => {
     setActiveTab(t);
-    try { localStorage.setItem("fiados-tab", t); } catch { /* ignore */ }
+    try { localStorage.setItem(tenantCacheKey("fiados-tab"), t); } catch { /* ignore */ }
   };
 
   // Conteos para badges de tabs (se actualizan en vivo con los filtros).
@@ -384,15 +389,12 @@ export default function FiadosModule() {
         // Buscar fiados del cliente en los datos ya cargados
         const clientFiados = fiados.filter(f => f.customerId === cid);
         if (clientFiados.length === 0) {
-          // Intentar fetch para verificar si el cliente existe
-          const res = await fetch(`/api/customers/${encodeURIComponent(cid)}`).catch(() => null);
-          if (res && res.ok) {
-            setClienteEsNuevo(true);
-            setClienteResumen(null);
-          } else {
-            setClienteEsNuevo(true);
-            setClienteResumen(null);
-          }
+          // Audit 2026-08-26: acá había un fetch a /api/customers/[cid] cuyo
+          // resultado (res.ok) nunca se usaba — las dos ramas del if/else
+          // hacían exactamente lo mismo. Sólo agregaba un round-trip de red
+          // que retrasaba el aviso "Cliente nuevo" sin aportar nada.
+          setClienteEsNuevo(true);
+          setClienteResumen(null);
         } else {
           setClienteEsNuevo(false);
           const score = computeReliabilityScore(clientFiados);
@@ -477,6 +479,10 @@ export default function FiadosModule() {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      // Audit 2026-08-26: showDebtorsMap faltaba acá — Escape no cerraba el
+      // Mapa de deudores, y si además había un "selected" de fondo, Escape
+      // cerraba ESE panel en vez del mapa visible al frente.
+      if (showDebtorsMap) { setShowDebtorsMap(false); return; }
       if (showCompromiso) { setShowCompromiso(false); return; }
       if (showRecibo) { setShowRecibo(false); return; }
       if (showCobroMasivo) { setShowCobroMasivo(false); return; }
@@ -486,7 +492,7 @@ export default function FiadosModule() {
     };
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
-  }, [showCompromiso, showRecibo, showCobroMasivo, showPago, showNew, selected]);
+  }, [showDebtorsMap, showCompromiso, showRecibo, showCobroMasivo, showPago, showNew, selected]);
 
   // UX Mejora 19: Toggle sort
   const toggleSort = (col: "name" | "total" | "saldo" | "fecha") => {
@@ -1054,7 +1060,7 @@ export default function FiadosModule() {
         {(["compact", "normal", "wide"] as const).map(d => (
           <button
             key={d}
-            onClick={() => { setTableDensity(d); try { localStorage.setItem("table-density", d); } catch {} }}
+            onClick={() => { setTableDensity(d); try { localStorage.setItem(tenantCacheKey("table-density"), d); } catch {} }}
             className={cn("px-2 py-0.5 rounded-full text-xs font-bold transition-colors", tableDensity === d ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]")}
           >
             {d === "compact" ? "Compacta" : d === "normal" ? "Normal" : "Amplia"}
@@ -1247,7 +1253,7 @@ export default function FiadosModule() {
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Detalle del fiado</CardTitle>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => { const next = !isPanelWide; setIsPanelWide(next); try { localStorage.setItem("panel-width-preference", next ? "wide" : "normal"); } catch {} }}
+                      onClick={() => { const next = !isPanelWide; setIsPanelWide(next); try { localStorage.setItem(tenantCacheKey("panel-width-preference"), next ? "wide" : "normal"); } catch {} }}
                       className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors hidden sm:flex"
                       title={isPanelWide ? "Panel normal" : "Panel ancho"}
                     >
