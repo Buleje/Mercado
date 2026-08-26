@@ -183,9 +183,12 @@ export default function FiadoModals({
         )}
       </AnimatePresence>
 
-      {/* Mejora 3: Cobro masivo sticky bar */}
+      {/* Mejora 3: Cobro masivo sticky bar.
+          Audit 2026-08-26: en mobile quedaba pintada encima del bottom-nav del
+          admin (AdminMobileBottomBar, mismo fixed bottom-0 z-30) — mismo
+          offset que ya usa ctp-barra-seleccion.tsx para el mismo choque. */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[var(--color-card)] border-t border-[var(--rule-base)] px-4 py-3">
+        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] sm:bottom-0 z-40 bg-white dark:bg-[var(--color-card)] border-t border-[var(--rule-base)] px-4 py-3">
           <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <span className="text-sm font-bold text-[var(--text-primary)]">
