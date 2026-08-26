@@ -162,6 +162,8 @@ type Props = {
   onSaved: () => void;
   customer?: Record<string, unknown> | null;
   initialFormat?: 'simple' | 'completo';
+  /** Precarga el teléfono en un alta nueva — para no hacer retipear lo que ya se escribió en otra pantalla. */
+  initialPhone?: string;
 };
 
 // ── Accordion Section ──────────────────────────────────────────────────────
@@ -185,7 +187,7 @@ function Section({ title, defaultOpen, children }: { title: string; defaultOpen?
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, initialFormat }: Props) {
+export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, initialFormat, initialPhone }: Props) {
   const [format, setFormat] = useState<'simple' | 'completo'>(() => {
     if (initialFormat) return initialFormat;
     if (typeof window !== 'undefined') {
@@ -231,9 +233,9 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
         observaciones: (customer.observaciones as string) ?? '',
       });
     } else {
-      setForm(EMPTY_FORM);
+      setForm({ ...EMPTY_FORM, phone: initialPhone ?? '' });
     }
-  }, [customer]);
+  }, [customer, initialPhone]);
 
   const changeFormat = useCallback((f: 'simple' | 'completo') => {
     setFormat(f);

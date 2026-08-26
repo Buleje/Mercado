@@ -1434,7 +1434,7 @@ export default function FiadosModule() {
       </AnimatePresence>
 
       {/* New Fiado Modal */}
-      <FiadoFormModal showNew={showNew} setShowNew={setShowNew} newForm={newForm} setNewForm={setNewForm} creating={creating} createError={createError} handleCreate={handleCreate} setCreateError={setCreateError} dniPhoto={dniPhoto} setDniPhoto={setDniPhoto} clienteResumen={clienteResumen} clienteResumenLoading={clienteResumenLoading} clienteEsNuevo={clienteEsNuevo} />
+      <FiadoFormModal showNew={showNew} setShowNew={setShowNew} newForm={newForm} setNewForm={setNewForm} creating={creating} createError={createError} handleCreate={handleCreate} setCreateError={setCreateError} dniPhoto={dniPhoto} setDniPhoto={setDniPhoto} clienteResumen={clienteResumen} clienteResumenLoading={clienteResumenLoading} clienteEsNuevo={clienteEsNuevo} onCrearCliente={() => setShowQuickClient(true)} />
 
       {/* Payment, Cobro Masivo, Recibo, Compromiso, Debtors Map Modals */}
       <FiadoModals
@@ -1455,12 +1455,15 @@ export default function FiadosModule() {
         fiados={fiados}
       />
 
-      {/* Quick client creation modal */}
+      {/* Quick client creation modal — precarga el teléfono que ya se tipeó
+          en "Nuevo fiado" (audit-verificado: antes no había forma de abrir
+          este modal desde ahí, era un <ClienteFormModal> montado y muerto). */}
       <ClienteFormModal
         isOpen={showQuickClient}
         onClose={() => setShowQuickClient(false)}
         onSaved={() => setShowQuickClient(false)}
         initialFormat="simple"
+        initialPhone={newForm.customerId.trim()}
       />
     </div>
   );

@@ -44,6 +44,8 @@ export type FiadoFormModalProps = {
   clienteResumen: FiadoClienteResumen | null;
   clienteResumenLoading: boolean;
   clienteEsNuevo: boolean;
+  /** Abre el alta rápida de cliente, precargando el teléfono ya tipeado acá. */
+  onCrearCliente?: () => void;
 };
 
 export default function FiadoFormModal({
@@ -60,6 +62,7 @@ export default function FiadoFormModal({
   clienteResumen,
   clienteResumenLoading,
   clienteEsNuevo,
+  onCrearCliente,
 }: FiadoFormModalProps) {
   return (
     <AdminModal
@@ -145,8 +148,17 @@ export default function FiadoFormModal({
                       // Fix #9: si el valor no parece un teléfono (pocos dígitos),
                       // mostrar aviso preventivo en lugar del mensaje positivo engañoso
                       /^[\d\s+\-]{6,}$/.test(newForm.customerId.trim()) ? (
-                        <div className="border border-[var(--rule-base)] dark:border-white/10 bg-gray-50 dark:bg-white/5 rounded-xl p-3">
+                        <div className="border border-[var(--rule-base)] dark:border-white/10 bg-gray-50 dark:bg-white/5 rounded-xl p-3 flex items-center justify-between gap-2">
                           <p className="text-xs text-[var(--text-tertiary)]">Cliente nuevo — sin historial de fiados</p>
+                          {onCrearCliente && (
+                            <button
+                              type="button"
+                              onClick={onCrearCliente}
+                              className="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> Crear cliente
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <div className="border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 flex items-start gap-2">
