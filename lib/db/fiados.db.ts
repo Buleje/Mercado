@@ -23,6 +23,21 @@ export class FiadoConflictError extends Error {
 }
 
 /**
+ * El pago tipeado excede el saldo pendiente. Es un error de VALIDACIÓN (el
+ * cajero se equivocó de monto), no de infraestructura — antes registerPago
+ * lo lanzaba como Error plano y el handler HTTP lo confundía con una falla
+ * de DB, respondiendo 503 "Database error" en vez del motivo real (audit
+ * 2026-08-26).
+ */
+export class FiadoOverpaymentError extends Error {
+  readonly code = "FIADO_OVERPAYMENT";
+  constructor(message: string) {
+    super(message);
+    this.name = "FiadoOverpaymentError";
+  }
+}
+
+/**
  * Detecta si un error es race-condition de Prisma/Postgres. Centraliza el
  * pattern para que los handlers HTTP no tengan que conocer códigos internos.
  */
@@ -321,7 +336,7 @@ export const FiadosDB = {
 
       const saldoFinal = Number(afterDecrement.saldo);
       if (saldoFinal < -0.01) {
-        throw new Error(`Overpayment: el pago excede el saldo en ${Math.abs(saldoFinal).toFixed(2)}`);
+        throw new FiadoOverpaymentError(`El pago excede el saldo en S/${Math.abs(saldoFinal).toFixed(2)}`);
       }
 
       if (saldoFinal <= 0.01) {
