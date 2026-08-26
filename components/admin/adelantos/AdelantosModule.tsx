@@ -40,7 +40,6 @@ import CobranzaView from "./cobranza/CobranzaView";
 import ProximosVencimientos from "./cobranza/ProximosVencimientos";
 import CrearPersonaModal from "./personas/CrearPersonaModal";
 import { sinTildes, fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, MiniStat, STATUS_BADGE } from "./shared";
-import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { estadoDeCredito, ordenarPorRiesgoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
@@ -1001,20 +1000,33 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
     (!ql || e.persona.toLowerCase().includes(ql)),
   );
 
-  const resumen = filtrados.reduce((a, e) => { if (e.tipo === "adelanto") a.adel += e.monto; else a.liq += e.monto; return a; }, { adel: 0, liq: 0 });
+  /* Por moneda, nunca cruzado: un adelanto en soles y una entrega en dólares
+     del mismo período no son la misma plata (auditoría de esta sesión). */
+  const sumar = (map: Record<string, number>, moneda: string | null | undefined, monto: number) => {
+    const m = moneda || "PEN";
+    map[m] = (map[m] ?? 0) + monto;
+  };
+  const tieneAlgo = (map: Record<string, number>) => Object.values(map).some((v) => v > 0);
+  const resumen = filtrados.reduce(
+    (a, e) => {
+      if (e.tipo === "adelanto") sumar(a.adel, e.moneda, e.monto); else sumar(a.liq, e.moneda, e.monto);
+      return a;
+    },
+    { adel: {} as Record<string, number>, liq: {} as Record<string, number> },
+  );
 
   // Agrupar por día (local)
   const localKey = (f: string) => { const d = new Date(f); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
   const hoyK = localKey(new Date().toISOString());
   const ayerK = localKey(new Date(Date.now() - 86_400_000).toISOString());
   const dayLabel = (k: string) => (k === hoyK ? "Hoy" : k === ayerK ? "Ayer" : new Date(k + "T12:00:00").toLocaleDateString("es-PE", { weekday: "short", day: "2-digit", month: "long" }));
-  const grupos: { key: string; eventos: ActEvento[]; adel: number; liq: number }[] = [];
+  const grupos: { key: string; eventos: ActEvento[]; adel: Record<string, number>; liq: Record<string, number> }[] = [];
   for (const e of filtrados) {
     const k = localKey(e.fecha);
     let g = grupos[grupos.length - 1];
-    if (!g || g.key !== k) { g = { key: k, eventos: [], adel: 0, liq: 0 }; grupos.push(g); }
+    if (!g || g.key !== k) { g = { key: k, eventos: [], adel: {}, liq: {} }; grupos.push(g); }
     g.eventos.push(e);
-    if (e.tipo === "adelanto") g.adel += e.monto; else g.liq += e.monto;
+    if (e.tipo === "adelanto") sumar(g.adel, e.moneda, e.monto); else sumar(g.liq, e.moneda, e.monto);
   }
 
   const exportarPdf = async () => {
@@ -1022,7 +1034,7 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
     const autoTable = (await import("jspdf-autotable")).default;
     const doc = new jsPDF();
     doc.setFontSize(16); doc.text("Historial de actividad", 14, 18);
-    doc.setFontSize(10); doc.text(`${filtrados.length} movimientos · +${formatCurrency(resumen.adel)} adelantado · −${formatCurrency(resumen.liq)} liquidado`, 14, 25);
+    doc.setFontSize(10); doc.text(`${filtrados.length} movimientos · +${fmtMonedas(resumen.adel)} adelantado · −${fmtMonedas(resumen.liq)} liquidado`, 14, 25);
     autoTable(doc, {
       startY: 31,
       head: [["Fecha", "Tipo", "Persona", "Detalle", "Monto"]],
@@ -1049,8 +1061,8 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
           ))}
         </div>
         <p className="text-base text-[var(--text-secondary)]">
-          <span className="font-bold text-[var(--data-warning)]">+{formatCurrency(resumen.adel)}</span> adelantado ·{" "}
-          <span className="font-bold text-[var(--data-success)]">−{formatCurrency(resumen.liq)}</span> liquidado ·{" "}
+          <span className="font-bold text-[var(--data-warning)]">+{fmtMonedas(resumen.adel)}</span> adelantado ·{" "}
+          <span className="font-bold text-[var(--data-success)]">−{fmtMonedas(resumen.liq)}</span> liquidado ·{" "}
           <span className="font-bold text-[var(--text-primary)]">{filtrados.length}</span> movs
         </p>
       </div>
@@ -1080,9 +1092,9 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
               <div className="flex items-center justify-between gap-2 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2">
                 <span className="text-sm font-extrabold uppercase tracking-wide text-[var(--text-secondary)]">{dayLabel(g.key)}</span>
                 <span className="text-sm tabular-nums text-[var(--text-tertiary)]">
-                  {g.adel > 0 && <span className="font-bold text-[var(--data-warning)]">+{formatCurrency(g.adel)}</span>}
-                  {g.adel > 0 && g.liq > 0 && " · "}
-                  {g.liq > 0 && <span className="font-bold text-[var(--data-success)]">−{formatCurrency(g.liq)}</span>}
+                  {tieneAlgo(g.adel) && <span className="font-bold text-[var(--data-warning)]">+{fmtMonedas(g.adel)}</span>}
+                  {tieneAlgo(g.adel) && tieneAlgo(g.liq) && " · "}
+                  {tieneAlgo(g.liq) && <span className="font-bold text-[var(--data-success)]">−{fmtMonedas(g.liq)}</span>}
                 </span>
               </div>
               <ul>
