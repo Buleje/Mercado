@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { waLink } from "@/lib/whatsapp-link";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { activateProps } from "@/components/admin/shared/a11y";
 
@@ -114,6 +115,12 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
   const showHeaderKpi = view === "all" || view === "resumen" || view === "analisis";
   const showResumen = view === "all" || view === "resumen";
   const showAnalisis = view === "all" || view === "analisis";
+  const waAntiguo = fiadoMasAntiguo
+    ? waLink(
+        fiadoMasAntiguo.customerId,
+        `Hola ${fiadoMasAntiguo.customerName || ""}! Le recuerdo que tiene un saldo pendiente de ${formatCurrency(fiadoMasAntiguo.saldo)} en Buleje. Gracias!`,
+      )
+    : null;
 
   return (
     <>
@@ -341,9 +348,9 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
             </p>
           </div>
           <div className="flex gap-2 shrink-0">
-            {fiadoMasAntiguo.customerId && (
+            {waAntiguo && (
               <a
-                href={`https://wa.me/51${fiadoMasAntiguo.customerId.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${fiadoMasAntiguo.customerName || ""}! Le recuerdo que tiene un saldo pendiente de ${formatCurrency(fiadoMasAntiguo.saldo)} en Buleje. Gracias!`)}`}
+                href={waAntiguo}
                 target="_blank" rel="noopener noreferrer"
                 // WhatsApp brand color (#25D366) — no token equivalent, se mantiene como excepcion documentada
                 className="text-xs font-bold text-white bg-[#25D366] hover:opacity-90 px-3 py-1.5 rounded-lg transition-opacity"
@@ -555,8 +562,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                                 e.stopPropagation();
                                 const nombre = f.customerName || f.customerId;
                                 const msg = `Hola ${nombre}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje. Cuando puedas pasa a regularizarlo!`;
-                                const cleanPhone = f.customerId.replace(/\D/g, "");
-                                window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+                                const wa = waLink(f.customerId, msg);
+                                if (wa) window.open(wa, "_blank");
                               }}
                               aria-label="Enviar recordatorio por WhatsApp"
                               className="text-xs font-bold p-1.5 rounded-lg bg-[#25D366]/12 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
@@ -736,9 +743,9 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                     </div>
                     <button
                       onClick={() => {
-                        const cleanPhone = f.customerId.replace(/\D/g, "");
                         const msg = `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje.`;
-                        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+                        const wa = waLink(f.customerId, msg);
+                        if (wa) window.open(wa, "_blank");
                       }}
                       // WhatsApp brand color (#25D366) — excepcion documentada (no token equivalent)
                       className="shrink-0 px-2 py-1 rounded-lg text-xs font-bold bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"

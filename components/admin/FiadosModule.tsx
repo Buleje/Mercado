@@ -18,6 +18,7 @@ import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
+import { waLink } from "@/lib/whatsapp-link";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 
 import dynamic from "next/dynamic";
@@ -1173,8 +1174,8 @@ export default function FiadosModule() {
                                 const msg = f.status === "VENCIDO"
                                   ? `Hola ${nombre}, tienes un pendiente de S/${saldo}${fecha ? ` vencido desde el ${fecha}` : ""} en Buleje. Cuando puedas pasa a regularizarlo?`
                                   : `Hola ${nombre}, te recordamos que tienes un pendiente de S/${saldo} en Buleje${fecha ? ` que vence el ${fecha}` : ""}. Pasa cuando puedas!`;
-                                const cleanPhone = f.customerId.replace(/\D/g, "");
-                                window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+                                const wa = waLink(f.customerId, msg);
+                                if (wa) window.open(wa, "_blank");
                               }}
                               title="Enviar recordatorio por WhatsApp"
                               className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] text-xs font-bold transition-colors"
@@ -1383,7 +1384,7 @@ export default function FiadosModule() {
                           Compromiso de Pago
                         </button>
                         <a
-                          href={`https://wa.me/${selected.customerId.replace(/\D/g, "").startsWith("51") ? selected.customerId.replace(/\D/g, "") : "51" + selected.customerId.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${selected.customerName || selected.customerId}, te recordamos que tienes un pendiente de S/${Number(selected.saldo).toFixed(2)} en Buleje.`)}`}
+                          href={waLink(selected.customerId, `Hola ${selected.customerName || selected.customerId}, te recordamos que tienes un pendiente de S/${Number(selected.saldo).toFixed(2)} en Buleje.`) ?? "#"}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
@@ -1403,10 +1404,9 @@ export default function FiadosModule() {
                               });
                               if (!res.ok) { alert("No se pudo generar el link"); return; }
                               const { url } = (await res.json()) as { url: string };
-                              const digits = selected.customerId.replace(/\D/g, "");
-                              const wa = digits.startsWith("51") ? digits : "51" + digits;
                               const msg = `Hola ${selected.customerName || ""}, aquí puedes ver tu estado de cuenta completo: ${url}`;
-                              window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
+                              const wa = waLink(selected.customerId, msg);
+                              if (wa) window.open(wa, "_blank", "noopener");
                             } catch {
                               alert("Error al generar el link");
                             }

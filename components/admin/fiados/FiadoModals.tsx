@@ -3,6 +3,7 @@
 import { CardTitle } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { waLink } from "@/lib/whatsapp-link";
 import React from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -399,9 +400,10 @@ export default function FiadoModals({
                     Imprimir
                   </button>
                   <a
-                    href={`https://wa.me/${reciboData.clientePhone.replace(/\D/g, "").startsWith("51") ? reciboData.clientePhone.replace(/\D/g, "") : "51" + reciboData.clientePhone.replace(/\D/g, "")}?text=${encodeURIComponent(
-                      `*RECIBO DE PAGO*\n${"=".repeat(25)}\nBuleje\nFecha: ${reciboData.fecha}\n${"─".repeat(25)}\nCliente: ${reciboData.clienteNombre}\nMonto pagado: S/${Number(reciboData.montoPagado).toFixed(2)}\nSaldo anterior: S/${Number(reciboData.saldoAnterior).toFixed(2)}\n*Saldo actual: S/${Number(reciboData.saldoActual).toFixed(2)}*\n${"─".repeat(25)}\nGracias por tu pago. Vuelve pronto!`
-                    )}`}
+                    href={waLink(
+                      reciboData.clientePhone,
+                      `*RECIBO DE PAGO*\n${"=".repeat(25)}\nBuleje\nFecha: ${reciboData.fecha}\n${"─".repeat(25)}\nCliente: ${reciboData.clienteNombre}\nMonto pagado: S/${Number(reciboData.montoPagado).toFixed(2)}\nSaldo anterior: S/${Number(reciboData.saldoAnterior).toFixed(2)}\n*Saldo actual: S/${Number(reciboData.saldoActual).toFixed(2)}*\n${"─".repeat(25)}\nGracias por tu pago. Vuelve pronto!`,
+                    ) ?? "#"}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-dark)] transition-colors"
@@ -770,7 +772,6 @@ export default function FiadoModals({
                               </div>
                               <div className="space-y-1.5 pl-6">
                                 {items.map(f => {
-                                  const cleanPhone = f.customerId.replace(/\D/g, "");
                                   const hasAddr = f.descripcion && f.descripcion.length > 5 && !f.descripcion.startsWith("[");
                                   return (
                                     <div key={f.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
@@ -780,7 +781,7 @@ export default function FiadoModals({
                                       </div>
                                       <div className="flex gap-1 shrink-0">
                                         <a
-                                          href={`https://wa.me/${cleanPhone.startsWith("51") ? cleanPhone : "51" + cleanPhone}?text=${encodeURIComponent(`Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje.`)}`}
+                                          href={waLink(f.customerId, `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje.`) ?? "#"}
                                           target="_blank" rel="noopener noreferrer"
                                           className="p-1.5 rounded-lg bg-[var(--color-whatsapp)]/10 text-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp)]/20 transition-colors"
                                           title="WhatsApp"
