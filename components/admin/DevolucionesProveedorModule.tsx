@@ -2,12 +2,17 @@
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { RotateCcw, Plus, X, ChevronDown, ChevronUp, Package, Truck, AlertCircle, Loader2, RefreshCw, BarChart2, Download, Clock, CheckCircle2 } from "@buleje/design-system/icons";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import ProductCombobox, { type ProductOption } from "@/components/admin/shared/ProductCombobox";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { Field } from "@/components/admin/shared/Field";
+
+const DevolucionesChart = dynamic(() => import("./DevolucionesChart"), {
+  ssr: false,
+  loading: () => <div className="h-64 animate-pulse bg-[var(--color-muted)] rounded-xl" />,
+});
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -981,25 +986,7 @@ export default function DevolucionesProveedorModule() {
             </div>
 
             {/* Gráfico mensual */}
-            {reportesPorMes.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-[var(--text-secondary)] mb-3">
-                  Devoluciones por mes
-                </p>
-                <ResponsiveContainer minWidth={0} width="100%" height={180}>
-                  <BarChart data={reportesPorMes} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                    <Tooltip
-                      formatter={(val) => { const n = Number(val); return [`${n} devoluci${n === 1 ? "ón" : "ones"}`, ""] as [string, string]; }}
-                      contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                    />
-                    <Bar dataKey="total" fill="var(--accent)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+            <DevolucionesChart data={reportesPorMes} />
 
             {/* Top motivos + proveedores */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
