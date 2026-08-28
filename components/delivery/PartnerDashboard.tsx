@@ -43,6 +43,7 @@ interface MeResp {
 
 const PING_INTERVAL_MS = 30_000;
 const OFFERS_POLL_MS = 10_000;
+const COUNTDOWN_INTERVAL_MS = 1_000;
 
 function csrf(): string {
   return document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1] ?? "";
@@ -69,6 +70,15 @@ export default function PartnerDashboard() {
       setOnlineSinceMs(null);
     }
   }, [me?.isOnline, onlineSinceMs]);
+
+  // Timer centralizado: 1 intervalo para todos los countdowns de ofertas.
+  // Cada OfferCard recibe secsRemaining calculado aquí; ya no mantiene su propio setInterval.
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    if (offers.length === 0) return;
+    const id = setInterval(() => setNowMs(Date.now()), COUNTDOWN_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [offers.length]);
 
   const loadMe = useCallback(async () => {
     try {
@@ -362,7 +372,11 @@ export default function PartnerDashboard() {
         {offers.length > 0 && (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
             {offers.map((o) => (
-              <OfferCard key={o.id} offer={o} />
+              <OfferCard
+                key={o.id}
+                offer={o}
+                secsRemaining={Math.max(0, Math.floor((new Date(o.expiresAt).getTime() - nowMs) / 1000))}
+              />
             ))}
           </div>
         )}
