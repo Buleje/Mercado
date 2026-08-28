@@ -102,7 +102,15 @@ function alertFeedback() {
   } catch { /* ignore — some browsers block AudioContext */ }
 }
 
-export default function NotificationBell() {
+interface NotificationBellProps {
+  /** El header renderiza sobre un fondo oscuro propio (temas Buleje/Ejecutivo
+   *  del sidebar) INDEPENDIENTE del modo claro/oscuro del sitio — `dark:`
+   *  no alcanza porque `.dark` puede no estar en el `<html>`. Sin esto el
+   *  ícono quedaba gris-400 sobre navy: invisible (Brandon 2026-08-28). */
+  onDarkHeader?: boolean;
+}
+
+export default function NotificationBell({ onDarkHeader = false }: NotificationBellProps) {
   const {
     notifications,
     unreadCount,
@@ -166,9 +174,14 @@ export default function NotificationBell() {
         title={`Notificaciones${totalBadge > 0 ? ` (${totalBadge} pendientes)` : ""} — tecla N`}
         className={cn(
           "relative flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
-          open
-            ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-            : "text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary"
+          open && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+          !open && !onDarkHeader && "text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary",
+          // onDarkHeader usa el token en vez de la clase literal `text-gray-400`
+          // a propósito: `globals.css` tiene `.dark .text-gray-400 { ...
+          // !important }` (parche WCAG P1 2026-05-08) que le gana a CUALQUIER
+          // `sm:text-*` que se agregue — medido acá mismo, quedaba gris oscuro
+          // pese al override. El token esquiva esa regla por completo.
+          !open && onDarkHeader && "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)] sm:text-white/60 sm:hover:bg-white/10 sm:hover:text-white"
         )}
       >
         <Bell className={cn("h-4 w-4", pulse && "animate-bounce")} />

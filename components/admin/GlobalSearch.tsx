@@ -456,9 +456,14 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
 
   return (
     <>
-      {/* Backdrop transparente — captura click-fuera sin oscurecer la página */}
+      {/* Backdrop oscurecido (Brandon 2026-08-28): antes era transparente y
+          dejaba el pill "Buscar módulos, productos, clientes…" del header
+          totalmente visible justo encima de este popover — dos cajas de
+          búsqueda casi idénticas a la vista a la vez. Con el fondo atenuado,
+          el pill del header queda claramente de fondo/inactivo y este input
+          se lee como el único foco. */}
       <div
-        className="fixed inset-0 z-[9998]"
+        className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm animate-in fade-in duration-[var(--dur-base)]"
         onClick={onClose}
         aria-hidden
       />
@@ -471,7 +476,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
           los ~576px que aparenta. Gotcha del DS: modales y popovers en rem. */}
       <div
         style={{ top: anchorTop }}
-        className="fixed left-2 sm:left-12 lg:left-[calc(var(--admin-sidebar-w,260px)+1rem)] right-2 sm:right-auto z-[9999] sm:w-[calc(100vw-3rem)] sm:max-w-[36rem]"
+        className="fixed left-2 sm:left-12 lg:left-[calc(var(--admin-sidebar-w,260px)+1rem)] right-2 sm:right-auto z-[9999] sm:w-[calc(100vw-3rem)] sm:max-w-[36rem] animate-in fade-in zoom-in-95 duration-[var(--dur-base)]"
       >
         {/* `role="dialog"` + `aria-modal`: el buscador se comportaba como un
             modal —tapa la página, atrapa Escape, se cierra al click fuera— pero

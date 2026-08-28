@@ -21,8 +21,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { MessageCircle, ShieldCheck } from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
 
-export default function AdminMensajesMenu() {
+interface AdminMensajesMenuProps {
+  /** Mismo caso que NotificationBell: fondo oscuro del header (temas
+   *  Buleje/Ejecutivo) que no depende del modo claro/oscuro del sitio. */
+  onDarkHeader?: boolean;
+}
+
+export default function AdminMensajesMenu({ onDarkHeader = false }: AdminMensajesMenuProps) {
   const [chatUnread, setChatUnread] = useState(0);
   const [plataformaUnread, setPlataformaUnread] = useState(0);
 
@@ -55,7 +62,15 @@ export default function AdminMensajesMenu() {
           type="button"
           aria-label={`Mensajes${total > 0 ? ` — ${total} sin leer` : ""}`}
           title="Mensajes"
-          className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+          className={cn(
+            // Base = light-safe SIEMPRE (el header fuerza fondo claro en
+            // mobile con `max-sm:` sin importar el tema — ver AdminTopHeader).
+            // El override a blanco sólo aplica desde `sm:`, donde el fondo
+            // oscuro del tema realmente se pinta.
+            "relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
+            "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)]",
+            onDarkHeader && "sm:text-white/60 sm:hover:bg-white/10 sm:hover:text-white",
+          )}
         >
           <MessageCircle className="h-5 w-5" strokeWidth={2} aria-hidden />
           {total > 0 && (

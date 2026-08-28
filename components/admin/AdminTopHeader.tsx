@@ -233,9 +233,9 @@ export const AdminTopHeader = memo(function AdminTopHeader({
         {/* Chat con clientes + mensajes de la plataforma en UN botón con el
             total sin leer. Eran dos íconos sueltos con badges que competían
             entre sí y llenaban la barra (ADR-132 + Messenger 2026-06-06). */}
-        <AdminMensajesMenu />
+        <AdminMensajesMenu onDarkHeader={isAutoDarkTheme} />
         <div className="hidden @min-[44rem]:block">
-          <NotificationBell />
+          <NotificationBell onDarkHeader={isAutoDarkTheme} />
         </div>
 
         <AdminOptionsDropdown
@@ -246,6 +246,7 @@ export const AdminTopHeader = memo(function AdminTopHeader({
           onToggleFocus={onToggleFocus}
           onTogglePresentation={onTogglePresentation}
           onSetTheme={onSetTheme}
+          onDarkHeader={isAutoDarkTheme}
         />
 
         <AdminUserDropdown
