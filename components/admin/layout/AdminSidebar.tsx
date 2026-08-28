@@ -7,7 +7,6 @@ import { m } from "@/components/admin/providers";
 import { SectionTitle } from "@buleje/design-system";
 import {
   ChevronRight,
-  ChevronDown,
   Store,
   PanelLeftClose,
   PanelLeft,
@@ -129,7 +128,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
   activeTenantName,
   activeTenantLogo,
   activeTenantSlug,
-  userName,
+  userName: _userName,
   userRole,
   tab,
   navigateTab,
@@ -577,31 +576,6 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     }
   }, [sidebarTheme]);
 
-  // ── Collapsible sections state (persisted in localStorage) ──
-  const [collapsedSections, setCollapsedSections] = React.useState<Set<string>>(() => {
-    if (typeof window === "undefined") return new Set();
-    try {
-      const stored = localStorage.getItem("admin-sidebar-collapsed");
-      if (stored) return new Set(JSON.parse(stored) as string[]);
-    } catch { /* ignore */ }
-    return new Set();
-  });
-
-  // Mismo criterio que toggleCompact: el updater queda puro y la escritura a
-  // localStorage vive en el handler.
-  const toggleSection = React.useCallback((sectionKey: string) => {
-    setCollapsedSections(prev => {
-      const next = new Set(prev);
-      if (next.has(sectionKey)) next.delete(sectionKey);
-      else next.add(sectionKey);
-      return next;
-    });
-  }, []);
-
-  React.useEffect(() => {
-    try { localStorage.setItem("admin-sidebar-collapsed", JSON.stringify([...collapsedSections])); } catch { /* ignore */ }
-  }, [collapsedSections]);
-
   // ── Compact mode toggle (persisted in localStorage) ──
   const [isCompact, setIsCompact] = React.useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -863,12 +837,14 @@ export const AdminSidebar = React.memo(function AdminSidebar({
           {effectiveCompact ? (
             tenantLogoNode
           ) : (
-            /* Marco de identidad: logo + nombre + badges viven juntos dentro
+            /* Marco de identidad: logo + nombre + badge de industria dentro
                de un borde acento — antes flotaban sueltos en la barra y el
                nombre del tenant se truncaba a la mitad porque el badge de
                industria competía por el ancho en la misma fila (Brandon
-               2026-08-24). Ahora el nombre tiene su propia fila completa y
-               los badges bajan a la segunda. */
+               2026-08-24). Usuario y rol salieron del bloque (Brandon
+               2026-08-28): ya se muestran en el dropdown de cuenta del
+               header superior (`AdminUserDropdown`) — repetirlos acá era
+               ruido, no información nueva. */
             <div className={cn(
               "flex min-w-0 flex-1 items-center gap-3 rounded-xl border px-2.5 py-1.5 transition-colors",
               isDarkTheme
@@ -901,20 +877,6 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                   >
                     {verticalConfig.label}
                   </button>
-                  <span className={cn(
-                    "capitalize text-[length:var(--ts-2xs)] truncate",
-                    isDarkTheme ? "text-white/55" : "text-[var(--text-tertiary)] dark:text-muted"
-                  )}>
-                    {userName}
-                  </span>
-                  <span className={cn(
-                    "uppercase text-[length:var(--ts-2xs)] font-bold tracking-wider px-1.5 py-px rounded shrink-0",
-                    isDarkTheme
-                      ? "bg-[color-mix(in_oklab,var(--accent)_14%,transparent)] text-[color-mix(in_oklab,var(--accent)_60%,white)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_25%,transparent)]"
-                      : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-inset ring-primary/20"
-                  )}>
-                    {userRole}
-                  </span>
                 </div>
               </div>
             </div>
@@ -965,7 +927,6 @@ export const AdminSidebar = React.memo(function AdminSidebar({
             const isSingleTab = catTabs.length === 1;
             const sectionLabel = SECTION_BEFORE[category.id];
             const iconColor = ICON_COLORS[category.id] ?? "text-[var(--text-tertiary)]";
-            const isSectionCollapsed = collapsedSections.has(sectionLabel ?? "");
 
             // Determine if this category or any of its tabs is active
             const isActive = isSingleTab
@@ -986,46 +947,18 @@ export const AdminSidebar = React.memo(function AdminSidebar({
 
             return (
               <React.Fragment key={category.id}>
-                {/* ── Section header (collapsible) + separator ── */}
-                {sectionLabel && (
-                  <>
-                    {catIdx > 0 && (
-                      <div className={cn("my-2 border-t", themeClasses.border)} />
-                    )}
-                    <button
-                      onClick={() => toggleSection(sectionLabel)}
-                      className="w-full flex items-center gap-1.5 px-3 mt-4 mb-1.5 group/section"
-                    >
-                      <ChevronDown className={cn(
-                        "h-3 w-3 transition-transform duration-[var(--dur-base)]",
-                        isDarkTheme ? "text-[rgba(94,234,212,0.5)]" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]",
-                        isSectionCollapsed && "-rotate-90"
-                      )} />
-                      <span className={cn(
-                        "text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest transition-colors",
-                        isDarkTheme
-                          ? "text-[rgba(94,234,212,0.6)] group-hover/section:text-[color-mix(in_oklab,var(--accent)_60%,white)]"
-                          : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
-                      )}>
-                        {sectionLabel}
-                      </span>
-                      <span className={cn(
-                        "flex-1 ml-2 h-px",
-                        isDarkTheme
-                          ? "bg-linear-to-r from-[color-mix(in_oklab,var(--accent)_18%,transparent)] to-transparent"
-                          : "bg-linear-to-r from-[var(--rule-soft)] to-transparent"
-                      )} />
-                    </button>
-                  </>
+                {/* Separador entre secciones — sin texto (Brandon 2026-08-28):
+                    los encabezados "Operaciones/Clientes/Gestión…" repetían
+                    lo que el ícono+color de cada categoría ya comunica y
+                    partían el menú en bloques con más aire del que hace
+                    falta. Sólo queda el hairline que separaba los grupos —
+                    el label sigue siendo single source (`SECTION_BEFORE`)
+                    para el drawer mobile, que sí lo muestra. */}
+                {sectionLabel && catIdx > 0 && (
+                  <div className={cn("my-2 border-t", themeClasses.border)} />
                 )}
 
-                {/* ── Category items with grid animation for collapse ── */}
-                <div
-                  className="grid transition-[grid-template-rows] duration-[var(--dur-base)] ease-in-out"
-                  style={{ gridTemplateRows: (sectionLabel && isSectionCollapsed) ? "0fr" : "1fr" }}
-                >
-                  <div className="overflow-hidden">
-                    <div className="group/cat relative">
+                <div className="group/cat relative">
                     <button
                       ref={(el) => { categoryRefs.current[category.id] = el; }}
                       data-tour-tab={isSingleTab ? catTabs[0] : category.id}
@@ -1206,8 +1139,6 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                         </div>
                       </div>
                     )}
-                  </div>
-                </div>
               </React.Fragment>
             );
           })}
@@ -1315,20 +1246,22 @@ export const AdminSidebar = React.memo(function AdminSidebar({
             </Link>
           )}
 
-          {/* ── Compact mode toggle ──
-              Antes se ocultaba cuando el sidebar se auto-colapsaba por ancho.
-              Sin ese auto-colapso, este botón es la única forma de compactar:
-              se muestra siempre (salvo en modo foco, que ya fuerza compacto). */}
-          {!focusMode && (
-            <>
-              <div className={cn("my-1.5 border-t", themeClasses.border)} />
+          {/* ── Compactar + Configurar — una sola fila, solo ícono (Brandon
+              2026-08-28): eran 2 filas completas con texto ("Compactar" /
+              "Configurar barra lateral"); con el pie ya angosto no hace
+              falta el label, el título (tooltip) alcanza para quien no se
+              sabe los íconos de memoria. El toggle de compactar se oculta en
+              modo foco (que ya fuerza compacto), Configurar queda solo. */}
+          <div className={cn("my-1.5 border-t", themeClasses.border)} />
+          <div className="flex items-center gap-1">
+            {!focusMode && (
               <button
                 onClick={toggleCompact}
                 title={isCompact ? "Expandir sidebar" : "Compactar sidebar"}
+                aria-label={isCompact ? "Expandir sidebar" : "Compactar sidebar"}
                 className={cn(
-                  "flex items-center rounded-lg text-[length:var(--ts-sm)] font-medium transition-all",
-                  themeClasses.text, themeClasses.hover,
-                  effectiveCompact ? "justify-center w-full px-0 py-2.5" : "gap-3 px-3 py-2.5 w-full"
+                  "flex flex-1 items-center justify-center rounded-lg py-2.5 transition-all",
+                  themeClasses.text, themeClasses.hover
                 )}
               >
                 {isCompact ? (
@@ -1336,41 +1269,20 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                 ) : (
                   <PanelLeftClose className="h-[18px] w-[18px] shrink-0" />
                 )}
-                {!effectiveCompact && (
-                  <span className="truncate">{isCompact ? "Expandir" : "Compactar"}</span>
-                )}
               </button>
-            </>
-          )}
-
-          {/* ── Configure sidebar button ── */}
-          {!effectiveCompact && (
-            <>
-              <div className={cn("my-1.5 border-t", themeClasses.border)} />
-              <button
-                onClick={openConfig}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-[length:var(--ts-sm)] font-medium transition-all",
-                  themeClasses.text, themeClasses.hover
-                )}
-              >
-                <SlidersHorizontal className="h-[18px] w-[18px] shrink-0" />
-                <span className="truncate">Configurar barra lateral</span>
-              </button>
-            </>
-          )}
-          {effectiveCompact && (
+            )}
             <button
               onClick={openConfig}
               title="Configurar barra lateral"
+              aria-label="Configurar barra lateral"
               className={cn(
-                "flex items-center justify-center w-full px-0 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-medium transition-all",
+                "flex flex-1 items-center justify-center rounded-lg py-2.5 transition-all",
                 themeClasses.text, themeClasses.hover
               )}
             >
               <SlidersHorizontal className="h-[18px] w-[18px] shrink-0" />
             </button>
-          )}
+          </div>
         </div>
         </>
       </aside>
