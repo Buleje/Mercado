@@ -10,7 +10,19 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Plus } from "@buleje/design-system/icons";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Ban,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Ruler,
+} from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import {
@@ -21,7 +33,9 @@ import {
   paginar,
   siguienteOrden,
 } from "@/lib/adelantos/ordenar-lista";
-import { MODALIDAD_LABEL, STATUS_BADGE, fmtMon } from "../shared";
+import { MODALIDAD_LABEL, PT_TIPO_LABEL, STATUS_BADGE, fmtMon, fmtPt } from "../shared";
+import AnularAdelantoModal from "./AnularAdelantoModal";
+import EditarNotasModal from "./EditarNotasModal";
 
 /** Cómo se abrevia cada modalidad en una celda. El título largo va en `title`. */
 const MODALIDAD_CHIP: Record<string, string> = {
@@ -41,6 +55,7 @@ export default function TablaAdelantos({
   onPagina,
   porPagina,
   onVerDetalle,
+  onChange,
 }: {
   adelantos: DbAdelanto[];
   orden: { columna: ColumnaOrden; direccion: Direccion };
@@ -49,9 +64,15 @@ export default function TablaAdelantos({
   onPagina: (p: number) => void;
   porPagina: number;
   onVerDetalle: (a: DbAdelanto) => void;
+  /** Refresca la lista tras anular o editar notas desde la fila. */
+  onChange: () => void;
 }) {
   const ordenados = ordenarAdelantos(adelantos, orden.columna, orden.direccion);
   const pag = paginar(ordenados, pagina, porPagina);
+
+  /** Cuál fila tiene abierto qué acción — un solo modal a la vez. */
+  const [anulando, setAnulando] = useState<DbAdelanto | null>(null);
+  const [editandoNotas, setEditandoNotas] = useState<DbAdelanto | null>(null);
 
   /**
    * Mismo patrón que AdminTabBar (checkScroll + canScrollLeft/Right), pero acá
@@ -94,7 +115,7 @@ export default function TablaAdelantos({
   }, [checkScroll, pag.pagina]);
 
   const th = (columna: ColumnaOrden, label: string, alineado?: "right") => (
-    <th className={`px-3 py-2.5 ${alineado === "right" ? "text-right" : "text-left"}`} aria-sort={ariaSort(orden, columna)}>
+    <th className={`px-2.5 py-2.5 ${alineado === "right" ? "text-right" : "text-left"}`} aria-sort={ariaSort(orden, columna)}>
       <button
         type="button"
         onClick={() => onOrden(siguienteOrden(orden, columna))}
@@ -112,27 +133,40 @@ export default function TablaAdelantos({
     <div className="space-y-3">
       <div ref={wrapRef} className="relative">
         <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          {/* min-w-[1000px] es clase muerta acá (memoria min-width-utilities-muertas) —
-              entre 640-999px (tablet, o desktop angosto con sidebar) la tabla se apretaba
-              en vez de forzar el scroll horizontal del wrapper. `.tabla-min-w-1000`
-              (globals.css) hace lo mismo que un `style={{minWidth:1000}}` pero SÓLO
-              desde 640px — un inline sin media query rompía `.admin-mobile-cards`
-              bajo 640px: el ancho nunca bajaba de 1000px y cada valor de la tarjeta
-              quedaba empujado fuera de la pantalla (Brandon 2026-08-26: "se ve
-              desbordada"). */}
-          <DataTable className="w-full text-base tabla-min-w-1000">
+          {/* `min-width` en una tabla `table-layout: auto` (el default de
+              DataTable) NO limita nada: el navegador igual calcula el ancho
+              real a partir del contenido — el `.tabla-min-w-1000` viejo sólo
+              ponía un PISO, nunca un TECHO, así que "Adelantado" ADL-2026-0022
+              con nombre + chips igual empujaba la tabla a ~1000px reales y
+              forzaba scroll aunque el piso bajara (medido acá mismo: 780px de
+              piso, 998px reales). El fix real es `table-layout: fixed` +
+              anchos explícitos por `<col>` (Brandon 2026-08-28: "evitar el
+              scroll a los lados") — Persona es la ÚNICA columna sin ancho
+              fijo, así que absorbe el espacio sobrante y el resto trunca con
+              `truncate`/`title` en vez de forzar overflow. */}
+          <DataTable className="w-full table-fixed text-base">
+            <colgroup>
+              <col style={{ width: 148 }} />
+              <col />
+              <col style={{ width: 70 }} />
+              <col className="hidden xl:table-column" style={{ width: 128 }} />
+              <col style={{ width: 98 }} />
+              <col style={{ width: 88 }} />
+              <col style={{ width: 98 }} />
+              <col style={{ width: 72 }} />
+              <col style={{ width: 145 }} />
+            </colgroup>
             <thead className="bg-[var(--surface-sunken)] text-sm text-[var(--text-tertiary)]">
               <tr>
                 {th("codigo", "Código")}
                 {th("persona", "Persona")}
                 {th("fecha", "Fecha")}
-                <th className="px-3 py-2.5 text-left font-bold">Liquidación</th>
-                <th className="px-3 py-2.5 text-left font-bold">Motivo</th>
+                <th className="hidden px-2.5 py-2.5 text-left font-bold xl:table-cell">Motivo</th>
                 {th("monto", "Adelantado", "right")}
                 {th("avance", "Avance", "right")}
                 {th("saldo", "Saldo", "right")}
                 {th("estado", "Estado")}
-                <th className="px-3 py-2.5" />
+                <th className="px-2.5 py-2.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--rule-soft)]">
@@ -156,75 +190,92 @@ export default function TablaAdelantos({
                         hermanos que `.admin-mobile-cards` pone en fila, y forzar
                         nowrap en los dos a la vez los hacía superponerse en una
                         pantalla angosta. */}
-                    <td className="sm:whitespace-nowrap px-3 py-2.5">
-                      <span className="block font-mono text-sm font-bold text-[var(--text-primary)]">
+                    <td className="px-2.5 py-2.5">
+                      <span className="block truncate font-mono text-sm font-bold text-[var(--text-primary)]" title={a.codigoOperacion ?? undefined}>
                         {a.codigoOperacion ?? "—"}
                       </span>
                       {a.reciboManual && (
-                        <span className="block font-mono text-xs text-[var(--text-tertiary)]" title="N° del recibo de papel">
+                        <span className="block truncate font-mono text-xs text-[var(--text-tertiary)]" title={`N° del recibo de papel — recibo ${a.reciboManual}`}>
                           recibo {a.reciboManual}
                         </span>
                       )}
+                      {/* Liquidación bajó de columna propia a chip acá (Brandon
+                          2026-08-28): la modalidad se lee junto al código, no en
+                          una columna aparte que sólo repetía info de la fila. */}
+                      <span className="mt-1 flex flex-wrap items-center gap-1">
+                        <span
+                          title={MODALIDAD_LABEL[a.modalidad] ?? a.modalidad}
+                          className="inline-block whitespace-nowrap rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]"
+                        >
+                          {MODALIDAD_CHIP[a.modalidad] ?? a.modalidad}
+                          {a.entregasPactadas.length > 0 && ` · ${cumplidas}/${a.entregasPactadas.length}`}
+                        </span>
+                        {a.piesTablares != null && a.piesTablaresTipo && (
+                          <span
+                            title={`${PT_TIPO_LABEL[a.piesTablaresTipo] ?? a.piesTablaresTipo} · ${fmtPt(a.piesTablares)}`}
+                            className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-[var(--accent)]/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                          >
+                            <Ruler className="h-3 w-3" aria-hidden /> {fmtPt(a.piesTablares)}
+                          </span>
+                        )}
+                      </span>
                     </td>
-                    <td className="sm:whitespace-nowrap px-3 py-2.5">
-                      <span className="block font-bold text-[var(--text-primary)]">{a.beneficiario?.nombre ?? "—"}</span>
+                    <td className="px-2.5 py-2.5">
+                      <span className="block truncate font-bold text-[var(--text-primary)]" title={a.beneficiario?.nombre ?? undefined}>
+                        {a.beneficiario?.nombre ?? "—"}
+                      </span>
                       {a.beneficiario?.telefono && (
-                        <span className="block text-xs tabular-nums text-[var(--text-tertiary)]">{a.beneficiario.telefono}</span>
+                        <span className="block truncate text-xs tabular-nums text-[var(--text-tertiary)]">{a.beneficiario.telefono}</span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 text-sm tabular-nums text-[var(--text-secondary)]">
+                    <td className="truncate px-2.5 py-2.5 text-sm tabular-nums text-[var(--text-secondary)]">
                       {fechaCelda(a.fechaAdelanto)}
                     </td>
-                    <td className="px-3 py-2.5">
-                      <span
-                        title={MODALIDAD_LABEL[a.modalidad] ?? a.modalidad}
-                        className="inline-block whitespace-nowrap rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]"
-                      >
-                        {MODALIDAD_CHIP[a.modalidad] ?? a.modalidad}
-                      </span>
-                      {a.entregasPactadas.length > 0 && (
-                        <span className="ml-1.5 text-xs font-bold tabular-nums text-[var(--text-tertiary)]">
-                          {cumplidas}/{a.entregasPactadas.length}
-                        </span>
-                      )}
-                    </td>
-                    {/* El motivo con el que se dio la plata: antes había que abrir
-                        el adelanto para verlo, uno por uno. 170px (no 220) para
-                        no ser la columna más ancha de la tabla — el nombre completo
-                        sigue en el `title` al pasar el mouse. */}
-                    <td className="max-w-[170px] px-3 py-2.5">
+                    {/* El motivo con el que se dio la plata: sigue en el `title`
+                        siempre; la columna en pantalla sólo aparece desde `xl:`
+                        (≥1280px) — es el dato menos urgente de la fila, y forzar
+                        su ancho en pantallas normales era lo que empujaba a la
+                        tabla entera al scroll horizontal. */}
+                    <td className="hidden max-w-[130px] px-2.5 py-2.5 xl:table-cell">
                       <span className="block truncate text-sm text-[var(--text-secondary)]" title={a.notas ?? undefined}>
                         {a.notas || <span className="text-[var(--text-tertiary)]">—</span>}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-[var(--text-secondary)]">
+                    <td className="whitespace-nowrap px-2.5 py-2.5 text-right tabular-nums text-[var(--text-secondary)]">
                       {fmtMon(a.montoAdelantado, a.moneda)}
                     </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center justify-end gap-2">
-                        <div className="h-2.5 w-16 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                    <td className="px-2.5 py-2.5">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <div className="h-2.5 w-10 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
                           <div className="h-full rounded-full bg-[var(--data-success)]" style={{ width: `${pct}%` }} />
                         </div>
-                        <span className="w-9 text-right text-sm font-semibold tabular-nums text-[var(--text-tertiary)]">{pct}%</span>
+                        <span className="w-8 text-right text-sm font-semibold tabular-nums text-[var(--text-tertiary)]">{pct}%</span>
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums text-[var(--text-primary)]">
+                    <td className="whitespace-nowrap px-2.5 py-2.5 text-right font-bold tabular-nums text-[var(--text-primary)]">
                       {fmtMon(a.saldoPendiente, a.moneda)}
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-2.5 py-2.5">
                       <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold ${badge?.className ?? ""}`}>
                         {badge?.label ?? a.status}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5 text-right">
-                      {a.status === "ABIERTO" && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onVerDetalle(a); }}
-                          className="inline-flex h-9 items-center gap-1 whitespace-nowrap rounded-xl border-2 border-primary px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 dark:text-[var(--accent)]"
-                        >
-                          <Plus className="h-4 w-4" /> Entrega
-                        </button>
-                      )}
+                    <td className="px-2.5 py-2.5 text-right">
+                      <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        {a.status === "ABIERTO" && (
+                          <button
+                            onClick={() => onVerDetalle(a)}
+                            className="inline-flex h-9 items-center gap-1 whitespace-nowrap rounded-xl border-2 border-primary px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 dark:text-[var(--accent)]"
+                          >
+                            <Plus className="h-4 w-4" /> Entrega
+                          </button>
+                        )}
+                        <FilaAcciones
+                          adelanto={a}
+                          onEditarNotas={() => setEditandoNotas(a)}
+                          onAnular={() => setAnulando(a)}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );
@@ -266,7 +317,80 @@ export default function TablaAdelantos({
           </div>
         </div>
       )}
+
+      {anulando && (
+        <AnularAdelantoModal
+          adelantoId={anulando.id}
+          persona={anulando.beneficiario?.nombre ?? "—"}
+          monto={anulando.montoAdelantado}
+          moneda={anulando.moneda}
+          onClose={() => setAnulando(null)}
+          onAnulado={() => { setAnulando(null); onChange(); }}
+        />
+      )}
+      {editandoNotas && (
+        <EditarNotasModal
+          adelantoId={editandoNotas.id}
+          notasActuales={editandoNotas.notas ?? null}
+          onClose={() => setEditandoNotas(null)}
+          onGuardado={() => { setEditandoNotas(null); onChange(); }}
+        />
+      )}
     </div>
+  );
+}
+
+/** Menú de "otros útiles" por fila — editar el motivo y anular, que ya vivían
+ *  en el backend (`PATCH /api/adelantos/[id]`) sin ninguna pantalla que los
+ *  llamara fuera del detalle. `stopPropagation` en el trigger: la fila entera
+ *  es clickeable (abre el detalle) y el menú no puede competir con eso. */
+function FilaAcciones({
+  adelanto,
+  onEditarNotas,
+  onAnular,
+}: {
+  adelanto: DbAdelanto;
+  onEditarNotas: () => void;
+  onAnular: () => void;
+}) {
+  const bloqueado = adelanto.status === "CANCELADO";
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          aria-label="Más acciones"
+          title="Más acciones"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+        >
+          <MoreHorizontal className="h-4.5 w-4.5" />
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="end"
+          sideOffset={4}
+          onClick={(e) => e.stopPropagation()}
+          className="z-50 min-w-[12rem] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-xl)]"
+        >
+          <DropdownMenu.Item
+            onSelect={onEditarNotas}
+            className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-semibold text-[var(--text-primary)] outline-none data-[highlighted]:bg-[var(--surface-sunken)]"
+          >
+            <Pencil className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" /> Editar motivo / notas
+          </DropdownMenu.Item>
+          {!bloqueado && (
+            <DropdownMenu.Item
+              onSelect={onAnular}
+              className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-semibold text-[var(--data-error)] outline-none data-[highlighted]:bg-[var(--data-error)]/10"
+            >
+              <Ban className="h-4 w-4 shrink-0" /> Anular adelanto
+            </DropdownMenu.Item>
+          )}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }
 

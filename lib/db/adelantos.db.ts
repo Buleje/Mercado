@@ -159,6 +159,10 @@ export type DbAdelanto = {
   totalEntregado: number;
   notas?: string | null;
   comprobanteUrl?: string | null;
+  /** Volumen de madera de referencia (pies tablares) — NO participa en
+   *  saldoPendiente ni en el tope de crédito. Ver comentario en schema.prisma. */
+  piesTablares?: number | null;
+  piesTablaresTipo?: "COMPRADO" | "VENDIDO" | null;
   entregas: DbAdelantoEntrega[];
   entregasPactadas: DbEntregaPactada[];
   createdAt: string;
@@ -255,6 +259,8 @@ function mapAdelanto(row: AdelantoRow): DbAdelanto {
     totalEntregado: Math.round((montoAdelantado - saldoPendiente) * 100) / 100,
     notas: row.notas,
     comprobanteUrl: row.comprobanteUrl,
+    piesTablares: row.piesTablares == null ? null : toNum(row.piesTablares),
+    piesTablaresTipo: row.piesTablaresTipo as "COMPRADO" | "VENDIDO" | null,
     entregas: row.entregas.map((e) => ({
       id: e.id, adelantoId: e.adelantoId, fecha: e.fecha.toISOString(),
       tipo: e.tipo as AdelantoEntregaTipo, descripcion: e.descripcion,
@@ -314,6 +320,9 @@ export type AdelantoCreateInput = {
   comprobanteUrl?: string;
   /** N° del talonario de papel que firmó la persona (ADR-329). */
   reciboManual?: string;
+  /** Volumen de madera de referencia — sólo se guarda si vienen los DOS juntos. */
+  piesTablares?: number;
+  piesTablaresTipo?: "COMPRADO" | "VENDIDO";
   entregasPactadas?: EntregaPactadaInput[]; // solo modalidad ENTREGAS_PACTADAS
   /**
    * Pasar por encima del límite de crédito, a sabiendas.
@@ -644,6 +653,10 @@ export const AdelantosDB = {
         reciboManual: data.reciboManual?.trim() || null,
         notas: [data.notas?.trim(), excedioLimite].filter(Boolean).join(" · ") || null,
         comprobanteUrl: data.comprobanteUrl?.trim() || null,
+        // Dato de referencia: uno sin el otro no dice nada, así que se guardan
+        // juntos o no se guarda ninguno.
+        piesTablares: data.piesTablares != null && data.piesTablaresTipo ? data.piesTablares : null,
+        piesTablaresTipo: data.piesTablares != null && data.piesTablaresTipo ? data.piesTablaresTipo : null,
         entregasPactadas: pactadas.length
           ? {
               create: pactadas.map((p, i) => ({

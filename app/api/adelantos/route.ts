@@ -19,6 +19,9 @@ const CreateSchema = z.object({
   comprobanteUrl: z.string().url().max(500).optional(),
   /** N° del talonario de papel que firmó la persona (ADR-329). */
   reciboManual: z.string().trim().max(60).optional(),
+  /** Volumen de madera de referencia — no toca saldoPendiente ni el tope de crédito. */
+  piesTablares: z.number().positive().max(9999999).optional(),
+  piesTablaresTipo: z.enum(["COMPRADO", "VENDIDO"]).optional(),
   /**
    * Pasar el tope de crédito a sabiendas. Va explícito y por defecto NO: un
    * desborde por descuido sigue rechazándose; éste lo manda la pantalla recién

@@ -643,6 +643,7 @@ function AdelantosView({
           onPagina={setPagina}
           porPagina={POR_PAGINA}
           onVerDetalle={setDetalle}
+          onChange={onChange}
         />
       )}
 

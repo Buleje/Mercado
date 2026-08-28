@@ -5199,6 +5199,14 @@ model Adelanto {
   saldoPendiente   Decimal                  @db.Decimal(12, 2)
   notas            String?
   comprobanteUrl   String? // ADR-118: foto/comprobante del adelanto
+  /// Volumen de madera asociado al adelanto, en pies tablares — dato de
+  /// REFERENCIA (Brandon 2026-08-28): no participa en saldoPendiente ni en
+  /// el tope de crédito, que siguen siendo 100% en `moneda` (PEN/USD). Sólo
+  /// tiene sentido junto a `piesTablaresTipo`; uno sin el otro no se guarda
+  /// (ver Zod de POST /api/adelantos).
+  piesTablares     Decimal?                 @db.Decimal(12, 2)
+  /// "COMPRADO" | "VENDIDO" — de qué lado del adelanto está la madera.
+  piesTablaresTipo String?
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
   tenant           Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)

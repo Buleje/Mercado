@@ -38,6 +38,7 @@ import {
   MontoRapido,
   NotasRapidas,
   OrigenCaja,
+  PiesTablares,
 } from "./crear-adelanto/campos";
 import type { BeneficiarioConSaldo, CuotaBorrador } from "./crear-adelanto/tipos";
 
@@ -125,6 +126,10 @@ export default function CrearAdelantoModal({
   const [metodoCaja, setMetodoCaja] = useState<string>("efectivo");
   const [comprobante, setComprobante] = useState<string | null>(null);
   const [cuotas, setCuotas] = useState<CuotaBorrador[]>([]);
+  /** (2026-08-28) Volumen de madera de referencia — no toca saldoPendiente ni
+   *  el tope de crédito. Uno sin el otro no se manda (ver submit). */
+  const [piesTablares, setPiesTablares] = useState("");
+  const [piesTablaresTipo, setPiesTablaresTipo] = useState<"COMPRADO" | "VENDIDO" | "">("");
   const [notasRapidas, setNotasRapidas] = useState<string[]>(leerNotasRapidas);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -146,6 +151,22 @@ export default function CrearAdelantoModal({
 
   /** Cambiar de persona o de monto invalida la autorización ya confirmada. */
   useEffect(() => setConfirmandoTope(false), [beneficiarioId, monto]);
+
+  /**
+   * Las 3 personas a las que más se les dio plata — acceso directo antes de
+   * abrir el modal de "buscar entre todas" (Brandon 2026-08-28). Se cuenta
+   * sobre TODO el historial, cancelados incluidos: cancelar un adelanto no
+   * borra que a esa persona se le atiende seguido.
+   */
+  const recurrentes = useMemo(() => {
+    const conteo = new Map<string, number>();
+    for (const a of adelantos) conteo.set(a.beneficiarioId, (conteo.get(a.beneficiarioId) ?? 0) + 1);
+    return [...conteo.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([id]) => beneficiarios.find((b) => b.id === id))
+      .filter((b): b is BeneficiarioConSaldo => !!b)
+      .slice(0, 3);
+  }, [adelantos, beneficiarios]);
 
   /** Lo que la pantalla ya podía saber sin que nadie lo escriba. */
   const repetible = useMemo(() => sugerirRepetir(adelantos, beneficiarioId), [adelantos, beneficiarioId]);
@@ -212,6 +233,9 @@ export default function CrearAdelantoModal({
           comprobanteUrl: comprobante || undefined,
           forzarLimite: excedeTope || undefined,
           entregasPactadas: plan.length ? plan : undefined,
+          // Dato de referencia: sin sentido uno sin el otro (ver PiesTablares).
+          piesTablares: piesTablares && piesTablaresTipo ? Number(piesTablares) : undefined,
+          piesTablaresTipo: piesTablares && piesTablaresTipo ? piesTablaresTipo : undefined,
         }),
       });
       if (res.ok) {
@@ -318,6 +342,7 @@ export default function CrearAdelantoModal({
           <SelectorPersona
             beneficiarios={beneficiarios}
             beneficiarioId={beneficiarioId}
+            recurrentes={recurrentes}
             onElegir={setBeneficiarioId}
             onPersonaCreada={onPersonaCreada}
           />
@@ -495,6 +520,13 @@ export default function CrearAdelantoModal({
           <Field label="Comprobante (opcional)" grupo>
             <Comprobante url={comprobante} onChange={setComprobante} onAbrirCamara={() => setConCamara(true)} />
           </Field>
+
+          <PiesTablares
+            cantidad={piesTablares}
+            tipo={piesTablaresTipo}
+            onCambiarCantidad={setPiesTablares}
+            onCambiarTipo={setPiesTablaresTipo}
+          />
         </section>
       </div>
 

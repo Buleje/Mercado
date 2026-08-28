@@ -12,13 +12,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Ban, CheckCircle, FileText, Package } from "@buleje/design-system/icons";
+import { Ban, CheckCircle, FileText, Package, Pencil } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { descargarComprobante } from "@/lib/adelantos/comprobante";
 import type { DbAdelanto, DbEntregaPactada } from "@/lib/db/adelantos.db";
 import { MODALIDAD_LABEL, MiniStat, ModalShell, STATUS_BADGE, SkeletonGrid, fmtMon, inputCls } from "../shared";
+import AnularAdelantoModal from "../lista/AnularAdelantoModal";
+import EditarNotasModal from "../lista/EditarNotasModal";
 import FichaAdelanto from "./FichaAdelanto";
 import PlanPactado from "./PlanPactado";
 
@@ -139,14 +141,9 @@ export default function DetalleAdelantoModal({
     }
   };
 
-  const cancelar = async () => {
-    if (!confirm("¿Cancelar este adelanto? No se borra el historial.")) return;
-    await fetch(`/api/adelantos/${adelantoId}`, {
-      method: "PATCH", headers: jsonHeaders(), credentials: "include", body: JSON.stringify({ cancelar: true }),
-    });
-    await load();
-    onChange();
-  };
+  /** Un solo modal secundario a la vez, sobre este mismo. */
+  const [anulando, setAnulando] = useState(false);
+  const [editandoNotas, setEditandoNotas] = useState(false);
 
   const badge = a ? STATUS_BADGE[a.status] : null;
   const bloqueado = !a || a.status === "CANCELADO";
@@ -156,13 +153,14 @@ export default function DetalleAdelantoModal({
       title={a ? `Adelanto · ${a.beneficiario?.nombre ?? ""}` : "Adelanto"}
       subtitle={a ? `${a.codigoOperacion ?? "sin código"} · ${MODALIDAD_LABEL[a.modalidad] ?? a.modalidad}` : undefined}
       onClose={onClose}
-      size="md"
+      size="lg"
     >
       {loading || !a ? (
         <SkeletonGrid />
       ) : (
         <div className="space-y-5">
-          {/* Lo que se pide por teléfono, arriba de todo. */}
+          {/* Lo que se pide por teléfono, arriba de todo — a lo ancho de las
+              dos columnas: es lo primero que se busca en la pantalla. */}
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[var(--surface-sunken)] px-4 py-3">
             <div className="min-w-0">
               <p className="font-mono text-base font-extrabold text-[var(--text-primary)]">
@@ -192,148 +190,184 @@ export default function DetalleAdelantoModal({
             </button>
           </div>
 
-          {/* Fecha, modalidad, persona y el motivo con el que se dio. */}
-          <FichaAdelanto adelanto={a} />
+          {/* Rediseño horizontal (Brandon 2026-08-28): era una sola columna
+              angosta que obligaba a bajar mucho para llegar al historial. Acá
+              izquierda = quién/cuánto/estado (lo que se responde por teléfono),
+              derecha = la ACCIÓN de hoy (registrar entrega) + el historial —
+              las dos cosas visibles a la vez desde `lg:`, sin competir por el
+              mismo scroll. */}
+          <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+            <div className="space-y-4">
+              {/* Fecha, modalidad, persona, Pt y el motivo con el que se dio. */}
+              <FichaAdelanto adelanto={a} />
 
-          <div className="grid grid-cols-3 gap-3">
-            <MiniStat label="Adelantado" value={fmtMon(a.montoAdelantado, a.moneda)} />
-            <MiniStat label="Entregado" value={fmtMon(a.totalEntregado, a.moneda)} tone="success" />
-            <MiniStat label="Saldo" value={fmtMon(a.saldoPendiente, a.moneda)} tone={a.saldoPendiente > 0 ? "warning" : "neutral"} />
-          </div>
+              <div className="grid grid-cols-3 gap-3">
+                <MiniStat label="Adelantado" value={fmtMon(a.montoAdelantado, a.moneda)} />
+                <MiniStat label="Entregado" value={fmtMon(a.totalEntregado, a.moneda)} tone="success" />
+                <MiniStat label="Saldo" value={fmtMon(a.saldoPendiente, a.moneda)} tone={a.saldoPendiente > 0 ? "warning" : "neutral"} />
+              </div>
 
-          <div className="flex items-center gap-2">
-            <span className={`inline-block rounded-full px-3 py-1 text-sm font-bold ${badge?.className ?? ""}`}>{badge?.label}</span>
-            {a.comprobanteUrl && (
-              <a href={a.comprobanteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline">
-                {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */}
-                <img src={a.comprobanteUrl} alt="comprobante" className="h-7 w-7 rounded-md border border-[var(--rule-base)] object-cover" /> Comprobante
-              </a>
-            )}
-            {a.status !== "CANCELADO" && (
-              <button onClick={cancelar} className="ml-auto inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-error)] hover:underline">
-                <Ban className="h-4 w-4" /> Cancelar adelanto
-              </button>
-            )}
-          </div>
-
-          <PlanPactado pactadas={a.entregasPactadas} moneda={a.moneda} bloqueado={bloqueado} onCumplir={cumplirCuota} />
-
-          {a.status !== "CANCELADO" && (
-            <div className="space-y-3 rounded-2xl border-2 border-[var(--rule-base)] p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Registrar entrega</CardTitle>
-                {pactada && (
-                  <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                    Cumple la cuota {pactada.numero}
-                    <button type="button" onClick={limpiar} aria-label="Desvincular la cuota" className="font-extrabold hover:underline">
-                      ×
-                    </button>
-                  </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`inline-block rounded-full px-3 py-1 text-sm font-bold ${badge?.className ?? ""}`}>{badge?.label}</span>
+                {a.comprobanteUrl && (
+                  <a href={a.comprobanteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */}
+                    <img src={a.comprobanteUrl} alt="comprobante" className="h-7 w-7 rounded-md border border-[var(--rule-base)] object-cover" /> Comprobante
+                  </a>
                 )}
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {(["LIBRE", "PRODUCTO"] as const).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTipo(t)}
-                    className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${
-                      tipo === t
-                        ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                        : "border-[var(--rule-base)] text-[var(--text-secondary)]"
-                    }`}
-                  >
-                    {t === "LIBRE" ? "Servicio / libre" : "Producto"}
+                <div className="ml-auto flex items-center gap-3">
+                  <button onClick={() => setEditandoNotas(true)} className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)] hover:underline">
+                    <Pencil className="h-4 w-4" /> Editar
                   </button>
-                ))}
+                  {a.status !== "CANCELADO" && (
+                    <button onClick={() => setAnulando(true)} className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-error)] hover:underline">
+                      <Ban className="h-4 w-4" /> Anular
+                    </button>
+                  )}
+                </div>
               </div>
-              <input
-                value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
-                placeholder={tipo === "LIBRE" ? "Ej: reparación del local" : "Descripción (opcional)"}
-                aria-label="Descripción de la entrega"
-                className={inputCls}
-              />
-              {tipo === "PRODUCTO" && (
-                <div className="grid grid-cols-2 gap-2">
-                  <select value={productId} onChange={(e) => setProductId(e.target.value)} aria-label="Producto" className={inputCls}>
-                    <option value="">Elegí un producto…</option>
-                    {productos.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} — {formatCurrency(p.price)}{p.stock != null ? ` · stock ${p.stock}` : ""}
-                      </option>
+
+              <PlanPactado pactadas={a.entregasPactadas} moneda={a.moneda} bloqueado={bloqueado} onCumplir={cumplirCuota} />
+            </div>
+
+            <div className="space-y-4">
+              {a.status !== "CANCELADO" && (
+                <div className="space-y-3 rounded-2xl border-2 border-[var(--rule-base)] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Registrar entrega</CardTitle>
+                    {pactada && (
+                      <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                        Cumple la cuota {pactada.numero}
+                        <button type="button" onClick={limpiar} aria-label="Desvincular la cuota" className="font-extrabold hover:underline">
+                          ×
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["LIBRE", "PRODUCTO"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setTipo(t)}
+                        className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${
+                          tipo === t
+                            ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                            : "border-[var(--rule-base)] text-[var(--text-secondary)]"
+                        }`}
+                      >
+                        {t === "LIBRE" ? "Servicio / libre" : "Producto"}
+                      </button>
                     ))}
-                  </select>
-                  <input type="number" min={1} value={cantidad} onChange={(e) => setCantidad(e.target.value)} placeholder="Cantidad" aria-label="Cantidad" className={`${inputCls} tabular-nums`} />
+                  </div>
+                  <input
+                    value={descripcion}
+                    onChange={(e) => setDescripcion(e.target.value)}
+                    placeholder={tipo === "LIBRE" ? "Ej: reparación del local" : "Descripción (opcional)"}
+                    aria-label="Descripción de la entrega"
+                    className={inputCls}
+                  />
+                  {tipo === "PRODUCTO" && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <select value={productId} onChange={(e) => setProductId(e.target.value)} aria-label="Producto" className={inputCls}>
+                        <option value="">Elegí un producto…</option>
+                        {productos.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} — {formatCurrency(p.price)}{p.stock != null ? ` · stock ${p.stock}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <input type="number" min={1} value={cantidad} onChange={(e) => setCantidad(e.target.value)} placeholder="Cantidad" aria-label="Cantidad" className={`${inputCls} tabular-nums`} />
+                    </div>
+                  )}
+                  {tipo === "PRODUCTO" && prodSel && cantidad && Number(cantidad) > 0 && !valor && (
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      Valor estimado: <strong className="text-[var(--text-primary)]">{formatCurrency(prodSel.price * Number(cantidad))}</strong> ({Number(cantidad)} × {formatCurrency(prodSel.price)})
+                    </p>
+                  )}
+                  <input
+                    type="number"
+                    value={valor}
+                    onChange={(e) => setValor(e.target.value)}
+                    placeholder={tipo === "LIBRE" ? "Valor en S/" : "Valor S/ (vacío = precio × cantidad)"}
+                    aria-label="Valor de la entrega"
+                    className={`${inputCls} tabular-nums`}
+                  />
+                  {tipo === "PRODUCTO" && (
+                    <label className="flex items-center gap-2 text-base font-semibold text-[var(--text-secondary)]">
+                      <input type="checkbox" checked={sumarAStock} onChange={(e) => setSumarAStock(e.target.checked)} className="h-5 w-5" />
+                      Sumar al stock del inventario
+                    </label>
+                  )}
+                  <ComprobanteUpload url={entregaComp} onChange={setEntregaComp} />
+                  {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}
+                  <button
+                    onClick={registrar}
+                    disabled={saving}
+                    className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--data-success)] px-5 text-base font-bold text-white transition hover:opacity-90 disabled:opacity-50"
+                  >
+                    <CheckCircle className="h-5 w-5" /> {saving ? "Registrando…" : "Registrar entrega"}
+                  </button>
                 </div>
               )}
-              {tipo === "PRODUCTO" && prodSel && cantidad && Number(cantidad) > 0 && !valor && (
-                <p className="text-sm text-[var(--text-secondary)]">
-                  Valor estimado: <strong className="text-[var(--text-primary)]">{formatCurrency(prodSel.price * Number(cantidad))}</strong> ({Number(cantidad)} × {formatCurrency(prodSel.price)})
-                </p>
-              )}
-              <input
-                type="number"
-                value={valor}
-                onChange={(e) => setValor(e.target.value)}
-                placeholder={tipo === "LIBRE" ? "Valor en S/" : "Valor S/ (vacío = precio × cantidad)"}
-                aria-label="Valor de la entrega"
-                className={`${inputCls} tabular-nums`}
-              />
-              {tipo === "PRODUCTO" && (
-                <label className="flex items-center gap-2 text-base font-semibold text-[var(--text-secondary)]">
-                  <input type="checkbox" checked={sumarAStock} onChange={(e) => setSumarAStock(e.target.checked)} className="h-5 w-5" />
-                  Sumar al stock del inventario
-                </label>
-              )}
-              <ComprobanteUpload url={entregaComp} onChange={setEntregaComp} />
-              {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}
-              <button
-                onClick={registrar}
-                disabled={saving}
-                className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--data-success)] px-5 text-base font-bold text-white transition hover:opacity-90 disabled:opacity-50"
-              >
-                <CheckCircle className="h-5 w-5" /> {saving ? "Registrando…" : "Registrar entrega"}
-              </button>
-            </div>
-          )}
 
-          <div>
-            <CardTitle className="mb-2 text-base font-extrabold text-[var(--text-primary)]">
-              Historial de entregas ({a.entregas.length})
-            </CardTitle>
-            {a.entregas.length === 0 ? (
-              <p className="text-base text-[var(--text-tertiary)]">Todavía no hay entregas.</p>
-            ) : (
-              <ul className="space-y-2">
-                {a.entregas.map((e) => (
-                  <li key={e.id} className="flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-soft)] px-4 py-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--data-success)]/10 text-[var(--data-success)]">
-                      {e.tipo === "PRODUCTO" ? <Package className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-base font-bold text-[var(--text-primary)]">
-                        {e.descripcion || (e.tipo === "PRODUCTO" ? `Producto #${e.productId}` : "Entrega")}
-                      </p>
-                      <p className="text-sm tabular-nums text-[var(--text-tertiary)]">
-                        {new Date(e.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
-                        {e.cantidad != null && ` · ${e.cantidad} u.`}
-                        {e.sumadoAStock && " · sumado al stock"}
-                      </p>
-                    </div>
-                    {e.comprobanteUrl && (
-                      <a href={e.comprobanteUrl} target="_blank" rel="noopener noreferrer" title="Ver comprobante" className="shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */}
-                        <img src={e.comprobanteUrl} alt="comprobante" className="h-9 w-9 rounded-lg border border-[var(--rule-base)] object-cover" />
-                      </a>
-                    )}
-                    <span className="shrink-0 text-base font-extrabold tabular-nums text-[var(--data-success)]">{fmtMon(e.valor, a.moneda)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+              <div>
+                <CardTitle className="mb-2 text-base font-extrabold text-[var(--text-primary)]">
+                  Historial de entregas ({a.entregas.length})
+                </CardTitle>
+                {a.entregas.length === 0 ? (
+                  <p className="text-base text-[var(--text-tertiary)]">Todavía no hay entregas.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {a.entregas.map((e) => (
+                      <li key={e.id} className="flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-soft)] px-4 py-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--data-success)]/10 text-[var(--data-success)]">
+                          {e.tipo === "PRODUCTO" ? <Package className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-base font-bold text-[var(--text-primary)]">
+                            {e.descripcion || (e.tipo === "PRODUCTO" ? `Producto #${e.productId}` : "Entrega")}
+                          </p>
+                          <p className="text-sm tabular-nums text-[var(--text-tertiary)]">
+                            {new Date(e.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
+                            {e.cantidad != null && ` · ${e.cantidad} u.`}
+                            {e.sumadoAStock && " · sumado al stock"}
+                          </p>
+                        </div>
+                        {e.comprobanteUrl && (
+                          <a href={e.comprobanteUrl} target="_blank" rel="noopener noreferrer" title="Ver comprobante" className="shrink-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */}
+                            <img src={e.comprobanteUrl} alt="comprobante" className="h-9 w-9 rounded-lg border border-[var(--rule-base)] object-cover" />
+                          </a>
+                        )}
+                        <span className="shrink-0 text-base font-extrabold tabular-nums text-[var(--data-success)]">{fmtMon(e.valor, a.moneda)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
           </div>
         </div>
+      )}
+
+      {a && anulando && (
+        <AnularAdelantoModal
+          adelantoId={a.id}
+          persona={a.beneficiario?.nombre ?? "—"}
+          monto={a.montoAdelantado}
+          moneda={a.moneda}
+          onClose={() => setAnulando(false)}
+          onAnulado={() => { setAnulando(false); void load(); onChange(); }}
+        />
+      )}
+      {a && editandoNotas && (
+        <EditarNotasModal
+          adelantoId={a.id}
+          notasActuales={a.notas ?? null}
+          onClose={() => setEditandoNotas(false)}
+          onGuardado={() => { setEditandoNotas(false); void load(); onChange(); }}
+        />
       )}
     </ModalShell>
   );

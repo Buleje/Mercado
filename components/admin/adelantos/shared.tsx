@@ -37,6 +37,18 @@ export function fmtMon(n: number, moneda?: string | null): string {
   return formatCurrency(n);
 }
 
+/** "COMPRADO"/"VENDIDO" → cómo se lee, con el signo que orienta de qué lado
+ *  del negocio está la madera. */
+export const PT_TIPO_LABEL: Record<string, string> = {
+  COMPRADO: "Comprado",
+  VENDIDO: "Vendido",
+};
+
+/** Pies tablares — dato de referencia, nunca plata: sin símbolo monetario. */
+export function fmtPt(n: number): string {
+  return `${n.toLocaleString("es-PE", { maximumFractionDigits: 2 })} pt`;
+}
+
 /**
  * Texto comparable: minúsculas y sin tildes.
  *
@@ -138,8 +150,8 @@ export function Field({
   );
 }
 
-/** Anchos del shell. `xl` es para formularios en columnas (ver el alta de adelanto). */
-const ANCHOS = { sm: "max-w-md", md: "max-w-2xl", xl: "max-w-[1180px]" } as const;
+/** Anchos del shell. `lg` = detalle en 2 columnas; `xl` = formularios en 3 (alta). */
+const ANCHOS = { sm: "max-w-md", md: "max-w-2xl", lg: "max-w-[900px]", xl: "max-w-[1180px]" } as const;
 
 export function ModalShell({
   title,

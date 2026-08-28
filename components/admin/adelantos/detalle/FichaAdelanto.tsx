@@ -9,9 +9,9 @@
  * adelanto?» sólo se podía contestar de memoria.
  */
 
-import { CalendarDays, Hash, Phone, Repeat, StickyNote } from "@buleje/design-system/icons";
+import { CalendarDays, Hash, Phone, Repeat, Ruler, StickyNote } from "@buleje/design-system/icons";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
-import { MODALIDAD_LABEL } from "../shared";
+import { fmtPt, MODALIDAD_LABEL, PT_TIPO_LABEL } from "../shared";
 
 const fechaLarga = (iso: string) =>
   new Date(iso).toLocaleDateString("es-PE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
@@ -50,6 +50,12 @@ export default function FichaAdelanto({ adelanto: a }: { adelanto: DbAdelanto })
         {a.beneficiario?.telefono && (
           <Dato icon={Phone} label="Teléfono">
             <span className="tabular-nums">{a.beneficiario.telefono}</span>
+          </Dato>
+        )}
+        {a.piesTablares != null && a.piesTablaresTipo && (
+          <Dato icon={Ruler} label="Madera de referencia">
+            <span className="tabular-nums">{fmtPt(a.piesTablares)}</span>
+            <span className="text-[var(--text-tertiary)]"> · {PT_TIPO_LABEL[a.piesTablaresTipo] ?? a.piesTablaresTipo}</span>
           </Dato>
         )}
       </div>

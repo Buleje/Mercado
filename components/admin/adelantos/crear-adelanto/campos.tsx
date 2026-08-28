@@ -19,7 +19,9 @@ import {
   ChevronDown,
   CreditCard,
   FileText,
+  Ruler,
   Smartphone,
+  X,
 } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -431,6 +433,76 @@ export function Comprobante({
         </label>
       </div>
       {err && <p className="mt-1.5 text-sm font-semibold text-[var(--data-error)]">{err}</p>}
+    </div>
+  );
+}
+
+// ── Pies tablares (Pt) ───────────────────────────────────────────────────────
+/**
+ * Volumen de madera de referencia — Brandon 2026-08-28: "Pt comprado o
+ * vendido, que es pies tablares". Colapsado por defecto: la mayoría de los
+ * adelantos no tiene madera de por medio, y mostrar dos campos vacíos todo
+ * el tiempo sería ruido. Al activarse pide los DOS juntos — el backend no
+ * guarda uno sin el otro (no dice nada: ¿100 pt de qué lado?).
+ */
+export function PiesTablares({
+  cantidad,
+  tipo,
+  onCambiarCantidad,
+  onCambiarTipo,
+}: {
+  cantidad: string;
+  tipo: "COMPRADO" | "VENDIDO" | "";
+  onCambiarCantidad: (v: string) => void;
+  onCambiarTipo: (v: "COMPRADO" | "VENDIDO" | "") => void;
+}) {
+  const [activo, setActivo] = useState(!!cantidad || !!tipo);
+
+  if (!activo) {
+    return (
+      <button
+        type="button"
+        onClick={() => setActivo(true)}
+        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+      >
+        <Ruler className="h-4 w-4" /> Agregar Pt (pies tablares)
+      </button>
+    );
+  }
+
+  return (
+    <div className="space-y-2 rounded-xl bg-[var(--surface-sunken)] p-3.5">
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)]">
+          <Ruler className="h-4 w-4" /> Pies tablares (referencia — no afecta el saldo)
+        </p>
+        <button
+          type="button"
+          onClick={() => { setActivo(false); onCambiarCantidad(""); onCambiarTipo(""); }}
+          aria-label="Quitar pies tablares"
+          className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="number"
+          min={0}
+          step="0.01"
+          value={cantidad}
+          onChange={(e) => onCambiarCantidad(e.target.value)}
+          placeholder="Cantidad"
+          aria-label="Cantidad de pies tablares"
+          className={`${inputCls} h-11 w-32 tabular-nums`}
+        />
+        <button type="button" onClick={() => onCambiarTipo("COMPRADO")} className={chipCls(tipo === "COMPRADO")}>
+          Comprado
+        </button>
+        <button type="button" onClick={() => onCambiarTipo("VENDIDO")} className={chipCls(tipo === "VENDIDO")}>
+          Vendido
+        </button>
+      </div>
     </div>
   );
 }

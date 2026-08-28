@@ -889,20 +889,14 @@ body {
   }
 }
 
-/* Ancho mínimo de una tabla ancha, SÓLO desde 640px — el reverso exacto de
-   `.admin-mobile-cards` de arriba (mismo corte: 639px/640px). Tailwind
-   `min-w-*` está muerto en este proyecto (memoria min-width-utilities-muertas:
-   `* { min-width: 0 }` sin capa le gana a `@layer utilities`) y un
-   `style={{ minWidth }}` inline sin media query no se puede apagar — el valor
-   quedaba fijo incluso bajo 640px y las tarjetas de `.admin-mobile-cards`
-   salían más anchas que la pantalla, con el valor de cada campo empujado
-   fuera de la vista (Brandon 2026-08-26: "la tabla se ve desbordada").
-   Usar esta clase en vez de un `min-width` a mano. */
-@media (min-width: 640px) {
-  .tabla-min-w-1000 {
-    min-width: 1000px;
-  }
-}
+/* `.tabla-min-w-1000` (usada sólo por TablaAdelantos) murió el 2026-08-28: era
+   un `min-width` sobre una tabla `table-layout: auto`, que NO limita nada — el
+   navegador igual calcula el ancho real desde el contenido, así que el "piso"
+   nunca evitó el scroll horizontal que decía evitar (medido: piso de 780px,
+   ancho real 998px). El reemplazo es `table-layout: fixed` + `<colgroup>` con
+   anchos explícitos por columna, directo en el componente. Si otra tabla
+   ancha necesita evitar el scroll horizontal, ese es el patrón a copiar —
+   no un `min-width` nuevo. */
 
 @keyframes cartBounce {
   0% { transform: scale(1); }
