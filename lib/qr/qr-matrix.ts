@@ -32,7 +32,7 @@ function rsEncode(data: number[], nEcc: number): number[] {
   let g = [1];
   for (let i = 0; i < nEcc; i++) {
     const factor = [1, GF_EXP[i]];
-    const newG = new Array(g.length + factor.length - 1).fill(0);
+    const newG = Array.from({ length: g.length + factor.length - 1 }, () => 0);
     for (let j = 0; j < g.length; j++) {
       for (let k = 0; k < factor.length; k++) {
         newG[j + k] ^= gfMul(g[j], factor[k]);
@@ -41,7 +41,7 @@ function rsEncode(data: number[], nEcc: number): number[] {
     g = newG;
   }
 
-  const msg = [...data, ...new Array(nEcc).fill(0)];
+  const msg = [...data, ...Array.from({ length: nEcc }, () => 0)];
   for (let i = 0; i < data.length; i++) {
     const c = msg[i];
     if (c !== 0) {
@@ -89,7 +89,7 @@ function encodeBytes(text: string): { data: number[]; bitLen: number } {
 export function makeQRMatrix(text: string): boolean[][] {
   const size = QR_SIZE;
   const mat: (boolean | null)[][] = Array.from({ length: size }, () =>
-    new Array(size).fill(null),
+    Array.from({ length: size }, () => null),
   );
 
   const set = (r: number, c: number, v: boolean) => {

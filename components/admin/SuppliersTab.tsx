@@ -1,4 +1,4 @@
-﻿﻿"use client";
+"use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 

@@ -124,7 +124,7 @@ export function ComparativoMensual() {
     );
   }
 
-  if (chartData.length === 0 || chartData.every(d => d.ingresos === 0 && d.gastos === 0)) {
+  if (chartData.every(d => d.ingresos === 0 && d.gastos === 0)) {
     return null;
   }
 

@@ -202,7 +202,7 @@ export function analizarPoa(opts: {
   areaHa: number | null;
   config?: Partial<PoaConfig>;
 }): PoaAnalisis {
-  const config: PoaConfig = { ...defaultPoaConfig(), ...(opts.config ?? {}) };
+  const config: PoaConfig = { ...defaultPoaConfig(), ...opts.config };
   const pct = Math.max(0, Math.min(100, Number(config.semillerosPct) || 0));
   const autorizadas = new Map(opts.species.map((s) => [normEspecie(s.speciesCommon), s]));
 

@@ -11,12 +11,10 @@ import {
   Wallet,
   CheckCircle,
   Clock,
-  Package,
   Ban,
   ChevronRight,
   Search,
   MessageCircle,
-  Pencil,
   Trash2,
   BarChart3,
   Activity,
@@ -39,9 +37,8 @@ import FichaPersonaModal from "./personas/FichaPersonaModal";
 import CobranzaView from "./cobranza/CobranzaView";
 import ProximosVencimientos from "./cobranza/ProximosVencimientos";
 import CrearPersonaModal from "./personas/CrearPersonaModal";
-import { sinTildes, fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, MiniStat, STATUS_BADGE } from "./shared";
+import { sinTildes, fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, STATUS_BADGE } from "./shared";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { logger } from "@/lib/logger";
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { normalizarBusquedaCodigo } from "@/lib/adelantos/codigo-operacion";
 import { descargarCsvAdelantos } from "@/lib/adelantos/exportar-csv";
@@ -1245,44 +1242,5 @@ function CrearRecurrenteModal({ beneficiarios, onClose, onCreated }: { beneficia
     </ModalShell>
   );
 }
-
-// ── Comprobante (subida de foto/recibo) ───────────────────────────────────────
-function ComprobanteUpload({ url, onChange }: { url: string | null; onChange: (u: string | null) => void }) {
-  const [up, setUp] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const handle = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setErr(null); setUp(true);
-    const fd = new FormData(); fd.append("file", file); fd.append("folder", "media");
-    const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), credentials: "include", body: fd });
-    setUp(false);
-    if (res.ok) { const j = await res.json().catch(() => null); if (j?.url) onChange(j.url); }
-    else { const j = await res.json().catch(() => null); setErr(j?.error ?? "No se pudo subir la imagen."); }
-  };
-  return (
-    <div>
-      {url ? (
-        <div className="flex items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail de comprobante desde Supabase Storage */}
-          <img src={url} alt="comprobante" className="h-12 w-12 rounded-lg object-cover border border-[var(--rule-base)]" />
-          <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-primary hover:underline">Ver</a>
-          <button type="button" onClick={() => onChange(null)} className="text-sm font-bold text-[var(--data-error)] hover:underline">Quitar</button>
-        </div>
-      ) : (
-        <label className="inline-flex items-center gap-2 h-10 px-3 rounded-xl border border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary cursor-pointer transition-colors">
-          <FileText className="h-4 w-4" /> {up ? "Subiendo…" : "Adjuntar comprobante"}
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handle} className="hidden" disabled={up} />
-        </label>
-      )}
-      {err && <p className="mt-1 text-sm text-[var(--data-error)]">{err}</p>}
-    </div>
-  );
-}
-
-
-
-
-
 
 // EmptyState, SkeletonGrid → movidos a ./shared (ADR-121 refactor).

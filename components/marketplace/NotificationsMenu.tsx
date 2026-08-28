@@ -105,7 +105,7 @@ function relativeTime(iso: string | undefined): string {
  * conservan porque ahí sí aportan — esto solo limpia el render del storefront.
  */
 function stripLeadingEmoji(s: string): string {
-  return s.replace(/^[\p{Extended_Pictographic}‍️←-⇿☀-➿\s]+/u, "").trim();
+  return s.replace(/^(?:[\p{Extended_Pictographic}←-⇿☀-➿\s]|\u200D|\uFE0F)+/u, "").trim();
 }
 
 /** Mapea el `type` del API a un NotifKind conocido (fallback "system"). */

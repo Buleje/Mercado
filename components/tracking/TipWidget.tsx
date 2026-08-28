@@ -32,7 +32,7 @@ export default function TipWidget({ orderId, partnerName, tipToken }: Props) {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const finalAmount = amount ?? Number(customAmount) ?? 0;
+  const finalAmount = amount ?? Number(customAmount);
   const valid = finalAmount > 0 && finalAmount <= 500;
 
   const submit = async () => {

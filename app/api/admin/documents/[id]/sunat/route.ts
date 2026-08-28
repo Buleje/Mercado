@@ -68,7 +68,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
     // Se guarda junto al resto del análisis, sin pisar lo que ya haya.
     await DocumentsDB.update(auth.tenantId, id, {
-      ocrMetadata: { ...(doc.ocrMetadata ?? {}), sunat: resultado },
+      ocrMetadata: { ...doc.ocrMetadata, sunat: resultado },
     });
 
     DocumentsDB.log(auth.tenantId, {

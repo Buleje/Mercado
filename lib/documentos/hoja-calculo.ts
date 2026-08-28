@@ -131,7 +131,7 @@ export function rectangular(filas: string[][], minFilas = 1, minCols = 1): strin
     while (copia.length < cols) copia.push("");
     return copia;
   });
-  while (out.length < minFilas) out.push(new Array(cols).fill(""));
+  while (out.length < minFilas) out.push(Array.from({ length: cols }, () => ""));
   return out;
 }
 

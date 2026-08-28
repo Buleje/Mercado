@@ -38,7 +38,6 @@ import {
 import { StatCard } from "@buleje/design-system";
 import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { IconAction } from "./ctp-shared";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";
 import { printLothInforme } from "@/lib/forestal/loth-informe-print";
@@ -46,7 +45,6 @@ import { printTrozaLabels } from "@/lib/forestal/loth-labels";
 import {
   LOTH_SECTION_GROUPS,
   PLAZO_REGISTRO_DIAS,
-  diasDeRegistro,
   estaFueraDePlazo,
   type LothSection,
   type LothEntryDTO,
@@ -1243,12 +1241,6 @@ export default function LothLibroOperaciones() {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <th className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}>{children}</th>;
-}
-function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;
-}
 function Mono({ v, bold }: { v: string; bold?: boolean }) {
   return <span className={`font-mono tabular-nums text-[var(--text-primary)] ${bold ? "font-bold" : ""}`}>{v}</span>;
 }
@@ -1280,13 +1272,4 @@ function Tag({ children, tone }: { children: React.ReactNode; tone?: "danger" })
 }
 function unitLabel(u: string | null) {
   return u === "m3" ? "m³" : u === "kg" ? "Kg" : u === "unidad" ? "Unidad" : (u ?? "—");
-}
-function formatDate(iso: string) {
-  try {
-    // Fecha date-only: se guarda como UTC medianoche → mostrar en UTC para no
-    // restar un día por el huso horario (-5 en Perú).
-    return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
-  } catch {
-    return iso;
-  }
 }

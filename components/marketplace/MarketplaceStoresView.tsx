@@ -949,10 +949,10 @@ export default function MarketplaceStoresView({
     // `isOpenNow === false` = cerrada; undefined/true = tratamos como abierta
     // (no penalizar tiendas sin horario cargado).
     const closedLast = (s: MarketplaceStore) => (s.isOpenNow === false ? 1 : 0);
-    const premiums = [...filteredStores.filter((s) => s.displayTier === "premium")].sort(
+    const premiums = filteredStores.filter((s) => s.displayTier === "premium").sort(
       (a, b) => closedLast(a) - closedLast(b),
     );
-    const rest = [...filteredStores.filter((s) => s.displayTier !== "premium")].sort((a, b) => {
+    const rest = filteredStores.filter((s) => s.displayTier !== "premium").sort((a, b) => {
       const ca = closedLast(a);
       const cb = closedLast(b);
       if (ca !== cb) return ca - cb; // abiertas primero

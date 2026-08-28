@@ -186,7 +186,7 @@ export function broadcastSpecsChanged(payload?: {
   if (typeof BroadcastChannel === "undefined") return;
   try {
     const bc = new BroadcastChannel(BROADCAST_CHANNEL);
-    bc.postMessage({ type: "spec-toggled", ...(payload ?? {}) });
+    bc.postMessage({ type: "spec-toggled", ...payload });
     bc.close();
   } catch {
     // silent

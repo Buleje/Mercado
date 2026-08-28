@@ -51,7 +51,7 @@ export function invalidarCtp(fragmento?: string): void {
     enVuelo.clear();
     return;
   }
-  for (const url of [...enVuelo.keys()]) {
+  for (const url of enVuelo.keys()) {
     if (url.includes(fragmento)) enVuelo.delete(url);
   }
 }

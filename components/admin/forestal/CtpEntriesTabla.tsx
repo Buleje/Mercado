@@ -17,7 +17,7 @@
  */
 
 import { DataTable } from "@buleje/design-system";
-import { AlertTriangle, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, Boxes, FileText, Link2, PackagePlus, Paperclip, Scale, Truck, X as XIcon } from "@buleje/design-system/icons";
+import { AlertTriangle, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, Boxes, FileText, Link2, PackagePlus, Paperclip, Truck, X as XIcon } from "@buleje/design-system/icons";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";

@@ -2199,7 +2199,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
   // Imagen por sección (Brandon 2026-06-25): setea/borra la imagen de una sección.
   const setSectionImage = useCallback((key: string, url: string) => {
-    const next = { ...(draft.sectionImages ?? {}) };
+    const next = { ...draft.sectionImages };
     if (url) next[key] = url; else delete next[key];
     patch("sectionImages", next);
   }, [draft.sectionImages, patch]);
@@ -2213,7 +2213,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     const nextForKey: SectionStyle = {};
     if (change !== "reset") {
       // `__replace` = preset de diseño (reemplaza todo); si no, merge sobre lo actual.
-      const source: SectionStyle = "__replace" in change ? change.__replace : { ...(cur[key] ?? {}), ...change };
+      const source: SectionStyle = "__replace" in change ? change.__replace : { ...cur[key], ...change };
       // Saca claves vacías/undefined para no persistir basura.
       for (const [k, v] of Object.entries(source)) {
         if (v !== undefined && v !== null && v !== "") {
@@ -2237,7 +2237,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   const patchSectionText = useCallback((key: string, field: "eyebrow" | "title" | "align", value: string) => {
     type ST = { eyebrow?: string; title?: string; align?: "left" | "center" | "right" };
     const cur = (draftRef.current.sectionText ?? {}) as Record<string, ST>;
-    const entry: ST = { ...(cur[key] ?? {}) };
+    const entry: ST = { ...cur[key] };
     if (field === "align") {
       if (value) entry.align = value as "left" | "center" | "right"; else delete entry.align;
     } else if (value) entry[field] = value; else delete entry[field];
@@ -2267,7 +2267,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   const patchTextStyle = useCallback((field: string, partial: Record<string, unknown>) => {
     type TS = { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean };
     const cur = (draftRef.current.textStyles ?? {}) as Record<string, TS>;
-    const merged: TS = { ...(cur[field] ?? {}), ...partial };
+    const merged: TS = { ...cur[field], ...partial };
     const clean: TS = {};
     for (const [k, v] of Object.entries(merged)) {
       if (v !== undefined && v !== null && v !== "") (clean as Record<string, unknown>)[k] = v;
@@ -3690,8 +3690,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   {draft.abTestEnabled && (
                     <>
                       <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Variante B</p>
-                      <input className={INPUT_CLASS} value={draft.heroVariantB?.heroTitle ?? ""} onChange={(e) => patch("heroVariantB", { ...(draft.heroVariantB ?? {}), heroTitle: e.target.value })} placeholder="Título alternativo (B)" maxLength={80} />
-                      <input className={INPUT_CLASS} value={draft.heroVariantB?.heroSubtitle ?? ""} onChange={(e) => patch("heroVariantB", { ...(draft.heroVariantB ?? {}), heroSubtitle: e.target.value })} placeholder="Subtítulo alternativo (B)" maxLength={140} />
+                      <input className={INPUT_CLASS} value={draft.heroVariantB?.heroTitle ?? ""} onChange={(e) => patch("heroVariantB", { ...draft.heroVariantB, heroTitle: e.target.value })} placeholder="Título alternativo (B)" maxLength={80} />
+                      <input className={INPUT_CLASS} value={draft.heroVariantB?.heroSubtitle ?? ""} onChange={(e) => patch("heroVariantB", { ...draft.heroVariantB, heroSubtitle: e.target.value })} placeholder="Subtítulo alternativo (B)" maxLength={140} />
                       <button type="button" onClick={loadAbStats} disabled={abLoading} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white disabled:opacity-50">
                         {abLoading ? "Cargando…" : "Ver resultados"}
                       </button>

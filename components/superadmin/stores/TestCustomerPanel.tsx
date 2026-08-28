@@ -44,7 +44,7 @@ const STALE_CUSTOMER_KEYS = [
 function clearAllCustomerIdentities() {
   try {
     for (const k of Object.keys(localStorage)) {
-      if (/-customer$/.test(k) || /^(marketplace-customer|marketplace-checkout-customer|buleje-checkout-data)$/.test(k)) {
+      if (k.endsWith("-customer") || /^(marketplace-customer|marketplace-checkout-customer|buleje-checkout-data)$/.test(k)) {
         localStorage.removeItem(k);
       }
     }

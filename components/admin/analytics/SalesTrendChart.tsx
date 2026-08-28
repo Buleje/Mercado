@@ -222,7 +222,7 @@ export default function SalesTrendChart() {
 
   // Reporta vacío si no hay días o todos están en cero (sin ventas reales) → el
   // ChartManager oculta el gráfico. En error NO reporta (deja ver el mensaje).
-  const isEmpty = chartData.length === 0 || chartData.every(d => (d.total ?? 0) === 0);
+  const isEmpty = chartData.every(d => (d.total ?? 0) === 0);
   useReportChartEmpty(!error && isEmpty, !loading);
 
   // ── Loading ──

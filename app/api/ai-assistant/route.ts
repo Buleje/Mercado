@@ -318,7 +318,7 @@ function motivoLegible(error: string | null | undefined): string | null {
   const e = String(error ?? "");
   if (!e) return null;
   if (/rate.?limit|429|tokens per day|TPD/i.test(e)) {
-    const espera = /try again in ([^.\"]+)/i.exec(e)?.[1]?.trim();
+    const espera = /try again in ([^."]+)/i.exec(e)?.[1]?.trim();
     return `**El asistente se quedó sin cuota por hoy.** El proveedor de IA cortó el servicio por límite diario de tokens${espera ? ` y se repone en ${espera}` : ""}.\n\nMientras tanto podés usar los módulos del panel normalmente — los datos están intactos.`;
   }
   if (/401|unauthor|api.?key|invalid.*key|permission-denied|credits/i.test(e)) {

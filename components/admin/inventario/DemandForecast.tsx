@@ -98,7 +98,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
   }));
 
   // Guard: sin historial de ventas no hay nada que graficar
-  const hasChartData = chartData.length > 0 && chartData.some(d => d.qty > 0);
+  const hasChartData = chartData.some(d => d.qty > 0);
 
   return (
     <div className="space-y-6">

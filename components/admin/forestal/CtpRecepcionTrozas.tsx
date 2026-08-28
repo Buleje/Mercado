@@ -81,7 +81,7 @@ export default function CtpRecepcionTrozas({
 
   /** El balance se calcula sobre lo EDITADO: el aviso se mueve mientras se tipea. */
   const conCambios = useMemo(
-    () => madres.map((t) => ({ ...t, ...(edit[t.id] ?? {}) })),
+    () => madres.map((t) => ({ ...t, ...edit[t.id] })),
     [madres, edit],
   );
   const balance = useMemo(() => balanceRecepcion(conCambios), [conCambios]);

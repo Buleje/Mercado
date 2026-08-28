@@ -85,7 +85,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       const r = registrarFirma(ronda, firmante.id, result.signedAt);
       rondaFinal = r.ronda;
       await DocumentsDB.update(found.doc.tenantId, found.doc.id, {
-        ocrMetadata: { ...(found.doc.ocrMetadata ?? {}), firmaRonda: rondaFinal },
+        ocrMetadata: { ...found.doc.ocrMetadata, firmaRonda: rondaFinal },
       });
     }
 

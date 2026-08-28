@@ -79,7 +79,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   const [error, setError] = useState<string | null>(null);
   const [showPlanForm, setShowPlanForm] = useState(false);
   const [balance, setBalance] = useState<Balance | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const [, setDetailLoading] = useState(false);
   // Plan Operativo: DMC por especie + % de semilleros (KV por plan).
   const [poaConfig, setPoaConfig] = useState<PoaConfig>(defaultPoaConfig());
   const [poaSaving, setPoaSaving] = useState(false);
@@ -950,79 +950,6 @@ interface Balance {
   plan: { vigenciaHasta: string | null; estado: string; areaHa: number; uitRef: number } | null;
 }
 
-function BalancePanel({ balance: b, loading, vigenciaHasta }: { balance: Balance | null; loading: boolean; vigenciaHasta: string | null }) {
-  // Alertas
-  const alerts: { tone: "danger" | "warning"; text: string }[] = [];
-  if (b) {
-    for (const r of b.rows) {
-      if (r.exceso) alerts.push({ tone: "danger", text: `${r.species}: aprovechamiento EXCEDE lo autorizado (${r.movilizado.toFixed(2)} > ${r.autorizado.toFixed(2)} m³) — requiere reformulación` });
-      else if (r.autorizado > 0 && r.saldo / r.autorizado < 0.1) alerts.push({ tone: "warning", text: `${r.species}: saldo bajo (${r.saldo.toFixed(2)} m³ · ${(100 - r.pctMovilizado).toFixed(0)}% disponible)` });
-    }
-  }
-  if (vigenciaHasta) {
-    const dias = Math.ceil((new Date(vigenciaHasta).getTime() - Date.now()) / 86400000);
-    if (dias < 0) alerts.push({ tone: "danger", text: `Vigencia del plan VENCIDA hace ${-dias} días` });
-    else if (dias <= 30) alerts.push({ tone: "warning", text: `Vigencia del plan vence en ${dias} días` });
-  }
-
-  return (
-    <Panel
-      title="Balance de extracción · saldos"
-      action={b ? <button type="button" onClick={() => printBalance(b)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-3.5 w-3.5" /> Imprimir</button> : undefined}
-    >
-      {loading && <div className="p-4 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>}
-      {!loading && b && (
-        <>
-          {alerts.length > 0 && (
-            <div className="mb-3 space-y-1.5">
-              {alerts.map((a, i) => (
-                <div key={i} className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs font-medium ${a.tone === "danger" ? "bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"}`}>
-                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {a.text}
-                </div>
-              ))}
-            </div>
-          )}
-          <Table head={["Especie", "Autorizado", "Talado", "Movilizado", "Saldo", "% mov.", "Valor S/", "Pago derecho S/"]}>
-            {b.rows.map((r) => (
-              <tr key={r.species} className={`border-t border-[var(--rule-soft)] ${r.exceso ? "bg-[var(--data-error-50)]" : ""}`}>
-                <Cell><span className="font-medium text-[var(--text-primary)]">{r.species}</span>{r.cites && <CitesPill />}</Cell>
-                <Cell right><Mono>{r.autorizado.toFixed(2)}</Mono></Cell>
-                <Cell right><Mono>{r.talado.toFixed(2)}</Mono></Cell>
-                <Cell right><Mono>{r.movilizado.toFixed(2)}</Mono></Cell>
-                <Cell right><span className={`font-mono tabular-nums font-bold ${r.saldo < 0 ? "text-[var(--data-error-700)]" : "text-[var(--data-success-700)]"}`}>{r.saldo.toFixed(2)}</span></Cell>
-                <Cell right><SaldoBar pct={r.pctMovilizado} exceso={r.exceso} /></Cell>
-                <Cell right>{r.valorMovilizado > 0 ? `S/ ${r.valorMovilizado.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</Cell>
-                <Cell right>{r.pagoDerecho > 0 ? `S/ ${r.pagoDerecho.toFixed(2)}` : "—"}</Cell>
-              </tr>
-            ))}
-            {b.rows.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">Agregá especies autorizadas para ver el balance.</td></tr>}
-          </Table>
-          <div className="mt-3 flex flex-wrap items-center justify-end gap-x-6 gap-y-1 border-t border-[var(--rule-soft)] pt-3 text-sm">
-            <span><span className="text-[var(--text-tertiary)]">Valor movilizado: </span><span className="font-bold text-[var(--text-primary)]">S/ {b.valorTotal.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></span>
-            <span><span className="text-[var(--text-tertiary)]">Pago por área (0.01% UIT × ha): </span><span className="font-bold text-[var(--text-primary)]">S/ {b.pagoArea.toFixed(2)}</span></span>
-            <span><span className="text-[var(--text-tertiary)]">Pago derecho total: </span><span className="font-bold text-[var(--data-success-700)]">S/ {b.pagoDerechoTotal.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></span>
-          </div>
-        </>
-      )}
-    </Panel>
-  );
-}
-
-// Impresión del balance de extracción (ventana nueva, aislada)
-function printBalance(b: Balance) {
-  const rows = b.rows.map((r) => `<tr${r.exceso ? ' style="background:#fde8e8"' : ""}><td>${r.species}${r.cites ? " <b>(CITES)</b>" : ""}</td><td style="text-align:right">${r.autorizado.toFixed(2)}</td><td style="text-align:right">${r.movilizado.toFixed(2)}</td><td style="text-align:right"><b>${r.saldo.toFixed(2)}</b></td><td style="text-align:right">${r.pctMovilizado.toFixed(0)}%</td><td style="text-align:right">${r.pagoDerecho.toFixed(2)}</td></tr>`).join("");
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Balance de extracción</title>
-  <style>body{font-family:Arial,sans-serif;color:#111;padding:28px;font-size:12px}h1{font-size:15px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ccc;padding:5px 7px}th{background:#f0f0f0;text-align:left}.k{color:#666}</style>
-  </head><body onload="window.print()">
-  <h1>BALANCE DE EXTRACCIÓN — SALDO DE MADERA</h1>
-  <div class="k">Reporte interno (SERFOR) · autorizado − movilizado con GTF = saldo</div>
-  <table><thead><tr><th>Especie</th><th>Autorizado m³</th><th>Movilizado m³</th><th>Saldo m³</th><th>% mov.</th><th>Pago derecho S/</th></tr></thead><tbody>${rows}</tbody></table>
-  <div style="margin-top:10px;text-align:right">Pago por área (0.01% UIT × ha): <b>S/ ${b.pagoArea.toFixed(2)}</b> · Pago derecho total: <b>S/ ${b.pagoDerechoTotal.toFixed(2)}</b> · Valor movilizado: <b>S/ ${b.valorTotal.toFixed(2)}</b></div>
-  </body></html>`;
-  const w = window.open("", "_blank", "width=820,height=700");
-  if (w) { w.document.write(html); w.document.close(); }
-}
-
 // ─── Control por especie · cruce censo ↔ autorizado ↔ movilizado ────────────
 // El corazón de la fiscalización OSINFOR: ¿lo censado/talado/movilizado cabe en
 // lo que autorizó la resolución? Detecta especies fuera del plan (tala no
@@ -1143,49 +1070,6 @@ function QualityAlerts({ rows, onResolver }: { rows: ControlRow[]; onResolver?: 
   );
 }
 
-function ControlToneDot({ tone }: { tone: ControlTone }) {
-  const c = tone === "danger" ? "var(--data-error-500)" : tone === "warn" ? "var(--data-warning-500)" : "var(--data-success-500)";
-  return <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c }} />;
-}
-
-function EspecieControlPanel({ rows, loading }: { rows: ControlRow[]; loading: boolean }) {
-  return (
-    <Panel title="Control por especie · censo ↔ autorizado">
-      {loading && rows.length === 0 && <div className="p-4 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>}
-      {(!loading || rows.length > 0) && (
-        <>
-          <Table head={["Especie", "Autorizado", "N° árb.", "Censado", "Talado", "Movilizado", "% ejec.", "Estado"]}>
-            {rows.map((r) => (
-              <tr key={r.species} className={`border-t border-[var(--rule-soft)] ${r.tone === "danger" ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/12" : ""}`}>
-                <Cell>
-                  <span className="inline-flex items-center gap-2 font-medium text-[var(--text-primary)]"><ControlToneDot tone={r.tone} />{r.species}</span>
-                  {r.cites && <CitesPill />}
-                  {!r.autorizada && <span className="ml-1.5 rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">NO EN PLAN</span>}
-                </Cell>
-                <Cell right><Mono>{r.autorizada ? r.autorizadoM3.toFixed(2) : "—"}</Mono></Cell>
-                <Cell right>
-                  <span className={r.flags.includes("exceso_arboles") ? "font-bold text-[var(--data-warning-700)]" : "text-[var(--text-secondary)]"}>
-                    {r.censadoCount}{r.autorizadoArboles != null ? ` / ${r.autorizadoArboles}` : ""}
-                  </span>
-                </Cell>
-                <Cell right><Mono>{r.censadoVolM3.toFixed(2)}</Mono></Cell>
-                <Cell right><Mono>{r.taladoCount}</Mono></Cell>
-                <Cell right><Mono>{r.movilizado.toFixed(2)}</Mono></Cell>
-                <Cell right><SaldoBar pct={r.pctEjecutado} exceso={r.flags.includes("exceso_volumen")} /></Cell>
-                <Cell><span className="text-xs font-medium text-[var(--text-secondary)]">{r.flags.length === 0 ? "OK" : r.flags.map((f) => FLAG_LABEL[f]).join(" · ")}</span></Cell>
-              </tr>
-            ))}
-            {rows.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">Agregá especies autorizadas y censá árboles para ver el control cruzado.</td></tr>}
-          </Table>
-          <p className="mt-2 text-xs text-[var(--text-tertiary)]">
-            Cruce entre lo que autorizó la resolución (m³ + N° de árboles), lo censado en campo y lo movilizado con GTF. Un fiscalizador de OSINFOR cruza exactamente estas columnas.
-          </p>
-        </>
-      )}
-    </Panel>
-  );
-}
-
 // Informe de ejecución del POA — documento consolidado para ARFFS/SERFOR/OSINFOR al cierre
 const SECTION_LABEL: Record<string, string> = {
   tala: "Tala", trozado: "Trozado", despacho_troza: "Despacho de trozas",
@@ -1292,18 +1176,6 @@ function CensusMap({ trees, authorizedSpecies }: { trees: Tree[]; authorizedSpec
         Opacidad = estado (lleno: en pie · medio: talado · tenue: descartado). Borde rojo punteado = especie fuera del plan.
       </p>
     </Panel>
-  );
-}
-
-function SaldoBar({ pct, exceso }: { pct: number; exceso: boolean }) {
-  const w = Math.min(100, Math.max(0, pct));
-  return (
-    <span className="inline-flex items-center gap-2">
-      <span className="h-1.5 w-16 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
-        <span className={`block h-full ${exceso ? "bg-[var(--data-error-500)]" : pct > 90 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-success-500)]"}`} style={{ width: `${w}%` }} />
-      </span>
-      <span className="font-mono tabular-nums text-xs text-[var(--text-secondary)]">{pct.toFixed(0)}%</span>
-    </span>
   );
 }
 

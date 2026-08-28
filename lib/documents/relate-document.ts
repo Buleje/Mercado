@@ -36,8 +36,8 @@ export async function linkDocuments(
     bRel.delete(aId);
   }
 
-  await DocumentsDB.update(tenantId, aId, { ocrMetadata: { ...(a.ocrMetadata ?? {}), relatedIds: [...aRel] } });
-  await DocumentsDB.update(tenantId, bId, { ocrMetadata: { ...(b.ocrMetadata ?? {}), relatedIds: [...bRel] } });
+  await DocumentsDB.update(tenantId, aId, { ocrMetadata: { ...a.ocrMetadata, relatedIds: [...aRel] } });
+  await DocumentsDB.update(tenantId, bId, { ocrMetadata: { ...b.ocrMetadata, relatedIds: [...bRel] } });
 
   DocumentsDB.log(tenantId, {
     documentId: aId,

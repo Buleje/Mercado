@@ -122,7 +122,7 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
           ...prev,
           [storeId]: {
             displayTier: body.displayTier ?? cur.displayTier,
-            benefits: { ...(cur.benefits ?? {}), ...(body.benefits ?? {}) },
+            benefits: { ...cur.benefits, ...body.benefits },
           },
         };
       });
@@ -188,7 +188,7 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
           {filtered.map((store) => {
             const ov = overrides[store.id];
             const tier = (ov?.displayTier ?? store.displayTier ?? "standard") as DisplayTier;
-            const benefits = { ...(store.benefits ?? {}), ...(ov?.benefits ?? {}) };
+            const benefits = { ...store.benefits, ...ov?.benefits };
             const busy = busyId === store.id;
             const activeCount = BENEFITS.filter((b) => benefits[b.key]).length;
             return (

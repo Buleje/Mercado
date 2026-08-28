@@ -140,7 +140,7 @@ export function compararTextos(antes: string[], despues: string[]): LineaDiff[] 
   if (n * m > 1_000_000) return diffPorPosicion(antes, despues);
 
   // tabla[i][j] = largo de la subsecuencia común de antes[i..] y despues[j..]
-  const tabla: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  const tabla: number[][] = Array.from({ length: n + 1 }, () => Array.from({ length: m + 1 }, () => 0));
   for (let i = n - 1; i >= 0; i--) {
     for (let j = m - 1; j >= 0; j--) {
       tabla[i][j] = antes[i] === despues[j]

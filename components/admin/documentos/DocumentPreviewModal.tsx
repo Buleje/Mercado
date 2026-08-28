@@ -795,7 +795,7 @@ function RelatedSection({ doc, allDocs, onChanged }: { doc: DbDocument; allDocs:
     try {
       await relateDoc(doc.id, relatedId, link);
       const nextIds = link ? [...relatedIds, relatedId] : relatedIds.filter((x) => x !== relatedId);
-      onChanged({ ...doc, ocrMetadata: { ...(doc.ocrMetadata ?? {}), relatedIds: nextIds } });
+      onChanged({ ...doc, ocrMetadata: { ...doc.ocrMetadata, relatedIds: nextIds } });
       setAdding(false);
     } finally {
       setBusy(false);
@@ -867,7 +867,7 @@ function ApprovalSection({ doc, onChanged }: { doc: DbDocument; onChanged: (d: D
       const nextTrail: ApprovalTrail = action === "request"
         ? { status: "review", requestedBy: "vos", requestedAt: now, note: note.trim() || undefined }
         : { ...trail, status: nextStatus, decidedBy: "vos", decidedAt: now, note: note.trim() || undefined };
-      onChanged({ ...doc, status: nextStatus, ocrMetadata: { ...(doc.ocrMetadata ?? {}), approval: nextTrail } });
+      onChanged({ ...doc, status: nextStatus, ocrMetadata: { ...doc.ocrMetadata, approval: nextTrail } });
       setNote("");
     } finally {
       setBusy(false);

@@ -20,7 +20,7 @@ export function validatePhone(value: string): PhoneValidationResult {
       hint: `${9 - digits.length} dígitos más`,
       color: "text-[var(--data-warning-500)]",
     };
-  if (digits.length === 9 && /^9/.test(digits))
+  if (digits.length === 9 && digits.startsWith("9"))
     return { valid: true, hint: "Número válido", color: "text-[var(--data-success-600)]" };
   if (digits.length === 9)
     return { valid: false, hint: "Debe empezar con 9", color: "text-[var(--data-error-500)]" };

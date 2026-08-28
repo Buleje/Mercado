@@ -180,7 +180,7 @@ export async function PUT(req: NextRequest) {
     // Mantenemos los campos existentes y aplicamos solo lo que llega.
     if (body.storeTheme && Object.keys(body).length === 1) {
       try {
-        const merged = { ...(current.storeTheme ?? {}), ...sanitizeStoreThemeInput(body.storeTheme as Record<string, unknown>) };
+        const merged = { ...current.storeTheme, ...sanitizeStoreThemeInput(body.storeTheme as Record<string, unknown>) };
         await upsertStoreThemeJson(tenantId, merged as Record<string, unknown>);
         // CRÍTICO: invalidar cache de SettingsDB (TTL 60s) — sino la storefront
         // sirve datos viejos hasta que expire. Bug detectado al testear que los
@@ -314,7 +314,7 @@ export async function PUT(req: NextRequest) {
       // borraba logo / storeName / colores / hero del row. Detectado tras
       // guardar visibilidad de secciones — la tienda perdia branding completo.
       ...(body.storeTheme !== undefined && {
-        storeTheme: { ...(current.storeTheme ?? {}), ...sanitizeStoreThemeInput(body.storeTheme as Record<string, unknown>) },
+        storeTheme: { ...current.storeTheme, ...sanitizeStoreThemeInput(body.storeTheme as Record<string, unknown>) },
       }),
     };
     const changed = Object.keys(body).filter(k => k !== "adminPassword").join(", ");

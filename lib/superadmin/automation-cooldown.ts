@@ -62,7 +62,7 @@ export function recordNotified(
   cooldownMs: number,
 ): NotifyLog {
   const iso = new Date(now).toISOString();
-  const ruleLog: Record<string, string> = { ...(log[ruleKey] ?? {}) };
+  const ruleLog: Record<string, string> = { ...log[ruleKey] };
   for (const id of tenantIds) ruleLog[id] = iso;
   for (const [id, ts] of Object.entries(ruleLog)) {
     if (now - new Date(ts).getTime() >= cooldownMs) delete ruleLog[id];

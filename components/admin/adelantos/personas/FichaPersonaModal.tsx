@@ -13,7 +13,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { DataTable } from "@buleje/design-system";
 import {
   CheckCircle,
   Clock,

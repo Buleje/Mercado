@@ -25,7 +25,6 @@ import {
   juzgarRendimientoLote,
   resumenLotes,
   type EstadoLoteAserrio,
-  type LoteAserrio,
 } from "@/lib/forestal/lotes-aserrio";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
@@ -69,7 +68,6 @@ export default function CtpLotesView({
 
   const resumen = useMemo(() => resumenLotes(lotes), [lotes]);
   const veredicto = juzgarRendimientoLote(resumen.rendimientoPct);
-  const abiertos = useMemo(() => lotes.filter((l) => l.status === "abierto"), [lotes]);
   const opcionesEspecie = useMemo(
     () => [...new Set(lotes.map((l) => l.speciesCommon).filter(Boolean))].sort(),
     [lotes],

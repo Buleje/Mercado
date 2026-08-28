@@ -13,7 +13,6 @@ import {
   claveDeGuia,
   resumirGuia,
   type GuiaIngreso,
-  type LineaDeGuia,
 } from "@/lib/forestal/ingresos-por-guia";
 import type {
   WoodEntryStatus,

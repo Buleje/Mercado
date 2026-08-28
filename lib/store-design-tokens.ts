@@ -295,7 +295,7 @@ export function deserializePageData(raw: string | null | undefined): PageData {
       const parsed = JSON.parse(raw.slice(NEW_PREFIX.length));
       return {
         sections: Array.isArray(parsed.sections) ? parsed.sections : [],
-        design: { ...DEFAULT_DESIGN_TOKENS, ...(parsed.design ?? {}) },
+        design: { ...DEFAULT_DESIGN_TOKENS, ...parsed.design },
       };
     } catch {
       return empty;

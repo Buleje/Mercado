@@ -301,7 +301,7 @@ export async function sendWhatsAppQueued(
         recipient: phone,
         message,
         tenantId: meta.tenantId,
-        metadata: { context: meta.context, ...(meta.metadata ?? {}) },
+        metadata: { context: meta.context, ...meta.metadata },
       });
       return { queued: true, jobId: jobId ?? undefined };
     }

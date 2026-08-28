@@ -100,7 +100,9 @@ export default function CtpEudrMap({ origins, geoByCode }: { origins: OrigenRow[
           const geom = JSON.parse(g.polygonJson);
           const gj = L.geoJSON(geom, { style: { color, weight: 2, fillColor: color, fillOpacity: 0.15 } }).bindPopup(popupHtml(o, g));
           gj.addTo(group);
-          gj.getBounds && gj.getBounds().isValid() && gj.getBounds().getCenter && bounds.push([gj.getBounds().getCenter().lat, gj.getBounds().getCenter().lng]);
+          if (gj.getBounds && gj.getBounds().isValid() && gj.getBounds().getCenter) {
+            bounds.push([gj.getBounds().getCenter().lat, gj.getBounds().getCenter().lng]);
+          }
           drawn = true;
         } catch {
           /* polígono corrupto → cae al punto */

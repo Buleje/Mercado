@@ -40,7 +40,7 @@ export default function CtpGuiaDatosTab({
   emision,
   onEmision,
   gtfNumber,
-  onGtfNumber,
+  onGtfNumber: _onGtfNumber,
   docType,
   onDocType,
   onAnotarParte,

@@ -72,16 +72,16 @@ function asegurarTamano(hoja: HojaFormato, filas: number, columnas: number): Hoj
     ...hoja,
     filas: filasNuevas,
     anchos: cols > hoja.anchos.length
-      ? [...hoja.anchos, ...new Array(cols - hoja.anchos.length).fill(64)]
+      ? [...hoja.anchos, ...Array.from({ length: cols - hoja.anchos.length }, () => 64)]
       : hoja.anchos,
     altos: filasNuevas.length > hoja.altos.length
-      ? [...hoja.altos, ...new Array(filasNuevas.length - hoja.altos.length).fill(20)]
+      ? [...hoja.altos, ...Array.from({ length: filasNuevas.length - hoja.altos.length }, () => 20)]
       : hoja.altos,
     columnasOcultas: cols > hoja.columnasOcultas.length
-      ? [...hoja.columnasOcultas, ...new Array(cols - hoja.columnasOcultas.length).fill(false)]
+      ? [...hoja.columnasOcultas, ...Array.from({ length: cols - hoja.columnasOcultas.length }, () => false)]
       : hoja.columnasOcultas,
     filasOcultas: filasNuevas.length > hoja.filasOcultas.length
-      ? [...hoja.filasOcultas, ...new Array(filasNuevas.length - hoja.filasOcultas.length).fill(false)]
+      ? [...hoja.filasOcultas, ...Array.from({ length: filasNuevas.length - hoja.filasOcultas.length }, () => false)]
       : hoja.filasOcultas,
   };
 }
@@ -210,7 +210,7 @@ export function aplicar(hoja: HojaFormato, accion: Accion): { hoja: HojaFormato;
       // son N acciones; se guarda la del conjunto tal como estaba. `bordes`
       // sólo viaja si la acción los tocó: su inversa es todo-o-nada y pisaría
       // bordes parciales del archivo al deshacer cualquier otro formato.
-      const formatoInverso: CambioFormato = { ...(previos[0] ?? {}) };
+      const formatoInverso: CambioFormato = { ...previos[0] };
       if (accion.formato.bordes === undefined) delete formatoInverso.bordes;
       return {
         hoja: out,

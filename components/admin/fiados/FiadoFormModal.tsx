@@ -147,7 +147,7 @@ export default function FiadoFormModal({
                     ) : clienteEsNuevo ? (
                       // Fix #9: si el valor no parece un teléfono (pocos dígitos),
                       // mostrar aviso preventivo en lugar del mensaje positivo engañoso
-                      /^[\d\s+\-]{6,}$/.test(newForm.customerId.trim()) ? (
+                      /^[\d\s+-]{6,}$/.test(newForm.customerId.trim()) ? (
                         <div className="border border-[var(--rule-base)] dark:border-white/10 bg-gray-50 dark:bg-white/5 rounded-xl p-3 flex items-center justify-between gap-2">
                           <p className="text-xs text-[var(--text-tertiary)]">Cliente nuevo — sin historial de fiados</p>
                           {onCrearCliente && (

@@ -82,7 +82,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     const comentarios = [comentario, ...comentariosDe(doc)].slice(0, 200);
 
     await DocumentsDB.update(auth.tenantId, id, {
-      ocrMetadata: { ...(doc.ocrMetadata ?? {}), comentarios },
+      ocrMetadata: { ...doc.ocrMetadata, comentarios },
     });
 
     return NextResponse.json({ comentario, comentarios });
@@ -119,7 +119,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
 
     const comentarios = previos.filter((c) => c.id !== comentarioId);
     await DocumentsDB.update(auth.tenantId, id, {
-      ocrMetadata: { ...(doc.ocrMetadata ?? {}), comentarios },
+      ocrMetadata: { ...doc.ocrMetadata, comentarios },
     });
     return NextResponse.json({ comentarios });
   } catch (e) {
@@ -159,7 +159,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     );
 
     await DocumentsDB.update(auth.tenantId, id, {
-      ocrMetadata: { ...(doc.ocrMetadata ?? {}), comentarios },
+      ocrMetadata: { ...doc.ocrMetadata, comentarios },
     });
 
     return NextResponse.json({ comentarios });

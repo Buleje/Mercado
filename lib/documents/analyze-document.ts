@@ -206,7 +206,7 @@ export async function analyzeDocumentContent(
   // dispara el aviso —o sea, lo que evita la multa—, así que se lee del texto.
   if (!sugerencias?.expiresAt) {
     const delTexto = fechaDeVencimientoEnTexto(text);
-    if (delTexto) sugerencias = { ...(sugerencias ?? {}), expiresAt: delTexto };
+    if (delTexto) sugerencias = { ...sugerencias, expiresAt: delTexto };
   }
 
   // La descripción escrita a mano sobrevive al re-análisis: es la que corrige a

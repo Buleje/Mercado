@@ -349,7 +349,7 @@ function Top10Clientes({ refreshKey, reportEmpty = true }: { refreshKey: number;
   // Vacío si no hay clientes o ninguno tiene gasto real → se oculta el gráfico.
   // Solo reporta cuando es slot standalone (en TabbedCard se pasa reportEmpty=false
   // para no ocultar toda la card al cambiar de pestaña).
-  const noRealData = customers.length === 0 || customers.every(c => (c.gastoTotal ?? 0) === 0);
+  const noRealData = customers.every(c => (c.gastoTotal ?? 0) === 0);
   useReportChartEmpty(reportEmpty && noRealData, !loading);
 
   if (loading) {

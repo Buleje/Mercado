@@ -29,7 +29,7 @@ import {
 } from "./ctp-documento-print";
 import type { CtpFicha } from "./ctp-ficha-types";
 import { leerGtfDatos, type GtfDatos } from "./ctp-gtf-datos";
-import { cuerpoGtfOficial, fechaGtf, type LineaProducto } from "./ctp-gtf-formato";
+import { cuerpoGtfOficial, type LineaProducto } from "./ctp-gtf-formato";
 import type { GuiaIngreso } from "./ingresos-por-guia";
 import type { TrozaListada } from "./ctp-lista-trozas";
 

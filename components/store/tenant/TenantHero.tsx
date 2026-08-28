@@ -592,7 +592,7 @@ export default function TenantHero(props: TenantHeroProps) {
       <section
         data-pb="hero"
         className="relative overflow-hidden flex items-end"
-        style={{ minHeight: height === "tall" ? "78vh" : height === "compact" ? "52vh" : "66vh", ...(gradientBg ?? {}) }}
+        style={{ minHeight: height === "tall" ? "78vh" : height === "compact" ? "52vh" : "66vh", ...gradientBg }}
       >
         {BgLayers}
         <div className={`relative w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 ${padding}`}>

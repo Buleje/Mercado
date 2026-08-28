@@ -230,7 +230,7 @@ export function filasOcultasPorFiltro(
   filtros: Map<number, Set<string>>,
   desdeFila: number,
 ): boolean[] {
-  const ocultas = new Array(filas.length).fill(false);
+  const ocultas = Array.from({ length: filas.length }, () => false);
   if (filtros.size === 0) return ocultas;
 
   for (let f = desdeFila; f < filas.length; f++) {

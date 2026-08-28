@@ -394,7 +394,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
   const speak = useCallback((text: string) => {
     if (!ttsEnabled || typeof speechSynthesis === "undefined") return;
     speechSynthesis.cancel();
-    const clean = text.replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1").replace(/[#*`>\-]/g, "").replace(/\[ACTION:[^\]]+\]/g, "").replace(/\n{2,}/g, ". ").replace(/\n/g, ". ").slice(0, 800);
+    const clean = text.replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1").replace(/[#*`>-]/g, "").replace(/\[ACTION:[^\]]+\]/g, "").replace(/\n{2,}/g, ". ").replace(/\n/g, ". ").slice(0, 800);
     const utter = new SpeechSynthesisUtterance(clean);
     utter.lang = "es-PE";
     utter.rate = 1.05;

@@ -24,7 +24,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { PRODUCTOS_CONSUMIBLES_LOTE, disponiblePorEspecie } from "@/lib/forestal/lote-programacion";
-import { Btn, CampoGrid, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar } from "./ctp-shared";
+import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar } from "./ctp-shared";
 
 export interface LoteProgramado {
   speciesCommon: string;

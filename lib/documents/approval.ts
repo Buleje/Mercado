@@ -45,7 +45,7 @@ export async function handleApproval(
 
   await DocumentsDB.update(tenantId, docId, {
     status: NEXT_STATUS[action],
-    ocrMetadata: { ...(doc.ocrMetadata ?? {}), approval: trail },
+    ocrMetadata: { ...doc.ocrMetadata, approval: trail },
   });
 
   DocumentsDB.log(tenantId, { documentId: docId, actorId, action: "tag", metadata: { approval: action, note } }).catch((err) =>

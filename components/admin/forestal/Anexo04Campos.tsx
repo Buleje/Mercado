@@ -10,7 +10,7 @@
  * nombre, DNI y cargo cada vez.
  */
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, ImageIcon, Trash2, UserPlus, X } from "@buleje/design-system/icons";
+import { ArrowRight, Check, ImageIcon, Trash2, UserPlus } from "@buleje/design-system/icons";
 import {
   siguienteCorrelativo, type DatosAnexo04, type EmisorGuardado,
 } from "@/lib/forestal/anexo04-serfor";
@@ -42,36 +42,6 @@ async function leerLogo(file: File): Promise<{ src: string; aspect: number }> {
   canvas.width = w; canvas.height = h;
   canvas.getContext("2d")?.drawImage(img, 0, 0, w, h);
   return { src: canvas.toDataURL("image/png"), aspect: img.width / img.height };
-}
-
-/** Botón-miniatura que sube/quita una de las imágenes de la hoja. */
-function ImagenCampo({ src, label, alto = "h-11 w-14", onArchivo, onQuitar }: {
-  src?: string; label: string; alto?: string;
-  onArchivo: (f?: File) => void; onQuitar: () => void;
-}) {
-  const ref = useRef<HTMLInputElement>(null);
-  return (
-    <div className="flex shrink-0 items-center gap-1">
-      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={(e) => { onArchivo(e.target.files?.[0]); e.target.value = ""; }} />
-      <button
-        type="button"
-        onClick={() => ref.current?.click()}
-        title={src ? `Cambiar ${label.toLowerCase()}` : `Subir ${label.toLowerCase()}`}
-        aria-label={`${src ? "Cambiar" : "Subir"} ${label.toLowerCase()}`}
-        className={`flex ${alto} items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]`}
-      >
-        {src
-          // eslint-disable-next-line @next/next/no-img-element -- dataURL local, no pasa por el optimizador
-          ? <img src={src} alt={label} className="max-h-full max-w-full object-contain" />
-          : <ImageIcon className="h-5 w-5" />}
-      </button>
-      {src && (
-        <button type="button" onClick={onQuitar} aria-label={`Quitar ${label.toLowerCase()}`} className="rounded-lg p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error-700)]">
-          <X className="h-3.5 w-3.5" />
-        </button>
-      )}
-    </div>
-  );
 }
 
 /**

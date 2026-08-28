@@ -310,7 +310,7 @@ function colPropia(doc: XMLDocument, columna: number): Element {
     else hojaEl.appendChild(cols);
   }
   let heredada: Element | null = null;
-  for (const col of [...hijos(cols, "col")]) {
+  for (const col of hijos(cols, "col")) {
     const min = Number(col.getAttribute("min"));
     const max = Number(col.getAttribute("max"));
     if (columna < min || columna > max) continue;
@@ -407,7 +407,7 @@ export function fijarAnchoColumna(doc: XMLDocument, columna: number, anchoPx: nu
 
   // Un `<col>` puede cubrir un tramo (min..max): si la columna cae dentro de
   // un tramo más grande, hay que partirlo para no cambiarle el ancho a todas.
-  for (const col of [...hijos(cols, "col")]) {
+  for (const col of hijos(cols, "col")) {
     const min = Number(col.getAttribute("min"));
     const max = Number(col.getAttribute("max"));
     if (columna < min || columna > max) continue;

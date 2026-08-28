@@ -15,7 +15,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { AlertTriangle, CheckCircle2, Gauge, Loader2, RefreshCw } from "@buleje/design-system/icons";
+import { CheckCircle2, Gauge, Loader2, RefreshCw } from "@buleje/design-system/icons";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import {
   RENDIMIENTO_TOPE_PCT,

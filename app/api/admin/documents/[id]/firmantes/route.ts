@@ -91,7 +91,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     }
 
     await DocumentsDB.update(auth.tenantId, id, {
-      ocrMetadata: { ...(doc.ocrMetadata ?? {}), firmaRonda: ronda },
+      ocrMetadata: { ...doc.ocrMetadata, firmaRonda: ronda },
     });
 
     DocumentsDB.log(auth.tenantId, {

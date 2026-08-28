@@ -134,7 +134,7 @@ export function OnboardingTour({
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key === "Enter") {
         e.preventDefault();
-        isLastStep ? onComplete() : onNext();
+        if (isLastStep) onComplete(); else onNext();
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
         onPrev();

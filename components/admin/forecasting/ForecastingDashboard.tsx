@@ -188,8 +188,8 @@ function buildDailyBreakdown(forecast: InventoryForecast): Array<{ dia: string; 
 function getWeekdayWeight(weekday: number, history: Array<{ date: string; qty: number }>): number {
   if (history.length === 0) return 1;
 
-  const sumByWeekday = new Array(7).fill(0);
-  const cntByWeekday = new Array(7).fill(0);
+  const sumByWeekday = Array.from({ length: 7 }, () => 0);
+  const cntByWeekday = Array.from({ length: 7 }, () => 0);
 
   for (const h of history) {
     const d = new Date(h.date + "T12:00:00");

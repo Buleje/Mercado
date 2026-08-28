@@ -625,7 +625,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
     : undefined;
 
   return (
-    <main className="min-h-screen bg-[var(--surface-canvas)] tenant-theme" data-store-chrome="tenant" data-pt={editorTheme.pageTransition !== "none" ? editorTheme.pageTransition : undefined} style={{ ...(brandTokenVars ?? {}), ...(editorTheme.pageBgColor ? ({ "--surface-canvas": editorTheme.pageBgColor } as React.CSSProperties) : {}), ...(editorTheme.pageTransition !== "none" ? { animation: `buleje-pt-${editorTheme.pageTransition} .45s ease both` } : {}) }}>
+    <main className="min-h-screen bg-[var(--surface-canvas)] tenant-theme" data-store-chrome="tenant" data-pt={editorTheme.pageTransition !== "none" ? editorTheme.pageTransition : undefined} style={{ ...brandTokenVars, ...(editorTheme.pageBgColor && ({ "--surface-canvas": editorTheme.pageBgColor } as React.CSSProperties)), ...(editorTheme.pageTransition !== "none" && { animation: `buleje-pt-${editorTheme.pageTransition} .45s ease both` }) }}>
       {/* Anuncios rotativos (Lote C) — barra superior con N mensajes. */}
       {editorTheme.announcements.length > 0 && <RotatingAnnouncementBar messages={editorTheme.announcements} intervalMs={(editorTheme.announcementInterval ?? 4) * 1000} />}
       {/* Lote U #6.2: datos estructurados LocalBusiness para Google */}

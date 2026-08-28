@@ -350,7 +350,7 @@ export default function CashRegisterTab() {
     const salesCount = mvs.filter(m => m.type === "venta").length;
     const expectedCash = currentRegister.openingAmount + salesEfectivo + totalIn - totalOut;
     // Hourly sales chart data
-    const hourlyData: number[] = new Array(24).fill(0);
+    const hourlyData: number[] = Array.from({ length: 24 }, () => 0);
     for (const m of mvs.filter(mv => mv.type === "venta")) {
       try {
         const h = new Date(m.createdAt).getHours();
@@ -1153,7 +1153,7 @@ export default function CashRegisterTab() {
           {/* Mejora 11: Sparkline de diferencias con AreaChart + badge de tendencia */}
           {closedRegisters.length > 2 && (() => {
             const last30 = closedRegisters.slice(0, 30);
-            const diffs = [...last30.map(r => r.difference ?? 0)].reverse();
+            const diffs = last30.map(r => r.difference ?? 0).reverse();
             const sparkData = diffs.map((d, i) => ({ idx: i, diff: d, pos: d >= 0 ? d : 0, neg: d < 0 ? d : 0 }));
 
             // Badge de tendencia (solo si hay 10+ datos)

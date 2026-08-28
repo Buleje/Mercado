@@ -292,7 +292,11 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
     const peak = { dow: 0, hour: 0, count: 0 };
     for (let d = 0; d < 7; d++) {
       for (let h = 0; h < 24; h++) {
-        if (grid[d][h] > peak.count) peak.count = grid[d][h], (peak.dow = d), (peak.hour = h);
+        if (grid[d][h] > peak.count) {
+          peak.count = grid[d][h];
+          peak.dow = d;
+          peak.hour = h;
+        }
       }
     }
     return { grid, max, peak };

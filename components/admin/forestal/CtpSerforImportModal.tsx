@@ -240,10 +240,6 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
   }).avisos;
 
   const totalListas = orden.reduce((s, x) => s + x.parseadas.filter((f) => f.problemas.length === 0).length, 0);
-  /* Lo que falta escribir, sumando todas las secciones revisadas. */
-  const porImportar = (resultados ?? []).reduce((s, r) => s + r.respuesta.resumen.porCrear, 0);
-  /** Ya se escribió: el botón de importar no tiene nada más que hacer. */
-  const yaImportado = (resultados ?? []).some((r) => r.respuesta.resumen.creados > 0);
 
   const mapaIngresos = mapaCodigoAGuia(filasDe("ingresos"));
 
