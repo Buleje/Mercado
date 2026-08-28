@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
-  avisosDeFicha, ctpFichaFaltantes, diasParaVencer, emptyCtpFicha, estadoVencimiento,
+  avisosDeFicha, ctpFichaFaltantes, diasParaVencer, documentosVencimientoDeFicha, emptyCtpFicha, estadoVencimiento,
   fechaCortaUTC, requisitosFaltantes, rucValido, tituloDeGuia, type CtpFicha,
 } from "@/lib/forestal/ctp-ficha-types";
 
@@ -74,6 +74,42 @@ describe("fechas date-only", () => {
     expect(estadoVencimiento("2026-08-30", HOY)).toBe("por_vencer");
     expect(estadoVencimiento("2027-01-01", HOY)).toBe("vigente");
     expect(estadoVencimiento("", HOY)).toBeNull();
+  });
+});
+
+describe("documentosVencimientoDeFicha — single source con el cron forestal-plazos", () => {
+  it("sin ficha no revienta, devuelve listas vacías", () => {
+    expect(documentosVencimientoDeFicha(null, HOY)).toEqual({ vencidosLabels: [], porVencerLabels: [] });
+    expect(documentosVencimientoDeFicha(undefined, HOY)).toEqual({ vencidosLabels: [], porVencerLabels: [] });
+  });
+
+  it("un título vencido entra a vencidosLabels con su código", () => {
+    const f = ficha({ titulos: [{ tipo: "concesion", codigo: "TH-004", resolucion: "", planManejo: "", vencimiento: "2026-08-01" }] });
+    const r = documentosVencimientoDeFicha(f, HOY);
+    expect(r.vencidosLabels).toEqual(["TH-004"]);
+    expect(r.porVencerLabels).toEqual([]);
+  });
+
+  it("un permiso CITES por vencer (≤30 días) entra a porVencerLabels con los días", () => {
+    const f = ficha({ citesPermisos: [{ especie: "Caoba", numero: "P-1", vencimiento: "2026-08-30" }] });
+    const r = documentosVencimientoDeFicha(f, HOY);
+    expect(r.vencidosLabels).toEqual([]);
+    expect(r.porVencerLabels[0]).toContain("CITES Caoba");
+    expect(r.porVencerLabels[0]).toMatch(/\(\d+ días?\)/);
+  });
+
+  it("un título vigente (fuera de la ventana de 30 días) no entra a ninguna lista", () => {
+    const f = ficha({ titulos: [{ tipo: "concesion", codigo: "TH-VIGENTE", resolucion: "", planManejo: "", vencimiento: "2030-01-01" }] });
+    const r = documentosVencimientoDeFicha(f, HOY);
+    expect(r.vencidosLabels).toEqual([]);
+    expect(r.porVencerLabels).toEqual([]);
+  });
+
+  it("sin fecha de vencimiento cargada, no se inventa un estado", () => {
+    const f = ficha({ titulos: [{ tipo: "concesion", codigo: "TH-SIN-FECHA", resolucion: "", planManejo: "", vencimiento: "" }] });
+    const r = documentosVencimientoDeFicha(f, HOY);
+    expect(r.vencidosLabels).toEqual([]);
+    expect(r.porVencerLabels).toEqual([]);
   });
 });
 

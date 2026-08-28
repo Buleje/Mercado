@@ -395,6 +395,10 @@
     {
       "path": "/api/cron/tramites-vencimiento",
       "schedule": "50 8 * * *"
+    },
+    {
+      "path": "/api/cron/tramites-sin-respuesta",
+      "schedule": "5 9 * * *"
     }
   ]
 }

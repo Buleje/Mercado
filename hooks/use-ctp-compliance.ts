@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ctpComplianceScore, parseCitesPermiso, type CtpComplianceCounts } from "@/lib/forestal/ctp-compliance";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
-import { diasParaVencer, estadoVencimiento } from "@/lib/forestal/ctp-ficha-types";
+import { documentosVencimientoDeFicha } from "@/lib/forestal/ctp-ficha-types";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import type { WoodEntryStats } from "@/components/admin/forestal/ctp-shared";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
@@ -140,23 +140,11 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
           .map((e) => e.especie);
         // Documentos vencidos: un título/permiso caducado invalida el origen.
         // Y los que vencen dentro de 30 días: llegar a tiempo a la renovación es
-        // lo único que evita el vencido de la línea de arriba.
-        for (const p of f?.citesPermisos ?? []) {
-          const estado = estadoVencimiento(p.vencimiento ?? "");
-          if (estado === "vencido") documentosVencidosLabels.push(`CITES ${p.especie || "—"}`);
-          else if (estado === "por_vencer") {
-            const dias = diasParaVencer(p.vencimiento ?? "") ?? 0;
-            documentosPorVencerLabels.push(`CITES ${p.especie || "—"} (${dias} ${dias === 1 ? "día" : "días"})`);
-          }
-        }
-        for (const t of f?.titulos ?? []) {
-          const estado = estadoVencimiento(t.vencimiento ?? "");
-          if (estado === "vencido") documentosVencidosLabels.push(t.codigo || t.tipo || "título");
-          else if (estado === "por_vencer") {
-            const dias = diasParaVencer(t.vencimiento ?? "") ?? 0;
-            documentosPorVencerLabels.push(`${t.codigo || t.tipo || "título"} (${dias} ${dias === 1 ? "día" : "días"})`);
-          }
-        }
+        // lo único que evita el vencido de la línea de arriba. Single source con
+        // el cron `forestal-plazos` (`documentosVencimientoDeFicha`).
+        const vencimiento = documentosVencimientoDeFicha(f);
+        documentosVencidosLabels.push(...vencimiento.vencidosLabels);
+        documentosPorVencerLabels.push(...vencimiento.porVencerLabels);
       }
       // Rendimiento alto: corridas de producción sobre el referencial SERFOR.
       let rendimientoAltoLineas: number[] = [];

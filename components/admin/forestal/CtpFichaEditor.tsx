@@ -16,6 +16,7 @@ import {
 import { LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Field, I } from "./ctp-shared";
+import { listDepartamentos } from "@/lib/peru-ubigeo";
 import CtpParteLogo from "./CtpParteLogo";
 import CtpFichaReadView from "./CtpFichaReadView";
 import {
@@ -282,7 +283,19 @@ export default function CtpFichaEditor() {
 
           <Section title="Ubicación y contacto">
             <Field label="Dirección"><input className={I} value={draft.direccion} onChange={(e) => set("direccion", e.target.value)} /></Field>
-            <Field label="Región"><input className={I} value={draft.region} onChange={(e) => set("region", e.target.value)} placeholder="Ucayali" /></Field>
+            <Field label="Región">
+              <input className={I} value={draft.region} onChange={(e) => set("region", e.target.value)} placeholder="Ucayali" list="ficha-regiones-peru" />
+              {/* Autocompletar (no restringe): un typo acá ("Ucayaly") hace que
+                  `arffsMesaPartes()` no encuentre la mesa de partes de la
+                  región y el banner de Trámites no aparece, en silencio —
+                  la lista oficial de 25 departamentos guía sin bloquear el
+                  campo para tenants fuera de esa cobertura. */}
+              <datalist id="ficha-regiones-peru">
+                {listDepartamentos().map((d) => (
+                  <option key={d.code} value={d.nombre} />
+                ))}
+              </datalist>
+            </Field>
             <Field label="Provincia"><input className={I} value={draft.provincia} onChange={(e) => set("provincia", e.target.value)} /></Field>
             <Field label="Distrito"><input className={I} value={draft.distrito} onChange={(e) => set("distrito", e.target.value)} /></Field>
             <Field label="Teléfono"><input className={I} value={draft.telefono} onChange={(e) => set("telefono", e.target.value)} /></Field>

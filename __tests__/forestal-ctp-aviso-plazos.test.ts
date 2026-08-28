@@ -63,7 +63,7 @@ describe("plazoDeGuia", () => {
 });
 
 describe("construirAviso", () => {
-  const vacio = { guiasSinIngresar: [], despachosSinGtf: 0, saldosNegativos: 0, fueraDePlazo: 0 };
+  const vacio = { guiasSinIngresar: [], despachosSinGtf: 0, saldosNegativos: 0, fueraDePlazo: 0, documentosVencidosLabels: [] };
 
   it("no interrumpe si no hay nada accionable", () => {
     const a = construirAviso(vacio, LUNES);
@@ -127,5 +127,23 @@ describe("construirAviso", () => {
   it("el mensaje nombra el negocio cuando se lo pasan", () => {
     const a = construirAviso({ ...vacio, saldosNegativos: 1 }, LUNES, "Aserradero San Martín");
     expect(a.whatsapp).toContain("Aserradero San Martín");
+  });
+
+  it("un documento vencido en la Ficha dispara el aviso en HIGH, aunque no haya guías", () => {
+    const a = construirAviso({ ...vacio, documentosVencidosLabels: ["TH-004"] }, LUNES);
+    expect(a.hayQueAvisar).toBe(true);
+    expect(a.severidad).toBe("HIGH");
+    expect(a.titulo).toContain("documento vencido");
+    expect(a.whatsapp).toContain("TH-004");
+    expect(a.whatsapp).toContain("invalida el origen legal");
+  });
+
+  it("varios documentos vencidos encabezan el título y el resumen antes que las guías", () => {
+    const a = construirAviso(
+      { ...vacio, documentosVencidosLabels: ["CITES Caoba", "TH-004"], guiasSinIngresar: [guia("001-1", "2026-07-20")] },
+      JUEVES,
+    );
+    expect(a.titulo).toBe("2 documentos vencidos en la Ficha CTP");
+    expect(a.resumen.startsWith("2 documentos vencidos en la Ficha")).toBe(true);
   });
 });

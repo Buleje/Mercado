@@ -12,6 +12,7 @@
  * Cada formato lleva su ícono: con ocho iguales hay que leer los ocho títulos.
  */
 
+import { useState } from "react";
 import { m as motion } from "framer-motion";
 import {
   ArrowRight,
@@ -34,12 +35,14 @@ import {
   RotateCcw,
   Route,
   Scale,
+  Search,
   ShieldAlert,
   Siren,
   Stamp,
   TreePine,
   Truck,
   UserCog,
+  X,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
@@ -106,6 +109,16 @@ const DESTACADO = "visado-talonario-gtf";
 /** Orden de los grupos: el que más trabajo genera primero. */
 const ORDEN_AUTORIDAD: AutoridadTramite[] = ["arffs", "serfor", "osinfor", "otra"];
 
+const sinTildes = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/** Tono de los chips de autoridad — mismos tokens que `TONO_ICONO`, ahora en botón. */
+const TONO_CHIP: Record<string, string> = {
+  accent: "border-primary/40 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+  info: "border-[var(--data-info-500)] bg-[var(--data-info-50)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/12 dark:text-[var(--data-info-500)]",
+  warning: "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]",
+  muted: "border-[var(--rule-strong)] bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+};
+
 export default function TramitesCatalogo({
   tramites,
   onElegir,
@@ -118,50 +131,119 @@ export default function TramitesCatalogo({
    *  motor de oficios/cartas (ADR-380). */
   onAbrirPlantaciones: () => void;
 }) {
+  const [busqueda, setBusqueda] = useState("");
+  const [autoridadFiltro, setAutoridadFiltro] = useState<AutoridadTramite | "todas">("todas");
   const usados = (id: string) => tramites.filter((t) => t.formatoId === id).length;
   const destacado = FORMATOS_TRAMITE.find((f) => f.id === DESTACADO);
   const resto = FORMATOS_TRAMITE.filter((f) => f.id !== DESTACADO);
   const porEstado = contarPorEstado(tramites);
   const enCurso = porEstado.presentado + porEstado.observado;
 
+  /**
+   * Buscador + filtro por autoridad (Brandon 2026-08-26, "consultá ideas y
+   * mejorá esto"): 22 formatos ya no se recorren a ojo agrupados en cuatro
+   * secciones — el mismo problema que resolvió el buscador de `TramitesExpediente`
+   * ("con 14 formatos... encontrar el que buscás a ojo deja de alcanzar"),
+   * ahora acá en el catálogo. `sinTildes` para que "tala" encuentre "Aviso de
+   * inicio de aprovechamiento" aunque el operador tipee sin acento.
+   */
+  const q = sinTildes(busqueda.trim());
+  const matches = (f: FormatoTramite) =>
+    (autoridadFiltro === "todas" || f.autoridad === autoridadFiltro) &&
+    (!q || sinTildes(f.nombre).includes(q) || sinTildes(f.proposito).includes(q));
+  const activo = q !== "" || autoridadFiltro !== "todas";
+  const resultados = activo ? FORMATOS_TRAMITE.filter(matches) : [];
+
   return (
     <div className="space-y-6">
       <TirasResumen total={FORMATOS_TRAMITE.length} guardados={tramites.length} enCurso={enCurso} resueltos={porEstado.resuelto} />
 
-      <RegistroPlantacionCard onClick={onAbrirPlantaciones} />
+      <div className="space-y-3">
+        <div className="flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5">
+          <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
+          <input
+            type="text"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            onKeyDown={(e) => e.key === "Escape" && setBusqueda("")}
+            placeholder="Buscar formato por nombre o para qué sirve…"
+            aria-label="Buscar formato por nombre o para qué sirve"
+            className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
+          />
+          {busqueda && (
+            <button type="button" onClick={() => setBusqueda("")} aria-label="Limpiar búsqueda" className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <FiltroChip label="Todas" activo={autoridadFiltro === "todas"} onClick={() => setAutoridadFiltro("todas")} />
+          {ORDEN_AUTORIDAD.map((aut) => (
+            <FiltroChip
+              key={aut}
+              label={AUTORIDADES[aut].corto}
+              tono={AUTORIDADES[aut].tono}
+              activo={autoridadFiltro === aut}
+              onClick={() => setAutoridadFiltro(autoridadFiltro === aut ? "todas" : aut)}
+            />
+          ))}
+        </div>
+      </div>
 
-      {destacado && <Hero formato={destacado} usados={usados(destacado.id)} onElegir={onElegir} />}
+      {activo ? (
+        resultados.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-[var(--rule-base)] py-10 text-center">
+            <Search className="h-8 w-8 text-[var(--text-tertiary)]" aria-hidden="true" />
+            <p className="font-bold text-[var(--text-primary)]">Ningún formato coincide</p>
+            <p className="text-sm text-[var(--text-tertiary)]">Probá con otra palabra o quitá el filtro de autoridad.</p>
+          </div>
+        ) : (
+          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {resultados.map((f) => (
+              <motion.div key={f.id} variants={staggerChild}>
+                <Card formato={f} usados={usados(f.id)} onElegir={onElegir} />
+              </motion.div>
+            ))}
+          </motion.div>
+        )
+      ) : (
+        <>
+          <RegistroPlantacionCard onClick={onAbrirPlantaciones} />
 
-      {ORDEN_AUTORIDAD.map((aut) => {
-        const grupo = resto.filter((f) => f.autoridad === aut);
-        if (grupo.length === 0) return null;
-        const meta = AUTORIDADES[aut];
-        return (
-          <section key={aut} className="space-y-3">
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b-2 border-[var(--rule-soft)] pb-2">
-              <SectionTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
-                {meta.label}
-              </SectionTitle>
-              <p className="text-sm text-[var(--text-tertiary)]">{meta.detalle}</p>
-            </div>
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="show"
-              className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
-            >
-              {grupo.map((f) => (
-                // Un grupo de una sola card en una grilla de tres deja dos huecos
-                // que se leen como "falta algo": esa card se estira y pasa a
-                // horizontal. Se ve elegida, no sobrante.
-                <motion.div key={f.id} variants={staggerChild} className={grupo.length === 1 ? "sm:col-span-2 xl:col-span-3" : ""}>
-                  <Card formato={f} usados={usados(f.id)} onElegir={onElegir} ancha={grupo.length === 1} />
+          {destacado && <Hero formato={destacado} usados={usados(destacado.id)} onElegir={onElegir} />}
+
+          {ORDEN_AUTORIDAD.map((aut) => {
+            const grupo = resto.filter((f) => f.autoridad === aut);
+            if (grupo.length === 0) return null;
+            const meta = AUTORIDADES[aut];
+            return (
+              <section key={aut} className="space-y-3">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b-2 border-[var(--rule-soft)] pb-2">
+                  <SectionTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+                    {meta.label}
+                  </SectionTitle>
+                  <p className="text-sm text-[var(--text-tertiary)]">{meta.detalle}</p>
+                </div>
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="show"
+                  className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+                >
+                  {grupo.map((f) => (
+                    // Un grupo de una sola card en una grilla de tres deja dos huecos
+                    // que se leen como "falta algo": esa card se estira y pasa a
+                    // horizontal. Se ve elegida, no sobrante.
+                    <motion.div key={f.id} variants={staggerChild} className={grupo.length === 1 ? "sm:col-span-2 xl:col-span-3" : ""}>
+                      <Card formato={f} usados={usados(f.id)} onElegir={onElegir} ancha={grupo.length === 1} />
+                    </motion.div>
+                  ))}
                 </motion.div>
-              ))}
-            </motion.div>
-          </section>
-        );
-      })}
+              </section>
+            );
+          })}
+        </>
+      )}
     </div>
   );
 }
@@ -203,6 +285,34 @@ function TirasResumen({
         </div>
       ))}
     </div>
+  );
+}
+
+/** Chip del filtro de autoridad — mismo look que el buscador del Expediente. */
+function FiltroChip({
+  label,
+  activo,
+  tono = "muted",
+  onClick,
+}: {
+  label: string;
+  activo: boolean;
+  tono?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={activo}
+      className={`inline-flex h-9 items-center rounded-full border-2 px-3.5 text-sm font-bold transition ${
+        activo
+          ? TONO_CHIP[tono]
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 

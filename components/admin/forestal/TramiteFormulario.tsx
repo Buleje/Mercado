@@ -37,6 +37,7 @@ import { nombreArchivoTramite, tramiteDocumentoAPdf } from "@/lib/forestal/trami
 import {
   AUTORIDADES,
   GRUPOS_CAMPO,
+  arffsMesaPartes,
   asuntoDe,
   faltantesDelTramite,
   type DatosTramite,
@@ -58,7 +59,7 @@ import {
   LOGO_MAX_BYTES,
   type LogoTramite,
 } from "@/lib/forestal/tramites-logo";
-import { Btn } from "./ctp-shared";
+import { Btn, MesaPartesBanner } from "./ctp-shared";
 import TramiteArchivadorOffscreen, { type TramiteArchivadorHandle } from "./TramiteArchivadorOffscreen";
 import TramiteCamposPanel from "./TramiteCamposPanel";
 import TramiteDocumentoModal from "./TramiteDocumentoModal";
@@ -227,6 +228,14 @@ export default function TramiteFormulario({
   const requeridos = useMemo(() => formato.campos.filter((c) => c.requerido), [formato]);
   const listos = requeridos.length - faltantes.length;
   const autoridad = AUTORIDADES[formato.autoridad];
+  /**
+   * SERFOR/OSINFOR tienen portal nacional único (`autoridad.mesaPartes`); la
+   * ARFFS es el Gobierno Regional — se busca por la región de la Ficha CTP en
+   * el catálogo curado región por región (`ARFFS_MESA_PARTES`, hoy sólo
+   * Ucayali). `undefined` si la autoridad no es arffs o la región no está
+   * verificada todavía: no linkeamos un portal que no confirmamos.
+   */
+  const mesaPartes = formato.autoridad === "arffs" ? arffsMesaPartes(auto.ficha?.region) : autoridad.mesaPartes;
   const autollenados = useMemo(
     () => formato.campos.filter((c) => c.autollenado && (datos[c.id] ?? "").trim()).length,
     [formato, datos],
@@ -640,6 +649,13 @@ export default function TramiteFormulario({
             <span>{formato.advertencia}</span>
           </p>
         )}
+
+        {/* Dónde presentarlo una vez impreso y firmado — SERFOR/OSINFOR por
+            portal nacional (`AUTORIDADES[...].mesaPartes`), ARFFS por la
+            región de la Ficha CTP (`ARFFS_MESA_PARTES`), sólo si está
+            verificada. Cierra el loop "genero el documento" → "lo presento",
+            que hoy terminaba en el PDF sin decir a dónde va. */}
+        {mesaPartes && <MesaPartesBanner url={mesaPartes.url} label={mesaPartes.label} />}
       </div>
 
       {aviso && (

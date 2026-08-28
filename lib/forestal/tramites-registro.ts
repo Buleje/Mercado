@@ -80,6 +80,14 @@ export interface TramiteRegistro {
    * la ventana, no una vez por vencimiento.
    */
   avisoVencimientoEnviadoEn: string | null;
+  /**
+   * Cuándo salió el aviso automático de "N días sin respuesta" por WhatsApp
+   * (cron `tramites-sin-respuesta`) para la `fechaPresentacion` ACTUAL — se
+   * resetea solo si `fechaPresentacion` cambia (mismo criterio que
+   * `avisoVencimientoEnviadoEn` con `fechaLimite`): si el trámite se vuelve a
+   * presentar con fecha nueva, es una espera nueva y merece avisar de nuevo.
+   */
+  avisoSinRespuestaEnviadoEn: string | null;
   createdAt: string;
   createdBy: string;
   updatedAt: string;
@@ -108,6 +116,10 @@ export interface TramiteInput {
    *  para decidir si el sello sigue valiendo o hay que resetearlo. */
   avisoVencimientoEnviadoEn?: string | null;
   fechaLimiteAnterior?: string | null;
+  /** Ídem para el sello de "sin respuesta": el sello y la `fechaPresentacion`
+   *  que tenía ANTES, para decidir si sigue valiendo o hay que resetearlo. */
+  avisoSinRespuestaEnviadoEn?: string | null;
+  fechaPresentacionAnterior?: string | null;
   createdAt?: string;
   createdBy?: string;
   /** El ahora, inyectado: así el registro es determinista en los tests. */
@@ -240,6 +252,11 @@ export function construirTramite(input: TramiteInput, existentes: TramiteRegistr
   const avisoVencimientoEnviadoEn =
     fechaLimite === (input.fechaLimiteAnterior ?? null) ? opcional(input.avisoVencimientoEnviadoEn, 40) : null;
 
+  // Mismo criterio: el sello de "sin respuesta" sólo sigue valiendo si la
+  // fecha de presentación no cambió.
+  const avisoSinRespuestaEnviadoEn =
+    fechaPresentacion === (input.fechaPresentacionAnterior ?? null) ? opcional(input.avisoSinRespuestaEnviadoEn, 40) : null;
+
   return {
     id: texto(input.id, 80) || nuevoId(formatoId, ahora),
     codigoInterno,
@@ -256,6 +273,7 @@ export function construirTramite(input: TramiteInput, existentes: TramiteRegistr
     notas: opcional(input.notas, 2000),
     numeroDocumento,
     avisoVencimientoEnviadoEn,
+    avisoSinRespuestaEnviadoEn,
     createdAt: input.createdAt ?? ahora,
     createdBy: texto(input.createdBy, 80) || "unknown",
     updatedAt: ahora,

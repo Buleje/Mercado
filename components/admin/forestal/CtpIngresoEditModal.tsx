@@ -17,6 +17,7 @@ import { useState } from "react";
 import { AlertCircle, Pencil } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { findSpeciesByCommonName, listSpecies } from "@/data/forestry-species";
 import { Btn, Field, I, MODAL_BODY, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, type WoodEntry } from "./ctp-shared";
 
 const ORIGENES = [
@@ -91,6 +92,26 @@ export default function CtpIngresoEditModal({
   const [error, setError] = useState<string | null>(null);
 
   const set = <K extends keyof Borrador>(k: K, v: Borrador[K]) => setData((p) => ({ ...p, [k]: v }));
+
+  /**
+   * Al corregir la especie de un ingreso ya registrado, el campo era texto
+   * libre puro sin ningún vínculo al catálogo — a diferencia del alta
+   * (`WoodEntryForm`), que obliga a elegir de un picker. Un dedazo acá
+   * desincroniza la especie del catálogo (agrupación de lotes, biblioteca de
+   * fotos, exports) sin ningún aviso. Mismo patrón que ya usa `LoteForm`:
+   * autocompleta el científico y el CITES al perder foco, sin bloquear el
+   * campo para especies fuera del catálogo (regla de honestidad legal del
+   * módulo: mejor texto libre que un enum que rechace una especie real).
+   */
+  function onEspecieBlur() {
+    const match = findSpeciesByCommonName(data.speciesCommonName);
+    if (!match) return;
+    setData((p) => ({
+      ...p,
+      speciesScientificName: p.speciesScientificName.trim() || match.scientificName,
+      speciesCites: match.cites,
+    }));
+  }
 
   const volumen = Number(data.volumeM3);
   const invalido =
@@ -228,7 +249,19 @@ export default function CtpIngresoEditModal({
           <div>
             <Seccion numero={4} title="Especie forestal">
               <Field span={12} label="Especie" required casillero={7}>
-                <input type="text" className={I} value={data.speciesCommonName} onChange={(e) => set("speciesCommonName", e.target.value)} />
+                <input
+                  type="text"
+                  className={I}
+                  value={data.speciesCommonName}
+                  onChange={(e) => set("speciesCommonName", e.target.value)}
+                  onBlur={onEspecieBlur}
+                  list="ctp-ingreso-especies"
+                />
+                <datalist id="ctp-ingreso-especies">
+                  {listSpecies().map((s) => (
+                    <option key={s.slug} value={s.commonName} />
+                  ))}
+                </datalist>
               </Field>
               <Field span={12} label="Nombre científico" casillero={8}>
                 <input type="text" className={`${I} italic`} value={data.speciesScientificName} onChange={(e) => set("speciesScientificName", e.target.value)} />

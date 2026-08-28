@@ -13,7 +13,7 @@
  * cuerpo del documento, uno solo para las N líneas de producto que viajan.
  */
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { TIPOS_DOCUMENTO_LOCTP } from "@/lib/forestal/loctp-campos";
@@ -101,6 +101,24 @@ export default function CtpGuiaDatosTab({
 
   /** Los títulos de la Ficha, para elegir cuál ampara ESTE viaje. */
   const titulosFicha = useMemo(() => (ficha?.titulos ?? []).filter((t) => t.codigo?.trim()), [ficha]);
+
+  /**
+   * "Autoridad que la ampara" arrancaba con `ficha?.arffs` sólo como
+   * `placeholder` — un gris que parece dato cargado pero no lo es: si el
+   * operador confiaba en él sin tipear nada, la guía salía con el casillero
+   * (2) vacío de verdad. Se semilla el valor REAL una sola vez (mismo patrón
+   * que el hijo que semilla estado de un prop que llega tarde, ADR-364): si
+   * la Ficha carga después de montado el tab, igual se completa; si el
+   * operador la borra a propósito para poner otra autoridad, no se vuelve a
+   * pisar.
+   */
+  const autoridadSemillada = useRef(false);
+  useEffect(() => {
+    if (autoridadSemillada.current || !ficha?.arffs?.trim()) return;
+    autoridadSemillada.current = true;
+    const arffs = ficha.arffs;
+    setDatos((p) => (p.guia.autoridad?.trim() ? p : { ...p, guia: { ...p.guia, autoridad: arffs } }));
+  }, [ficha?.arffs, setDatos]);
 
   return (
     <div className="space-y-3">

@@ -447,3 +447,50 @@ export function estadoVencimiento(vencimiento: string, ahora: number = Date.now(
   if (dias <= 30) return "por_vencer";
   return "vigente";
 }
+
+/** Títulos habilitantes y permisos CITES vencidos o por vencer, con etiqueta legible. */
+export interface DocumentosVencimiento {
+  vencidosLabels: string[];
+  porVencerLabels: string[];
+}
+
+/**
+ * Un título habilitante o permiso CITES vencido invalida el origen legal de
+ * TODA la madera que ampara — no un caso puntual. Single source entre el
+ * panel de Cumplimiento (`use-ctp-compliance.ts`, cliente) y el cron
+ * `forestal-plazos` (servidor, pasa `ahora` explícito): antes esta cuenta
+ * sólo vivía en el hook cliente, así que el vencido no disparaba WhatsApp ni
+ * quedaba en la campana — sólo se veía si alguien entraba a mirar el panel.
+ */
+export function documentosVencimientoDeFicha(
+  ficha:
+    | {
+        citesPermisos?: { especie: string; vencimiento?: string }[];
+        titulos?: { tipo: string; codigo: string; vencimiento?: string }[];
+      }
+    | null
+    | undefined,
+  ahora: number = Date.now(),
+): DocumentosVencimiento {
+  const vencidosLabels: string[] = [];
+  const porVencerLabels: string[] = [];
+
+  for (const p of ficha?.citesPermisos ?? []) {
+    const estado = estadoVencimiento(p.vencimiento ?? "", ahora);
+    if (estado === "vencido") vencidosLabels.push(`CITES ${p.especie || "—"}`);
+    else if (estado === "por_vencer") {
+      const dias = diasParaVencer(p.vencimiento ?? "", ahora) ?? 0;
+      porVencerLabels.push(`CITES ${p.especie || "—"} (${dias} ${dias === 1 ? "día" : "días"})`);
+    }
+  }
+  for (const t of ficha?.titulos ?? []) {
+    const estado = estadoVencimiento(t.vencimiento ?? "", ahora);
+    if (estado === "vencido") vencidosLabels.push(t.codigo || t.tipo || "título");
+    else if (estado === "por_vencer") {
+      const dias = diasParaVencer(t.vencimiento ?? "", ahora) ?? 0;
+      porVencerLabels.push(`${t.codigo || t.tipo || "título"} (${dias} ${dias === 1 ? "día" : "días"})`);
+    }
+  }
+
+  return { vencidosLabels, porVencerLabels };
+}

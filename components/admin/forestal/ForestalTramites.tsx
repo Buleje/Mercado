@@ -20,6 +20,7 @@ import { useForestTramites } from "@/hooks/use-forest-tramites";
 import { useForestPlantaciones } from "@/hooks/use-forest-plantaciones";
 import { FORMATOS_TRAMITE, datosParaDuplicar, formatoPorId, type DatosTramite } from "@/lib/forestal/tramites-catalogo";
 import { tramitesPorVencer, tramitesSinRespuesta, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
+import { mensajeAvisoTramites } from "@/lib/forestal/tramites-aviso-mensaje";
 import { avisoPlazoRelacion, relacionesDelFormato } from "@/lib/forestal/tramites-relacion-guias";
 import type { CtpReportFicha } from "@/lib/forestal/ctp-print-shared";
 import TramiteFormulario, { type AutollenadoTramite } from "./TramiteFormulario";
@@ -205,7 +206,7 @@ export default function ForestalTramites() {
           botón de WhatsApp manda el mismo listado para que el aviso no
           dependa de entrar a mirar el panel. */}
       {vista === "catalogo" && !formato && porVencer.length > 0 && (
-        <div className="flex justify-end"><TramiteAvisoWhatsApp porVencer={porVencer} /></div>
+        <div className="flex justify-end"><TramiteAvisoWhatsApp mensaje={mensajeAvisoTramites(porVencer)} /></div>
       )}
       {vista === "catalogo" && !formato && porVencer.map((t) => (
         <button

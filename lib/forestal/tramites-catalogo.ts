@@ -21,7 +21,21 @@ export type AutoridadTramite = "arffs" | "serfor" | "osinfor" | "otra";
 
 export const AUTORIDADES: Record<
   AutoridadTramite,
-  { label: string; corto: string; detalle: string; tono: "accent" | "info" | "warning" | "muted" }
+  {
+    label: string;
+    corto: string;
+    detalle: string;
+    tono: "accent" | "info" | "warning" | "muted";
+    /**
+     * Portal oficial donde SE PRESENTA el documento ya impreso y firmado.
+     * Sólo va acá cuando existe un portal NACIONAL único y verificable
+     * (SERFOR, OSINFOR): mismo criterio de honestidad legal del módulo — nunca
+     * un link inventado. ARFFS es regional (cada Gobierno Regional tiene el
+     * suyo, no hay uno solo) y "otra" es variable por entidad, así que ninguna
+     * de las dos declara `mesaPartes`.
+     */
+    mesaPartes?: { url: string; label: string };
+  }
 > = {
   arffs: {
     label: "ARFFS (Gobierno Regional)",
@@ -34,12 +48,14 @@ export const AUTORIDADES: Record<
     corto: "SERFOR",
     detalle: "Autoridad nacional rectora — normativa, registros y SNIFFS",
     tono: "info",
+    mesaPartes: { url: "https://apps.serfor.gob.pe/mesadepartesvirtual/#/", label: "Mesa de Partes Virtual del SERFOR" },
   },
   osinfor: {
     label: "OSINFOR",
     corto: "OSINFOR",
     detalle: "Supervisor y fiscalizador de títulos habilitantes",
     tono: "warning",
+    mesaPartes: { url: "https://sgd.osinfor.gob.pe/virtual/inicio.do", label: "Mesa de Partes Virtual del OSINFOR" },
   },
   otra: {
     label: "Otra autoridad",
@@ -48,6 +64,45 @@ export const AUTORIDADES: Record<
     tono: "muted",
   },
 };
+
+/**
+ * Mesa de partes virtual de la ARFFS, por región (Brandon 2026-08-26). A
+ * diferencia de SERFOR/OSINFOR, la ARFFS es el Gobierno Regional: no hay un
+ * portal único nacional, así que esto NO va en `AUTORIDADES.arffs` — es un
+ * catálogo aparte, curado región por región conforme se verifica cada una
+ * contra la fuente oficial (mismo criterio de honestidad legal del módulo:
+ * mejor faltar una región que linkear una sin confirmar).
+ *
+ * Cubre las regiones con más actividad forestal/CTP (Amazonía + Selva
+ * Central), cada una verificada contra `gob.pe/institucion/region…` o el
+ * comunicado oficial del propio Gobierno Regional (2026-08-26):
+ * - Ucayali, Loreto, Madre de Dios, San Martín, Huánuco, Pasco, Junín.
+ * Regiones fuera de esta lista simplemente no muestran el banner — no se
+ * inventa un link para las que faltan.
+ */
+export const ARFFS_MESA_PARTES: Record<string, { url: string; label: string }> = {
+  Ucayali: { url: "https://app.regionucayali.gob.pe/mesadepartes/", label: "Mesa de Partes Virtual del Gobierno Regional de Ucayali" },
+  Loreto: { url: "https://facilita.gob.pe/t/641", label: "Mesa de Partes Virtual del Gobierno Regional de Loreto" },
+  "Madre de Dios": { url: "http://info.regionmadrededios.gob.pe/servicios/mesadepartes", label: "Mesa de Partes Virtual del Gobierno Regional de Madre de Dios" },
+  "San Martín": { url: "https://mesavirtual.regionsanmartin.gob.pe/", label: "Mesa de Partes Digital del Gobierno Regional de San Martín" },
+  Huánuco: { url: "http://digital.regionhuanuco.gob.pe/registro/mesa-partes-virtual/3", label: "Mesa de Partes Virtual del Gobierno Regional de Huánuco" },
+  Pasco: { url: "https://sisgedoregionpasco.sisadmin.link/mpv_grpsc/", label: "Mesa de Partes Virtual del Gobierno Regional de Pasco" },
+  Junín: { url: "http://sisdore.regionjunin.gob.pe:4949/tramiteVirtualGRJ/", label: "Mesa de Partes Virtual del Gobierno Regional de Junín" },
+};
+
+const normalizarRegion = (s: string): string => s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+/**
+ * Busca la mesa de partes de la ARFFS por región de la Ficha CTP,
+ * case/tilde-insensible ("san martin" == "San Martín") — con regiones como
+ * Huánuco/Junín/San Martín en el catálogo, no alcanza con `toLowerCase()`.
+ */
+export function arffsMesaPartes(region?: string | null): { url: string; label: string } | undefined {
+  const q = normalizarRegion(region ?? "");
+  if (!q) return undefined;
+  const key = Object.keys(ARFFS_MESA_PARTES).find((r) => normalizarRegion(r) === q);
+  return key ? ARFFS_MESA_PARTES[key] : undefined;
+}
 
 /**
  * Ícono de cada trámite (Lucide, del barrel del DS). Ocho cards con el mismo

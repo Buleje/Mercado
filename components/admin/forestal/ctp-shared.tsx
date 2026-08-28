@@ -13,16 +13,54 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
   type ReactElement,
 } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { AlertCircle, AlertTriangle, Check, CheckCircle2, Clock, X as XIcon } from "@buleje/design-system/icons";
+import { AlertCircle, AlertTriangle, Check, CheckCircle2, Clock, Copy, ExternalLink, X as XIcon } from "@buleje/design-system/icons";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "@/lib/forestal/ctp-compliance";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 
 // Re-exportados: single source vive en lib/forestal/ctp-compliance.ts (lo
 // consume también lib/forestal/ctp-export.ts, que no puede importar de acá).
 export { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso };
+
+/**
+ * MesaPartesBanner — "dónde presentarlo" una vez impreso y firmado, con botón
+ * de copiar el link. Single source entre `TramiteFormulario` (SERFOR/OSINFOR
+ * nacional vía `AUTORIDADES`, ARFFS regional vía `arffsMesaPartes`) y
+ * `PlantacionPasoRevision` (RNPF, siempre SERFOR) — mismo look en los dos,
+ * sin duplicar el JSX ni la lógica de copiado (Brandon 2026-08-26/27).
+ */
+export function MesaPartesBanner({ url, label }: { url: string; label: string }) {
+  const [copiado, setCopiado] = useState(false);
+  return (
+    <p className="mt-2 flex items-start gap-2 rounded-xl border-l-4 border-[var(--data-info-500)] bg-[var(--data-info-50)] p-3 text-sm text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/12 dark:text-[var(--data-info-500)]">
+      <ExternalLink className="mt-0.5 h-4 w-4 shrink-0" />
+      <span className="flex-1">
+        Ya impreso y firmado, se presenta en la{" "}
+        <a href={url} target="_blank" rel="noopener noreferrer" className="font-bold underline underline-offset-2">
+          {label}
+        </a>{" "}
+        — portal oficial, disponible 24/7.
+      </span>
+      <button
+        type="button"
+        onClick={() => {
+          void navigator.clipboard?.writeText(url).then(() => {
+            setCopiado(true);
+            setTimeout(() => setCopiado(false), 1600);
+          });
+        }}
+        title="Copiar el link de la mesa de partes"
+        aria-label="Copiar el link de la mesa de partes"
+        className="shrink-0 rounded-lg p-1 text-[var(--data-info-700)] transition hover:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]"
+      >
+        {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+      </button>
+    </p>
+  );
+}
 
 /**
  * Puente inverso monte→planta (rec #9 QA, lado Títulos Habilitantes):

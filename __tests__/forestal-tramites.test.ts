@@ -8,6 +8,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  arffsMesaPartes,
   asuntoDe,
   cuerpoDe,
   FORMATOS_TRAMITE,
@@ -24,7 +25,7 @@ import {
   type TramiteRegistro,
 } from "@/lib/forestal/tramites-registro";
 import { buildTramiteHtml } from "@/lib/forestal/tramites-print";
-import { mensajeAvisoTramites } from "@/lib/forestal/tramites-aviso-mensaje";
+import { mensajeAvisoSinRespuesta, mensajeAvisoTramites } from "@/lib/forestal/tramites-aviso-mensaje";
 
 const FICHA = {
   razonSocial: "Maderera San Martín SAC",
@@ -66,6 +67,23 @@ describe("catálogo de formatos", () => {
       f.campos.filter((c) => c.requerido).map((c) => [c.id, "x"]),
     );
     expect(faltantesDelTramite(f, completo)).toEqual([]);
+  });
+
+  it("arffsMesaPartes encuentra la región sin importar mayúsculas/espacios, y no inventa una sin verificar", () => {
+    expect(arffsMesaPartes("Ucayali")?.url).toContain("regionucayali.gob.pe");
+    expect(arffsMesaPartes(" ucayali  ")?.url).toContain("regionucayali.gob.pe");
+    expect(arffsMesaPartes("Arequipa")).toBeUndefined();
+    expect(arffsMesaPartes(null)).toBeUndefined();
+    expect(arffsMesaPartes(undefined)).toBeUndefined();
+  });
+
+  it("arffsMesaPartes cubre las regiones forestales verificadas, sin importar la tilde", () => {
+    expect(arffsMesaPartes("Loreto")?.url).toContain("facilita.gob.pe");
+    expect(arffsMesaPartes("Madre de Dios")?.url).toContain("regionmadrededios.gob.pe");
+    expect(arffsMesaPartes("san martin")?.url).toContain("regionsanmartin.gob.pe"); // sin tilde
+    expect(arffsMesaPartes("HUÁNUCO")?.url).toContain("regionhuanuco.gob.pe"); // mayúsculas + tilde
+    expect(arffsMesaPartes("Pasco")?.url).toContain("sisadmin.link");
+    expect(arffsMesaPartes("junin")?.url).toContain("regionjunin.gob.pe"); // sin tilde
   });
 });
 
@@ -376,5 +394,54 @@ describe("aviso de vencimiento (cron tramites-vencimiento)", () => {
     expect(msg).toContain("Trámites que vencen pronto (2)");
     expect(msg).toContain("Carta u oficio a la autoridad (EXP-2026-018) — vence en 2 días");
     expect(msg).toContain("Descargo ante una supervisión — venció hace 2 días");
+  });
+});
+
+describe("aviso de sin respuesta (cron tramites-sin-respuesta)", () => {
+  const tramite = (over: Partial<TramiteRegistro>): TramiteRegistro => ({
+    ...construirTramite({ formatoId: "f", autoridad: "arffs", ahora: "2026-08-01T00:00:00.000Z" }),
+    ...over,
+  });
+
+  it("el sello sigue valiendo si la fechaPresentacion no cambió", () => {
+    const t = construirTramite({
+      formatoId: "f",
+      autoridad: "arffs",
+      estado: "presentado",
+      fechaPresentacion: "2026-08-01",
+      avisoSinRespuestaEnviadoEn: "2026-08-20T09:05:00.000Z",
+      fechaPresentacionAnterior: "2026-08-01",
+    });
+    expect(t.avisoSinRespuestaEnviadoEn).toBe("2026-08-20T09:05:00.000Z");
+  });
+
+  it("el sello se resetea si se volvió a presentar con fecha nueva: es una espera nueva", () => {
+    const t = construirTramite({
+      formatoId: "f",
+      autoridad: "arffs",
+      estado: "presentado",
+      fechaPresentacion: "2026-09-01",
+      avisoSinRespuestaEnviadoEn: "2026-08-20T09:05:00.000Z",
+      fechaPresentacionAnterior: "2026-08-01",
+    });
+    expect(t.avisoSinRespuestaEnviadoEn).toBeNull();
+  });
+
+  it("un trámite recién creado no trae sello", () => {
+    const t = construirTramite({ formatoId: "f", autoridad: "arffs", estado: "presentado" });
+    expect(t.avisoSinRespuestaEnviadoEn).toBeNull();
+  });
+
+  it("el mensaje de WhatsApp lista formato, expediente y días sin respuesta — sin inventar un plazo legal", () => {
+    const hoy = new Date("2026-07-29T00:00:00Z");
+    const sinRespuesta = tramitesSinRespuesta([
+      tramite({ id: "a", estado: "presentado", formatoNombre: "Visado de talonario de GTF", expedienteAutoridad: "EXP-2026-014", fechaPresentacion: "2026-07-01" }),
+      tramite({ id: "b", estado: "observado", formatoNombre: "Descargo ante una supervisión", expedienteAutoridad: null, fechaPresentacion: "2026-07-10" }),
+    ], hoy);
+    const msg = mensajeAvisoSinRespuesta(sinRespuesta, hoy);
+    expect(msg).toContain("Trámites sin respuesta de la autoridad (2)");
+    expect(msg).toContain("Visado de talonario de GTF (EXP-2026-014) — 28 días sin respuesta");
+    expect(msg).toContain("Descargo ante una supervisión — 19 días sin respuesta");
+    expect(msg).not.toMatch(/plazo (vence|legal de \d)/i);
   });
 });

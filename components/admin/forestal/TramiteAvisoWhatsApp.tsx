@@ -1,12 +1,14 @@
 "use client";
 
 /**
- * TramiteAvisoWhatsApp — el aviso de "vence pronto" ya se ve en el catálogo
- * (banner rojo/ámbar), pero solo si alguien entra a mirar. Este botón manda
- * el MISMO listado por WhatsApp, para que el aviso llegue sin depender de
- * abrir el panel. El texto sale de `tramites-aviso-mensaje` (single source
- * con el cron `tramites-vencimiento`), con los mismos `porVencer` que ya
- * están en pantalla — nunca un recálculo aparte que pudiera decir otra cosa.
+ * TramiteAvisoWhatsApp — los avisos automáticos (vence pronto, sin respuesta)
+ * ya se ven en pantalla (banner rojo/ámbar), pero solo si alguien entra a
+ * mirar. Este botón manda el MISMO texto por WhatsApp, para que el aviso
+ * llegue sin depender de abrir el panel. Genérico a propósito: el `mensaje`
+ * lo arma el caller con `tramites-aviso-mensaje` (single source con los
+ * crons `tramites-vencimiento`/`tramites-sin-respuesta`) a partir de los
+ * mismos datos que ya están en pantalla — nunca un recálculo aparte que
+ * pudiera decir otra cosa.
  *
  * El número de destino de ESTE botón manual no vive en el sistema (la Ficha
  * CTP no tiene teléfono): se pide una vez y se recuerda en este navegador
@@ -16,16 +18,16 @@
 
 import { useState } from "react";
 import { Loader2, MessageCircle, Send } from "@buleje/design-system/icons";
-import type { TramiteRegistro } from "@/lib/forestal/tramites-registro";
-import { mensajeAvisoTramites } from "@/lib/forestal/tramites-aviso-mensaje";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 const CLAVE_TELEFONO = "tramites-aviso-whatsapp-telefono";
 
 export default function TramiteAvisoWhatsApp({
-  porVencer,
+  mensaje,
+  label = "Avisar por WhatsApp",
 }: {
-  porVencer: (TramiteRegistro & { diasRestantes: number })[];
+  mensaje: string;
+  label?: string;
 }) {
   const [abierto, setAbierto] = useState(false);
   const [telefono, setTelefono] = useState(() => {
@@ -54,7 +56,7 @@ export default function TramiteAvisoWhatsApp({
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
-        body: JSON.stringify({ telefono: limpio, mensaje: mensajeAvisoTramites(porVencer) }),
+        body: JSON.stringify({ telefono: limpio, mensaje }),
       });
       const data = (await r.json().catch(() => ({}))) as { message?: string };
       if (!r.ok) {
@@ -77,7 +79,7 @@ export default function TramiteAvisoWhatsApp({
         onClick={() => setAbierto(true)}
         className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--data-success-500)] hover:text-[var(--data-success-700)] dark:hover:text-[var(--data-success-500)]"
       >
-        <MessageCircle className="h-3.5 w-3.5" /> Avisar por WhatsApp
+        <MessageCircle className="h-3.5 w-3.5" /> {label}
       </button>
     );
   }

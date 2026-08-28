@@ -14,6 +14,8 @@
  */
 import { AlertTriangle, CheckCircle2, FileCheck, MinusCircle, ScrollText, type LucideIcon } from "@buleje/design-system/icons";
 import { calcularResumen, nombreTitular, validarPlantacion, type PlantacionInput } from "@/lib/forestal/plantacion-tramite";
+import { AUTORIDADES } from "@/lib/forestal/tramites-catalogo";
+import { MesaPartesBanner } from "./ctp-shared";
 
 const DECLARACION_1 =
   "Declaro bajo juramento que toda la información antes consignada en la presente solicitud es veraz y ha sido debidamente verificada. En caso que se compruebe fraude o falsedad en la declaración, información o documentación presentada, me someto a las consecuencias y responsabilidades administrativas y penales que correspondan, conforme a lo previsto en el artículo 34 del TUO de la Ley N° 27444, Ley del Procedimiento Administrativo General, aprobado por Decreto Supremo N° 004-2019-JUS, y el Código Penal respecto a los delitos contra la fe pública. Asimismo, declaro que no existe otro derecho de propiedad, registrado o no, sobre el área correspondiente a la plantación forestal.";
@@ -197,6 +199,14 @@ export default function PlantacionPasoRevision({
           <FileCheck className="h-4 w-4" aria-hidden="true" /> Generar documentación
         </button>
       </div>
+
+      {/* Dónde presentarlo una vez impreso y firmado — el RNPF se inscribe
+          ante SERFOR a nivel nacional (a diferencia de los formatos de
+          `tramites-catalogo`, acá no hay variante ARFFS regional). Mismo
+          banner que usa `TramiteFormulario` (`ctp-shared.MesaPartesBanner`). */}
+      {AUTORIDADES.serfor.mesaPartes && (
+        <MesaPartesBanner url={AUTORIDADES.serfor.mesaPartes.url} label={AUTORIDADES.serfor.mesaPartes.label} />
+      )}
     </div>
   );
 }

@@ -26,7 +26,9 @@ import {
   type EstadoTramite,
   type TramiteRegistro,
 } from "@/lib/forestal/tramites-registro";
+import { mensajeAvisoSinRespuesta } from "@/lib/forestal/tramites-aviso-mensaje";
 import { Btn } from "./ctp-shared";
+import TramiteAvisoWhatsApp from "./TramiteAvisoWhatsApp";
 
 const TONO: Record<string, { chip: string; activo: string; barra: string }> = {
   muted: {
@@ -166,6 +168,7 @@ export default function TramitesExpediente({
           <Btn variant="secondary" size="sm" onClick={() => setFiltro("presentado")}>
             Ver presentados
           </Btn>
+          <TramiteAvisoWhatsApp mensaje={mensajeAvisoSinRespuesta(esperando, hoy)} label="Avisar por WhatsApp" />
         </div>
       )}
 

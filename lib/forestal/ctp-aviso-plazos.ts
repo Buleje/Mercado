@@ -60,6 +60,15 @@ export interface DatosAviso {
   /** Despachos vivos sin número de GTF de salida. */ despachosSinGtf: number;
   /** Especies con saldo negativo: el libro no cierra así. */ saldosNegativos: number;
   /** Ingresos ya registrados fuera de plazo (histórico, no accionable hoy). */ fueraDePlazo: number;
+  /**
+   * Títulos habilitantes o permisos CITES de la Ficha ya VENCIDOS
+   * (`documentosVencimientoDeFicha`, `ctp-ficha-types.ts`) — a diferencia de
+   * `fueraDePlazo`, esto SÍ dispara el aviso: un documento vencido invalida
+   * el origen legal de TODA la madera que ampara, no un caso puntual. Los
+   * "por vencer" (30 días) siguen siendo sólo informativos del panel — un
+   * aviso diario durante 30 días enseñaría a ignorarlo.
+   */
+  documentosVencidosLabels: string[];
 }
 
 export interface Aviso {
@@ -102,23 +111,30 @@ export function construirAviso(d: DatosAviso, hoy: Date, nombreNegocio?: string)
   const urgentes = guias.filter((g) => g.estado !== "en_plazo");
   const vencidas = guias.filter((g) => g.estado === "vencido");
   const hoyMismo = guias.filter((g) => g.estado === "vence_hoy");
+  const docsVencidos = d.documentosVencidosLabels;
 
-  const hayQueAvisar = urgentes.length > 0 || d.despachosSinGtf > 0 || d.saldosNegativos > 0;
+  const hayQueAvisar = urgentes.length > 0 || d.despachosSinGtf > 0 || d.saldosNegativos > 0 || docsVencidos.length > 0;
   const severidad: "HIGH" | "MEDIUM" =
-    vencidas.length > 0 || hoyMismo.length > 0 || d.saldosNegativos > 0 ? "HIGH" : "MEDIUM";
+    vencidas.length > 0 || hoyMismo.length > 0 || d.saldosNegativos > 0 || docsVencidos.length > 0 ? "HIGH" : "MEDIUM";
 
+  // Un documento vencido invalida el origen legal de TODA la madera que
+  // ampara — más grave que una guía puntual sin ingresar, así que encabeza
+  // el título cuando aparece.
   const titulo =
-    vencidas.length > 0
-      ? `${plural(vencidas.length, "guía pasada", "guías pasadas")} de plazo en el Libro CTP`
-      : hoyMismo.length > 0
-        ? `${plural(hoyMismo.length, "guía se vence", "guías se vencen")} hoy`
-        : urgentes.length > 0
-          ? `${plural(urgentes.length, "guía por vencer", "guías por vencer")} en el Libro CTP`
-          : d.saldosNegativos > 0
-            ? "Saldos en negativo en el Libro CTP"
-            : "Despachos sin guía de salida";
+    docsVencidos.length > 0
+      ? `${plural(docsVencidos.length, "documento vencido", "documentos vencidos")} en la Ficha CTP`
+      : vencidas.length > 0
+        ? `${plural(vencidas.length, "guía pasada", "guías pasadas")} de plazo en el Libro CTP`
+        : hoyMismo.length > 0
+          ? `${plural(hoyMismo.length, "guía se vence", "guías se vencen")} hoy`
+          : urgentes.length > 0
+            ? `${plural(urgentes.length, "guía por vencer", "guías por vencer")} en el Libro CTP`
+            : d.saldosNegativos > 0
+              ? "Saldos en negativo en el Libro CTP"
+              : "Despachos sin guía de salida";
 
   const partes: string[] = [];
+  if (docsVencidos.length > 0) partes.push(`${plural(docsVencidos.length, "documento vencido", "documentos vencidos")} en la Ficha`);
   if (urgentes.length > 0) partes.push(`${plural(urgentes.length, "guía del monte", "guías del monte")} sin ingresar`);
   if (d.despachosSinGtf > 0) partes.push(`${plural(d.despachosSinGtf, "despacho", "despachos")} sin GTF de salida`);
   if (d.saldosNegativos > 0) partes.push(`${plural(d.saldosNegativos, "especie", "especies")} con saldo negativo`);
@@ -136,6 +152,9 @@ export function construirAviso(d: DatosAviso, hoy: Date, nombreNegocio?: string)
   const whatsapp = [
     `🌲 *${titulo}*${nombreNegocio ? ` — ${nombreNegocio}` : ""}`,
     "",
+    docsVencidos.length > 0
+      ? `⛔ ${plural(docsVencidos.length, "documento vencido", "documentos vencidos")} en la Ficha CTP: ${docsVencidos.slice(0, 4).join(", ")}${docsVencidos.length > 4 ? ` y ${docsVencidos.length - 4} más` : ""}. Un título o permiso vencido invalida el origen legal de la madera que ampara.`
+      : null,
     ...lineas,
     urgentes.length > 6 ? `…y ${urgentes.length - 6} más.` : null,
     d.despachosSinGtf > 0

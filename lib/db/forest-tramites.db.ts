@@ -66,6 +66,8 @@ export const ForestTramitesDB = {
         // decide si sigue valiendo (comparando contra la fechaLimite previa).
         avisoVencimientoEnviadoEn: existente?.avisoVencimientoEnviadoEn,
         fechaLimiteAnterior: existente?.fechaLimite,
+        avisoSinRespuestaEnviadoEn: existente?.avisoSinRespuestaEnviadoEn,
+        fechaPresentacionAnterior: existente?.fechaPresentacion,
       },
       list,
     );
@@ -128,6 +130,23 @@ export const ForestTramitesDB = {
     const list = await this.list(tenantId);
     const idSet = new Set(ids);
     const next = list.map((t) => (idSet.has(t.id) ? { ...t, avisoVencimientoEnviadoEn: ahora } : t));
+    await PlatformSettingsDB.set(`${KEY_PREFIX}${tenantId}`, next, "cron");
+  },
+
+  /**
+   * Sella el aviso automático de "N días sin respuesta" (cron
+   * `tramites-sin-respuesta`) — mismo criterio que `marcarAvisoVencimientoEnviado`,
+   * es bookkeeping del sistema, no pasa por `auditCtp`.
+   */
+  async marcarAvisoSinRespuestaEnviado(
+    tenantId: string,
+    ids: string[],
+    ahora: string = new Date().toISOString(),
+  ): Promise<void> {
+    if (!tenantId || ids.length === 0) return;
+    const list = await this.list(tenantId);
+    const idSet = new Set(ids);
+    const next = list.map((t) => (idSet.has(t.id) ? { ...t, avisoSinRespuestaEnviadoEn: ahora } : t));
     await PlatformSettingsDB.set(`${KEY_PREFIX}${tenantId}`, next, "cron");
   },
 

@@ -11,7 +11,7 @@ import { useState } from "react";
 import { Layers, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { findSpeciesByCommonName } from "@/data/forestry-species";
+import { findSpeciesByCommonName, listSpecies } from "@/data/forestry-species";
 import { Btn, Field, I, ModalBody, ModalFooter, Seccion } from "./ctp-shared";
 import { avisosVentana } from "@/lib/forestal/lote-ventana";
 import LoteMiembrosEditor, { loteRowsValidas, type LoteRow } from "./LoteMiembrosEditor";
@@ -121,7 +121,23 @@ export default function LoteForm({ onClose, onSaved }: { onClose: () => void; on
                 </select>
               </Field>
               <Field span={12} label="Especie">
-                <input value={speciesCommon} onChange={(e) => setSpeciesCommon(e.target.value)} onBlur={onSpeciesBlur} placeholder="Tornillo" className={I} />
+                <input
+                  value={speciesCommon}
+                  onChange={(e) => setSpeciesCommon(e.target.value)}
+                  onBlur={onSpeciesBlur}
+                  placeholder="Tornillo"
+                  className={I}
+                  list="lote-especies"
+                />
+                {/* Sugerencia mientras se tipea — el autocompletado de
+                    científico+CITES en `onSpeciesBlur` ya existía, pero sin
+                    esto era invisible hasta soltar el campo: un typo no
+                    matcheaba y nada avisaba. */}
+                <datalist id="lote-especies">
+                  {listSpecies().map((s) => (
+                    <option key={s.slug} value={s.commonName} />
+                  ))}
+                </datalist>
               </Field>
               <Field span={12} label="Nombre científico" hint={cites ? "Especie CITES — requiere permiso" : undefined}>
                 <input value={speciesScientific} onChange={(e) => setSpeciesScientific(e.target.value)} placeholder="Cedrelinga cateniformis" className={I} />

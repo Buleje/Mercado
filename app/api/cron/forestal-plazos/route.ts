@@ -3,9 +3,11 @@ import { withCronAuth } from "@/lib/cron-auth";
 import { prisma } from "@/lib/prisma";
 import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
 import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
+import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
 import { NotificationCenterDB } from "@/lib/db/notification-center.db";
 import { sendWhatsAppText } from "@/lib/whatsapp";
 import { construirAviso } from "@/lib/forestal/ctp-aviso-plazos";
+import { documentosVencimientoDeFicha } from "@/lib/forestal/ctp-ficha-types";
 import { logger } from "@/lib/logger";
 
 /**
@@ -72,8 +74,16 @@ export const GET = withCronAuth("forestal-plazos", async () => {
       // creaba en la campana y nadie se enteraba.
       const tenant = await prisma.tenant.findFirst({
         where: { OR: [{ id: tenantId }, { slug: tenantId }] },
-        select: { ownerPhone: true, name: true },
+        select: { id: true, ownerPhone: true, name: true },
       });
+
+      // La Ficha CTP (KV) se guarda SIEMPRE con el cuid canónico
+      // (`auth.tenantId` del endpoint `ctp-ficha`, nunca el slug) — hay que
+      // resolverlo primero o un tenant cuyo `tenantId` de tabla es el slug
+      // ("main") consultaría una clave que nunca existió y perdería sus
+      // documentos vencidos en silencio.
+      const ficha = await ForestCtpFichaDB.get(tenant?.id ?? tenantId);
+      const { vencidosLabels: documentosVencidosLabels } = documentosVencimientoDeFicha(ficha, hoy.getTime());
 
       // Sin fecha de guía no hay plazo que calcular: se saltea en vez de
       // inventarle una fecha y avisar de un vencimiento que no existe.
@@ -96,6 +106,7 @@ export const GET = withCronAuth("forestal-plazos", async () => {
           despachosSinGtf,
           saldosNegativos: saldos.materiaPrima.especiesEnNegativo,
           fueraDePlazo: 0,
+          documentosVencidosLabels,
         },
         hoy,
         tenant?.name ?? undefined,
