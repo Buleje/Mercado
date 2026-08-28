@@ -38,6 +38,7 @@ import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds
 import FolderBulkBar from "./FolderBulkBar";
 import { ConfirmarBorrarCarpetas, type BorradoCarpetas } from "./ConfirmarBorrarCarpetas";
 import SyncEscritorioView from "./SyncEscritorioView";
+import EstadoCarpetaLocalBadge from "./EstadoCarpetaLocalBadge";
 import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
 import { ordenarPorRelevancia, tieneDescripcion } from "@/lib/documentos/relevancia";
 import FiltrosDoc from "@/components/admin/documentos/FiltrosDoc";
@@ -1160,6 +1161,12 @@ export default function DocumentosModule() {
         description="Drive del negocio: contratos, licencias, facturas. Te avisa antes de que venzan."
         icon={FolderArchive}
       >
+        {/* Si está conectado con el escritorio o no, a la vista sin entrar a
+            "Mi PC" (Brandon 2026-08-28). No se ve nada si el navegador no
+            soporta la File System Access API — no tiene sentido avisar de
+            algo que ahí no se puede usar. */}
+        <EstadoCarpetaLocalBadge tenantId={slugActivo()} onAbrir={() => setFilterMode("sync")} />
+
         {/* Cuatro botones en el header no entraban en pantallas medianas: se
             partían en dos filas y competían con el primario. Ahora queda UNA
             acción principal (Subir archivos) y el resto en el menú del DS. */}

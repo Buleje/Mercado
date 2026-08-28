@@ -203,6 +203,22 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     tagsKey,
   ]);
 
+  /**
+   * Al volver con el botón atrás/adelante, el navegador puede restaurar la
+   * página CONGELADA (bfcache) en vez de remontarla: el `useEffect` de arriba
+   * no vuelve a correr, así que la lista queda con lo que tenía ANTES de
+   * salir — si esa foto es de antes de borrar algo, se ve como si hubiera
+   * "vuelto a aparecer" sin que el servidor haya hecho nada raro. `pageshow`
+   * con `event.persisted` es la única forma de detectar esa restauración.
+   */
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) void fetchAll({ silencioso: true });
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [fetchAll]);
+
 
   /**
    * Aplica el cambio en pantalla YA y lo confirma con el servidor detrás.
