@@ -149,7 +149,7 @@ const STATUS_STYLES: Record<VendorApplication["status"], string> = {
   aprobada:
     "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
   rechazada:
-    "bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-200",
+    "bg-[var(--data-error-100)] text-[var(--data-error)]",
   info_solicitada:
     "bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
 };
@@ -164,7 +164,7 @@ const STATUS_LABELS: Record<VendorApplication["status"], string> = {
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
   good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
   warn: "bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-300",
-  bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
+  bad: "bg-[var(--data-error-50)] text-[var(--data-error)]",
 };
 
 // ── Stat Card ───────────────────────────────────────────────────────────────
@@ -188,7 +188,7 @@ function StatCard({
     success:
       "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
     danger:
-      "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+      "bg-[var(--data-error-100)] text-[var(--data-error)]",
     info: "bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300",
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
   }[tone];
@@ -553,7 +553,7 @@ export default function VendorApplicationsModule() {
   const toggleSelectOne = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
@@ -816,7 +816,7 @@ export default function VendorApplicationsModule() {
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-5 sm:space-y-6">
         {error && (
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm font-semibold text-[var(--data-error)]">
             <span>{error}</span>
             <button
               onClick={() => setError(null)}
@@ -949,7 +949,7 @@ export default function VendorApplicationsModule() {
               <button
                 onClick={bulkReject}
                 disabled={bulkBusy}
-                className="h-10 px-3.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 dark:text-rose-200 dark:bg-rose-500/15 dark:hover:bg-rose-500/25 disabled:opacity-50 inline-flex items-center gap-1.5"
+                className="h-10 px-3.5 rounded-lg text-xs font-bold text-[var(--data-error)] bg-[var(--data-error-100)] hover:bg-[var(--data-error-500)]/20 disabled:opacity-50 inline-flex items-center gap-1.5"
               >
                 <X className="h-3.5 w-3.5" />
                 Rechazar
@@ -1112,7 +1112,7 @@ export default function VendorApplicationsModule() {
                             onClick={() => openDetails(a)}
                             title="Rechazar"
                             aria-label="Rechazar"
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-rose-700 hover:bg-rose-100 dark:text-rose-300 dark:hover:bg-rose-500/15"
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-[var(--data-error)] hover:bg-[var(--data-error-100)]"
                           >
                             <X className="h-5 w-5" />
                           </button>
@@ -1286,7 +1286,7 @@ export default function VendorApplicationsModule() {
                                 <button
                                   onClick={() => openDetails(a)}
                                   aria-label="Rechazar"
-                                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-rose-100 hover:text-rose-700 dark:hover:bg-rose-500/15 dark:hover:text-rose-300"
+                                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--data-error-100)] hover:text-[var(--data-error)]"
                                   title="Rechazar"
                                 >
                                   <X className="h-4 w-4" />

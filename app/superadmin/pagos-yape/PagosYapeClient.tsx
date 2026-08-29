@@ -185,7 +185,7 @@ function exportCSV(rows: PaymentApproval[]) {
 const DELTA_CLASS: Record<string, string> = {
   exact: "text-emerald-700 dark:text-emerald-300 font-extrabold",
   near: "text-[var(--accent)] font-extrabold",
-  far: "text-rose-700 dark:text-rose-300 font-extrabold",
+  far: "text-[var(--data-error)] font-extrabold",
   unknown: "text-[var(--text-tertiary)]",
 };
 
@@ -199,7 +199,7 @@ const DELTA_ICON: Record<string, React.ReactNode> = {
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
   good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
   warn: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
-  bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
+  bad: "bg-[var(--data-error-50)] text-[var(--data-error)]",
 };
 
 // ─── Optimistic reducer ───────────────────────────────────────────────────────
@@ -534,7 +534,7 @@ export default function PagosYapeClient(_: Props) {
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
 
@@ -878,7 +878,7 @@ export default function PagosYapeClient(_: Props) {
                     </div>
 
                     <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-                      <span className="text-[11px] text-[var(--text-tertiary)]">
+                      <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
                         Esperado{" "}
                         <span
                           className="font-extrabold text-[var(--text-primary)] tabular-nums"
@@ -891,7 +891,7 @@ export default function PagosYapeClient(_: Props) {
                         <>
                           <span className="text-[var(--text-tertiary)]">·</span>
                           <span
-                            className={`text-[11px] tabular-nums ${DELTA_CLASS[delta]}`}
+                            className={`text-[length:var(--ts-xs)] tabular-nums ${DELTA_CLASS[delta]}`}
                             data-no-translate
                           >
                             {DELTA_ICON[delta]}
@@ -1322,7 +1322,7 @@ function DetailPanel({
                         ? "text-emerald-700 dark:text-emerald-300"
                         : conf >= 0.7
                           ? "text-[var(--accent)]"
-                          : "text-rose-700 dark:text-rose-300",
+                          : "text-[var(--data-error)]",
                     )}
                     data-no-translate
                   >
@@ -1335,7 +1335,7 @@ function DetailPanel({
         </div>
 
         {/* Metadata */}
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[var(--text-tertiary)]">
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
           {approval.conversationId && (
             <span data-no-translate>
               Conv:{" "}

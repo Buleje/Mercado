@@ -117,7 +117,7 @@ const STATUS_META = {
   },
   rejected: {
     label: "Rechazado",
-    pill: "border-rose-300 bg-rose-100/80 text-rose-800 dark:border-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
+    pill: "border-[var(--data-error-500)] bg-[var(--data-error-100)] text-[var(--data-error)]",
     dot: "bg-rose-500",
   },
 } as const;
@@ -125,7 +125,7 @@ const STATUS_META = {
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
   good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
   warn: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
-  bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
+  bad: "bg-[var(--data-error-50)] text-[var(--data-error)]",
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -528,7 +528,7 @@ export default function PagosPendientesClient() {
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
 
@@ -792,7 +792,7 @@ export default function PagosPendientesClient() {
         {error && (
           <div
             role="alert"
-            className="flex items-center gap-3 rounded-xl border-2 border-rose-300/60 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300"
+            className="flex items-center gap-3 rounded-xl border-2 border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm font-semibold text-[var(--data-error)]"
           >
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
             {error}
@@ -946,7 +946,7 @@ function ProofCard({
             onChange={onToggleSelect}
             onClick={(e) => e.stopPropagation()}
             aria-label={`Seleccionar ${proof.storeName}`}
-            className="h-5 w-5 accent-[var(--accent)] cursor-pointer drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+            className="h-5 w-5 accent-[var(--accent)] cursor-pointer drop-shadow-[var(--shadow-sm)]"
           />
         </label>
       )}
@@ -1299,8 +1299,8 @@ function ProofModal({
                   className={cn(
                     "inline-flex items-center justify-center gap-2 rounded-xl border-2 h-12 px-4 text-sm font-bold transition",
                     rejectOpen
-                      ? "border-rose-400 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
-                      : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-rose-300 hover:text-rose-700 dark:hover:text-rose-300",
+                      ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error)]"
+                      : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error)]",
                   )}
                 >
                   <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
@@ -1308,10 +1308,10 @@ function ProofModal({
                 </button>
               </div>
               {rejectOpen && (
-                <div className="rounded-xl border-2 border-rose-300/60 bg-rose-50/60 p-3 dark:border-rose-700/40 dark:bg-rose-950/30">
+                <div className="rounded-xl border-2 border-[var(--data-error-100)] bg-[var(--data-error-50)] p-3">
                   <label
                     htmlFor="reject-reason"
-                    className="text-xs font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-300"
+                    className="text-xs font-extrabold uppercase tracking-wider text-[var(--data-error)]"
                   >
                     Motivo del rechazo (lo recibe por WhatsApp)
                   </label>
