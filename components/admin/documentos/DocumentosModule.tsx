@@ -32,7 +32,7 @@ import { DataTable } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
-import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, splitDoc } from "@/hooks/use-documents";
+import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, splitDoc, fetchTags } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
 import FolderBulkBar from "./FolderBulkBar";
@@ -43,7 +43,7 @@ import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
 import { ordenarPorRelevancia, tieneDescripcion } from "@/lib/documentos/relevancia";
 import FiltrosDoc from "@/components/admin/documentos/FiltrosDoc";
 import {
-  FILTROS_VACIOS, cumpleFiltros, familiasPresentes, cuantosFiltrosActivos,
+  FILTROS_VACIOS, cumpleFiltros, familiasPresentes, tagsPresentes, cuantosFiltrosActivos,
   type FiltrosDoc as FiltrosDocumento,
 } from "@/lib/documentos/filtros-doc";
 import { palabrasUtiles } from "@/lib/documentos/terminos-busqueda";
@@ -76,6 +76,8 @@ import { PageEditorModal } from "./PageEditorModal";
 import { loadSmartFolders, saveSmartFolders, matchesSmartFolder, describeRules, type SmartFolder } from "@/lib/documentos/smart-folders";
 import { AssistantView } from "./AssistantView";
 import { TagTaxonomyModal } from "./TagTaxonomyModal";
+import { TagEditModal } from "./TagEditModal";
+import { EtiquetaAutocomplete } from "./EtiquetaAutocomplete";
 import { PapeleraView } from "./PapeleraView";
 import { formatBytes, getFileIcon } from "./archivo-visual";
 
@@ -396,6 +398,14 @@ export default function DocumentosModule() {
   const [selectingFolders, setSelectingFolders] = useState(false);
   const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(new Set());
   const [bulkTagValue, setBulkTagValue] = useState("");
+  /** Id del documento cuyo editor de etiquetas está abierto (chips + autocompletar). */
+  const [tagDocId, setTagDocId] = useState<string | null>(null);
+  /** Taxonomía completa del tenant, para sugerir al escribir y evitar duplicados por typo. */
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const reloadAllTags = useCallback(() => {
+    fetchTags().then((r) => setAllTags(r.map((t) => t.tag))).catch((err) => console.warn("[documentos] no pude cargar la taxonomía de etiquetas", err));
+  }, []);
+  useEffect(() => { reloadAllTags(); }, [reloadAllTags]);
   const [expiryBannerDismissed, setExpiryBannerDismissed] = useState(false);
   const [zipping, setZipping] = useState(false);
   // Drag & drop de documentos hacia carpetas de la barra lateral.
@@ -917,6 +927,7 @@ export default function DocumentosModule() {
     await correrLote(async () => {
       await bulk("tag", Array.from(selectedIds), { tag: t });
       setBulkTagValue("");
+      reloadAllTags();
     });
   };
   // Empaqueta una lista de documentos en un ZIP (client-side con jszip): baja cada
@@ -1756,6 +1767,7 @@ export default function DocumentosModule() {
               filtros={filtros}
               onCambiar={setFiltros}
               presentes={familiasPresentes(documents)}
+              tagsPresentes={tagsPresentes(documents)}
               abierto={filtrosAbiertos}
               onAlternar={() => setFiltrosAbiertos((v) => !v)}
               resultados={displayDocs.length}
@@ -1976,13 +1988,14 @@ export default function DocumentosModule() {
               )}
               <div className="inline-flex items-center gap-1 rounded-md bg-white/20 px-2">
                 <Tag className="h-3 w-3 shrink-0" />
-                <input
+                <EtiquetaAutocomplete
                   value={bulkTagValue}
-                  onChange={(e) => setBulkTagValue(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") bulkTag(bulkTagValue); }}
+                  onChange={setBulkTagValue}
+                  onSubmit={bulkTag}
+                  todasLasTags={allTags}
                   placeholder="Etiquetar…"
-                  aria-label="Agregar etiqueta a la selección"
-                  className="w-24 bg-transparent py-1 text-xs font-bold text-white placeholder-white/60 outline-none"
+                  ariaLabel="Agregar etiqueta a la selección"
+                  inputClassName="w-24 bg-transparent py-1 text-xs font-bold text-white placeholder-white/60 outline-none"
                 />
               </div>
               <button onClick={bulkDelete} className="text-xs px-2.5 py-1 rounded-md bg-[var(--data-error-500)] hover:brightness-110 font-bold inline-flex items-center gap-1">
@@ -2145,6 +2158,16 @@ export default function DocumentosModule() {
                   onOpenFolder={() => { if (doc.folderId) { setFilterMode("folder"); setActiveFolderId(doc.folderId); } }}
                   onSelect={() => toggleSelect(doc.id)}
                   onPreview={() => setPreview(doc)}
+                  onTagClick={(t) => setFiltros((f) => ({
+                    ...f,
+                    tags: f.tags.includes(t) ? f.tags.filter((x) => x !== t) : [...f.tags, t],
+                  }))}
+                  tagsActivos={filtros.tags}
+                  onPromoteAiTag={(t) => {
+                    if (doc.tags.includes(t)) return;
+                    patch(doc.id, { tags: [...doc.tags, t] });
+                    reloadAllTags();
+                  }}
                   onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
                   onWhatsApp={() => setWhatsappDoc([doc])}
                   onSetStatus={(s) => patch(doc.id, { status: s })}
@@ -2260,6 +2283,7 @@ export default function DocumentosModule() {
                             onAnalyze={() => handleAnalyze(doc)}
                             onRename={() => startRename(doc)}
                             onMove={() => setMovingDoc(doc)}
+                            onTag={() => setTagDocId(doc.id)}
                             onWhatsApp={() => setWhatsappDoc([doc])}
                             onSign={() => setSignDoc(doc)}
                             onStamp={() => setStampTarget(doc)}
@@ -2351,12 +2375,7 @@ export default function DocumentosModule() {
                   patch(preview.id, { name: nuevo.trim() });
                 }
               },
-              onTag: () => {
-                const etiqueta = prompt("Etiqueta a agregar:");
-                if (etiqueta && etiqueta.trim()) {
-                  patch(preview.id, { tags: [...(preview.tags ?? []), etiqueta.trim().toLowerCase()] });
-                }
-              },
+              onTag: () => setTagDocId(preview.id),
               onDelete: () => {
                 if (!confirm(`¿Eliminar "${preview.name}"?\n\nVa a la papelera: se puede restaurar.`)) return;
                 // Igual que al borrar varios: se pasa al siguiente en vez de
@@ -2508,8 +2527,29 @@ export default function DocumentosModule() {
       )}
 
       {showTags && (
-        <TagTaxonomyModal onChanged={refresh} onClose={() => setShowTags(false)} />
+        <TagTaxonomyModal onChanged={() => { refresh(); reloadAllTags(); }} onClose={() => setShowTags(false)} />
       )}
+
+      {tagDocId && (() => {
+        const doc = documents.find((d) => d.id === tagDocId);
+        if (!doc) return null;
+        return (
+          <TagEditModal
+            nombre={doc.name}
+            tags={doc.tags ?? []}
+            todasLasTags={allTags}
+            onAdd={async (tag) => {
+              await patch(doc.id, { tags: [...(doc.tags ?? []), tag] });
+              reloadAllTags();
+            }}
+            onRemove={async (tag) => {
+              await patch(doc.id, { tags: (doc.tags ?? []).filter((t) => t !== tag) });
+              reloadAllTags();
+            }}
+            onClose={() => setTagDocId(null)}
+          />
+        );
+      })()}
     </div>
   );
 }
@@ -2722,7 +2762,7 @@ function DocCard({
   doc, selected, isRenaming, renameValue, terminos, folderNombre, onOpenFolder,
   onSelect, onPreview, onToggleFav, onRemove, onWhatsApp, onSetStatus,
   onStartRename, onCommitRename, onCancelRename, onRenameChange, onDownload,
-  onDragStart, onDragEnd, dragging,
+  onDragStart, onDragEnd, dragging, onTagClick, tagsActivos, onPromoteAiTag,
 }: {
   doc: DbDocument;
   selected: boolean;
@@ -2747,6 +2787,12 @@ function DocCard({
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   dragging: boolean;
+  /** Clic en un #tag: lo suma/saca del filtro por etiqueta sin abrir el panel. */
+  onTagClick: (tag: string) => void;
+  /** Etiquetas puestas en el filtro ahora mismo — para resaltarlas si el doc las tiene. */
+  tagsActivos: string[];
+  /** Aceptar una etiqueta sugerida por la IA como etiqueta real del documento. */
+  onPromoteAiTag: (tag: string) => void;
 }) {
   const { Icon, tint, bg } = getFileIcon(doc.mimeType, doc.name);
   // `none` no pinta nada: si todo tuviera color, el color no diría nada.
@@ -2786,7 +2832,10 @@ function DocCard({
         onChange={(e) => { e.stopPropagation(); onSelect(); }}
         className={cn(
           "absolute top-2 left-2 z-10 h-5 w-5 rounded border-2 border-white/80 bg-white/85 accent-[var(--color-primary)] cursor-pointer",
-          selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          // Siempre visible (antes sólo con hover, invisible en touch/mobile
+          // donde no hay hover): un poco tenue en reposo, sólido al elegir o
+          // pasar el mouse — no compite con la miniatura pero se puede tocar.
+          selected ? "opacity-100" : "opacity-60 group-hover:opacity-100"
         )}
         aria-label={`Seleccionar ${doc.name}`}
       />
@@ -2860,12 +2909,30 @@ function DocCard({
         {(doc.tags.length > 0 || doc.aiTags.length > 0) && (
           <div className="flex flex-wrap gap-1 mt-2">
             {doc.tags.slice(0, 2).map((t) => (
-              <span key={t} className="text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold">#{t}</span>
+              <button
+                key={t}
+                onClick={(e) => { e.stopPropagation(); onTagClick(t); }}
+                title={tagsActivos.includes(t) ? `Quitar "#${t}" del filtro` : `Filtrar por "#${t}"`}
+                className={cn(
+                  "text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded font-bold transition-colors",
+                  tagsActivos.includes(t)
+                    ? "bg-primary text-white"
+                    : "bg-primary/10 text-[var(--accent-ink)] hover:bg-primary/20 dark:text-[var(--accent)]",
+                )}
+              >
+                #{t}
+              </button>
             ))}
-            {doc.aiTags.slice(0, 1).map((t) => (
-              <span key={`ai-${t}`} className="text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded bg-violet-100 text-[var(--accent)] font-bold inline-flex items-center gap-0.5">
+            {/* Ya aceptada = ahora es un tag real (arriba); no mostrarla dos veces. */}
+            {doc.aiTags.filter((t) => !doc.tags.includes(t)).slice(0, 1).map((t) => (
+              <button
+                key={`ai-${t}`}
+                onClick={(e) => { e.stopPropagation(); onPromoteAiTag(t); }}
+                title={`Sugerencia de la IA — clic para aceptarla como etiqueta`}
+                className="text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded bg-violet-100 text-[var(--accent)] font-bold inline-flex items-center gap-0.5 hover:bg-violet-200"
+              >
                 <Sparkles className="h-2.5 w-2.5" />{t}
-              </span>
+              </button>
             ))}
             {doc.tags.length + doc.aiTags.length > 3 && (
               <span className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)] tabular-nums font-bold">+{doc.tags.length + doc.aiTags.length - 3}</span>
@@ -2897,8 +2964,8 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
 // ── Menú de acciones por fila (kebab) — reemplaza los 5 íconos amontonados en
 // la vista lista. Dropdown `position: fixed` para no quedar recortado por el
 // overflow del contenedor de la tabla. ──
-function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onWhatsApp, onSign, onStamp, onRotate, onSplit, onEditPages, isPdf, onToggleFav, onDelete, favorite }: {
-  onPreview: () => void; onAnalyze: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onWhatsApp: () => void; onSign: () => void; onStamp: () => void; onRotate: () => void; onSplit: () => void; onEditPages: () => void; isPdf: boolean; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
+function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onTag, onWhatsApp, onSign, onStamp, onRotate, onSplit, onEditPages, isPdf, onToggleFav, onDelete, favorite }: {
+  onPreview: () => void; onAnalyze: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onTag: () => void; onWhatsApp: () => void; onSign: () => void; onStamp: () => void; onRotate: () => void; onSplit: () => void; onEditPages: () => void; isPdf: boolean; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
@@ -2944,6 +3011,7 @@ function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onWhat
           {item(Wand2, "Analizar con IA", onAnalyze)}
           {item(Pencil, "Renombrar", onRename)}
           {item(FolderInput, "Mover a carpeta", onMove)}
+          {item(Tag, "Etiquetar", onTag)}
           {item(MessageCircle, "Enviar por WhatsApp", onWhatsApp)}
           {item(PenLine, "Solicitar firma", onSign)}
           {isPdf && item(Stamp, "Poner sello", onStamp)}

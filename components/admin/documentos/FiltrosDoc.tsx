@@ -25,11 +25,16 @@ interface Props {
   onCambiar: (f: Filtros) => void;
   /** Tipos que hay de verdad en lo que se está mirando, con su cuenta. */
   presentes: { familia: FamiliaArchivo; cuantos: number }[];
+  /** Etiquetas que hay de verdad en lo que se está mirando, con su cuenta. */
+  tagsPresentes: { tag: string; cuantos: number }[];
   abierto: boolean;
   onAlternar: () => void;
   /** Cuántos quedan tras aplicar los filtros, para decirlo sin cerrar el panel. */
   resultados: number;
 }
+
+/** Etiquetas más usadas primero: con docenas de tags, la cola larga no entra ni ayuda. */
+const MAX_TAGS_EN_PANEL = 15;
 
 const PESOS: { valor: FiltroPeso; texto: string }[] = [
   { valor: "cualquiera", texto: "Cualquiera" },
@@ -83,7 +88,7 @@ function Chip({ activo, onClick, children }: { activo: boolean; onClick: () => v
   );
 }
 
-export default function FiltrosDoc({ filtros, onCambiar, presentes, abierto, onAlternar, resultados }: Props) {
+export default function FiltrosDoc({ filtros, onCambiar, presentes, tagsPresentes, abierto, onAlternar, resultados }: Props) {
   const activos = cuantosFiltrosActivos(filtros);
   const panelRef = useRef<HTMLDivElement>(null);
   const botonRef = useRef<HTMLButtonElement>(null);
@@ -125,6 +130,14 @@ export default function FiltrosDoc({ filtros, onCambiar, presentes, abierto, onA
       familias: filtros.familias.includes(f)
         ? filtros.familias.filter((x) => x !== f)
         : [...filtros.familias, f],
+    });
+
+  const alternarTag = (t: string) =>
+    onCambiar({
+      ...filtros,
+      tags: filtros.tags.includes(t)
+        ? filtros.tags.filter((x) => x !== t)
+        : [...filtros.tags, t],
     });
 
   return (
@@ -175,6 +188,17 @@ export default function FiltrosDoc({ filtros, onCambiar, presentes, abierto, onA
               {presentes.map(({ familia, cuantos }) => (
                 <Chip key={familia} activo={filtros.familias.includes(familia)} onClick={() => alternarFamilia(familia)}>
                   {etiquetaFamilia(familia)}
+                  <span className="tabular-nums opacity-60">{cuantos}</span>
+                </Chip>
+              ))}
+            </Grupo>
+          )}
+
+          {tagsPresentes.length > 0 && (
+            <Grupo titulo="Etiquetas">
+              {tagsPresentes.slice(0, MAX_TAGS_EN_PANEL).map(({ tag, cuantos }) => (
+                <Chip key={tag} activo={filtros.tags.includes(tag)} onClick={() => alternarTag(tag)}>
+                  #{tag}
                   <span className="tabular-nums opacity-60">{cuantos}</span>
                 </Chip>
               ))}

@@ -20,6 +20,8 @@ export interface FiltrosDoc {
   peso: FiltroPeso;
   subido: FiltroFecha;
   vencimiento: FiltroVencimiento;
+  /** Vacío = cualquier etiqueta. Igual que `familias`: basta con UNA de las elegidas (OR). */
+  tags: string[];
 }
 
 export const FILTROS_VACIOS: FiltrosDoc = {
@@ -27,6 +29,7 @@ export const FILTROS_VACIOS: FiltrosDoc = {
   peso: "cualquiera",
   subido: "cualquiera",
   vencimiento: "cualquiera",
+  tags: [],
 };
 
 /** Lo mínimo que hace falta saber de un documento para filtrarlo. */
@@ -36,6 +39,7 @@ export interface DocFiltrable {
   size: number;
   uploadedAt: string;
   expiresAt: string | null;
+  tags: string[];
 }
 
 const MB = 1024 * 1024;
@@ -90,6 +94,7 @@ export function cumpleFiltros(doc: DocFiltrable, filtros: FiltrosDoc, ahora: Dat
   if (filtros.familias.length > 0 && !filtros.familias.includes(familiaDe(doc.name, doc.mimeType))) {
     return false;
   }
+  if (filtros.tags.length > 0 && !filtros.tags.some((t) => doc.tags.includes(t))) return false;
   if (!cumplePeso(doc.size, filtros.peso)) return false;
 
   const desde = desdeCuando(filtros.subido, ahora);
@@ -105,6 +110,7 @@ export function cumpleFiltros(doc: DocFiltrable, filtros: FiltrosDoc, ahora: Dat
 export function cuantosFiltrosActivos(f: FiltrosDoc): number {
   return (
     (f.familias.length > 0 ? 1 : 0) +
+    (f.tags.length > 0 ? 1 : 0) +
     (f.peso !== "cualquiera" ? 1 : 0) +
     (f.subido !== "cualquiera" ? 1 : 0) +
     (f.vencimiento !== "cualquiera" ? 1 : 0)
@@ -124,5 +130,21 @@ export function familiasPresentes(docs: DocFiltrable[]): { familia: FamiliaArchi
   }
   return [...cuenta.entries()]
     .map(([familia, cuantos]) => ({ familia, cuantos }))
+    .sort((a, b) => b.cuantos - a.cuantos);
+}
+
+/**
+ * Qué etiquetas hay REALMENTE en lo que se está mirando, con su cuenta —
+ * mismo espíritu que `familiasPresentes`. Ordenadas por uso: las etiquetas
+ * de un solo documento se pierden entre 40 igual de solitarias si no hay un
+ * criterio de qué mostrar primero.
+ */
+export function tagsPresentes(docs: Pick<DocFiltrable, "tags">[]): { tag: string; cuantos: number }[] {
+  const cuenta = new Map<string, number>();
+  for (const d of docs) {
+    for (const t of d.tags) cuenta.set(t, (cuenta.get(t) ?? 0) + 1);
+  }
+  return [...cuenta.entries()]
+    .map(([tag, cuantos]) => ({ tag, cuantos }))
     .sort((a, b) => b.cuantos - a.cuantos);
 }

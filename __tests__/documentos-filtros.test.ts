@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  cumpleFiltros, cuantosFiltrosActivos, familiasPresentes, FILTROS_VACIOS,
+  cumpleFiltros, cuantosFiltrosActivos, familiasPresentes, tagsPresentes, FILTROS_VACIOS,
   type DocFiltrable, type FiltrosDoc,
 } from "@/lib/documentos/filtros-doc";
 
@@ -18,6 +18,7 @@ function doc(over: Partial<DocFiltrable> = {}): DocFiltrable {
     size: 500 * 1024,
     uploadedAt: "2026-07-28T09:00:00.000Z",
     expiresAt: null,
+    tags: [],
     ...over,
   };
 }
@@ -46,6 +47,27 @@ describe("filtro por tipo de archivo", () => {
   it("un .json cae en documentos de texto, no en 'otros'", () => {
     const f = con({ familias: ["texto"] });
     expect(cumpleFiltros(doc({ name: "config.json", mimeType: "application/json" }), f, AHORA)).toBe(true);
+  });
+});
+
+describe("filtro por etiqueta", () => {
+  it("sin etiquetas elegidas, pasa todo", () => {
+    expect(cumpleFiltros(doc(), FILTROS_VACIOS, AHORA)).toBe(true);
+    expect(cumpleFiltros(doc({ tags: ["sunat"] }), FILTROS_VACIOS, AHORA)).toBe(true);
+  });
+
+  it("deja pasar sólo lo que tiene la etiqueta elegida", () => {
+    const soloSunat = con({ tags: ["sunat"] });
+    expect(cumpleFiltros(doc({ tags: ["sunat", "factura"] }), soloSunat, AHORA)).toBe(true);
+    expect(cumpleFiltros(doc({ tags: ["contrato"] }), soloSunat, AHORA)).toBe(false);
+    expect(cumpleFiltros(doc({ tags: [] }), soloSunat, AHORA)).toBe(false);
+  });
+
+  it("varias etiquetas a la vez son un O, no un Y (igual que familias)", () => {
+    const f = con({ tags: ["sunat", "gtf"] });
+    expect(cumpleFiltros(doc({ tags: ["gtf"] }), f, AHORA)).toBe(true);
+    expect(cumpleFiltros(doc({ tags: ["sunat"] }), f, AHORA)).toBe(true);
+    expect(cumpleFiltros(doc({ tags: ["legajo"] }), f, AHORA)).toBe(false);
   });
 });
 
@@ -159,5 +181,23 @@ describe("familiasPresentes", () => {
 
   it("sin documentos no ofrece ningún tipo", () => {
     expect(familiasPresentes([])).toEqual([]);
+  });
+});
+
+describe("tagsPresentes", () => {
+  it("sólo devuelve etiquetas que hay, ordenadas por cuántas son", () => {
+    const docs = [
+      doc({ tags: ["sunat", "factura"] }),
+      doc({ name: "b.pdf", tags: ["sunat"] }),
+      doc({ name: "c.pdf", tags: [] }),
+    ];
+    expect(tagsPresentes(docs)).toEqual([
+      { tag: "sunat", cuantos: 2 },
+      { tag: "factura", cuantos: 1 },
+    ]);
+  });
+
+  it("sin documentos no ofrece ninguna etiqueta", () => {
+    expect(tagsPresentes([])).toEqual([]);
   });
 });
