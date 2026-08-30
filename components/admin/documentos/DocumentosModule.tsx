@@ -32,7 +32,7 @@ import { DataTable } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
-import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, splitDoc, fetchTags } from "@/hooks/use-documents";
+import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, splitDoc, fetchTags, fetchSharedLinks } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
 import FolderBulkBar from "./FolderBulkBar";
@@ -689,6 +689,51 @@ export default function DocumentosModule() {
   // retiene el último conteo estable en vez de mostrar 0.
   const lastDocCount = useRef(0);
   useEffect(() => { if (!loading) lastDocCount.current = documents.length; }, [loading, documents.length]);
+
+  // ── Vista del sidebar: ocultar las que no tienen nada adentro (Brandon
+  // 2026-08-30) — "Resumen"/"Asistente IA"/"Recientes"/"Actividad" no aportan
+  // nada con cero documentos; "Calendario" sin vencimientos cargados tampoco.
+  const anyExpiryCount = useMemo(() => documents.filter((d) => d.expiresAt).length, [documents]);
+  /** Mismo criterio que `DocumentsDB.gruposDuplicados` (backend): agrupar por
+   * tamaño + nombre-base evita pedir `/documents/duplicates` sólo para saber
+   * si hay que mostrar "Repetidos" — los documentos ya están en memoria. */
+  const hayDuplicados = useMemo(() => {
+    const nombreBase = (n: string) =>
+      n.toLowerCase()
+        .replace(/\.[^.]+$/, "")
+        .replace(/[ _-]*\(\d+\)$/, "")
+        .replace(/[ _-]*(copia|copy)\s*\d*$/, "")
+        .trim();
+    const porClave = new Map<string, number>();
+    for (const d of documents) {
+      if (d.size < 1024) continue;
+      const clave = `${d.size}:${nombreBase(d.name)}`;
+      porClave.set(clave, (porClave.get(clave) ?? 0) + 1);
+    }
+    return Array.from(porClave.values()).some((n) => n > 1);
+  }, [documents]);
+  // Enlaces compartidos SÍ necesita una request propia: a diferencia de
+  // duplicados, no se puede derivar de `documents` (una carpeta compartida no
+  // deja rastro en ningún documento individual). `null` = todavía no se sabe
+  // → no ocultar (más vale mostrar de más que esconder algo que sí tiene datos).
+  const [enlacesCount, setEnlacesCount] = useState<number | null>(null);
+  useEffect(() => {
+    fetchSharedLinks().then((links) => setEnlacesCount(links.length)).catch(() => setEnlacesCount(null));
+  }, []);
+  const vistaConDatos = useMemo(() => ({
+    all: true,
+    dashboard: documents.length > 0,
+    assistant: documents.length > 0,
+    favorites: favCount > 0,
+    recent: documents.length > 0,
+    expiring: expiringSoonCount > 0,
+    calendar: anyExpiryCount > 0,
+    activity: documents.length > 0,
+    enlaces: enlacesCount === null || enlacesCount > 0,
+    duplicados: hayDuplicados,
+    sync: true,
+    trash: true,
+  }) as Record<BuiltinCategory["id"], boolean>, [documents.length, favCount, expiringSoonCount, anyExpiryCount, enlacesCount, hayDuplicados]);
   const shownDocCount = loading && documents.length === 0 ? lastDocCount.current : documents.length;
 
   // ── Árbol de carpetas (subcarpetas anidadas) ──
@@ -1471,7 +1516,7 @@ export default function DocumentosModule() {
             Vista
           </p>
           <ul className="space-y-1 mb-4">
-            {BUILTIN_CATEGORIES.map((cat) => {
+            {BUILTIN_CATEGORIES.filter((cat) => vistaConDatos[cat.id] || filterMode === cat.id).map((cat) => {
               const Icon = cat.icon;
               const active = filterMode === cat.id;
               return (
@@ -3131,25 +3176,50 @@ function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onTag,
   onPreview: () => void; onAnalyze: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onTag: () => void; onWhatsApp: () => void; onSign: () => void; onStamp: () => void; onRotate: () => void; onSplit: () => void; onEditPages: () => void; isPdf: boolean; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; right: number; maxHeight: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
-    const close = () => setOpen(false);
-    window.addEventListener("click", close);
-    window.addEventListener("scroll", close, true);
-    window.addEventListener("resize", close);
+    const closeAll = () => setOpen(false);
+    // Scrollear DENTRO del menú (para ver las opciones que no entran) no debe
+    // cerrarlo — el listener de "scroll" en window recibe TAMBIÉN el scroll de
+    // este contenedor interno (fase de captura), así que hay que distinguir
+    // por `e.target`. Un scroll de la página de atrás (o cualquier otro
+    // contenedor) sí cierra, como antes.
+    const onScroll = (e: Event) => {
+      if (menuRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    window.addEventListener("click", closeAll);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", closeAll);
     return () => {
-      window.removeEventListener("click", close);
-      window.removeEventListener("scroll", close, true);
-      window.removeEventListener("resize", close);
+      window.removeEventListener("click", closeAll);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", closeAll);
     };
   }, [open]);
   const toggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (open) { setOpen(false); return; }
     const r = btnRef.current?.getBoundingClientRect();
-    if (r) setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+    if (r) {
+      const GAP = 4;
+      const MARGIN = 12;
+      const right = window.innerWidth - r.right;
+      const spaceBelow = window.innerHeight - r.bottom - GAP - MARGIN;
+      const spaceAbove = r.top - GAP - MARGIN;
+      // El menú puede tener hasta 13 ítems: una fila cerca del final de la
+      // tabla no siempre tiene sitio abajo. Con scroll interno alcanza casi
+      // siempre, pero si abajo queda MUY poco (y arriba hay más), mejor
+      // abrirlo hacia arriba que dejarlo apretado contra el borde inferior.
+      if (spaceBelow < 160 && spaceAbove > spaceBelow) {
+        setPos({ bottom: window.innerHeight - r.top + GAP, right, maxHeight: Math.max(120, spaceAbove) });
+      } else {
+        setPos({ top: r.bottom + GAP, right, maxHeight: Math.max(120, spaceBelow) });
+      }
+    }
     setOpen(true);
   };
   const item = (Icon: typeof Eye, label: string, onClick: () => void, danger?: boolean) => (
@@ -3169,7 +3239,12 @@ function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onTag,
         <MoreVertical className="h-4 w-4" />
       </button>
       {open && pos && (
-        <div className="fixed z-50 min-w-[170px] overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl" style={{ top: pos.top, right: pos.right }} onClick={(e) => e.stopPropagation()}>
+        <div
+          ref={menuRef}
+          className="fixed z-50 min-w-[170px] overflow-y-auto overscroll-contain rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl"
+          style={{ top: pos.top, bottom: pos.bottom, right: pos.right, maxHeight: pos.maxHeight }}
+          onClick={(e) => e.stopPropagation()}
+        >
           {item(Eye, "Ver", onPreview)}
           {item(Wand2, "Analizar con IA", onAnalyze)}
           {item(Pencil, "Renombrar", onRename)}
