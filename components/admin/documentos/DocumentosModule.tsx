@@ -25,7 +25,7 @@ import {
   FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check, CheckSquare, Monitor,
   Camera, AlarmClock, Wand2, Tag, MoreVertical, MoreHorizontal, FileArchive, Loader2,
-  ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
+  ChevronRight, ChevronDown, ChevronUp, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
   CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Link2, Copy,
 } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
@@ -296,8 +296,31 @@ function escribirCarpetaEnUrl(id: string | null) {
   }
 }
 
+/** Ancho de la barra lateral del drive, arrastrable — clamp para que nunca quede ilegible ni tape el contenido. */
+const SIDEBAR_MIN_W = 180;
+const SIDEBAR_MAX_W = 400;
+const SIDEBAR_DEFAULT_W = 240;
+
 export default function DocumentosModule() {
-  const [view, setView] = useState<"grid" | "list">("grid");
+  // Vista (grilla/lista), ancho de sidebar y KPIs: preferencias por-dispositivo,
+  // no por-tenant — cada persona que abre el drive en su compu puede querer
+  // algo distinto. Los KPIs arrancan OCULTOS (Brandon 2026-08-30): el resumen
+  // ocupaba una fila entera antes de llegar a los documentos, que es lo que
+  // se busca el 100% de las veces que se abre esta pantalla.
+  const [view, setView] = useState<"grid" | "list">(() => {
+    try { return (localStorage.getItem("doc-view-mode") as "grid" | "list") || "grid"; } catch { return "grid"; }
+  });
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    try {
+      const raw = Number(localStorage.getItem("doc-sidebar-width"));
+      return raw >= SIDEBAR_MIN_W && raw <= SIDEBAR_MAX_W ? raw : SIDEBAR_DEFAULT_W;
+    } catch { return SIDEBAR_DEFAULT_W; }
+  });
+  const [kpisVisible, setKpisVisible] = useState(() => {
+    try { return localStorage.getItem("doc-kpis-visible") === "1"; } catch { return false; }
+  });
+  useEffect(() => { try { localStorage.setItem("doc-view-mode", view); } catch { /* quota */ } }, [view]);
+  useEffect(() => { try { localStorage.setItem("doc-kpis-visible", kpisVisible ? "1" : "0"); } catch { /* quota */ } }, [kpisVisible]);
   const [sortBy, setSortBy] = useState<"recent" | "name" | "size" | "expiry" | "relevancia">("recent");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   /** Ver sólo lo que todavía no tiene descripción (lo que no se puede buscar). */
@@ -1195,11 +1218,12 @@ export default function DocumentosModule() {
             algo que ahí no se puede usar. */}
         <EstadoCarpetaLocalBadge tenantId={slugActivo()} onAbrir={() => setFilterMode("sync")} />
 
-        {/* Cuatro botones en el header no entraban en pantallas medianas: se
-            partían en dos filas y competían con el primario. Ahora queda UNA
-            acción principal (Subir archivos) y el resto en el menú del DS. */}
+        {/* Cinco acciones en el header no entraban en pantallas medianas: se
+            partían en dos-tres filas y competían con el primario. Queda UNA
+            acción principal (Subir archivos) y el resto en el menú del DS —
+            "Importar carpeta" vivía como botón suelto y era lo que más
+            forzaba el salto de línea (Brandon 2026-08-30). */}
         <ModuleActionMenu
-          label="Escanear y crear"
           items={[
             {
               label: "Escanear un documento",
@@ -1219,6 +1243,13 @@ export default function DocumentosModule() {
               icon: Sparkles,
               onClick: () => setShowTemplates(true),
             },
+            {
+              label: "Importar carpeta",
+              description: "Subís una carpeta completa respetando sus subcarpetas",
+              icon: FolderTree,
+              onClick: () => setImportandoCarpeta(true),
+              dividerBefore: true,
+            },
           ]}
         />
         <button
@@ -1235,16 +1266,6 @@ export default function DocumentosModule() {
               <Upload className="h-4 w-4" /> Subir archivos
             </>
           )}
-        </button>
-        {/* Carpeta entera con su estructura: subir un año de contratos ordenado
-            en subcarpetas era crear cada carpeta a mano y arrastrar por tandas. */}
-        <button
-          type="button"
-          onClick={() => setImportandoCarpeta(true)}
-          title="Subir una carpeta completa respetando sus subcarpetas"
-          className="inline-flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)]"
-        >
-          <FolderTree className="h-4 w-4" /> Importar carpeta
         </button>
         <input
           ref={fileInputRef}
@@ -1403,31 +1424,47 @@ export default function DocumentosModule() {
 
       {/* Hero stats — en la papelera se ocultan: el listado que hay en memoria es
           el de los BORRADOS, así que "Total archivos" y "Espacio usado" contaban
-          la papelera como si fuera el drive (4 archivos, 976 KB, con 41 vivos). */}
+          la papelera como si fuera el drive (4 archivos, 976 KB, con 41 vivos).
+          Ocultos por defecto (Brandon 2026-08-30): la fila de resumen empujaba
+          los documentos, que es lo que se busca casi siempre al abrir el drive. */}
       {filterMode !== "trash" && (
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatBlock label="Total archivos" value={shownDocCount.toString()} icon={FileIcon} tint="text-primary" />
-        <StorageRing usedBytes={totalSize} quotaBytes={STORAGE_QUOTA_BYTES} />
+      <div>
         <button
-          onClick={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
-          className={cn(
-            "text-left bg-white border rounded-2xl p-4 transition-all hover:shadow-md",
-            expiringSoonCount > 0 ? "border-[var(--data-error-500)]/40 hover:border-[var(--data-error-500)]" : "border-[var(--rule-base)] hover:border-primary/40"
-          )}
+          onClick={() => setKpisVisible((v) => !v)}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--text-tertiary)] hover:text-primary transition-colors"
         >
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Por vencer (30d)</p>
-              <p className={cn("text-2xl font-extrabold tabular-nums mt-0.5", expiringSoonCount > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>{expiringSoonCount}</p>
-            </div>
-            <AlarmClock className={cn("h-5 w-5 shrink-0 mt-0.5", expiringSoonCount > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")} />
-          </div>
+          {kpisVisible ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          {kpisVisible ? "Ocultar resumen" : "Mostrar resumen"}
         </button>
-        <StatBlock label="Favoritos" value={favCount.toString()} icon={Star} tint="text-amber-500" />
+        {kpisVisible && (
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-2">
+          <StatBlock label="Total archivos" value={shownDocCount.toString()} icon={FileIcon} tint="text-primary" />
+          <StorageRing usedBytes={totalSize} quotaBytes={STORAGE_QUOTA_BYTES} />
+          <button
+            onClick={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
+            className={cn(
+              "text-left bg-white border rounded-2xl p-4 transition-all hover:shadow-md",
+              expiringSoonCount > 0 ? "border-[var(--data-error-500)]/40 hover:border-[var(--data-error-500)]" : "border-[var(--rule-base)] hover:border-primary/40"
+            )}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Por vencer (30d)</p>
+                <p className={cn("text-2xl font-extrabold tabular-nums mt-0.5", expiringSoonCount > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>{expiringSoonCount}</p>
+              </div>
+              <AlarmClock className={cn("h-5 w-5 shrink-0 mt-0.5", expiringSoonCount > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")} />
+            </div>
+          </button>
+          <StatBlock label="Favoritos" value={favCount.toString()} icon={Star} tint="text-amber-500" />
+        </div>
+        )}
       </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-5">
+      <div
+        className="grid grid-cols-1 lg:grid-cols-[var(--docs-sidebar-w)_12px_1fr] gap-5 lg:gap-x-0"
+        style={{ "--docs-sidebar-w": `${sidebarWidth}px` } as React.CSSProperties}
+      >
         {/* ─── Sidebar ─── */}
         <aside className="bg-white border border-[var(--rule-base)] rounded-2xl p-3 h-fit">
           <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-3 py-2">
@@ -1748,6 +1785,14 @@ export default function DocumentosModule() {
             <Tag className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" /> Etiquetas
           </button>
         </aside>
+
+        <SidebarResizeHandle
+          width={sidebarWidth}
+          min={SIDEBAR_MIN_W}
+          max={SIDEBAR_MAX_W}
+          onChange={setSidebarWidth}
+          onCommit={(w) => { try { localStorage.setItem("doc-sidebar-width", String(w)); } catch { /* quota */ } }}
+        />
 
         {/* ─── Main list ─── */}
         <div className="space-y-4">
@@ -2610,6 +2655,71 @@ export default function DocumentosModule() {
 // ─────────────────────────────────────────────────────────────────
 // Sub-componentes
 // ─────────────────────────────────────────────────────────────────
+
+/**
+ * Barra de agarre entre el sidebar y el listado (achicar/alargar). Se mueve
+ * con pointermove/pointerup en `window` (no en el propio div) para que el
+ * drag no se corte si el mouse sale del hilo de 12px mientras arrastra.
+ * Persiste sólo en `onCommit` (pointerup) — escribir en cada pixel arrastrado
+ * sería cientos de writes a localStorage por un solo drag.
+ */
+function SidebarResizeHandle({
+  width, onChange, onCommit, min, max,
+}: {
+  width: number;
+  onChange: (w: number) => void;
+  onCommit: (w: number) => void;
+  min: number;
+  max: number;
+}) {
+  const dragging = useRef(false);
+  const startX = useRef(0);
+  const startW = useRef(width);
+  const lastW = useRef(width);
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!dragging.current) return;
+      const next = Math.min(max, Math.max(min, startW.current + (e.clientX - startX.current)));
+      lastW.current = next;
+      onChange(next);
+    };
+    const onUp = () => {
+      if (!dragging.current) return;
+      dragging.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      onCommit(lastW.current);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, [onChange, onCommit, min, max]);
+
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Redimensionar barra lateral"
+      title="Arrastrá para achicar o alargar · doble click para restaurar"
+      onPointerDown={(e) => {
+        dragging.current = true;
+        startX.current = e.clientX;
+        startW.current = width;
+        lastW.current = width;
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+      }}
+      onDoubleClick={() => { onChange(SIDEBAR_DEFAULT_W); onCommit(SIDEBAR_DEFAULT_W); }}
+      className="group hidden lg:flex cursor-col-resize items-center justify-center"
+    >
+      <div className="h-10 w-1 rounded-full bg-[var(--rule-base)] group-hover:bg-primary transition-colors" />
+    </div>
+  );
+}
 
 function StatBlock({ label, value, icon: Icon, tint }: { label: string; value: string; icon: typeof FileIcon; tint: string }) {
   return (
