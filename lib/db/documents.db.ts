@@ -840,7 +840,11 @@ export class DocumentsDB {
     ids: string[],
     tag: string
   ): Promise<number> {
-    const tagN = tag.trim().toLowerCase();
+    // Sin lowercase: el PATCH de un documento individual preserva el case tal
+    // como lo tipeó el usuario (por eso la taxonomía real tiene "GTF"/"SERFOR"
+    // en mayúsculas) — forzarlo acá creaba un tag hermano en minúsculas cada
+    // vez que se elegía uno YA existente desde la lista en vez de tipearlo.
+    const tagN = tag.trim();
     if (!tagN) return 0;
     const docs = await prisma.document.findMany({
       where: { id: { in: ids }, tenantId, deletedAt: null },

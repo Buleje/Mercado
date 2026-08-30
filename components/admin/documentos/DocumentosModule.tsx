@@ -77,7 +77,7 @@ import { loadSmartFolders, saveSmartFolders, matchesSmartFolder, describeRules, 
 import { AssistantView } from "./AssistantView";
 import { TagTaxonomyModal } from "./TagTaxonomyModal";
 import { TagEditModal } from "./TagEditModal";
-import { EtiquetaAutocomplete } from "./EtiquetaAutocomplete";
+import { BulkTagModal } from "./BulkTagModal";
 import { PapeleraView } from "./PapeleraView";
 import { formatBytes, getFileIcon } from "./archivo-visual";
 
@@ -397,7 +397,8 @@ export default function DocumentosModule() {
    */
   const [selectingFolders, setSelectingFolders] = useState(false);
   const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(new Set());
-  const [bulkTagValue, setBulkTagValue] = useState("");
+  /** Modal de etiquetado en lote (elegir de la taxonomía o crear nueva) para la selección activa. */
+  const [bulkTagModalOpen, setBulkTagModalOpen] = useState(false);
   /** Id del documento cuyo editor de etiquetas está abierto (chips + autocompletar). */
   const [tagDocId, setTagDocId] = useState<string | null>(null);
   /** Taxonomía completa del tenant, para sugerir al escribir y evitar duplicados por typo. */
@@ -943,7 +944,6 @@ export default function DocumentosModule() {
     if (selectedIds.size === 0 || !t) return;
     await correrLote(async () => {
       await bulk("tag", Array.from(selectedIds), { tag: t });
-      setBulkTagValue("");
       reloadAllTags();
     });
   };
@@ -2036,18 +2036,12 @@ export default function DocumentosModule() {
                   )}
                 </div>
               )}
-              <div className="inline-flex items-center gap-1 rounded-md bg-white/20 px-2">
-                <Tag className="h-3 w-3 shrink-0" />
-                <EtiquetaAutocomplete
-                  value={bulkTagValue}
-                  onChange={setBulkTagValue}
-                  onSubmit={bulkTag}
-                  todasLasTags={allTags}
-                  placeholder="Etiquetar…"
-                  ariaLabel="Agregar etiqueta a la selección"
-                  inputClassName="w-24 bg-transparent py-1 text-xs font-bold text-white placeholder-white/60 outline-none"
-                />
-              </div>
+              <button
+                onClick={() => setBulkTagModalOpen(true)}
+                className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1"
+              >
+                <Tag className="h-3 w-3" /> Etiquetar…
+              </button>
               <button onClick={bulkDelete} className="text-xs px-2.5 py-1 rounded-md bg-[var(--data-error-500)] hover:brightness-110 font-bold inline-flex items-center gap-1">
                 <Trash2 className="h-3 w-3" /> Eliminar
               </button>
@@ -2578,6 +2572,15 @@ export default function DocumentosModule() {
 
       {showTags && (
         <TagTaxonomyModal onChanged={() => { refresh(); reloadAllTags(); }} onClose={() => setShowTags(false)} />
+      )}
+
+      {bulkTagModalOpen && (
+        <BulkTagModal
+          count={selectedIds.size}
+          todasLasTags={allTags}
+          onApply={bulkTag}
+          onClose={() => setBulkTagModalOpen(false)}
+        />
       )}
 
       {tagDocId && (() => {
