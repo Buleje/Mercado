@@ -24,7 +24,7 @@ import {
   Upload, Search, Grid3x3, List, FolderArchive,
   FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check, CheckSquare, Monitor,
-  Camera, AlarmClock, Wand2, Tag, MoreVertical, FileArchive, Loader2,
+  Camera, AlarmClock, Wand2, Tag, MoreVertical, MoreHorizontal, FileArchive, Loader2,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
   CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Link2, Copy,
 } from "@buleje/design-system/icons";
@@ -406,6 +406,23 @@ export default function DocumentosModule() {
     fetchTags().then((r) => setAllTags(r.map((t) => t.tag))).catch((err) => console.warn("[documentos] no pude cargar la taxonomía de etiquetas", err));
   }, []);
   useEffect(() => { reloadAllTags(); }, [reloadAllTags]);
+  /** Menú "Más" de la barra de selección — agrupa las acciones menos frecuentes
+   *  (mover, ZIP, WhatsApp, combinar) para que la fila no crezca sin límite. */
+  const [bulkMoreOpen, setBulkMoreOpen] = useState(false);
+  const [bulkMorePos, setBulkMorePos] = useState<{ top: number; right: number } | null>(null);
+  const bulkMoreBtnRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!bulkMoreOpen) return;
+    const close = () => setBulkMoreOpen(false);
+    window.addEventListener("click", close);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [bulkMoreOpen]);
   const [expiryBannerDismissed, setExpiryBannerDismissed] = useState(false);
   const [zipping, setZipping] = useState(false);
   // Drag & drop de documentos hacia carpetas de la barra lateral.
@@ -1949,42 +1966,75 @@ export default function DocumentosModule() {
                 ))}
                 <option value="none">Quitar el estado</option>
               </select>
-              <select
-                onChange={(e) => { const v = e.target.value; if (v) { bulkMove(v === "__none__" ? null : v); } e.currentTarget.selectedIndex = 0; }}
-                defaultValue=""
-                className="text-xs px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white font-bold outline-none cursor-pointer [&>option]:text-[var(--text-primary)]"
-                title="Mover a carpeta"
-                aria-label="Mover a carpeta"
-              >
-                <option value="" disabled>Mover a…</option>
-                {allFolderRows.map(({ folder: f, depth }) => (
-                  <option key={f.id} value={f.id}>{`${"   ".repeat(depth)}${depth > 0 ? "└ " : ""}${f.name}`}</option>
-                ))}
-                <option value="__none__">Sin carpeta</option>
-              </select>
-              <button onClick={bulkDownloadZip} disabled={zipping} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1 disabled:opacity-60">
-                <FileArchive className="h-3 w-3" /> {zipping ? "Comprimiendo…" : "ZIP"}
-              </button>
-              {/* Mandar la selección entera por WhatsApp: un enlace por
-                  documento en un solo mensaje. Antes había que abrir la ficha
-                  de cada uno y repetir el envío. */}
+              {/* Acciones menos frecuentes (mover, ZIP, WhatsApp, combinar) agrupadas
+                  acá — la fila crecía sin límite cada vez que se sumaba una acción
+                  bulk nueva y terminaba ilegible en pantallas angostas. */}
               <button
-                onClick={() => {
-                  // Tope de 10: el endpoint de compartir corre con preset STRICT
-                  // (10 cada 15 min). Mandar 20 dejaría al usuario sin poder
-                  // compartir nada por un cuarto de hora.
-                  const elegidos = documents.filter((d) => selectedIds.has(d.id)).slice(0, 10);
-                  if (elegidos.length > 0) setWhatsappDoc(elegidos);
+                ref={bulkMoreBtnRef}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (bulkMoreOpen) { setBulkMoreOpen(false); return; }
+                  const r = bulkMoreBtnRef.current?.getBoundingClientRect();
+                  if (r) setBulkMorePos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+                  setBulkMoreOpen(true);
                 }}
-                title={selectedIds.size > 10 ? "Se enviarán los primeros 10 (límite del servidor: 10 enlaces cada 15 min)" : "Enviar los documentos seleccionados por WhatsApp"}
                 className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1"
+                aria-label="Más acciones para la selección"
               >
-                <MessageCircle className="h-3 w-3" /> WhatsApp
+                <MoreHorizontal className="h-3 w-3" /> Más
               </button>
-              {selectedIds.size >= 2 && (
-                <button onClick={handleMerge} disabled={merging} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1 disabled:opacity-60" title="Combinar en un PDF">
-                  <Combine className="h-3 w-3" /> {merging ? "Combinando…" : "Combinar PDF"}
-                </button>
+              {bulkMoreOpen && bulkMorePos && (
+                <div
+                  className="fixed z-50 min-w-[200px] overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl"
+                  style={{ top: bulkMorePos.top, right: bulkMorePos.right }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <select
+                    onChange={(e) => { const v = e.target.value; if (v) { bulkMove(v === "__none__" ? null : v); } setBulkMoreOpen(false); }}
+                    defaultValue=""
+                    className="w-full px-3 py-2 text-sm font-medium text-[var(--text-secondary)] bg-transparent outline-none cursor-pointer hover:bg-[var(--surface-sunken)]"
+                    aria-label="Mover a carpeta"
+                  >
+                  <option value="" disabled>Mover a…</option>
+                  {allFolderRows.map(({ folder: f, depth }) => (
+                    <option key={f.id} value={f.id}>{`${"   ".repeat(depth)}${depth > 0 ? "└ " : ""}${f.name}`}</option>
+                  ))}
+                  <option value="__none__">Sin carpeta</option>
+                  </select>
+                  <button
+                    onClick={() => { setBulkMoreOpen(false); bulkDownloadZip(); }}
+                    disabled={zipping}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-60"
+                  >
+                    <FileArchive className="h-4 w-4 shrink-0" /> {zipping ? "Comprimiendo…" : "Descargar ZIP"}
+                  </button>
+                  {/* Mandar la selección entera por WhatsApp: un enlace por
+                      documento en un solo mensaje. Antes había que abrir la ficha
+                      de cada uno y repetir el envío. */}
+                  <button
+                    onClick={() => {
+                      setBulkMoreOpen(false);
+                      // Tope de 10: el endpoint de compartir corre con preset STRICT
+                      // (10 cada 15 min). Mandar 20 dejaría al usuario sin poder
+                      // compartir nada por un cuarto de hora.
+                      const elegidos = documents.filter((d) => selectedIds.has(d.id)).slice(0, 10);
+                      if (elegidos.length > 0) setWhatsappDoc(elegidos);
+                    }}
+                    title={selectedIds.size > 10 ? "Se enviarán los primeros 10 (límite del servidor: 10 enlaces cada 15 min)" : undefined}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+                  >
+                    <MessageCircle className="h-4 w-4 shrink-0" /> Enviar por WhatsApp
+                  </button>
+                  {selectedIds.size >= 2 && (
+                    <button
+                      onClick={() => { setBulkMoreOpen(false); handleMerge(); }}
+                      disabled={merging}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-60"
+                    >
+                      <Combine className="h-4 w-4 shrink-0" /> {merging ? "Combinando…" : "Combinar en un PDF"}
+                    </button>
+                  )}
+                </div>
               )}
               <div className="inline-flex items-center gap-1 rounded-md bg-white/20 px-2">
                 <Tag className="h-3 w-3 shrink-0" />
