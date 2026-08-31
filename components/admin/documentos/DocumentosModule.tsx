@@ -26,7 +26,7 @@ import {
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check, CheckSquare, Monitor,
   Camera, AlarmClock, Wand2, Tag, MoreVertical, MoreHorizontal, FileArchive, Loader2,
   ChevronRight, ChevronDown, ChevronUp, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
-  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Link2, Copy,
+  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Link2, Copy, Columns3,
 } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
@@ -319,8 +319,31 @@ export default function DocumentosModule() {
   const [kpisVisible, setKpisVisible] = useState(() => {
     try { return localStorage.getItem("doc-kpis-visible") === "1"; } catch { return false; }
   });
+  // Todo lo que no es "Todos" (Resumen, Asistente IA, Favoritos… hasta
+  // Papelera) vive colapsado bajo "Más vistas" por defecto — la lista plana
+  // de hasta 12 ítems era la mitad del sidebar antes de llegar a "Carpetas".
+  const [otrosAbierto, setOtrosAbierto] = useState(() => {
+    try { return localStorage.getItem("doc-sidebar-otros-abierto") === "1"; } catch { return false; }
+  });
   useEffect(() => { try { localStorage.setItem("doc-view-mode", view); } catch { /* quota */ } }, [view]);
   useEffect(() => { try { localStorage.setItem("doc-kpis-visible", kpisVisible ? "1" : "0"); } catch { /* quota */ } }, [kpisVisible]);
+  useEffect(() => { try { localStorage.setItem("doc-sidebar-otros-abierto", otrosAbierto ? "1" : "0"); } catch { /* quota */ } }, [otrosAbierto]);
+  // Columnas opcionales de la vista lista (Nombre y Acción son fijas).
+  const [colsVisibles, setColsVisibles] = useState<{ categoria: boolean; tamano: boolean; subido: boolean }>(() => {
+    const defaults = { categoria: true, tamano: true, subido: true };
+    try {
+      const raw = localStorage.getItem("doc-cols-visibles");
+      return raw ? { ...defaults, ...(JSON.parse(raw) as Partial<typeof defaults>) } : defaults;
+    } catch { return defaults; }
+  });
+  useEffect(() => { try { localStorage.setItem("doc-cols-visibles", JSON.stringify(colsVisibles)); } catch { /* quota */ } }, [colsVisibles]);
+  const [colsMenuOpen, setColsMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!colsMenuOpen) return;
+    const close = () => setColsMenuOpen(false);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [colsMenuOpen]);
   const [sortBy, setSortBy] = useState<"recent" | "name" | "size" | "expiry" | "relevancia">("recent");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   /** Ver sólo lo que todavía no tiene descripción (lo que no se puede buscar). */
@@ -1515,8 +1538,14 @@ export default function DocumentosModule() {
           <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-3 py-2">
             Vista
           </p>
-          <ul className="space-y-1 mb-4">
-            {BUILTIN_CATEGORIES.filter((cat) => vistaConDatos[cat.id] || filterMode === cat.id).map((cat) => {
+          {(() => {
+            const visibles = BUILTIN_CATEGORIES.filter((cat) => vistaConDatos[cat.id] || filterMode === cat.id);
+            const todos = visibles.find((c) => c.id === "all");
+            const resto = visibles.filter((c) => c.id !== "all");
+            // Auto-abierto si la vista activa vive adentro del grupo — si no,
+            // "Papelera" (por ej.) parecería que nada está seleccionado.
+            const grupoAbierto = otrosAbierto || resto.some((c) => c.id === filterMode);
+            const item = (cat: BuiltinCategory) => {
               const Icon = cat.icon;
               const active = filterMode === cat.id;
               return (
@@ -1536,8 +1565,31 @@ export default function DocumentosModule() {
                   </button>
                 </li>
               );
-            })}
-          </ul>
+            };
+            return (
+              <ul className="space-y-1 mb-4">
+                {todos && item(todos)}
+                {resto.length > 0 && (
+                  <li>
+                    <button
+                      onClick={() => setOtrosAbierto((v) => !v)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                      aria-expanded={grupoAbierto}
+                    >
+                      <MoreHorizontal className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+                      <span className="flex-1 text-left">Más vistas</span>
+                      <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)] transition-transform", grupoAbierto && "rotate-180")} />
+                    </button>
+                    {grupoAbierto && (
+                      <ul className="mt-1 ml-3 space-y-1 border-l-2 border-[var(--rule-soft)] pl-2">
+                        {resto.map(item)}
+                      </ul>
+                    )}
+                  </li>
+                )}
+              </ul>
+            );
+          })()}
 
           <div
             className={cn("flex items-center justify-between px-3 py-2 rounded-lg transition-all", rootDropActive && "bg-primary/10 ring-2 ring-primary")}
@@ -1700,12 +1752,18 @@ export default function DocumentosModule() {
                       <button
                         onClick={() => { setFilterMode("folder"); setActiveFolderId(f.id); }}
                         className={cn(
-                          "flex-1 min-w-0 flex items-center gap-2 py-2 pr-14 rounded-lg text-sm font-bold transition-colors",
+                          "relative group/folderrow flex-1 min-w-0 flex items-center gap-2 py-2 pr-14 rounded-lg text-sm font-bold transition-colors",
                           active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                         )}
                       >
                         <FolderGlyph folder={f} active={active} className="h-4 w-4 shrink-0" />
                         <span className="flex-1 text-left truncate">{f.name}</span>
+                        {/* Nombre completo al hover — el sidebar es redimensionable
+                            (puede llegar a 180px) y el `truncate` de arriba no
+                            avisaba en absoluto qué decía el nombre cortado. */}
+                        <span className="pointer-events-none absolute left-6 top-full z-50 mt-1 hidden whitespace-nowrap rounded-lg bg-[var(--text-primary)] px-2.5 py-1.5 text-xs font-bold text-white shadow-[var(--shadow-lg)] group-hover/folderrow:block dark:bg-[var(--surface-raised)] dark:border dark:border-[var(--rule-base)]">
+                          {f.name}
+                        </span>
                         {/* Con el checkbox puesto, el ancho del sidebar no alcanza
                             para nombre + etiquetas: en modo selección hay que poder
                             LEER qué se marca, así que los chips se guardan. */}
@@ -1910,6 +1968,49 @@ export default function DocumentosModule() {
                 <List className="h-4 w-4" />
               </button>
             </div>
+            {/* Columnas opcionales — sólo tiene sentido en la tabla, la grilla
+                no tiene columnas que ocultar. */}
+            {view === "list" && (
+              <div className="relative">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setColsMenuOpen((v) => !v); }}
+                  className={cn(
+                    "inline-flex h-[42px] items-center gap-1.5 px-3 rounded-xl border-2 text-sm font-bold transition-colors",
+                    colsMenuOpen ? "border-primary text-primary bg-primary/5" : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-primary hover:text-primary"
+                  )}
+                  title="Elegir columnas visibles"
+                  aria-label="Elegir columnas visibles"
+                  aria-expanded={colsMenuOpen}
+                >
+                  <Columns3 className="h-4 w-4" />
+                </button>
+                {colsMenuOpen && (
+                  <div
+                    className="absolute right-0 top-full z-50 mt-1 min-w-[180px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <p className="px-2 py-1 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Columnas</p>
+                    {(
+                      [
+                        ["categoria", "Categoría"],
+                        ["tamano", "Tamaño"],
+                        ["subido", "Subido"],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={colsVisibles[key]}
+                          onChange={(e) => setColsVisibles((c) => ({ ...c, [key]: e.target.checked }))}
+                          className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           )}
 
@@ -2342,9 +2443,9 @@ export default function DocumentosModule() {
                       />
                     </th>
                     <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Nombre</th>
-                    <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Categoría</th>
-                    <th className="text-right px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Tamaño</th>
-                    <th className="text-right px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Subido</th>
+                    {colsVisibles.categoria && <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Categoría</th>}
+                    {colsVisibles.tamano && <th className="text-right px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Tamaño</th>}
+                    {colsVisibles.subido && <th className="text-right px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Subido</th>}
                     <th className="text-center px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acción</th>
                   </tr>
                 </thead>
@@ -2392,6 +2493,7 @@ export default function DocumentosModule() {
                             <PorQueAparecio doc={doc} terminos={terminosBusqueda} variante="list" />
                           )}
                         </td>
+                        {colsVisibles.categoria && (
                         <td className="px-4 py-3 hidden sm:table-cell">
                           <div className="flex flex-col items-start gap-1">
                             <span className="text-xs text-[var(--text-secondary)] capitalize">{doc.category}</span>
@@ -2406,10 +2508,15 @@ export default function DocumentosModule() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-secondary)]">{formatBytes(doc.size)}</td>
-                        <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-tertiary)]">
-                          {new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
-                        </td>
+                        )}
+                        {colsVisibles.tamano && (
+                          <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-secondary)]">{formatBytes(doc.size)}</td>
+                        )}
+                        {colsVisibles.subido && (
+                          <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-tertiary)]">
+                            {new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                          </td>
+                        )}
                         <td className="px-4 py-3 text-center">
                           <RowActions
                             favorite={!!doc.favorite}
