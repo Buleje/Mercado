@@ -26,7 +26,7 @@ import {
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check, CheckSquare, Monitor,
   Camera, AlarmClock, Wand2, Tag, MoreVertical, MoreHorizontal, FileArchive, Loader2,
   ChevronRight, ChevronDown, ChevronUp, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
-  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Link2, Copy, Columns3,
+  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Link2, Copy, Columns3, ArrowUpDown,
 } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
@@ -2448,12 +2448,46 @@ export default function DocumentosModule() {
                         className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
                       />
                     </th>
-                    <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Nombre</th>
-                    {colsVisibles.categoria && <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Categoría</th>}
-                    {colsVisibles.etiquetas && <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden lg:table-cell">Etiquetas</th>}
-                    {colsVisibles.vencimiento && <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden lg:table-cell">Vencimiento</th>}
-                    {colsVisibles.tamano && <th className="text-right px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Tamaño</th>}
-                    {colsVisibles.subido && <th className="text-right px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Subido</th>}
+                    {(() => {
+                      // Clickear el header ordena por esa columna — antes sólo se
+                      // podía cambiar el orden desde el <select> de la toolbar,
+                      // sin ninguna pista visual de cuál estaba activo en la tabla.
+                      const sortTh = (
+                        label: string,
+                        value: "name" | "size" | "expiry" | "recent",
+                        opts: { align?: "left" | "right"; extraClass?: string } = {},
+                      ) => {
+                        const { align = "left", extraClass } = opts;
+                        const active = sortBy === value;
+                        return (
+                          <th className={cn("px-4 py-3", align === "right" ? "text-right" : "text-left", extraClass)}>
+                            <button
+                              type="button"
+                              onClick={() => setSortBy(value)}
+                              title={`Ordenar por ${label.toLowerCase()}`}
+                              className={cn(
+                                "inline-flex items-center gap-1 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider transition-colors",
+                                align === "right" && "flex-row-reverse",
+                                active ? "text-primary" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+                              )}
+                            >
+                              {label}
+                              <ArrowUpDown className={cn("h-3 w-3 shrink-0", active ? "opacity-100" : "opacity-40")} />
+                            </button>
+                          </th>
+                        );
+                      };
+                      return (
+                        <>
+                          {sortTh("Nombre", "name")}
+                          {colsVisibles.categoria && <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Categoría</th>}
+                          {colsVisibles.etiquetas && <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden lg:table-cell">Etiquetas</th>}
+                          {colsVisibles.vencimiento && sortTh("Vencimiento", "expiry", { extraClass: "hidden lg:table-cell" })}
+                          {colsVisibles.tamano && sortTh("Tamaño", "size", { align: "right", extraClass: "hidden md:table-cell" })}
+                          {colsVisibles.subido && sortTh("Subido", "recent", { align: "right", extraClass: "hidden md:table-cell" })}
+                        </>
+                      );
+                    })()}
                     <th className="text-center px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acción</th>
                   </tr>
                 </thead>
