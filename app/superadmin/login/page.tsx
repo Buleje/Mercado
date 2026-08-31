@@ -24,12 +24,41 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useLoginSecurity } from "@/hooks/useLoginSecurity";
+import { getKeepAlive } from "@/lib/session-keepalive";
 
 export default function SuperAdminLoginPage() {
   const searchParams = useSearchParams();
   const usernameRef = useRef<HTMLInputElement>(null);
   const codeRef = useRef<HTMLInputElement>(null);
   const sessionExpired = searchParams.get("reason") === "expired";
+
+  // Resumen silencioso (Brandon 2026-08-30): reusa el mismo flag "confiar en
+  // este equipo" del login admin (localStorage compartido) — si ya estaba
+  // marcado y el platform-token (12h, se renueva solo pasada la mitad de su
+  // vida) sigue vivo, entra directo sin mostrar el form. A diferencia del
+  // admin (refresh de 7 días), acá el techo real es 12h: un corte MÁS largo
+  // que eso (ej. toda una noche) sigue pidiendo 2FA de nuevo — deliberado,
+  // es la cuenta de mayor privilegio de toda la plataforma.
+  const [resuming, setResuming] = useState(!sessionExpired);
+  useEffect(() => {
+    if (sessionExpired) return; // ya se sabe inválida, no perder tiempo probando
+    let cancelado = false;
+    (async () => {
+      if (!getKeepAlive()) { setResuming(false); return; }
+      try {
+        const res = await fetch("/api/superadmin/auth", { method: "GET", credentials: "include" });
+        if (!cancelado && res.ok) {
+          window.location.assign("/superadmin/dashboard");
+          return;
+        }
+      } catch {
+        /* sin red — mostrar el form */
+      }
+      if (!cancelado) setResuming(false);
+    })();
+    return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -137,6 +166,17 @@ export default function SuperAdminLoginPage() {
     setCode("");
     setError(false);
   };
+
+  if (resuming) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--surface-canvas)]">
+        <div className="flex flex-col items-center gap-3 text-[var(--text-tertiary)]">
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--brand-purple)" }} />
+          <p className="text-sm font-medium">Entrando…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">

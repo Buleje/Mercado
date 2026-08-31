@@ -92,6 +92,35 @@ export default function AdminLoginPage() {
   const [retryAfter, setRetryAfter] = useState(0);
   // Motivo por el que llegó al login (sesión expirada / ruta protegida).
   const [reason, setReason] = useState<string | null>(null);
+  // Resumen silencioso (Brandon 2026-08-30): "confiar en este equipo" arranca
+  // en true — mientras se intenta, ocultamos el form para no mostrar un login
+  // que va a desaparecer solo. Si no hay keep-alive activo, o el refresh token
+  // ya venció/fue revocado (logout manual, "cerrar todas las sesiones"), cae
+  // al form normal — nunca se guarda contraseña, sólo se reusa el refresh
+  // cookie HttpOnly que YA existe para el keep-alive en pestaña abierta.
+  const [resuming, setResuming] = useState(true);
+
+  useEffect(() => {
+    let cancelado = false;
+    (async () => {
+      if (!getKeepAlive()) { setResuming(false); return; }
+      try {
+        const res = await fetch("/api/auth/refresh", { method: "POST", credentials: "include" });
+        if (!cancelado && res.ok) {
+          const params = new URLSearchParams(window.location.search);
+          const match = window.location.pathname.match(/^(\/t\/[^/]+)\/admin/);
+          const prefix = match ? match[1] : "";
+          hardRedirect(safeRedirectPath(params.get("from"), `${prefix}/admin`));
+          return;
+        }
+      } catch {
+        // sin red — mostrar el form, no dejar la pantalla colgada en "Entrando…"
+      }
+      if (!cancelado) setResuming(false);
+    })();
+    return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -343,6 +372,19 @@ export default function AdminLoginPage() {
 
   const isDev =
     typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+
+  // Mientras se intenta el resumen silencioso no se muestra el form — se
+  // vería un parpadeo de login que desaparece solo apenas responde el refresh.
+  if (resuming) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--surface-canvas)]">
+        <div className="flex flex-col items-center gap-3 text-[var(--text-tertiary)]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm font-medium">Entrando…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">

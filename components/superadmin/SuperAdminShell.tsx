@@ -47,6 +47,7 @@ import {
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 import { useSessionKeepAlive } from "@/hooks/use-session-keepalive";
+import { setKeepAlive } from "@/lib/session-keepalive";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { SessionExpiryGuard } from "@/components/shared/SessionExpiryGuard";
 import { FinanceAlertBanner } from "@/components/superadmin/FinanceAlertBanner";
@@ -713,6 +714,10 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     try {
       await fetch("/api/superadmin/auth", { method: "DELETE", headers: csrfHeaders() });
     } finally {
+      // Mismo flag que el admin: un logout manual apaga "confiar en este
+      // equipo" (compartido entre ambos paneles) para que el resumen
+      // silencioso del login deje de intentarlo.
+      setKeepAlive(false);
       // Hard navigation: tras borrar la cookie de sesión, router.push (SPA) podía
       // colgarse al re-renderizar el layout sin sesión. window.location recarga
       // limpio y nunca se paraliza.
