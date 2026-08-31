@@ -329,8 +329,12 @@ export default function DocumentosModule() {
   useEffect(() => { try { localStorage.setItem("doc-kpis-visible", kpisVisible ? "1" : "0"); } catch { /* quota */ } }, [kpisVisible]);
   useEffect(() => { try { localStorage.setItem("doc-sidebar-otros-abierto", otrosAbierto ? "1" : "0"); } catch { /* quota */ } }, [otrosAbierto]);
   // Columnas opcionales de la vista lista (Nombre y Acción son fijas).
-  const [colsVisibles, setColsVisibles] = useState<{ categoria: boolean; tamano: boolean; subido: boolean }>(() => {
-    const defaults = { categoria: true, tamano: true, subido: true };
+  // Etiquetas/Vencimiento arrancan ocultas: son nuevas, no cambiar lo que
+  // Brandon ya venía viendo por defecto.
+  const [colsVisibles, setColsVisibles] = useState<{
+    categoria: boolean; tamano: boolean; subido: boolean; etiquetas: boolean; vencimiento: boolean;
+  }>(() => {
+    const defaults = { categoria: true, tamano: true, subido: true, etiquetas: false, vencimiento: false };
     try {
       const raw = localStorage.getItem("doc-cols-visibles");
       return raw ? { ...defaults, ...(JSON.parse(raw) as Partial<typeof defaults>) } : defaults;
@@ -1993,6 +1997,8 @@ export default function DocumentosModule() {
                     {(
                       [
                         ["categoria", "Categoría"],
+                        ["etiquetas", "Etiquetas"],
+                        ["vencimiento", "Vencimiento"],
                         ["tamano", "Tamaño"],
                         ["subido", "Subido"],
                       ] as const
@@ -2444,6 +2450,8 @@ export default function DocumentosModule() {
                     </th>
                     <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Nombre</th>
                     {colsVisibles.categoria && <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Categoría</th>}
+                    {colsVisibles.etiquetas && <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden lg:table-cell">Etiquetas</th>}
+                    {colsVisibles.vencimiento && <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden lg:table-cell">Vencimiento</th>}
                     {colsVisibles.tamano && <th className="text-right px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Tamaño</th>}
                     {colsVisibles.subido && <th className="text-right px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Subido</th>}
                     <th className="text-center px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acción</th>
@@ -2508,6 +2516,27 @@ export default function DocumentosModule() {
                             </div>
                           </div>
                         </td>
+                        )}
+                        {colsVisibles.etiquetas && (
+                          <td className="px-4 py-3 hidden lg:table-cell">
+                            {(doc.tags?.length ?? 0) > 0 ? (
+                              <div className="flex flex-wrap items-center gap-1">
+                                {(doc.tags ?? []).slice(0, 3).map((t) => (
+                                  <span key={t} className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">#{t}</span>
+                                ))}
+                                {(doc.tags ?? []).length > 3 && (
+                                  <span className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">+{(doc.tags ?? []).length - 3}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-[var(--text-tertiary)]">—</span>
+                            )}
+                          </td>
+                        )}
+                        {colsVisibles.vencimiento && (
+                          <td className="px-4 py-3 hidden lg:table-cell">
+                            {doc.expiresAt ? <ExpiryBadge expiresAt={doc.expiresAt} /> : <span className="text-xs text-[var(--text-tertiary)]">—</span>}
+                          </td>
                         )}
                         {colsVisibles.tamano && (
                           <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-secondary)]">{formatBytes(doc.size)}</td>
