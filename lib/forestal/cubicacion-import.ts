@@ -11,7 +11,7 @@
  * el archivo).
  */
 
-import { cubicarPieza, ESPECIES_MADERA, medidaSospechosa, type PiezaCubicada, type Unidad } from "./cubicacion";
+import { cubicarPieza, ESPECIES_MADERA, medidaSospechosa, mejoresNumeros, partirConFijas, type PiezaCubicada, type Unidad } from "./cubicacion";
 
 /** Una celda del archivo tal como la devuelve la lectura (string o número). */
 export type Celda = string | number | null | undefined;
@@ -237,6 +237,57 @@ export function interpretarOcrPiezas(piezas: PiezaOcrRaw[]): ResultadoImport {
       sospechosa: p.incierto || medidaSospechosa(p.espesor, p.ancho, p.largo),
     });
   });
+
+  return { piezas: out, errores, columnas: { cantidad: null, espesor: null, ancho: null, largo: null, especie: null, uEspesor: null, uAncho: null, uLargo: null } };
+}
+
+let contadorAudio = 0;
+
+/**
+ * Interpreta el TEXTO transcrito de un audio dictado en continuo — "dos ocho
+ * once, dos ocho diez, ..." tabla por tabla — usando el MISMO parser que el
+ * dictado por voz en vivo (`mejoresNumeros`/`partirConFijas`), pero aplicado
+ * una sola vez sobre el transcript completo en vez de frase por frase (acá no
+ * hay un micrófono devolviendo alternativas en tiempo real, hay un texto ya
+ * transcrito de punta a punta por Whisper).
+ *
+ * No soporta "N piezas de..." ni especie ni comandos de voz (pausar/fijar) —
+ * es deliberadamente el caso simple: sólo tríos espesor·ancho·largo, cantidad
+ * 1 cada uno. Si el archivo no cierra en tríos completos, el sobrante queda
+ * reportado como error (nunca se inventa una tercera medida).
+ */
+export function interpretarDictadoAudio(texto: string): ResultadoImport {
+  const errores: { fila: number; motivo: string }[] = [];
+  const out: PiezaImportada[] = [];
+
+  const nums = mejoresNumeros([texto], {}, 0);
+  if (nums.length === 0) {
+    errores.push({ fila: 1, motivo: "No se reconoció ningún número en el audio. Dictá más despacio y separá bien cada medida." });
+    return { piezas: out, errores, columnas: { cantidad: null, espesor: null, ancho: null, largo: null, especie: null, uEspesor: null, uAncho: null, uLargo: null } };
+  }
+
+  const { piezas: trios, resto } = partirConFijas(nums, {});
+  trios.forEach((t, i) => {
+    const filaNro = i + 1;
+    const base = { cantidad: 1, espesor: t.espesor, ancho: t.ancho, largo: t.largo, uEspesor: "pulg" as Unidad, uAncho: "pulg" as Unidad, uLargo: "pies" as Unidad };
+    const { pieTablar, m3 } = cubicarPieza(base);
+    out.push({
+      id: `aud-p-${Date.now()}-${contadorAudio++}`,
+      ...base,
+      especie: undefined,
+      pieTablar,
+      m3,
+      filaOrigen: filaNro,
+      sospechosa: medidaSospechosa(t.espesor, t.ancho, t.largo),
+    });
+  });
+
+  if (resto.length > 0) {
+    errores.push({
+      fila: trios.length + 1,
+      motivo: `Quedaron ${resto.length} número${resto.length === 1 ? "" : "s"} suelto${resto.length === 1 ? "" : "s"} al final sin formar una pieza completa: ${resto.join(", ")}.`,
+    });
+  }
 
   return { piezas: out, errores, columnas: { cantidad: null, espesor: null, ancho: null, largo: null, especie: null, uEspesor: null, uAncho: null, uLargo: null } };
 }
