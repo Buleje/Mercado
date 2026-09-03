@@ -244,23 +244,17 @@ export function FiltroColumna({
  * que recortaría cualquier `absolute`. Se cierra al hacer click afuera y al
  * scrollear (la posición fija quedaría colgada en el aire).
  */
-export function FiltroColumnaMulti({
-  label,
-  value,
-  options,
-  onChange,
-  placeholder = "Todas",
-}: {
-  label: string;
-  value: readonly string[];
-  options: FacetaOpcion[];
-  onChange: (v: string[]) => void;
-  placeholder?: string;
-}) {
+/**
+ * La mecánica del desplegable de una cabecera, una sola vez.
+ *
+ * `<details>` nativo para abrir/cerrar sin librería, y el panel en
+ * `position: fixed` con la posición MEDIDA al abrir: la tabla vive dentro de un
+ * contenedor con `overflow`, que recortaría cualquier `absolute`. Abre hacia
+ * arriba cuando no entra abajo (`alto`), como el autofiltro de Excel. Se cierra
+ * al click afuera y al scrollear — una posición fija quedaría colgada en el aire.
+ */
+function usePopoverCabecera(alto: number) {
   const ref = useRef<HTMLDetailsElement>(null);
-  /* `top` si entra debajo del botón; `bottom` (medido desde el borde inferior de
-     la ventana) cuando la cabecera está al pie de la pantalla y la lista
-     quedaría cortada — se abre hacia arriba, como el autofiltro de Excel. */
   const [pos, setPos] = useState<{ left: number; top?: number; bottom?: number } | null>(null);
   useEffect(() => {
     const el = ref.current;
@@ -278,25 +272,139 @@ export function FiltroColumnaMulti({
       document.removeEventListener("scroll", cerrar, true);
     };
   }, []);
+  const alAbrir = (e: React.SyntheticEvent<HTMLDetailsElement>) => {
+    const d = e.currentTarget;
+    if (!d.open) return;
+    const r = d.querySelector("summary")?.getBoundingClientRect();
+    if (!r) return;
+    const entraAbajo = r.bottom + 4 + alto <= window.innerHeight;
+    setPos(entraAbajo ? { top: r.bottom + 4, left: r.left } : { bottom: window.innerHeight - r.top + 4, left: r.left });
+  };
+  const estilo = pos ? { position: "fixed" as const, top: pos.top, bottom: pos.bottom, left: pos.left } : undefined;
+  return { ref, alAbrir, estilo };
+}
+
+/** El disparador del desplegable: mismo alto y borde que `FiltroColumna`. */
+const SUMMARY_CABECERA =
+  "flex h-9 min-w-24 max-w-56 cursor-pointer list-none items-center justify-between gap-1 rounded-lg border-[1.5px] bg-[var(--surface-raised)] pl-2.5 pr-2 text-sm font-medium text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none [&::-webkit-details-marker]:hidden";
+
+/**
+ * «Mayor que», «entre X e Y» en la cabecera de una columna de números — el otro
+ * autofiltro de Excel (Brandon, 2026-09-03).
+ *
+ * Dos topes opcionales y nada más: es como se decide en el aserradero («las de
+ * más de medio metro cúbico», «rendimiento bajo 50 %»). Un tope vacío no filtra
+ * ese lado, así que «≥ 0.5» se escribe llenando sólo el primero.
+ */
+export function FiltroColumnaRango({
+  label,
+  unidad,
+  paso = 0.1,
+  valor,
+  onChange,
+  placeholder = "Todos",
+}: {
+  label: string;
+  /** m³, %, pz — se dice al lado de cada input y en el resumen. */
+  unidad?: string;
+  paso?: number;
+  valor: { min: number | null; max: number | null } | undefined;
+  onChange: (r: { min: number | null; max: number | null }) => void;
+  placeholder?: string;
+}) {
+  const { ref, alAbrir, estilo } = usePopoverCabecera(170);
+  const min = valor?.min ?? null;
+  const max = valor?.max ?? null;
+  const activo = min != null || max != null;
+  const resumen = !activo
+    ? placeholder
+    : min != null && max != null
+      ? `${min} – ${max}`
+      : min != null
+        ? `≥ ${min}`
+        : `≤ ${max}`;
+  /* Un input vacío es `null` (sin tope), no 0: «≥ 0» dejaría afuera lo negativo
+     y, peor, se leería como un filtro puesto cuando el operador sólo borró. */
+  const leer = (v: string) => (v.trim() === "" ? null : Number(v));
+  const campo =
+    "h-10 w-24 rounded-lg border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  return (
+    <details ref={ref} onToggle={alAbrir} className="mt-1.5 block font-normal normal-case tracking-normal">
+      <summary
+        aria-label={`Filtrar ${label} por rango`}
+        className={`${SUMMARY_CABECERA} ${activo ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)]"}`}
+      >
+        <span className="truncate tabular-nums">{resumen}</span>
+        <ChevronDown
+          className={`h-3.5 w-3.5 shrink-0 ${activo ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
+          aria-hidden
+        />
+      </summary>
+      <div
+        style={estilo}
+        className="z-50 w-60 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)]"
+      >
+        <p className="mb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          {label} {unidad ? `(${unidad})` : ""}
+        </p>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            inputMode="decimal"
+            step={paso}
+            value={min ?? ""}
+            onChange={(e) => onChange({ min: leer(e.target.value), max })}
+            placeholder="desde"
+            aria-label={`${label} desde`}
+            className={campo}
+          />
+          <span className="text-sm text-[var(--text-tertiary)]">a</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            step={paso}
+            value={max ?? ""}
+            onChange={(e) => onChange({ min, max: leer(e.target.value) })}
+            placeholder="hasta"
+            aria-label={`${label} hasta`}
+            className={campo}
+          />
+        </div>
+        {activo && (
+          <button
+            type="button"
+            onClick={() => onChange({ min: null, max: null })}
+            className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-[var(--text-secondary)] underline-offset-2 hover:text-[var(--text-primary)] hover:underline"
+          >
+            <X className="h-3.5 w-3.5" aria-hidden /> Quitar el rango
+          </button>
+        )}
+      </div>
+    </details>
+  );
+}
+
+export function FiltroColumnaMulti({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = "Todas",
+}: {
+  label: string;
+  value: readonly string[];
+  options: FacetaOpcion[];
+  onChange: (v: string[]) => void;
+  placeholder?: string;
+}) {
+  const { ref, alAbrir, estilo } = usePopoverCabecera(256);
   const elegidas = new Set(value);
   const resumen = value.length === 0 ? placeholder : value.length === 1 ? value[0] : `${value.length} elegidas`;
   return (
-    <details
-      ref={ref}
-      onToggle={(e) => {
-        const d = e.currentTarget;
-        if (!d.open) return;
-        const r = d.querySelector("summary")?.getBoundingClientRect();
-        if (!r) return;
-        /* 16rem = el `max-h-64` de la lista. Si no entra abajo, va arriba. */
-        const entraAbajo = r.bottom + 4 + 256 <= window.innerHeight;
-        setPos(entraAbajo ? { top: r.bottom + 4, left: r.left } : { bottom: window.innerHeight - r.top + 4, left: r.left });
-      }}
-      className="mt-1.5 block font-normal normal-case tracking-normal"
-    >
+    <details ref={ref} onToggle={alAbrir} className="mt-1.5 block font-normal normal-case tracking-normal">
       <summary
         aria-label={`Filtrar por ${label}`}
-        className={`flex h-9 min-w-24 max-w-56 cursor-pointer list-none items-center justify-between gap-1 rounded-lg border-[1.5px] bg-[var(--surface-raised)] pl-2.5 pr-2 text-sm font-medium text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none [&::-webkit-details-marker]:hidden ${
+        className={`${SUMMARY_CABECERA} ${
           value.length > 0 ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)]"
         }`}
       >
@@ -309,7 +417,7 @@ export function FiltroColumnaMulti({
       <div
         role="group"
         aria-label={`Valores de ${label}`}
-        style={pos ? { position: "fixed", top: pos.top, bottom: pos.bottom, left: pos.left } : undefined}
+        style={estilo}
         className="z-50 max-h-64 w-64 overflow-y-auto rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
       >
         {options.length === 0 && <p className="px-2 py-1.5 text-sm text-[var(--text-tertiary)]">Sin valores</p>}

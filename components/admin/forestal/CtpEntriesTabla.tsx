@@ -31,8 +31,9 @@ import {
   UNIT_LABELS,
 } from "./ctp-section-shared";
 import { IconAction } from "./ctp-shared";
-import { FiltroColumna, type FacetaOpcion } from "./ctp-filtros-panel";
+import { FiltroColumna, FiltroColumnaRango, type FacetaOpcion } from "./ctp-filtros-panel";
 import { estadoDeGuia } from "@/lib/forestal/gtf-estado";
+import { CAMPO_RANGO_META, type CampoRango, type RangoNumerico } from "@/lib/forestal/ctp-secciones-filtro";
 import type { totalesDeSeccion } from "@/lib/forestal/ctp-secciones-filtro";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
@@ -54,6 +55,12 @@ export interface FiltroDeColumna {
   placeholder?: string;
 }
 
+/** «Mayor que» / «entre X e Y» en una columna de números. */
+export interface RangoDeColumna {
+  valor: RangoNumerico | undefined;
+  onChange: (r: RangoNumerico) => void;
+}
+
 /** Qué columnas traen autofiltro. Sin la clave, la columna va como siempre. */
 export interface FiltrosDeColumna {
   species?: FiltroDeColumna;
@@ -61,6 +68,8 @@ export interface FiltrosDeColumna {
   salida?: FiltroDeColumna;
   permiso?: FiltroDeColumna;
   destino?: FiltroDeColumna;
+  /** Por columna numérica; la unidad y el paso salen de `CAMPO_RANGO_META`. */
+  rangos?: Partial<Record<CampoRango, RangoDeColumna>>;
 }
 
 // timeZone UTC: entryDate es date-only guardada a medianoche UTC — en hora Lima
@@ -244,12 +253,37 @@ function ThFiltro({ label, filtro, className }: {
   );
 }
 
-function SortTh({ label, by, sort, onSort, className }: {
+/** Cabecera de columna numérica con su rango debajo del título. */
+function ThRango({ campo, rango, className }: {
+  campo: CampoRango; rango?: RangoDeColumna; className?: string;
+}) {
+  const meta = CAMPO_RANGO_META[campo];
+  const etiqueta = campo === "consumido" ? "Consumido (m³)" : meta.label;
+  return (
+    <Th className={className}>
+      <span className="block">{etiqueta}</span>
+      {rango && (
+        <FiltroColumnaRango
+          label={meta.label}
+          unidad={meta.unidad}
+          paso={meta.paso}
+          valor={rango.valor}
+          onChange={rango.onChange}
+        />
+      )}
+    </Th>
+  );
+}
+
+function SortTh({ label, by, sort, onSort, className, campoRango, rango }: {
   label: string; by: SortKey; sort: { by: SortKey | null; dir: "asc" | "desc" }; onSort: (by: SortKey) => void; className?: string;
+  /** Se ordena Y se acota desde la misma cabecera (Rend.). */
+  campoRango?: CampoRango; rango?: RangoDeColumna;
 }) {
   const active = sort.by === by;
   const Ico = active ? (sort.dir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
   const right = className?.includes("text-right");
+  const meta = campoRango ? CAMPO_RANGO_META[campoRango] : null;
   return (
     <th className={`px-4 py-3 font-bold ${className ?? ""}`}>
       <button
@@ -259,6 +293,15 @@ function SortTh({ label, by, sort, onSort, className }: {
       >
         {label} <Ico className={`h-3.5 w-3.5 ${active ? "" : "opacity-40"}`} />
       </button>
+      {meta && rango && (
+        <FiltroColumnaRango
+          label={meta.label}
+          unidad={meta.unidad}
+          paso={meta.paso}
+          valor={rango.valor}
+          onChange={rango.onChange}
+        />
+      )}
     </th>
   );
 }
@@ -300,10 +343,12 @@ export default function CtpEntriesTabla({
               <ThFiltro label="Producto" filtro={fc.product} />
               {section === "produccion" ? (
                 <>
-                  {cv.consumido && <Th className="text-right">Consumido (m³)</Th>}
+                  {cv.consumido && <ThRango campo="consumido" rango={fc.rangos?.consumido} className="text-right" />}
+                  {/* «Producido» no lleva rango: su unidad cambia por línea
+                      (m³/pt/kg) y un «entre 10 y 20» mezclaría magnitudes. */}
                   <SortTh label="Producido" by="cantidad" sort={sort} onSort={onSort} className="text-right" />
-                  {cv.piezas && <Th className="text-right">Piezas</Th>}
-                  {cv.rend && <SortTh label="Rend." by="rend" sort={sort} onSort={onSort} className="text-right" />}
+                  {cv.piezas && <ThRango campo="piezas" rango={fc.rangos?.piezas} className="text-right" />}
+                  {cv.rend && <SortTh label="Rend." by="rend" sort={sort} onSort={onSort} className="text-right" campoRango="rend" rango={fc.rangos?.rend} />}
                   {cv.salida && <ThFiltro label="Salida" filtro={fc.salida} />}
                   {cv.permiso && <ThFiltro label="N° Permiso" filtro={fc.permiso} />}
                 </>

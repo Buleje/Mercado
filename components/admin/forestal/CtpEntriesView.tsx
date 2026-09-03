@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Plus, Search, Boxes, Truck, AlertCircle, PackagePlus, Calendar, Table } from "@buleje/design-system/icons";
+import { Plus, Search, Boxes, Truck, AlertCircle, PackagePlus, Calendar, Table, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { accionesDeLotes, accionesDeSeccion, accionesPorDeclarar } from "./ctp-entries-acciones";
@@ -35,7 +35,14 @@ import { useCtpSeccion } from "@/hooks/use-ctp-secciones";
 import CtpSimuladorModal from "./CtpSimuladorModal";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import CtpFiltrosPanel, { BotonFiltros, type FacetaOpcion } from "./ctp-filtros-panel";
-import { SALIDA_LABEL, type ClaveSalida } from "@/lib/forestal/ctp-secciones-filtro";
+import {
+  rangoActivo,
+  rangosPuestos,
+  SALIDA_LABEL,
+  type CampoRango,
+  type ClaveSalida,
+  type RangoNumerico,
+} from "@/lib/forestal/ctp-secciones-filtro";
 import { nombreArchivoSeccion, seccionACsv } from "@/lib/forestal/ctp-secciones-csv";
 import { corridasAMedioDeclarar } from "@/lib/forestal/produccion-paquetes";
 
@@ -233,12 +240,34 @@ export function CtpEntriesView({
     enLaCabecera[id]
       ? { value: (facetas[id] as string | undefined) ?? "", options, onChange: (v: string) => setFaceta(id, v), ...extra }
       : undefined;
+  /**
+   * Los rangos numéricos («≥ 0.5 m³», «entre 10 y 20 piezas»): mismo `facetas`,
+   * otra clave. Un rango vacío se BORRA en vez de guardarse como
+   * `{min:null,max:null}` — si quedara, el badge de «Filtros» contaría uno que
+   * no filtra nada.
+   */
+  const setRango = (campo: CampoRango, r: RangoNumerico) =>
+    setFacetas((f) => {
+      const rangos = { ...f.rangos };
+      if (rangoActivo(r)) rangos[campo] = r;
+      else delete rangos[campo];
+      return { ...f, rangos: Object.keys(rangos).length > 0 ? rangos : undefined };
+    });
+  const rangoCol = (campo: CampoRango) => ({
+    valor: facetas.rangos?.[campo],
+    onChange: (r: RangoNumerico) => setRango(campo, r),
+  });
   const filtrosColumna = {
     species: filtroCol("species", opciones.species, { placeholder: "Todas" }),
     product: filtroCol("product", opciones.products),
     destino: filtroCol("destino", opciones.destinos),
     salida: filtroCol("salida", opciones.salidas, { etiqueta: (v: string) => SALIDA_LABEL[v as ClaveSalida] ?? v, placeholder: "Todas" }),
     permiso: filtroCol("permiso", opciones.permisos),
+    /* Sólo en Producción: son sus columnas. Despacho no tiene consumido ni rend. */
+    rangos:
+      section === "produccion"
+        ? { consumido: rangoCol("consumido"), piezas: rangoCol("piezas"), rend: rangoCol("rend") }
+        : undefined,
   };
   /** Despacho para el que se está emitiendo el ANEXO N° 04 de la GTF. */
   const [anexoEntry, setAnexoEntry] = useState<CtpEntry | null>(null);
@@ -1017,6 +1046,32 @@ export function CtpEntriesView({
           onToggle={() => setFacetas((f) => ({ ...f, cites: f.cites === true ? undefined : true }))}
           onLimpiar={() => setFacetas({})}
         />
+      )}
+
+      {/**
+       * Los rangos puestos, a la vista y con su cruz.
+       *
+       * Un rango vive en la cabecera de su columna, y esa columna se puede
+       * APAGAR desde «Columnas»: sin este renglón quedaría la tabla acotada y
+       * ningún control para desacotarla. Misma regla que los chips del patio —
+       * un filtro escondido que explica por qué falta madera es peor que un
+       * renglón de más.
+       */}
+      {rangosPuestos(facetas).length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {rangosPuestos(facetas).map(({ campo, texto }) => (
+            <button
+              key={campo}
+              type="button"
+              onClick={() => setRango(campo, { min: null, max: null })}
+              title="Quitar este rango"
+              className="inline-flex items-center gap-1 rounded-full border-2 border-[var(--accent)] bg-primary/10 px-2.5 py-1 text-sm font-bold tabular-nums text-[var(--accent-ink)] transition-colors hover:bg-primary/20 dark:text-[var(--accent)]"
+            >
+              {texto}
+              <X className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          ))}
+        </div>
       )}
 
       <AvisosDelLibro error={error} mensaje={toProductMsg} onCerrarMensaje={() => setToProductMsg(null)} />

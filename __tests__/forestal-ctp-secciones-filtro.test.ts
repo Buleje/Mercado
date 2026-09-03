@@ -9,6 +9,10 @@ import { describe, expect, it } from "vitest";
 import {
   claveSalida,
   contarFiltros,
+  enRango,
+  rangoActivo,
+  rangosPuestos,
+  textoDeRango,
   facetasDeSeccion,
   filtrarSeccion,
   totalesDeSeccion,
@@ -151,6 +155,82 @@ describe("faceta y filtro de salida", () => {
     expect(filtrarSeccion(lineas, { salida: "salido" }).map((l) => l.id)).toEqual(["b"]);
     expect(contarFiltros({ salida: "stock" })).toBe(1);
     expect(contarFiltros({ species: "Tornillo", salida: "stock" })).toBe(2);
+  });
+});
+
+/**
+ * «Mayor que» / «entre X e Y» — el otro autofiltro de Excel. La regla que más
+ * importa: un valor AUSENTE no entra en un rango pedido (una corrida abierta no
+ * declara rendimiento; si pasara «rend ≥ 50 %» la tabla afirmaría de ella algo
+ * que el libro no sabe).
+ */
+describe("enRango / rangoActivo", () => {
+  it("sin topes no filtra nada", () => {
+    expect(rangoActivo(undefined)).toBe(false);
+    expect(rangoActivo({ min: null, max: null })).toBe(false);
+    expect(enRango(5, undefined)).toBe(true);
+    expect(enRango(null, { min: null, max: null })).toBe(true);
+  });
+
+  it("respeta cada tope, inclusive en los bordes", () => {
+    expect(enRango(5, { min: 5, max: null })).toBe(true);
+    expect(enRango(4.99, { min: 5, max: null })).toBe(false);
+    expect(enRango(5, { min: null, max: 5 })).toBe(true);
+    expect(enRango(5.01, { min: null, max: 5 })).toBe(false);
+    expect(enRango(3, { min: 2, max: 4 })).toBe(true);
+    expect(enRango(1, { min: 2, max: 4 })).toBe(false);
+  });
+
+  it("lo que no tiene dato queda AFUERA de un rango pedido", () => {
+    expect(enRango(null, { min: 50, max: null })).toBe(false);
+    expect(enRango(Number.NaN, { min: 50, max: null })).toBe(false);
+  });
+
+  it("acepta rangos al reves sin romper (no devuelve todo)", () => {
+    expect(enRango(3, { min: 4, max: 2 })).toBe(false);
+  });
+
+  it("se lee como se habla", () => {
+    expect(textoDeRango("consumido", { min: 0.5, max: null })).toBe("Consumido ≥ 0.5 m³");
+    expect(textoDeRango("rend", { min: null, max: 50 })).toBe("Rend. ≤ 50 %");
+    expect(textoDeRango("piezas", { min: 10, max: 20 })).toBe("Piezas 10 – 20 pz");
+  });
+});
+
+describe("filtrarSeccion con rangos", () => {
+  const l = (over: Partial<LineaCsv>) => linea(over);
+  const lineas = [
+    l({ id: "a", volumeInputM3: "1", pieces: 5, rendimientoPct: "40" }),
+    l({ id: "b", volumeInputM3: "10", pieces: 50, rendimientoPct: "60" }),
+    l({ id: "c", volumeInputM3: null, pieces: null, rendimientoPct: null }),
+  ];
+
+  it("acota por consumido, piezas y rendimiento", () => {
+    expect(filtrarSeccion(lineas, { rangos: { consumido: { min: 5, max: null } } }).map((x) => x.id)).toEqual(["b"]);
+    expect(filtrarSeccion(lineas, { rangos: { piezas: { min: null, max: 10 } } }).map((x) => x.id)).toEqual(["a"]);
+    expect(filtrarSeccion(lineas, { rangos: { rend: { min: 50, max: 70 } } }).map((x) => x.id)).toEqual(["b"]);
+  });
+
+  it("los rangos se acumulan entre si y con las facetas", () => {
+    expect(
+      filtrarSeccion(lineas, { rangos: { consumido: { min: 5, max: null }, rend: { min: null, max: 50 } } }),
+    ).toHaveLength(0);
+    expect(
+      filtrarSeccion(lineas, { species: "Tornillo", rangos: { consumido: { min: 0.5, max: null } } }).map((x) => x.id),
+    ).toEqual(["a", "b"]);
+  });
+
+  it("la linea sin el dato no entra, pero sin rango puesto sigue estando", () => {
+    expect(filtrarSeccion(lineas, { rangos: { consumido: { min: 0, max: null } } }).map((x) => x.id)).toEqual(["a", "b"]);
+    expect(filtrarSeccion(lineas, {}).map((x) => x.id)).toEqual(["a", "b", "c"]);
+  });
+
+  it("cuenta y lista SOLO los rangos con algo puesto (el badge y los chips)", () => {
+    expect(contarFiltros({ rangos: { consumido: { min: null, max: null } } })).toBe(0);
+    expect(contarFiltros({ species: "Tornillo", rangos: { rend: { min: 50, max: null } } })).toBe(2);
+    expect(rangosPuestos({ rangos: { consumido: { min: null, max: null }, piezas: { min: 3, max: null } } })).toEqual([
+      { campo: "piezas", texto: "Piezas ≥ 3 pz" },
+    ]);
   });
 });
 

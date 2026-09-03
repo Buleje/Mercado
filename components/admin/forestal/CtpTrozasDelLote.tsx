@@ -24,7 +24,8 @@ import { CheckCircle2, Search } from "@buleje/design-system/icons";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
-import { FiltroColumna, type FacetaOpcion } from "./ctp-filtros-panel";
+import { FiltroColumna, FiltroColumnaRango, type FacetaOpcion } from "./ctp-filtros-panel";
+import { enRango, type RangoNumerico } from "@/lib/forestal/ctp-secciones-filtro";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** `AAAA-MM-DD` o ISO → `DD/MM/AAAA` en UTC (las fechas del libro son date-only). */
@@ -99,6 +100,13 @@ export default function CtpTrozasDelLote({
   /** Autofiltros de las otras dos columnas con valores repetidos. */
   const [gtf, setGtf] = useState("");
   const [especie, setEspecie] = useState("");
+  /**
+   * «Las de más de medio metro cúbico»: el rango de la columna Volumen.
+   *
+   * Con sesenta trozas de una guía, elegir por tamaño es lo que decide qué entra
+   * al carro hoy — y era lo único que no se podía hacer sin ir pieza por pieza.
+   */
+  const [rangoVol, setRangoVol] = useState<RangoNumerico>({ min: null, max: null });
   const marcadas = seleccion ?? SIN_SELECCION;
 
   const opcionesGtf = useMemo(() => opcionesDeColumna(trozas, (t) => t.gtfNumber), [trozas]);
@@ -109,10 +117,11 @@ export default function CtpTrozasDelLote({
     return trozas.filter((t) => {
       if (gtf && (t.gtfNumber ?? "").trim() !== gtf) return false;
       if (especie && (t.especieComun ?? "").trim() !== especie) return false;
+      if (!enRango(t.volumenM3 == null ? null : Number(t.volumenM3), rangoVol)) return false;
       if (!q) return true;
       return [t.codigoPlanta, t.codificacion, t.gtfNumber].some((v) => (v ?? "").toLowerCase().includes(q));
     });
-  }, [trozas, busca, gtf, especie]);
+  }, [trozas, busca, gtf, especie, rangoVol]);
 
   const todas = filas.length > 0 && filas.every((t) => marcadas.has(t.id));
   /* En lectura la cuenta es la de TODA la corrida: no hay elegidas y decir
@@ -169,7 +178,11 @@ export default function CtpTrozasDelLote({
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
   const codigoDe = (t: TrozaConsumible) => (t.codigoPlanta || t.codificacion || "").trim();
-  const enRango = (codigo: string, a: string, b: string) => {
+  /* `codigoEnRango` y no `enRango`: éste compara CÓDIGOS (texto correlativo) y el
+     `enRango` del módulo puro compara NÚMEROS. Con el mismo nombre, el local
+     tapaba al importado dentro del componente y el rango de volumen se llamaba
+     con 2 argumentos sobre una función de 3 — lo cazó `tsgo`, no el navegador. */
+  const codigoEnRango = (codigo: string, a: string, b: string) => {
     const [na, nb, nc] = [Number(a), Number(b), Number(codigo)];
     if (Number.isFinite(na) && Number.isFinite(nb) && Number.isFinite(nc) && codigo !== "") {
       return nc >= Math.min(na, nb) && nc <= Math.max(na, nb);
@@ -181,7 +194,7 @@ export default function CtpTrozasDelLote({
     if (!desde.trim() || !hasta.trim()) return [];
     return filas.filter((t) => {
       const c = codigoDe(t);
-      return c !== "" && enRango(c, desde.trim(), hasta.trim());
+      return c !== "" && codigoEnRango(c, desde.trim(), hasta.trim());
     });
   }, [filas, desde, hasta]);
   const aplicarRango = (sumar: boolean) => {
@@ -305,7 +318,16 @@ export default function CtpTrozasDelLote({
             <th className="px-3 py-2 text-right font-bold">D1 (cm)</th>
             <th className="px-3 py-2 text-right font-bold">D2 (cm)</th>
             <th className="px-3 py-2 text-right font-bold">Long. (m)</th>
-            <th className="px-3 py-2 text-right font-bold">Volumen (m³)</th>
+            <th className="px-3 py-2 text-right font-bold">
+              <span className="block">Volumen (m³)</span>
+              <FiltroColumnaRango
+                label="Volumen"
+                unidad="m³"
+                paso={0.05}
+                valor={rangoVol}
+                onChange={setRangoVol}
+              />
+            </th>
             <th className="px-3 py-2 text-center font-bold">
               {soloLectura ? (
                 <span className="block">Estado</span>

@@ -46,10 +46,72 @@ export interface FiltrosSeccion {
   permiso?: string;
   /** Sólo Producción: en qué anda el paquete (patio / parcial / despachado). */
   salida?: ClaveSalida;
+  /** «Mayor que», «entre X e Y» por columna numérica (el otro autofiltro de Excel). */
+  rangos?: Partial<Record<CampoRango, RangoNumerico>>;
 }
 
 const num = (v: string | number | null | undefined): number => (v == null ? 0 : Number(v) || 0);
 const r2 = (n: number) => Math.round(n * 100) / 100;
+
+/** Un rango abierto por los dos lados: `null` = sin tope de ese lado. */
+export interface RangoNumerico {
+  min: number | null;
+  max: number | null;
+}
+
+/**
+ * Qué columnas numéricas admiten rango.
+ *
+ * **`producido` NO está a propósito:** su unidad cambia por línea (m³, pt, kg,
+ * unidad), así que un «entre 10 y 20» compararía 10 pie tablar con 10 m³ —
+ * peras y manzanas en el mismo filtro. Las tres de acá tienen una sola unidad:
+ * `volumeInputM3` es siempre m³, las piezas son un conteo y el rendimiento un
+ * porcentaje.
+ */
+export type CampoRango = "consumido" | "piezas" | "rend";
+
+export const CAMPO_RANGO_META: Record<CampoRango, { label: string; unidad: string; paso: number }> = {
+  consumido: { label: "Consumido", unidad: "m³", paso: 0.1 },
+  piezas: { label: "Piezas", unidad: "pz", paso: 1 },
+  rend: { label: "Rend.", unidad: "%", paso: 1 },
+};
+
+/** De dónde sale el número de cada columna. */
+const VALOR_DE_RANGO: Record<CampoRango, (l: LineaCtp) => number | null> = {
+  consumido: (l) => (l.volumeInputM3 == null ? null : Number(l.volumeInputM3)),
+  piezas: (l) => l.pieces,
+  rend: (l) => (l.rendimientoPct == null ? null : Number(l.rendimientoPct)),
+};
+
+/** ¿Hay algo puesto en este rango? Un `{min:null,max:null}` no filtra nada. */
+export const rangoActivo = (r: RangoNumerico | undefined): boolean =>
+  Boolean(r && (r.min != null || r.max != null));
+
+/**
+ * ¿El valor cae en el rango? Sin rango, todo entra.
+ *
+ * **Un valor ausente NO entra en un rango pedido**: una corrida abierta no
+ * declara rendimiento, y si pasara el filtro «rendimiento ≥ 50 %» la tabla
+ * afirmaría de ella algo que el libro no sabe. Es lo mismo que hace Excel con
+ * una celda vacía, y el motivo por el que la faceta de `salidas` tampoco opina
+ * de lo que no tiene dato.
+ */
+export function enRango(v: number | null, r: RangoNumerico | undefined): boolean {
+  if (!rangoActivo(r)) return true;
+  if (v == null || !Number.isFinite(v)) return false;
+  if (r!.min != null && v < r!.min) return false;
+  if (r!.max != null && v > r!.max) return false;
+  return true;
+}
+
+/** Cómo se lee un rango puesto: «≥ 0.5 m³», «≤ 2 m³», «0.5 – 2 m³». */
+export function textoDeRango(campo: CampoRango, r: RangoNumerico): string {
+  const { label, unidad } = CAMPO_RANGO_META[campo];
+  const { min, max } = r;
+  const cuerpo =
+    min != null && max != null ? `${min} – ${max}` : min != null ? `≥ ${min}` : `≤ ${max}`;
+  return `${label} ${cuerpo} ${unidad}`.trim();
+}
 
 /** En qué anda el paquete producido. */
 export type ClaveSalida = "stock" | "parcial" | "salido";
@@ -181,6 +243,9 @@ export function filtrarSeccion<T extends LineaCtp>(lineas: T[], f: FiltrosSeccio
     if (f.cites !== undefined && l.cites !== f.cites) return false;
     if (f.permiso && !(l.permisoOrigen ?? []).includes(f.permiso)) return false;
     if (f.salida && claveSalida(l) !== f.salida) return false;
+    for (const [campo, r] of Object.entries(f.rangos ?? {})) {
+      if (!enRango(VALOR_DE_RANGO[campo as CampoRango](l), r)) return false;
+    }
     return true;
   });
 }
@@ -193,8 +258,16 @@ export function contarFiltros(f: FiltrosSeccion): number {
     (f.destino ? 1 : 0) +
     (f.cites !== undefined ? 1 : 0) +
     (f.permiso ? 1 : 0) +
-    (f.salida ? 1 : 0)
+    (f.salida ? 1 : 0) +
+    Object.values(f.rangos ?? {}).filter(rangoActivo).length
   );
+}
+
+/** Los rangos puestos, para dibujarlos como chips con su cruz. */
+export function rangosPuestos(f: FiltrosSeccion): { campo: CampoRango; texto: string }[] {
+  return Object.entries(f.rangos ?? {})
+    .filter(([, r]) => rangoActivo(r))
+    .map(([campo, r]) => ({ campo: campo as CampoRango, texto: textoDeRango(campo as CampoRango, r!) }));
 }
 
 export interface TotalesSeccion {
