@@ -25,6 +25,7 @@ import {
   Layers,
   Leaf,
   Loader2,
+  PackageCheck,
   RotateCcw,
   Ruler,
   Search,
@@ -54,6 +55,7 @@ import CtpTrozasIngresadas from "./CtpTrozasIngresadas";
 import CtpResumenPermisoModal from "./CtpResumenPermisoModal";
 import CtpPatioFiltros from "./CtpPatioFiltros";
 import CtpPatioKpis from "./CtpPatioKpis";
+import { CtpKpisPlegables } from "./ctp-shared";
 import CtpApartados, { useApartado, type Apartado } from "./ctp-apartados";
 import { CtpPaginacion, usePaginacion } from "./ctp-tabla";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
@@ -589,48 +591,88 @@ export default function CtpConsumosView({
           Son las del CUADRO: en el apartado del patio manda `CtpPatioKpis`, que
           cuenta la pila (ADR-345). */}
       {apartado === "seccion2" && (
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <StatCard
-          density="compact"
-          label="Consumos"
-          value={nf(visibles.length)}
-          subValue={visibles.length === filas.length ? period.label : `de ${nf(filas.length)} · filtrado`}
-          icon={Flame}
-          emphasis="neutral"
-        />
-        <StatCard
-          density="compact"
-          label="Volumen consumido"
-          value={`${fmtM3(total)} m³`}
-          subValue="Entró a la sierra"
-          icon={TreePine}
-          emphasis="success"
-        />
-        <StatCard
-          density="compact"
-          label="Especies"
-          value={nf(especies)}
-          subValue={especies === 1 ? "Una sola especie" : "Distintas en el período"}
-          icon={Leaf}
-          emphasis="neutral"
-        />
-        {/* Reemplaza a «guías de origen» —que ya se ve en el filtro— por la
-            pregunta del negocio: de lo que entró a la sierra, ¿cuánto salió? */}
-        <StatCard
-          density="compact"
-          label="Rendimiento"
-          value={resumen.rendimientoPct != null ? `${resumen.rendimientoPct}%` : "—"}
-          subValue={
-            resumen.rendimientoPct != null
-              ? `${fmtM3(Number(resumen.producido))} m³ producidos · ${veredicto.texto}`
-              : resumen.corridasOtraUnidad > 0
-                ? `${resumen.corridasOtraUnidad} corrida(s) en otra unidad`
-                : "Sin producción declarada todavía"
+        <CtpKpisPlegables
+          claveMemoria="consumos-seccion2"
+          resumen={
+            visibles.length === 0
+              ? "Sin consumos en el período"
+              : `${nf(visibles.length)} consumo${visibles.length === 1 ? "" : "s"} · ${fmtM3(total)} m³ a la sierra` +
+                (resumen.rendimientoPct != null ? ` · ${resumen.rendimientoPct} %` : "") +
+                /* «corridas» explícito: NO son parte de los consumos de la
+                   izquierda. Una corrida sin origen no tiene fila en el cuadro
+                   —justamente porque no cita guía— así que «1 consumo · 4 sin
+                   origen» se leía como una contradicción. */
+                (resumen.corridasSinOrigen.length > 0
+                  ? ` · ${resumen.corridasSinOrigen.length} corrida${resumen.corridasSinOrigen.length === 1 ? "" : "s"} sin origen`
+                  : "")
           }
-          icon={Gauge}
-          emphasis={veredicto.tono === "ok" ? "success" : veredicto.tono === "neutro" ? "neutral" : "warning"}
+          tarjetas={[
+            <StatCard
+              key="consumos"
+              density="compact"
+              label="Consumos"
+              value={nf(visibles.length)}
+              subValue={visibles.length === filas.length ? period.label : `de ${nf(filas.length)} · filtrado`}
+              icon={Flame}
+              emphasis="neutral"
+            />,
+            <StatCard
+              key="volumen"
+              density="compact"
+              label="Volumen consumido"
+              value={`${fmtM3(total)} m³`}
+              subValue="Entró a la sierra"
+              icon={TreePine}
+              emphasis="success"
+            />,
+            <StatCard
+              key="especies"
+              density="compact"
+              label="Especies"
+              value={nf(especies)}
+              subValue={especies === 1 ? "Una sola especie" : "Distintas en el período"}
+              icon={Leaf}
+              emphasis="neutral"
+            />,
+            /* Reemplaza a «guías de origen» —que ya se ve en el filtro— por la
+               pregunta del negocio: de lo que entró a la sierra, ¿cuánto salió? */
+            <StatCard
+              key="rendimiento"
+              density="compact"
+              label="Rendimiento"
+              value={resumen.rendimientoPct != null ? `${resumen.rendimientoPct}%` : "—"}
+              subValue={
+                resumen.rendimientoPct != null
+                  ? `${fmtM3(Number(resumen.producido))} m³ producidos · ${veredicto.texto}`
+                  : resumen.corridasOtraUnidad > 0
+                    ? `${resumen.corridasOtraUnidad} corrida(s) en otra unidad`
+                    : "Sin producción declarada todavía"
+              }
+              icon={Gauge}
+              emphasis={veredicto.tono === "ok" ? "success" : veredicto.tono === "neutro" ? "neutral" : "warning"}
+            />,
+            /**
+             * El agujero de la cadena, como CIFRA y no sólo como cartel.
+             *
+             * `corridasSinOrigen` ya alimentaba el aviso de abajo; acá entra al
+             * mismo renglón que el resto para que se lea junto con el volumen
+             * que sí tiene guía — sin origen no hay certificado que emitir.
+             */
+            <StatCard
+              key="sin-origen"
+              density="compact"
+              label="Corridas sin origen"
+              value={nf(resumen.corridasSinOrigen.length)}
+              subValue={
+                resumen.corridasSinOrigen.length > 0
+                  ? "produjeron sin decir de qué guía salió — no tienen fila en el cuadro"
+                  : "toda la madera consumida cita su guía"
+              }
+              icon={resumen.corridasSinOrigen.length > 0 ? AlertTriangle : PackageCheck}
+              emphasis={resumen.corridasSinOrigen.length > 0 ? "error" : "success"}
+            />,
+          ]}
         />
-      </div>
       )}
 
       {/* Los del patio van en el MISMO renglón de la pantalla que los de arriba

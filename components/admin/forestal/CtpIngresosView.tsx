@@ -656,7 +656,11 @@ export default function CtpIngresosView({
           «Fuera de plazo» son siempre 0 acá —todo está recepcionado— y una fila
           de KPI que nunca dice nada enseña a no mirarla. */}
       {esArchivo ? (
-        <CtpGtfIngresadasKpis guias={guias} />
+        <CtpGtfIngresadasKpis
+          guias={guias}
+          lateOn={facetas.late === true}
+          onLate={() => setFacetas((f) => ({ ...f, late: f.late ? undefined : true }))}
+        />
       ) : (
       <CtpIngresosKpis
         stats={stats}
@@ -668,6 +672,8 @@ export default function CtpIngresosView({
         onLate={() => setFacetas((f) => ({ ...f, late: f.late ? undefined : true }))}
         onVolumen={() => setShowDashboard((v) => !v)}
         dashboardOn={showDashboard}
+        sinOrigenOn={facetas.sinOrigen === true}
+        onSinOrigen={() => setFacetas((f) => ({ ...f, sinOrigen: f.sinOrigen ? undefined : true }))}
       />
       )}
 

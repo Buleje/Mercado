@@ -26,15 +26,19 @@ import {
   Layers,
   PackageCheck,
   PackageOpen,
+  PackagePlus,
   Scale,
   Scissors,
   Truck,
   Warehouse,
 } from "@buleje/design-system/icons";
+import type { ReactNode } from "react";
 import { StatCard } from "@buleje/design-system";
+import { CtpKpisPlegables } from "./ctp-shared";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { juzgarRendimientoLote } from "@/lib/forestal/lotes-aserrio";
 import type { CtpSection } from "./ctp-section-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Lo que la vista ya calculó del período (ver `use-ctp-secciones`). */
 export interface KpisSeccion {
@@ -64,7 +68,6 @@ const TONO_A_EMPHASIS = {
 } as const;
 
 const n2 = (v: number) => v.toFixed(2);
-const n4 = (v: number) => v.toFixed(4);
 /** Anillo de la tarjeta que está filtrando: si no, nadie sabe por qué la tabla tiene menos filas. */
 const ANILLO = "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]";
 
@@ -77,6 +80,7 @@ export default function CtpSeccionKpis({
   soloSinAnexo,
   onSoloSinAnexo,
   onVerPendientes,
+  ampliables = 0,
 }: {
   section: CtpSection;
   kpis: KpisSeccion;
@@ -89,12 +93,24 @@ export default function CtpSeccionKpis({
   onSoloSinAnexo?: () => void;
   /** Producción: abrir el menú de corridas sin declarar. */
   onVerPendientes?: () => void;
+  /**
+   * Producción: corridas que YA declararon y todavía admiten más bajo el tope
+   * (ADR-365). Es deuda del libro igual que las abiertas —salió más madera de
+   * la misma corrida y falta anotarla— y hasta ahora sólo se veía como un
+   * ícono en la fila.
+   */
+  ampliables?: number;
 }) {
   const veredicto = juzgarRendimientoLote(kpis.avgRend > 0 ? kpis.avgRend : null);
 
-  return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+  /* Todas las tarjetas van juntas detrás del botón «Indicadores» (Brandon,
+     2026-09-03). Antes la primera fila quedaba fija y la segunda se pedía; con
+     ocho tarjetas eso seguía empujando la tabla —que es el trabajo— media
+     pantalla abajo en cada carga. El titular viaja en la línea de `resumen`. */
+  const tarjetas: ReactNode[] = [];
+  tarjetas.push(
       <StatCard
+        key="count"
         density="compact"
         label={section === "produccion" ? "Corridas" : "Despachos"}
         value={String(kpis.count)}
@@ -103,27 +119,31 @@ export default function CtpSeccionKpis({
         emphasis="neutral"
         onClick={onSoloVigentes}
         className={soloVigentes ? ANILLO : undefined}
-      />
+      />,
+  );
 
-      {section === "produccion" ? (
-        <>
+  if (section === "produccion") {
+    tarjetas.push(
           <StatCard
+            key="materia"
             density="compact"
             label="Materia prima"
             value={`${n2(kpis.consumido)} m³`}
             subValue={`${pieTablarDe(kpis.consumido).toLocaleString("es-PE")} pt a la sierra`}
             icon={Layers}
             emphasis="neutral"
-          />
+          />,
           <StatCard
+            key="producido"
             density="compact"
             label="Producido"
             value={`${n2(kpis.totalQty)} m³`}
             subValue={kpis.piezas > 0 ? `${kpis.piezas.toLocaleString("es-PE")} piezas declaradas` : "suma de lo declarado"}
             icon={PackageCheck}
             emphasis="success"
-          />
+          />,
           <StatCard
+            key="rendimiento"
             density="compact"
             label="Rendimiento prom."
             value={`${kpis.avgRend.toFixed(1)}%`}
@@ -132,11 +152,14 @@ export default function CtpSeccionKpis({
             subValue={kpis.avgRend > 0 ? `ponderado por m³ · ${veredicto.texto}` : "sin corridas declaradas"}
             icon={Scale}
             emphasis={TONO_A_EMPHASIS[veredicto.tono]}
-          />
-          {/* Sin corridas comparables NO se dice «0.00 m³»: un cero ahí se lee
-              como «no se pierde nada», que es una afirmación distinta de «no
-              hay con qué compararlo». */}
+          />,
+    );
+    tarjetas.push(
+          /* Sin corridas comparables NO se dice «0.00 m³»: un cero ahí se lee
+             como «no se pierde nada», que es una afirmación distinta de «no
+             hay con qué compararlo». */
           <StatCard
+            key="merma"
             density="compact"
             label="Merma"
             value={kpis.mermaSobre > 0 ? `${n2(kpis.merma)} m³` : "—"}
@@ -147,34 +170,54 @@ export default function CtpSeccionKpis({
             }
             icon={Scissors}
             emphasis="neutral"
-          />
+          />,
           <StatCard
+            key="en-planta"
             density="compact"
             label="En planta"
             value={`${n2(kpis.enPatio)} m³`}
             subValue="producido que todavía no salió"
             icon={Warehouse}
             emphasis={kpis.enPatio > 0 ? "success" : "neutral"}
-          />
+          />,
           <StatCard
+            key="sin-declarar"
             density="compact"
             label="Sin declarar"
             value={String(kpis.abiertas)}
             subValue={
               kpis.abiertas > 0
-                ? `${n4(kpis.consumidoAbierto)} m³ en la sierra — declaralas`
+                ? `${fmtM3(kpis.consumidoAbierto)} m³ en la sierra — declaralas`
                 : "todas las corridas dijeron qué salió"
             }
             icon={PackageOpen}
             emphasis={kpis.abiertas > 0 ? "warning" : "success"}
             onClick={kpis.abiertas > 0 ? onVerPendientes : undefined}
-          />
-          {/* Dos agujeros distintos y una sola tarjeta: manda el que domina.
+          />,
+          /* Dos agujeros distintos y una sola tarjeta: manda el que domina.
               Una corrida que declara SIN materia prima no aporta m³ a «sin
               guía» —no hay nada que atribuir— así que mostrar «0.00 m³» en rojo
-              con un subtítulo que habla de corridas era el número grande
-              diciendo una cosa y la letra chica otra. */}
+             con un subtítulo que habla de corridas era el número grande
+             diciendo una cosa y la letra chica otra. */
+          /* Deuda gemela de «Sin declarar», y distinta: acá la corrida SÍ
+             declaró, pero salió más de la misma madera y el tope todavía lo
+             permite (ADR-365). Sin la tarjeta, ese saldo sólo se veía abriendo
+             cada fila. */
           <StatCard
+            key="a-medio-declarar"
+            density="compact"
+            label="A medio declarar"
+            value={String(ampliables)}
+            subValue={
+              ampliables > 0
+                ? "corridas que admiten más producción — agregala desde la fila"
+                : "ninguna corrida quedó a medias"
+            }
+            icon={PackagePlus}
+            emphasis={ampliables > 0 ? "warning" : "success"}
+          />,
+          <StatCard
+            key="sin-origen-prod"
             density="compact"
             label={kpis.sinMateriaPrima > 0 ? "Sin materia prima" : "Sin origen"}
             value={kpis.sinMateriaPrima > 0 ? String(kpis.sinMateriaPrima) : `${n2(kpis.sinOrigen)} m³`}
@@ -189,35 +232,41 @@ export default function CtpSeccionKpis({
             }
             icon={kpis.sinOrigen > 0 || kpis.sinMateriaPrima > 0 ? AlertTriangle : PackageCheck}
             emphasis={kpis.sinOrigen > 0 || kpis.sinMateriaPrima > 0 ? "error" : "success"}
-          />
-        </>
-      ) : (
-        <>
+          />,
+    );
+  } else {
+    tarjetas.push(
           <StatCard
+            key="despachado"
             density="compact"
             label="Despachado"
             value={n2(kpis.totalQty)}
             subValue={kpis.piezas > 0 ? `${kpis.piezas.toLocaleString("es-PE")} piezas` : "suma de cantidades"}
             icon={PackageCheck}
             emphasis="success"
-          />
+          />,
           <StatCard
+            key="guias"
             density="compact"
             label="Guías de salida"
             value={String(kpis.guias)}
             subValue="GTF distintas emitidas"
             icon={Truck}
             emphasis="neutral"
-          />
+          />,
           <StatCard
+            key="destinos"
             density="compact"
             label="Destinos"
             value={String(kpis.destinos)}
             subValue="clientes o plantas distintas"
             icon={Warehouse}
             emphasis="neutral"
-          />
+          />,
+    );
+    tarjetas.push(
           <StatCard
+            key="sin-anexo"
             density="compact"
             label="Sin anexo 04"
             value={String(sinAnexo ?? 0)}
@@ -228,8 +277,9 @@ export default function CtpSeccionKpis({
             emphasis={(sinAnexo ?? 0) > 0 ? "warning" : "success"}
             onClick={(sinAnexo ?? 0) > 0 ? onSoloSinAnexo : undefined}
             className={soloSinAnexo ? ANILLO : undefined}
-          />
+          />,
           <StatCard
+            key="sin-origen-desp"
             density="compact"
             label="Sin origen"
             value={n2(kpis.sinOrigen)}
@@ -238,9 +288,20 @@ export default function CtpSeccionKpis({
             }
             icon={kpis.sinOrigen > 0 ? AlertTriangle : PackageCheck}
             emphasis={kpis.sinOrigen > 0 ? "error" : "success"}
-          />
-        </>
-      )}
-    </div>
-  );
+          />,
+    );
+  }
+
+  /* El titular de la pestaña en una línea: lo que se mira de reojo sin abrir el
+     panel. Sale de las mismas cuentas que las tarjetas — no es un cálculo
+     aparte que pueda contradecirlas. */
+  const resumen =
+    section === "produccion"
+      ? `${kpis.count} corrida${kpis.count === 1 ? "" : "s"} · ${n2(kpis.consumido)} m³ → ${n2(kpis.totalQty)} m³` +
+        (kpis.avgRend > 0 ? ` · ${kpis.avgRend.toFixed(1)} %` : "") +
+        (kpis.abiertas > 0 ? ` · ${kpis.abiertas} sin declarar` : "")
+      : `${kpis.count} despacho${kpis.count === 1 ? "" : "s"} · ${n2(kpis.totalQty)} · ${kpis.guias} guía${kpis.guias === 1 ? "" : "s"}` +
+        ((sinAnexo ?? 0) > 0 ? ` · ${sinAnexo} sin anexo` : "");
+
+  return <CtpKpisPlegables claveMemoria={`seccion-${section}`} tarjetas={tarjetas} resumen={resumen} />;
 }

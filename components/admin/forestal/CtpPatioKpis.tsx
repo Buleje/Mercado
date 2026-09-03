@@ -13,36 +13,42 @@
  * la misma madera que no coinciden enseñan a no mirar ninguna.
  */
 
-import { Clock, Layers, PackageOpen, TreePine } from "@buleje/design-system/icons";
+import { Clock, FileStack, Layers, PackageOpen, Ruler, TreePine } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
-import { CHART_PALETTE } from "@/lib/chart-theme";
+import { CtpKpisPlegables } from "./ctp-shared";
 import { DIAS_PATIO_ANEJO, type ResumenPatio } from "@/lib/forestal/patio-resumen";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { pieTablarAserrableDe } from "@/lib/forestal/cubicacion";
+import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 
 const nf = (n: number) => n.toLocaleString("es-PE");
 
-/** Los colores de la barra: la paleta categórica del proyecto, no una propia. */
-const TINTES = CHART_PALETTE;
-
 export default function CtpPatioKpis({
   resumen,
-  /** Cuántas piezas tiene el patio sin filtrar — para decir qué quedó afuera. */
-  totalSinFiltrar,
 }: {
   resumen: ResumenPatio;
-  totalSinFiltrar: number;
+  /** Cuántas piezas tiene el patio sin filtrar. Ya no se usa acá —el resumen de
+   *  especies que la necesitaba se sacó (Brandon, 2026-09-01): agrupar la
+   *  tabla por especie/guía/permiso dice lo mismo, sin duplicar la cuenta. */
+  totalSinFiltrar?: number;
 }) {
   const r = resumen;
-  const filtrado = r.piezas !== totalSinFiltrar;
   const lider = r.porEspecie[0] ?? null;
-  /* Las que se dibujan en la barra: cinco y el resto junto. Con quince especies
-     una barra de quince tramos no dice nada. */
-  const top = r.porEspecie.slice(0, 5);
-  const restoPct = Math.max(0, Math.round((100 - top.reduce((a, e) => a + e.pctVolumen, 0)) * 10) / 10);
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    /* Todas detrás del botón «Indicadores» (Brandon, 2026-09-03); el titular
+       —cuántas trozas y cuántos m³— viaja en la línea de resumen. */
+    <CtpKpisPlegables
+      claveMemoria="consumos-patio"
+      resumen={
+        r.piezas === 0
+          ? "Sin madera esperando"
+          : `${nf(r.piezas)} trozas · ${fmtM3(r.volumenM3)} m³ · ${nf(r.libres)} libres` +
+            (r.anejas > 0 ? ` · ${nf(r.anejas)} añejas` : "")
+      }
+      tarjetas={[
         <StatCard
+          key="piezas"
           density="compact"
           label="Trozas en el patio"
           value={nf(r.piezas)}
@@ -54,18 +60,20 @@ export default function CtpPatioKpis({
           }
           icon={PackageOpen}
           emphasis="neutral"
-        />
-        {/* La unidad va en el rótulo: con «m³» pegado, los cuatro decimales del
-            libro parten el número en dos renglones y estiran toda la fila. */}
+        />,
+        /* La unidad va en el rótulo: con «m³» pegado, los tres decimales del
+           libro parten el número en dos renglones y estiran toda la fila. */
         <StatCard
+          key="volumen"
           density="compact"
           label="Volumen en patio (m³)"
-          value={r.volumenM3.toFixed(4)}
-          subValue={`${nf(r.pieTablar)} pt · ${r.volumenLibreM3.toFixed(4)} libres hoy`}
+          value={fmtM3(r.volumenM3)}
+          subValue={`≈${nf(pieTablarAserrableDe(r.volumenM3, RENDIMIENTO_META))} pt aserrables (56%) · ${fmtM3(r.volumenLibreM3)} libres hoy`}
           icon={TreePine}
           emphasis="success"
-        />
+        />,
         <StatCard
+          key="especies"
           density="compact"
           label="Especies en la pila"
           value={nf(r.especies)}
@@ -74,10 +82,11 @@ export default function CtpPatioKpis({
           }
           icon={Layers}
           emphasis="neutral"
-        />
-        {/* La pregunta que nadie hace hasta que la madera se manchó: ¿hace cuánto
-            que está parada? El promedio escondería justo la pieza vieja. */}
+        />,
+        /* La pregunta que nadie hace hasta que la madera se manchó: ¿hace cuánto
+           que está parada? El promedio escondería justo la pieza vieja. */
         <StatCard
+          key="espera"
           density="compact"
           label="Espera en el patio"
           value={r.esperaMaxDias != null ? `${nf(r.esperaMaxDias)} d` : "—"}
@@ -90,82 +99,47 @@ export default function CtpPatioKpis({
           }
           icon={Clock}
           emphasis={r.anejas > 0 ? "warning" : "neutral"}
-        />
-      </div>
-
-      {/* Una sola caja debajo de las tarjetas: de qué es el patio y de dónde
-          vino. Sueltas eran dos bloques con distinto margen y la fila de abajo
-          no alineaba con nada. El reparto va sobre el VOLUMEN — cuatro trozas
-          gruesas pesan en la sierra más que veinte delgadas. */}
-      {r.piezas > 0 && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          {top.length > 0 && r.volumenM3 > 0 && (
-            <div className="px-4 py-3">
-              <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
-                {top.map((e, i) => (
-                  <div
-                    key={e.especie}
-                    style={{ width: `${e.pctVolumen}%`, backgroundColor: TINTES[i % TINTES.length] }}
-                    title={`${e.especie}: ${e.volumenM3.toFixed(4)} m³ (${e.pctVolumen}%)`}
-                  />
-                ))}
-              </div>
-              <ul className="mt-2 grid gap-x-4 gap-y-1 sm:grid-cols-2 xl:grid-cols-3">
-                {top.map((e, i) => (
-                  <li key={e.especie} className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-                    <span
-                      aria-hidden
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: TINTES[i % TINTES.length] }}
-                    />
-                    <b className="truncate text-[var(--text-primary)]">{e.especie}</b>
-                    <span className="ml-auto shrink-0 font-mono tabular-nums">
-                      {nf(e.piezas)} pza · {e.volumenM3.toFixed(4)} m³ · {e.pctVolumen}%
-                    </span>
-                  </li>
-                ))}
-                {restoPct > 0.5 && (
-                  <li className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]">
-                    y {r.especies - top.length} especie(s) más
-                    <span className="ml-auto shrink-0 font-mono tabular-nums">{restoPct}%</span>
-                  </li>
-                )}
-              </ul>
-            </div>
-          )}
-
-          {/* La letra chica: cómo es la pieza promedio y de dónde viene esa
-              madera. No son cuatro tarjetas más porque no se miran a diario. */}
-          <p className="flex flex-wrap gap-x-5 gap-y-1 border-t border-[var(--rule-base)] px-4 py-2.5 text-sm text-[var(--text-tertiary)]">
-            <span>
-              Pieza promedio{" "}
-              <b className="font-mono tabular-nums text-[var(--text-secondary)]">
-                {r.promedioM3?.toFixed(4) ?? "—"} m³
-              </b>
-              {r.mayorM3 != null && (
-                <>
-                  {" "}· la mayor{" "}
-                  <b className="font-mono tabular-nums text-[var(--text-secondary)]">{r.mayorM3.toFixed(4)} m³</b>
-                </>
-              )}
-            </span>
-            <span>
-              De <b className="text-[var(--text-secondary)]">{nf(r.guias)}</b> guía(s)
-              {r.permisos > 0 && (
-                <>
-                  {" "}· <b className="text-[var(--text-secondary)]">{nf(r.permisos)}</b> permiso(s)
-                </>
-              )}
-              {r.proveedores > 0 && (
-                <>
-                  {" "}· <b className="text-[var(--text-secondary)]">{nf(r.proveedores)}</b> proveedor(es)
-                </>
-              )}
-            </span>
-            {filtrado && <span>Cifras del filtro · el patio tiene {nf(totalSinFiltrar)} piezas</span>}
-          </p>
-        </div>
-      )}
-    </div>
+        />,
+        /**
+         * De cuántos papeles cuelga esta pila.
+         *
+         * El dato lo devolvía `resumenPatio` desde siempre y no se mostraba en
+         * ningún lado: es la pregunta del fiscalizador —¿cuántas guías y
+         * cuántos títulos sostienen la madera que hay parada?— y la que dice si
+         * el patio es de una sola carga o de diez guías mezcladas.
+         */
+        <StatCard
+          key="papeles"
+          density="compact"
+          label="Guías en la pila"
+          value={nf(r.guias)}
+          subValue={
+            r.guias === 0
+              ? "Ninguna pieza declara su guía"
+              : `${nf(r.permisos)} título${r.permisos === 1 ? "" : "s"} habilitante${r.permisos === 1 ? "" : "s"} · ${nf(r.proveedores)} proveedor${r.proveedores === 1 ? "" : "es"}`
+          }
+          icon={FileStack}
+          emphasis={r.guias === 0 && r.piezas > 0 ? "warning" : "neutral"}
+        />,
+        /**
+         * ¿Es pila de palo grueso o de menudo? Cambia el rendimiento esperado y
+         * qué sierra conviene. `promedioM3`/`mayorM3` también venían calculados
+         * y sin usar.
+         */
+        <StatCard
+          key="calibre"
+          density="compact"
+          label="Calibre de la pila"
+          value={r.promedioM3 != null ? `${fmtM3(r.promedioM3)} m³` : "—"}
+          subValue={
+            r.promedioM3 == null
+              ? "Ninguna pieza trae volumen"
+              : `promedio por troza · la mayor ${fmtM3(r.mayorM3 ?? 0)} m³`
+          }
+          icon={Ruler}
+          emphasis="neutral"
+        />,
+      ]}
+    />
   );
 }

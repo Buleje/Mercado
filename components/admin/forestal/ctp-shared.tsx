@@ -7,6 +7,7 @@
 
 import {
   Children,
+  Fragment,
   cloneElement,
   isValidElement,
   useCallback,
@@ -15,11 +16,13 @@ import {
   useRef,
   useState,
   type ReactElement,
+  type ReactNode,
 } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { AlertCircle, AlertTriangle, Check, CheckCircle2, Clock, Copy, ExternalLink, X as XIcon } from "@buleje/design-system/icons";
+import { AlertCircle, AlertTriangle, BarChart3, Check, CheckCircle2, ChevronDown, Clock, Columns3, Copy, ExternalLink, X as XIcon } from "@buleje/design-system/icons";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "@/lib/forestal/ctp-compliance";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 // Re-exportados: single source vive en lib/forestal/ctp-compliance.ts (lo
 // consume también lib/forestal/ctp-export.ts, que no puede importar de acá).
@@ -743,11 +746,216 @@ export function DescuadreChip({ entry }: { entry: WoodEntry }) {
   if (!descuadra(cuadre)) return null;
   return (
     <div
-      title={`El ingreso declara ${Number(entry.volumeM3).toFixed(4)} m³ y sus ${entry.trozasCount} piezas suman ${(entry.trozasM3 ?? 0).toFixed(4)} m³. Abrilo para cargar las que faltan o corregir el volumen.`}
+      title={`El ingreso declara ${fmtM3(Number(entry.volumeM3))} m³ y sus ${entry.trozasCount} piezas suman ${fmtM3(entry.trozasM3 ?? 0)} m³. Abrilo para cargar las que faltan o corregir el volumen.`}
       className="mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
     >
       <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
       {cuadre.aviso}
+    </div>
+  );
+}
+
+/**
+ * La fila de KPIs de una vista, con lo secundario plegado.
+ *
+ * Brandon, 2026-09-02: «en los KPI, la segunda fila que se oculte por defecto y
+ * verlo con un botón para desplegarlo». Cinco tarjetas caen a dos filas apenas
+ * la ventana baja de 1280 px, y esa segunda fila empuja la tabla —que es a lo
+ * que se entra— fuera de la pantalla.
+ *
+ * `principales` = los que se ven siempre (los dos primeros: cuánto hay y cuánto
+ * mide). El resto entra tras el botón, y la preferencia se recuerda por vista:
+ * quien los quiere abiertos los abre una vez.
+ *
+ * El grid es `auto-fit` y no un número fijo de columnas a propósito: plegado
+ * son dos tarjetas y desplegado cinco, y con `xl:grid-cols-5` las dos visibles
+ * dejaban tres huecos en blanco del alto de una tarjeta.
+ */
+export function CtpKpisPlegables({
+  claveMemoria,
+  tarjetas,
+  resumen,
+}: {
+  claveMemoria: string;
+  tarjetas: ReactNode[];
+  /**
+   * El titular en una línea, al lado del botón cerrado.
+   *
+   * Sin esto el botón es una caja ciega: nadie abre un panel que no sabe qué
+   * tiene adentro, y las cifras dejarían de mirarse del todo. Va corto —dos o
+   * tres números— y sale de las MISMAS cuentas que las tarjetas.
+   */
+  resumen?: string;
+}) {
+  /* Arranca CERRADO (Brandon, 2026-09-03: «que los KPIs estén ocultos y que
+     haya un botón para mostrarlos»). Ocho tarjetas empujaban la tabla —que es
+     el trabajo— media pantalla abajo en cada carga de cada pestaña.
+
+     Clave `v2`: la v1 guardaba «¿está abierta la SEGUNDA fila?», que es otra
+     pregunta. Reusarla habría abierto el panel entero a quien sólo había
+     pedido ver dos tarjetas más. */
+  const [abierto, setAbierto] = useState(false);
+  useEffect(() => {
+    try { setAbierto(localStorage.getItem(`ctp-kpis-v2:${claveMemoria}`) === "1"); } catch { /* modo privado */ }
+  }, [claveMemoria]);
+  const alternar = () => {
+    setAbierto((v) => {
+      const next = !v;
+      try { localStorage.setItem(`ctp-kpis-v2:${claveMemoria}`, next ? "1" : "0"); } catch { /* quota */ }
+      return next;
+    });
+  };
+  if (tarjetas.length === 0) return null;
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <button
+          type="button"
+          onClick={alternar}
+          aria-expanded={abierto}
+          title={abierto ? "Ocultar los indicadores del período" : "Ver los indicadores del período"}
+          className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border-[1.5px] px-2.5 text-sm font-bold transition-colors print:hidden ${
+            abierto
+              ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+          }`}
+        >
+          <BarChart3 className="h-4 w-4" aria-hidden />
+          Indicadores
+          <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 text-xs tabular-nums text-[var(--text-tertiary)]">
+            {tarjetas.length}
+          </span>
+          <ChevronDown className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />
+        </button>
+        {/* El titular sólo mientras están escondidas: con el panel abierto, las
+            tarjetas ya lo dicen mejor y repetirlo es ruido. */}
+        {!abierto && resumen && (
+          <p className="min-w-0 flex-1 truncate font-mono text-sm tabular-nums text-[var(--text-secondary)]">{resumen}</p>
+        )}
+      </div>
+      {abierto && (
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-3">
+          {tarjetas.map((k, i) => <Fragment key={i}>{k}</Fragment>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Columnas opcionales de una tabla, elegibles por el operador y persistidas
+ * por dispositivo (mismo patrón que Documentos, ADR del 2026-08-30: sólo unas
+ * pocas columnas de detalle se pueden ocultar, las que identifican la fila
+ * quedan siempre fijas — no hay opción de "ocultar Especie").
+ */
+export function useColumnasVisibles<K extends string>(
+  storageKey: string,
+  columnas: readonly { key: K; label: string; porDefecto?: boolean }[],
+) {
+  const [visibles, setVisibles] = useState<Record<K, boolean>>(() => {
+    const defaults = Object.fromEntries(columnas.map((c) => [c.key, c.porDefecto ?? true])) as Record<K, boolean>;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      return raw ? { ...defaults, ...(JSON.parse(raw) as Partial<Record<K, boolean>>) } : defaults;
+    } catch {
+      return defaults;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(visibles));
+    } catch {
+      /* cuota llena o storage bloqueado: la preferencia no persiste, pero la
+         pantalla sigue andando con lo que ya se eligió en esta sesión. */
+    }
+  }, [storageKey, visibles]);
+  return [visibles, setVisibles] as const;
+}
+
+/** El botón "Columnas" + su desplegable de checkboxes. */
+export function ColumnasMenu<K extends string>({
+  columnas,
+  visibles,
+  onChange,
+  className,
+}: {
+  columnas: readonly { key: K; label: string }[];
+  visibles: Record<K, boolean>;
+  onChange: (v: Record<K, boolean>) => void;
+  /** Alto/redondeo del botón, para que entre en barras que no usan la altura
+   *  de filtro (`h-12`) — por ejemplo la cabecera de Resúmenes, que va en `h-9`. */
+  className?: string;
+}) {
+  const [abierto, setAbierto] = useState(false);
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrar = () => setAbierto(false);
+    window.addEventListener("click", cerrar);
+    return () => window.removeEventListener("click", cerrar);
+  }, [abierto]);
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setAbierto((v) => !v);
+        }}
+        className={`inline-flex items-center gap-1.5 border-2 px-3 text-sm font-bold transition-colors ${className ?? "h-12 rounded-2xl"} ${
+          abierto
+            ? "border-primary bg-primary/5 text-primary"
+            : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary hover:text-primary"
+        }`}
+        title="Elegir columnas visibles"
+        aria-label="Elegir columnas visibles"
+        aria-expanded={abierto}
+      >
+        <Columns3 className="h-4 w-4" aria-hidden />
+        <span className="max-sm:sr-only">Columnas</span>
+      </button>
+      {abierto && (
+        <div
+          className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <p className="px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            Columnas
+          </p>
+          {columnas.map((c) => (
+            <label
+              key={c.key}
+              className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            >
+              <input
+                type="checkbox"
+                checked={visibles[c.key]}
+                onChange={(e) => onChange({ ...visibles, [c.key]: e.target.checked })}
+                className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)]"
+              />
+              {c.label}
+            </label>
+          ))}
+          {/* Con una tabla de catorce columnas, volver al estado inicial
+              tildando de a una es tedioso — y dejarla vacía sin salida sería
+              una trampa. Estos dos atajos son la vuelta atrás. */}
+          <div className="mt-1 flex gap-1 border-t border-[var(--rule-soft)] pt-1">
+            <button
+              type="button"
+              onClick={() => onChange(Object.fromEntries(columnas.map((c) => [c.key, true])) as Record<K, boolean>)}
+              className="flex-1 rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            >
+              Todas
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange(Object.fromEntries(columnas.map((c) => [c.key, false])) as Record<K, boolean>)}
+              className="flex-1 rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            >
+              Ninguna
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

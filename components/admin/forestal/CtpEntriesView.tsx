@@ -705,6 +705,9 @@ export function CtpEntriesView({
         onSoloSinAnexo={() => setSoloSinAnexo((v) => !v)}
         /* La deuda lleva a resolverla: la tarjeta abre el mismo menú del botón. */
         onVerPendientes={() => setAbrirDeclarar((n) => n + 1)}
+        /* La misma cuenta que dibuja el atajo de la fila (ADR-365): si la
+           tarjeta la calculara aparte, podría decir 3 con 2 íconos en la tabla. */
+        ampliables={idsAmpliables.size}
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
