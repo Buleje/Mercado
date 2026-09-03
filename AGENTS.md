@@ -1,5 +1,15 @@
 # Virtual Software Agency — Bodega San Martin
 
+> **Poda 2026-09-03 (telemetría de 3 meses de transcripts):** de los 17 agent defs sólo se
+> despacharon `frontend` (15), `Explore`/`fork` (built-in), `healer` (4), `architect` (3),
+> `backend` (1). `director`, `observer`, `deployer`, `optimizer`, `integrator`, `data-qa` y los
+> 3 specialists (`dark-mode-auditor`, `storefront-visual-qa`, `typography-enforcer`) tuvieron
+> **0-1 despachos** → archivados en `.claude/_agents-archive/`. Quedan **8 activos**:
+> `architect · backend · frontend · database · healer · reviewer · security · tester`.
+> El diagrama de abajo describe la arquitectura de referencia; el router en la práctica es el
+> hilo principal, y los Workflows (`.claude/workflows/`) siguen siendo la vía para auditorías.
+> Revertir: `git mv .claude/_agents-archive/<x>.agent.md .claude/agents/`.
+
 ## Mission
 Build premium software with the quality standards of a senior multi-disciplinary engineering agency.
 

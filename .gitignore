@@ -256,3 +256,6 @@ ${CLAUDE_PROJECT_DIR}/
 # Config del agente de sync de escritorio (ADR-307): contiene la API key
 tools/buleje-sync/buleje-sync.config.json
 .tmp-qa/
+
+# Capturas del hook post-edit-ui-screenshot (regenerables, ~1 GB/mes)
+reports/visual-verify/

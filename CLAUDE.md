@@ -122,7 +122,7 @@ Vitest 4 · Playwright 1.59 + `@playwright/mcp` · `@axe-core/playwright` · k6 
 | **DANGER** | Zona peligrosa | Squad + security | `opus`/effort alto | Full pipeline |
 | **INITIATIVE** | 5+ archivos, ≥2 áreas | Hub BUILD→QUALITY→OPS o **Workflow** (`audit-verificado` como template) | mixto por fase | Todos los gates |
 
-Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md` (Hub & Spoke v2: Director + 14 agentes canónicos + 3 specialists (dark-mode-auditor, storefront-visual-qa, typography-enforcer) = **17 agent defs activos** en `.claude/agents/`. 36 defs legacy absorbidos → archivados en `.claude/_agents-archive/`, NO se cargan; los skills referencian solo nombres canónicos).
+Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md`. **8 agent defs activos** en `.claude/agents/` (poda 2026-09-03 por telemetría de 3 meses): `architect` · `backend` · `frontend` · `database` · `healer` · `reviewer` · `security` · `tester`. El router es el hilo principal (no hay `director`); QA visual/tipografía/dark se hacen inline con Playwright + skills `bsm-*`. 45 defs legacy en `.claude/_agents-archive/`, NO se cargan.
 
 ---
 
@@ -170,9 +170,9 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 2. **No matar `node.exe` ni wipear `.next`**: restarts de Turbopack son caros (30-90s). Solo `dev:clean` si hay lock corrupto; `dev:nuke` solo si caché realmente corrupto.
 3. **Grep/Glob antes que `Explore` agent**: Explore es para preguntas open-ended. Target conocido = Grep directo (más rápido, menos tokens).
 4. **Batch reads**: leer N screenshots o N archivos en una sola tanda paralela, no secuencial.
-5. **Worktrees para `ultra-impact` >50 files**: `isolation: "worktree"` en Agent. Deja el dev server principal intacto.
+5. **Worktrees para trabajos >50 files**: `isolation: "worktree"` en Agent. Deja el dev server principal intacto.
 6. **Scripts bulk**: antes de auto-inyectar imports a `.tsx`, detectar `"use client"` y poner imports DESPUÉS del directive.
-7. **Pre-refactor primitive**: grep `function <X>|const <X> =` en todo el repo para evitar shadowing (ej. PrestamosModule tenía SparklineKPICard interno clonado). Skill `shadow-detector`.
+7. **Pre-refactor primitive**: grep `function <X>|const <X> =` en todo el repo para evitar shadowing (ej. PrestamosModule tenía SparklineKPICard interno clonado).
 8. **Visual verify focused**: no correr los 34 tabs cada vez. `scripts/visual-verify-admin-focused.mjs` cubre los 9 críticos (~30s).
 9. **Respuestas tipo tabla**: máx 100 palabras prosa + tablas + snippets. No narrar deliberación.
 10. **`HUSKY_SKIP_POSTCOMMIT=1`**: default. Vitest post-commit solo con `HUSKY_RUN_POSTCOMMIT_TESTS=1`. CI ya lo corre.
@@ -180,7 +180,7 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 12. **Credenciales QA admin** (Playwright visual verify): `qaadmin` / `Qa-admin-1234` en tenant `main`. Crear con `node -r dotenv/config scripts/create-qa-admin-raw.mjs`.
 13. **Onboarding modal**: localStorage key real = `onboarding-completed-${tenantSlug}`. Setear a `"1"` en Playwright antes de screenshots.
 14. **Prisma schema drift** (suppliers `ColumnNotFound`): requiere `prisma migrate deploy` con DIRECT_URL accesible. DNS de Supabase directo puede fallar en algunas redes — correr desde red con acceso o aplicar la migration sobrante manualmente.
-15. **Claude Code 2026** (v2.1.220, verificado changelog 2026-08-03): `/goal` = condición de completitud con evaluador externo (corridas autónomas); `/btw` = preguntas laterales sin gastar contexto; `/rewind` restaura incluso pre-`/clear`; `/clear` entre tareas no relacionadas; tras 2 correcciones fallidas → replantear. **Subagentes corren en background por DEFAULT** (fan-out no bloquea) y **anidan hasta profundidad 3** (2.1.219 — un builder spawnea su propio verifier; NO 5 como decía antes). **`/verify` y `/code-review` ya NO se auto-invocan** (2.1.215) — dispararlos explícitos; `/code-review` corre como subagente background (2.1.218). `/fork` = copiar la conversación a una sesión background conservando el trabajo (2.1.212). MCP calls >2 min se van a background solas (2.1.212). Límites por sesión: 200 subagentes / 200 WebSearch (2.1.212). `/doctor` = checkup con auto-fix + poda de CLAUDE.md (correr quincenal). Permisos por parámetro: `Tool(param:valor)`. **Context resets + estado en archivos > compaction** en corridas largas.
+15. **Claude Code CLI** (v2.1.259 al 2026-09-03): subagentes en background por default y anidados hasta profundidad 3; `/verify` y `/code-review` NO se auto-invocan (dispararlos a mano); `/goal` para corridas autónomas; `/doctor` quincenal. **Context resets + estado en archivos > compaction** en corridas largas. Detalle y changelog → memoria `claude-code-novedades-2026-07`.
 16. **Reglas path-scoped en `.claude/rules/`** — cargan solo al tocar archivos que matchean (db-classes, ui-components, danger-zone, agentic-style, **code-quality** = estándar enterprise fijo: tipos/DS/errores/refactor/verificación/commits). Gotchas nuevos de capa → ahí, NO inflar este archivo.
 17. **Workflow `audit-verificado`** — auditorías con verificación adversarial integrada (cada hallazgo pasa por un refutador). Usar para "auditá X" en vez de N agentes sueltos.
 
@@ -190,7 +190,7 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 
 | Archivo | Para qué |
 |---|---|
-| `AGENTS.md` | Arquitectura Hub & Spoke v2 (14 agentes canónicos) y protocolos de handoff |
+| `AGENTS.md` | Arquitectura Hub & Spoke v2 y protocolos de handoff (8 agentes activos desde 2026-09-03; el resto archivado) |
 | `MEMORIA-PROYECTO.md` | Memoria viva del proyecto (decisiones, operación crítica, gaps) |
 | `docs/HISTORY.md` | Snapshot histórico de tabs/fases/batches (archivo histórico) |
 | `README.md` | Quick start, deployment Vercel, API endpoints |
@@ -199,7 +199,7 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 | `.claude/hooks/` | Hooks (wiring real en `settings.json`): mem-guard, danger-zone, pre-bash-guard (Pre); `post-edit-dispatcher` async (Post — gatea y spawnea hex/auto-learn/typography/screenshot/rubric solo si el path matchea); deploy-gates solo en Skill(deploy); Stop = gate agente de evidencia |
 | `.claude/rules/` | Reglas path-scoped 2026 — cargan SOLO al tocar archivos que matchean (db, ui, danger-zone, agentic-style, code-quality) |
 | `.claude/workflows/` | Workflows guardados — `audit-verificado` (auditoría + refutación adversarial) |
-| `.claude/rubrics/` | Rubrics bash-verificables por capa (api, db, migration, ui) — usa `outcome-evaluator` |
+| `.claude/rubrics/` | Rubrics bash-verificables por capa (api, db, migration, ui) — las corre `post-edit-rubric-check.mjs` |
 | `.claude/skills/` | Skills v2 (`allowed-tools`+`model`+`argument-hint`); el harness los surface por descripción — niche/dead en `_archive/` |
 
 ---
@@ -210,9 +210,8 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 
 | Asset | Cuándo importa |
 |---|---|
-| `outcome-evaluator` | "evaluá/self-grade" → Generator+Evaluator con rubric, max 3 iters |
 | `dreaming` | "consolidá memoria" / MEMORY.md >50 → dedupe en **dry-run**, apply explícito (nunca borra a ciegas) |
-| `turbo-parallel` · `ultra-impact` | tareas >1h, ≥3 capas, o 3+ sub-tareas paralelas |
+| `turbo-parallel` | 3+ sub-tareas independientes → N agentes/tool-calls en 1 mensaje |
 | Rubrics (`api-endpoint`/`db-class`/`prisma-migration`/`ui-component`) | corren auto vía `post-edit-rubric-check.mjs` (warning no-bloqueante) |
 | Hooks Pre (mem-guard/danger-zone/pre-bash-guard) | bloquean RAM crítica / archivos críticos / `rm -rf`. Post (hex/typography/rubric/screenshot) = async no-bloqueante. Deploy-gates SÓLO en `Skill(deploy)` |
 

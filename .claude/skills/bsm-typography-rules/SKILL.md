@@ -164,5 +164,5 @@ Si encontrás `text-xs`, `text-2xs`, `text-[10px]`, `border-gray-*` sin override
 ## 10. Loop de enforcement (no manual)
 
 - Hook `post-edit-typography-lint` alerta violaciones al editar UI → si dispara, corregir en el momento.
-- Violaciones masivas / legacy → agente **typography-enforcer** (auto-corrige text-xs→sm, h-8→h-12, border→border-2, grays→tokens).
+- Violaciones masivas / legacy → barrido con `Grep` + `Edit` en lote (text-xs→sm, h-8→h-12, border→border-2, grays→tokens) y screenshot light+dark al final. (El agente `typography-enforcer` se archivó el 2026-09-03: 1 despacho en 3 meses.)
 - Verificación visual: `/preview <ruta>` (light+dark) o `node scripts/visual-verify-admin-focused.mjs` (9 tabs, ~30s).

@@ -192,10 +192,10 @@
         "matcher": "",
         "hooks": [
           {
-            "type": "agent",
-            "prompt": "Sos el gate 'testear antes de reportar listo' (regla #1 de Brandon). Input del hook: $ARGUMENTS. Aprobá DE INMEDIATO si: stop_hook_active es true, o el turno fue conversacional/análisis sin edits de código. Si hubo edits, leé el final del transcript (transcript_path del input, usá `tail -c 20000`). Si el último mensaje afirma que algo quedó listo/funciona/arreglado/verificado y en el turno NO hay evidencia ejecutable (tsc/lint/test corrido, curl con respuesta, screenshot, output de comando que pruebe el claim), bloqueá con 1 línea diciendo exactamente qué verificar. Ante la duda, aprobá.",
-            "timeout": 45,
-            "statusMessage": "Gate: verificando evidencia antes de cerrar"
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/stop-evidence-gate.mjs",
+            "timeout": 5,
+            "statusMessage": "Gate de evidencia (determinista)"
           },
           {
             "type": "command",
@@ -278,9 +278,9 @@
       "Bash(npx tsx *)",
       "Bash(npx vitest *)",
       "Bash(printf *)",
-      "Bash(psql * -c \"\\d *)",
-      "Bash(psql * -c \"\\dt*)",
-      "Bash(psql * -c SELECT *)",
+      "Bash(psql \"$DIRECT_URL\" -c \"\\d *)",
+      "Bash(psql \"$DIRECT_URL\" -c \"\\dt*)",
+      "Bash(psql \"$DIRECT_URL\" -c SELECT *)",
       "Bash(psql --version)",
       "Bash(psql -V)",
       "Bash(pwd)",
