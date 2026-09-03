@@ -23,7 +23,7 @@ import { corridasAMedioDeclarar, origenesDeTrozas } from "@/lib/forestal/producc
 import { cuposDeGuia, motivoDeCupo } from "@/lib/forestal/consumo-trozas";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
 import CtpProduccionPendiente from "./CtpProduccionPendiente";
-import CtpBarraSeleccion from "./ctp-barra-seleccion";
+import CtpBarraSeleccion, { CifraSeleccion } from "./ctp-barra-seleccion";
 import { pieTablarDe, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import CtpRegistrarProduccionModal, {
   type MaterialAConsumir,
@@ -31,6 +31,7 @@ import CtpRegistrarProduccionModal, {
 } from "./CtpRegistrarProduccionModal";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { Btn, I } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { EstadoLotesAserrio } from "./hooks/use-lotes-aserrio";
 
 /**
@@ -376,12 +377,12 @@ export default function CtpProduccionDeLote({
       setAbierto(false);
       onListo(
         `Producción del lote ${lote.code} registrada`,
-        `Corrida N° ${consumo.corrida.lineNo}: consumió ${consumo.volumenM3.toFixed(4)} m³ y produjo ` +
-          `${datos.volumen.toFixed(4)} m³ en ${datos.paquetes.length} paquete(s).` +
+        `Corrida N° ${consumo.corrida.lineNo}: consumió ${fmtM3(consumo.volumenM3)} m³ y produjo ` +
+          `${fmtM3(datos.volumen)} m³ en ${datos.paquetes.length} paquete(s).` +
           /* Lo que sobró se NOMBRA: sin esto, el operador que aserró 3 de 4 no
              tenía forma de saber que la cuarta seguía esperándolo. */
           (quedan.length > 0
-            ? ` Quedan ${quedan.length} troza${quedan.length === 1 ? "" : "s"} (${volumenQueda.toFixed(4)} m³) ` +
+            ? ` Quedan ${quedan.length} troza${quedan.length === 1 ? "" : "s"} (${fmtM3(volumenQueda)} m³) ` +
               `en el lote para la corrida siguiente.`
             : ` El lote quedó consumido.`),
       );
@@ -425,10 +426,31 @@ export default function CtpProduccionDeLote({
           </span>
           <input type="date" value={fechaConsumo} onChange={(e) => setFechaConsumo(e.target.value)} className={I} />
         </label>
-        <div className="flex flex-1 items-center justify-end gap-2">
-          <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
-            {material.piezas} pza · {material.volumenM3.toFixed(4)} m³
-          </span>
+        <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+          {/**
+           * Lo elegido, en grande y pegado al botón que lo va a declarar
+           * (Brandon, 2026-09-03). Antes era `12 pza · 8.43 m³` en mono chico:
+           * faltaba sobre cuántas se eligió y faltaba el pie tablar, que es la
+           * unidad en la que el aserradero decide si vale la pena la corrida.
+           *
+           * Con cero tildadas se dibuja igual, en gris: un bloque que aparece y
+           * desaparece mueve el botón de lugar justo cuando se lo va a apretar.
+           */}
+          <div
+            className={`flex items-center gap-4 rounded-xl border-2 px-3 py-1.5 transition-colors ${
+              alConsumo.length > 0
+                ? "border-[var(--accent)]/40 bg-[var(--surface-raised)]"
+                : "border-[var(--rule-base)] bg-transparent opacity-60"
+            }`}
+          >
+            <CifraSeleccion label="Elegidas" valor={`${alConsumo.length}`} sufijo={`de ${yaEnElLote.length}`} />
+            <CifraSeleccion label="Volumen" valor={fmtM3(material.volumenM3)} sufijo="m³" fuerte />
+            <CifraSeleccion
+              label="Pie tablar"
+              valor={pieTablarDe(material.volumenM3).toLocaleString("es-PE")}
+              sufijo="pt"
+            />
+          </div>
           <Btn
             variant="primary"
             disabled={alConsumo.length === 0 || excesos.length > 0}
@@ -437,6 +459,13 @@ export default function CtpProduccionDeLote({
           >
             <Boxes className="h-4 w-4" />
             Declarar producción
+            {/* El número también EN el botón: es lo que se está por escribir en
+                el libro, y el que lo aprieta mira el botón, no el bloque. */}
+            {alConsumo.length > 0 && (
+              <span className="rounded-full bg-white/20 px-1.5 font-mono text-xs tabular-nums">
+                {alConsumo.length}
+              </span>
+            )}
           </Btn>
           {/* Cerrar el LOTE (no el panel): lo que queda no va a entrar a la
               sierra y vuelve al patio. Sólo tiene sentido con madera libre. */}
@@ -561,7 +590,7 @@ export default function CtpProduccionDeLote({
           <Layers className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
           Entran <b className="font-mono tabular-nums text-[var(--text-primary)]">{alConsumo.length}</b> a la
           sierra y <b className="font-mono tabular-nums text-[var(--text-primary)]">{quedan.length}</b> troza
-          {quedan.length === 1 ? "" : "s"} ({volumenQueda.toFixed(4)} m³) se qued
+          {quedan.length === 1 ? "" : "s"} ({fmtM3(volumenQueda)} m³) se qued
           {quedan.length === 1 ? "a" : "an"} en{" "}
           <b className="font-mono text-[var(--text-primary)]">{lote.code}</b> para la corrida siguiente.
         </p>
@@ -584,7 +613,7 @@ export default function CtpProduccionDeLote({
         <CtpBarraSeleccion
           cifras={[
             { label: "Trozas", valor: `${alConsumo.length}` },
-            { label: "Volumen", valor: `${material.volumenM3.toFixed(4)} m³`, fuerte: true },
+            { label: "Volumen", valor: `${fmtM3(material.volumenM3)} m³`, fuerte: true },
             { label: "Pie tablar", valor: `${pieTablarDe(material.volumenM3).toLocaleString("es-PE")} pt` },
           ]}
           onLimpiar={() => elegir(new Set())}

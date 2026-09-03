@@ -31,6 +31,17 @@ export interface FiltroSelect {
   options: FacetaOpcion[];
   /** Traduce el valor crudo a etiqueta legible (rolliza → Rolliza). */
   etiqueta?: (v: string) => string;
+  /**
+   * Este filtro YA vive en la cabecera de su columna (≥640px), así que acá sólo
+   * se dibuja en móvil — donde la tabla no existe y en su lugar hay cards.
+   *
+   * Es la regla que pidió Brandon (2026-09-03): lo que es una columna se filtra
+   * desde su columna, estilo Excel; el botón «Filtros» queda para lo
+   * especializado (marcas, y las columnas que estén ocultas). No se duplica el
+   * control en desktop porque dos controles del mismo estado enseñan a dudar de
+   * cuál manda.
+   */
+  soloMobile?: boolean;
 }
 
 export interface FiltroToggle {
@@ -120,6 +131,15 @@ export default function CtpFiltrosPanel({
       {selects.map((s) => (
         <SelectFaceta key={s.id} filtro={s} onChange={(v) => onSelect(s.id, v)} />
       ))}
+      {/* Sin nada más que las marcas, el panel quedaría mudo sobre dónde fueron
+          a parar los filtros de columna. Se dice, una sola vez y sólo cuando
+          hay tabla (≥640px). */}
+      {selects.some((s) => s.soloMobile) && (
+        <p className="hidden text-sm text-[var(--text-tertiary)] sm:block">
+          Especie, producto y demás columnas se filtran{" "}
+          <b className="text-[var(--text-secondary)]">desde su encabezado en la tabla</b>.
+        </p>
+      )}
       {(toggles.length > 0 || activos > 0) && (
         <div className="flex flex-col gap-2">
           <span className="text-sm font-bold text-[var(--text-primary)]">{tituloToggles}</span>
@@ -156,11 +176,69 @@ export default function CtpFiltrosPanel({
   );
 }
 
+/**
+ * El filtro DENTRO de la cabecera de su columna — el autofiltro de Excel
+ * (Brandon, 2026-09-03).
+ *
+ * Es el mismo estado que el panel: no hay un segundo filtro, hay un segundo
+ * lugar desde donde tocarlo. Se elige mirando la columna que se quiere acotar,
+ * que es como se lee una tabla — en vez de abrir un panel, buscar el select con
+ * el nombre correcto y volver.
+ *
+ * Cada opción trae su peso (líneas y m³) por lo mismo que en el panel: se elige
+ * por peso y una opción que devuelve cero es una trampa. Y hereda el `normal-case`
+ * porque el `<thead>` va en versalitas: un select en mayúsculas no se lee.
+ */
+export function FiltroColumna({
+  label,
+  value,
+  options,
+  etiqueta,
+  onChange,
+  placeholder = "Todos",
+}: {
+  /** Cómo se llama la columna: arma el `aria-label` del control. */
+  label: string;
+  value: string;
+  options: FacetaOpcion[];
+  etiqueta?: (v: string) => string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const vacio = options.length === 0;
+  return (
+    <span className="relative mt-1.5 block font-normal normal-case tracking-normal">
+      <select
+        value={value}
+        disabled={vacio}
+        aria-label={`Filtrar por ${label}`}
+        onChange={(e) => onChange(e.target.value)}
+        className={`h-9 w-full min-w-24 max-w-56 appearance-none truncate rounded-lg border-[1.5px] bg-[var(--surface-raised)] pl-2.5 pr-7 text-sm font-medium text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] disabled:opacity-50 ${
+          value ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)]"
+        }`}
+      >
+        <option value="">{vacio ? "—" : placeholder}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {(etiqueta ? etiqueta(o.value) : o.value)} ({o.count})
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        className={`pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 ${
+          value ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
+        }`}
+        aria-hidden
+      />
+    </span>
+  );
+}
+
 function SelectFaceta({ filtro, onChange }: { filtro: FiltroSelect; onChange: (v: string) => void }) {
   const id = useId();
   const vacio = filtro.options.length === 0;
   return (
-    <label htmlFor={id} className="flex flex-col gap-2">
+    <label htmlFor={id} className={`flex flex-col gap-2 ${filtro.soloMobile ? "sm:hidden" : ""}`}>
       <span className="text-sm font-bold text-[var(--text-primary)]">{filtro.label}</span>
       <div className="relative">
         <select

@@ -26,6 +26,44 @@ export interface CifraSeleccion {
   fuerte?: boolean;
 }
 
+/**
+ * Una cifra de lo elegido, con su nombre encima y el número en grande.
+ *
+ * Nace de una fricción concreta (Brandon, 2026-09-03): al lado de «Declarar
+ * producción» la cuenta era un `12 pza · 8.43 m³` en mono chico, sin el pie
+ * tablar y sin decir sobre cuántas. Se declara producción MIRANDO ese número —es
+ * lo que va a quedar escrito en el libro— así que tiene que leerse de un vistazo
+ * y decir de qué habla.
+ *
+ * Vive acá, con la barra del pie, porque las dos cuentan lo mismo: lo tildado.
+ */
+export function CifraSeleccion({ label, valor, sufijo, fuerte }: {
+  label: string;
+  valor: string;
+  /** Unidad o contexto («m³», «pt», «de 20»): más chico, nunca compite con el número. */
+  sufijo?: string;
+  fuerte?: boolean;
+}) {
+  return (
+    <span className="flex flex-col justify-center leading-tight">
+      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        {label}
+      </span>
+      <span className="whitespace-nowrap font-mono tabular-nums text-[var(--text-primary)]">
+        <b className={fuerte ? "text-lg font-extrabold" : "text-base font-bold"}>{valor}</b>
+        {sufijo && <span className="ml-1 text-sm font-normal text-[var(--text-secondary)]">{sufijo}</span>}
+      </span>
+    </span>
+  );
+}
+
+export interface AccionSeleccion {
+  label: string;
+  icon: LucideIcon;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
 export default function CtpBarraSeleccion({
   cifras,
   onLimpiar,
@@ -34,6 +72,12 @@ export default function CtpBarraSeleccion({
   accionDisabled,
   onAccion,
   aviso,
+  /**
+   * Otras cosas que se pueden hacer con lo tildado, antes de la acción
+   * principal. Botón secundario (borde, no relleno) para que la acción
+   * principal siga siendo la que más pesa visualmente.
+   */
+  accionesSecundarias,
 }: {
   cifras: CifraSeleccion[];
   onLimpiar: () => void;
@@ -44,6 +88,7 @@ export default function CtpBarraSeleccion({
   onAccion: () => void;
   /** Por qué no se puede seguir. Sin esto, el botón apagado no explica nada. */
   aviso?: string | null;
+  accionesSecundarias?: AccionSeleccion[];
 }) {
   /* Los toasts del módulo se apoyan en esta variable para no quedar debajo de
      la barra. Se limpia al desmontar: si quedara puesta, los toasts flotarían
@@ -100,6 +145,17 @@ export default function CtpBarraSeleccion({
             >
               <X className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">Limpiar</span>
             </button>
+            {accionesSecundarias?.map((a) => (
+              <button
+                key={a.label}
+                type="button"
+                disabled={a.disabled}
+                onClick={a.onClick}
+                className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 disabled:opacity-50 dark:text-[var(--accent)]"
+              >
+                <a.icon className="h-4 w-4" aria-hidden /> {a.label}
+              </button>
+            ))}
             <button
               type="button"
               disabled={accionDisabled}

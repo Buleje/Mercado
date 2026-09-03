@@ -76,7 +76,10 @@ export function TablaCtp({
 /** Cabecera estándar: sticky, en mayúsculas chicas, sobre el fondo hundido. */
 export function TheadCtp({ children }: { children: React.ReactNode }) {
   return (
-    <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+    /* `align-top`: las cabeceras llevan controles debajo del título (buscador,
+       autofiltro) y sin esto las columnas sin control quedan centradas contra
+       ellos, como si el título flotara. */
+    <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left align-top text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
       {children}
     </thead>
   );

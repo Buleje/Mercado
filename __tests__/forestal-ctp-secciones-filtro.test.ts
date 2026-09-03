@@ -7,6 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  claveSalida,
   contarFiltros,
   facetasDeSeccion,
   filtrarSeccion,
@@ -82,6 +83,74 @@ describe("filtrarSeccion", () => {
   it("cuenta cuántos filtros están puestos (el badge)", () => {
     expect(contarFiltros({})).toBe(0);
     expect(contarFiltros({ species: "Tornillo", cites: true })).toBe(2);
+  });
+});
+
+/**
+ * La columna «Salida» se filtra desde su cabecera (autofiltro estilo Excel), y
+ * el badge de la fila usa la MISMA `claveSalida`. Lo que se testea acá es que la
+ * regla sea una sola: si difirieran, la tabla podria mostrar «En patio» en la
+ * fila y esconder esa misma fila al filtrar por «En patio».
+ */
+describe("claveSalida", () => {
+  const prod = (over: Partial<LineaCtp> = {}): LineaCtp =>
+    linea({ section: "produccion", quantity: "10", ...over } as Partial<LineaCsv>);
+
+  it("nada despachado ni reprocesado = sigue en el patio", () => {
+    expect(claveSalida(prod())).toBe("stock");
+    expect(claveSalida(prod({ despachadoQty: "0", reprocesadoQty: "0" }))).toBe("stock");
+  });
+
+  it("salio una parte = parcial; salio todo = despachado", () => {
+    expect(claveSalida(prod({ despachadoQty: "4" }))).toBe("parcial");
+    expect(claveSalida(prod({ despachadoQty: "6", reprocesadoQty: "4" }))).toBe("salido");
+  });
+
+  it("el reprocesado tambien saca madera del patio, no solo el despacho", () => {
+    expect(claveSalida(prod({ reprocesadoQty: "10" }))).toBe("salido");
+  });
+
+  it("no opina de una linea de despacho ni de una corrida sin producir", () => {
+    expect(claveSalida(linea({ section: "despacho", quantity: "10" } as Partial<LineaCsv>))).toBeNull();
+    expect(claveSalida(prod({ quantity: null }))).toBeNull();
+  });
+
+  it("acepta numeros ademas de strings: el endpoint los manda asi", () => {
+    expect(claveSalida({ section: "produccion", quantity: "10", despachadoQty: 4 })).toBe("parcial");
+  });
+});
+
+describe("faceta y filtro de salida", () => {
+  const prod = (over: Partial<LineaCtp> = {}): LineaCtp =>
+    linea({ section: "produccion", quantity: "10", ...over } as Partial<LineaCsv>);
+
+  it("ordena patio -> parcial -> despachado, no por volumen", () => {
+    const f = facetasDeSeccion([
+      prod({ id: "c", quantity: "100", despachadoQty: "100" }),
+      prod({ id: "a" }),
+      prod({ id: "b", despachadoQty: "4" }),
+    ]);
+    expect(f.salidas.map((s) => s.value)).toEqual(["stock", "parcial", "salido"]);
+    expect(f.salidas[0]).toMatchObject({ value: "stock", count: 1, volumeM3: 10 });
+  });
+
+  it("no ofrece un estado que no existe en el periodo", () => {
+    const f = facetasDeSeccion([prod({ id: "a" }), prod({ id: "b" })]);
+    expect(f.salidas.map((s) => s.value)).toEqual(["stock"]);
+    expect(f.salidas[0].count).toBe(2);
+  });
+
+  it("una linea anulada no aporta al filtro de salida", () => {
+    const f = facetasDeSeccion([prod({ id: "a", despachadoQty: "4", status: "anulado" })]);
+    expect(f.salidas).toEqual([]);
+  });
+
+  it("filtra por el estado elegido y suma al badge de filtros puestos", () => {
+    const lineas = [prod({ id: "a" }), prod({ id: "b", despachadoQty: "10" })];
+    expect(filtrarSeccion(lineas, { salida: "stock" }).map((l) => l.id)).toEqual(["a"]);
+    expect(filtrarSeccion(lineas, { salida: "salido" }).map((l) => l.id)).toEqual(["b"]);
+    expect(contarFiltros({ salida: "stock" })).toBe(1);
+    expect(contarFiltros({ species: "Tornillo", salida: "stock" })).toBe(2);
   });
 });
 

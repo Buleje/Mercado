@@ -24,6 +24,8 @@ import { CheckCircle2, Search } from "@buleje/design-system/icons";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
+import { FiltroColumna, type FacetaOpcion } from "./ctp-filtros-panel";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** `AAAA-MM-DD` o ISO → `DD/MM/AAAA` en UTC (las fechas del libro son date-only). */
 const fmtDia = (v: string | null | undefined) => {
@@ -37,6 +39,30 @@ const num = (v: number | null | undefined, dec: number) => (v == null ? "—" : 
 
 /** Sin selección (modo lectura): una constante, no un `new Set()` por render. */
 const SIN_SELECCION: ReadonlySet<string> = new Set<string>();
+
+/**
+ * Los valores distintos de una columna, con cuántas trozas tiene cada uno —lo
+ * que come el autofiltro de la cabecera (estilo Excel, Brandon 2026-09-03).
+ *
+ * Devuelve vacío cuando hay UN solo valor: un desplegable con una sola opción no
+ * filtra nada y ensucia la cabecera de una tabla que ya es ancha. Un lote de una
+ * sola guía no necesita elegir guía.
+ */
+function opcionesDeColumna(
+  trozas: TrozaConsumible[],
+  campo: (t: TrozaConsumible) => string | null | undefined,
+): FacetaOpcion[] {
+  const map = new Map<string, number>();
+  for (const t of trozas) {
+    const v = (campo(t) ?? "").trim();
+    if (!v) continue;
+    map.set(v, (map.get(v) ?? 0) + 1);
+  }
+  if (map.size < 2) return [];
+  return [...map.entries()]
+    .map(([value, count]) => ({ value, count }))
+    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+}
 
 export default function CtpTrozasDelLote({
   trozas,
@@ -70,15 +96,23 @@ export default function CtpTrozasDelLote({
 }) {
   /** Buscador de la cabecera «Cod. Planta», igual que el formato. */
   const [busca, setBusca] = useState("");
+  /** Autofiltros de las otras dos columnas con valores repetidos. */
+  const [gtf, setGtf] = useState("");
+  const [especie, setEspecie] = useState("");
   const marcadas = seleccion ?? SIN_SELECCION;
+
+  const opcionesGtf = useMemo(() => opcionesDeColumna(trozas, (t) => t.gtfNumber), [trozas]);
+  const opcionesEspecie = useMemo(() => opcionesDeColumna(trozas, (t) => t.especieComun), [trozas]);
 
   const filas = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    if (!q) return trozas;
-    return trozas.filter((t) =>
-      [t.codigoPlanta, t.codificacion, t.gtfNumber].some((v) => (v ?? "").toLowerCase().includes(q)),
-    );
-  }, [trozas, busca]);
+    return trozas.filter((t) => {
+      if (gtf && (t.gtfNumber ?? "").trim() !== gtf) return false;
+      if (especie && (t.especieComun ?? "").trim() !== especie) return false;
+      if (!q) return true;
+      return [t.codigoPlanta, t.codificacion, t.gtfNumber].some((v) => (v ?? "").toLowerCase().includes(q));
+    });
+  }, [trozas, busca, gtf, especie]);
 
   const todas = filas.length > 0 && filas.every((t) => marcadas.has(t.id));
   /* En lectura la cuenta es la de TODA la corrida: no hay elegidas y decir
@@ -178,7 +212,7 @@ export default function CtpTrozasDelLote({
               {elegidas.length === 1 ? "" : "s"}
             </>
           )}{" "}
-          · {volumen.toFixed(4)} m³ · {pieTablarDe(volumen).toLocaleString("es-PE")} pt
+          · {fmtM3(volumen)} m³ · {pieTablarDe(volumen).toLocaleString("es-PE")} pt
         </p>
       </header>
 
@@ -238,8 +272,21 @@ export default function CtpTrozasDelLote({
         <TheadCtp>
           <tr>
             <th className="px-3 py-2 font-bold">Fecha consumo</th>
-            <th className="px-3 py-2 font-bold">Nro GTF</th>
-            <th className="px-3 py-2 font-bold">Nombre científico / Nombre común</th>
+            {/* Los autofiltros de columna sólo aparecen si la columna tiene más
+                de un valor: en un lote de una sola guía y una sola especie, un
+                desplegable con una opción es ruido. */}
+            <th className="px-3 py-2 font-bold">
+              <span className="block">Nro GTF</span>
+              {opcionesGtf.length > 0 && (
+                <FiltroColumna label="Nro GTF" value={gtf} options={opcionesGtf} onChange={setGtf} placeholder="Todas" />
+              )}
+            </th>
+            <th className="px-3 py-2 font-bold">
+              <span className="block">Nombre científico / Nombre común</span>
+              {opcionesEspecie.length > 0 && (
+                <FiltroColumna label="Especie" value={especie} options={opcionesEspecie} onChange={setEspecie} placeholder="Todas" />
+              )}
+            </th>
             <th className="px-3 py-2 font-bold">
               <span className="block">Cod. planta</span>
               {/* El buscador vive en la cabecera de su columna, como el formato:
@@ -284,7 +331,7 @@ export default function CtpTrozasDelLote({
                 ? "Leyendo las trozas del lote…"
                 : trozas.length === 0
                   ? (vacio ?? "Este lote no tiene trozas apartadas.")
-                  : "Ninguna troza coincide con la búsqueda."}
+                  : "Ninguna troza coincide con lo filtrado en la cabecera."}
             </FilaVacia>
           )}
           {filas.map((t, indice) => {

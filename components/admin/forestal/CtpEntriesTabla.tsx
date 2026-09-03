@@ -17,23 +17,58 @@
  */
 
 import { DataTable } from "@buleje/design-system";
-import { AlertTriangle, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, Boxes, FileText, Link2, PackagePlus, Paperclip, Truck, X as XIcon } from "@buleje/design-system/icons";
+import { AlertTriangle, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, Boxes, Download, FileText, Link2, PackagePlus, Paperclip, Truck, X as XIcon } from "@buleje/design-system/icons";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
-import { type CtpEntry, type CtpSection, Th, Td, estadoSalida, UNIT_LABELS } from "./ctp-section-shared";
+import {
+  type ColsProduccionVisibles,
+  type CtpEntry,
+  type CtpSection,
+  Th,
+  Td,
+  estadoSalida,
+  UNIT_LABELS,
+} from "./ctp-section-shared";
 import { IconAction } from "./ctp-shared";
+import { FiltroColumna, type FacetaOpcion } from "./ctp-filtros-panel";
 import { estadoDeGuia } from "@/lib/forestal/gtf-estado";
 import type { totalesDeSeccion } from "@/lib/forestal/ctp-secciones-filtro";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Por qué columna se puede ordenar. Lo resuelve la vista; acá sólo se dibuja. */
 export type SortKey = "fecha" | "cantidad" | "rend";
 export type OrdenCtp = { by: SortKey | null; dir: "asc" | "desc" };
 
+/**
+ * Un filtro que vive en la cabecera de SU columna (autofiltro estilo Excel).
+ *
+ * Lo arma la vista con las mismas facetas del panel: acá no se calcula nada, se
+ * dibuja donde el ojo ya está mirando.
+ */
+export interface FiltroDeColumna {
+  value: string;
+  options: FacetaOpcion[];
+  onChange: (v: string) => void;
+  etiqueta?: (v: string) => string;
+  placeholder?: string;
+}
+
+/** Qué columnas traen autofiltro. Sin la clave, la columna va como siempre. */
+export interface FiltrosDeColumna {
+  species?: FiltroDeColumna;
+  product?: FiltroDeColumna;
+  salida?: FiltroDeColumna;
+  permiso?: FiltroDeColumna;
+  destino?: FiltroDeColumna;
+}
+
 // timeZone UTC: entryDate es date-only guardada a medianoche UTC — en hora Lima
 // se corría un día.
 const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; } };
-const n4 = (v: string | null) => (v == null ? "—" : Number(v).toFixed(4));
+/** `v` en m³ salvo que `unit` diga otra cosa (kg, pt, unidad): esas quedan tal cual. */
+const n4 = (v: string | null, unit?: string | null) =>
+  v == null ? "—" : !unit || unit === "m3" ? fmtM3(Number(v)) : Number(v).toFixed(4);
 
 export interface CtpEntriesTablaProps {
   section: CtpSection;
@@ -63,7 +98,15 @@ export interface CtpEntriesTablaProps {
   /** Totales de lo que se está viendo — los calcula la vista, para que el pie de
    *  la tabla y los KPIs de arriba no puedan decir números distintos. */
   totalesVista: ReturnType<typeof totalesDeSeccion>;
+  /** Qué columnas opcionales de Producción se ven (sólo aplica a esa sección). */
+  colsProduccion?: ColsProduccionVisibles;
+  /** Autofiltros en la cabecera (Brandon, 2026-09-03). Sin esto, la tabla queda igual. */
+  filtrosColumna?: FiltrosDeColumna;
 }
+
+const COLS_PRODUCCION_DEFECTO: ColsProduccionVisibles = {
+  consumido: true, piezas: true, rend: true, salida: true, permiso: false,
+};
 
 
 /**
@@ -143,6 +186,29 @@ function SalidaBadge({ entry }: { entry: CtpEntry }) {
   );
 }
 
+/**
+ * ¿Esta línea vino del importador del libro, como existencia de apertura?
+ *
+ * `aCuerpoDelLibro` escribe siempre "Inventario de apertura" al arrancar las
+ * notas de una corrida o un ingreso importado —es el mismo texto en los dos
+ * casos (`ctp-serfor-a-libro.ts`)— así que no hace falta una columna nueva:
+ * alcanza con leer lo que el import ya deja escrito. Sin este aviso, un
+ * paquete importado se ve IGUAL a uno que salió de la sierra hoy, y son datos
+ * de calidad distinta: uno lo midió el aserradero, el otro lo declaró un
+ * archivo.
+ */
+function ImportadoBadge({ entry }: { entry: CtpEntry }) {
+  if (!entry.observations?.startsWith("Inventario de apertura")) return null;
+  return (
+    <span
+      title="Existencia de apertura: entró por el importador del libro, no es una corrida registrada acá"
+      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+    >
+      <Download className="h-3 w-3 shrink-0" aria-hidden /> Importado
+    </span>
+  );
+}
+
 function RendimientoCell({ productType, rendimientoPct }: { productType: string | null; rendimientoPct: string | null }) {
   const pct = rendimientoPct != null ? Number(rendimientoPct) : null;
   const { estado, ref } = evaluarRendimiento(productType, pct);
@@ -159,6 +225,22 @@ function RendimientoCell({ productType, rendimientoPct }: { productType: string 
         {pct != null ? `${pct.toFixed(1)}%` : "—"}
       </span>
     </span>
+  );
+}
+
+/**
+ * Cabecera con su autofiltro debajo del título. Sin `filtro` es un `<Th>` común
+ * —así una columna sin faceta (GTF salida) no cambia de forma— y con él, la
+ * columna se acota desde donde se la está leyendo.
+ */
+function ThFiltro({ label, filtro, className }: {
+  label: string; filtro?: FiltroDeColumna; className?: string;
+}) {
+  return (
+    <Th className={className}>
+      <span className="block">{label}</span>
+      {filtro && <FiltroColumna label={label} {...filtro} />}
+    </Th>
   );
 }
 
@@ -197,21 +279,35 @@ export default function CtpEntriesTabla({
   onPapeles,
   onGuia,
   totalesVista,
+  colsProduccion = COLS_PRODUCCION_DEFECTO,
+  filtrosColumna,
 }: CtpEntriesTablaProps) {
+  const cv = colsProduccion;
+  const fc = filtrosColumna ?? {};
   return (
     <>
       {/* ── Desktop: tabla (≥640px). El `hidden` a <640px gana sobre la
              auto-conversión genérica del shell, dejando lugar a las cards. ── */}
       <div className="hidden overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
         <DataTable className="w-full text-sm">
-          <thead className="bg-[var(--surface-sunken)] text-left">
+          {/* `align-top`: con el autofiltro debajo del título, las cabeceras sin
+              filtro tienen que quedar arriba y no centradas contra los selects. */}
+          <thead className="bg-[var(--surface-sunken)] text-left align-top">
             <tr>
               <Th className="w-12 text-right">#</Th>
               <SortTh label="Fecha" by="fecha" sort={sort} onSort={onSort} />
-              <Th>Especie</Th>
-              <Th>Producto</Th>
-              {section === "produccion" ? (<><Th className="text-right">Consumido (m³)</Th><SortTh label="Producido" by="cantidad" sort={sort} onSort={onSort} className="text-right" /><SortTh label="Rend." by="rend" sort={sort} onSort={onSort} className="text-right" /><Th>Salida</Th></>)
-                : (<><SortTh label="Cantidad" by="cantidad" sort={sort} onSort={onSort} className="text-right" /><Th className="text-right">Piezas</Th><Th>GTF salida</Th><Th>Destino</Th></>)}
+              <ThFiltro label="Especie" filtro={fc.species} />
+              <ThFiltro label="Producto" filtro={fc.product} />
+              {section === "produccion" ? (
+                <>
+                  {cv.consumido && <Th className="text-right">Consumido (m³)</Th>}
+                  <SortTh label="Producido" by="cantidad" sort={sort} onSort={onSort} className="text-right" />
+                  {cv.piezas && <Th className="text-right">Piezas</Th>}
+                  {cv.rend && <SortTh label="Rend." by="rend" sort={sort} onSort={onSort} className="text-right" />}
+                  {cv.salida && <ThFiltro label="Salida" filtro={fc.salida} />}
+                  {cv.permiso && <ThFiltro label="N° Permiso" filtro={fc.permiso} />}
+                </>
+              ) : (<><SortTh label="Cantidad" by="cantidad" sort={sort} onSort={onSort} className="text-right" /><Th className="text-right">Piezas</Th><Th>GTF salida</Th><ThFiltro label="Destino" filtro={fc.destino} /></>)}
               <Th>Estado</Th>
               <Th className="text-right">Acciones</Th>
             </tr>
@@ -229,25 +325,40 @@ export default function CtpEntriesTabla({
                   {e.speciesScientific && <div className="text-xs italic text-[var(--text-tertiary)]">{e.speciesScientific}</div>}
                 </Td>
                 <Td>
-                  <span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">{e.productType ?? "—"}</span>
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">{e.productType ?? "—"}</span>
+                    <ImportadoBadge entry={e} />
+                  </div>
                   {e.codigoProducto && (
                     <div className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{e.codigoProducto}</div>
                   )}
                 </Td>
                 {section === "produccion" ? (
                   <>
-                    <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                      {n4(e.volumeInputM3)}
-                      <OrigenBadge entry={e} />
-                    </Td>
-                    <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{n4(e.quantity)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span></Td>
-                    <Td className="text-right"><RendimientoCell productType={e.productType} rendimientoPct={e.rendimientoPct} /></Td>
-                    <Td><SalidaBadge entry={e} /></Td>
+                    {cv.consumido && (
+                      <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                        {n4(e.volumeInputM3)}
+                        <OrigenBadge entry={e} />
+                      </Td>
+                    )}
+                    <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{n4(e.quantity, e.unit)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span></Td>
+                    {cv.piezas && (
+                      <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{e.pieces ?? "—"}</Td>
+                    )}
+                    {cv.rend && (
+                      <Td className="text-right"><RendimientoCell productType={e.productType} rendimientoPct={e.rendimientoPct} /></Td>
+                    )}
+                    {cv.salida && <Td><SalidaBadge entry={e} /></Td>}
+                    {cv.permiso && (
+                      <Td className="font-mono text-xs text-[var(--text-secondary)]">
+                        {e.permisoOrigen?.length ? e.permisoOrigen.join(" · ") : "—"}
+                      </Td>
+                    )}
                   </>
                 ) : (
                   <>
                     <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {n4(e.quantity)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span>
+                      {n4(e.quantity, e.unit)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span>
                       <AtribucionBadge entry={e} />
                     </Td>
                     <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{e.pieces ?? "—"}</Td>
@@ -288,7 +399,11 @@ export default function CtpEntriesTabla({
                         disabled={toProductId === e.id}
                         busy={toProductId === e.id}
                         onClick={() => onSendInventory(e.id)}
-                        label={toProductId === e.id ? "Creando el producto…" : "Enviar a inventario (borrador inactivo)"}
+                        label={
+                          toProductId === e.id
+                            ? "Creando el producto…"
+                            : "Crear producto de esta línea (queda oculto hasta que lo actives)"
+                        }
                       />
                       {section === "despacho" && onGuia && (
                         <IconAction
@@ -344,9 +459,17 @@ export default function CtpEntriesTabla({
                 </td>
                 {section === "produccion" ? (
                   <>
-                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.consumido.toFixed(4)}</td>
+                    {cv.consumido && (
+                      <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalesVista.consumido)}</td>
+                    )}
                     <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.cantidad.toFixed(4)}</td>
-                    <td colSpan={4} />
+                    {cv.piezas && (
+                      <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.piezas}</td>
+                    )}
+                    {cv.rend && <td />}
+                    {cv.salida && <td />}
+                    {cv.permiso && <td />}
+                    <td colSpan={2} />
                   </>
                 ) : (
                   <>
