@@ -30,9 +30,12 @@ import { useEspeciesFotos } from "./hooks/use-especies-fotos";
 import { usePlantaUbicacion } from "./hooks/use-planta-ubicacion";
 import { puntoDeTono } from "./CtpTrozasPatio";
 import type { TrozaPatioAPI } from "./hooks/use-trozas-patio";
+import { FiltroColumna } from "./ctp-filtros-panel";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const n = (v: number | null | undefined, dec = 2) => (v == null ? "—" : v.toFixed(dec));
-const TH = "px-3 py-2 text-left align-bottom text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]";
+/* `align-top`: Especie y Estado llevan su autofiltro debajo del título. */
+const TH = "px-3 py-2 text-left align-top text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]";
 const TD = "px-3 py-2 align-middle";
 const NUM = "text-right font-mono tabular-nums";
 
@@ -94,7 +97,17 @@ export default function CtpTrozasLista({
      distintos al cruzar la medianoche. */
   const hoy = useMemo(() => new Date(), [trozas]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const especies = useMemo(() => resumirPatio(trozas).porEspecie.map((e) => e.especie), [trozas]);
+  /* Las opciones de los autofiltros de cabecera (Especie, Estado), con cuántas
+     piezas hay detrás de cada una — de TODA la pila, no de lo filtrado. */
+  const resumen = useMemo(() => resumirPatio(trozas), [trozas]);
+  const especiesFaceta = useMemo(
+    () => resumen.porEspecie.map((e) => ({ value: e.especie, count: e.piezas })),
+    [resumen],
+  );
+  const estadosFaceta = useMemo(
+    () => resumen.porEstado.map((e) => ({ value: e.estado, count: e.piezas })),
+    [resumen],
+  );
   const filtradas = useMemo(
     () => filtrarPatio(trozas, { texto, estado: estadoFiltro, especie, tramo: tramoFiltro, orden }, hoy),
     [trozas, texto, estadoFiltro, especie, tramoFiltro, orden, hoy],
@@ -158,15 +171,8 @@ export default function CtpTrozasLista({
             className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
           />
         </div>
-        <select
-          value={especie ?? ""}
-          onChange={(e) => setEspecie(e.target.value || null)}
-          aria-label="Filtrar por especie"
-          className="h-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-medium text-[var(--text-primary)] focus:border-primary focus:outline-none"
-        >
-          <option value="">Todas las especies</option>
-          {especies.map((e) => <option key={e} value={e}>{e}</option>)}
-        </select>
+        {/* La especie se elige desde la cabecera de su columna (estilo Excel,
+            Brandon 2026-09-03); acá queda sólo lo que no es una columna. */}
         <select
           value={orden}
           onChange={(e) => setOrden(e.target.value as OrdenTrozas)}
@@ -263,8 +269,29 @@ export default function CtpTrozasLista({
                     />
                   </th>
                   <th className={TH}>Código</th>
-                  <th className={TH}>Especie</th>
-                  <th className={TH}>Estado</th>
+                  <th className={TH}>
+                    <span className="block">Especie</span>
+                    <FiltroColumna
+                      label="Especie"
+                      value={especie ?? ""}
+                      options={especiesFaceta}
+                      onChange={(v) => setEspecie(v || null)}
+                      placeholder="Todas"
+                    />
+                  </th>
+                  <th className={TH}>
+                    <span className="block">Estado</span>
+                    {/* El mismo filtro que los KPI de arriba (`onEstadoFiltro`):
+                        clickear la tarjeta o elegir acá es lo mismo. */}
+                    <FiltroColumna
+                      label="Estado"
+                      value={estadoFiltro ?? ""}
+                      options={estadosFaceta}
+                      etiqueta={(v) => ESTADO_META[v as EstadoTroza]?.label ?? v}
+                      onChange={(v) => onEstadoFiltro((v || null) as EstadoTroza | null)}
+                      placeholder="Todos"
+                    />
+                  </th>
                   <th className={`${TH} text-right`} title="Días que lleva parada en el patio">Parada</th>
                   <th className={`${TH} text-right`}>D1 · D2 (cm)</th>
                   <th className={`${TH} text-right`}>Largo (m)</th>
@@ -329,7 +356,7 @@ export default function CtpTrozasLista({
                       </td>
                       <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{n(t.d1Cm, 0)} · {n(t.d2Cm, 0)}</td>
                       <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{n(t.largoM)}</td>
-                      <td className={`${TD} ${NUM} font-bold text-[var(--text-primary)]`}>{t.volumenM3 == null ? "—" : `${t.volumenM3.toFixed(4)} m³`}</td>
+                      <td className={`${TD} ${NUM} font-bold text-[var(--text-primary)]`}>{t.volumenM3 == null ? "—" : `${fmtM3(t.volumenM3)} m³`}</td>
                       <td className={TD}>
                         <span className="block font-mono text-xs text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</span>
                         <span className="block truncate text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{t.permiso ?? t.proveedor ?? ""}</span>
@@ -362,7 +389,7 @@ export default function CtpTrozasLista({
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="font-mono font-bold text-[var(--text-primary)]">{t.codificacion ?? t.codigoPlanta ?? "—"}</span>
                     <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
-                      {t.volumenM3 == null ? "—" : `${t.volumenM3.toFixed(4)} m³`}
+                      {t.volumenM3 == null ? "—" : `${fmtM3(t.volumenM3)} m³`}
                     </span>
                   </div>
                   <p className="mt-0.5 flex items-center gap-2 text-sm text-[var(--text-secondary)]">

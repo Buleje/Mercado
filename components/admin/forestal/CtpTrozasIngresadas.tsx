@@ -18,10 +18,25 @@
  * filas ya elegidas y se ocupa de dibujarlas.
  */
 
-import { PackageOpen } from "@buleje/design-system/icons";
-import { motivoBloqueo, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import { Fragment, useMemo, useState } from "react";
+import { ChevronRight, FileCheck, PackageOpen, PenLine } from "@buleje/design-system/icons";
+import { agruparTrozas, motivoBloqueo, type AgrupacionPatio, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
+import { FiltroColumna, FiltroColumnaMulti, type FacetaOpcion } from "./ctp-filtros-panel";
+
+/**
+ * Los autofiltros de la cabecera (estilo Excel, Brandon 2026-09-03): Guía (varias
+ * a la vez), Permiso y Especie. Son las tres columnas que también son filtros del
+ * patio; resolución y proveedor no tienen columna y se quedan en el panel.
+ * Escriben el MISMO estado que `useFiltroPatio` — la vista los arma.
+ */
+export interface FiltrosPatioColumna {
+  guia?: { value: readonly string[]; options: FacetaOpcion[]; onChange: (v: string[]) => void };
+  permiso?: { value: string; options: FacetaOpcion[]; onChange: (v: string) => void };
+  especie?: { value: string; options: FacetaOpcion[]; onChange: (v: string) => void };
+}
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const fmtDia = (iso: string | null | undefined) => {
   if (!iso) return "—";
@@ -40,6 +55,32 @@ function medidas(t: TrozaConsumible): string {
   return `${d1 ?? "—"} × ${d2 ?? "—"} cm · ${largo ?? "—"} m`;
 }
 
+/**
+ * De dónde salió el dato de la troza.
+ *
+ * Es un DERIVADO y el rótulo lo dice: «SERFOR» cuando la guía que la trajo
+ * tiene su N° de constancia del SNIFFS —la lista de trozas bajó del documento
+ * oficial—, «a mano» cuando no. Ninguna troza guarda un campo que declare esto;
+ * presentarlo como un sello sería fabricar una garantía que el sistema no tiene.
+ */
+function OrigenDelDato({ origen }: { origen?: "serfor" | "manual" }) {
+  if (origen == null) return <span className="text-[var(--text-tertiary)]">—</span>;
+  const deSerfor = origen === "serfor";
+  return (
+    <span
+      title={deSerfor
+        ? "La guía trae su N° de constancia del SNIFFS: la lista de trozas bajó del documento oficial de SERFOR."
+        : "La guía no tiene N° de constancia del SNIFFS: estas trozas se cargaron a mano o se importaron de una planilla."}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-1.5 py-0.5 font-bold ${deSerfor
+        ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+        : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}
+    >
+      {deSerfor ? <FileCheck className="h-3 w-3 shrink-0" aria-hidden /> : <PenLine className="h-3 w-3 shrink-0" aria-hidden />}
+      {deSerfor ? "SERFOR" : "a mano"}
+    </span>
+  );
+}
+
 export default function CtpTrozasIngresadas({
   filas,
   libres,
@@ -55,6 +96,11 @@ export default function CtpTrozasIngresadas({
   vacio,
   loteId,
   onSacarDelLote,
+  /** Subtotal arriba, detalle plegado — mismo patrón que Consumos (Brandon,
+   *  2026-09-01). `"ninguna"` (default) deja la tabla plana como siempre. */
+  agrupar = "ninguna",
+  menuAgrupar,
+  filtrosColumna,
 }: {
   /** Las piezas a dibujar — ya filtradas por la vista. */
   filas: TrozaConsumible[];
@@ -96,7 +142,14 @@ export default function CtpTrozasIngresadas({
   titulo?: string;
   /** Qué decir cuando no hay ni una fila (el vacío del patio no sirve al lote). */
   vacio?: string;
+  agrupar?: AgrupacionPatio;
+  /** El botón "Opciones · agrupar" — lo arma el llamador (mismo `ActionMenu`
+   *  que ya usa Consumos), esto sólo le hace lugar en el header. */
+  menuAgrupar?: React.ReactNode;
+  /** Autofiltros en la cabecera. Sin esto la tabla queda como siempre. */
+  filtrosColumna?: FiltrosPatioColumna;
 }) {
+  const fc = filtrosColumna ?? {};
   const totalVisible = filas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0);
   const elegidas = filas.filter((t) => seleccion.has(t.id));
   /** Cuántas de las elegidas venían apartadas en el lote — contexto, no un total aparte. */
@@ -104,14 +157,89 @@ export default function CtpTrozasIngresadas({
   const volumenElegido = elegidas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0);
   const todasElegidas = libres.length > 0 && libres.every((t) => seleccion.has(t.id));
   /* La página se pagina sobre lo YA filtrado, y el rango se acota solo cuando
-     un filtro achica la lista (ADR-344). */
+     un filtro achica la lista (ADR-344). Agrupado no pagina — igual que
+     Consumos: los grupos son pocos, la lista de piezas es la que era mucha. */
   const { visibles: enPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(filas);
+  const grupos = useMemo(() => agruparTrozas(filas, agrupar), [filas, agrupar]);
+  const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
 
   const alternar = (id: string) => {
     const next = new Set(seleccion);
     if (next.has(id)) next.delete(id);
     else next.add(id);
     onSeleccion(next);
+  };
+
+  /** Una fila — la misma sea la tabla plana o el detalle de un grupo abierto. */
+  const filaTroza = (t: TrozaConsumible) => {
+    const bloqueo = motivoBloqueo(t);
+    const enLote = Boolean(t.loteAserrioId);
+    /** Apartada en el lote que se está cargando: ya cuenta. */
+    const delLote = loteId != null && t.loteAserrioId === loteId;
+    /* Las del lote SÍ se eligen: el operador decide cuáles entran hoy a la
+       sierra. Las que deje sin tildar siguen apartadas. */
+    const elegible = !bloqueo && (!enLote || delLote);
+    return (
+      <tr key={t.id} className={`${seleccion.has(t.id) ? "bg-primary/5" : ""} hover:bg-[var(--surface-sunken)]`}>
+        {seleccionable && (
+          <td className="px-3 py-2">
+            <input
+              type="checkbox"
+              checked={seleccion.has(t.id)}
+              disabled={!elegible}
+              onChange={() => alternar(t.id)}
+              aria-label={`Elegir la troza ${t.codigoPlanta ?? t.codificacion ?? ""}`}
+              title={delLote ? "Apartada en este lote. Destildala para dejarla para otra corrida." : undefined}
+              className="h-5 w-5 accent-[var(--accent)] disabled:opacity-40"
+            />
+          </td>
+        )}
+        <td className="px-3 py-2 font-mono text-xs font-bold text-[var(--text-primary)]">{t.gtfNumber ?? "—"}</td>
+        <td className="px-3 py-2 font-mono text-xs text-[var(--text-tertiary)]">{t.permiso ?? "—"}</td>
+        <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{t.codificacion ?? "—"}</td>
+        <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{t.codigoPlanta ?? "—"}</td>
+        <td className="px-3 py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
+        <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{medidas(t)}</td>
+        <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+          {t.volumenM3 != null ? fmtM3(Number(t.volumenM3)) : "—"}
+        </td>
+        <td className="px-3 py-2 text-xs">
+          {delLote ? (
+            <span className="inline-flex items-center gap-1">
+              <span className="rounded-lg bg-primary/15 px-1.5 py-0.5 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                en este lote
+              </span>
+              {onSacarDelLote && (
+                <button
+                  type="button"
+                  onClick={() => onSacarDelLote(t.id)}
+                  title="Sacar del lote y devolverla al patio"
+                  className="rounded-lg px-1 py-0.5 text-[var(--text-tertiary)] underline-offset-2 hover:text-[var(--data-error-700)] hover:underline dark:hover:text-[var(--data-error-500)]"
+                >
+                  sacar
+                </button>
+              )}
+            </span>
+          ) : enLote ? (
+            <span className="rounded-lg bg-primary/10 px-1.5 py-0.5 font-mono font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+              {t.loteAserrioCode ?? "en un lote"}
+            </span>
+          ) : bloqueo ? (
+            <span className="text-[var(--text-tertiary)]">{bloqueo.replace(/_/g, " ")}</span>
+          ) : (
+            <span className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">Libre</span>
+          )}
+        </td>
+        <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{fmtDia(t.fechaRecepcion)}</td>
+        {/* Fecha del ASIENTO de la guía en el libro. No es la recepción física:
+            el camión puede descargar el miércoles una guía asentada el lunes, y
+            confundirlas mueve el saldo del patio de día. */}
+        <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]" title="Fecha del asiento de la guía en el libro — distinta de la recepción física de la pieza">
+          {fmtDia(t.fechaIngreso)}
+        </td>
+        <td className="px-3 py-2 text-xs"><OrigenDelDato origen={t.origenDato} /></td>
+      </tr>
+    );
   };
 
   return (
@@ -126,11 +254,12 @@ export default function CtpTrozasIngresadas({
             </span>
           )}
         </p>
+        {menuAgrupar}
         {/* Los totales de la tabla viven en su pie y en los KPI; acá arriba sólo
             lo que cambia mientras se elige, que es lo que se mira. */}
         {elegidas.length > 0 && (
           <span className="font-mono text-sm font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">
-            {elegidas.length} elegida{elegidas.length === 1 ? "" : "s"} · {volumenElegido.toFixed(4)} m³ ·{" "}
+            {elegidas.length} elegida{elegidas.length === 1 ? "" : "s"} · {fmtM3(volumenElegido)} m³ ·{" "}
             {pieTablarDe(volumenElegido).toLocaleString("es-PE")} pt
             {delLoteElegidas > 0 && (
               <span className="ml-2 font-sans font-normal text-[var(--text-tertiary)]">
@@ -183,19 +312,39 @@ export default function CtpTrozasIngresadas({
                 />
               </th>
             )}
-            <th className="px-3 py-2 font-bold">Cód. planta</th>
+            {/* Orden pedido por Brandon (2026-09-02): se lee de lo que
+                IDENTIFICA el papel (guía, permiso) hacia lo que identifica la
+                pieza (codificación, código de planta), después lo que se mide
+                y por último en qué estado está. La especie queda pegada a las
+                medidas: es parte de qué es la pieza, no de qué documento la
+                ampara. */}
+            <th className="px-3 py-2 font-bold">
+              <span className="block">Guía</span>
+              {fc.guia && <FiltroColumnaMulti label="Guía" {...fc.guia} />}
+            </th>
+            <th className="px-3 py-2 font-bold">
+              <span className="block">Permiso</span>
+              {fc.permiso && <FiltroColumna label="Permiso" {...fc.permiso} placeholder="Todos" />}
+            </th>
             <th className="px-3 py-2 font-bold">Codificación</th>
-            <th className="px-3 py-2 font-bold">Especie</th>
-            <th className="px-3 py-2 font-bold">Guía</th>
+            <th className="px-3 py-2 font-bold">Cód. planta</th>
+            <th className="px-3 py-2 font-bold">
+              <span className="block">Especie</span>
+              {fc.especie && <FiltroColumna label="Especie" {...fc.especie} placeholder="Todas" />}
+            </th>
             <th className="px-3 py-2 font-bold">Medidas</th>
-            <th className="px-3 py-2 font-bold">Recibida</th>
             <th className="px-3 py-2 text-right font-bold">Volumen</th>
             <th className="px-3 py-2 font-bold">Estado</th>
+            <th className="px-3 py-2 font-bold">Recibida</th>
+            {/* Cuándo se asentó la guía y de dónde salió el dato — dos cosas
+                distintas de la recepción física de la pieza. */}
+            <th className="px-3 py-2 font-bold">Ingreso</th>
+            <th className="px-3 py-2 font-bold">Dato</th>
           </tr>
         </TheadCtp>
         <TbodyCtp>
-          {enPagina.length === 0 && (
-            <FilaVacia cols={seleccionable ? 9 : 8}>
+          {filas.length === 0 && (
+            <FilaVacia cols={seleccionable ? 13 : 12}>
               {cargando
                 ? "Leyendo el patio…"
                 : totalPatio === 0
@@ -203,90 +352,65 @@ export default function CtpTrozasIngresadas({
                   : "Ninguna troza coincide con el filtro."}
             </FilaVacia>
           )}
-          {enPagina.map((t) => {
-            const bloqueo = motivoBloqueo(t);
-            const enLote = Boolean(t.loteAserrioId);
-            /** Apartada en el lote que se está cargando: ya cuenta. */
-            const delLote = loteId != null && t.loteAserrioId === loteId;
-            /* Las del lote SÍ se eligen: el operador decide cuáles entran hoy
-               a la sierra. Las que deje sin tildar siguen apartadas. */
-            const elegible = !bloqueo && (!enLote || delLote);
-            return (
-              <tr
-                key={t.id}
-                className={`${seleccion.has(t.id) ? "bg-primary/5" : ""} hover:bg-[var(--surface-sunken)]`}
-              >
-                {seleccionable && (
-                  <td className="px-3 py-2">
-                    <input
-                      type="checkbox"
-                      checked={seleccion.has(t.id)}
-                      disabled={!elegible}
-                      onChange={() => alternar(t.id)}
-                      aria-label={`Elegir la troza ${t.codigoPlanta ?? t.codificacion ?? ""}`}
-                      title={
-                        delLote
-                          ? "Apartada en este lote. Destildala para dejarla para otra corrida."
-                          : undefined
-                      }
-                      className="h-5 w-5 accent-[var(--accent)] disabled:opacity-40"
-                    />
-                  </td>
-                )}
-                <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{t.codigoPlanta ?? "—"}</td>
-                <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{t.codificacion ?? "—"}</td>
-                <td className="px-3 py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
-                <td className="px-3 py-2 font-mono text-xs text-[var(--text-tertiary)]">{t.gtfNumber ?? "—"}</td>
-                <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{medidas(t)}</td>
-                <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{fmtDia(t.fechaRecepcion)}</td>
-                <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                  {t.volumenM3 != null ? Number(t.volumenM3).toFixed(4) : "—"}
-                </td>
-                <td className="px-3 py-2 text-xs">
-                  {delLote ? (
-                    <span className="inline-flex items-center gap-1">
-                      <span className="rounded-lg bg-primary/15 px-1.5 py-0.5 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                        en este lote
-                      </span>
-                      {onSacarDelLote && (
+          {agrupar === "ninguna"
+            ? enPagina.map(filaTroza)
+            : grupos.map((g) => {
+                const abierto = abiertos.has(g.clave);
+                return (
+                  <Fragment key={g.clave}>
+                    <tr className="bg-[var(--surface-sunken)]">
+                      <td colSpan={seleccionable ? 13 : 12} className="px-3 py-2">
                         <button
                           type="button"
-                          onClick={() => onSacarDelLote(t.id)}
-                          title="Sacar del lote y devolverla al patio"
-                          className="rounded-lg px-1 py-0.5 text-[var(--text-tertiary)] underline-offset-2 hover:text-[var(--data-error-700)] hover:underline dark:hover:text-[var(--data-error-500)]"
+                          onClick={() =>
+                            setAbiertos((prev) => {
+                              const s2 = new Set(prev);
+                              if (s2.has(g.clave)) s2.delete(g.clave);
+                              else s2.add(g.clave);
+                              return s2;
+                            })
+                          }
+                          aria-expanded={abierto}
+                          className="flex w-full items-center gap-2 text-left text-sm font-bold text-[var(--text-primary)]"
                         >
-                          sacar
+                          <ChevronRight
+                            className={`h-4 w-4 shrink-0 transition-transform ${abierto ? "rotate-90" : ""}`}
+                            aria-hidden
+                          />
+                          {g.clave}
+                          <span className="font-normal text-[var(--text-tertiary)]">{g.piezas} pza</span>
+                          <span className="ml-auto font-mono tabular-nums text-[var(--text-primary)]">
+                            {fmtM3(g.volumenM3)} m³
+                          </span>
                         </button>
-                      )}
-                    </span>
-                  ) : enLote ? (
-                    <span className="rounded-lg bg-primary/10 px-1.5 py-0.5 font-mono font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                      {t.loteAserrioCode ?? "en un lote"}
-                    </span>
-                  ) : bloqueo ? (
-                    <span className="text-[var(--text-tertiary)]">{bloqueo.replace(/_/g, " ")}</span>
-                  ) : (
-                    <span className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">Libre</span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
+                      </td>
+                    </tr>
+                    {abierto && g.trozas.map(filaTroza)}
+                  </Fragment>
+                );
+              })}
         </TbodyCtp>
       </TablaCtp>
 
-      <CtpPaginacion
-        rango={rango}
-        porPagina={porPagina}
-        onPorPagina={setPorPagina}
-        onIr={ir}
-        sustantivo="troza"
-        extra={
-          <span className="font-mono tabular-nums">
-            {totalVisible.toFixed(4)} m³ · {pieTablarDe(totalVisible).toLocaleString("es-PE")} pt
-          </span>
-        }
-      />
+      {agrupar === "ninguna" ? (
+        <CtpPaginacion
+          rango={rango}
+          porPagina={porPagina}
+          onPorPagina={setPorPagina}
+          onIr={ir}
+          sustantivo="troza"
+          extra={
+            <span className="font-mono tabular-nums">
+              {fmtM3(totalVisible)} m³ · {pieTablarDe(totalVisible).toLocaleString("es-PE")} pt
+            </span>
+          }
+        />
+      ) : (
+        <p className="text-sm text-[var(--text-tertiary)]">
+          <span className="font-mono tabular-nums text-[var(--text-secondary)]">{grupos.length} grupo(s)</span> ·{" "}
+          {filas.length} troza{filas.length === 1 ? "" : "s"} · {fmtM3(totalVisible)} m³
+        </p>
+      )}
     </section>
   );
 }

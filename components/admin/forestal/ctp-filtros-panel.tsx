@@ -136,7 +136,7 @@ export default function CtpFiltrosPanel({
           hay tabla (≥640px). */}
       {selects.some((s) => s.soloMobile) && (
         <p className="hidden text-sm text-[var(--text-tertiary)] sm:block">
-          Especie, producto y demás columnas se filtran{" "}
+          {selects.filter((s) => s.soloMobile).map((s) => s.label).join(", ")} se filtran{" "}
           <b className="text-[var(--text-secondary)]">desde su encabezado en la tabla</b>.
         </p>
       )}
@@ -231,6 +231,114 @@ export function FiltroColumna({
         aria-hidden
       />
     </span>
+  );
+}
+
+/**
+ * El autofiltro de VARIOS valores a la vez — la columna «Guía» del patio
+ * (Brandon, 2026-09-01: «de esas 3 quiero filtrar 2 al mismo tiempo»).
+ *
+ * Es la lista de casillas del autofiltro de Excel. `<details>` nativo para
+ * abrir/cerrar sin librería; el panel va en `position: fixed` con la posición
+ * medida al abrir, porque la tabla vive dentro de un contenedor con `overflow`
+ * que recortaría cualquier `absolute`. Se cierra al hacer click afuera y al
+ * scrollear (la posición fija quedaría colgada en el aire).
+ */
+export function FiltroColumnaMulti({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = "Todas",
+}: {
+  label: string;
+  value: readonly string[];
+  options: FacetaOpcion[];
+  onChange: (v: string[]) => void;
+  placeholder?: string;
+}) {
+  const ref = useRef<HTMLDetailsElement>(null);
+  /* `top` si entra debajo del botón; `bottom` (medido desde el borde inferior de
+     la ventana) cuando la cabecera está al pie de la pantalla y la lista
+     quedaría cortada — se abre hacia arriba, como el autofiltro de Excel. */
+  const [pos, setPos] = useState<{ left: number; top?: number; bottom?: number } | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const cerrar = () => {
+      if (el.open) el.open = false;
+    };
+    const clickAfuera = (e: MouseEvent) => {
+      if (el.open && !el.contains(e.target as Node)) el.open = false;
+    };
+    document.addEventListener("mousedown", clickAfuera);
+    document.addEventListener("scroll", cerrar, true);
+    return () => {
+      document.removeEventListener("mousedown", clickAfuera);
+      document.removeEventListener("scroll", cerrar, true);
+    };
+  }, []);
+  const elegidas = new Set(value);
+  const resumen = value.length === 0 ? placeholder : value.length === 1 ? value[0] : `${value.length} elegidas`;
+  return (
+    <details
+      ref={ref}
+      onToggle={(e) => {
+        const d = e.currentTarget;
+        if (!d.open) return;
+        const r = d.querySelector("summary")?.getBoundingClientRect();
+        if (!r) return;
+        /* 16rem = el `max-h-64` de la lista. Si no entra abajo, va arriba. */
+        const entraAbajo = r.bottom + 4 + 256 <= window.innerHeight;
+        setPos(entraAbajo ? { top: r.bottom + 4, left: r.left } : { bottom: window.innerHeight - r.top + 4, left: r.left });
+      }}
+      className="mt-1.5 block font-normal normal-case tracking-normal"
+    >
+      <summary
+        aria-label={`Filtrar por ${label}`}
+        className={`flex h-9 min-w-24 max-w-56 cursor-pointer list-none items-center justify-between gap-1 rounded-lg border-[1.5px] bg-[var(--surface-raised)] pl-2.5 pr-2 text-sm font-medium text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none [&::-webkit-details-marker]:hidden ${
+          value.length > 0 ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)]"
+        }`}
+      >
+        <span className="truncate">{resumen}</span>
+        <ChevronDown
+          className={`h-3.5 w-3.5 shrink-0 ${value.length > 0 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
+          aria-hidden
+        />
+      </summary>
+      <div
+        role="group"
+        aria-label={`Valores de ${label}`}
+        style={pos ? { position: "fixed", top: pos.top, bottom: pos.bottom, left: pos.left } : undefined}
+        className="z-50 max-h-64 w-64 overflow-y-auto rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
+      >
+        {options.length === 0 && <p className="px-2 py-1.5 text-sm text-[var(--text-tertiary)]">Sin valores</p>}
+        {options.map((o) => (
+          <label
+            key={o.value}
+            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+          >
+            <input
+              type="checkbox"
+              checked={elegidas.has(o.value)}
+              onChange={(e) => onChange(e.target.checked ? [...value, o.value] : value.filter((x) => x !== o.value))}
+              className="h-4 w-4 accent-[var(--accent)]"
+            />
+            <span className="flex-1 truncate">{o.value}</span>
+            <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{o.count}</span>
+          </label>
+        ))}
+        {value.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange([])}
+            className="mt-1 w-full rounded-lg px-2 py-1.5 text-left text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+          >
+            {placeholder}
+          </button>
+        )}
+      </div>
+    </details>
   );
 }
 

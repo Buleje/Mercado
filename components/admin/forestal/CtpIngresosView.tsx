@@ -705,6 +705,7 @@ export default function CtpIngresosView({
         onStatus={setStatusFilter}
         facetas={facetas}
         onFacetas={setFacetas}
+        enCabecera={modo === "guia"}
         stats={stats}
         loading={loading}
         dashboardOn={showDashboard}
@@ -845,6 +846,20 @@ export default function CtpIngresosView({
       ) : (
       <CtpGuiasTable
         guias={guias}
+        /* Autofiltros de cabecera: mismo `facetas` que el panel (dos lugares, un filtro). */
+        filtrosColumna={{
+          provider: {
+            value: facetas.provider ?? "",
+            options: stats?.providers ?? [],
+            onChange: (v) => setFacetas((f) => ({ ...f, provider: v || undefined })),
+          },
+          species: {
+            value: facetas.species ?? "",
+            options: stats?.species ?? [],
+            onChange: (v) => setFacetas((f) => ({ ...f, species: v || undefined })),
+            placeholder: "Todas",
+          },
+        }}
         loading={loading}
         period={period}
         filtered={hayFiltro}

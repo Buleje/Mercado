@@ -22,6 +22,7 @@ import {
   CheckCheck,
   ChevronRight,
   Copy,
+  Download,
   Eye,
   FileText,
   MoreHorizontal,
@@ -32,11 +33,14 @@ import {
   TreePine,
 } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { CtpSort, CtpSortField } from "@/hooks/use-ctp-ingresos";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
+import { PROVEEDOR_INVENTARIO_APERTURA } from "@/lib/forestal/ctp-serfor-a-libro";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { FiltroColumna, type FacetaOpcion } from "./ctp-filtros-panel";
 import CtpEntryActions from "./CtpEntryActions";
 import CtpGuiaCardMobile from "./CtpGuiaCardMobile";
 import EspecieFoto from "./EspecieFoto";
@@ -55,10 +59,23 @@ import {
   type WoodEntryStatus,
 } from "./ctp-shared";
 
+/** Un autofiltro en la cabecera de su columna (estilo Excel). Lo arma la vista. */
+export interface FiltroColumnaGuias {
+  value: string;
+  options: FacetaOpcion[];
+  onChange: (v: string) => void;
+  placeholder?: string;
+}
+
 export interface CtpGuiasTableProps {
   guias: GuiaIngreso<WoodEntry>[];
   loading: boolean;
   period: CtpPeriod;
+  /**
+   * Especie y Proveedor se filtran desde su cabecera (Brandon, 2026-09-03).
+   * Mismo estado `facetas` que el panel «Filtros»: dos lugares, un filtro.
+   */
+  filtrosColumna?: { species?: FiltroColumnaGuias; provider?: FiltroColumnaGuias };
   /** Hay algún filtro activo → el vacío significa "no coincide", no "no hay". */
   filtered: boolean;
   /** Qué filtros están puestos, para nombrarlos en el vacío (ADR-352). */
@@ -187,9 +204,9 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                 <Th className="w-16">N° libro</Th>
                 <ThSort field="entryDate" sort={sort} onSort={onSort}>Fecha</ThSort>
                 <Th>Documento</Th>
-                <ThSort field="providerName" sort={sort} onSort={onSort}>Proveedor / Origen</ThSort>
+                <ThSort field="providerName" sort={sort} onSort={onSort} filtro={props.filtrosColumna?.provider}>Proveedor / Origen</ThSort>
                 {/* Ya no es «la» especie: es la lista de lo que trae el papel. */}
-                <ThSort field="speciesCommonName" sort={sort} onSort={onSort}>Especies de la guía</ThSort>
+                <ThSort field="speciesCommonName" sort={sort} onSort={onSort} filtro={props.filtrosColumna?.species}>Especies de la guía</ThSort>
                 <ThSort field="volumeM3" sort={sort} onSort={onSort} align="right">Cantidad</ThSort>
                 <Th>Estado</Th>
                 <Th className="text-right">Acciones</Th>
@@ -237,7 +254,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                   </td>
                   <td className="px-3 py-2.5 text-right">
                     <div className="whitespace-nowrap font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {totalPagina.vol.toFixed(4)}{" "}
+                      {fmtM3(totalPagina.vol)}{" "}
                       <span className="text-xs font-medium text-[var(--text-tertiary)]">m³</span>
                     </div>
                     <div className="whitespace-nowrap font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
@@ -274,7 +291,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
             />
           ))}
           <p className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm font-bold text-[var(--text-secondary)]">
-            {guias.length} guías · {totalPagina.vol.toFixed(4)} m³ · {totalPagina.pz} piezas
+            {guias.length} guías · {fmtM3(totalPagina.vol)} m³ · {totalPagina.pz} piezas
           </p>
         </div>
       )}
@@ -503,7 +520,29 @@ function FilaGuia({
           <div title={guia.providerName} className="max-w-36 truncate font-medium text-[var(--text-primary)]">
             {guia.providerName}
           </div>
-          <div className="text-sm text-[var(--text-tertiary)]">{originLabel(primera.originType)}</div>
+          {/* La guía importada como existencia de apertura no trae proveedor:
+              el importador escribe siempre este texto (`ctp-serfor-a-libro.ts`),
+              así que alcanza para distinguirla de una GTF recepcionada de verdad. */}
+          {guia.providerName === PROVEEDOR_INVENTARIO_APERTURA ? (
+            <span
+              title="Existencia de apertura: entró por el importador del libro, no es una GTF recepcionada"
+              className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+            >
+              <Download className="h-3 w-3 shrink-0" aria-hidden /> Importado
+            </span>
+          ) : (
+            <div className="text-sm text-[var(--text-tertiary)]">{originLabel(primera.originType)}</div>
+          )}
+          {/* Contrato (9) y N° de Resolución (5) del formato LO-CTP Sección 1: el
+              importador de inventario los trae, y sin mostrarlos acá quedaban
+              en el JSON sin que nadie los viera (Brandon, 2026-09-01). */}
+          {(guia.originCode || guia.originSourceNumber) && (
+            <div className="mt-0.5 truncate font-mono text-xs text-[var(--text-tertiary)]" title={`Contrato ${guia.originCode ?? "—"} · Res. ${guia.originSourceNumber ?? "—"}`}>
+              {guia.originCode && <>Contrato {guia.originCode}</>}
+              {guia.originCode && guia.originSourceNumber && " · "}
+              {guia.originSourceNumber && <>Res. {guia.originSourceNumber}</>}
+            </div>
+          )}
         </Td>
         <Td>
           {/* Todas las especies del papel, con su volumen: es lo que el operador
@@ -525,7 +564,7 @@ function FilaGuia({
                   <EspecieFoto especie={e.comun} indice={fotosEspecie} />
                   <span className="font-medium text-[var(--text-primary)]">{e.comun}</span>
                   <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
-                    {e.volumenM3.toFixed(4)} m³
+                    {fmtM3(e.volumenM3)} m³
                   </span>
                   {e.cites && (
                     <span
@@ -552,7 +591,7 @@ function FilaGuia({
         </Td>
         <Td className="text-right">
           <div className="whitespace-nowrap font-mono font-bold tabular-nums text-[var(--text-primary)]">
-            {guia.volumenM3.toFixed(4)} <span className="text-xs font-medium text-[var(--text-tertiary)]">m³</span>
+            {fmtM3(guia.volumenM3)} <span className="text-xs font-medium text-[var(--text-tertiary)]">m³</span>
           </div>
           <div className="whitespace-nowrap font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
             {guia.trozasCount > 0
@@ -574,7 +613,7 @@ function FilaGuia({
               <button
                 type="button"
                 onClick={() => onCuadrar(guia)}
-                title={`La guía declara ${guia.volumenM3.toFixed(4)} m³${cuantos} y sus ${guia.trozasCount} piezas suman ${(guia.trozasM3 ?? 0).toFixed(4)} m³. Abrí el cuadre para ver los dos lados del documento.`}
+                title={`La guía declara ${fmtM3(guia.volumenM3)} m³${cuantos} y sus ${guia.trozasCount} piezas suman ${fmtM3(guia.trozasM3 ?? 0)} m³. Abrí el cuadre para ver los dos lados del documento.`}
                 className="mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] underline-offset-2 hover:underline dark:text-[var(--data-warning-500)]"
               >
                 <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
@@ -672,7 +711,7 @@ function FilaGuia({
             </Td>
             <Td className="text-right">
               <div className="whitespace-nowrap font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                {Number(l.volumeM3).toFixed(4)} <span className="text-xs font-medium text-[var(--text-tertiary)]">m³</span>
+                {fmtM3(Number(l.volumeM3))} <span className="text-xs font-medium text-[var(--text-tertiary)]">m³</span>
               </div>
               <DescuadreChip entry={l} />
             </Td>
@@ -734,19 +773,22 @@ function ThSort({
   onSort,
   align = "left",
   children,
+  /** El autofiltro debajo del título: se ordena Y se acota desde la misma cabecera. */
+  filtro,
 }: {
   field: CtpSortField;
   sort: CtpSort;
   onSort: (f: CtpSortField) => void;
   align?: "left" | "right";
   children: React.ReactNode;
+  filtro?: FiltroColumnaGuias;
 }) {
   const activo = sort.by === field;
   const Icono = !activo ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
   return (
     <th
       aria-sort={activo ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
-      className={`px-3 py-2.5 font-bold text-[var(--text-primary)] ${align === "right" ? "text-right" : ""}`}
+      className={`px-3 py-2.5 align-top font-bold text-[var(--text-primary)] ${align === "right" ? "text-right" : ""}`}
     >
       <button
         type="button"
@@ -759,6 +801,8 @@ function ThSort({
         {children}
         <Icono className={`h-3.5 w-3.5 ${activo ? "" : "opacity-40"}`} aria-hidden="true" />
       </button>
+      {/* Título arriba, autofiltro debajo — igual que en las otras tablas del libro. */}
+      {filtro && <FiltroColumna label={String(children)} {...filtro} />}
     </th>
   );
 }

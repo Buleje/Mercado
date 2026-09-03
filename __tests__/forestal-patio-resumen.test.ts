@@ -3,6 +3,7 @@ import {
   DIAS_PATIO_ANEJO,
   diasEnPatio,
   estaLibreEnPatio,
+  facetasDePatio,
   filtrarPatio,
   libresDelPatio,
   opcionesDePatio,
@@ -116,7 +117,7 @@ describe("resumenPatio", () => {
 
   it("el pie tablar sale del volumen total y el promedio de todas las piezas", () => {
     const r = resumenPatio([troza({ volumenM3: 1 }), troza({ volumenM3: 2 })], AHORA);
-    expect(r.pieTablar).toBe(Math.round(3 * 423.78));
+    expect(r.pieTablar).toBe(Math.round(3 * 424)); // PT_POR_M3
     expect(r.promedioM3).toBe(1.5);
     expect(r.mayorM3).toBe(2);
   });
@@ -201,9 +202,15 @@ describe("filtrarPatio / opcionesDePatio", () => {
 
   it("filtra por cada campo y combina", () => {
     expect(filtrarPatio(pila, { especie: "Capirona" }).map((t) => t.id)).toEqual(["a", "c"]);
-    expect(filtrarPatio(pila, { guia: "001-2" }).map((t) => t.id)).toEqual(["b", "c"]);
+    expect(filtrarPatio(pila, { guia: ["001-2"] }).map((t) => t.id)).toEqual(["b", "c"]);
     expect(filtrarPatio(pila, { permiso: "P-1", proveedor: "Ana" }).map((t) => t.id)).toEqual(["c"]);
     expect(filtrarPatio(pila, { resolucion: "R-1" }).map((t) => t.id)).toEqual(["a", "c"]);
+  });
+
+  it("guía admite elegir dos o más a la vez (Brandon, 2026-09-01)", () => {
+    expect(filtrarPatio(pila, { guia: ["001-1", "001-2"] }).map((t) => t.id)).toEqual(["a", "b", "c"]);
+    expect(filtrarPatio(pila, { guia: [] }).map((t) => t.id)).toEqual(["a", "b", "c"]);
+    expect(filtrarPatio(pila, { guia: undefined }).map((t) => t.id)).toEqual(["a", "b", "c"]);
   });
 
   it("el texto busca sin tildes ni mayúsculas y por los dos códigos", () => {
@@ -220,5 +227,33 @@ describe("filtrarPatio / opcionesDePatio", () => {
     expect(o.permisos).toEqual(["P-1", "P-2"]);
     expect(o.resoluciones).toEqual(["R-1"]);
     expect(o.proveedores).toEqual(["Ana", "Juan"]);
+  });
+});
+
+/**
+ * Las opciones del autofiltro de cabecera (estilo Excel) llevan cuántas piezas
+ * hay detrás: se elige por peso, y una opción que devuelve cero es una trampa.
+ */
+describe("facetasDePatio — opciones con conteo para la cabecera", () => {
+  it("cuenta piezas por valor y ordena por cantidad, empate por nombre", () => {
+    const f = facetasDePatio([
+      troza({ id: "a", gtfNumber: "G-2", especieComun: "Tornillo", permiso: "P1" }),
+      troza({ id: "b", gtfNumber: "G-1", especieComun: "Capirona", permiso: "P1" }),
+      troza({ id: "c", gtfNumber: "G-2", especieComun: "Capirona", permiso: "P2" }),
+    ]);
+    expect(f.guias).toEqual([{ value: "G-2", count: 2 }, { value: "G-1", count: 1 }]);
+    expect(f.especies).toEqual([{ value: "Capirona", count: 2 }, { value: "Tornillo", count: 1 }]);
+    expect(f.permisos).toEqual([{ value: "P1", count: 2 }, { value: "P2", count: 1 }]);
+  });
+
+  it("no inventa una opción vacía cuando el campo viene null o en blanco", () => {
+    const f = facetasDePatio([troza({ gtfNumber: null, proveedor: "  " }), troza({ gtfNumber: undefined })]);
+    expect(f.guias).toEqual([]);
+    expect(f.proveedores).toEqual([]);
+  });
+
+  it("dice lo mismo que opcionesDePatio, sólo que con peso", () => {
+    const pila = [troza({ especieComun: "Shihuahuaco" }), troza({ especieComun: "Capirona" }), troza({ especieComun: "Capirona" })];
+    expect(facetasDePatio(pila).especies.map((e) => e.value).sort()).toEqual(opcionesDePatio(pila).especies);
   });
 });

@@ -65,6 +65,12 @@ export interface CtpIngresosFiltrosProps {
   armandoLegajo: boolean;
   /** Cómo se lista (por guía / por troza): va con los chips, no en su propia fila. */
   modoLista?: React.ReactNode;
+  /**
+   * Especie y Proveedor ya se filtran desde la cabecera de su columna en la
+   * tabla por guía (estilo Excel, Brandon 2026-09-03): acá sólo se dibujan en
+   * móvil (sin tabla, hay cards). Falso en la lista por troza, que no los tiene.
+   */
+  enCabecera?: boolean;
 }
 
 export default function CtpIngresosFiltros({
@@ -88,6 +94,7 @@ export default function CtpIngresosFiltros({
   legajoDeTodo,
   armandoLegajo,
   modoLista,
+  enCabecera = false,
 }: CtpIngresosFiltrosProps) {
   const activos =
     (facetas.species ? 1 : 0) +
@@ -233,9 +240,10 @@ export default function CtpIngresosFiltros({
         <CtpFiltrosPanel
           id={panelId}
           activos={activos}
+          /* Producto no es una columna de la tabla por guía: se queda acá siempre. */
           selects={[
-            { id: "species", label: "Especie", value: facetas.species ?? "", options: stats?.species ?? [] },
-            { id: "provider", label: "Proveedor", value: facetas.provider ?? "", options: stats?.providers ?? [] },
+            { id: "species", label: "Especie", value: facetas.species ?? "", options: stats?.species ?? [], soloMobile: enCabecera },
+            { id: "provider", label: "Proveedor", value: facetas.provider ?? "", options: stats?.providers ?? [], soloMobile: enCabecera },
             { id: "product", label: "Producto", value: facetas.product ?? "", options: stats?.products ?? [], etiqueta: productLabel },
           ]}
           toggles={[

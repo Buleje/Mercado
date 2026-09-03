@@ -49,6 +49,51 @@ function Filtro({
   );
 }
 
+/**
+ * Guía de ingreso: checkboxes y no un `<select>` (Brandon, 2026-09-01: "de esas
+ * 3 quiero filtrar 2 al mismo tiempo") — comparar dos guías a la vez es el caso
+ * real, y un single-select obligaba a mirar el patio dos veces y sumar a mano.
+ */
+function FiltroGuias({
+  valor,
+  onCambio,
+  opciones,
+}: {
+  valor: readonly string[];
+  onCambio: (v: string[]) => void;
+  opciones: readonly string[];
+}) {
+  if (opciones.length === 0) return null;
+  const elegidas = new Set(valor);
+  return (
+    <div
+      role="group"
+      aria-label="Filtrar por guía de ingreso"
+      className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2"
+    >
+      <p className="mb-1 px-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        Guía de ingreso
+      </p>
+      <div className="flex max-h-32 flex-col gap-0.5 overflow-y-auto">
+        {opciones.map((g) => (
+          <label
+            key={g}
+            className="flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+          >
+            <input
+              type="checkbox"
+              checked={elegidas.has(g)}
+              onChange={(e) => onCambio(e.target.checked ? [...valor, g] : valor.filter((x) => x !== g))}
+              className="h-4 w-4 accent-[var(--accent)]"
+            />
+            {g}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Lo puesto, a la vista y con su cruz. Un filtro que no se ve no se saca. */
 function Chip({ texto, onQuitar }: { texto: string; onQuitar: () => void }) {
   return (
@@ -68,16 +113,28 @@ export default function CtpPatioFiltros({
   filtro,
   /** Los controles de la acción —lote y fecha—: van PRIMEROS y en la misma fila. */
   accion,
+  /**
+   * Especie, guía y permiso ya se filtran desde la cabecera de su columna en la
+   * tabla de abajo (estilo Excel, Brandon 2026-09-03). Con esto, acá sólo se
+   * dibujan en móvil —donde la tabla es otra— y el panel se queda con lo que
+   * no tiene columna: resolución y proveedor.
+   */
+  enCabecera = false,
 }: {
   filtro: EstadoFiltroPatio;
   accion?: React.ReactNode;
+  enCabecera?: boolean;
 }) {
   const { opciones, set } = filtro;
   const [abierto, setAbierto] = useState(false);
+  /* `contents` deja que el hijo ocupe su celda de la grilla; `sm:hidden` (que es
+     `display:none`) le gana a partir de 640px. */
+  const soloMovil = enCabecera ? "contents sm:hidden" : "contents";
 
   const puestos: { texto: string; quitar: () => void }[] = [
     filtro.especie && { texto: filtro.especie, quitar: () => set.especie("") },
-    filtro.guia && { texto: `Guía ${filtro.guia}`, quitar: () => set.guia("") },
+    /* Un chip por guía elegida: sacar una no debería sacarlas todas. */
+    ...filtro.guia.map((g) => ({ texto: `Guía ${g}`, quitar: () => set.guia(filtro.guia.filter((x) => x !== g)) })),
     filtro.permiso && { texto: `Permiso ${filtro.permiso}`, quitar: () => set.permiso("") },
     filtro.resolucion && { texto: `Res. ${filtro.resolucion}`, quitar: () => set.resolucion("") },
     filtro.proveedor && { texto: filtro.proveedor, quitar: () => set.proveedor("") },
@@ -141,29 +198,35 @@ export default function CtpPatioFiltros({
           nunca — el operador que abre para afinar suele tocar dos seguidos. */}
       {abierto && (
         <div className="grid grid-cols-1 gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2 sm:grid-cols-2 lg:grid-cols-3">
-          <Filtro
-            valor={filtro.especie}
-            onCambio={set.especie}
-            etiqueta="Filtrar por especie"
-            todos="Todas las especies"
-            opciones={opciones.especies}
-          />
-          <Filtro
-            valor={filtro.guia}
-            onCambio={set.guia}
-            etiqueta="Filtrar por guía de ingreso"
-            todos="Todas las guías"
-            opciones={opciones.guias}
-          />
+          <div className={soloMovil}>
+            <Filtro
+              valor={filtro.especie}
+              onCambio={set.especie}
+              etiqueta="Filtrar por especie"
+              todos="Todas las especies"
+              opciones={opciones.especies}
+            />
+          </div>
+          <div className={soloMovil}>
+            <FiltroGuias valor={filtro.guia} onCambio={set.guia} opciones={opciones.guias} />
+          </div>
           {/* El permiso y la resolución: cuando entra la carga de un título
               entero, es por ahí que el patio la busca (ADR-342/343). */}
-          <Filtro
-            valor={filtro.permiso}
-            onCambio={set.permiso}
-            etiqueta="Filtrar por permiso o título habilitante"
-            todos="Todos los permisos"
-            opciones={opciones.permisos}
-          />
+          <div className={soloMovil}>
+            <Filtro
+              valor={filtro.permiso}
+              onCambio={set.permiso}
+              etiqueta="Filtrar por permiso o título habilitante"
+              todos="Todos los permisos"
+              opciones={opciones.permisos}
+            />
+          </div>
+          {enCabecera && (
+            <p className="hidden text-sm text-[var(--text-tertiary)] sm:block lg:col-span-1">
+              Especie, guía y permiso se filtran{" "}
+              <b className="text-[var(--text-secondary)]">desde su encabezado en la tabla</b>.
+            </p>
+          )}
           <Filtro
             valor={filtro.resolucion}
             onCambio={set.resolucion}

@@ -121,7 +121,9 @@ export interface FiltroPatio {
   /** Busca por código de planta, codificación, parcela, especie, guía… */
   texto?: string;
   especie?: string;
-  guia?: string;
+  /** Una o más guías a la vez (Brandon, 2026-09-01): "de esas 3 quiero 2" — sin
+   *  esto, comparar dos guías obligaba a mirar el patio dos veces y sumar a mano. */
+  guia?: readonly string[];
   /** N° del título habilitante. */
   permiso?: string;
   /** N° de resolución que aprueba el plan de manejo. */
@@ -140,14 +142,14 @@ const norm = (v: string | null | undefined) =>
 export function filtrarPatio(trozas: readonly TrozaConsumible[], f: FiltroPatio): TrozaConsumible[] {
   const texto = norm(f.texto);
   const especie = norm(f.especie);
-  const guia = norm(f.guia);
+  const guias = (f.guia ?? []).map(norm).filter(Boolean);
   const permiso = norm(f.permiso);
   const resolucion = norm(f.resolucion);
   const proveedor = norm(f.proveedor);
 
   return trozas.filter((t) => {
     if (especie && norm(t.especieComun) !== especie) return false;
-    if (guia && norm(t.gtfNumber) !== guia) return false;
+    if (guias.length > 0 && !guias.includes(norm(t.gtfNumber))) return false;
     if (permiso && norm(t.permiso) !== permiso) return false;
     if (resolucion && norm(t.resolucion) !== resolucion) return false;
     if (proveedor && norm(t.proveedor) !== proveedor) return false;
@@ -184,6 +186,39 @@ export function opcionesDePatio(trozas: readonly TrozaConsumible[]): OpcionesPat
     permisos: unicos((t) => t.permiso),
     resoluciones: unicos((t) => t.resolucion),
     proveedores: unicos((t) => t.proveedor),
+  };
+}
+
+/** Un valor de una columna con cuántas piezas lo tienen. */
+export interface FacetaPatio {
+  value: string;
+  count: number;
+}
+
+/**
+ * Lo mismo que `opcionesDePatio`, pero con el PESO de cada valor: el autofiltro
+ * de la cabecera (estilo Excel) elige por cuántas piezas hay detrás, y una
+ * opción que devuelve cero es una trampa. De toda la pila, por lo mismo que
+ * arriba. Orden: más piezas primero, empate por nombre.
+ */
+export function facetasDePatio(trozas: readonly TrozaConsumible[]): Record<keyof OpcionesPatio, FacetaPatio[]> {
+  const contar = (get: (t: TrozaConsumible) => string | null | undefined): FacetaPatio[] => {
+    const m = new Map<string, number>();
+    for (const t of trozas) {
+      const v = (get(t) ?? "").trim();
+      if (!v) continue;
+      m.set(v, (m.get(v) ?? 0) + 1);
+    }
+    return [...m.entries()]
+      .map(([value, count]) => ({ value, count }))
+      .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+  };
+  return {
+    especies: contar((t) => t.especieComun),
+    guias: contar((t) => t.gtfNumber),
+    permisos: contar((t) => t.permiso),
+    resoluciones: contar((t) => t.resolucion),
+    proveedores: contar((t) => t.proveedor),
   };
 }
 
