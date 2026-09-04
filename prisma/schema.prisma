@@ -6072,6 +6072,66 @@ model ForestCtpDespachoOrigen {
   @@index([tenantId, produccionEntryId])
 }
 
+/// ForestCtpComplianceSnapshot — cómo estaba el cumplimiento del libro ESE día
+/// (ADR-384). El panel muestra una foto; esto es la película.
+///
+/// **Se guarda lo que el panel ya calculó, no se recalcula.** El score se
+/// compone en el cliente juntando cinco agregados (`wood-entries?stats`,
+/// `ctp?saldos`, `ctp?traza`, `ctp-ficha`, `ctp?section=produccion`); un cron
+/// que los reimplementara crearía un SEGUNDO score que va a divergir del que ve
+/// el operador. Un libro fiscalizable no puede tener dos versiones de su propio
+/// cumplimiento. El costo aceptado: sólo hay punto los días que alguien abrió
+/// el libro, y la UI lo dice con esas palabras.
+///
+/// Sin soft-delete: es una medición, no un acta. Sin backfill: el pasado no se
+/// puede reconstruir sin los agregados de ese día, y no se finge.
+model ForestCtpComplianceSnapshot {
+  id       String @id @default(cuid())
+  tenantId String // denormalizado — regla 3 + detección de fuga (ADR-134 D3)
+
+  /// El día medido, date-only en UTC (el resto del libro usa la misma
+  /// convención: formatear con timeZone:"UTC" o aparece el off-by-one de Lima).
+  fecha DateTime @db.Date
+
+  /// La `key` del CtpPeriod que se estaba mirando (`mes-actual`, `todo`, …).
+  /// Un «mes actual» del 3 de septiembre habla de septiembre y el del 3 de
+  /// octubre, de octubre: por eso la serie se lee por periodo + fecha, nunca
+  /// sólo por fecha.
+  periodo String @db.VarChar(20)
+
+  /// 0-100, tal cual lo mostró el gauge. Int y no Decimal: el score ya sale
+  /// redondeado de `ctpComplianceScore`.
+  score Int
+
+  /// Las cinco categorías que RESTAN puntos (CATEGORIAS_QUE_RESTAN). Se guardan
+  /// una por una: «bajó de 92 a 74» sin decir por cuál no sirve para actuar.
+  fueraPlazo         Int @default(0)
+  pendientes         Int @default(0)
+  especiesEnNegativo Int @default(0)
+  stockNegativo      Int @default(0)
+  despachosSinTraza  Int @default(0)
+
+  /// Las informativas: NO restan (tener madera CITES no es una infracción), pero
+  /// su curva es justamente lo que anticipa un problema.
+  citesCount          Int @default(0)
+  citesSinPermiso     Int @default(0)
+  rendimientoAlto     Int @default(0)
+  documentosVencidos  Int @default(0)
+  documentosPorVencer Int @default(0)
+
+  /// Denominador del período: 4 pendientes sobre 6 ingresos no es lo mismo que
+  /// 4 sobre 600.
+  totalIngresos Int @default(0)
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Un punto por día y período. Un segundo guardado del mismo día ACTUALIZA:
+  /// el operador corrigió algo y el score subió — vale el último estado del día.
+  @@unique([tenantId, periodo, fecha])
+}
+
 /// ForestCtpConsumo — puente N:M entre una línea del libro CTP y los ingresos de
 /// materia prima que consumió (ADR-134 D5). Una corrida real mezcla varias guías,
 /// y un ingreso puede alimentar varias corridas.

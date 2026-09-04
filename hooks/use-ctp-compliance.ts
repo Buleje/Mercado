@@ -15,6 +15,7 @@ import { documentosVencimientoDeFicha } from "@/lib/forestal/ctp-ficha-types";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import type { WoodEntryStats } from "@/components/admin/forestal/ctp-shared";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import { registrarSnapshot } from "./use-ctp-compliance-serie";
 import { logger } from "@/lib/logger";
 
 interface SaldosSummary {
@@ -170,9 +171,15 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         documentosPorVencer: documentosPorVencerLabels.length,
       };
 
+      const score = ctpComplianceScore(counts);
+      /* La historia del cumplimiento (ADR-384): se guarda lo que el panel ACABA
+         de calcular, no una recomposición server-side que divergiría del número
+         que el operador ve. Fire-and-forget y una vez por día. */
+      registrarSnapshot(period.key, counts, score, wood.stats.totalCount);
+
       setData({
         counts,
-        score: ctpComplianceScore(counts),
+        score,
         totalIngresos: wood.stats.totalCount,
         productosNegativos,
         despachosSinTrazaLineas: trazaBody.traza.lineas,

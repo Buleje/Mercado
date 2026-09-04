@@ -23,7 +23,10 @@ interface Series {
 }
 
 interface Props {
-  data: Array<Record<string, string | number>>;
+  /** `null` en una serie = ese punto no se midió: la línea se corta ahí
+   *  (`connectNulls` de Recharts es false por defecto) en vez de inventar el
+   *  tramo. */
+  data: Array<Record<string, string | number | null>>;
   xKey: string;
   series: Series[];
   height?: number;

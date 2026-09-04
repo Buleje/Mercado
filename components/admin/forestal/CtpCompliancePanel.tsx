@@ -36,6 +36,7 @@ import {
 } from "@buleje/design-system/icons";
 import { CardTitle, WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
 import { BulejeGaugeChart } from "@/components/ui-system/charts";
+import CtpComplianceHistoria from "./CtpComplianceHistoria";
 import CtpDescuadresPanel from "./CtpDescuadresPanel";
 import CtpSobreTopePanel from "./CtpSobreTopePanel";
 import { Btn, VistaHeader } from "./ctp-shared";
@@ -365,6 +366,10 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           </ul>
         </div>
       </div>
+
+      {/* El gauge dice cómo estoy; esto, cómo vengo (ADR-384). Va pegado
+          debajo porque la pregunta que sigue a «74/100» es siempre «¿y antes?». */}
+      <CtpComplianceHistoria periodo={period.key} periodLabel={period.label} />
 
       {/* Triage: cuánto a corregir / revisar / en orden, de un vistazo. */}
       <div className="flex flex-wrap items-center gap-2">
