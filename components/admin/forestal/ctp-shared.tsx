@@ -202,6 +202,10 @@ export interface WoodEntryStats {
   lateCount: number;
   /** Ingresos vigentes sin código de origen — sin eso la pestaña EUDR queda inerte. */
   sinOrigenCount: number;
+  /** Ingresos vigentes sin costo cargado (ADR-135). */
+  sinCostoCount?: number;
+  /** Ingresos vigentes sin constancia del SNIFFS guardada (ADR-386). */
+  sinConstanciaCount?: number;
   byStatus: Record<WoodEntryStatus, number>;
   /** Especies / proveedores / productos del período (top 30 por volumen). */
   species: WoodEntryFacet[];

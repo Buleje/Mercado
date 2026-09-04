@@ -132,6 +132,76 @@ export function resolveCtpPeriod(
 }
 
 /**
+ * El período INMEDIATAMENTE ANTERIOR, para comparar contra él.
+ *
+ * «Entraron 135 m³» no dice nada solo. «135 m³, 40 % menos que el mes pasado»
+ * es una decisión de compra. El libro sabía contar el período elegido y nunca
+ * el de al lado.
+ *
+ * Se corre hacia atrás **el mismo largo** que el período elegido, terminando el
+ * día antes de que empiece: el trimestre se compara contra el trimestre previo,
+ * no contra el mes previo. Comparar lapsos de distinto largo es la forma más
+ * fácil de fabricar una caída del 66 % que no existió.
+ *
+ * `null` cuando no hay contra qué comparar: «todo el histórico» no tiene un
+ * antes, y un rango sin definir tampoco. Devolver un período inventado sería
+ * peor que no comparar.
+ */
+export function periodoAnterior(period: CtpPeriod): CtpPeriod | null {
+  if (!period.from || !period.to) return null;
+
+  const desde = new Date(period.from);
+  const hasta = new Date(period.to);
+  if (Number.isNaN(desde.getTime()) || Number.isNaN(hasta.getTime()) || hasta <= desde) return null;
+
+  /* Los meses de calendario se corren por MES, no por milisegundos: febrero
+     contra enero tiene que dar enero entero, y restarle 28 días a marzo daría
+     un pedazo de febrero más un pedazo de enero. */
+  if (period.key === "mes-actual" || period.key === "mes-anterior") {
+    const py = desde.getFullYear();
+    const pm = desde.getMonth() - 1;
+    const prev = new Date(py, pm, 1);
+    const fin = new Date(prev.getFullYear(), prev.getMonth(), lastDay(prev.getFullYear(), prev.getMonth()), 23, 59, 59, 999);
+    return { key: period.key, from: prev.toISOString(), to: fin.toISOString(), label: monthLabel(prev) };
+  }
+  if (period.key === "trimestre") {
+    /* Tres MESES calendario hacia atrás, no 92 días: restar el largo en
+       milisegundos daba «31 mar — 30 jun», que no es ningún trimestre y se lee
+       como un error de cálculo. El trimestre se compara contra el trimestre. */
+    const ini = new Date(desde.getFullYear(), desde.getMonth() - 3, 1);
+    const finMes = new Date(ini.getFullYear(), ini.getMonth() + 2, 1);
+    const fin = endOfDay(finMes.getFullYear(), finMes.getMonth(), lastDay(finMes.getFullYear(), finMes.getMonth()));
+    return {
+      key: period.key,
+      from: startOfDay(ini.getFullYear(), ini.getMonth(), 1).toISOString(),
+      to: fin.toISOString(),
+      label: `${monthLabel(ini)} — ${monthLabel(finMes)}`,
+    };
+  }
+  if (period.key === "anio") {
+    const py = desde.getFullYear() - 1;
+    return {
+      key: period.key,
+      from: startOfDay(py, 0, 1).toISOString(),
+      to: endOfDay(py, 11, 31).toISOString(),
+      label: `Año ${py}`,
+    };
+  }
+
+  /* Rangos custom: mismo largo, pegado por detrás — es lo único honesto
+     cuando el usuario eligió un lapso arbitrario. */
+  const largoMs = hasta.getTime() - desde.getTime();
+  const finPrev = new Date(desde.getTime() - 1);
+  const iniPrev = new Date(finPrev.getTime() - largoMs);
+  return {
+    key: period.key,
+    from: iniPrev.toISOString(),
+    to: finPrev.toISOString(),
+    label: `${dayLabel(iniPrev)} — ${dayLabel(finPrev)}`,
+  };
+}
+
+/**
  * El mismo rango, en formato corto para la cabina del libro ("may–jul 2026").
  * El `label` largo sigue siendo el de los informes y exports; acá manda el
  * ancho: en la cabecera compite con el score, las acciones y el título.

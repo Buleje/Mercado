@@ -287,6 +287,11 @@ function buildListWhere(
       { gtfNumber: { contains: filters.search, mode: "insensitive" } },
       { providerName: { contains: filters.search, mode: "insensitive" } },
       { speciesCommonName: { contains: filters.search, mode: "insensitive" } },
+      /* Contrato y N° de Resolución (Brandon, 2026-09-01): el importador de
+         inventario los trae y hasta ahora no había forma de buscar por ellos —
+         un operador que se acuerda del contrato no se acuerda del GTF. */
+      { originCode: { contains: filters.search, mode: "insensitive" } },
+      { originSourceNumber: { contains: filters.search, mode: "insensitive" } },
     ];
   }
 
@@ -523,6 +528,16 @@ export interface WoodEntryStats {
    * salga de esa madera no puede mostrar margen.
    */
   sinCostoCount: number;
+  /**
+   * Ingresos vigentes SIN constancia del SNIFFS guardada (ADR-386).
+   *
+   * No dice «SERFOR no la tiene» —eso el libro no lo puede saber, el SNIFFS no
+   * expone API— sino algo más honesto y igual de accionable: **este libro no
+   * puede probar que SERFOR conoce esa guía**. Es la primera pregunta de una
+   * fiscalización y hasta ahora sólo se contestaba abriendo los asientos de a
+   * uno.
+   */
+  sinConstanciaCount: number;
   byStatus: Record<WoodEntryStatus, number>;
   /** Especies / proveedores / productos presentes en el período (top 30 por volumen). */
   species: WoodEntryFacet[];
@@ -1180,6 +1195,15 @@ export class WoodEntriesDB {
             // Título habilitante (6) y resolución (8): por ahí agrupa el patio
             // cuando entra la carga de un permiso entero (ADR-342).
             originCode: true, originSourceNumber: true,
+            /* De dónde salió el DATO de esta pieza (Brandon, 2026-09-02:
+               «importados o puestos»). No hay un campo que lo declare, pero
+               el hecho sí está guardado: una guía traída del SNIFFS deja su
+               N° de constancia. Sin él, alguien tipeó la troza a mano — y en
+               una fiscalización no vale lo mismo un dato que vino del sistema
+               oficial que uno cargado por el operador. Se pide sólo el número,
+               nunca `serforGtf`: esa ficha es un JSON grande y traerla por
+               cada una de 5.000 trozas pagaría megabytes para mostrar un chip. */
+            serforNumeroRegistro: true,
             /* Lo que el asiento DECLARA (ADR-353). El consumo no puede pasarse
                de ahí (I2), así que el picker tiene que poder avisar ANTES de
                armar el acta —y no cuando el servidor la rechaza—. */
@@ -1239,6 +1263,10 @@ export class WoodEntriesDB {
       guiaRecepcionada: t.entry.status === "validado" || Boolean(t.entry.fechaRecepcion) || Boolean(t.fechaRecepcion),
       permiso: t.entry.originCode,
       resolucion: t.entry.originSourceNumber,
+      /* DERIVADO, y se dice que lo es: «serfor» = la guía trae su constancia
+         del SNIFFS, así que la troza bajó del documento oficial; «manual» =
+         se cargó a mano. No es un campo declarado en la troza. */
+      origenDato: t.entry.serforNumeroRegistro ? ("serfor" as const) : ("manual" as const),
       guiaVolumenM3: num(t.entry.volumeM3),
       guiaConsumidoM3: consumido.get(t.woodEntryId) ?? 0,
       consumidaEnId:
@@ -2603,7 +2631,7 @@ export class WoodEntriesDB {
     // la tabla listar 2.
     const condFueraDePlazo = lateConditions(tenantId, periodFilters);
 
-    const [agg, byStatusRows, speciesRows, citesAgg, lateRows, providerRows, productRows, sinOrigenCount, sinCostoCount] = await Promise.all([
+    const [agg, byStatusRows, speciesRows, citesAgg, lateRows, providerRows, productRows, sinOrigenCount, sinCostoCount, sinConstanciaCount] = await Promise.all([
       prisma.woodEntry.aggregate({
         where: whereVigente,
         _sum: { volumeM3: true, pieces: true },
@@ -2645,6 +2673,12 @@ export class WoodEntriesDB {
       // Ingresos sin valorizar: lo que deja al P&L sin COGS. Vigentes también —
       // el costo de un rechazado no le importa a nadie.
       prisma.woodEntry.count({ where: { ...whereVigente, costoTotal: null } }),
+      /* Sin constancia del SNIFFS: `null` Y `""`, como `sinOrigenCount`. Un
+         string vacío es un campo que alguien abrió y dejó igual — contarlo
+         como verificado sería el falso verde más caro del libro. */
+      prisma.woodEntry.count({
+        where: { ...whereVigente, OR: [{ serforNumeroRegistro: null }, { serforNumeroRegistro: "" }] },
+      }),
     ]);
 
     const byStatus: Record<WoodEntryStatus, number> = {
@@ -2683,6 +2717,7 @@ export class WoodEntriesDB {
       lateCount: Number(lateRows[0]?.count ?? 0),
       sinOrigenCount,
       sinCostoCount,
+      sinConstanciaCount,
       byStatus,
       species: faceta(speciesRows, (r) => r.speciesCommonName),
       providers: faceta(providerRows, (r) => r.providerName),
