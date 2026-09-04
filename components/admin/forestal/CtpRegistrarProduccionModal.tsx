@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Boxes, Copy, Gauge, Loader2, Pencil, Plus, Trash2, X } from "@buleje/design-system/icons";
+import { AlertTriangle, Boxes, ChevronDown, Copy, Gauge, Loader2, Pencil, Plus, Trash2, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import {
@@ -81,12 +81,20 @@ const fmtDia = (iso: string | null | undefined) => {
   return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("es-PE", { timeZone: "UTC" });
 };
 
-/** Un bloque del formulario oficial, con su barra de título. */
+/**
+ * Un bloque del formulario oficial, con su barra de título.
+ *
+ * `plegable` lo cierra por defecto y deja el `resumen` a la vista: el material y
+ * los datos de la corrida se leen UNA vez y después estorban, pero esconderlos
+ * sin decir qué valen obligaría a abrirlos igual para comprobar.
+ */
 function Bloque({
   titulo,
   meta,
   children,
   onKeyDown,
+  plegable = false,
+  resumen,
 }: {
   titulo: string;
   /** Contexto corto a la derecha del título: el lote, sus fechas. Antes eso era
@@ -95,14 +103,50 @@ function Bloque({
   children: React.ReactNode;
   /** Atajos del bloque (Enter = Añadir en el del paquete). */
   onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
+  plegable?: boolean;
+  /** Lo que dice el bloque cerrado. Sin esto, plegar es esconder. */
+  resumen?: string;
 }) {
+  const [abierto, setAbierto] = useState(!plegable);
+  const cabecera = (
+    <>
+      <span className="text-sm font-bold text-[var(--text-primary)]">{titulo}</span>
+      {!abierto && resumen ? (
+        <span className="min-w-0 flex-1 truncate text-right font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+          {resumen}
+        </span>
+      ) : (
+        meta && <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{meta}</span>
+      )}
+    </>
+  );
   return (
     <section className="rounded-xl border border-[var(--rule-base)]">
-      <CardTitle as="h3" className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
-        <span className="text-sm font-bold text-[var(--text-primary)]">{titulo}</span>
-        {meta && <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{meta}</span>}
-      </CardTitle>
-      <div className="p-3" onKeyDown={onKeyDown}>{children}</div>
+      {plegable ? (
+        <CardTitle as="h3" className="rounded-t-xl bg-[var(--surface-sunken)]">
+          <button
+            type="button"
+            onClick={() => setAbierto((v) => !v)}
+            aria-expanded={abierto}
+            className="flex w-full flex-wrap items-baseline gap-2 rounded-t-xl px-3 py-2 text-left transition-colors hover:bg-[var(--surface-canvas)]"
+          >
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 self-center text-[var(--text-tertiary)] transition-transform ${abierto ? "rotate-180" : ""}`}
+              aria-hidden
+            />
+            {cabecera}
+          </button>
+        </CardTitle>
+      ) : (
+        <CardTitle as="h3" className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
+          {cabecera}
+        </CardTitle>
+      )}
+      {abierto && (
+        <div className="p-3" onKeyDown={onKeyDown}>
+          {children}
+        </div>
+      )}
     </section>
   );
 }
@@ -521,7 +565,10 @@ export default function CtpRegistrarProduccionModal({
     codigoTocado.current = false;
     setObsPaquete("");
     setRepetir("1");
-    cantidadRef.current?.focus();
+    /* `preventScroll`: enfocar sin arrastrar el scroll del modal. Sin esto,
+       cada paquete agregado saltaba la vista al medio del formulario y tapaba
+       la franja de estado y la lista. */
+    cantidadRef.current?.focus({ preventScroll: true });
   }
 
   function agregar() {
@@ -587,7 +634,10 @@ export default function CtpRegistrarProduccionModal({
       sugeridoRef.current = cod;
       codigoTocado.current = false;
     }
-    cantidadRef.current?.focus();
+    /* `preventScroll`: enfocar sin arrastrar el scroll del modal. Sin esto,
+       cada paquete agregado saltaba la vista al medio del formulario y tapaba
+       la franja de estado y la lista. */
+    cantidadRef.current?.focus({ preventScroll: true });
   }
 
   /** Salir de la edición sin tocar el paquete. */
@@ -656,98 +706,66 @@ export default function CtpRegistrarProduccionModal({
           </p>
         )}
 
-        {/**
-         * Dos columnas desde 1280 px (C1, Brandon 2026-09-03).
-         *
-         * Apilado, el formulario del paquete quedaba TAPADO por el pie del
-         * modal y la lista de lo cargado no se veía nunca: había que scrollear
-         * a ciegas entre cargar y comprobar. Izquierda el CONTEXTO —de qué
-         * madera se trata y con qué tope—, derecha el TRABAJO —cargar paquetes
-         * y verlos aparecer—.
-         *
-         * `@container` en cada columna: las grillas de adentro miden la COLUMNA
-         * y no la ventana. Con breakpoints de viewport, cuatro campos en una
-         * columna de 650 px daban 110 px cada uno.
-         */}
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] xl:items-start">
-        <div className="@container space-y-3">
-        {/* ── Material ── */}
-        <Bloque
-          titulo="Material"
-          meta={
-            lote
-              ? `Lote ${lote.code} · ${fmtDia(lote.inicioProceso ?? lote.fechaApertura)} → ${fmtDia(lote.finProceso)}`
-              : undefined
-          }
-        >
-          <div className="grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-4">
-            {/* Inventario declarado (ADR-?) no trae piezas reales que contar:
-                un "Cantidad: 0" al lado de "Volumen: 10.0000" se lee como que
-                falta algo, cuando en realidad no aplica. Sólo se muestra
-                cuando hay piezas de verdad. */}
-            <div className={material.piezas > 0 ? "sm:col-span-2" : "sm:col-span-2 lg:col-span-3"}>
-              <Dato
-                label="Especie"
-                valor={
-                  material.especieCientifica
-                    ? `${material.especieCientifica} (${material.especie.toUpperCase()})`
-                    : material.especie
-                }
-              />
-            </div>
-            {material.piezas > 0 && <Dato label="Cantidad" valor={String(material.piezas)} />}
-            <div className="grid grid-cols-2 gap-2">
-              <Dato label="Volumen" valor={fmtM3(material.volumenM3)} />
-              <div className="text-sm">
-                <span className="mb-1 block font-bold text-[var(--text-secondary)]">Rendimiento</span>
-                <p
-                  className={`flex h-11 items-center gap-1.5 rounded-xl px-2.5 font-mono font-bold tabular-nums ${
-                    veredicto.tono === "ok"
-                      ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                      : veredicto.tono === "neutro"
-                        ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
-                        : "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                  }`}
-                >
-                  <Gauge className="h-4 w-4" aria-hidden />
-                  {rendimientoPct != null ? `${rendimientoPct} %` : "—"}
-                </p>
-              </div>
-            </div>
-          </div>
-          {/* El techo, a la vista MIENTRAS se carga: enterarse al apretar
-              «Guardar» es enterarse tarde (ADR-358).
 
-              `sticky` (C3): es el número que decide si entra otro paquete, y al
-              scrollear hasta el formulario desaparecía justo cuando hace falta.
-              `-mx-3 px-3` para que el fondo tape el borde del bloque al pegarse. */}
-          <div className="sticky top-0 z-10 -mx-3 mt-3 bg-[var(--surface-raised)] px-3 pb-1 pt-1">
-          <div
-            className={`flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm ${
-              margen > 0
-                ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
-                : "bg-[var(--data-error-500)]/12 font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
-            }`}
-          >
-            <span className="flex items-center gap-1.5">
-              {margen === 0 && <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />}
-              Tope de rendimiento <b>{RENDIMIENTO_TOPE_PCT} %</b> · máximo declarable{" "}
-              <b className="font-mono tabular-nums">{fmtM3(tope)} m³</b>
-              {/* Lo ya declarado se NOMBRA acá: es lo que explica por qué el
-                  margen no es el tope entero (ADR-361). */}
+        {/**
+         * La FRANJA DE ESTADO: el único renglón que gobierna la tarea.
+         *
+         * Antes esto vivía adentro del bloque «Material», en una columna
+         * lateral: el dato que decide si entra otro paquete estaba enterrado
+         * al costado, y el rendimiento se repetía en tres lugares distintos.
+         * Acá va a lo ancho, arriba de todo y pegado al scroll — se lee la
+         * cuenta completa de izquierda a derecha: qué entró, qué se declaró,
+         * cuánto queda.
+         */}
+        <div
+          className={`sticky top-0 z-20 rounded-xl border-2 px-3 py-2 ${
+            margen > 0
+              ? "border-[var(--rule-base)] bg-[var(--surface-raised)]"
+              : "border-[var(--data-error-500)] bg-[var(--data-error-500)]/10"
+          }`}
+        >
+          <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm">
+            <span className="text-[var(--text-secondary)]">
+              Entró{" "}
+              <b className="font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(material.volumenM3)} m³</b>
+            </span>
+            <span aria-hidden className="text-[var(--text-tertiary)]">→</span>
+            <span className="text-[var(--text-secondary)]">
+              Declarado{" "}
+              <b className="font-mono text-base tabular-nums text-[var(--text-primary)]">{fmtM3(acumulado)} m³</b>
               {previo > 0 && (
-                <>
-                  {" "}· ya declarado <b className="font-mono tabular-nums">{fmtM3(previo)} m³</b>
-                </>
+                <span className="ml-1 text-xs text-[var(--text-tertiary)]">
+                  ({fmtM3(previo)} de antes + {fmtM3(totales.volumen)} ahora)
+                </span>
               )}
             </span>
-            <span className="font-mono tabular-nums">
-              {margen > 0 ? `quedan ${fmtM3(margen)} m³` : "sin margen: sacá volumen para guardar"}
+            <span
+              className={`font-bold ${
+                margen > 0
+                  ? "text-[var(--text-secondary)]"
+                  : "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+              }`}
+            >
+              {margen > 0 ? (
+                <>
+                  Quedan{" "}
+                  <b className="font-mono text-base tabular-nums">{fmtM3(margen)} m³</b>
+                </>
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> Sin margen: sacá volumen para guardar
+                </span>
+              )}
+            </span>
+            {/* El rendimiento, UNA sola vez en todo el modal. */}
+            <span className="ml-auto flex items-center gap-1.5">
+              <Gauge className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+              <b className="font-mono text-base tabular-nums text-[var(--text-primary)]">
+                {rendimientoPct != null ? `${rendimientoPct} %` : "—"}
+              </b>
+              <span className="text-xs text-[var(--text-tertiary)]">{veredicto.texto}</span>
             </span>
           </div>
-
-          {/* La barra hace obvio el límite: el número solo se lee, la barra se
-              VE llenarse mientras se cargan paquetes. */}
           {tope > 0 && (
             <div
               className="mt-1.5 h-2 overflow-hidden rounded-full bg-[var(--surface-sunken)]"
@@ -765,103 +783,28 @@ export default function CtpRegistrarProduccionModal({
               />
             </div>
           )}
-          </div>
-
-          {/* Reparto entre títulos habilitantes (ADR-358). */}
-          {reparto.length > 1 ? (
-            <div className="mt-3 overflow-hidden rounded-xl border border-[var(--rule-base)]">
-              <div className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Cómo se reparte entre los títulos habilitantes
-              </div>
-              <ul className="divide-y divide-[var(--rule-soft)]">
-                {reparto.map((o) => (
-                  <li key={o.permiso ?? "sin"} className="flex flex-wrap items-baseline justify-between gap-2 px-3 py-1.5 text-sm">
-                    <span className="min-w-0 flex-1 truncate">
-                      <b className="font-mono text-[var(--text-primary)]">{o.permiso ?? "sin título declarado"}</b>
-                      <span className="ml-2 text-[var(--text-tertiary)]">
-                        {o.piezas} pza · {fmtM3(o.volumenM3)} m³ de materia prima ({o.pctMateriaPrima} %)
-                      </span>
-                    </span>
-                    <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {fmtM3(o.produccionM3)} m³
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <p className="px-3 py-1.5 text-xs text-[var(--text-tertiary)]">
-                Proporcional al volumen que puso cada uno: de una tabla no se puede decir de qué árbol salió, pero sí
-                en qué proporción entró cada título.
-              </p>
-            </div>
-          ) : (
-            material.permisos.length > 0 && (
-              <p className="mt-2 text-sm text-[var(--text-tertiary)]">
-                Amparada por {material.permisos.length === 1 ? "el título" : "los títulos"}{" "}
-                <b className="text-[var(--text-secondary)]">{material.permisos.join(" · ")}</b>
-              </p>
-            )
-          )}
-
-          {/**
-           * Lo que hay que tener a mano mientras se declara: la madera pieza por
-           * pieza, de qué guía y título viene, y lo que la corrida ya declaró.
-           * Plegado en solapas — sin esto había que cerrar el modal (perdiendo
-           * lo tipeado) para ir a buscarlo a otra pestaña.
-           */}
-          <CtpMaterialPanel
-            trozas={trozas}
-            origenes={material.origenes}
-            paquetesPrevios={paquetesPrevios}
-            fecha={dia}
-          />
-        </Bloque>
-
-        {/* ── La corrida: se llena UNA vez ──────────────────────────────────
-            Estaba mezclada con los campos del paquete, que se repiten por cada
-            atado. Dos cosas distintas en la misma grilla hacían tipear la línea
-            y la fecha creyendo que eran del paquete. */}
-        <Bloque titulo="La corrida">
-          <div className="grid gap-3 @lg:grid-cols-2 @2xl:grid-cols-3">
-            {/**
-             * Ampliando, la corrida YA existe: su fecha y su línea son las del
-             * asiento que se está completando y el servidor no las toca. Se
-             * muestran como dato — un campo editable que no viaja es una mentira
-             * de la pantalla.
-             */}
-            {previo > 0 ? (
-              <>
-                <Dato label="Línea de producción" valor={linea} />
-                <Dato label="Fecha de producción" valor={fmtDia(dia)} />
-              </>
-            ) : (
-              <>
-                <Campo label="Línea de producción">
-                  <select value={linea} onChange={(e) => setLinea(e.target.value)} className={CAMPO}>
-                    {/* Las dos del Cuadro Resumen 3: principal y recuperación. */}
-                    <option value="LP">LP · línea principal</option>
-                    <option value="LRE">LRE · línea de recuperación</option>
-                  </select>
-                </Campo>
-                <Campo label="Fecha de producción">
-                  <input type="date" value={dia} onChange={(e) => setDia(e.target.value)} className={CAMPO} />
-                </Campo>
-              </>
-            )}
-            <Campo label="Observación de la corrida">
-              <input
-                value={observaciones}
-                onChange={(e) => setObservaciones(e.target.value)}
-                placeholder={previo > 0 ? "Si la escribís, reemplaza la anterior" : "Turno, sierra…"}
-                maxLength={300}
-                className={CAMPO}
-              />
-            </Campo>
-          </div>
-
-        </Bloque>
-
+          <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+            Tope de rendimiento {RENDIMIENTO_TOPE_PCT} % · máximo declarable{" "}
+            <b className="font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(tope)} m³</b>
+          </p>
         </div>
 
+        {/**
+         * Dos columnas desde 1280 px (C1, Brandon 2026-09-03).
+         *
+         * Apilado, el formulario del paquete quedaba TAPADO por el pie del
+         * modal y la lista de lo cargado no se veía nunca: había que scrollear
+         * a ciegas entre cargar y comprobar. Izquierda el CONTEXTO —de qué
+         * madera se trata y con qué tope—, derecha el TRABAJO —cargar paquetes
+         * y verlos aparecer—.
+         *
+         * `@container` en cada columna: las grillas de adentro miden la COLUMNA
+         * y no la ventana. Con breakpoints de viewport, cuatro campos en una
+         * columna de 650 px daban 110 px cada uno.
+         */}
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,27rem)_minmax(0,1fr)] xl:items-start">
+        {/* Izquierda: lo que se HACE — cargar paquetes. Debajo, el contexto
+            plegado (material y datos de la corrida), que se lee una vez. */}
         <div className="@container space-y-3">
         {/* ── El paquete: se repite por cada atado que sale de la sierra ── */}
         <Bloque
@@ -1121,12 +1064,161 @@ export default function CtpRegistrarProduccionModal({
           )}
         </Bloque>
 
+        {/* ── Material ── */}
+        <Bloque
+          titulo="Material"
+          plegable
+          resumen={`${material.especie}${material.piezas > 0 ? ` · ${material.piezas} trozas` : ""} · ${fmtM3(material.volumenM3)} m³`}
+          meta={
+            lote
+              ? `Lote ${lote.code} · ${fmtDia(lote.inicioProceso ?? lote.fechaApertura)} → ${fmtDia(lote.finProceso)}`
+              : undefined
+          }
+        >
+          <div className="grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-4">
+            {/* Inventario declarado (ADR-?) no trae piezas reales que contar:
+                un "Cantidad: 0" al lado de "Volumen: 10.0000" se lee como que
+                falta algo, cuando en realidad no aplica. Sólo se muestra
+                cuando hay piezas de verdad. */}
+            <div className={material.piezas > 0 ? "sm:col-span-2" : "sm:col-span-2 lg:col-span-3"}>
+              <Dato
+                label="Especie"
+                valor={
+                  material.especieCientifica
+                    ? `${material.especieCientifica} (${material.especie.toUpperCase()})`
+                    : material.especie
+                }
+              />
+            </div>
+            {material.piezas > 0 && <Dato label="Cantidad" valor={String(material.piezas)} />}
+            <div className="grid grid-cols-2 gap-2">
+              <Dato label="Volumen" valor={fmtM3(material.volumenM3)} />
+              <div className="text-sm">
+                <span className="mb-1 block font-bold text-[var(--text-secondary)]">Rendimiento</span>
+                <p
+                  className={`flex h-11 items-center gap-1.5 rounded-xl px-2.5 font-mono font-bold tabular-nums ${
+                    veredicto.tono === "ok"
+                      ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                      : veredicto.tono === "neutro"
+                        ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+                        : "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                  }`}
+                >
+                  <Gauge className="h-4 w-4" aria-hidden />
+                  {rendimientoPct != null ? `${rendimientoPct} %` : "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Reparto entre títulos habilitantes (ADR-358). */}
+          {reparto.length > 1 ? (
+            <div className="mt-3 overflow-hidden rounded-xl border border-[var(--rule-base)]">
+              <div className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Cómo se reparte entre los títulos habilitantes
+              </div>
+              <ul className="divide-y divide-[var(--rule-soft)]">
+                {reparto.map((o) => (
+                  <li key={o.permiso ?? "sin"} className="flex flex-wrap items-baseline justify-between gap-2 px-3 py-1.5 text-sm">
+                    <span className="min-w-0 flex-1 truncate">
+                      <b className="font-mono text-[var(--text-primary)]">{o.permiso ?? "sin título declarado"}</b>
+                      <span className="ml-2 text-[var(--text-tertiary)]">
+                        {o.piezas} pza · {fmtM3(o.volumenM3)} m³ de materia prima ({o.pctMateriaPrima} %)
+                      </span>
+                    </span>
+                    <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                      {fmtM3(o.produccionM3)} m³
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="px-3 py-1.5 text-xs text-[var(--text-tertiary)]">
+                Proporcional al volumen que puso cada uno: de una tabla no se puede decir de qué árbol salió, pero sí
+                en qué proporción entró cada título.
+              </p>
+            </div>
+          ) : (
+            material.permisos.length > 0 && (
+              <p className="mt-2 text-sm text-[var(--text-tertiary)]">
+                Amparada por {material.permisos.length === 1 ? "el título" : "los títulos"}{" "}
+                <b className="text-[var(--text-secondary)]">{material.permisos.join(" · ")}</b>
+              </p>
+            )
+          )}
+
+          {/**
+           * Lo que hay que tener a mano mientras se declara: la madera pieza por
+           * pieza, de qué guía y título viene, y lo que la corrida ya declaró.
+           * Plegado en solapas — sin esto había que cerrar el modal (perdiendo
+           * lo tipeado) para ir a buscarlo a otra pestaña.
+           */}
+          <CtpMaterialPanel
+            trozas={trozas}
+            origenes={material.origenes}
+            paquetesPrevios={paquetesPrevios}
+            fecha={dia}
+          />
+        </Bloque>
+
+        {/* ── La corrida: se llena UNA vez ──────────────────────────────────
+            Estaba mezclada con los campos del paquete, que se repiten por cada
+            atado. Dos cosas distintas en la misma grilla hacían tipear la línea
+            y la fecha creyendo que eran del paquete. */}
+        <Bloque titulo="La corrida" plegable resumen={`${fmtDia(dia)} · ${linea}`}>
+          <div className="grid gap-3 @lg:grid-cols-2 @2xl:grid-cols-3">
+            {/**
+             * Ampliando, la corrida YA existe: su fecha y su línea son las del
+             * asiento que se está completando y el servidor no las toca. Se
+             * muestran como dato — un campo editable que no viaja es una mentira
+             * de la pantalla.
+             */}
+            {previo > 0 ? (
+              <>
+                <Dato label="Línea de producción" valor={linea} />
+                <Dato label="Fecha de producción" valor={fmtDia(dia)} />
+              </>
+            ) : (
+              <>
+                <Campo label="Línea de producción">
+                  <select value={linea} onChange={(e) => setLinea(e.target.value)} className={CAMPO}>
+                    {/* Las dos del Cuadro Resumen 3: principal y recuperación. */}
+                    <option value="LP">LP · línea principal</option>
+                    <option value="LRE">LRE · línea de recuperación</option>
+                  </select>
+                </Campo>
+                <Campo label="Fecha de producción">
+                  <input type="date" value={dia} onChange={(e) => setDia(e.target.value)} className={CAMPO} />
+                </Campo>
+              </>
+            )}
+            <Campo label="Observación de la corrida">
+              <input
+                value={observaciones}
+                onChange={(e) => setObservaciones(e.target.value)}
+                placeholder={previo > 0 ? "Si la escribís, reemplaza la anterior" : "Turno, sierra…"}
+                maxLength={300}
+                className={CAMPO}
+              />
+            </Campo>
+          </div>
+
+        </Bloque>
+
+        </div>
+
+        {/* Derecha: lo que se VE crecer. La lista ocupa la columna entera —
+            antes arrancaba debajo del formulario y quedaba tapada por el pie.
+
+            `sticky` bajo la franja: las dos columnas comparten el scroll del
+            modal, así que al bajar por el formulario la lista se iba de
+            pantalla justo mientras se la está llenando. */}
+        <div className="@container xl:sticky xl:top-[5.5rem]">
         {/* ── Producción cargada ── */}
         <Bloque
           titulo={previo > 0 ? `Paquetes que se agregan (${paquetes.length})` : `Producción (${paquetes.length})`}
           meta={previo > 0 ? `La corrida ya tiene ${codigosUsados?.length ?? 0} paquete(s) cargados` : undefined}
         >
-          <TablaCtp>
+          <TablaCtp altoMax="max-h-[calc(92vh-22rem)]">
             <TheadCtp>
               <tr>
                 <th className="px-3 py-2 font-bold">Código paquete</th>
@@ -1231,30 +1323,10 @@ export default function CtpRegistrarProduccionModal({
             </TbodyCtp>
           </TablaCtp>
 
-          {/* El balance del formato: qué entró, qué salió y con qué rendimiento. */}
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-x-6 gap-y-1 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm">
-            <span className="text-[var(--text-secondary)]">
-              Consumido{" "}
-              <b className="font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(material.volumenM3)} m³</b>
-            </span>
-            <span className="text-[var(--text-secondary)]">
-              Volumen producción{" "}
-              <b className="font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(totales.volumen)} m³</b>
-              {previo > 0 && (
-                <span className="text-[var(--text-tertiary)]">
-                  {" "}+ {fmtM3(previo)} ya declarado ={" "}
-                  <b className="font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(acumulado)} m³</b>
-                </span>
-              )}
-            </span>
-            <span className="text-[var(--text-secondary)]">
-              Rendimiento{" "}
-              <b className="font-mono tabular-nums text-[var(--text-primary)]">
-                {rendimientoPct != null ? `${rendimientoPct} %` : "—"}
-              </b>{" "}
-              <span className="text-[var(--text-tertiary)]">· {veredicto.texto}</span>
-            </span>
-          </div>
+          {/* El balance ya no se repite acá: qué entró, qué se declaró y con qué
+              rendimiento viven en la franja de estado de arriba, que está a la
+              vista todo el tiempo. Tres copias del mismo número enseñaban a no
+              mirar ninguna. */}
 
           {/**
            * El tope avisa por ARRIBA; por abajo no avisaba nadie (D2).
