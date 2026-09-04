@@ -454,6 +454,43 @@ export interface DocumentosVencimiento {
   porVencerLabels: string[];
 }
 
+/** Lo que la Ficha declara con fecha de caducidad, ya listo para proyectar. */
+export interface DocumentoDeFicha {
+  /** Cómo se lo nombra en pantalla: el código si lo tiene, si no el tipo. */
+  label: string;
+  /** `yyyy-mm-dd`, o `""` si no está cargada — no se inventa. */
+  vencimiento: string;
+}
+
+/**
+ * Los documentos de la Ficha en forma estructurada (título + CITES).
+ *
+ * `documentosVencimientoDeFicha` (abajo) devuelve etiquetas ya cocinadas para
+ * mostrar; esto devuelve el dato, que es lo que necesita quien va a PROYECTAR
+ * sobre él (`ctp-anticipa.ts`). Las dos comparten cómo se nombra un documento
+ * para que la campana y el panel no lo llamen distinto.
+ */
+export function documentosDeFicha(
+  ficha:
+    | {
+        citesPermisos?: { especie: string; vencimiento?: string }[];
+        titulos?: { tipo: string; codigo: string; vencimiento?: string }[];
+      }
+    | null
+    | undefined,
+): DocumentoDeFicha[] {
+  return [
+    ...(ficha?.citesPermisos ?? []).map((p) => ({
+      label: `CITES ${p.especie || "—"}`,
+      vencimiento: (p.vencimiento ?? "").trim(),
+    })),
+    ...(ficha?.titulos ?? []).map((t) => ({
+      label: t.codigo || t.tipo || "título",
+      vencimiento: (t.vencimiento ?? "").trim(),
+    })),
+  ];
+}
+
 /**
  * Un título habilitante o permiso CITES vencido invalida el origen legal de
  * TODA la madera que ampara — no un caso puntual. Single source entre el

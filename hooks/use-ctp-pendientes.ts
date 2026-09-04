@@ -14,6 +14,10 @@ import {
   diaDeFechaOnly, diaDeLimiteLocal, diaEnPeriodo, pendientesDelLibro, TROZAS_VARADAS_DIAS,
   type DatosPendientes, type Pendiente,
 } from "@/lib/forestal/ctp-pendientes";
+import {
+  HORIZONTE_TROZA_DIAS, avisosQueVienen, type AvisoAnticipado, type DatosAnticipa,
+} from "@/lib/forestal/ctp-anticipa";
+import { documentosDeFicha } from "@/lib/forestal/ctp-ficha-types";
 
 const VACIO: DatosPendientes = {
   ingresosPendientes: 0, fueraDePlazo: 0, guiasSinIngresar: 0,
@@ -38,6 +42,8 @@ type Respuesta = {
   saldos?: { materiaPrima?: unknown; productos?: unknown };
   /** `?varadas=`: sólo el conteo, para no traerse el patio entero. */
   piezas?: number;
+  m3?: number;
+  ficha?: unknown;
 };
 
 /** Lo que devuelve el hook. Exportado: el shell lo carga una vez y lo reparte
@@ -45,13 +51,32 @@ type Respuesta = {
 export interface CtpPendientesState {
   datos: DatosPendientes;
   lista: Pendiente[];
+  /** Lo que TODAVÍA no pasó pero se viene (ADR-385). */
+  seViene: AvisoAnticipado[];
   cargando: boolean;
   falló: boolean;
   recargar: () => void;
 }
 
+/**
+ * Cuántos días abarca el período elegido. Sin límites (todo el histórico) no se
+ * puede medir un ritmo diario honesto: se devuelve 0 y la proyección del patio
+ * se calla sola.
+ */
+function diasDelPeriodo(period: CtpPeriod): number {
+  if (!period.from) return 0;
+  const desde = new Date(period.from).getTime();
+  const hasta = period.to ? new Date(period.to).getTime() : Date.now();
+  const d = Math.round((Math.min(hasta, Date.now()) - desde) / 86_400_000);
+  return d > 0 ? d : 0;
+}
+
 export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
   const [datos, setDatos] = useState<DatosPendientes>(VACIO);
+  /* Lo que se viene sale de los MISMOS pedidos que los pendientes (más dos
+     baratos): otra tanda de fetches para la mitad de la campana sería pagar
+     dos veces por la misma pantalla. */
+  const [seViene, setSeViene] = useState<AvisoAnticipado[]>([]);
   const [cargando, setCargando] = useState(true);
   /** Si el cálculo falla, NO se puede decir "al día": sería mentir. */
   const [falló, setFalló] = useState(false);
@@ -79,8 +104,13 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
       /* Sin período a propósito: una troza parada desde marzo sigue parada hoy,
          y mirar sólo el mes elegido la escondería justo cuando más urge. */
       json(`/api/admin/forestal/trozas/patio?varadas=${TROZAS_VARADAS_DIAS}`),
+      /* Las dos de «lo que se viene»: el borde inferior de la banda de trozas
+         (las que cruzan el umbral esta semana = éstas menos las ya varadas) y
+         la Ficha, para los documentos por vencer. Dos agregados, no listas. */
+      json(`/api/admin/forestal/trozas/patio?varadas=${TROZAS_VARADAS_DIAS - HORIZONTE_TROZA_DIAS}`),
+      json("/api/admin/forestal/ctp-ficha"),
     ])
-      .then(([we, gtf, desp, anexos, saldos, varadas]) => {
+      .then(([we, gtf, desp, anexos, saldos, varadas, porVarar, ficha]) => {
         if (miCarga !== cargaRef.current) return;   // llegó tarde: manda la más nueva
         const despachos = arr<{ status?: string; gtfNumber?: string | null; id: string }>(desp?.entries)
           .filter((e) => e.status === "registrado");
@@ -104,12 +134,46 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
           trozasVaradas: varadas?.piezas ?? 0,
           ingresosSinCosto: we?.stats?.sinCostoCount ?? 0,
         });
+
+        /* ── Lo que se viene ──────────────────────────────────────────────
+           Todo sale de lo ya pedido. El plazo corre sobre las guías del monte
+           que TODAVÍA no entraron al CTP: es el único momento en que avisar
+           todavía sirve (una vez registrada tarde, ya es infracción). */
+        const mp = (saldos?.saldos?.materiaPrima ?? {}) as {
+          saldoM3?: number;
+          consumidoM3?: number;
+        };
+        const banda = Math.max(0, (porVarar?.piezas ?? 0) - (varadas?.piezas ?? 0));
+        const datosAnticipa: DatosAnticipa = {
+          ingresos: guias.map((g) => ({
+            gtfNumber: (g as { gtfNumber?: string }).gtfNumber ?? "—",
+            entryDate: diaDeFechaOnly(g.gtfDate),
+            registrado: false,
+          })),
+          trozasPorVarar: banda > 0
+            ? {
+                piezas: banda,
+                m3: Math.max(0, (porVarar?.m3 ?? 0) - (varadas?.m3 ?? 0)),
+                ventanaDias: HORIZONTE_TROZA_DIAS,
+              }
+            : undefined,
+          documentos: documentosDeFicha(
+            (ficha as { ficha?: Parameters<typeof documentosDeFicha>[0] })?.ficha,
+          ),
+          patioM3: Number(mp.saldoM3 ?? 0),
+          consumidoM3: Number(mp.consumidoM3 ?? 0),
+          /* El consumo que devuelve `saldos` es el DEL PERÍODO elegido, así que
+             el ritmo se mide sobre ese mismo lapso — no sobre 30 días fijos que
+             no se corresponderían con el numerador. */
+          consumoDias: diasDelPeriodo(period),
+        };
+        setSeViene(avisosQueVienen(datosAnticipa));
       })
-      .catch(() => { if (miCarga === cargaRef.current) setFalló(true); })
+      .catch(() => { if (miCarga === cargaRef.current) { setFalló(true); setSeViene([]); } })
       .finally(() => { if (miCarga === cargaRef.current) setCargando(false); });
   }, [period]);
 
   useEffect(recargar, [recargar]);
 
-  return { datos, lista: pendientesDelLibro(datos), cargando, falló, recargar };
+  return { datos, lista: pendientesDelLibro(datos), seViene, cargando, falló, recargar };
 }
