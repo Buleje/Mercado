@@ -42,7 +42,9 @@ import CtpArchivadorAuto, { type GuiaParaArchivar } from "./CtpArchivadorAuto";
 import { hayNovedades } from "@/lib/forestal/ctp-cola-archivado";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
-import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import { csrfHeaders } from "@/lib/csrf-client";
+import { tieneCosto } from "@/lib/forestal/costo-sugerido";
 import { logger } from "@/lib/logger";
 
 /** Lo que el endpoint de trozas devuelve: lo usan el papel y la ficha. */
@@ -67,6 +69,7 @@ import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import CtpGuiasTable from "./CtpGuiasTable";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
 import CtpGuiaFichaModal from "./CtpGuiaFichaModal";
+import CtpCostoGuiaModal, { type GuiaACostear } from "./CtpCostoGuiaModal";
 import CtpTrozasIndividuales from "./CtpTrozasIndividuales";
 import CtpIngresosKpis from "./CtpIngresosKpis";
 import CtpGtfIngresadasKpis from "./CtpGtfIngresadasKpis";
@@ -151,6 +154,14 @@ export default function CtpIngresosView({
   const [docTrozas, setDocTrozas] = useState<TrozaDeGuia[] | null>(null);
   /** La FICHA de la guía (ADR-350): se revisa y se recibe en el mismo lugar. */
   const [fichaGuia, setFichaGuia] = useState<GuiaIngreso<WoodEntry> | null>(null);
+  /**
+   * La guía a la que hay que ponerle precio, recién recepcionada (ADR-135).
+   *
+   * Se pregunta acá y no en la pestaña Rentabilidad porque acá es cuando la
+   * factura del proveedor está sobre la mesa. Medido antes de esto: **0 % del
+   * patio valorizado**, con la pantalla para cargarlo existiendo desde agosto.
+   */
+  const [costoGuia, setCostoGuia] = useState<GuiaACostear | null>(null);
   const [fichaTrozas, setFichaTrozas] = useState<TrozaDeGuia[] | null>(null);
   const [fichaError, setFichaError] = useState<string | null>(null);
   /** La guía que se está CUADRANDO: declara un volumen y sus piezas suman otro (ADR-353). */
@@ -502,6 +513,50 @@ export default function CtpIngresosView({
         "Está arriba de todo en «GTF ingresadas», y sus piezas ya se pueden llevar a la sierra desde Consumos.",
     });
     encolarArchivado(guia.lineas);
+    /* Sólo si NO tiene costo: preguntar por algo ya contestado es ruido, y el
+       operador aprende a cerrar el modal sin leerlo. */
+    if (!guia.lineas.some(tieneCosto)) {
+      setCostoGuia({
+        gtfNumber: guia.gtfNumber,
+        providerName: guia.lineas[0]?.providerName ?? null,
+        especie: guia.lineas[0]?.speciesCommonName ?? null,
+        volumenM3: guia.lineas.reduce((a, l) => a + (Number(l.volumeM3) || 0), 0),
+        lineas: guia.lineas.map((l) => ({ id: l.id, volumeM3: l.volumeM3 })),
+      });
+    }
+    return true;
+  }
+
+  /**
+   * Guarda el costo de cada asiento de la guía. Devuelve `false` si alguno
+   * falló: el modal lo dice y no cierra —la plata cargada a medias es peor que
+   * no cargada, porque el margen que muestre va a estar mal y nadie lo va a
+   * saber.
+   */
+  async function guardarCostoGuia(porAsiento: { id: string; costoTotal: number }[]): Promise<boolean> {
+    const rs = await Promise.all(
+      porAsiento.map((a) =>
+        fetch(`/api/admin/forestal/wood-entries/${encodeURIComponent(a.id)}`, {
+          method: "PATCH",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          credentials: "include",
+          body: JSON.stringify({ action: "set_costo", costoTotal: a.costoTotal, moneda: "PEN" }),
+        })
+          .then((r) => r.ok)
+          .catch((err) => {
+            logger.error("[ingresos] no se pudo guardar el costo", { error: String(err) });
+            return false;
+          }),
+      ),
+    );
+    if (rs.some((ok) => !ok)) return false;
+    invalidarCtp("wood-entries");
+    void reload();
+    pushToast({
+      tono: "success",
+      msg: `Costo cargado — ${porAsiento.length} asiento${porAsiento.length === 1 ? "" : "s"}`,
+      detail: "Ya cuenta para el margen y para el valor del patio.",
+    });
     return true;
   }
 
@@ -958,6 +1013,15 @@ export default function CtpIngresosView({
           />
         );
       })()}
+
+      {costoGuia && (
+        <CtpCostoGuiaModal
+          guia={costoGuia}
+          historial={entries}
+          onGuardar={guardarCostoGuia}
+          onClose={() => setCostoGuia(null)}
+        />
+      )}
 
       {fichaGuia && (
         <CtpGuiaFichaModal

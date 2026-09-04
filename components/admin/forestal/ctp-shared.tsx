@@ -140,6 +140,16 @@ export interface WoodEntry {
   originSourceNumber: string | null;
   /** (9) Código de CTP de procedencia (si vino de otro centro). */
   ctpProductCode: string | null;
+  /**
+   * Lo que se pagó por esta madera (ADR-135).
+   *
+   * `list()` lo devuelve desde siempre —hace `...e` sobre la fila— pero faltaba
+   * en ESTE tipo, así que la bandeja de Ingresos no podía saber si una guía ya
+   * estaba valorizada ni proponer un precio. El clásico campo que viaja en el
+   * JSON y no existe para TypeScript.
+   */
+  costoTotal?: number | string | null;
+  moneda?: string | null;
   originRegion: string | null;
   originDistrict: string | null;
   speciesCommonName: string;

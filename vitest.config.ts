@@ -71,6 +71,11 @@ export default defineConfig({
     "process.env.NODE_ENV": JSON.stringify("test"),
   },
   resolve: {
+    /* UNA sola copia de React en el bundle del navegador. Sin esto, cualquier
+       componente con Radix (todo `AdminModal`) muere en el proyecto `vrt` con
+       «Cannot read properties of null (reading 'useRef')»: Radix resuelve a la
+       copia que trae vitest-browser-react y se queda sin dispatcher. */
+    dedupe: ["react", "react-dom"],
     conditions: ["development", "browser"],
     alias: {
       "@": path.resolve(__dirname),
