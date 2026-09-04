@@ -14,12 +14,19 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Boxes, Gauge, Loader2, Plus, Trash2 } from "@buleje/design-system/icons";
+import { AlertTriangle, Boxes, Copy, Gauge, Loader2, Pencil, Plus, Trash2, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { PRESENTACIONES_LOCTP, TIPOS_PRODUCTO_SALIDA, presentacionSugerida } from "@/lib/forestal/loctp-catalogos";
+import {
+  PRESENTACIONES_LOCTP,
+  RENDIMIENTO_PLAUSIBLE_MAX,
+  RENDIMIENTO_PLAUSIBLE_MIN,
+  TIPOS_PRODUCTO_SALIDA,
+  presentacionSugerida,
+} from "@/lib/forestal/loctp-catalogos";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import CtpMaterialPanel, { type PaquetePrevio } from "./CtpMaterialPanel";
 import { juzgarRendimientoLote, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
@@ -79,12 +86,15 @@ function Bloque({
   titulo,
   meta,
   children,
+  onKeyDown,
 }: {
   titulo: string;
   /** Contexto corto a la derecha del título: el lote, sus fechas. Antes eso era
    *  un bloque entero para tres datos que se miran de reojo. */
   meta?: string;
   children: React.ReactNode;
+  /** Atajos del bloque (Enter = Añadir en el del paquete). */
+  onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
 }) {
   return (
     <section className="rounded-xl border border-[var(--rule-base)]">
@@ -92,7 +102,7 @@ function Bloque({
         <span className="text-sm font-bold text-[var(--text-primary)]">{titulo}</span>
         {meta && <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{meta}</span>}
       </CardTitle>
-      <div className="p-3">{children}</div>
+      <div className="p-3" onKeyDown={onKeyDown}>{children}</div>
     </section>
   );
 }
@@ -130,6 +140,7 @@ export default function CtpRegistrarProduccionModal({
   paquetesPrevios,
   ctaLabel,
   trozas,
+  productoInicial,
   onConfirmar,
   onClose,
 }: {
@@ -172,6 +183,12 @@ export default function CtpRegistrarProduccionModal({
    * LO-CTP, en sólo lectura: esas piezas ya son un hecho registrado.
    */
   trozas?: TrozaConsumible[];
+  /**
+   * Con qué producto arranca el primer paquete (modo inventario, ADR-?): el
+   * paso 1 ya preguntó "qué va a salir" y repetir la elección acá sería
+   * ignorar lo que el operador ya contestó. Sigue siendo editable.
+   */
+  productoInicial?: string | null;
   onConfirmar: (datos: ProduccionRegistrada) => void;
   onClose: () => void;
 }) {
@@ -202,11 +219,11 @@ export default function CtpRegistrarProduccionModal({
       .catch(() => { if (vivo) setCodigosPlanta([]); });
     return () => { vivo = false; };
   }, []);
-  const [producto, setProducto] = useState<string>(TIPOS_PRODUCTO_SALIDA[0]?.valor ?? "");
+  const [producto, setProducto] = useState<string>(productoInicial || TIPOS_PRODUCTO_SALIDA[0]?.valor || "");
   /* Arranca en la del producto inicial, para que el primer paquete no salga con
      una presentación que el producto contradice. */
   const [presentacion, setPresentacion] = useState<string>(
-    () => presentacionSugerida(TIPOS_PRODUCTO_SALIDA[0]?.valor) ?? "PAQUETES",
+    () => presentacionSugerida(productoInicial || TIPOS_PRODUCTO_SALIDA[0]?.valor) ?? "PAQUETES",
   );
   const [cantidad, setCantidad] = useState("");
   const [volumen, setVolumen] = useState("");
@@ -249,6 +266,26 @@ export default function CtpRegistrarProduccionModal({
       .catch(() => { if (vivo) { setMedidas([]); setMedidasDeOtros(false); } });
     return () => { vivo = false; };
   }, [producto]);
+
+  /**
+   * El paquete que se está EDITANDO, si hay uno.
+   *
+   * Antes sólo se podía quitar y volver a tipear: equivocarse en el volumen del
+   * paquete 3 de 15 costaba re-cargarlo entero. Editando, el formulario es el
+   * mismo — un segundo formulario para corregir sería otro lugar donde el
+   * volumen puede salir distinto.
+   */
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  /**
+   * Cuántos paquetes IGUALES crear de una (A1).
+   *
+   * El turno real es «doce paquetes de 2 × 20 × 3.20»: doce vueltas del mismo
+   * formulario cambiando sólo el correlativo del código. Acá se pone 12 y salen
+   * los doce, cada uno con su código libre de la serie.
+   */
+  const [repetir, setRepetir] = useState("1");
+  /** Para devolver el foco acá al abrir y después de cada paquete agregado. */
+  const cantidadRef = useRef<HTMLInputElement>(null);
 
   const [dimensionar, setDimensionar] = useState(false);
   const [espesor, setEspesor] = useState("");
@@ -299,6 +336,61 @@ export default function CtpRegistrarProduccionModal({
     setCodigo((actual) => (actual.trim() === "" || actual === anterior ? sugerido : actual));
   }, [proponerCodigo]);
 
+  /**
+   * El borrador de la carga, guardado por corrida (B1).
+   *
+   * Cerrar el modal con catorce paquetes cargados los perdía todos, y volver a
+   * tipearlos es media hora. Mismo patrón que la selección de trozas del panel
+   * del lote: se guarda en cada cambio y se recupera al abrir.
+   *
+   * ⚠️ Al recuperar se DESCARTA lo que la corrida ya declaró (por código): si
+   * el guardado salió bien y el modal se reabre, el borrador viejo volvería a
+   * proponer paquetes que ya están en el libro — declararlos dos veces.
+   */
+  const claveBorrador = `buleje-ctp-produccion-borrador:${lote?.id ?? titulo ?? "produccion"}`;
+  const [borradorRecuperado, setBorradorRecuperado] = useState(0);
+  const borradorLeido = useRef(false);
+  useEffect(() => {
+    if (borradorLeido.current) return;
+    borradorLeido.current = true;
+    try {
+      const crudo = localStorage.getItem(claveBorrador);
+      if (!crudo) return;
+      const b = JSON.parse(crudo) as { paquetes?: PaqueteBorrador[]; dia?: string; linea?: string; observaciones?: string };
+      const yaEnElLibro = new Set(codigosUsados);
+      const rescatados = (b.paquetes ?? []).filter((p) => p?.codigo && !yaEnElLibro.has(p.codigo));
+      if (rescatados.length === 0) {
+        localStorage.removeItem(claveBorrador);
+        return;
+      }
+      setPaquetes(rescatados);
+      if (b.dia) setDia(b.dia);
+      if (b.linea) setLinea(b.linea);
+      if (b.observaciones) setObservaciones(b.observaciones);
+      setBorradorRecuperado(rescatados.length);
+    } catch {
+      /* JSON corrupto, storage bloqueado o modo privado: se arranca en blanco,
+         que es como estaba antes. Un borrador nunca puede romper la carga. */
+    }
+  }, [claveBorrador, codigosUsados]);
+  useEffect(() => {
+    /* No escribir ANTES de leer: el efecto de guardado corre en el primer
+       render y pisaría el borrador con el estado vacío — el mismo bug que borró
+       los precios por especie del cubicador. */
+    if (!borradorLeido.current) return;
+    try {
+      if (paquetes.length === 0) localStorage.removeItem(claveBorrador);
+      else localStorage.setItem(claveBorrador, JSON.stringify({ paquetes, dia, linea, observaciones }));
+    } catch {
+      /* Sin persistencia se sigue cargando igual: es una red, no un requisito. */
+    }
+  }, [claveBorrador, paquetes, dia, linea, observaciones]);
+  const descartarBorrador = () => {
+    setPaquetes([]);
+    setBorradorRecuperado(0);
+    try { localStorage.removeItem(claveBorrador); } catch { /* idem */ }
+  };
+
   const piezas = Number(cantidad) || 0;
   /** Dimensionado, el volumen se CALCULA: tipearlo aparte da dos verdades. */
   const volumenCalculado = useMemo(
@@ -322,6 +414,17 @@ export default function CtpRegistrarProduccionModal({
      sale físicamente de lo que entró (ADR-358). */
   const tope = topeDeclarableM3(material.volumenM3);
   const margen = margenDeclarableM3(material.volumenM3, acumulado);
+  /**
+   * El paquete que se está editando y el margen que le corresponde A ÉL.
+   *
+   * `margen` ya descuenta el volumen del paquete editado (está en `paquetes`).
+   * Si no se lo devolviera, corregir «3.0 → 3.0» diría que no entra: el propio
+   * paquete estaría compitiendo consigo mismo por el tope.
+   */
+  const editando = useMemo(() => paquetes.find((p) => p.id === editandoId) ?? null, [paquetes, editandoId]);
+  const margenParaEste = Math.round((margen + (editando?.volumenM3 ?? 0)) * 10_000) / 10_000;
+  /** Cuántos iguales se van a crear. Editando siempre es 1: se corrige uno. */
+  const veces = editandoId ? 1 : Math.max(1, Math.min(200, Math.floor(Number(repetir) || 1)));
   const motivos = useMemo(
     () =>
       motivosParaGuardar(paquetes, {
@@ -343,6 +446,39 @@ export default function CtpRegistrarProduccionModal({
   const listo = motivos.length === 0 && !guardando;
 
   /**
+   * Guardar: se limpia el borrador y se entrega.
+   *
+   * Se limpia ACÁ y no al cerrar: si el guardado falla, el modal queda abierto
+   * con los paquetes en pantalla y se puede reintentar. Dejar el borrador vivo
+   * después de un guardado exitoso es peor — al reabrir propondría declarar de
+   * nuevo lo que ya está en el libro.
+   */
+  const confirmar = useCallback(() => {
+    if (!listo) return;
+    try { localStorage.removeItem(claveBorrador); } catch { /* storage bloqueado */ }
+    onConfirmar({
+      fecha: dia,
+      lineaProduccion: linea,
+      observaciones: observaciones.trim() || null,
+      paquetes,
+      volumen: totales.volumen,
+    });
+  }, [listo, claveBorrador, onConfirmar, dia, linea, observaciones, paquetes, totales.volumen]);
+
+  /* Ctrl+Enter guarda desde cualquier campo: con veinte paquetes cargados,
+     buscar el botón con el mouse es el último peaje de la jornada. */
+  useEffect(() => {
+    const alTeclado = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        confirmar();
+      }
+    };
+    document.addEventListener("keydown", alTeclado);
+    return () => document.removeEventListener("keydown", alTeclado);
+  }, [confirmar]);
+
+  /**
    * Por qué este paquete no entra. `null` = entra.
    *
    * El tope se chequea ANTES de agregarlo y no después: dejarlo entrar para
@@ -353,40 +489,111 @@ export default function CtpRegistrarProduccionModal({
     ? "Poné el código del paquete."
     : !(volumenAUsar && volumenAUsar > 0)
       ? "Poné el volumen del paquete."
-      : material.volumenM3 > 0 && volumenAUsar > margen
-        ? margen > 0
-          ? `Ese paquete pasa el tope del ${RENDIMIENTO_TOPE_PCT} %: entran ${margen.toFixed(4)} m³ más.`
-          : `Ya se llegó al tope del ${RENDIMIENTO_TOPE_PCT} % (${tope.toFixed(4)} m³). Sacá un paquete para agregar otro.`
+      : material.volumenM3 > 0 && volumenAUsar * veces > margenParaEste
+        ? margenParaEste > 0
+          ? veces > 1
+            ? `${veces} paquetes de ${fmtM3(volumenAUsar)} m³ pasan el tope del ${RENDIMIENTO_TOPE_PCT} %: entran ${fmtM3(margenParaEste)} m³ más (${Math.floor(margenParaEste / volumenAUsar)} paquete(s)).`
+            : `Ese paquete pasa el tope del ${RENDIMIENTO_TOPE_PCT} %: entran ${fmtM3(margenParaEste)} m³ más.`
+          : `Ya se llegó al tope del ${RENDIMIENTO_TOPE_PCT} % (${fmtM3(tope)} m³). Sacá un paquete para agregar otro.`
         : null;
+
+  /** Los campos del paquete, tal como quedaron en el formulario. */
+  function camposDelForm(id: string, cod: string): PaqueteBorrador {
+    return {
+      id,
+      codigo: cod,
+      productType: producto,
+      presentacion,
+      cantidad: piezas,
+      volumenM3: volumenAUsar as number,
+      espesorCm: dimensionar ? Number(espesor) || null : null,
+      anchoCm: dimensionar ? Number(ancho) || null : null,
+      largoM: dimensionar ? Number(largo) || null : null,
+      observations: obsPaquete.trim(),
+    };
+  }
+
+  /** Deja el formulario listo para el paquete siguiente, con el código libre. */
+  function prepararSiguiente(ocupados: readonly string[]) {
+    const siguiente = proponerCodigo(ocupados);
+    setCodigo(siguiente);
+    sugeridoRef.current = siguiente;
+    codigoTocado.current = false;
+    setObsPaquete("");
+    setRepetir("1");
+    cantidadRef.current?.focus();
+  }
 
   function agregar() {
     /* El guard vive en `noEntra` (que es lo que apaga el botón y explica por
        qué): acá sólo se re-afirma el tipo, porque TS no lo puede deducir de él. */
     if (noEntra || !(volumenAUsar && volumenAUsar > 0)) return;
-    const volumen = volumenAUsar;
-    setPaquetes((prev) => [
-      ...prev,
-      {
-        id: `${Date.now()}-${prev.length}`,
-        codigo: codigo.trim(),
-        productType: producto,
-        presentacion,
-        cantidad: piezas,
-        volumenM3: volumen,
-        espesorCm: dimensionar ? Number(espesor) || null : null,
-        anchoCm: dimensionar ? Number(ancho) || null : null,
-        largoM: dimensionar ? Number(largo) || null : null,
-        observations: obsPaquete.trim(),
-      },
-    ]);
-    /* El código se autonumera y el resto queda: una jornada carga veinte
-       paquetes iguales cambiando el número. El recién agregado va como ocupado
-       —todavía no está en el estado— para no proponerlo de nuevo. */
-    const siguiente = proponerCodigo([codigo.trim()]);
-    setCodigo(siguiente);
-    sugeridoRef.current = siguiente;
-    codigoTocado.current = false;
-    setObsPaquete("");
+
+    /* Corrigiendo: se reemplaza EN SU LUGAR, conservando el id y la posición.
+       Sacarlo y volver a agregarlo lo mandaría al final de la lista, y el orden
+       de los paquetes es el orden en que salieron de la sierra. */
+    if (editandoId) {
+      const cod = codigo.trim();
+      setPaquetes((prev) => prev.map((p) => (p.id === editandoId ? camposDelForm(p.id, cod) : p)));
+      setEditandoId(null);
+      prepararSiguiente([cod]);
+      return;
+    }
+
+    /* N paquetes iguales de una (A1): cada uno con el próximo código libre.
+       Los ya creados en este mismo click viajan como ocupados —todavía no
+       están en el estado— para que la serie no se repita. */
+    const nuevos: PaqueteBorrador[] = [];
+    const usados: string[] = [];
+    for (let k = 0; k < veces; k++) {
+      const cod = k === 0 ? codigo.trim() : proponerCodigo(usados);
+      if (!cod) break;
+      usados.push(cod);
+      nuevos.push(camposDelForm(`${Date.now()}-${paquetes.length + k}`, cod));
+    }
+    setPaquetes((prev) => [...prev, ...nuevos]);
+    /* El resto de los campos QUEDA: una jornada carga veinte paquetes iguales
+       cambiando el número. */
+    prepararSiguiente(usados);
+  }
+
+  /**
+   * Traer un paquete de la lista al formulario.
+   *
+   * `editar` lo corrige en su lugar; `duplicar` lo usa de molde y le da el
+   * próximo código libre — que es como se cargan dos atados iguales seguidos.
+   */
+  function cargarEnForm(p: PaqueteBorrador, modo: "editar" | "duplicar") {
+    setProducto(p.productType);
+    setPresentacion(p.presentacion);
+    setPresentacionAuto(false);
+    setCantidad(p.cantidad ? String(p.cantidad) : "");
+    setObsPaquete(p.observations ?? "");
+    setRepetir("1");
+    const dim = p.espesorCm != null && p.anchoCm != null && p.largoM != null;
+    setDimensionar(dim);
+    setEspesor(dim ? String(p.espesorCm) : "");
+    setAncho(dim ? String(p.anchoCm) : "");
+    setLargo(dim ? String(p.largoM) : "");
+    setVolumen(dim ? "" : String(p.volumenM3));
+    if (modo === "editar") {
+      setEditandoId(p.id);
+      setCodigo(p.codigo);
+      codigoTocado.current = true;
+    } else {
+      setEditandoId(null);
+      const cod = proponerCodigo([p.codigo]);
+      setCodigo(cod);
+      sugeridoRef.current = cod;
+      codigoTocado.current = false;
+    }
+    cantidadRef.current?.focus();
+  }
+
+  /** Salir de la edición sin tocar el paquete. */
+  function cancelarEdicion() {
+    setEditandoId(null);
+    prepararSiguiente([]);
   }
 
   return (
@@ -394,6 +601,10 @@ export default function CtpRegistrarProduccionModal({
       open
       onClose={guardando ? () => {} : onClose}
       variant="info"
+      /* 80rem en vez de las 64 del variant: con dos columnas, 64rem dejaba los
+         campos del paquete en ~110 px cada uno. `cn` usa twMerge, así que este
+         ancho le gana al de la variante. */
+      className="sm:max-w-[80rem]"
       icon={Boxes}
       title={titulo ?? `Producción del lote ${lote ? lote.code : "—"}`}
       description={
@@ -406,10 +617,10 @@ export default function CtpRegistrarProduccionModal({
           nota={
             <span className="font-mono tabular-nums">
               {totales.paquetes} paquete{totales.paquetes === 1 ? "" : "s"} · {totales.piezas} pza ·{" "}
-              {totales.volumen.toFixed(4)} m³
+              {fmtM3(totales.volumen)} m³
               {/* Al ampliar, el pie dice las dos cifras: lo que se agrega ahora y
                   con cuánto queda la corrida. Una sola se lee como la otra. */}
-              {previo > 0 && ` · total ${acumulado.toFixed(4)} m³`}
+              {previo > 0 && ` · total ${fmtM3(acumulado)} m³`}
               {rendimientoPct != null && ` · rendimiento ${rendimientoPct}%`}
             </span>
           }
@@ -417,19 +628,7 @@ export default function CtpRegistrarProduccionModal({
           <Btn variant="secondary" onClick={onClose} disabled={guardando}>
             Cerrar
           </Btn>
-          <Btn
-            variant="primary"
-            disabled={!listo}
-            onClick={() =>
-              onConfirmar({
-                fecha: dia,
-                lineaProduccion: linea,
-                observaciones: observaciones.trim() || null,
-                paquetes,
-                volumen: totales.volumen,
-              })
-            }
-          >
+          <Btn variant="primary" disabled={!listo} onClick={confirmar} title="Ctrl+Enter">
             {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Boxes className="h-4 w-4" />}
             {ctaLabel ?? "Guardar producción"}
           </Btn>
@@ -437,6 +636,41 @@ export default function CtpRegistrarProduccionModal({
       }
     >
       <ModalBody className="space-y-3">
+        {/* Un borrador que vuelve SIN avisar es peor que perderlo: el operador
+            guardaría paquetes que no recuerda haber cargado. Se dice, y se
+            puede descartar de un click. */}
+        {borradorRecuperado > 0 && (
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-[var(--data-info-500)]/12 px-3 py-2 text-sm text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
+            <Boxes className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="flex-1">
+              Recuperé <b className="tabular-nums">{borradorRecuperado}</b> paquete
+              {borradorRecuperado === 1 ? "" : "s"} que habías cargado y no llegaste a guardar.
+            </span>
+            <button
+              type="button"
+              onClick={descartarBorrador}
+              className="shrink-0 font-bold underline underline-offset-2"
+            >
+              Descartar y empezar de cero
+            </button>
+          </p>
+        )}
+
+        {/**
+         * Dos columnas desde 1280 px (C1, Brandon 2026-09-03).
+         *
+         * Apilado, el formulario del paquete quedaba TAPADO por el pie del
+         * modal y la lista de lo cargado no se veía nunca: había que scrollear
+         * a ciegas entre cargar y comprobar. Izquierda el CONTEXTO —de qué
+         * madera se trata y con qué tope—, derecha el TRABAJO —cargar paquetes
+         * y verlos aparecer—.
+         *
+         * `@container` en cada columna: las grillas de adentro miden la COLUMNA
+         * y no la ventana. Con breakpoints de viewport, cuatro campos en una
+         * columna de 650 px daban 110 px cada uno.
+         */}
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] xl:items-start">
+        <div className="@container space-y-3">
         {/* ── Material ── */}
         <Bloque
           titulo="Material"
@@ -446,8 +680,12 @@ export default function CtpRegistrarProduccionModal({
               : undefined
           }
         >
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="sm:col-span-2">
+          <div className="grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-4">
+            {/* Inventario declarado (ADR-?) no trae piezas reales que contar:
+                un "Cantidad: 0" al lado de "Volumen: 10.0000" se lee como que
+                falta algo, cuando en realidad no aplica. Sólo se muestra
+                cuando hay piezas de verdad. */}
+            <div className={material.piezas > 0 ? "sm:col-span-2" : "sm:col-span-2 lg:col-span-3"}>
               <Dato
                 label="Especie"
                 valor={
@@ -457,9 +695,9 @@ export default function CtpRegistrarProduccionModal({
                 }
               />
             </div>
-            <Dato label="Cantidad" valor={String(material.piezas)} />
+            {material.piezas > 0 && <Dato label="Cantidad" valor={String(material.piezas)} />}
             <div className="grid grid-cols-2 gap-2">
-              <Dato label="Volumen" valor={material.volumenM3.toFixed(4)} />
+              <Dato label="Volumen" valor={fmtM3(material.volumenM3)} />
               <div className="text-sm">
                 <span className="mb-1 block font-bold text-[var(--text-secondary)]">Rendimiento</span>
                 <p
@@ -478,9 +716,14 @@ export default function CtpRegistrarProduccionModal({
             </div>
           </div>
           {/* El techo, a la vista MIENTRAS se carga: enterarse al apretar
-              «Guardar» es enterarse tarde (ADR-358). */}
+              «Guardar» es enterarse tarde (ADR-358).
+
+              `sticky` (C3): es el número que decide si entra otro paquete, y al
+              scrollear hasta el formulario desaparecía justo cuando hace falta.
+              `-mx-3 px-3` para que el fondo tape el borde del bloque al pegarse. */}
+          <div className="sticky top-0 z-10 -mx-3 mt-3 bg-[var(--surface-raised)] px-3 pb-1 pt-1">
           <div
-            className={`mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm ${
+            className={`flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm ${
               margen > 0
                 ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                 : "bg-[var(--data-error-500)]/12 font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
@@ -489,17 +732,17 @@ export default function CtpRegistrarProduccionModal({
             <span className="flex items-center gap-1.5">
               {margen === 0 && <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />}
               Tope de rendimiento <b>{RENDIMIENTO_TOPE_PCT} %</b> · máximo declarable{" "}
-              <b className="font-mono tabular-nums">{tope.toFixed(4)} m³</b>
+              <b className="font-mono tabular-nums">{fmtM3(tope)} m³</b>
               {/* Lo ya declarado se NOMBRA acá: es lo que explica por qué el
                   margen no es el tope entero (ADR-361). */}
               {previo > 0 && (
                 <>
-                  {" "}· ya declarado <b className="font-mono tabular-nums">{previo.toFixed(4)} m³</b>
+                  {" "}· ya declarado <b className="font-mono tabular-nums">{fmtM3(previo)} m³</b>
                 </>
               )}
             </span>
             <span className="font-mono tabular-nums">
-              {margen > 0 ? `quedan ${margen.toFixed(4)} m³` : "sin margen: sacá volumen para guardar"}
+              {margen > 0 ? `quedan ${fmtM3(margen)} m³` : "sin margen: sacá volumen para guardar"}
             </span>
           </div>
 
@@ -512,7 +755,7 @@ export default function CtpRegistrarProduccionModal({
               aria-valuemin={0}
               aria-valuemax={tope}
               aria-valuenow={Math.min(acumulado, tope)}
-              aria-label={`Declarado ${acumulado.toFixed(4)} de ${tope.toFixed(4)} m³ que permite el tope`}
+              aria-label={`Declarado ${fmtM3(acumulado)} de ${fmtM3(tope)} m³ que permite el tope`}
             >
               <div
                 className={`h-full rounded-full transition-[width] ${
@@ -522,6 +765,7 @@ export default function CtpRegistrarProduccionModal({
               />
             </div>
           )}
+          </div>
 
           {/* Reparto entre títulos habilitantes (ADR-358). */}
           {reparto.length > 1 ? (
@@ -535,11 +779,11 @@ export default function CtpRegistrarProduccionModal({
                     <span className="min-w-0 flex-1 truncate">
                       <b className="font-mono text-[var(--text-primary)]">{o.permiso ?? "sin título declarado"}</b>
                       <span className="ml-2 text-[var(--text-tertiary)]">
-                        {o.piezas} pza · {o.volumenM3.toFixed(4)} m³ de materia prima ({o.pctMateriaPrima} %)
+                        {o.piezas} pza · {fmtM3(o.volumenM3)} m³ de materia prima ({o.pctMateriaPrima} %)
                       </span>
                     </span>
                     <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {o.produccionM3.toFixed(4)} m³
+                      {fmtM3(o.produccionM3)} m³
                     </span>
                   </li>
                 ))}
@@ -577,7 +821,7 @@ export default function CtpRegistrarProduccionModal({
             atado. Dos cosas distintas en la misma grilla hacían tipear la línea
             y la fecha creyendo que eran del paquete. */}
         <Bloque titulo="La corrida">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 @lg:grid-cols-2 @2xl:grid-cols-3">
             {/**
              * Ampliando, la corrida YA existe: su fecha y su línea son las del
              * asiento que se está completando y el servidor no las toca. Se
@@ -616,16 +860,30 @@ export default function CtpRegistrarProduccionModal({
 
         </Bloque>
 
+        </div>
+
+        <div className="@container space-y-3">
         {/* ── El paquete: se repite por cada atado que sale de la sierra ── */}
-        <Bloque titulo="Agregar paquete">
+        <Bloque
+          titulo={editandoId ? `Corrigiendo el paquete ${editando?.codigo ?? ""}` : "Agregar paquete"}
+          meta={editandoId ? "Enter guarda el cambio" : "Enter añade · Ctrl+Enter guarda la producción"}
+          onKeyDown={(e) => {
+            /* Enter añade, como en cualquier planilla. En un `select` no: ahí
+               Enter es «elegir esta opción», y robárselo cambiaría el producto
+               sin querer. Ctrl+Enter lo maneja el atajo global de guardar. */
+            if (e.key !== "Enter" || e.ctrlKey || e.metaKey) return;
+            const t = e.target as HTMLElement;
+            if (t.tagName === "SELECT" || t.tagName === "BUTTON" || t.tagName === "TEXTAREA") return;
+            e.preventDefault();
+            if (!noEntra) agregar();
+          }}
+        >
           {/* Las medidas de siempre, antes del formulario: se elige una y los
               cuatro campos quedan puestos. */}
           {medidas.length > 0 && (
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                {medidasDeOtros
-                  ? "Las de siempre (de otros productos)"
-                  : `Las de siempre en ${TIPOS_PRODUCTO_SALIDA.find((t) => t.valor === producto)?.label ?? producto}`}
+                {medidasDeOtros ? "Las de siempre (de otros productos)" : `Las de siempre en ${producto}`}
               </span>
               {medidas.map((m) => (
                 <button
@@ -649,7 +907,7 @@ export default function CtpRegistrarProduccionModal({
               ))}
             </div>
           )}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-4">
             <Campo label="Código de paquete">
               <input
                 value={codigo}
@@ -685,9 +943,13 @@ export default function CtpRegistrarProduccionModal({
                 }}
                 className={CAMPO}
               >
+                {/* El valor oficial del catálogo, tal cual — es como ya se
+                    muestra en la tabla del libro y en la tarjeta del lote;
+                    una versión acortada acá sería un segundo vocabulario para
+                    lo mismo (Brandon, 2026-08-31). */}
                 {TIPOS_PRODUCTO_SALIDA.map((t) => (
-                  <option key={t.valor} value={t.valor}>
-                    {t.label}
+                  <option key={t.valor} value={t.valor} title={t.label}>
+                    {t.valor}
                   </option>
                 ))}
               </select>
@@ -715,6 +977,7 @@ export default function CtpRegistrarProduccionModal({
             </Campo>
             <Campo label="Cantidad (piezas)">
               <input
+                ref={cantidadRef}
                 type="number"
                 min={0}
                 value={cantidad}
@@ -734,7 +997,7 @@ export default function CtpRegistrarProduccionModal({
             Dimensionar (espesor × ancho × largo)
           </label>
 
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-3 grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-4">
             {dimensionar ? (
               <>
                 <Campo label="Espesor (cm)">
@@ -752,7 +1015,7 @@ export default function CtpRegistrarProduccionModal({
                   label="Volumen (m³)"
                   valor={
                     volumenCalculado != null
-                      ? `${volumenCalculado.toFixed(4)}  ·  ${pieTablarDe(volumenCalculado).toLocaleString("es-PE")} pt`
+                      ? `${fmtM3(volumenCalculado)}  ·  ${pieTablarDe(volumenCalculado).toLocaleString("es-PE")} pt`
                       : "—"
                   }
                 />
@@ -768,6 +1031,17 @@ export default function CtpRegistrarProduccionModal({
                     onChange={(e) => setVolumen(e.target.value)}
                     className={CAMPO}
                   />
+                  {/* El último paquete siempre se calcula a mano: «me quedan
+                      3.030, ¿cuánto pongo?». Acá se pone solo (D1). */}
+                  {margenParaEste > 0 && Number(volumen) !== margenParaEste && (
+                    <button
+                      type="button"
+                      onClick={() => setVolumen(String(margenParaEste))}
+                      className="mt-1 block text-xs font-bold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]"
+                    >
+                      usar el margen restante ({fmtM3(margenParaEste)} m³)
+                    </button>
+                  )}
                 </Campo>
                 {/**
                  * El mismo bulto, en la unidad en la que se canta en el patio.
@@ -796,11 +1070,45 @@ export default function CtpRegistrarProduccionModal({
                 </Campo>
               </>
             )}
-            <div className="flex items-end">
-              <Btn variant="primary" onClick={agregar} disabled={Boolean(noEntra)} title={noEntra ?? undefined}>
-                <Plus className="h-4 w-4" /> Añadir
+          </div>
+
+          {/* Repetir y el botón, en su propio renglón: dentro de la grilla se
+              caían a una quinta celda al dimensionar. */}
+          <div className="mt-3 flex flex-wrap items-end gap-3">
+            {/* Doce atados iguales se cargan una vez, no doce (A1). */}
+            {!editandoId && (
+              <label className="flex flex-col gap-1">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  Repetir (paquetes iguales)
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={repetir}
+                  onChange={(e) => setRepetir(e.target.value)}
+                  aria-label="Cuántos paquetes iguales crear"
+                  className={`${CAMPO} w-28 text-center tabular-nums`}
+                />
+              </label>
+            )}
+            <Btn variant="primary" onClick={agregar} disabled={Boolean(noEntra)} title={noEntra ?? undefined}>
+              {editandoId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+              {editandoId ? "Guardar cambios" : veces > 1 ? `Añadir ${veces} paquetes` : "Añadir"}
+            </Btn>
+            {editandoId && (
+              <Btn variant="secondary" onClick={cancelarEdicion}>
+                <X className="h-4 w-4" /> Cancelar
               </Btn>
-            </div>
+            )}
+            {/* Con más de uno, el total se dice ANTES de apretar: es lo que va a
+                entrar al libro y lo que puede chocar contra el tope. */}
+            {!editandoId && veces > 1 && (volumenAUsar ?? 0) > 0 && (
+              <span className="pb-2 font-mono text-sm tabular-nums text-[var(--text-secondary)]">
+                {veces} × {fmtM3(volumenAUsar ?? 0)} ={" "}
+                <b className="text-[var(--text-primary)]">{fmtM3((volumenAUsar ?? 0) * veces)} m³</b>
+              </span>
+            )}
           </div>
 
           {/* Por qué el botón está apagado. Un botón gris sin motivo se lee como
@@ -829,6 +1137,13 @@ export default function CtpRegistrarProduccionModal({
                 <th className="px-3 py-2 text-right font-bold">Ancho (cm)</th>
                 <th className="px-3 py-2 text-right font-bold">Largo (m)</th>
                 <th className="px-3 py-2 text-right font-bold">Volumen</th>
+                {/* Igual al "% aprovechado" del Resumen de Producción por PMF y
+                    Producto oficial (Brandon, 2026-09-01): qué parte del
+                    consumido representa este paquete, no del acumulado — un
+                    número que ya se ve en Rendimiento arriba. */}
+                <th className="px-3 py-2 text-right font-bold" title="Del volumen consumido por esta corrida">
+                  % aprov.
+                </th>
                 <th className="px-3 py-2">
                   <span className="sr-only">Quitar</span>
                 </th>
@@ -836,18 +1151,23 @@ export default function CtpRegistrarProduccionModal({
             </TheadCtp>
             <TbodyCtp>
               {paquetes.length === 0 && (
-                <FilaVacia cols={9}>
+                <FilaVacia cols={10}>
                   {previo > 0
                     ? "Todavía no agregaste ningún paquete. Los que cargues acá se SUMAN a los que la corrida ya declaró; los anteriores no se tocan."
                     : "Todavía no agregaste ningún paquete. El volumen de la corrida es la suma de los que cargues acá."}
                 </FilaVacia>
               )}
               {paquetes.map((p) => (
-                <tr key={p.id} className="hover:bg-[var(--surface-sunken)]">
+                <tr
+                  key={p.id}
+                  className={
+                    p.id === editandoId
+                      ? "bg-primary/10 ring-1 ring-inset ring-[var(--accent)]"
+                      : "hover:bg-[var(--surface-sunken)]"
+                  }
+                >
                   <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{p.codigo}</td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">
-                    {TIPOS_PRODUCTO_SALIDA.find((t) => t.valor === p.productType)?.label ?? p.productType}
-                  </td>
+                  <td className="px-3 py-2 text-[var(--text-secondary)]">{p.productType}</td>
                   <td className="px-3 py-2 text-[var(--text-secondary)]">{p.presentacion}</td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums">{p.cantidad}</td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
@@ -860,17 +1180,51 @@ export default function CtpRegistrarProduccionModal({
                     {p.largoM ?? "—"}
                   </td>
                   <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                    {p.volumenM3.toFixed(4)}
+                    {fmtM3(p.volumenM3)}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    {material.volumenM3 > 0 ? `${((p.volumenM3 / material.volumenM3) * 100).toFixed(2)}%` : "—"}
                   </td>
                   <td className="px-3 py-2 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setPaquetes((prev) => prev.filter((x) => x.id !== p.id))}
-                      aria-label={`Quitar el paquete ${p.codigo}`}
-                      className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--data-error-500)] hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="inline-flex items-center gap-1">
+                      {/* Corregir sin re-tipear: el volumen del paquete 3 de 15
+                          se arregla acá, no borrando y volviendo a cargar. */}
+                      <button
+                        type="button"
+                        onClick={() => cargarEnForm(p, "editar")}
+                        aria-label={`Editar el paquete ${p.codigo}`}
+                        title="Editar este paquete"
+                        className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      {/* Dos atados iguales seguidos: se copia y sale con el
+                          próximo código libre de la serie. */}
+                      <button
+                        type="button"
+                        onClick={() => cargarEnForm(p, "duplicar")}
+                        aria-label={`Duplicar el paquete ${p.codigo}`}
+                        title="Usar este paquete de molde para el siguiente"
+                        className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaquetes((prev) => prev.filter((x) => x.id !== p.id));
+                          /* Si se borra el que se estaba editando, el formulario
+                             tiene que salir del modo corrección o quedaría
+                             apuntando a un paquete que ya no existe. */
+                          if (p.id === editandoId) setEditandoId(null);
+                        }}
+                        aria-label={`Quitar el paquete ${p.codigo}`}
+                        title="Quitar este paquete"
+                        className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--data-error-500)] hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -881,15 +1235,15 @@ export default function CtpRegistrarProduccionModal({
           <div className="mt-2 flex flex-wrap items-center justify-between gap-x-6 gap-y-1 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm">
             <span className="text-[var(--text-secondary)]">
               Consumido{" "}
-              <b className="font-mono tabular-nums text-[var(--text-primary)]">{material.volumenM3.toFixed(4)} m³</b>
+              <b className="font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(material.volumenM3)} m³</b>
             </span>
             <span className="text-[var(--text-secondary)]">
               Volumen producción{" "}
-              <b className="font-mono tabular-nums text-[var(--text-primary)]">{totales.volumen.toFixed(4)} m³</b>
+              <b className="font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(totales.volumen)} m³</b>
               {previo > 0 && (
                 <span className="text-[var(--text-tertiary)]">
-                  {" "}+ {previo.toFixed(4)} ya declarado ={" "}
-                  <b className="font-mono tabular-nums text-[var(--text-primary)]">{acumulado.toFixed(4)} m³</b>
+                  {" "}+ {fmtM3(previo)} ya declarado ={" "}
+                  <b className="font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(acumulado)} m³</b>
                 </span>
               )}
             </span>
@@ -901,7 +1255,35 @@ export default function CtpRegistrarProduccionModal({
               <span className="text-[var(--text-tertiary)]">· {veredicto.texto}</span>
             </span>
           </div>
+
+          {/**
+           * El tope avisa por ARRIBA; por abajo no avisaba nadie (D2).
+           *
+           * Un 22 % no rompe ninguna regla —se puede declarar— pero casi siempre
+           * significa que falta cargar un paquete, y eso se descubría al mes
+           * siguiente mirando el libro. El veredicto es el MISMO
+           * `juzgarRendimientoConsumo` que usan los KPI y la tarjeta del lote: no
+           * se inventa acá un segundo umbral.
+           */}
+          {paquetes.length > 0 && rendimientoPct != null && veredicto.tono !== "ok" && veredicto.tono !== "neutro" && (
+            <p
+              className={`mt-2 flex items-start gap-2 rounded-xl px-3 py-2 text-sm ${
+                veredicto.tono === "malo"
+                  ? "bg-[var(--data-error-500)]/12 font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                  : "bg-[var(--data-warning-500)]/12 font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+              }`}
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span>
+                {veredicto.tono === "malo"
+                  ? `Rendimiento ${rendimientoPct} %: por encima del ${RENDIMIENTO_PLAUSIBLE_MAX} % que se ve en aserrío. Revisá que ningún paquete esté cargado de más.`
+                  : `Rendimiento ${rendimientoPct} %: por debajo del ${RENDIMIENTO_PLAUSIBLE_MIN} % habitual en aserrío. ¿Falta declarar algún paquete? Se puede guardar igual — es un aviso, no un bloqueo.`}
+              </span>
+            </p>
+          )}
         </Bloque>
+        </div>
+        </div>
       </ModalBody>
     </AdminModal>
   );
