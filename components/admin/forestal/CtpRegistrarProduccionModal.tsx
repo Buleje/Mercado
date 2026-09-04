@@ -95,6 +95,7 @@ function Bloque({
   onKeyDown,
   plegable = false,
   resumen,
+  acciones,
 }: {
   titulo: string;
   /** Contexto corto a la derecha del título: el lote, sus fechas. Antes eso era
@@ -106,6 +107,8 @@ function Bloque({
   plegable?: boolean;
   /** Lo que dice el bloque cerrado. Sin esto, plegar es esconder. */
   resumen?: string;
+  /** Un control que vive en la barra de título (el interruptor de dimensionar). */
+  acciones?: React.ReactNode;
 }) {
   const [abierto, setAbierto] = useState(!plegable);
   const cabecera = (
@@ -138,8 +141,9 @@ function Bloque({
           </button>
         </CardTitle>
       ) : (
-        <CardTitle as="h3" className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
+        <CardTitle as="h3" className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
           {cabecera}
+          {acciones}
         </CardTitle>
       )}
       {abierto && (
@@ -654,7 +658,7 @@ export default function CtpRegistrarProduccionModal({
       /* 80rem en vez de las 64 del variant: con dos columnas, 64rem dejaba los
          campos del paquete en ~110 px cada uno. `cn` usa twMerge, así que este
          ancho le gana al de la variante. */
-      className="sm:max-w-[80rem]"
+      className="sm:max-w-[88rem]"
       icon={Boxes}
       title={titulo ?? `Producción del lote ${lote ? lote.code : "—"}`}
       description={
@@ -685,7 +689,7 @@ export default function CtpRegistrarProduccionModal({
         </ModalFooter>
       }
     >
-      <ModalBody className="space-y-3">
+      <ModalBody className="space-y-3 @container">
         {/* Un borrador que vuelve SIN avisar es peor que perderlo: el operador
             guardaría paquetes que no recuerda haber cargado. Se dice, y se
             puede descartar de un click. */}
@@ -802,14 +806,185 @@ export default function CtpRegistrarProduccionModal({
          * y no la ventana. Con breakpoints de viewport, cuatro campos en una
          * columna de 650 px daban 110 px cada uno.
          */}
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,27rem)_minmax(0,1fr)] xl:items-start">
-        {/* Izquierda: lo que se HACE — cargar paquetes. Debajo, el contexto
-            plegado (material y datos de la corrida), que se lee una vez. */}
-        <div className="@container space-y-3">
+        {/**
+         * UNA columna a todo el ancho (Brandon, 2026-09-03: «más grande, más
+         * amplio, mejor ordenado»).
+         *
+         * Las dos columnas de la vuelta anterior salieron peor: la del
+         * formulario quedaba en ~430 px —por debajo del umbral de la grilla— y
+         * los campos se apilaban de a UNO por fila, mientras la de la lista
+         * quedaba vacía casi todo el tiempo. Los dos bloques quieren ancho, no
+         * altura: el formulario porque son campos cortos que entran de a cuatro,
+         * y la tabla porque tiene diez columnas.
+         *
+         * El orden es el del formato oficial: material → corrida → producción.
+         * Los dos primeros van plegados, en un renglón: se leen una vez.
+         */}
+        <div className="grid gap-3 @3xl:grid-cols-2">
+        {/* ── Material ── */}
+        <div className="@container">
+        <Bloque
+          titulo="Material"
+          plegable
+          resumen={`${material.especie}${material.piezas > 0 ? ` · ${material.piezas} trozas` : ""} · ${fmtM3(material.volumenM3)} m³`}
+          meta={
+            lote
+              ? `Lote ${lote.code} · ${fmtDia(lote.inicioProceso ?? lote.fechaApertura)} → ${fmtDia(lote.finProceso)}`
+              : undefined
+          }
+        >
+          <div className="grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-4">
+            {/* Inventario declarado (ADR-?) no trae piezas reales que contar:
+                un "Cantidad: 0" al lado de "Volumen: 10.0000" se lee como que
+                falta algo, cuando en realidad no aplica. Sólo se muestra
+                cuando hay piezas de verdad. */}
+            <div className={material.piezas > 0 ? "sm:col-span-2" : "sm:col-span-2 lg:col-span-3"}>
+              <Dato
+                label="Especie"
+                valor={
+                  material.especieCientifica
+                    ? `${material.especieCientifica} (${material.especie.toUpperCase()})`
+                    : material.especie
+                }
+              />
+            </div>
+            {material.piezas > 0 && <Dato label="Cantidad" valor={String(material.piezas)} />}
+            <div className="grid grid-cols-2 gap-2">
+              <Dato label="Volumen" valor={fmtM3(material.volumenM3)} />
+              <div className="text-sm">
+                <span className="mb-1 block font-bold text-[var(--text-secondary)]">Rendimiento</span>
+                <p
+                  className={`flex h-11 items-center gap-1.5 rounded-xl px-2.5 font-mono font-bold tabular-nums ${
+                    veredicto.tono === "ok"
+                      ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                      : veredicto.tono === "neutro"
+                        ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+                        : "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                  }`}
+                >
+                  <Gauge className="h-4 w-4" aria-hidden />
+                  {rendimientoPct != null ? `${rendimientoPct} %` : "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Reparto entre títulos habilitantes (ADR-358). */}
+          {reparto.length > 1 ? (
+            <div className="mt-3 overflow-hidden rounded-xl border border-[var(--rule-base)]">
+              <div className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Cómo se reparte entre los títulos habilitantes
+              </div>
+              <ul className="divide-y divide-[var(--rule-soft)]">
+                {reparto.map((o) => (
+                  <li key={o.permiso ?? "sin"} className="flex flex-wrap items-baseline justify-between gap-2 px-3 py-1.5 text-sm">
+                    <span className="min-w-0 flex-1 truncate">
+                      <b className="font-mono text-[var(--text-primary)]">{o.permiso ?? "sin título declarado"}</b>
+                      <span className="ml-2 text-[var(--text-tertiary)]">
+                        {o.piezas} pza · {fmtM3(o.volumenM3)} m³ de materia prima ({o.pctMateriaPrima} %)
+                      </span>
+                    </span>
+                    <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                      {fmtM3(o.produccionM3)} m³
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="px-3 py-1.5 text-xs text-[var(--text-tertiary)]">
+                Proporcional al volumen que puso cada uno: de una tabla no se puede decir de qué árbol salió, pero sí
+                en qué proporción entró cada título.
+              </p>
+            </div>
+          ) : (
+            material.permisos.length > 0 && (
+              <p className="mt-2 text-sm text-[var(--text-tertiary)]">
+                Amparada por {material.permisos.length === 1 ? "el título" : "los títulos"}{" "}
+                <b className="text-[var(--text-secondary)]">{material.permisos.join(" · ")}</b>
+              </p>
+            )
+          )}
+
+          {/**
+           * Lo que hay que tener a mano mientras se declara: la madera pieza por
+           * pieza, de qué guía y título viene, y lo que la corrida ya declaró.
+           * Plegado en solapas — sin esto había que cerrar el modal (perdiendo
+           * lo tipeado) para ir a buscarlo a otra pestaña.
+           */}
+          <CtpMaterialPanel
+            trozas={trozas}
+            origenes={material.origenes}
+            paquetesPrevios={paquetesPrevios}
+            fecha={dia}
+          />
+        </Bloque>
+        </div>
+
+        {/* ── La corrida: se llena UNA vez ──────────────────────────────────
+            Estaba mezclada con los campos del paquete, que se repiten por cada
+            atado. Dos cosas distintas en la misma grilla hacían tipear la línea
+            y la fecha creyendo que eran del paquete. */}
+        <div className="@container">
+        <Bloque titulo="La corrida" plegable resumen={`${fmtDia(dia)} · ${linea}`}>
+          <div className="grid gap-3 @lg:grid-cols-2 @2xl:grid-cols-3">
+            {/**
+             * Ampliando, la corrida YA existe: su fecha y su línea son las del
+             * asiento que se está completando y el servidor no las toca. Se
+             * muestran como dato — un campo editable que no viaja es una mentira
+             * de la pantalla.
+             */}
+            {previo > 0 ? (
+              <>
+                <Dato label="Línea de producción" valor={linea} />
+                <Dato label="Fecha de producción" valor={fmtDia(dia)} />
+              </>
+            ) : (
+              <>
+                <Campo label="Línea de producción">
+                  <select value={linea} onChange={(e) => setLinea(e.target.value)} className={CAMPO}>
+                    {/* Las dos del Cuadro Resumen 3: principal y recuperación. */}
+                    <option value="LP">LP · línea principal</option>
+                    <option value="LRE">LRE · línea de recuperación</option>
+                  </select>
+                </Campo>
+                <Campo label="Fecha de producción">
+                  <input type="date" value={dia} onChange={(e) => setDia(e.target.value)} className={CAMPO} />
+                </Campo>
+              </>
+            )}
+            <Campo label="Observación de la corrida">
+              <input
+                value={observaciones}
+                onChange={(e) => setObservaciones(e.target.value)}
+                placeholder={previo > 0 ? "Si la escribís, reemplaza la anterior" : "Turno, sierra…"}
+                maxLength={300}
+                className={CAMPO}
+              />
+            </Campo>
+          </div>
+
+        </Bloque>
+        </div>
+
+        </div>
+
         {/* ── El paquete: se repite por cada atado que sale de la sierra ── */}
         <Bloque
           titulo={editandoId ? `Corrigiendo el paquete ${editando?.codigo ?? ""}` : "Agregar paquete"}
-          meta={editandoId ? "Enter guarda el cambio" : "Enter añade · Ctrl+Enter guarda la producción"}
+          meta={editandoId ? "Enter guarda el cambio" : "Enter añade · Ctrl+Enter guarda"}
+          /* El interruptor era una fila entera para una casilla. En la barra de
+             título ocupa cero alto y sigue estando ANTES de los campos que
+             cambia, que es lo que importa para entenderlo. */
+          acciones={
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1 text-sm font-bold text-[var(--text-secondary)]">
+              <input
+                type="checkbox"
+                checked={dimensionar}
+                onChange={(e) => setDimensionar(e.target.checked)}
+                className="h-4 w-4 accent-[var(--accent)]"
+              />
+              Dimensionar (espesor × ancho × largo)
+            </label>
+          }
           onKeyDown={(e) => {
             /* Enter añade, como en cualquier planilla. En un `select` no: ahí
                Enter es «elegir esta opción», y robárselo cambiaría el producto
@@ -930,16 +1105,6 @@ export default function CtpRegistrarProduccionModal({
             </Campo>
           </div>
 
-          <label className="mt-3 flex w-fit cursor-pointer items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)]">
-            <input
-              type="checkbox"
-              checked={dimensionar}
-              onChange={(e) => setDimensionar(e.target.checked)}
-              className="h-5 w-5 accent-[var(--accent)]"
-            />
-            Dimensionar (espesor × ancho × largo)
-          </label>
-
           <div className="mt-3 grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-4">
             {dimensionar ? (
               <>
@@ -1013,46 +1178,47 @@ export default function CtpRegistrarProduccionModal({
                 </Campo>
               </>
             )}
+            {/* Repetir y el botón son la ÚLTIMA celda de la grilla, no una fila
+                aparte: la fila de medidas termina en la acción, que es donde el
+                ojo llega. Al dimensionar caen solos a la línea siguiente. */}
+            <div className="flex flex-wrap items-end justify-end gap-3">
+              {/* Doce atados iguales se cargan una vez, no doce (A1). */}
+              {!editandoId && (
+                <label className="flex flex-col gap-1">
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                    Repetir
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={200}
+                    value={repetir}
+                    onChange={(e) => setRepetir(e.target.value)}
+                    aria-label="Cuántos paquetes iguales crear"
+                    className={`${CAMPO} w-20 text-center tabular-nums`}
+                  />
+                </label>
+              )}
+              <Btn variant="primary" onClick={agregar} disabled={Boolean(noEntra)} title={noEntra ?? undefined}>
+                {editandoId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {editandoId ? "Guardar cambios" : veces > 1 ? `Añadir ${veces}` : "Añadir"}
+              </Btn>
+              {editandoId && (
+                <Btn variant="secondary" onClick={cancelarEdicion}>
+                  <X className="h-4 w-4" /> Cancelar
+                </Btn>
+              )}
+            </div>
           </div>
 
-          {/* Repetir y el botón, en su propio renglón: dentro de la grilla se
-              caían a una quinta celda al dimensionar. */}
-          <div className="mt-3 flex flex-wrap items-end gap-3">
-            {/* Doce atados iguales se cargan una vez, no doce (A1). */}
-            {!editandoId && (
-              <label className="flex flex-col gap-1">
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  Repetir (paquetes iguales)
-                </span>
-                <input
-                  type="number"
-                  min={1}
-                  max={200}
-                  value={repetir}
-                  onChange={(e) => setRepetir(e.target.value)}
-                  aria-label="Cuántos paquetes iguales crear"
-                  className={`${CAMPO} w-28 text-center tabular-nums`}
-                />
-              </label>
-            )}
-            <Btn variant="primary" onClick={agregar} disabled={Boolean(noEntra)} title={noEntra ?? undefined}>
-              {editandoId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-              {editandoId ? "Guardar cambios" : veces > 1 ? `Añadir ${veces} paquetes` : "Añadir"}
-            </Btn>
-            {editandoId && (
-              <Btn variant="secondary" onClick={cancelarEdicion}>
-                <X className="h-4 w-4" /> Cancelar
-              </Btn>
-            )}
-            {/* Con más de uno, el total se dice ANTES de apretar: es lo que va a
-                entrar al libro y lo que puede chocar contra el tope. */}
-            {!editandoId && veces > 1 && (volumenAUsar ?? 0) > 0 && (
-              <span className="pb-2 font-mono text-sm tabular-nums text-[var(--text-secondary)]">
-                {veces} × {fmtM3(volumenAUsar ?? 0)} ={" "}
-                <b className="text-[var(--text-primary)]">{fmtM3((volumenAUsar ?? 0) * veces)} m³</b>
-              </span>
-            )}
-          </div>
+          {/* Con más de uno, el total se dice ANTES de apretar: es lo que va a
+              entrar al libro y lo que puede chocar contra el tope. */}
+          {!editandoId && veces > 1 && (volumenAUsar ?? 0) > 0 && (
+            <p className="mt-2 text-right font-mono text-sm tabular-nums text-[var(--text-secondary)]">
+              {veces} × {fmtM3(volumenAUsar ?? 0)} ={" "}
+              <b className="text-[var(--text-primary)]">{fmtM3((volumenAUsar ?? 0) * veces)} m³</b>
+            </p>
+          )}
 
           {/* Por qué el botón está apagado. Un botón gris sin motivo se lee como
               que la pantalla se rompió. */}
@@ -1064,161 +1230,12 @@ export default function CtpRegistrarProduccionModal({
           )}
         </Bloque>
 
-        {/* ── Material ── */}
-        <Bloque
-          titulo="Material"
-          plegable
-          resumen={`${material.especie}${material.piezas > 0 ? ` · ${material.piezas} trozas` : ""} · ${fmtM3(material.volumenM3)} m³`}
-          meta={
-            lote
-              ? `Lote ${lote.code} · ${fmtDia(lote.inicioProceso ?? lote.fechaApertura)} → ${fmtDia(lote.finProceso)}`
-              : undefined
-          }
-        >
-          <div className="grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-4">
-            {/* Inventario declarado (ADR-?) no trae piezas reales que contar:
-                un "Cantidad: 0" al lado de "Volumen: 10.0000" se lee como que
-                falta algo, cuando en realidad no aplica. Sólo se muestra
-                cuando hay piezas de verdad. */}
-            <div className={material.piezas > 0 ? "sm:col-span-2" : "sm:col-span-2 lg:col-span-3"}>
-              <Dato
-                label="Especie"
-                valor={
-                  material.especieCientifica
-                    ? `${material.especieCientifica} (${material.especie.toUpperCase()})`
-                    : material.especie
-                }
-              />
-            </div>
-            {material.piezas > 0 && <Dato label="Cantidad" valor={String(material.piezas)} />}
-            <div className="grid grid-cols-2 gap-2">
-              <Dato label="Volumen" valor={fmtM3(material.volumenM3)} />
-              <div className="text-sm">
-                <span className="mb-1 block font-bold text-[var(--text-secondary)]">Rendimiento</span>
-                <p
-                  className={`flex h-11 items-center gap-1.5 rounded-xl px-2.5 font-mono font-bold tabular-nums ${
-                    veredicto.tono === "ok"
-                      ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                      : veredicto.tono === "neutro"
-                        ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
-                        : "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                  }`}
-                >
-                  <Gauge className="h-4 w-4" aria-hidden />
-                  {rendimientoPct != null ? `${rendimientoPct} %` : "—"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Reparto entre títulos habilitantes (ADR-358). */}
-          {reparto.length > 1 ? (
-            <div className="mt-3 overflow-hidden rounded-xl border border-[var(--rule-base)]">
-              <div className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Cómo se reparte entre los títulos habilitantes
-              </div>
-              <ul className="divide-y divide-[var(--rule-soft)]">
-                {reparto.map((o) => (
-                  <li key={o.permiso ?? "sin"} className="flex flex-wrap items-baseline justify-between gap-2 px-3 py-1.5 text-sm">
-                    <span className="min-w-0 flex-1 truncate">
-                      <b className="font-mono text-[var(--text-primary)]">{o.permiso ?? "sin título declarado"}</b>
-                      <span className="ml-2 text-[var(--text-tertiary)]">
-                        {o.piezas} pza · {fmtM3(o.volumenM3)} m³ de materia prima ({o.pctMateriaPrima} %)
-                      </span>
-                    </span>
-                    <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {fmtM3(o.produccionM3)} m³
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <p className="px-3 py-1.5 text-xs text-[var(--text-tertiary)]">
-                Proporcional al volumen que puso cada uno: de una tabla no se puede decir de qué árbol salió, pero sí
-                en qué proporción entró cada título.
-              </p>
-            </div>
-          ) : (
-            material.permisos.length > 0 && (
-              <p className="mt-2 text-sm text-[var(--text-tertiary)]">
-                Amparada por {material.permisos.length === 1 ? "el título" : "los títulos"}{" "}
-                <b className="text-[var(--text-secondary)]">{material.permisos.join(" · ")}</b>
-              </p>
-            )
-          )}
-
-          {/**
-           * Lo que hay que tener a mano mientras se declara: la madera pieza por
-           * pieza, de qué guía y título viene, y lo que la corrida ya declaró.
-           * Plegado en solapas — sin esto había que cerrar el modal (perdiendo
-           * lo tipeado) para ir a buscarlo a otra pestaña.
-           */}
-          <CtpMaterialPanel
-            trozas={trozas}
-            origenes={material.origenes}
-            paquetesPrevios={paquetesPrevios}
-            fecha={dia}
-          />
-        </Bloque>
-
-        {/* ── La corrida: se llena UNA vez ──────────────────────────────────
-            Estaba mezclada con los campos del paquete, que se repiten por cada
-            atado. Dos cosas distintas en la misma grilla hacían tipear la línea
-            y la fecha creyendo que eran del paquete. */}
-        <Bloque titulo="La corrida" plegable resumen={`${fmtDia(dia)} · ${linea}`}>
-          <div className="grid gap-3 @lg:grid-cols-2 @2xl:grid-cols-3">
-            {/**
-             * Ampliando, la corrida YA existe: su fecha y su línea son las del
-             * asiento que se está completando y el servidor no las toca. Se
-             * muestran como dato — un campo editable que no viaja es una mentira
-             * de la pantalla.
-             */}
-            {previo > 0 ? (
-              <>
-                <Dato label="Línea de producción" valor={linea} />
-                <Dato label="Fecha de producción" valor={fmtDia(dia)} />
-              </>
-            ) : (
-              <>
-                <Campo label="Línea de producción">
-                  <select value={linea} onChange={(e) => setLinea(e.target.value)} className={CAMPO}>
-                    {/* Las dos del Cuadro Resumen 3: principal y recuperación. */}
-                    <option value="LP">LP · línea principal</option>
-                    <option value="LRE">LRE · línea de recuperación</option>
-                  </select>
-                </Campo>
-                <Campo label="Fecha de producción">
-                  <input type="date" value={dia} onChange={(e) => setDia(e.target.value)} className={CAMPO} />
-                </Campo>
-              </>
-            )}
-            <Campo label="Observación de la corrida">
-              <input
-                value={observaciones}
-                onChange={(e) => setObservaciones(e.target.value)}
-                placeholder={previo > 0 ? "Si la escribís, reemplaza la anterior" : "Turno, sierra…"}
-                maxLength={300}
-                className={CAMPO}
-              />
-            </Campo>
-          </div>
-
-        </Bloque>
-
-        </div>
-
-        {/* Derecha: lo que se VE crecer. La lista ocupa la columna entera —
-            antes arrancaba debajo del formulario y quedaba tapada por el pie.
-
-            `sticky` bajo la franja: las dos columnas comparten el scroll del
-            modal, así que al bajar por el formulario la lista se iba de
-            pantalla justo mientras se la está llenando. */}
-        <div className="@container xl:sticky xl:top-[5.5rem]">
         {/* ── Producción cargada ── */}
         <Bloque
           titulo={previo > 0 ? `Paquetes que se agregan (${paquetes.length})` : `Producción (${paquetes.length})`}
           meta={previo > 0 ? `La corrida ya tiene ${codigosUsados?.length ?? 0} paquete(s) cargados` : undefined}
         >
-          <TablaCtp altoMax="max-h-[calc(92vh-22rem)]">
+          <TablaCtp altoMax="max-h-[45vh]">
             <TheadCtp>
               <tr>
                 <th className="px-3 py-2 font-bold">Código paquete</th>
@@ -1354,8 +1371,6 @@ export default function CtpRegistrarProduccionModal({
             </p>
           )}
         </Bloque>
-        </div>
-        </div>
       </ModalBody>
     </AdminModal>
   );
