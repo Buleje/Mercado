@@ -21,6 +21,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { Keyboard, type LucideIcon } from "@buleje/design-system/icons";
 import { Kicker, PageTitle } from "@buleje/design-system";
 import ActionMenu, { type MenuAccion } from "./action-menu";
+import SelectorDeVista from "./selector-de-vista";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
 import {
@@ -105,11 +106,6 @@ export default function LibroChrome({
 }: LibroChromeProps) {
   const { registerSubTabs, registerOnChange, clearSubTabs } = useModuleTabs();
   const flat = useMemo(() => groups.flatMap((g) => g.views), [groups]);
-  const activeGroup = useMemo(
-    () => groups.find((g) => g.views.some((v) => v.key === view)) ?? groups[0],
-    [groups, view],
-  );
-
   // El handler del sidebar se registra UNA vez y lee la última versión por ref:
   // registrarlo en cada render lo mete en el estado del contexto → re-render →
   // registro → bucle infinito (React corta con "Maximum update depth").
@@ -207,9 +203,6 @@ export default function LibroChrome({
   );
   useRegisterShortcuts(`libro:${moduleId}`, seccionesAtajos);
 
-  const alertasDe = (g: LibroGroup) =>
-    g.views.reduce((n, v) => n + (alerts?.[v.key] ?? 0), 0);
-
   return (
     <div className="space-y-4">
       <section
@@ -254,86 +247,20 @@ export default function LibroChrome({
           </div>
         </div>
 
-        {/* Navegación: fase del libro → vista de esa fase.
-            En pantallas angostas cada riel se desliza en vez de envolver: con
-            wrap, los cuatro grupos se pisaban entre sí a 390px. */}
+        {/* Navegación: un solo selector con todas las vistas, agrupadas por
+            fase del libro.
+
+            Eran dos rieles —las fases, y al lado las vistas de la activa—. Con
+            nueve destinos andaba; el CTP tiene veintitrés y ahí el segundo riel
+            se comía una fila entera y en pantallas angostas había que
+            deslizarlo a ciegas para descubrir qué contenía. Ahora el botón dice
+            dónde estás y al abrirlo se ven los veintitrés juntos, no los seis
+            de la fase en la que uno cayó. Los atajos `g` + letra siguen yendo
+            directo sin abrir nada. */}
         {flat.length > 1 && (
-        <div className="flex flex-col gap-2 border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:px-3">
-          {groups.length > 1 && (
-          <div
-            role="tablist"
-            aria-label="Fase del libro"
-            className="flex max-w-full items-center gap-0.5 self-start overflow-x-auto rounded-xl bg-[var(--surface-sunken)] p-1 scrollbar-none"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {groups.map((g) => {
-              const activo = g.id === activeGroup?.id;
-              const alertas = alertasDe(g);
-              return (
-                <button
-                  key={g.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={activo}
-                  onClick={() => !activo && onView?.(g.views[0].key)}
-                  className={`relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors sm:px-3 ${
-                    activo
-                      ? "bg-[var(--surface-raised)] text-[var(--accent-dark)] shadow-[var(--shadow-sm)] dark:text-[var(--accent)]"
-                      : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-                  }`}
-                >
-                  {g.label}
-                  {alertas > 0 && (
-                    <span
-                      title={`${alertas} pendiente${alertas === 1 ? "" : "s"} en ${g.label}`}
-                      className="grid h-4 min-w-4 place-items-center rounded-full bg-[var(--data-warning-500)] px-1 font-mono text-[length:var(--ts-2xs)] tabular-nums text-white"
-                    >
-                      {alertas}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-2 sm:px-3">
+            <SelectorDeVista groups={groups} view={view} onView={onView} alerts={alerts} />
           </div>
-          )}
-
-          {groups.length > 1 && (
-            <span aria-hidden="true" className="hidden h-6 w-px bg-[var(--rule-base)] sm:block" />
-          )}
-
-          <div
-            role="tablist"
-            aria-label={activeGroup?.label}
-            className="flex max-w-full items-center gap-1 overflow-x-auto scrollbar-none sm:flex-wrap"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {activeGroup?.views.map((v) => {
-              const activo = v.key === view;
-              const VIcon = v.icon;
-              return (
-                <button
-                  key={v.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={activo}
-                  title={v.tecla ? `${v.hint}  ·  atajo: g ${v.tecla}` : v.hint}
-                  onClick={() => onView?.(v.key)}
-                  className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm transition-colors sm:px-3 ${
-                    activo
-                      ? "bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/20"
-                      : "font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-                  }`}
-                >
-                  <VIcon className="h-4 w-4 shrink-0" />
-                  <span>{v.label}</span>
-                  {(alerts?.[v.key] ?? 0) > 0 && (
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--data-warning-500)]" aria-hidden="true" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
         )}
       </section>
 
