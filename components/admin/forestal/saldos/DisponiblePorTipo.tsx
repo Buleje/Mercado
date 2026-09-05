@@ -191,7 +191,19 @@ export default function DisponiblePorTipo({
                 El detalle fila por fila está en la pestaña de al lado.
               </p>
             )}
-            {grafico.map((g) => (
+            {/* Una sola fila dibuja una barra al 100 %: no compara con nada y
+                ocupa el ancho de la tarjeta para repetir el total que ya está
+                en el encabezado. Mismo criterio que la dona de Composición. */}
+            {grafico.length === 1 && (
+              <p className="text-sm text-[var(--text-secondary)]">
+                Todo el volumen está en{" "}
+                <strong className="font-bold text-[var(--text-primary)]">{grafico[0].nombre}</strong>:{" "}
+                {n3(grafico[0].valor)} m³, el 100 %. {vista === "trozas" ? "Una sola especie" : "Un solo producto"} — no
+                hay reparto que mirar hasta que entre {vista === "trozas" ? "otra" : "otro"}.
+              </p>
+            )}
+            {grafico.length > 1 &&
+              grafico.map((g) => (
               <div key={g.nombre} className="space-y-0.5">
                 <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
                   <span className="font-semibold text-[var(--text-primary)]">{g.nombre}</span>
@@ -209,7 +221,7 @@ export default function DisponiblePorTipo({
                   />
                 </div>
               </div>
-            ))}
+              ))}
           </div>
 
           )}
