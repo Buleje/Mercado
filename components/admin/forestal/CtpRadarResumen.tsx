@@ -13,6 +13,7 @@
  * dibuja lo que esas libs ya calcularon.
  */
 
+import { useState } from "react";
 import {
   AlertTriangle,
   Boxes,
@@ -77,6 +78,55 @@ export default function CtpRadarResumen({
   const setVista = onVista;
   const setSeguirId = onSeguir;
   const setDetail = onDetail;
+  const [verTodosHuecos, setVerTodosHuecos] = useState(false);
+
+  /**
+   * Los tres tipos de hueco en UNA lista, para poder cortarla.
+   *
+   * Antes eran tres `.map()` seguidos con el mismo markup repetido: no se podía
+   * poner un tope sin repartirlo a mano entre los tres. Unificados, el tope es
+   * una línea y el orden es el que importa —lo que no traza nada antes que lo
+   * que traza a medias— porque un despacho sin ningún origen es lo que primero
+   * pide un fiscalizador.
+   */
+  const filasDeHueco = [
+    ...huecoDespachos.map((d) => ({
+      key: `d-${d.id}`,
+      icon: Truck,
+      tono: "warning" as const,
+      titulo: `Despacho #${d.lineNo}`,
+      detalle: `${trunc(d.destino || d.label || "—", 48)} — sin origen atribuido`,
+      accion: "Atribuir origen",
+      onClick: () => setDetail({ kind: "despacho" as const, id: d.id }),
+    })),
+    ...huerfanaCorridas.map((c) => ({
+      key: `c-${c.id}`,
+      icon: Boxes,
+      tono: "warning" as const,
+      titulo: `Corrida #${c.lineNo}`,
+      detalle: `${trunc(c.label || "—", 48)} — sin materia prima`,
+      accion: "Atribuir materia prima",
+      onClick: () => setDetail({ kind: "corrida" as const, id: c.id }),
+    })),
+    ...despachosParciales.map((d) => {
+      const bal = a.despachos.get(d.id)!;
+      return {
+        key: `p-${d.id}`,
+        icon: Truck,
+        tono: "info" as const,
+        titulo: `Despacho #${d.lineNo}`,
+        detalle: `${trunc(d.destino || d.label || "—", 34)} — faltan ${fmtNum(bal.sinAtribuir)} ${unidadDe(d.id)} de ${fmtNum(bal.total)}`,
+        accion: "Completar origen",
+        onClick: () => setDetail({ kind: "despacho" as const, id: d.id }),
+      };
+    }),
+  ];
+
+  /** Cuántos huecos se listan sin pedirlo. Ver la nota de abajo. */
+  const TOPE_HUECOS = 3;
+
+  /** Con un solo medidor, el grid de dos columnas deja media fila vacía. */
+  const hayDosMedidores = a.totales.trazabilidadPct != null && a.totales.consumoPct != null;
 
   return (
     <>
@@ -86,7 +136,13 @@ export default function CtpRadarResumen({
               fiscalizador y los cuatro conteos accionables. Antes eran dos
               filas de tarjetas (≈250px) para seis cifras. */}
           <div className="space-y-2.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-            <div className="grid gap-3 sm:grid-cols-2">
+            {/*
+              Dos columnas SÓLO si hay dos medidores. Sin despachos en el
+              período `trazabilidadPct` es null y queda uno solo: el grid fijo de
+              dos columnas le daba media pantalla de aire a la derecha, que es lo
+              que hacía ver esta cabecera vacía y empujaba el grafo hacia abajo.
+            */}
+            <div className={`grid gap-3 ${hayDosMedidores ? "sm:grid-cols-2" : ""}`}>
               {a.totales.trazabilidadPct != null && (
                 <Medidor
                   pct={a.totales.trazabilidadPct}
@@ -168,38 +224,38 @@ export default function CtpRadarResumen({
               <p className="mb-3 text-sm text-[var(--text-secondary)]">
                 Estos eslabones no trazan (o trazan sólo en parte) hasta su GTF de ingreso. El libro los admite, pero el certificado exige cadena completa — tocá para completarlos.
               </p>
+              {/*
+                Con tope y no la lista entera. Cada fila mide ~54 px: cuatro
+                huecos ya empujaban el GRAFO —el punto de esta pestaña— fuera de
+                la pantalla, y veinte lo habrían enterrado a mil cuatrocientos
+                píxeles de scroll. Se muestran los primeros y el resto se pide.
+                El grafo además ya tiene «Ir al hueco», que los recorre ahí
+                mismo: esta lista es el atajo al arreglo, no el inventario.
+              */}
               <ul className="space-y-2">
-                {huecoDespachos.map((d) => (
+                {(verTodosHuecos ? filasDeHueco : filasDeHueco.slice(0, TOPE_HUECOS)).map((f) => (
                   <HuecoFila
-                    key={d.id} icon={Truck} tono="warning"
-                    titulo={`Despacho #${d.lineNo}`}
-                    detalle={`${trunc(d.destino || d.label || "—", 32)} — sin origen atribuido`}
-                    accion="Atribuir origen"
-                    onClick={() => setDetail({ kind: "despacho", id: d.id })}
-                  />
-                ))}
-                {despachosParciales.map((d) => {
-                  const bal = a.despachos.get(d.id)!;
-                  return (
-                    <HuecoFila
-                      key={d.id} icon={Truck} tono="info"
-                      titulo={`Despacho #${d.lineNo}`}
-                      detalle={`${trunc(d.destino || d.label || "—", 26)} — faltan ${fmtNum(bal.sinAtribuir)} ${unidadDe(d.id)} de ${fmtNum(bal.total)} por atribuir`}
-                      accion="Completar origen"
-                      onClick={() => setDetail({ kind: "despacho", id: d.id })}
-                    />
-                  );
-                })}
-                {huerfanaCorridas.map((c) => (
-                  <HuecoFila
-                    key={c.id} icon={Boxes} tono="warning"
-                    titulo={`Corrida #${c.lineNo}`}
-                    detalle={`${trunc(c.label || "—", 32)} — sin materia prima`}
-                    accion="Atribuir materia prima"
-                    onClick={() => setDetail({ kind: "corrida", id: c.id })}
+                    key={f.key}
+                    icon={f.icon}
+                    tono={f.tono}
+                    titulo={f.titulo}
+                    detalle={f.detalle}
+                    accion={f.accion}
+                    onClick={f.onClick}
                   />
                 ))}
               </ul>
+              {filasDeHueco.length > TOPE_HUECOS && (
+                <button
+                  type="button"
+                  onClick={() => setVerTodosHuecos((v) => !v)}
+                  className="mt-2 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] underline dark:text-[var(--data-warning-500)]"
+                >
+                  {verTodosHuecos
+                    ? "Ver menos"
+                    : `Ver los otros ${filasDeHueco.length - TOPE_HUECOS}`}
+                </button>
+              )}
             </div>
           )}
     </>
