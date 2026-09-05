@@ -88,6 +88,8 @@ export default function CtpComplianceHistoria({
   const puntos = serie ?? [];
   const primero = puntos[0];
   const ultimo = puntos[puntos.length - 1];
+  /** Piso del eje: redondeado a la decena de abajo, con una ventana mínima de 20. */
+  const piso = Math.max(0, Math.min(80, Math.floor(Math.min(...puntos.map((p) => p.score)) / 10) * 10 - 10));
   const delta = ultimo.score - primero.score;
   const Icono = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
   const tono =
@@ -126,6 +128,14 @@ export default function CtpComplianceHistoria({
             /* Con hueco, los puntos son la única marca de qué días SÍ se midió. */
             showDots={datos.length <= 45}
             format={(v) => `${v}/100`}
+            /* El eje llega SIEMPRE a 100 —el techo es parte del significado— y
+               el piso baja hasta donde estuvo la serie. Con el eje desde cero,
+               un libro que vive entre 90 y 100 dibujaba una raya pegada al
+               borde: 95 constante y una caída a 88 se ven idénticos, y el
+               gráfico deja de contestar la única pregunta que tiene («¿esto
+               empeora?»). La ventana nunca baja de 20 puntos, así que tampoco
+               exagera un movimiento chico. */
+            yDomain={[piso, 100]}
           />
         </div>
       )}
