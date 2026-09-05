@@ -38,6 +38,7 @@ import {
   ArrowRight,
   Mic,
   MicOff,
+  Paperclip,
 } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
@@ -236,6 +237,43 @@ export default function ChatIAClean({
     }
     setInput((prev) => (prev ? `${prev.replace(/\s+$/, "")} ${limpio}` : limpio));
   });
+
+  /**
+   * Subir un audio que YA existe (el de WhatsApp que mandó el chofer).
+   *
+   * El dictado del navegador sólo sirve para hablar en vivo. Esto va por
+   * Whisper en el servidor, que además entiende mejor con ruido de motor
+   * atrás — que es donde se graban estos audios.
+   */
+  const [transcribiendo, setTranscribiendo] = useState(false);
+  const [errorAudio, setErrorAudio] = useState<string | null>(null);
+  const archivoRef = useRef<HTMLInputElement | null>(null);
+
+  const subirAudio = useCallback(async (archivo: File) => {
+    setTranscribiendo(true);
+    setErrorAudio(null);
+    try {
+      const fd = new FormData();
+      fd.append("audio", archivo);
+      const res = await fetch("/api/ai/transcribir", {
+        method: "POST",
+        headers: csrfHeaders(),
+        body: fd,
+      });
+      const json = (await res.json().catch(() => ({}))) as { texto?: string; error?: string };
+      if (!res.ok || !json.texto) {
+        setErrorAudio(json.error ?? "No se pudo transcribir el audio.");
+        return;
+      }
+      // Va al campo, no se manda solo: lo transcrito se lee ANTES de anotarlo.
+      setInput((prev) => (prev ? `${prev.replace(/\s+$/, "")} ${json.texto}` : json.texto!));
+      textareaRef.current?.focus();
+    } catch (e) {
+      setErrorAudio(e instanceof Error ? e.message : String(e));
+    } finally {
+      setTranscribiendo(false);
+    }
+  }, []);
 
   // Hydrate desde localStorage en cliente
   useEffect(() => {
@@ -602,7 +640,7 @@ export default function ChatIAClean({
               className={cn(
                 "w-full resize-none rounded-2xl border border-[var(--rule-base)]",
                 "bg-[var(--surface-sunken)] dark:bg-surface",
-                "px-5 py-4 pr-24 text-base leading-relaxed",
+                "px-5 py-4 pr-36 text-base leading-relaxed",
                 "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
                 "focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20 focus:border-[var(--text-primary)]/40",
                 "transition-all",
@@ -615,6 +653,36 @@ export default function ChatIAClean({
               frase en la cabeza— pero se deshabilita, porque el campo también
               lo está.
             */}
+            <input
+              ref={archivoRef}
+              type="file"
+              accept="audio/*,.ogg,.oga,.m4a,.mp3,.wav,.webm"
+              // `hidden` y no `sr-only`: con sr-only el input queda en el orden
+              // de tabulación y el lector de pantalla anuncia DOS controles para
+              // la misma acción. El botón de al lado ya lleva la etiqueta.
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void subirAudio(f);
+                e.target.value = "";
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => archivoRef.current?.click()}
+              disabled={streaming || transcribiendo}
+              title="Subir un audio (el de WhatsApp, una nota de voz)"
+              aria-label="Subir un audio"
+              className={cn(
+                "absolute bottom-3 h-10 w-10 rounded-xl flex items-center justify-center transition-all",
+                "border border-[var(--rule-base)] bg-[var(--surface-raised)]",
+                "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]/40",
+                voz.supported ? "right-25" : "right-14",
+                (streaming || transcribiendo) && "opacity-50 cursor-not-allowed",
+              )}
+            >
+              {transcribiendo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+            </button>
             {voz.supported && (
               <button
                 type="button"
@@ -675,6 +743,24 @@ export default function ChatIAClean({
             <p className="mt-2 text-[length:var(--ts-xs)] italic text-[var(--text-tertiary)] truncate" aria-live="polite">
               «{voz.liveText}»
             </p>
+          )}
+          {transcribiendo && (
+            <p className="mt-2 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+              Transcribiendo el audio…
+            </p>
+          )}
+          {errorAudio && (
+            <div className="mt-2 flex items-start gap-2 rounded-lg border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] px-3 py-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
+              <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] flex-1">{errorAudio}</p>
+              <button
+                type="button"
+                onClick={() => setErrorAudio(null)}
+                className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+              >
+                Cerrar
+              </button>
+            </div>
           )}
           {voz.errMsg && (
             <div className="mt-2 flex items-start gap-2 rounded-lg border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] px-3 py-2">
