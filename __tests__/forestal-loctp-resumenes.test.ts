@@ -244,3 +244,84 @@ describe("LO-CTP · clasificación y catálogos", () => {
     expect(resumen3.length).toBeGreaterThan(0);
   });
 });
+
+/**
+ * ── La corrida abierta en los cuadros oficiales ───────────────────────────
+ *
+ * Una corrida que ya consumió y todavía no declaró qué salió (ADR-364) llega a
+ * `cuadrosResumen` con `tipoProducto` en null y cantidad 0. Producía dos
+ * defectos en papel que se presenta a la autoridad:
+ *
+ *  · **Cuadro 2** ganaba una fila «TORNILLO · — · m³» con los seis casilleros
+ *    en cero: un producto que nunca existió, con nombre de dato roto.
+ *  · **Cuadro 3** declaraba rendimiento **0 %**, y la lectura de la pantalla lo
+ *    llamaba «muy bajo: falta declarar o se perdió madera», contándolo entre
+ *    los lotes fuera de rango. Acusa una pérdida que no ocurrió: esa madera
+ *    entró a la sierra hace media hora.
+ *
+ * Lo que NO puede pasar: que el consumo desaparezca. El libro admite huecos y
+ * este es uno — 5.411 m³ adentro y nada declarado todavía— pero esconderlo
+ * sería peor que mostrarlo mal.
+ */
+describe("una corrida abierta no inventa un producto ni una pérdida", () => {
+  const abierta = {
+    especie: "TORNILLO",
+    cientifico: "Cedrelinga cateniformis",
+    tipoProducto: null,
+    unidad: "m3",
+    cantidad: 0,
+    consumidoM3: 5.411,
+    lote: null,
+    lineaProduccion: "LP",
+  };
+  const declarada = {
+    especie: "TORNILLO",
+    cientifico: "Cedrelinga cateniformis",
+    tipoProducto: "MADERA ASERRADA (COMERCIAL)",
+    unidad: "m3",
+    cantidad: 59.8467,
+    consumidoM3: 109.329,
+    lote: null,
+    lineaProduccion: "LP",
+  };
+  const base = { ingresos: [], produccion: [], salidas: [], retrozos: [] };
+
+  it("Cuadro 2 no publica la fila de ceros", () => {
+    const { resumen2 } = cuadrosResumen({ ...base, produccion: [abierta, declarada] } as never);
+    expect(resumen2.map((f) => f.tipoProducto)).toEqual(["MADERA ASERRADA (COMERCIAL)"]);
+    expect(resumen2.some((f) => f.tipoProducto === "—")).toBe(false);
+  });
+
+  it("Cuadro 2 sí publica una fila con saldo aunque el período no la mueva", () => {
+    const { resumen2 } = cuadrosResumen({
+      ...base,
+      inicial: { productos: { "TORNILLO|MADERA ASERRADA (COMERCIAL)|m3": 12.633 } },
+    } as never);
+    expect(resumen2).toHaveLength(1);
+    expect(resumen2[0].inicial).toBe(12.633);
+  });
+
+  it("Cuadro 3 SÍ muestra el consumo de la abierta — el hueco no se esconde", () => {
+    const { resumen3 } = cuadrosResumen({ ...base, produccion: [abierta, declarada] } as never);
+    const sinDeclarar = resumen3.find((f) => f.tipoProducto === "—");
+    expect(sinDeclarar?.cantidadConsumida).toBe(5.411);
+    expect(sinDeclarar?.cantidadProducida).toBe(0);
+  });
+
+  it("…pero su rendimiento es null, no 0 %: no hubo pérdida, hubo demora", () => {
+    const { resumen3 } = cuadrosResumen({ ...base, produccion: [abierta, declarada] } as never);
+    expect(resumen3.find((f) => f.tipoProducto === "—")?.rendimientoPct).toBeNull();
+  });
+
+  it("la corrida declarada sí calcula su rendimiento, como siempre", () => {
+    const { resumen3 } = cuadrosResumen({ ...base, produccion: [declarada] } as never);
+    expect(resumen3[0].rendimientoPct).toBeCloseTo(54.74, 1);
+  });
+
+  it("una corrida que produjo 0 con unidad distinta tampoco inventa un factor", () => {
+    const enPt = { ...abierta, unidad: "pt", cantidad: 0 };
+    const { resumen3 } = cuadrosResumen({ ...base, produccion: [enPt] } as never);
+    expect(resumen3[0].factorConversion).toBeNull();
+    expect(resumen3[0].cantidadConsumida).toBe(5.411);
+  });
+});

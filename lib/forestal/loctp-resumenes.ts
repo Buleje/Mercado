@@ -311,9 +311,15 @@ export function resumen2Productos(entrada: EntradaResumenes): FilaResumen2[] {
     f.saldo = r4(f.inicial + f.ingresado + f.producido - f.consumido - f.salido);
   }
 
-  return [...porClave.values()].sort(
-    (a, b) => a.especie.localeCompare(b.especie, "es") || a.tipoProducto.localeCompare(b.tipoProducto, "es"),
-  );
+  /* Una fila con los seis casilleros en cero no declara nada: es una corrida
+     abierta —consumió y todavía no dijo qué salió, así que no tiene tipo de
+     producto— que se cuela como «TORNILLO · — · m³ · 0 0 0 0 0 0». Un producto
+     que nunca existió, con nombre de dato roto, en un cuadro que se presenta a
+     la autoridad. Su consumo NO se pierde: vive en el Cuadro 3, que es donde el
+     formato pide la materia prima consumida. */
+  return [...porClave.values()]
+    .filter((f) => f.inicial !== 0 || f.ingresado !== 0 || f.consumido !== 0 || f.producido !== 0 || f.salido !== 0)
+    .sort((a, b) => a.especie.localeCompare(b.especie, "es") || a.tipoProducto.localeCompare(b.tipoProducto, "es"));
 }
 
 // ── Cuadro Resumen 3 ────────────────────────────────────────────────────────
@@ -382,7 +388,14 @@ export function resumen3Balance(entrada: EntradaResumenes): FilaResumen3[] {
     yaAsignado.add(f.lote);
     f.salido = r4(salido);
     f.stock = r4(f.cantidadProducida - salido);
-    if (f.cantidadConsumida > 0) {
+    /* Hace falta numerador Y denominador. Con producción en cero, la cuenta da
+       0 % y la pantalla lo leía como «muy bajo: se perdió madera» — pero una
+       corrida abierta (ADR-364) consumió hace media hora y declara al final de
+       la jornada. Un 0 % ahí acusa una pérdida que no ocurrió, y contaba ese
+       lote entre los «fuera de rango». `null` dice lo único cierto: todavía no
+       hay rendimiento. El consumo sigue a la vista en su casillero, que es lo
+       que el formato pide — no se esconde nada. */
+    if (f.cantidadConsumida > 0 && f.cantidadProducida > 0) {
       if (f.unidadProducto === f.unidadConsumo) {
         f.rendimientoPct = r2((f.cantidadProducida / f.cantidadConsumida) * 100);
       } else {

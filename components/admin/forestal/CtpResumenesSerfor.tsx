@@ -221,18 +221,36 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
           documento regulatorio incompleto tiene que decirlo: callarlo es peor
           que no mostrarlo. */}
       {incompleto.length > 0 && (
-        <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-transparent px-3 py-2.5 text-sm font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+        <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2.5 text-sm font-medium text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>
+          <div className="min-w-0">
             {/* El aviso decía «les falta una parte» y sonaba a que el cuadro
                 salía en cero. No es así: los tres cuadros se arman de ingresos,
                 corridas y despachos —que son obligatorios— y esto sólo
                 ENRIQUECE una columna. Decirlo evita que alguien no presente el
-                libro creyendo que está inválido (ADR-357). */}
-            Los tres cuadros están completos con los movimientos del libro. Lo único que quedó sin llenar es una
-            columna de apoyo: {incompleto.join(" · ")} Los volúmenes, los saldos y el rendimiento no cambian.
-          </span>
-        </p>
+                libro creyendo que está inválido (ADR-357).
+
+                Y va en LISTA, no pegado con « · » adentro de la frase: cada
+                motivo trae su propia oración con su punto, así que unirlos daba
+                «una columna de apoyo: No se pudieron leer los lotes de
+                producción: El módulo no está habilitado. Los volúmenes…» — dos
+                puntos seguidos y una explicación que se lee como continuación
+                del error. */}
+            <p>
+              {incompleto.length === 1 ? "Una columna de apoyo quedó" : `${incompleto.length} columnas de apoyo quedaron`}{" "}
+              sin llenar:
+            </p>
+            <ul className="ml-4 mt-1 list-disc space-y-0.5">
+              {incompleto.map((motivo) => (
+                <li key={motivo}>{motivo}</li>
+              ))}
+            </ul>
+            <p className="mt-1.5">
+              Los tres cuadros se arman igual con los ingresos, las corridas y los despachos, que son los datos
+              obligatorios: los volúmenes, los saldos y el rendimiento no cambian.
+            </p>
+          </div>
+        </div>
       )}
 
       {negativos > 0 && (
