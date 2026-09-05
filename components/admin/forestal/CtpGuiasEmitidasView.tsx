@@ -75,8 +75,20 @@ export default function CtpGuiasEmitidasView({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      {/*
+        Los cuatro conteos de calidad SÓLO cuando hay guías.
+
+        Con el período en cero decían «todas completas», «todas verificadas»,
+        «todas con origen declarado»: cuatro tarjetas felicitando por un
+        conjunto vacío. No es un cero neutro como el de un tramo de antigüedad
+        —es una afirmación FALSA sobre documentos que se presentan ante SERFOR—
+        y encima repetía lo que el estado vacío de abajo ya dice mejor
+        («Todavía no se emitió ninguna guía»), con el botón para ir a Despacho.
+      */}
+      <div className={`grid grid-cols-2 gap-3 ${resumen.total > 0 ? "lg:grid-cols-5" : ""}`}>
         <StatCard density="compact" label="Guías emitidas" value={String(resumen.total)} subValue={period.label} icon={FileText} emphasis="neutral" />
+        {resumen.total > 0 && (
+          <>
         <StatCard
           density="compact"
           label="Listas para imprimir"
@@ -109,6 +121,8 @@ export default function CtpGuiasEmitidasView({
           icon={AlertTriangle}
           emphasis={resumen.sinOrigen > 0 ? "warning" : "success"}
         />
+          </>
+        )}
       </div>
 
       <VistaHeader
