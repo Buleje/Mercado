@@ -17,6 +17,8 @@ import {
   filtrarPatio,
   resumirPatio,
   tramoDe,
+  opcionesDeOrigen,
+  SIN_TITULO,
   type TrozaPatio,
 } from "@/lib/forestal/trozas-patio";
 
@@ -254,5 +256,123 @@ describe("buscar en el patio", () => {
     const orig = [...patio];
     filtrarPatio(patio, { orden: "volumen" }, hoy);
     expect(patio.map((t) => t.id)).toEqual(orig.map((t) => t.id));
+  });
+});
+
+
+// ─── Filtrar por guía y por título habilitante ───────────────────────────────
+
+/**
+ * La pregunta del fiscalizador es «¿qué trozas ampara ESTA guía?», y hasta ahora
+ * sólo se respondía tipeando el número en la búsqueda libre — que también matchea
+ * proveedor y código de troza, así que una guía `019-001-0000011` y una pieza
+ * codificada `0000011` caían juntas.
+ */
+describe("filtrar por guía", () => {
+  const patio = [
+    t_({ id: "a", gtfNumber: "019-001-0000011" }),
+    t_({ id: "b", gtfNumber: "019-001-0000011" }),
+    t_({ id: "c", gtfNumber: "019-001-0000022" }),
+  ];
+  const hoy = new Date("2026-09-05T12:00:00.000Z");
+
+  it("devuelve sólo las piezas de esa guía", () => {
+    const r = filtrarPatio(patio, { guia: "019-001-0000011" }, hoy);
+    expect(r.map((t) => t.id).sort()).toEqual(["a", "b"]);
+  });
+
+  it("es exacto, no por substring: el filtro no es la búsqueda libre", () => {
+    expect(filtrarPatio(patio, { guia: "0000011" }, hoy)).toHaveLength(0);
+  });
+
+  it("sin filtro de guía no descarta nada", () => {
+    expect(filtrarPatio(patio, {}, hoy)).toHaveLength(3);
+  });
+});
+
+describe("filtrar por título habilitante", () => {
+  const patio = [
+    t_({ id: "a", permiso: "19-SEC/REG-PLT-2018-020" }),
+    t_({ id: "b", permiso: "19-SEC/REG-PLT-2018-020" }),
+    t_({ id: "c", permiso: "OTRO-TITULO" }),
+    t_({ id: "d", permiso: null }),
+    t_({ id: "e", permiso: "   " }),
+  ];
+  const hoy = new Date("2026-09-05T12:00:00.000Z");
+
+  it("filtra por el título elegido", () => {
+    const r = filtrarPatio(patio, { titulo: "19-SEC/REG-PLT-2018-020" }, hoy);
+    expect(r.map((t) => t.id).sort()).toEqual(["a", "b"]);
+  });
+
+  it("«sin título» es una opción con nombre propio, no la ausencia de filtro", () => {
+    const r = filtrarPatio(patio, { titulo: SIN_TITULO }, hoy);
+    // Null y espacios en blanco cuentan igual: las dos son piezas sin origen legal.
+    expect(r.map((t) => t.id).sort()).toEqual(["d", "e"]);
+  });
+});
+
+describe("las opciones que se ofrecen en el desplegable", () => {
+  const patio = [
+    t_({ id: "a", gtfNumber: "G-1", permiso: "T-1" }),
+    t_({ id: "b", gtfNumber: "G-1", permiso: "T-1" }),
+    t_({ id: "c", gtfNumber: "G-2", permiso: null }),
+    t_({ id: "d", gtfNumber: null, permiso: "T-2" }),
+  ];
+
+  it("ordena por cantidad de piezas: la guía que más trajo va primero", () => {
+    const o = opcionesDeOrigen(patio, "guia");
+    expect(o.map((x) => x.valor)).toEqual(["G-1", "G-2"]);
+    expect(o[0].piezas).toBe(2);
+  });
+
+  it("una pieza sin guía no se ofrece como guía: no se la puede pedir por ese número", () => {
+    expect(opcionesDeOrigen(patio, "guia").map((x) => x.valor)).not.toContain(SIN_TITULO);
+  });
+
+  it("«Sin título declarado» SÍ se ofrece, y va último aunque pese", () => {
+    const o = opcionesDeOrigen(
+      [t_({ permiso: null }), t_({ permiso: null }), t_({ permiso: "T-9" })],
+      "titulo",
+    );
+    expect(o.at(-1)?.valor).toBe(SIN_TITULO);
+    expect(o.at(-1)?.label).toBe("Sin título declarado");
+    expect(o.at(-1)?.piezas).toBe(2);
+  });
+});
+
+// ─── El resumen sabe qué NO tiene origen ─────────────────────────────────────
+
+describe("piezas en patio sin título habilitante", () => {
+  it("cuenta las que siguen paradas y no declaran origen", () => {
+    const r = resumirPatio([
+      t_({ id: "a", permiso: "T-1", volumenM3: 2 }),
+      t_({ id: "b", permiso: null, volumenM3: 3 }),
+      t_({ id: "c", permiso: "  ", volumenM3: 1 }),
+    ]);
+    expect(r.sinTitulo.piezas).toBe(2);
+    expect(r.sinTitulo.m3).toBe(4);
+  });
+
+  it("lo YA aserrado no cuenta: se corrige en su asiento, no en el patio", () => {
+    const r = resumirPatio([
+      t_({ id: "a", permiso: null, consumidaEnId: "corrida-1", volumenM3: 5 }),
+      t_({ id: "b", permiso: null, volumenM3: 1 }),
+    ]);
+    expect(r.sinTitulo.piezas).toBe(1);
+  });
+});
+
+describe("apartadas: decide si «en patio» se desdobla", () => {
+  it("sin ninguna apartada, en patio y libres son el mismo número", () => {
+    const r = resumirPatio([t_({ id: "a" }), t_({ id: "b" })]);
+    expect(r.apartadas).toBe(0);
+    expect(r.enPatio.piezas).toBe(2);
+  });
+
+  it("con una apartada, en patio la incluye y el desglose tiene algo que decir", () => {
+    const r = resumirPatio([t_({ id: "a" }), t_({ id: "b", loteAserrioCode: "LA-1" })]);
+    expect(r.apartadas).toBe(1);
+    expect(r.enPatio.piezas).toBe(2);
   });
 });

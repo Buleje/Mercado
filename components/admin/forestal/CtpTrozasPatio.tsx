@@ -19,7 +19,7 @@
 
 import { useMemo } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Boxes, Clock, RefreshCw, Trees } from "@buleje/design-system/icons";
+import { Boxes, Clock, RefreshCw, ShieldAlert, Trees } from "@buleje/design-system/icons";
 import {
   antiguedadDelPatio,
   ESTADO_META,
@@ -64,6 +64,11 @@ export default function CtpTrozasPatio({
   const edad = useMemo(() => antiguedadDelPatio(trozas, new Date()), [trozas]);
 
   const libres = resumen.porEstado.find((e) => e.estado === "libre");
+  /* Decide si «en patio» y «listas para sierra» tienen algo distinto que decir. */
+  const hayApartadas = resumen.apartadas > 0;
+  /* Los tramos vacíos no se dibujan: una barra en cero con el botón apagado
+     ocupa el mismo alto que un dato y no es uno. */
+  const tramosConPiezas = useMemo(() => edad.tramos.filter((t) => t.piezas > 0), [edad.tramos]);
   const maxEspecie = Math.max(1, ...resumen.porEspecie.map((e) => e.m3));
   const tonoEdad: TonoPatio =
     edad.masVieja == null ? "muted" : edad.masVieja >= 60 ? "danger" : edad.masVieja >= 30 ? "warn" : "ok";
@@ -88,9 +93,34 @@ export default function CtpTrozasPatio({
           </button>
         </div>
 
+        {/*
+          Las tarjetas se adaptan a lo que los datos tienen para decir.
+
+          «Paradas en patio» (libre + apartada) y «Listas para sierra» (sólo
+          libre) son cosas distintas, pero mientras no haya NADA apartado dicen
+          el mismo número: dos tarjetas grandes repitiendo 57 · 27.52 m³ enseñan
+          a no leerlas. Sin apartadas se muestra una sola, y el lugar que queda
+          libre lo ocupa el dato que sí falta: cuántas piezas del patio no
+          declaran título habilitante — el hueco de origen legal que el
+          certificado no perdona.
+        */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Cifra label="Paradas en patio" valor={cifra(resumen.enPatio.piezas)} nota={leyendo ? "leyendo el patio…" : `${n2(resumen.enPatio.m3)} m³ ocupando cancha`} icono={Boxes} />
-          <Cifra label="Listas para sierra" valor={cifra(libres?.piezas ?? 0)} nota={leyendo ? "" : `${n2(libres?.m3 ?? 0)} m³ sin apartar`} tono="ok" />
+          <Cifra
+            label={hayApartadas ? "Paradas en patio" : "En patio, listas"}
+            valor={cifra(resumen.enPatio.piezas)}
+            nota={
+              leyendo
+                ? "leyendo el patio…"
+                : hayApartadas
+                  ? `${n2(resumen.enPatio.m3)} m³ ocupando cancha`
+                  : `${n2(resumen.enPatio.m3)} m³ · ninguna apartada`
+            }
+            icono={Boxes}
+            tono={hayApartadas ? "muted" : "ok"}
+          />
+          {hayApartadas && (
+            <Cifra label="Listas para sierra" valor={cifra(libres?.piezas ?? 0)} nota={leyendo ? "" : `${n2(libres?.m3 ?? 0)} m³ sin apartar`} tono="ok" />
+          )}
           <Cifra
             label="La más vieja"
             valor={cifra(edad.masVieja != null ? `${edad.masVieja} d` : "—")}
@@ -98,6 +128,17 @@ export default function CtpTrozasPatio({
             tono={tonoEdad}
             icono={Clock}
           />
+          {/* El hueco de origen legal sólo aparece cuando existe: una tarjeta en
+              cero es ruido, y en verde sería una felicitación que nadie pidió. */}
+          {resumen.sinTitulo.piezas > 0 && (
+            <Cifra
+              label="Sin título declarado"
+              valor={cifra(resumen.sinTitulo.piezas)}
+              nota={`${n2(resumen.sinTitulo.m3)} m³ sin origen legal`}
+              tono="warn"
+              icono={ShieldAlert}
+            />
+          )}
           <Cifra
             label="Piezas registradas"
             valor={cifra(resumen.total.piezas)}
@@ -167,8 +208,15 @@ export default function CtpTrozasPatio({
             <CardTitle as="h3" className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
               <Clock className="h-4 w-4 text-[var(--accent)]" /> Hace cuánto están paradas
             </CardTitle>
+            {/*
+              Sólo los tramos que TIENEN piezas. Un patio recién cargado dejaba
+              dos filas en cero con su barra vacía y su botón deshabilitado:
+              ocupan el alto de un panel para decir «no hay nada que mirar acá».
+              Cuando todo cae en un solo tramo, ni siquiera hace falta la lista
+              —lo dice el pie— pero se deja la fila para poder filtrar con ella.
+            */}
             <ul className="space-y-1">
-              {edad.tramos.map((t) => {
+              {tramosConPiezas.map((t) => {
                 const tono = TONO[t.tono];
                 const pct = resumen.enPatio.piezas > 0 ? (t.piezas / resumen.enPatio.piezas) * 100 : 0;
                 const activo = tramoFiltro === t.key;

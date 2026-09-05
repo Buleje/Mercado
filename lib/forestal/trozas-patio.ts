@@ -110,6 +110,19 @@ export interface ResumenPatio {
   porEspecie: PorEspecieTroza[];
   /** Piezas sin código de codificación: no se pueden rastrear pieza a pieza. */
   sinCodificar: number;
+  /**
+   * Piezas EN PATIO que no declaran título habilitante.
+   *
+   * El otro hueco de trazabilidad, y el que pesa en una fiscalización: sin
+   * título no hay origen legal que acreditar. Se cuenta sólo sobre lo que sigue
+   * parado porque es lo único que todavía se puede corregir — lo ya aserrado o
+   * despachado se arregla en su asiento, no acá.
+   *
+   * El libro las admite; el certificado no (`trazabilidadCompleta()`).
+   */
+  sinTitulo: GrupoTrozas;
+  /** Cuántas piezas están apartadas en un lote: decide si «en patio» se desdobla. */
+  apartadas: number;
 }
 
 /**
@@ -124,12 +137,18 @@ export function resumirPatio(trozas: readonly TrozaPatio[]): ResumenPatio {
   let total: GrupoTrozas = { piezas: 0, m3: 0 };
   let enPatio: GrupoTrozas = { piezas: 0, m3: 0 };
   let sinCodificar = 0;
+  let sinTitulo: GrupoTrozas = { piezas: 0, m3: 0 };
+  let apartadas = 0;
 
   for (const t of trozas) {
     const e = estadoDeTroza(t);
     const v = vol(t);
     total = { piezas: total.piezas + 1, m3: r3(total.m3 + v) };
-    if (estaEnPatio(e)) enPatio = { piezas: enPatio.piezas + 1, m3: r3(enPatio.m3 + v) };
+    if (estaEnPatio(e)) {
+      enPatio = { piezas: enPatio.piezas + 1, m3: r3(enPatio.m3 + v) };
+      if (!(t.permiso ?? "").trim()) sinTitulo = { piezas: sinTitulo.piezas + 1, m3: r3(sinTitulo.m3 + v) };
+    }
+    if (e === "apartada") apartadas += 1;
     if (!(t.codificacion ?? "").trim()) sinCodificar += 1;
 
     const ge = porEstado.get(e) ?? { piezas: 0, m3: 0 };
@@ -153,6 +172,8 @@ export function resumirPatio(trozas: readonly TrozaPatio[]): ResumenPatio {
       return b.m3 - a.m3 || a.especie.localeCompare(b.especie);
     }),
     sinCodificar,
+    sinTitulo,
+    apartadas,
   };
 }
 
@@ -237,7 +258,64 @@ export interface FiltroTrozas {
   especie?: string | null;
   /** `key` de `TRAMOS_ANTIGUEDAD`. */
   tramo?: string | null;
+  /**
+   * N° de GTF con la que entró la pieza.
+   *
+   * Es LA pregunta del fiscalizador —«¿qué trozas ampara esta guía?»— y hasta
+   * ahora sólo se podía responder tipeando el número en la búsqueda libre, que
+   * también matchea proveedor y código: una guía `019-001-0000011` y una troza
+   * codificada `0000011` caían juntas.
+   */
+  guia?: string | null;
+  /** Título habilitante (`permiso`). `SIN_TITULO` para las que no declaran uno. */
+  titulo?: string | null;
   orden?: OrdenTrozas;
+}
+
+/**
+ * La clave de las piezas sin título habilitante declarado.
+ *
+ * No es un título más: es el hueco de ORIGEN LEGAL. El libro las admite —por eso
+ * están en la lista— pero el certificado no, y en una fiscalización son las
+ * primeras que se piden. Se puede filtrar por ellas justamente para cerrarlas.
+ */
+export const SIN_TITULO = "__sin_titulo__";
+
+/**
+ * Las guías y los títulos que hay en el patio, con cuántas piezas trae cada uno.
+ *
+ * Se calcula sobre las piezas SIN filtrar por ese mismo campo (quien llama pasa
+ * ya filtrado por lo demás) para que el desplegable siga ofreciendo las otras
+ * guías después de elegir una — si no, elegir una guía dejaría el filtro con una
+ * sola opción y habría que limpiarlo para cambiar de guía.
+ *
+ * Ordena por cantidad de piezas: la guía que más madera trajo es la que más se
+ * consulta. `SIN_TITULO` va último aunque pese: es un pendiente, no un origen
+ * (mismo criterio que el nodo «Sin título declarado» del Radar).
+ */
+export function opcionesDeOrigen(
+  trozas: readonly TrozaPatio[],
+  campo: "guia" | "titulo",
+): { valor: string; label: string; piezas: number }[] {
+  const cuenta = new Map<string, number>();
+  for (const t of trozas) {
+    const crudo = (campo === "guia" ? t.gtfNumber : t.permiso) ?? "";
+    const v = crudo.trim();
+    if (campo === "guia" && !v) continue; // una pieza sin guía no se puede pedir por guía
+    const clave = v || SIN_TITULO;
+    cuenta.set(clave, (cuenta.get(clave) ?? 0) + 1);
+  }
+  return [...cuenta.entries()]
+    .map(([valor, piezas]) => ({
+      valor,
+      label: valor === SIN_TITULO ? "Sin título declarado" : valor,
+      piezas,
+    }))
+    .sort((a, b) => {
+      if (a.valor === SIN_TITULO) return 1;
+      if (b.valor === SIN_TITULO) return -1;
+      return b.piezas - a.piezas || a.label.localeCompare(b.label, "es-PE", { numeric: true });
+    });
 }
 
 /**
@@ -257,6 +335,13 @@ export function filtrarPatio<T extends TrozaPatio>(trozas: readonly T[], f: Filt
     if (f.estado && estadoDeTroza(t) !== f.estado) return false;
     if (f.especie && ((t.especieComun ?? "").trim() || "Sin especie") !== f.especie) return false;
     if (f.tramo && tramoDe(diasParada(t, hoy)) !== f.tramo) return false;
+    if (f.guia && (t.gtfNumber ?? "").trim() !== f.guia) return false;
+    if (f.titulo) {
+      const suyo = (t.permiso ?? "").trim();
+      /* Sin título es una opción de filtro con nombre propio, no la ausencia de
+         filtro: buscar «las que no declaran origen» es una tarea concreta. */
+      if (f.titulo === SIN_TITULO ? suyo !== "" : suyo !== f.titulo) return false;
+    }
     if (!q) return true;
     return [t.codificacion, t.codigoPlanta, t.especieComun, t.gtfNumber, t.proveedor, t.permiso, t.loteAserrioCode]
       .some((v) => v && plano(String(v)).includes(q));

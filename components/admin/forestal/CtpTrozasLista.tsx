@@ -21,7 +21,9 @@ import {
   ESTADO_META,
   estadoDeTroza,
   filtrarPatio,
+  opcionesDeOrigen,
   resumirPatio,
+  SIN_TITULO,
   type EstadoTroza,
   type OrdenTrozas,
 } from "@/lib/forestal/trozas-patio";
@@ -100,6 +102,19 @@ export default function CtpTrozasLista({
   /* Las opciones de los autofiltros de cabecera (Especie, Estado), con cuántas
      piezas hay detrás de cada una — de TODA la pila, no de lo filtrado. */
   const resumen = useMemo(() => resumirPatio(trozas), [trozas]);
+  /* La guía y el título son la pregunta del fiscalizador («¿qué trozas ampara
+     esta GTF?»). Viven acá y no en el padre porque no los toca ninguna otra
+     pantalla — a diferencia de estado y tramo, que se eligen desde los KPIs. */
+  const [guia, setGuia] = useState<string | null>(null);
+  const [titulo, setTitulo] = useState<string | null>(null);
+  const guiasFaceta = useMemo(
+    () => opcionesDeOrigen(trozas, "guia").map((o) => ({ value: o.valor, count: o.piezas })),
+    [trozas],
+  );
+  const titulosFaceta = useMemo(
+    () => opcionesDeOrigen(trozas, "titulo").map((o) => ({ value: o.valor, count: o.piezas })),
+    [trozas],
+  );
   const especiesFaceta = useMemo(
     () => resumen.porEspecie.map((e) => ({ value: e.especie, count: e.piezas })),
     [resumen],
@@ -109,12 +124,12 @@ export default function CtpTrozasLista({
     [resumen],
   );
   const filtradas = useMemo(
-    () => filtrarPatio(trozas, { texto, estado: estadoFiltro, especie, tramo: tramoFiltro, orden }, hoy),
-    [trozas, texto, estadoFiltro, especie, tramoFiltro, orden, hoy],
+    () => filtrarPatio(trozas, { texto, estado: estadoFiltro, especie, tramo: tramoFiltro, guia, titulo, orden }, hoy),
+    [trozas, texto, estadoFiltro, especie, tramoFiltro, guia, titulo, orden, hoy],
   );
   const visibles = filtradas.slice(0, tope);
   const sumaVisible = filtradas.reduce((a, t) => a + (t.volumenM3 ?? 0), 0);
-  const hayFiltro = Boolean(texto.trim() || estadoFiltro || especie || tramoFiltro);
+  const hayFiltro = Boolean(texto.trim() || estadoFiltro || especie || tramoFiltro || guia || titulo);
 
   /* Sólo lo LIBRE se puede apartar: lo apartado ya está en un lote y lo demás
      salió del patio. Ofrecer la casilla igual sería ofrecer un rechazo. */
@@ -132,7 +147,10 @@ export default function CtpTrozasLista({
       return s;
     });
 
-  const limpiar = () => { setTexto(""); setEspecie(null); onEstadoFiltro(null); onTramoFiltro(null); };
+  const limpiar = () => {
+    setTexto(""); setEspecie(null); onEstadoFiltro(null); onTramoFiltro(null);
+    setGuia(null); setTitulo(null);
+  };
 
   /** Lo que se está viendo, para cruzarlo en Excel contra el conteo del patio. */
   const exportar = useCallback(() => {
@@ -207,6 +225,13 @@ export default function CtpTrozasLista({
         {estadoFiltro && <Chip label={ESTADO_META[estadoFiltro].label} onQuitar={() => onEstadoFiltro(null)} />}
         {tramoFiltro && <Chip label={tramoFiltro === "fresca" ? "Menos de 30 días" : tramoFiltro === "atencion" ? "30 a 59 días" : "60 días o más"} onQuitar={() => onTramoFiltro(null)} />}
         {especie && <Chip label={especie} onQuitar={() => setEspecie(null)} />}
+        {guia && <Chip label={`Guía ${guia}`} onQuitar={() => setGuia(null)} />}
+        {titulo && (
+          <Chip
+            label={titulo === SIN_TITULO ? "Sin título declarado" : `Título ${titulo}`}
+            onQuitar={() => setTitulo(null)}
+          />
+        )}
         {texto.trim() && <Chip label={`«${texto.trim()}»`} onQuitar={() => setTexto("")} />}
         {hayFiltro && (
           <button type="button" onClick={limpiar} className="font-bold text-[var(--accent-ink)] underline dark:text-[var(--accent)]">
@@ -296,7 +321,30 @@ export default function CtpTrozasLista({
                   <th className={`${TH} text-right`}>D1 · D2 (cm)</th>
                   <th className={`${TH} text-right`}>Largo (m)</th>
                   <th className={`${TH} text-right`}>Volumen</th>
-                  <th className={TH}>Guía / origen</th>
+                  {/* Dos filtros en una columna porque son dos preguntas del
+                      mismo eje: «esta guía» y «este título habilitante». El de
+                      título ofrece además «Sin título declarado», que es como se
+                      encuentran las piezas sin origen legal para cerrarlas. */}
+                  <th className={TH}>
+                    <span className="block">Guía / origen</span>
+                    <div className="mt-1 space-y-1">
+                      <FiltroColumna
+                        label="Guía"
+                        value={guia ?? ""}
+                        options={guiasFaceta}
+                        onChange={(v) => setGuia(v || null)}
+                        placeholder="Todas las guías"
+                      />
+                      <FiltroColumna
+                        label="Título habilitante"
+                        value={titulo ?? ""}
+                        options={titulosFaceta}
+                        etiqueta={(v) => (v === SIN_TITULO ? "Sin título declarado" : v)}
+                        onChange={(v) => setTitulo(v || null)}
+                        placeholder="Todos los títulos"
+                      />
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
