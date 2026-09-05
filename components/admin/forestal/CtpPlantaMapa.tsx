@@ -721,19 +721,33 @@ export default function CtpPlantaMapa({
             <button type="button" onClick={() => setCoordModal(true)} disabled={!ready} title="Crear o ir a una zona por coordenadas GPS" className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Navigation className="h-4 w-4" /><span className="hidden lg:inline">Coordenadas</span></button>
           </>
         )}
+        {/*
+          Separador SIN `ml-auto`.
+
+          Con `ml-auto` los controles de vista se iban al extremo derecho, y como
+          la barra vive en la columna del mapa —1008 px, no el ancho de la
+          ventana— nunca entran todos en una línea: quedaban en un segundo
+          renglón pegado a la derecha, leyéndose como dos barras desalineadas en
+          vez de una que sigue. Sin él fluyen continuos y el wrap, cuando pasa,
+          arranca alineado con la primera fila.
+
+          (Los `xl:inline` de los botones de acá abajo tampoco lo resolvían: son
+          breakpoints de VENTANA y el problema es el ancho del CONTENEDOR. Sirven
+          igual en pantallas medianas, donde la columna es todavía más angosta.)
+        */}
         <span aria-hidden className="mx-0.5 hidden h-6 w-px shrink-0 bg-[var(--rule-base)] lg:block" />
-        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {conGeom.length > 0 && (
             <select value="" onChange={(e) => { if (e.target.value) flyTo(e.target.value); }} title="Ir a una zona" className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
               <option value="">Ir a zona…</option>
               {conGeom.map((z) => <option key={z.id} value={z.id}>{z.codigo}</option>)}
             </select>
           )}
-          <button type="button" onClick={locate} disabled={locating} title="Centrar el mapa en mi ubicación (GPS)" className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden sm:inline">Mi ubicación</span></button>
-          {hasZonas && <button type="button" onClick={toggleLabels} title="Mostrar los códigos sobre las zonas" className={`inline-flex h-9 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold hover:bg-[var(--surface-canvas)] ${showLabels ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"}`}><Tag className="h-4 w-4" /><span className="hidden sm:inline">Etiquetas</span></button>}
-          {conGeom.some((z) => parseCoords(z.poligono ?? null)) && <button type="button" onClick={exportGeoJSON} title="Exportar las zonas como GeoJSON (SIG / plano de planta)" className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" /><span className="hidden sm:inline">Exportar</span></button>}
-          <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Layers className="h-4 w-4" />{layer === "sat" ? "Satélite" : "Calles"}</button>
-          <button type="button" onClick={() => setFullscreen((v) => !v)} title={fullscreen ? "Salir de pantalla completa (Esc)" : "Ver el mapa a pantalla completa"} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">{fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}<span className="hidden sm:inline">{fullscreen ? "Salir" : "Pantalla completa"}</span></button>
+          <button type="button" onClick={locate} disabled={locating} title="Centrar el mapa en mi ubicación (GPS)" className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden xl:inline">Mi ubicación</span></button>
+          {hasZonas && <button type="button" onClick={toggleLabels} title="Mostrar los códigos sobre las zonas" className={`inline-flex h-9 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold hover:bg-[var(--surface-canvas)] ${showLabels ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"}`}><Tag className="h-4 w-4" /><span className="hidden xl:inline">Etiquetas</span></button>}
+          {conGeom.some((z) => parseCoords(z.poligono ?? null)) && <button type="button" onClick={exportGeoJSON} title="Exportar las zonas como GeoJSON (SIG / plano de planta)" className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" /><span className="hidden xl:inline">Exportar</span></button>}
+          <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} title={layer === "sat" ? "Ver el mapa de calles" : "Ver la imagen satelital"} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Layers className="h-4 w-4" /><span className="hidden xl:inline">{layer === "sat" ? "Satélite" : "Calles"}</span></button>
+          <button type="button" onClick={() => setFullscreen((v) => !v)} title={fullscreen ? "Salir de pantalla completa (Esc)" : "Ver el mapa a pantalla completa"} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">{fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}<span className="hidden xl:inline">{fullscreen ? "Salir" : "Pantalla completa"}</span></button>
         </div>
       </div>
 
