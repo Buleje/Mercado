@@ -44,6 +44,7 @@ import { gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { gtfDatosDesdeSerfor } from "@/lib/forestal/serfor-gtf-a-datos";
 import CtpGuiaOficialForm from "./CtpGuiaOficialForm";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { tenantCacheKey, getActiveTenantSlug } from "@/lib/tenant-cache";
 
 /** Lo que se copia al duplicar un ingreso: el camión siguiente del mismo
  *  proveedor y la misma concesión. Nunca la GTF ni el volumen. */
@@ -119,7 +120,24 @@ type GtfSerforLite = GtfSerfor;
 
 const TOP_SPECIES_SLUGS = ["tornillo", "capirona", "shihuahuaco", "cedro", "caoba"];
 
-const DRAFT_KEY = "buleje:ctp-wood-entry-draft";
+/**
+ * El borrador del ingreso, POR NEGOCIO.
+ *
+ * ⛔ Hasta 2026-09-05 la clave era global (`buleje:ctp-wood-entry-draft`, sin
+ * slug). El borrador se auto-guarda en CADA tecla y se auto-restaura al montar,
+ * y transporta el N° de GTF, el proveedor con su RUC/DNI, el título habilitante
+ * y el volumen: abrir el formulario en otro negocio lo pre-llenaba con los
+ * datos del anterior. El guard de cambio de tenant tampoco lo limpiaba —
+ * `clearAllTenantCache()` borra por una lista de prefijos y `"buleje:"` (dos
+ * puntos) no matchea `"buleje-admin-"` (guion).
+ *
+ * Dos defensas, no una: la clave lleva el slug, y el slug también viaja DENTRO
+ * del payload para descartarlo al leer si no coincide. La segunda cubre el caso
+ * en que el slug todavía no estaba resuelto al escribir — ahí `tenantCacheKey`
+ * devuelve la clave pelada y sin el chequeo interno volvería el bug.
+ */
+const DRAFT_BASE = "buleje:ctp-wood-entry-draft";
+const draftKey = () => tenantCacheKey(DRAFT_BASE);
 /** Cómo carga este operador: se respeta su última elección entre altas. */
 const MODO_CARGA_KEY = "buleje:ctp-wood-entry-modo";
 
@@ -301,11 +319,19 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   useEffect(() => {
     if (initialGtfNumber || preset) return;
     try {
-      const raw = localStorage.getItem(DRAFT_KEY);
+      const raw = localStorage.getItem(draftKey());
       if (raw) {
-        const parsed = JSON.parse(raw) as DraftData;
-        if (parsed.gtfNumber || parsed.providerName) {
-          setData({ ...INITIAL, ...parsed, entryDate: INITIAL.entryDate });
+        const parsed = JSON.parse(raw) as DraftData & { __tenant?: string };
+        const slugActual = getActiveTenantSlug();
+        // Segunda defensa: un borrador que dice ser de otro negocio se descarta
+        // aunque la clave haya coincidido. Sin `__tenant` (borrador viejo, de
+        // antes de este arreglo) también se descarta: puede ser de cualquiera.
+        const esDeEsteNegocio = Boolean(parsed.__tenant) && parsed.__tenant === slugActual;
+        if (!esDeEsteNegocio) {
+          localStorage.removeItem(draftKey());
+        } else if (parsed.gtfNumber || parsed.providerName) {
+          const { __tenant: _ignorado, ...limpio } = parsed;
+          setData({ ...INITIAL, ...limpio, entryDate: INITIAL.entryDate });
         }
       }
     } catch {}
@@ -354,7 +380,9 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   // Auto-guardar borrador
   useEffect(() => {
     try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+      // Se sella con el negocio: la clave sola no alcanza si el slug todavía
+      // no estaba resuelto cuando se escribió.
+      localStorage.setItem(draftKey(), JSON.stringify({ ...data, __tenant: getActiveTenantSlug() }));
     } catch {}
   }, [data]);
 
@@ -802,7 +830,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         });
         const j = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(j?.message ?? j?.error ?? `HTTP ${r.status}`);
-        try { localStorage.removeItem(DRAFT_KEY); } catch {}
+        try { localStorage.removeItem(draftKey()); } catch {}
         marcarProveedorUsado();
         /* Una guía que no cuadra CONSIGO MISMA no es un éxito silencioso
            (ADR-353): entra igual —el documento es el que es— pero se avisa en
@@ -898,7 +926,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         throw new Error(r.message ?? (r.issues && r.issues[0]?.message) ?? r.error ?? `HTTP ${res.status}`);
       }
 
-      try { localStorage.removeItem(DRAFT_KEY); } catch {}
+      try { localStorage.removeItem(draftKey()); } catch {}
       marcarProveedorUsado();
 
       if (keepOpen) {

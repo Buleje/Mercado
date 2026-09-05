@@ -19,12 +19,14 @@ import { logger } from "@/lib/logger";
  *    SERFOR; borrarlo deja al titular sin poder respaldar lo que declaró. Si hay
  *    alguno, la purga se niega ENTERA y dice cuál — reabrirlo es una decisión
  *    aparte, con su propio rastro. Aplica a los cuatro alcances por igual.
- * 2. **Un alcance parcial nunca rompe lo que deja vivo.** `soloSinTocar()` saca
- *    de la lista cualquier corrida que un despacho, un reproceso o un lote de
- *    producción todavía referencia — el `onDelete: Restrict` de esas tres
- *    relaciones es la red de seguridad si el filtro se equivocara, pero el
- *    filtro va primero para poder decir CUÁNTAS se saltaron en vez de fallar
- *    la transacción entera (Brandon, 2026-09-01).
+ * 2. **Un alcance parcial nunca rompe lo que deja vivo.** `corridasSinTocar()`
+ *    saca de la lista cualquier corrida todavía referenciada (la lista completa,
+ *    más abajo). El filtro va primero para poder decir CUÁNTAS se saltaron en
+ *    vez de fallar la transacción entera (Brandon, 2026-09-01).
+ *    ⚠️ El `onDelete: Restrict` es red de seguridad SÓLO para despacho,
+ *    reproceso y lote comercial. El lote de aserrío y las trozas NO tienen esa
+ *    red —id suelto y `SetNull` respectivamente—, así que para ellos el filtro
+ *    no es la primera línea de defensa: es la única.
  * 3. **Siempre se cuenta antes de borrar**, y el conteo se le muestra al
  *    operador. Un «¿seguro?» sin números no es una confirmación informada.
  * 4. **Queda auditado** con el detalle de cuánto se borró de cada cosa. Un libro
@@ -35,9 +37,25 @@ import { logger } from "@/lib/logger";
  * | Alcance | Qué borra | Qué NUNCA toca |
  * |---|---|---|
  * | `trozas_disponibles` | Trozas del patio sin consumir, sin despachar, sin hijos de retrozado | El ingreso (GTF) — queda como evidencia, aunque quede en 0 piezas |
- * | `madera_disponible` | Corridas de producción con saldo (`quantity > 0`) y CERO despacho/reproceso/lote encima | Cualquier corrida que un despacho, reproceso o lote de producción referencie |
- * | `consumo` | TODAS las corridas de producción sin despacho/reproceso/lote encima (incluye las que no llegaron a declarar `quantity`) | Idem — se salta y CUENTA las que están tocadas |
+ * | `madera_disponible` | Corridas de producción con saldo (`quantity > 0`) y CERO referencia encima | Cualquier corrida referenciada — ver la lista completa abajo |
+ * | `consumo` | TODAS las corridas de producción sin referencias encima (incluye las que no llegaron a declarar `quantity`) | Idem — se salta y CUENTA las que están tocadas |
  * | `todo` | El libro entero: ingresos, trozas, producción, despachos, puentes | Nada — es el purge histórico, sin cambios de comportamiento |
+ *
+ * ## Qué cuenta como «referencia» (la lista, completa)
+ *
+ * Una corrida se salva si algo de esto la apunta: un **despacho**, un
+ * **reproceso** (como origen o como destino), un **lote comercial**
+ * (`ForestProdLoteMiembro`, ADR-136), un **lote de aserrío**
+ * (`ForestLoteAserrio`, ADR-334) o una **troza** que declara haberse consumido
+ * en ella.
+ *
+ * ⛔ Los dos últimos FALTABAN hasta 2026-09-05, y ninguno de los dos falla solo:
+ * `ForestLoteAserrio.produccionEntryId` es un id suelto sin `@relation`, así que
+ * no hay `onDelete: Restrict` que frene nada; y la troza es `SetNull`, así que
+ * el borrado pasa limpio y deja una pieza «consumida por nadie». Este docstring
+ * decía «lote de producción» y con eso parecía cubrir los dos: `ForestProdLoteMiembro`
+ * (comercial) y `ForestLoteAserrio` (el de la sierra) son cosas distintas con
+ * nombres parecidos, y esa confusión es la que dejó el hueco.
  */
 
 export type ScopeVaciado = "trozas_disponibles" | "madera_disponible" | "consumo" | "todo";
@@ -51,7 +69,8 @@ export type ConteoDelLibro = {
   origenes: number;
   total: number;
   /** Sólo en `consumo`/`madera_disponible`: corridas que se salvaron por tener
-   *  despacho, reproceso o lote encima — no es un error, es el guard actuando. */
+   *  algo encima (despacho, reproceso, lote comercial, lote de aserrío o trozas
+   *  consumidas) — no es un error, es el guard actuando. */
   saltadas?: number;
 };
 
@@ -83,7 +102,8 @@ async function corridasSinTocar(
   if (vivas.length === 0) return [];
   const ids = vivas.map((v) => v.id);
 
-  const [despachos, reprocesosOrigen, reprocesosDestino, loteMiembros] = await Promise.all([
+  const [despachos, reprocesosOrigen, reprocesosDestino, loteMiembros, lotesAserrio, trozasConsumidas] =
+    await Promise.all([
     prisma.forestCtpDespachoOrigen.findMany({
       where: { tenantId, produccionEntryId: { in: ids } },
       select: { produccionEntryId: true },
@@ -108,12 +128,40 @@ async function corridasSinTocar(
       select: { produccionEntryId: true },
       distinct: ["produccionEntryId"],
     }),
+    /* ⛔ El LOTE DE ASERRÍO (ADR-334) — el que faltaba, y el que más duele.
+       `ForestLoteAserrio.produccionEntryId` es un id SUELTO: no tiene
+       `@relation` en el schema, así que tampoco hay `onDelete: Restrict` que
+       frene el borrado. Sin esta consulta, vaciar «Consumo» o «Madera
+       disponible» borraba EN DURO la corrida que un lote todavía apunta: el
+       lote quedaba en `consumido` señalando una fila inexistente y su
+       producción y su rendimiento —lo que se mira— desaparecían del libro sin
+       que nadie lo hubiera pedido.
+       No confundir con `ForestProdLoteMiembro` de acá arriba: ése es el lote
+       COMERCIAL (ADR-136). Son dos cosas distintas con nombres parecidos, y
+       esa confusión es exactamente la que dejó el hueco. */
+    prisma.forestLoteAserrio.findMany({
+      where: { tenantId, deletedAt: null, produccionEntryId: { in: ids } },
+      select: { produccionEntryId: true },
+      distinct: ["produccionEntryId"],
+    }),
+    /* Y las TROZAS que declaran haberse consumido en esta corrida. Su relación
+       es `onDelete: SetNull`, así que el borrado no falla: deja la troza con
+       `consumidaEnId` en null pero conservando `fechaConsumo` y
+       `loteAserrioId` — una pieza "consumida por nadie", que es peor que un
+       error porque cuadra en los conteos y miente en la trazabilidad. */
+    prisma.woodEntryTroza.findMany({
+      where: { tenantId, consumidaEnId: { in: ids } },
+      select: { consumidaEnId: true },
+      distinct: ["consumidaEnId"],
+    }),
   ]);
   const tocadas = new Set<string>([
     ...despachos.map((d) => d.produccionEntryId),
     ...reprocesosOrigen.map((r) => r.origenEntryId),
     ...reprocesosDestino.map((r) => r.destinoEntryId),
     ...loteMiembros.map((l) => l.produccionEntryId),
+    ...lotesAserrio.map((l) => l.produccionEntryId).filter((x): x is string => Boolean(x)),
+    ...trozasConsumidas.map((t) => t.consumidaEnId).filter((x): x is string => Boolean(x)),
   ]);
 
   return vivas.filter((v) => !tocadas.has(v.id) && (!soloConSaldo || Number(v.quantity ?? 0) > 0));
