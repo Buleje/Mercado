@@ -47,6 +47,24 @@ const NUCLEO: readonly AgentDomain[] = ["analytics", "orders", "inventory"];
  * No son etiquetas técnicas: son el vocabulario del negocio. «Petróleo» acá es
  * diésel, «plata» es dinero, «trozas» y «GTF» son del libro forestal.
  */
+/**
+ * Cuántas palabras tiene el diccionario de cada dominio.
+ *
+ * Se expone SÓLO para que un test pueda comprobar que ningún dominio quedó sin
+ * vocabulario. Es el fallo más silencioso de todo el sistema de agentes: sin
+ * palabras, sus tools nunca se le mandan al modelo, el modelo contesta «no
+ * puedo hacer eso» y desde afuera parece una decisión suya y no un diccionario
+ * vacío. No devuelve las palabras: sólo el conteo, que es lo que hay que
+ * verificar.
+ */
+export function palabrasPorDominio(): Record<AgentDomain, number> {
+  const out = {} as Record<AgentDomain, number>;
+  for (const [dominio, palabras] of Object.entries(PALABRAS)) {
+    out[dominio as AgentDomain] = palabras.length;
+  }
+  return out;
+}
+
 const PALABRAS: Record<AgentDomain, readonly string[]> = {
   plata: [
     "anota", "anotar", "anotame", "anotalo", "apunta", "apuntar", "apuntame",

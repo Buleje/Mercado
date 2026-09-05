@@ -12,8 +12,14 @@
  *   3. **n8n** — para lo que ninguno de los dos cubre: un correo, una planilla;
  *      y disparar flujos ya armados desde el chat del panel.
  *
- * Los dos terminan en el mismo lugar (`lib/asistente/conversar`) y con la misma
+ * Los tres terminan en el mismo lugar (`lib/asistente/conversar`) y con la misma
  * confirmación: cambia el canal, no la regla.
+ *
+ * Arriba de todo va el estado de la IA. No es decoración: cuando el proveedor da
+ * de baja un modelo, los canales siguen recibiendo mensajes y contestando «no
+ * pude responder» —parece un problema de conexión y es un 404—. Antes de
+ * preguntarse por qué el bot no entendió algo, conviene saber si el modelo
+ * existe.
  */
 
 import dynamic from "next/dynamic";
@@ -23,6 +29,7 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 // `ssr: false`: los dos paneles leen credenciales y estado en vivo del servidor
 // de Telegram — no hay nada que renderizar de antemano.
+const IASaludPanel = dynamic(() => import("@/components/admin/automatizaciones/IASaludPanel"), { loading: S, ssr: false });
 const WhatsAppAnotarPanel = dynamic(() => import("@/components/admin/automatizaciones/WhatsAppAnotarPanel"), { loading: S, ssr: false });
 const TelegramPanel = dynamic(() => import("@/components/admin/automatizaciones/TelegramPanel"), { loading: S, ssr: false });
 const N8nPanel = dynamic(() => import("@/components/admin/automatizaciones/N8nPanel"), { loading: S, ssr: false });
@@ -36,6 +43,7 @@ export default function AutomatizacionesModule() {
         description="Dictale por WhatsApp o Telegram, o conectá n8n para que tus flujos anoten en Buleje."
         icon={Webhook}
       />
+      <IASaludPanel />
       <WhatsAppAnotarPanel />
       <TelegramPanel />
       <N8nPanel />

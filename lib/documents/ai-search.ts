@@ -1,6 +1,7 @@
 import "server-only";
 import { logger } from "@/lib/logger";
 import { fetchGroqWithRetry } from "@/lib/groq-fetch";
+import { groqProvider } from "@/lib/llm-providers/groq";
 
 /**
  * ADR-119 — Búsqueda semántica de documentos.
@@ -40,7 +41,8 @@ export async function expandSearchTerms(query: string): Promise<string[]> {
     const resp = await fetchGroqWithRetry(
       apiKey ?? "",
       {
-        model: "llama-3.1-8b-instant",
+        // Del registro (ver lib/llm-providers/groq.ts).
+        model: groqProvider.models.cheap,
         messages: [{ role: "user", content: prompt }],
         temperature: 0.2,
         max_tokens: 200,
