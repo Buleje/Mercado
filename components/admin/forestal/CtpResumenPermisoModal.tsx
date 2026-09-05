@@ -336,9 +336,28 @@ export default function CtpResumenPermisoModal({
     window.location.href = "/admin?tab=forestal-herramientas";
   }
 
+  /**
+   * La rolliza que TODAVÍA está para repartir.
+   *
+   * ⛔ Este modal recibe a propósito TODAS las trozas del permiso —incluidas las
+   * ya consumidas y las despachadas— porque el resumen por permiso tiene que
+   * mostrar todo lo que entró con ese título habilitante: es lo que un
+   * fiscalizador pregunta. Pero al DISTRIBUIR, sembrar bloques con esas piezas
+   * es prometer madera que ya no está en el patio, y el reparto se arma sobre un
+   * volumen que no existe.
+   *
+   * Se filtra acá y no en `bloquesDeGuiaDe()`, que sirve a los dos usos: el que
+   * cambia de significado es este, no la función.
+   *
+   * `noRecepcionada` entra también: declarada en la guía pero nunca bajó del
+   * camión (ADR-325). Nunca estuvo en el patio.
+   */
+  const paraRepartir = (ts: readonly TrozaConsumible[]) =>
+    ts.filter((t) => !t.consumidaEnId && !t.despachadaEnId && !t.noRecepcionada);
+
   function distribuirPermisoActual() {
     if (!grupo) return;
-    const deGuias = bloquesDeGuiaDe(grupo.trozas);
+    const deGuias = bloquesDeGuiaDe(paraRepartir(grupo.trozas));
     const deLotes: CandidatoBloque[] = lotesConRollizaSobrante
       .filter((l) => lotesElegidos.has(l.id))
       .map((l) => ({ etiqueta: `Lote ${l.code}`, especie: l.speciesCommon, m3: volumenLibre(l) }));
@@ -347,7 +366,7 @@ export default function CtpResumenPermisoModal({
 
   function distribuirSeleccionMulti() {
     const trozasElegidas = grupos.filter((g) => seleccionMulti.has(g.clave)).flatMap((g) => g.trozas);
-    const deGuias = bloquesDeGuiaDe(trozasElegidas);
+    const deGuias = bloquesDeGuiaDe(paraRepartir(trozasElegidas));
     // SÓLO la rolliza sin aserrar de los lotes elegidos — la aserrada YA
     // producida (`aserradaSobranteM3`) nunca se siembra como bloque.
     const deLotes: CandidatoBloque[] = lotesConSobra

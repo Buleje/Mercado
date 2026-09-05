@@ -25,13 +25,28 @@ const Query = z.object({
   limite: z.coerce.number().int().min(1).max(500).optional(),
 });
 
-/** Un día suelto del formulario (`AAAA-MM-DD`) → mediodía UTC, sin correrse en Lima. */
-const dia = z
+/**
+ * Un día suelto del formulario (`AAAA-MM-DD`) → mediodía UTC, sin correrse en Lima.
+ *
+ * ⛔ `undefined` se preserva como `undefined`, y eso NO es un detalle de tipos.
+ * Antes el transform devolvía `null` para cualquier ausencia, así que «no mandé
+ * este campo» y «borrá este campo» llegaban idénticos a la capa de datos. El
+ * `update()` de la DB class ya distingue bien (`!== undefined ? … : {}`), pero
+ * nunca recibía un `undefined`: editar el NOMBRE de un lote le borraba en
+ * silencio el inicio y el fin del proceso — las fechas que dicen cuánto tardó
+ * la sierra, que no se recuperan de ningún lado.
+ *
+ * Los tres casos, que son tres:
+ *   · el campo no viene            → `undefined` → no se toca
+ *   · viene `null` o vacío         → `null`      → se borra a propósito
+ *   · viene una fecha              → `Date`      → se escribe
+ */
+export const dia = z
   .string()
   .trim()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD")
   .nullish()
-  .transform((v) => (v ? new Date(`${v}T12:00:00.000Z`) : null));
+  .transform((v) => (v === undefined ? undefined : v ? new Date(`${v}T12:00:00.000Z`) : null));
 
 /** Un paquete de producción declarado (ADR-349), igual que en `declarar_produccion`. */
 const paqueteSchema = z.object({

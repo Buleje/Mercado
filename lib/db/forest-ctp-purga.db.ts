@@ -74,13 +74,23 @@ export type ConteoDelLibro = {
   saltadas?: number;
 };
 
-/** Una troza "disponible" para el vaciado: nunca tocó ni la sierra ni un camión,
- *  y no es una madre con hijos de retrozado (borrarla arrastraría a hijos que
- *  bien podrían estar consumidos). */
+/**
+ * Una troza "disponible" para el vaciado: nunca tocó ni la sierra ni un camión,
+ * no es una madre con hijos de retrozado (borrarla arrastraría a hijos que bien
+ * podrían estar consumidos) y **no está apartada en un lote de aserrío**.
+ *
+ * ⛔ `loteAserrioId: null` faltaba. Una troza ya cargada en un lote abierto
+ * —armado y esperando la sierra— tiene `consumidaEnId` y `despachadaEnId` en
+ * null, así que entraba como "disponible" y se borraba: el lote quedaba vacío
+ * sin que nadie lo hubiera pedido, y sin fallar, porque la relación con el lote
+ * es `onDelete: SetNull`. Armar un lote es trabajo de patio de una mañana;
+ * "disponible" tiene que significar que nadie la apartó todavía.
+ */
 const TROZA_DISPONIBLE_WHERE = (tenantId: string) => ({
   tenantId,
   consumidaEnId: null,
   despachadaEnId: null,
+  loteAserrioId: null,
   retrozos: { none: {} },
 });
 

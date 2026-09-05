@@ -99,6 +99,52 @@ describe("rendimiento del lote", () => {
     const l = lote({ status: "consumido", produccion: corrida({ viva: false }) });
     expect(rendimientoLote(l)).toBeNull();
   });
+
+  /**
+   * Desde ADR-383 un lote se puede reabrir y aserrar en tandas. El rendimiento
+   * tiene que ser TODO lo que salió sobre TODO lo que entró: antes dividía sólo
+   * la ÚLTIMA corrida por el volumen entero y el lote aparecía rindiendo la
+   * mitad de lo que rindió.
+   */
+  it("con el lote aserrado en DOS tandas, suma las dos corridas", () => {
+    const l = lote({
+      status: "consumido",
+      corridas: [corrida({ quantity: 1 }), corrida({ quantity: 2 })],
+      produccion: corrida({ quantity: 2 }),
+    });
+    // 1 + 2 = 3 sobre 5 → 60 %, no 2/5 = 40 %.
+    expect(rendimientoLote(l)).toBe(60);
+  });
+
+  it("no cuenta dos veces la corrida que cerró el lote", () => {
+    // `corridas` ya la incluye; sumar `produccion` aparte daría 5/5 = 100 %.
+    const cerro = corrida({ quantity: 3 });
+    const l = lote({ status: "consumido", corridas: [cerro], produccion: cerro });
+    expect(rendimientoLote(l)).toBe(60);
+  });
+
+  it("una tanda anulada no suma", () => {
+    const l = lote({
+      status: "consumido",
+      corridas: [corrida({ quantity: 3 }), corrida({ quantity: 5, viva: false })],
+    });
+    expect(rendimientoLote(l)).toBe(60);
+  });
+
+  it("basta UNA tanda en otra unidad para no mostrar porcentaje", () => {
+    // Un porcentaje sobre una suma incompleta miente peor que no mostrarlo.
+    const l = lote({
+      status: "consumido",
+      corridas: [corrida({ quantity: 3 }), corrida({ unit: "pt", quantity: 1200 })],
+    });
+    expect(rendimientoLote(l)).toBeNull();
+  });
+
+  it("sin `corridas` cae a `produccion` sola — las vistas que no la traen siguen andando", () => {
+    const l = lote({ status: "consumido", produccion: corrida({ quantity: 3 }) });
+    expect(l.corridas).toBeUndefined();
+    expect(rendimientoLote(l)).toBe(60);
+  });
 });
 
 describe("margen declarable del lote (ADR-365)", () => {

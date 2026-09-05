@@ -185,18 +185,37 @@ export function volumenLibre(lote: Pick<LoteAserrio, "trozas">): number {
 }
 
 /**
- * Cuánto rindió el lote: lo que salió de la corrida sobre lo que entró.
+ * Cuánto rindió el lote: TODO lo que salió sobre TODO lo que entró.
  *
- * Sólo cuando la corrida declaró en m³. Convertir pie tablar a m³ para poder
- * mostrar un porcentaje sería inventar el dato — es la misma regla que aplica
- * la vista de Consumos con `corridasOtraUnidad`.
+ * ⛔ Antes dividía una sola corrida —`produccion`, la que cerró el lote— por el
+ * volumen ENTERO. Mientras el lote se aserraba de una vez, esas dos mitades
+ * hablaban de lo mismo. Desde que un lote se puede reabrir y aserrar en tandas
+ * (ADR-383), no: con veinte trozas el lunes y quince el miércoles, el numerador
+ * era lo que produjo la segunda tanda y el denominador las treinta y cinco. El
+ * lote aparecía rindiendo la mitad de lo que rindió, y el rendimiento es
+ * justamente lo que se mira para saber si la sierra está bien calibrada.
+ *
+ * `corridas` ya trae TODAS las vivas del lote —la que lo cerró incluida y sin
+ * repetirla (ver `list()` en la DB class)— así que se suma esa lista y no se
+ * agrega `produccion` aparte, que la contaría dos veces.
+ *
+ * Sólo cuando TODAS declararon en m³. Convertir pie tablar para poder mostrar un
+ * porcentaje sería inventar el dato — misma regla que la vista de Consumos con
+ * `corridasOtraUnidad`. Y basta UNA en otra unidad para que el total no se pueda
+ * sumar: un porcentaje sobre una suma incompleta miente peor que no mostrarlo.
  */
 export function rendimientoLote(lote: LoteAserrio): number | null {
-  const c = lote.produccion;
-  if (!c || !c.viva) return null;
-  if (c.unit !== "m3") return null;
-  const producido = Number(c.quantity ?? 0);
-  if (!(producido > 0) || !(lote.volumenM3 > 0)) return null;
+  if (!(lote.volumenM3 > 0)) return null;
+
+  /* `corridas` es la fuente cuando está; `produccion` sola es el fallback para
+     las vistas que no la traen (nunca las dos, o se cuenta doble). */
+  const vivas = (lote.corridas ?? []).filter((c) => c.viva);
+  const cuentan = vivas.length > 0 ? vivas : lote.produccion?.viva ? [lote.produccion] : [];
+  if (cuentan.length === 0) return null;
+  if (cuentan.some((c) => c.unit !== "m3")) return null;
+
+  const producido = cuentan.reduce((a, c) => a + Number(c.quantity ?? 0), 0);
+  if (!(producido > 0)) return null;
   return Math.round((producido / lote.volumenM3) * 1000) / 10;
 }
 
