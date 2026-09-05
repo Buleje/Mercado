@@ -1437,7 +1437,25 @@ body {
  *
  * Uso: `className="modal-backdrop"` en el overlay fijo del modal.
  * Colores via tokens CSS para adaptarse a dark mode automaticamente.
- */
+ *
+ * [FIX 2026-08-31] Va DENTRO de `@layer components` a propósito — sin esto,
+ * esta regla queda SIN capa (fuera de cualquier @layer) y en cascade layers
+ * lo sin-capa gana SIEMPRE a lo que está en `@layer utilities`, sin importar
+ * el orden ni la especificidad. El comentario de abajo ("si el consumer
+ * agrega flex-X, se sobreescribe") era el INTENTO, pero de hecho un
+ * `items-start`/`bg-black/50` del consumer nunca ganaba: quedaba pintado,
+ * simplemente no hacía nada. Encontrado en Anexo04Modal — con el contenido
+ * más alto que el viewport, `align-items:center` (nunca reemplazado por el
+ * `items-start` que el modal SÍ tenía en su className) centraba la hoja y
+ * la cortaba por igual arriba y abajo — el header y los botones de acción
+ * quedaban tapados por el borde de la pantalla. Mismo bug, silencioso,
+ * también en CtpBuscarGtf y AdminCommandPalette (grep `modal-backdrop.*
+ * items-start`). Dentro de `@layer components` (prioridad MENOR a
+ * `@layer utilities`), un `items-start`/`bg-black/50` del consumer vuelve a
+ * ganar como siempre se esperó — los ~55 modales que no agregan overrides
+ * no cambian en nada, porque no hay ninguna utility peleando esas
+ * propiedades. */
+@layer components {
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1457,6 +1475,7 @@ body {
 }
 .dark .modal-backdrop {
   background: rgb(15 23 42 / 0.72); /* slate-900 72% para dark mode */
+}
 }
 /* Admin shell: mantiene el whiteout blanco (override explicito del usuario). */
 /* NOTE: algunos modales ya aplican su propio `flex items-center` al
@@ -2139,6 +2158,23 @@ button,
   --data-7: #ff6b5b;
   --data-8: #8b5cf6;
 
+  /* ── Identidad de bloque (forestal · reparto de rolliza) ────────────────
+     Seis colores para DISTINGUIR bloques entre sí, no para juzgarlos: van en
+     franjas y puntos de 3-6 px, nunca en texto ni en áreas grandes.
+     Deliberadamente separados de la familia `--data-{warning,error}`: en el
+     reparto el ámbar y el rojo ya significan «esto no cuadra», y reusarlos
+     como color de identidad haría que el bloque 3 pareciera un problema.
+     El teal de marca va ÚLTIMO a propósito: como primer color, el bloque 1
+     se confundía con los acentos generales del panel (botones, totales) y
+     dejaba de leerse como identidad de fila.
+     Valores para superficie CLARA; el bloque dark de más abajo los sube. */
+  --bloque-1: #1d4ed8;
+  --bloque-2: #d9480f;
+  --bloque-3: #6d28d9;
+  --bloque-4: #15803d;
+  --bloque-5: #be185d;
+  --bloque-6: #0d8f8f;
+
   /* ── Data state scale (Sprint C1 — ADR-075 addendum) ─────────────────────
      Escalas {50, 100, 500, 600, 700} por estado semántico.
      Uso: bg-[var(--data-*-50)] para soft bg (alerts), text-[var(--data-*)]
@@ -2396,6 +2432,15 @@ button,
   --data-6: #4f7fe8;
   --data-7: #e05a45;
   --data-8: #8b5cf6;
+
+  /* Identidad de bloque sobre superficie OSCURA (`--surface-raised` = #1c2230):
+     los mismos seis hues, subidos de luminosidad para que la franja se vea. */
+  --bloque-1: #60a5fa;
+  --bloque-2: #fb923c;
+  --bloque-3: #a78bfa;
+  --bloque-4: #4ade80;
+  --bloque-5: #f472b6;
+  --bloque-6: #14C2C2;
 
   /* ── Data state scale — dark overrides (Sprint C1) ───────────────────────
      Light -500 no sirve en dark — usamos -400/300 para contraste AA sobre
