@@ -80,8 +80,9 @@ type MejorPagadorMes = {
  *  - "resumen"  → KPI + progreso + proyección + banners (pagaron, mejor pagador, más antiguo).
  *  - "analisis" → gráfica tendencia 12m + ranking riesgo + calendario + tags por zona.
  *  - "deudores" → ninguna sección de FiadoStats (la tabla la pinta FiadosModule).
+ *  - "cobranza" → ninguna sección de FiadoStats (CobranzaView pinta la suya).
  */
-export type FiadoStatsView = "all" | "resumen" | "analisis" | "deudores";
+export type FiadoStatsView = "all" | "resumen" | "analisis" | "deudores" | "cobranza";
 
 type FiadoStatsProps = {
   fiados: Fiado[];

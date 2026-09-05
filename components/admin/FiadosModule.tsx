@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import { waLink } from "@/lib/whatsapp-link";
 import { tenantCacheKey } from "@/lib/tenant-cache";
+import { computeReliabilityScore, type ReliabilityScore } from "@/lib/fiados/reliability";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 
 import dynamic from "next/dynamic";
@@ -33,6 +34,7 @@ const FiadoModals = dynamic(() => import("./fiados/FiadoModals"), { ssr: false }
 const FiadoStats = dynamic(() => import("./fiados/FiadoStats"), { ssr: false });
 const FiadoMarketplaceToggle = dynamic(() => import("./fiados/FiadoMarketplaceToggle"), { ssr: false });
 const CreditRequestsPanel = dynamic(() => import("./fiados/CreditRequestsPanel"), { ssr: false });
+const FiadoCobranzaView = dynamic(() => import("./fiados/cobranza/CobranzaView"), { ssr: false });
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -48,7 +50,7 @@ type FiadoCuota = {
   createdAt: string;
 };
 
-type Fiado = {
+export type Fiado = {
   id: string;
   tenantId: string;
   customerId: string;
@@ -126,55 +128,7 @@ function FiadoSemaphore({ fiado }: { fiado: { status: string; fechaVence?: strin
   return <StatusBadge variant="success" label="Al dia" dot size="sm" />;
 }
 
-// ── Mejora 11: Score de confiabilidad para fiados ────────────────────────────
-
-type ReliabilityScore = {
-  score: number; // 1-5
-  label: string;
-  pagosATiempo: number;
-  pagosTotal: number;
-  diasPromedioPago: number;
-  sufficientHistory: boolean;
-};
-
-function computeReliabilityScore(fiados: Fiado[]): ReliabilityScore {
-  // Solo considerar fiados completados (PAGADO)
-  const completados = fiados.filter(f => f.status === "PAGADO");
-  if (completados.length < 3) {
-    return { score: 0, label: "Sin historial", pagosATiempo: 0, pagosTotal: 0, diasPromedioPago: 0, sufficientHistory: false };
-  }
-
-  let pagosATiempo = 0;
-  let totalDiasPago = 0;
-
-  for (const f of completados) {
-    const createdAt = new Date(f.createdAt).getTime();
-    const updatedAt = new Date(f.updatedAt).getTime(); // pagadoEn ~ updatedAt
-    const diasPago = Math.max(0, Math.floor((updatedAt - createdAt) / (1000 * 60 * 60 * 24)));
-    totalDiasPago += diasPago;
-
-    if (f.fechaVence) {
-      const vence = new Date(f.fechaVence).getTime();
-      if (updatedAt <= vence) pagosATiempo++;
-    } else {
-      // Sin fecha de vencimiento, considerar "a tiempo" si pagó en <30 días
-      if (diasPago < 30) pagosATiempo++;
-    }
-  }
-
-  const pagosTotal = completados.length;
-  const pctATiempo = pagosTotal > 0 ? (pagosATiempo / pagosTotal) * 100 : 0;
-  const diasPromedioPago = pagosTotal > 0 ? totalDiasPago / pagosTotal : 0;
-
-  let score: number;
-  if (pctATiempo > 90 && diasPromedioPago < 7) score = 5;
-  else if (pctATiempo > 75 && diasPromedioPago < 15) score = 4;
-  else if (pctATiempo > 50 && diasPromedioPago < 30) score = 3;
-  else if (pctATiempo > 25) score = 2;
-  else score = 1;
-
-  return { score, label: `${score}/5`, pagosATiempo, pagosTotal, diasPromedioPago, sufficientHistory: true };
-}
+// ── Mejora 11: Score de confiabilidad para fiados (lib/fiados/reliability.ts) ──
 
 // ── Mejora QW-10h: Streak de pagos consecutivos a tiempo ────────────────────
 
@@ -309,11 +263,11 @@ export default function FiadosModule() {
   // table-density, fiados-tab) no tenían tenant-scope — un superadmin que
   // pasa de un negocio a otro en la misma pestaña heredaba el tab/densidad/
   // ancho del negocio anterior.
-  type FiadoTab = "resumen" | "deudores" | "analisis";
+  type FiadoTab = "resumen" | "deudores" | "cobranza" | "analisis";
   const [activeTab, setActiveTab] = useState<FiadoTab>(() => {
     try {
       const stored = localStorage.getItem(tenantCacheKey("fiados-tab")) as FiadoTab | null;
-      if (stored === "resumen" || stored === "deudores" || stored === "analisis") return stored;
+      if (stored === "resumen" || stored === "deudores" || stored === "cobranza" || stored === "analisis") return stored;
     } catch { /* localStorage bloqueado */ }
     return "resumen";
   });
@@ -327,6 +281,7 @@ export default function FiadosModule() {
   const FIADOS_TAB_ITEMS: Array<{ id: FiadoTab; label: string; badge?: number }> = [
     { id: "resumen", label: "Resumen" },
     { id: "deudores", label: "Deudores", badge: fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length },
+    { id: "cobranza", label: "Cobranza", badge: vencidosTotales > 0 ? vencidosTotales : undefined },
     { id: "analisis", label: "Análisis", badge: vencidosTotales > 0 ? vencidosTotales : undefined },
   ];
 
@@ -1053,6 +1008,9 @@ export default function FiadosModule() {
       >
       {/* Stats — pasa `view` para que FiadoStats renderice solo los widgets de cada tab. */}
       <FiadoStats view={activeTab} fiados={fiados} loading={loading} totalSaldo={totalSaldo} tendenciaMorosidad={tendenciaMorosidad} proyeccionCobro={proyeccionCobro} fiadoMasAntiguo={fiadoMasAntiguo} pagosEstaSemana={pagosEstaSemana} mejorPagadorMes={mejorPagadorMes} openDetail={openDetail} search={search} setSearch={setSearch} setSelected={setSelected} statusFilter={statusFilter} setStatusFilter={setStatusFilter} FiadoTendenciaCobro={FiadoTendenciaCobroChart} />
+
+      {/* Cobranza — port del sistema de Adelantos (tramos, gestión, modo llamada). */}
+      {activeTab === "cobranza" && <FiadoCobranzaView fiados={fiados} loading={loading} onRecordado={fetchFiados} />}
 
       {/* UX Mejora 20: Density toggle — solo en tab Deudores */}
       {activeTab === "deudores" && <div className="flex items-center gap-1 mb-2">
