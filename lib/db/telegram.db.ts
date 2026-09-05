@@ -52,6 +52,42 @@ function leerChats(json: string | null | undefined): ChatVinculado[] {
   return Array.isArray(v) ? (v as ChatVinculado[]) : [];
 }
 
+/**
+ * Saca este chat de todo negocio que NO sea el destino.
+ *
+ * Es lo que hace que «mudar el chat al forestal» sea de verdad una mudanza y no
+ * una copia. Se recorre por `contains` igual que la lectura, y se confirma
+ * parseando: el LIKE es un filtro barato, no la prueba.
+ */
+async function sacarDeOtrosNegocios(tenantIdDestino: string, chatId: number): Promise<void> {
+  const filas = (await prisma.settings.findMany({
+    where: { featureFlagsJson: { contains: `"chatId":${chatId}` } },
+    select: { tenantId: true, featureFlagsJson: true },
+  })) as Array<{ tenantId: string; featureFlagsJson: string | null }>;
+
+  for (const fila of filas) {
+    if (fila.tenantId === tenantIdDestino) continue;
+    const chats = leerChats(fila.featureFlagsJson);
+    if (!chats.some((c) => c.chatId === chatId)) continue;
+
+    const flags = leerFlags(fila.featureFlagsJson);
+    await prisma.settings.update({
+      where: { tenantId: fila.tenantId },
+      data: {
+        featureFlagsJson: JSON.stringify({
+          ...flags,
+          [CLAVE]: chats.filter((c) => c.chatId !== chatId),
+        }),
+      },
+    });
+    logger.info("[telegram] chat mudado de negocio", {
+      desde: fila.tenantId,
+      hacia: tenantIdDestino,
+      chatId,
+    });
+  }
+}
+
 export const TelegramDB = {
   /** Los chats vinculados de un negocio. */
   async listar(tenantId: string): Promise<ChatVinculado[]> {
@@ -78,19 +114,51 @@ export const TelegramDB = {
       select: { tenantId: true, featureFlagsJson: true },
     })) as Array<{ tenantId: string; featureFlagsJson: string | null }>;
 
+    /**
+     * Se juntan TODAS las coincidencias en vez de cortar en la primera.
+     *
+     * `vincular()` saca el chat de cualquier otro negocio, así que un chat en
+     * dos lugares no debería existir. Pero si existiera —datos anteriores a ese
+     * arreglo, dos instancias escribiendo a la vez— cortar en la primera hace
+     * que a QUÉ negocio se anota dependa del orden en que la base devuelva las
+     * filas: la misma frase podría caer en un libro distinto entre dos
+     * mensajes, sin que nada lo diga. Eligiendo siempre el vínculo más reciente
+     * la respuesta es estable, y el warning deja el rastro para arreglarlo.
+     */
+    const candidatos: Array<{ tenantId: string; vinculadoEn: string }> = [];
     for (const fila of filas) {
       // El `contains` puede pegarle a `"chatId":1234` buscando `"chatId":123`,
       // así que la pertenencia se confirma parseando de verdad.
-      if (leerChats(fila.featureFlagsJson).some((c) => c.chatId === chatId)) {
-        cache.set(chatId, { tenantId: fila.tenantId, expira: Date.now() + TTL_MS });
-        return fila.tenantId;
-      }
+      const chat = leerChats(fila.featureFlagsJson).find((c) => c.chatId === chatId);
+      if (chat) candidatos.push({ tenantId: fila.tenantId, vinculadoEn: chat.vinculadoEn ?? "" });
     }
-    return null;
+    if (candidatos.length === 0) return null;
+
+    if (candidatos.length > 1) {
+      logger.warn("[telegram] un chat vinculado a varios negocios — se usa el más reciente", {
+        chatId,
+        negocios: candidatos.map((c) => c.tenantId),
+      });
+      candidatos.sort((a, b) => b.vinculadoEn.localeCompare(a.vinculadoEn));
+    }
+
+    const elegido = candidatos[0].tenantId;
+    cache.set(chatId, { tenantId: elegido, expira: Date.now() + TTL_MS });
+    return elegido;
   },
 
-  /** Vincula un chat a un negocio. Idempotente: revincular sólo actualiza. */
+  /**
+   * Vincula un chat a un negocio. Idempotente: revincular sólo actualiza.
+   *
+   * ⭐ Un chat pertenece a UN negocio: vincularlo acá lo saca de cualquier otro.
+   * Sin eso, «mudar» el chat de la bodega al forestal lo dejaba en los dos y a
+   * cuál se anotaba pasaba a depender del orden en que la base devolviera las
+   * filas. Es más barato hacer imposible el estado ambiguo que resolverlo bien
+   * en cada lectura.
+   */
   async vincular(tenantId: string, chat: Omit<ChatVinculado, "vinculadoEn">): Promise<ChatVinculado[]> {
+    await sacarDeOtrosNegocios(tenantId, chat.chatId);
+
     const row = (await prisma.settings.findUnique({
       where: { tenantId },
       select: { featureFlagsJson: true },
