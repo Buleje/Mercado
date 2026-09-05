@@ -889,19 +889,19 @@ model PurchaseOrder {
   /// factura | boleta | guia | ninguno
   invoiceType   String?
   /// ¿El costo unitario cargado ya incluye IGV? En bodega, casi siempre sí.
-  igvIncluded   Boolean        @default(true)
+  igvIncluded   Boolean   @default(true)
   /// Flete: se prorratea entre los items al recibir, para que el costo no mienta.
-  flete         Decimal?       @default(0) @db.Decimal(12, 2)
-  otrosCostos   Decimal?       @default(0) @db.Decimal(12, 2)
+  flete         Decimal?  @default(0) @db.Decimal(12, 2)
+  otrosCostos   Decimal?  @default(0) @db.Decimal(12, 2)
   /// Cuándo llegó de verdad. Comparada con deliveryDate mide al proveedor.
   receivedDate  DateTime?
   createdBy     String?
   receivedBy    String?
   cancelReason  String?
 
-  tenantId      String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   items    PurchaseItem[]
   supplier Supplier       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
@@ -1351,8 +1351,8 @@ model Expense {
   documentNumber String?
   supplierRuc    String?
   /// IGV discriminado. La base imponible es `amount - igvAmount`.
-  igvAmount      Decimal? @db.Decimal(12, 2)
-  afectoIgv      Boolean  @default(false)
+  igvAmount      Decimal?  @db.Decimal(12, 2)
+  afectoIgv      Boolean   @default(false)
   /// Foto de la boleta.
   attachmentUrl  String?
   /// Centro de costo o etiqueta libre («delivery», «forestal»).
@@ -1385,16 +1385,16 @@ model Expense {
 /// veía desde el celular— y que la comparación «presupuesto vs real» comparaba
 /// contra un número que nadie había decidido.
 model ExpenseBudget {
-  id       String @id @default(cuid())
-  tenantId String
+  id           String   @id @default(cuid())
+  tenantId     String
   /// Coincide con `Expense.category`, tal cual se guarda.
-  category String
+  category     String
   /// Techo mensual en S/. Cero = sin techo declarado.
-  montoMensual Decimal @db.Decimal(12, 2)
+  montoMensual Decimal  @db.Decimal(12, 2)
   /// Username de quien lo fijó.
-  updatedBy String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([tenantId, category])
   @@index([tenantId])
@@ -2451,6 +2451,30 @@ model FiadoCuota {
   fiado     Fiado     @relation(fields: [fiadoId], references: [id], onDelete: Cascade)
 
   @@index([fiadoId])
+}
+
+/// La bitácora de cobranza de Fiados (port de AdelantoGestion, ADR-021 §Fase 2
+/// simplificado): qué se hizo con cada cliente y qué prometió. Sin relación
+/// FK a Customer a propósito — un Fiado abierto ya impide borrar al cliente
+/// (onDelete: Restrict arriba), así que el log no necesita su propia cascada.
+model FiadoGestion {
+  id             String    @id @default(cuid())
+  tenantId       String
+  customerId     String
+  fecha          DateTime  @default(now())
+  /// RECORDATORIO | PROMESA | NO_CONTESTA | REFINANCIAR | VISITA | PAGO | OTRO
+  tipo           String    @default("RECORDATORIO")
+  nota           String?
+  /// Sólo tipo PROMESA. Vive en el CLIENTE, no en un fiado puntual: puede
+  /// abarcar varios fiados activos de la misma persona.
+  fechaPrometida DateTime?
+  montoPrometido Decimal?  @db.Decimal(12, 2)
+  /// Quién la anotó: una gestión sin autor no se le puede preguntar a nadie.
+  usuario        String?
+  createdAt      DateTime  @default(now())
+
+  @@index([tenantId, customerId, fecha])
+  @@index([tenantId, fechaPrometida])
 }
 
 // ═══════════════════════════════════════════════════════
@@ -5360,7 +5384,7 @@ model WoodEntry {
   /// terminan divergiendo, y un fiscalizador compara los dos lados del libro.
   /// JSON y no columnas porque son declaraciones de un documento ajeno: se
   /// guardan enteras y no se consultan campo por campo.
-  gtfDatos             Json?
+  gtfDatos Json?
 
   // ── Proveedor / Titular Habilitante ──────────────────
   /// SE QUEDA aunque exista `supplierId`: es el acta de la guía, no un mirror
@@ -5509,7 +5533,7 @@ model WoodEntryTroza {
   /// La guía la declara pero no llegó al patio. NO se borra la fila: el
   /// documento dice que existe, y esconderla sería alterar el acta. El volumen
   /// que sí llegó se deriva sumando las recepcionadas.
-  noRecepcionada Boolean @default(false)
+  noRecepcionada Boolean   @default(false)
   /// Cuándo bajó ESTA pieza del camión (ADR-336).
   ///
   /// El ingreso ya tiene la suya (`WoodEntry.fechaRecepcion`, ADR-335), pero una
@@ -5920,6 +5944,18 @@ model ForestCtpEntry {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
+
+  /// Marcado a mano como YA USADO (Brandon, 2026-09-01): saca la corrida de
+  /// "Productos disponibles" sin despacharla ni reprocesarla — el saldo real
+  /// (`saldosDeCorridas`) sigue contando lo mismo, esto sólo dice "no lo
+  /// ofrezcas más". Sirve para el resto que quedó sin vender/sin declarar
+  /// salida (mermas, ajustes de inventario, existencias de apertura ya
+  /// distribuidas por fuera del libro) sin fabricar un despacho que no
+  /// ocurrió. `null` = disponible como siempre. Reversible: desmarcar la
+  /// vuelve a mostrar.
+  usadoAt     DateTime?
+  usadoPor    String?
+  usadoMotivo String?
 
   /// Aserrío / secado / mano de obra (ADR-134). Input genuino: sin esto no hay margen.
   /// costoMateriaPrima y costoTotal NO se almacenan — son derivados de `consumos` (D6).
@@ -6388,12 +6424,12 @@ model ForestParty {
   /// fotografiando la hoja en el navegador, y una imagen remota sin CORS
   /// ensucia el canvas y sale en blanco. Embebida, el logo viaja con el
   /// documento y funciona igual en pantalla, en el PDF y sin señal.
-  logo              String?
+  logo String?
 
   /// Papeles del titular guardados en el Drive: [{ documentId, rotulo }].
   /// Es una lista de PUNTEROS — el archivo vive en el Drive con su versionado,
   /// acá sólo queda de qué titular es.
-  adjuntos          Json?
+  adjuntos Json?
 
   activo Boolean @default(true)
 
@@ -6455,11 +6491,11 @@ model ForestVehiculo {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  fletes ForestFlete[]
+
   @@unique([tenantId, placa])
   @@index([tenantId, activo])
   @@index([deletedAt])
-
-  fletes ForestFlete[]
 }
 
 /// Flete forestal (ADR-318) — el viaje que trae la madera al CTP o se lleva el
@@ -6581,9 +6617,9 @@ model ForestCuentaMov {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  @@unique([tenantId, fleteId])
   @@index([tenantId, parteId, fecha(sort: Desc)])
   @@index([tenantId, fecha(sort: Desc)])
-  @@unique([tenantId, fleteId])
   @@index([deletedAt])
 }
 
@@ -6618,10 +6654,10 @@ model ForestPlantacionTramite {
   titularEmail                String?
   titularDepartamento         String?
   titularProvincia            String?
-  titularDistrito              String?
+  titularDistrito             String?
   titularTipoVia              String?
   titularDireccion            String?
-  titularNumero                String?
+  titularNumero               String?
   titularDocumentoAutorizaUso String?
 
   // ── 1.2 Representante legal (opcional) ─────────────────────────────────
