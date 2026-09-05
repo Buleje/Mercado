@@ -27,6 +27,11 @@ export const AGENT_DOMAINS = [
   "caja",
   "cobranzas",
   "ui",
+  // Escritura de plata dictada («anotame el combustible del camión N12»).
+  // Todas sus acciones de escritura pasan por confirmación humana (HITL).
+  "plata",
+  // Puente con n8n: disparar flujos ya armados por el usuario.
+  "n8n",
 ] as const;
 
 export type AgentDomain = (typeof AGENT_DOMAINS)[number];

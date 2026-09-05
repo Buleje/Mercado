@@ -36,11 +36,14 @@ import {
   Copy,
   Check,
   ArrowRight,
+  Mic,
+  MicOff,
 } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useVozContinua } from "@/hooks/use-voz-continua";
 
 type Role = "user" | "assistant";
 
@@ -90,6 +93,21 @@ interface QuickPrompt {
   label: string;
   prompt: string;
 }
+
+/**
+ * Lo que se puede ANOTAR hablando o escribiendo.
+ *
+ * Va arriba y separado de las preguntas de análisis porque es una capacidad
+ * distinta —escribe en los libros del negocio, no los lee— y nadie la
+ * descubre leyendo una lista de «¿qué hago hoy?». Son frases de verdad, tal
+ * como se dicen: el punto es que se vea que no hay que hablarle raro.
+ */
+const EJEMPLOS_ANOTAR: string[] = [
+  "Anotame 25 galones de petróleo para el camión N12, a 27 el galón",
+  "Le adelanté 300 soles en efectivo a Juan Pérez",
+  "Doña Rosa me pagó 50 soles de lo que debía",
+  "Pagué 180 soles de luz del local, por Yape",
+];
 
 const QUICK_PROMPTS: QuickPrompt[] = [
   {
@@ -159,6 +177,20 @@ interface ChatIACleanProps {
   maxTokens?: number;
 }
 
+/**
+ * Palabras que CIERRAN el dictado y mandan lo dictado.
+ *
+ * Existen porque anotar a viva voz es de manos ocupadas: si para enviar hay que
+ * soltar la manguera del combustible y tocar la pantalla, el dictado no sirve.
+ * Se comparan contra la frase entera, no como substring: «listo, ya cargué» NO
+ * puede mandar el mensaje a mitad de la oración.
+ */
+const COMANDOS_ENVIAR = new Set(["listo", "enviar", "manda", "mandalo", "envialo", "ya esta"]);
+const COMANDO_CANCELAR = new Set(["cancelar", "borra eso", "borrar", "olvidalo"]);
+
+const normalizarComando = (t: string) =>
+  t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z ]/g, "").trim();
+
 export default function ChatIAClean({
   tone = "feynman",
   model: _model = "balanced",
@@ -175,6 +207,35 @@ export default function ChatIAClean({
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  /**
+   * Dictado. El texto reconocido se ACUMULA en el mismo campo que se tipea:
+   * así se puede empezar hablando, corregir con el teclado y mandar — que es
+   * como se dicta de verdad, con el celular en el bolsillo del pantalón.
+   *
+   * `inputRef` existe porque el callback del reconocedor se cablea una sola vez
+   * y no ve el `input` fresco de cada render: sin él, decir «listo» mandaba
+   * siempre la primera frase dictada.
+   */
+  const inputRef = useRef("");
+  inputRef.current = input;
+  const enviarRef = useRef<(t: string) => void>(() => {});
+
+  const voz = useVozContinua((texto) => {
+    const limpio = texto.trim();
+    if (!limpio) return;
+    const comando = normalizarComando(limpio);
+    if (COMANDO_CANCELAR.has(comando)) {
+      setInput("");
+      return;
+    }
+    if (COMANDOS_ENVIAR.has(comando)) {
+      const pendiente = inputRef.current.trim();
+      if (pendiente) enviarRef.current(pendiente);
+      return;
+    }
+    setInput((prev) => (prev ? `${prev.replace(/\s+$/, "")} ${limpio}` : limpio));
+  });
 
   // Hydrate desde localStorage en cliente
   useEffect(() => {
@@ -390,6 +451,18 @@ export default function ChatIAClean({
     [messages, streaming, tone],
   );
 
+  /**
+   * El puente entre el reconocedor —que se cablea una sola vez— y la función de
+   * envío, que se recrea en cada render. Sin esto, decir «listo» llamaría a la
+   * versión de `sendMessage` del primer render.
+   */
+  useEffect(() => {
+    enviarRef.current = (t: string) => {
+      voz.detener();
+      void sendMessage(t);
+    };
+  }, [sendMessage, voz]);
+
   const handleSubmit = useCallback(
     (e: FormEvent) => {
       e.preventDefault();
@@ -439,15 +512,21 @@ export default function ChatIAClean({
         return;
       }
       const datos = body.result as Record<string, unknown> | undefined;
-      marcar(
-        "hecha",
-        datos
-          ? Object.entries(datos)
-              .filter(([, v]) => v !== null && typeof v !== "object")
-              .map(([k, v]) => `${k}: ${String(v)}`)
-              .join(" · ")
-          : "Acción ejecutada.",
-      );
+      /**
+       * Lo que se muestra al confirmar es la frase que escribió el agente
+       * («Anotado: S/ 675.00 de combustible para Camión N12»), no el volcado
+       * de claves. El volcado era legible para mí y para nadie más: decía
+       * `registrado: true · destino: activos · gastoId: cmtn…` con el dato que
+       * importa —cuánto y a qué— perdido al final.
+       */
+      const humano = typeof datos?.confirmacion === "string" ? datos.confirmacion : null;
+      const crudo = datos
+        ? Object.entries(datos)
+            .filter(([k, v]) => v !== null && typeof v !== "object" && k !== "confirmacion")
+            .map(([k, v]) => `${k}: ${String(v)}`)
+            .join(" · ")
+        : "";
+      marcar("hecha", humano ?? crudo ?? "Acción ejecutada.");
     } catch (e) {
       marcar("error", e instanceof Error ? e.message : String(e));
     }
@@ -516,18 +595,45 @@ export default function ChatIAClean({
               placeholder={
                 streaming
                   ? "Esperando respuesta…"
-                  : "Pregunta cualquier cosa sobre tu negocio…"
+                  : voz.listening
+                    ? "Escuchando… decí «listo» para mandarlo"
+                    : "Preguntá o dictá: «anotame 25 galones de petróleo para el camión N12 a 27»"
               }
               className={cn(
                 "w-full resize-none rounded-2xl border border-[var(--rule-base)]",
                 "bg-[var(--surface-sunken)] dark:bg-surface",
-                "px-5 py-4 pr-14 text-base leading-relaxed",
+                "px-5 py-4 pr-24 text-base leading-relaxed",
                 "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
                 "focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20 focus:border-[var(--text-primary)]/40",
                 "transition-all",
                 streaming && "opacity-60 cursor-wait",
               )}
             />
+            {/*
+              Micrófono. Sigue visible mientras el asistente responde —cortar el
+              dictado porque el modelo está escribiendo obliga a esperarlo con la
+              frase en la cabeza— pero se deshabilita, porque el campo también
+              lo está.
+            */}
+            {voz.supported && (
+              <button
+                type="button"
+                onClick={voz.toggle}
+                disabled={streaming}
+                title={voz.listening ? "Dejar de dictar" : "Dictar (español)"}
+                aria-label={voz.listening ? "Dejar de dictar" : "Dictar"}
+                aria-pressed={voz.listening}
+                className={cn(
+                  "absolute right-14 bottom-3 h-10 w-10 rounded-xl flex items-center justify-center transition-all",
+                  voz.listening
+                    ? "bg-[var(--data-error-500)] text-white animate-pulse"
+                    : "bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]/40",
+                  streaming && "opacity-50 cursor-not-allowed",
+                )}
+              >
+                {voz.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </button>
+            )}
             {streaming ? (
               <button
                 type="button"
@@ -546,7 +652,12 @@ export default function ChatIAClean({
                 className={cn(
                   "absolute right-3 bottom-3 h-10 w-10 rounded-xl flex items-center justify-center transition-all",
                   input.trim()
-                    ? "bg-[var(--text-primary)] text-white hover:opacity-90"
+                    // `text-white` sobre `--text-primary` funciona en claro y
+                    // desaparece en oscuro: ahí el fondo se vuelve casi blanco
+                    // y el avión de papel queda blanco sobre blanco. El token
+                    // del lienzo invierte con el tema, que es lo que hace el
+                    // `PrimaryButton` del DS.
+                    ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:opacity-90"
                     : "bg-[var(--rule-soft)] text-[var(--text-tertiary)] cursor-not-allowed",
                 )}
                 aria-label="Enviar"
@@ -555,6 +666,29 @@ export default function ChatIAClean({
               </button>
             )}
           </form>
+          {/*
+            Lo que el reconocedor está escuchando AHORA. Sin esto el dictado es
+            a ciegas: no se sabe si entendió «veinticinco» o «venticinco» hasta
+            que el texto ya está en el campo.
+          */}
+          {voz.listening && voz.liveText && (
+            <p className="mt-2 text-[length:var(--ts-xs)] italic text-[var(--text-tertiary)] truncate" aria-live="polite">
+              «{voz.liveText}»
+            </p>
+          )}
+          {voz.errMsg && (
+            <div className="mt-2 flex items-start gap-2 rounded-lg border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] px-3 py-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
+              <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] flex-1">{voz.errMsg}</p>
+              <button
+                type="button"
+                onClick={() => voz.setErrMsg(null)}
+                className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+              >
+                Cerrar
+              </button>
+            </div>
+          )}
           <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
             <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
               <kbd className="font-mono text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--rule-soft)]">
@@ -565,6 +699,7 @@ export default function ChatIAClean({
                 Shift+Enter
               </kbd>{" "}
               nueva línea
+              {voz.listening && <> · decí «listo» para mandarlo, «cancelar» para borrarlo</>}
             </p>
             {messages.length > 0 && (
               <button
@@ -596,13 +731,44 @@ function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
         Asistente de tu negocio
       </SectionTitle>
       <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-xl">
-        Te ayudo a entender qué pasa en tu negocio, qué hacer ahora y cómo vender más.
-        Respondo con ejemplos fáciles y datos reales — sin adornos.
+        Contame qué pasó y lo anoto donde va — gastos, ingresos, adelantos, cobros.
+        Y si querés entender el negocio, preguntame: respondo con datos reales y
+        ejemplos fáciles.
       </p>
 
       <div className="mt-10 w-full">
+        <div className="flex items-center gap-2 mb-4">
+          <Mic className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            Dictá o escribí para anotar
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-2">
+          {EJEMPLOS_ANOTAR.map((frase) => (
+            <button
+              key={frase}
+              type="button"
+              onClick={() => onPick(frase)}
+              className={cn(
+                "flex items-center gap-2.5 px-4 py-3 rounded-xl text-left text-sm",
+                "border border-[var(--rule-soft)] bg-[var(--surface-sunken)]",
+                "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                "hover:border-[var(--text-primary)]/30 transition-all",
+              )}
+            >
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
+              <span className="min-w-0 flex-1 leading-snug">«{frase}»</span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-3 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+          Siempre te muestro qué se va a anotar y por cuánto <strong className="font-semibold text-[var(--text-secondary)]">antes</strong> de escribirlo.
+        </p>
+      </div>
+
+      <div className="mt-10 w-full">
         <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-4">
-          Probá con estas preguntas
+          O preguntame sobre el negocio
         </p>
         <div className="grid sm:grid-cols-2 gap-3">
           {QUICK_PROMPTS.map((q) => (
@@ -656,7 +822,9 @@ function MessageRow({
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-[var(--text-primary)] text-white px-5 py-3">
+        {/* Mismo caso que el botón de enviar: en oscuro, `text-white` sobre
+            `--text-primary` deja la burbuja del usuario ilegible. */}
+        <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-[var(--text-primary)] text-[var(--surface-canvas)] px-5 py-3">
           <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
             {message.content}
           </p>

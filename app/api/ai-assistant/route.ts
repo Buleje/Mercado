@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 import { processSafeInput, buildInjectionGuard, detectPromptInjection, moderateLLMOutput } from "@/lib/ai-safety";
 import { getCachedLLMResponse, setCachedLLMResponse } from "@/lib/llm-cache";
 import { ALL_AGENT_TOOLS, resolveToolCall, isToolApprovalRequired } from "@/lib/agents/tool-definitions";
+import { toolsParaMensaje, tokensAproximados } from "@/lib/agents/tool-routing";
 import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
 import { stashPendingApproval } from "@/lib/agents/pending-approvals";
 import { callLLM } from "@/lib/llm-router";
@@ -214,12 +215,45 @@ herramienta "ui_abrir" con el destino y el chat pinta un botón que abre esa
 pantalla. Si además hay un texto a buscar (un producto, un cliente, una guía),
 pasalo en "filtro".
 
+ANOTAR OPERACIONES DICTADAS (lo más importante que hacés):
+Cuando el usuario dice "anotame", "apuntá", "registrá" —o simplemente cuenta algo
+que pasó ("compré 25 galones de petróleo para el camión N12 a 27 el galón")—, tu
+trabajo es convertirlo en un asiento real con las herramientas "plata_*". No
+respondas "andá a Gastos y cargalo": anotalo.
+
+El orden NUNCA cambia:
+1. BUSCAR primero. Un camión se busca con plata_buscar_maquina, una persona con
+   plata_buscar_persona, una deuda con plata_buscar_deuda. JAMÁS inventes un
+   maquinaId, personaId, adelantoId ni fiadoId: si la búsqueda no lo devolvió,
+   no existe. La búsqueda te dice qué hacer en su campo "mensaje": si viene
+   "recomendado", usá ESE id y seguí de largo — que aparezcan otras filas
+   parecidas no es una duda. Preguntá SÓLO si el mensaje te pide aclarar.
+2. ANOTAR con la herramienta que corresponde. El usuario ve una tarjeta con el
+   resumen y aprieta Confirmar; recién ahí se escribe. Vos no confirmás por él.
+3. DECIR QUÉ QUEDÓ. Después de confirmar, repetí en una línea qué se anotó, por
+   cuánto y en qué pantalla quedó (la herramienta te lo devuelve en
+   "confirmacion" y "dondeVerlo"). Y ofrecé abrirla con "ui_abrir".
+
+Qué NO hacer al anotar:
+- No calcules el total vos cuando hay cantidad y precio: pasá los dos y dejá que
+  el sistema multiplique. Así el usuario ve la operación completa y la puede
+  auditar ("25 × S/ 27,00 = S/ 675,00").
+- No completes datos que el usuario no dijo. Si falta el monto, la persona o la
+  máquina, preguntá UNA cosa concreta.
+- Si la herramienta devuelve un error, leelo y contalo tal cual: son mensajes
+  escritos para que los entienda el dueño ("supera el límite de crédito de Juan").
+
+Un gasto de una máquina (combustible, repuestos, operador, peaje) va al libro de
+ESA máquina, no al libro de gastos del negocio; el sistema te lo dice en el
+resumen y vos se lo repetís al usuario, porque si no lo va a buscar donde no está.
+
 QUÉ NO PODÉS HACER TODAVÍA:
-No podés cambiar precios, ajustar stock, crear productos ni mover pedidos desde
-el chat. Si te lo piden, decilo con todas las letras —"eso todavía no lo puedo
-hacer desde acá"— y abrí la pantalla donde sí se hace con "ui_abrir". Nunca
-escribas un bloque tipo [ACTION:...] ni afirmes que ejecutaste algo: no hay nada
-del otro lado que lo ejecute, y el usuario se quedaría creyendo que se hizo.
+No podés cambiar precios, crear productos, mover pedidos ni registrar ventas de
+productos desde el chat (una venta descuenta stock y emite comprobante: va por el
+punto de venta). Si te lo piden, decilo con todas las letras —"eso todavía no lo
+puedo hacer desde acá"— y abrí la pantalla donde sí se hace con "ui_abrir". Nunca
+escribas un bloque tipo [ACTION:...] ni afirmes que ejecutaste algo que no
+ejecutaste: el usuario se quedaría creyendo que se hizo.
 
 HERRAMIENTAS DE DATOS:
 Tienes acceso a herramientas (tools/functions) que puedes llamar para obtener datos en tiempo real del negocio.
@@ -268,6 +302,7 @@ function generateRuleBasedResponse(query: string, metrics: Record<string, unknow
  */
 function respuestaConDatosCrudos(
   toolsUsados: { nombre: string; resultado: string }[],
+  motivo?: string | null,
 ): string | null {
   const utiles = toolsUsados.filter((t) => {
     if (!t.resultado) return false;
@@ -290,7 +325,23 @@ function respuestaConDatosCrudos(
     })
     .join("\n\n");
 
-  return `**Consulté tus datos pero no pude redactar la respuesta** (el proveedor de IA está saturado). Esto es lo que encontré, en crudo:\n\n${bloques}\n\n_Volvé a preguntar en un momento y te lo explico normal._`;
+  /**
+   * Por qué falló, con el número.
+   *
+   * «El proveedor está saturado» manda a esperar un rato cuando el problema es
+   * un límite POR MINUTO de la cuenta —que no se arregla esperando, se arregla
+   * subiendo de plan—. Decirlo con la cifra es la diferencia entre que Brandon
+   * reintente diez veces y que sepa qué hacer.
+   */
+  const porMinuto = motivo && /tokens per minute|TPM/i.test(motivo);
+  // Ojo: `[^."]+` cortaba «17.2s» en «17» — el punto decimal terminaba la
+  // captura y quedaba «se libera en 17», sin unidad y con el número mal.
+  const espera = motivo ? /try again in\s+([0-9]+(?:\.[0-9]+)?\s*[a-z]+(?:[0-9]+(?:\.[0-9]+)?\s*[a-z]+)?)/i.exec(motivo)?.[1]?.trim() : undefined;
+  const causa = porMinuto
+    ? `el proveedor de IA corta por límite de tokens **por minuto** de la cuenta${espera ? `; se libera en ${espera}` : ""}`
+    : "el proveedor de IA no pudo redactar";
+
+  return `**Consulté tus datos pero no pude redactar la respuesta** (${causa}). Esto es lo que encontré, en crudo:\n\n${bloques}\n\n_Volvé a preguntar en un momento y te lo explico normal._`;
 }
 
 /**
@@ -423,6 +474,13 @@ export async function POST(req: NextRequest) {
   // ── Ensure domain agents are registered for function calling ──────────────
   await ensureAgentsRegistered();
 
+  const toolsElegidas = toolsParaMensaje(userMessage);
+  logger.debug("[ai-assistant] herramientas elegidas", {
+    cantidad: toolsElegidas.length,
+    tokensEsquema: tokensAproximados(toolsElegidas),
+    deUnTotalDe: ALL_AGENT_TOOLS.length,
+  });
+
   try {
     // ── First LLM call (with tools) — ADR-010 balanced tier ────────────────
     // Router call, primera decisión con tools. Llama-3.3-70b por default,
@@ -432,7 +490,10 @@ export async function POST(req: NextRequest) {
       temperature: AI_TEMPERATURES.router,
       maxTokens: 1500,
       stream: false, // Function calling requires non-streaming first pass
-      tools: ALL_AGENT_TOOLS,
+      // Sólo las herramientas que la frase menciona. El catálogo entero son
+      // 7.043 tokens de esquema por llamada y no entra en el límite POR MINUTO
+      // de la cuenta — ver lib/agents/tool-routing.ts.
+      tools: toolsElegidas,
       toolChoice: "auto",
       label: "ai-assistant",
     });
@@ -483,6 +544,14 @@ export async function POST(req: NextRequest) {
         const toolCalls = assistantMessage.tool_calls.slice(0, 5);
         /** Lo que devolvió cada tool — la red cuando la redacción falla. */
         const toolsEjecutados: { nombre: string; resultado: string }[] = [];
+        /**
+         * Cuántas tarjetas [Confirmar]/[Cancelar] quedaron esperando.
+         *
+         * Con una pendiente NO se encadena otra ronda de tools: el usuario ya
+         * tiene una decisión sobre la mesa, y proponerle una segunda antes de
+         * que responda la primera es pedirle que apruebe a ciegas.
+         */
+        let aprobacionesPendientes = 0;
 
         // TransformStream pattern — Next 16 + undici compat (avoids
         // "controller[kState].transformAlgorithm is not a function" on ReadableStream).
@@ -499,7 +568,18 @@ export async function POST(req: NextRequest) {
         (async () => {
           try {
             // Execute tools with progress events
-            for (const toolCall of toolCalls) {
+            /**
+             * Una ronda de herramientas: ejecuta el lote y deja cada resultado
+             * en `capturedMessages` para que el modelo lo lea.
+             *
+             * Está extraída porque anotar algo dictado necesita DOS rondas: la
+             * primera BUSCA (el camión, la persona, la deuda) y la segunda
+             * ESCRIBE con el id que devolvió la primera. Con una sola ronda,
+             * «anotame el combustible del camión N12» terminaba en «encontré el
+             * camión» y el usuario tenía que repetir el pedido entero.
+             */
+            const ejecutarRonda = async (lote: { id: string; function: { name: string; arguments: string } }[]) => {
+            for (const toolCall of lote) {
               const toolName = toolCall.function?.name;
 
               // Send progress event
@@ -573,6 +653,7 @@ export async function POST(req: NextRequest) {
                       },
                     })}\n\n`,
                   );
+                  aprobacionesPendientes += 1;
                 } else {
                   const result = await orchestrator.executeSync({
                     domain: mapping.domain,
@@ -611,6 +692,49 @@ export async function POST(req: NextRequest) {
                 tool_call_id: toolCall.id,
               });
             }
+            };
+
+            await ejecutarRonda(toolCalls);
+
+            /**
+             * Segunda ronda — sólo cuando la primera fue una búsqueda que existe
+             * para habilitar una escritura, y no quedó ya una confirmación
+             * esperando. Fuera de ese caso no se gasta otra llamada: casi todas
+             * las preguntas se contestan con una sola.
+             */
+            if (
+              aprobacionesPendientes === 0 &&
+              toolsEjecutados.some((t) => TOOLS_QUE_PRECEDEN_ESCRITURA.has(t.nombre))
+            ) {
+              send(`data: ${JSON.stringify({ toolProgress: "Preparando la operación...", tool: "_ronda2" })}\n\n`);
+              const ronda2 = await callLLM("balanced", {
+                messages: capturedMessages as Parameters<typeof callLLM>[1]["messages"],
+                temperature: AI_TEMPERATURES.router,
+                maxTokens: 1500,
+                stream: false,
+                tools: TOOLS_CIERRE,
+                toolChoice: "auto",
+                label: "ai-assistant-ronda2",
+              });
+              if (ronda2.ok) {
+                totalUsage.promptTokens += ronda2.usage.promptTokens;
+                totalUsage.completionTokens += ronda2.usage.completionTokens;
+                totalUsage.totalTokens += ronda2.usage.totalTokens;
+                recordTokenUsage(auth.tenantId, ronda2.usage.totalTokens);
+                if (ronda2.toolCalls && ronda2.toolCalls.length > 0) {
+                  capturedMessages.push({
+                    role: "assistant" as const,
+                    content: ronda2.content ?? "",
+                    ...({ tool_calls: ronda2.toolCalls } as Record<string, unknown>),
+                  });
+                  await ejecutarRonda(ronda2.toolCalls.slice(0, 5));
+                }
+              } else {
+                // Que falle la segunda ronda no puede tirar abajo lo ya leído:
+                // se sigue derecho a redactar con lo que hay.
+                logger.warn("[ai-assistant] segunda ronda de tools falló", { error: String(ronda2.error) });
+              }
+            }
 
             // Send "generating response" progress
             send(`data: ${JSON.stringify({ toolProgress: "Generando respuesta...", tool: "_final" })}\n\n`);
@@ -628,9 +752,18 @@ export async function POST(req: NextRequest) {
               recordAIFailure("ai-assistant-followup", followUpRes.error ?? "unknown");
               // Los datos ya se leyeron: se muestran. Sólo si no hubo ninguno
               // se cae al resumen genérico del negocio.
+              /**
+               * Con una tarjeta de confirmación abajo, volcar el JSON de la
+               * búsqueda es ruido: la tarjeta ya dice qué se va a anotar y por
+               * cuánto. Se avisa en una línea y listo.
+               */
               const fallback =
-                respuestaConDatosCrudos(toolsEjecutados) ??
-                generateRuleBasedResponse(userMessage, snapshot.metrics);
+                aprobacionesPendientes > 0
+                  ? "Encontré lo que hacía falta y te dejé la operación lista para confirmar acá abajo. " +
+                    "No alcancé a redactarlo con palabras porque el proveedor de IA cortó por límite de tokens por minuto — " +
+                    "revisá el resumen de la tarjeta, que es lo que se va a anotar."
+                  : (respuestaConDatosCrudos(toolsEjecutados, followUpRes.error) ??
+                     generateRuleBasedResponse(userMessage, snapshot.metrics));
               send(`data: ${JSON.stringify({ content: fallback })}\n\n`);
               send("data: [DONE]\n\n");
               tsClosed = true;
@@ -727,20 +860,41 @@ export async function POST(req: NextRequest) {
 
           // ── HITL gate (Excel Agentes IA práctica #10, TD-025) ──
           if (isToolApprovalRequired(toolName)) {
-            const approvalId = stashPendingApproval({
-              tenantId: auth.tenantId,
-              toolName,
+            /**
+             * El ensayo va también acá.
+             *
+             * Este camino (cliente que pide `stream: false`) no lo usa el chat,
+             * pero stasheaba sin validar: dejaba pendiente de confirmar una
+             * acción con un id inventado, y el resumen que vería quien la
+             * aprueba sería el payload crudo. Desde que hay ocho acciones que
+             * escriben plata, la asimetría dejó de ser teórica.
+             */
+            const ensayo = await orchestrator.executeSync({
               domain: mapping.domain,
               action: mapping.action,
-              payload: args,
-              conversationId: activeConversationId,
-              requestedBy: auth.username,
+              payload: { ...args, __validar: true },
+              tenantId: auth.tenantId,
+              actorRole: auth.role,
             });
-            toolResult = JSON.stringify({
-              pendingApprovalId: approvalId,
-              requiresApproval: true,
-              message: `Acción "${toolName}" pendiente de aprobación humana. Un admin debe confirmarla antes de ejecutar.`,
-            });
+            if (!ensayo.success) {
+              toolResult = JSON.stringify({ error: ensayo.error });
+            } else {
+              const approvalId = stashPendingApproval({
+                tenantId: auth.tenantId,
+                toolName,
+                domain: mapping.domain,
+                action: mapping.action,
+                payload: args,
+                conversationId: activeConversationId,
+                requestedBy: auth.username,
+              });
+              toolResult = JSON.stringify({
+                pendingApprovalId: approvalId,
+                requiresApproval: true,
+                resumen: (ensayo.data as { resumen?: string } | undefined)?.resumen ?? null,
+                message: `Acción "${toolName}" pendiente de aprobación humana. Un admin debe confirmarla antes de ejecutar.`,
+              });
+            }
           } else {
             const result = await orchestrator.executeSync({
               domain: mapping.domain,
@@ -896,6 +1050,36 @@ export async function POST(req: NextRequest) {
 
 // ── Stream helper ─────────────────────────────────────────────────────────────
 
+/**
+ * Herramientas que sólo existen para habilitar una escritura.
+ *
+ * Después de una de estas el modelo TIENE el id que le faltaba, así que vale la
+ * pena una segunda ronda de tools antes de redactar: es la diferencia entre
+ * anotar la operación en la misma frase y contestar «encontré el camión».
+ */
+const TOOLS_QUE_PRECEDEN_ESCRITURA = new Set([
+  "plata_buscar_maquina",
+  "plata_buscar_persona",
+  "plata_buscar_deuda",
+  "inventory_buscar_producto",
+]);
+
+/**
+ * Las herramientas de la SEGUNDA ronda: sólo las que cierran una operación.
+ *
+ * Mandar el catálogo entero de vuelta cuesta ~5.000 tokens de puro esquema, y
+ * en la segunda vuelta no sirve de nada: el modelo ya decidió qué quiere hacer
+ * y sólo le falta el id que trajo la búsqueda. Con el free tier de Groq
+ * (8.000 tokens POR MINUTO) esa diferencia es la que decide si la operación se
+ * anota o si el usuario ve «no pude redactar la respuesta».
+ */
+const TOOLS_CIERRE = ALL_AGENT_TOOLS.filter(
+  (t) =>
+    (t.function.name.startsWith("plata_") && !TOOLS_QUE_PRECEDEN_ESCRITURA.has(t.function.name)) ||
+    t.function.name === "inventory_ajustar_stock" ||
+    t.function.name === "ui_abrir",
+);
+
 /** Human-friendly labels for tool progress messages */
 const TOOL_LABELS: Record<string, string> = {
   inventory_check_stock: "Revisando stock...",
@@ -934,6 +1118,16 @@ const TOOL_LABELS: Record<string, string> = {
   notifications_send_expiry_warning: "Avisando vencimientos...",
   notifications_send_promotion: "Enviando promoción...",
   notifications_digest_pending: "Preparando resumen...",
+  plata_buscar_maquina: "Buscando la máquina...",
+  plata_buscar_persona: "Buscando a la persona...",
+  plata_buscar_deuda: "Buscando la deuda...",
+  plata_registrar_gasto: "Anotar el gasto",
+  plata_registrar_ingreso: "Anotar el ingreso",
+  plata_registrar_adelanto: "Anotar el adelanto",
+  plata_cobrar_fiado: "Registrar el cobro",
+  plata_liquidar_adelanto: "Descontar del adelanto",
+  n8n_listar_flujos: "Mirando tus automatizaciones...",
+  n8n_disparar_flujo: "Disparar la automatización",
   pricing_margin_check: "Verificando márgenes...",
   pricing_promotion_candidates: "Buscando candidatos a promo...",
   pricing_bundle_suggestions: "Buscando combos...",

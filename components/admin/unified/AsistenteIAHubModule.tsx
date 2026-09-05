@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { BotMessageSquare, Wand2, Lightbulb } from "@buleje/design-system/icons";
+import { BotMessageSquare, Wand2, Lightbulb, Webhook } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -15,6 +15,7 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 const ChatIAModule        = dynamic(() => import("@/components/admin/unified/ChatIAModule"),        { loading: S, ssr: false });
 const AICommandModule     = dynamic(() => import("@/components/admin/unified/AICommandModule"),     { loading: S });
 const SugerenciasIAModule = dynamic(() => import("@/components/admin/unified/SugerenciasIAModule"), { loading: S });
+const AutomatizacionesModule = dynamic(() => import("@/components/admin/unified/AutomatizacionesModule"), { loading: S, ssr: false });
 
 const MODULE_ID = "asistente-ia-hub";
 
@@ -22,6 +23,7 @@ const TABS = [
   { id: "chat",        label: "Chat IA",        icon: BotMessageSquare },
   { id: "comandos",    label: "Comandos IA",    icon: Wand2 },
   { id: "sugerencias", label: "Sugerencias IA", icon: Lightbulb },
+  { id: "automatizaciones", label: "Automatizaciones", icon: Webhook },
 ];
 
 /** Los ids, estables: el hook los usa como dependencia. */
@@ -38,13 +40,14 @@ export default function AsistenteIAHubModule({ initialTab }: { initialTab?: stri
       <AdminModuleHeader
         eyebrow="Inicio · Asistente"
         title="Asistente IA"
-        description="Chat, comandos y sugerencias sobre tu negocio."
+        description="Anotá operaciones hablando, preguntá por tu negocio y conectá tus automatizaciones."
         icon={BotMessageSquare}
       />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "chat" && <ChatIAModule />}
         {sub === "comandos" && <AICommandModule />}
         {sub === "sugerencias" && <SugerenciasIAModule />}
+        {sub === "automatizaciones" && <AutomatizacionesModule />}
       </AdminTabBar>
     </div>
   );

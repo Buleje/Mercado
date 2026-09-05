@@ -1,8 +1,11 @@
 "use client";
 
 /**
- * useVozContinua — motor de dictado continuo (Web Speech API, es-PE) para las
- * herramientas forestales.
+ * useVozContinua — motor de dictado continuo (Web Speech API, es-PE).
+ *
+ * Nació para el cubicador forestal y hoy lo usan también el chat del asistente
+ * («anotame la compra de combustible…») y el cubicador de trozas. Por eso vive
+ * en `hooks/` y no dentro de un módulo.
  *
  * Es el patrón PROBADO del cubicador de aserrada, extraído para reusar:
  *   - Solo se procesan resultados FINALES (los interim alimentan el caption:

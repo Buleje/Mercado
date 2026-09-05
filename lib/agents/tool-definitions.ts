@@ -808,6 +808,196 @@ const cobranzasTools = defineTools("cobranzas", [
   },
 ]);
 
+// ── Plata: anotar operaciones dictadas (ESCRITURA con confirmación) ──────────
+//
+// El único bloque de tools que MUEVE plata. Tres reglas que la descripción de
+// cada tool tiene que dejar clarísimas, porque el modelo sólo lee esto:
+//   1. Nunca inventar un id: primero buscar, y con más de una coincidencia,
+//      preguntar.
+//   2. Un total dictado y un total calculado que no cuadran se preguntan, no
+//      se promedian.
+//   3. Todo lo que escribe pide confirmación al usuario antes de ejecutarse.
+
+const plataTools = defineTools("plata", [
+  {
+    function: {
+      name: "plata_buscar_maquina",
+      description:
+        "Busca un camión, tractor, cargador o cualquier máquina del negocio por nombre o placa, y devuelve su maquinaId. SIEMPRE usar esto ANTES de anotar un gasto o un ingreso de una máquina: sin el maquinaId el registro no se puede hacer. Si devuelve más de una, preguntale al usuario cuál.",
+      parameters: {
+        type: "object",
+        properties: {
+          texto: { type: "string", description: "Nombre, número o placa de la máquina. Ej: 'camión N12', 'A4B-892'" },
+        },
+        required: ["texto"],
+      },
+    },
+  },
+  {
+    function: {
+      name: "plata_buscar_persona",
+      description:
+        "Busca a una persona del padrón de adelantos por nombre o documento. Devuelve su personaId y sus adelantos abiertos con adelantoId, código y saldo. Usar ANTES de anotar un adelanto o de liquidar uno.",
+      parameters: {
+        type: "object",
+        properties: {
+          texto: { type: "string", description: "Nombre o número de documento de la persona" },
+        },
+        required: ["texto"],
+      },
+    },
+  },
+  {
+    function: {
+      name: "plata_buscar_deuda",
+      description:
+        "Busca fiados abiertos (lo que un cliente debe) por nombre o teléfono, y devuelve el fiadoId y el saldo. Usar ANTES de registrar un cobro. Sin texto, lista todas las deudas abiertas.",
+      parameters: {
+        type: "object",
+        properties: {
+          texto: { type: "string", description: "Nombre o teléfono del cliente. Opcional." },
+        },
+      },
+    },
+  },
+  {
+    function: {
+      name: "plata_registrar_gasto",
+      description:
+        "Anota un gasto: plata que salió. Si el gasto es de una máquina (combustible, repuesto, mantenimiento, operador, peaje) pasá el maquinaId de plata_buscar_maquina y va al libro de esa máquina; si no, va al libro de gastos del negocio. Para combustible pasá 'cantidad' (galones) y 'precioUnitario' y NO calcules el total vos: el sistema lo multiplica y lo muestra. Si el usuario dijo también un total y no coincide con cantidad × precio, el sistema lo rechaza y hay que preguntarle cuál va. El usuario confirma antes de que se ejecute.",
+      parameters: {
+        type: "object",
+        properties: {
+          descripcion: { type: "string", description: "Qué se compró o pagó, en las palabras del usuario. Ej: 'petróleo para el camión'" },
+          monto: { type: "number", description: "Total en soles. Omitilo si diste cantidad y precioUnitario." },
+          cantidad: { type: "number", description: "Cantidad comprada (galones de combustible, unidades)" },
+          precioUnitario: { type: "number", description: "Precio por galón o por unidad, en soles" },
+          categoria: {
+            type: "string",
+            description:
+              "De máquina: combustible | mantenimiento | repuesto | operador | peaje | otro. Del negocio: alquiler | servicios | personal | transporte | limpieza | marketing | mantenimiento | otros",
+          },
+          maquinaId: { type: "string", description: "Id de la máquina, de plata_buscar_maquina. Sólo si el gasto es de una máquina." },
+          metodoPago: { type: "string", description: "efectivo | yape | plin | transferencia | tarjeta | credito" },
+          proveedor: { type: "string", description: "A quién se le pagó (grifo, ferretería, casero)" },
+          centroCosto: { type: "string", description: "Etiqueta libre para agrupar: 'delivery', 'forestal'" },
+          fecha: { type: "string", description: "AAAA-MM-DD. Omitir si es hoy." },
+          notas: { type: "string", description: "Cualquier detalle extra que dijo el usuario" },
+        },
+        required: ["descripcion"],
+      },
+    },
+    requiresApproval: true,
+  },
+  {
+    function: {
+      name: "plata_registrar_ingreso",
+      description:
+        "Anota plata que ENTRÓ y que no es una venta del mostrador. Con maquinaId queda como alquiler/viaje de esa máquina (podés marcar cobrado=false si todavía no pagaron). Sin maquinaId entra como movimiento de la caja abierta, y si no hay caja abierta el sistema lo dice. NO sirve para registrar ventas de productos: esas van por el punto de venta. El usuario confirma antes de que se ejecute.",
+      parameters: {
+        type: "object",
+        properties: {
+          descripcion: { type: "string", description: "De qué es el ingreso" },
+          monto: { type: "number", description: "Total en soles. Omitilo si diste cantidad y tarifa." },
+          cantidad: { type: "number", description: "Horas, días, viajes o m³ trabajados" },
+          tarifa: { type: "number", description: "Precio por hora/día/viaje/m³" },
+          unidad: { type: "string", description: "hora | dia | viaje | m3" },
+          maquinaId: { type: "string", description: "Id de la máquina, de plata_buscar_maquina" },
+          cliente: { type: "string", description: "Quién pagó o alquiló" },
+          cobrado: { type: "boolean", description: "false si quedó a deber. Por defecto true." },
+          metodoPago: { type: "string", description: "efectivo | yape | plin | transferencia | tarjeta" },
+        },
+        required: ["descripcion"],
+      },
+    },
+    requiresApproval: true,
+  },
+  {
+    function: {
+      name: "plata_registrar_adelanto",
+      description:
+        "Anota un adelanto de plata a una persona del padrón (se liquida después con entregas o descuento). Requiere el personaId de plata_buscar_persona. Si supera el límite de crédito de esa persona, el sistema lo frena: eso se autoriza en la pantalla de Adelantos, no desde el chat. El usuario confirma antes de que se ejecute.",
+      parameters: {
+        type: "object",
+        properties: {
+          personaId: { type: "string", description: "Id de la persona, de plata_buscar_persona" },
+          monto: { type: "number", description: "Cuánta plata se le adelanta, en soles" },
+          metodoPago: { type: "string", description: "efectivo | yape | plin | transferencia | tarjeta. Omitir si no salió de la caja." },
+          fecha: { type: "string", description: "AAAA-MM-DD. Omitir si es hoy." },
+          notas: { type: "string", description: "Para qué es el adelanto" },
+        },
+        required: ["personaId", "monto"],
+      },
+    },
+    requiresApproval: true,
+  },
+  {
+    function: {
+      name: "plata_cobrar_fiado",
+      description:
+        "Registra un pago que un cliente hizo sobre lo que debía (fiado). Requiere el fiadoId de plata_buscar_deuda. Si el monto supera el saldo, el sistema lo rechaza y hay que preguntar cuánto entregó de verdad. El usuario confirma antes de que se ejecute.",
+      parameters: {
+        type: "object",
+        properties: {
+          fiadoId: { type: "string", description: "Id de la deuda, de plata_buscar_deuda" },
+          monto: { type: "number", description: "Cuánto pagó, en soles" },
+          notas: { type: "string", description: "Detalle del cobro" },
+        },
+        required: ["fiadoId", "monto"],
+      },
+    },
+    requiresApproval: true,
+  },
+  {
+    function: {
+      name: "plata_liquidar_adelanto",
+      description:
+        "Descuenta plata de un adelanto abierto (la persona devolvió o entregó algo por ese valor). Requiere el adelantoId, que devuelve plata_buscar_persona. Sólo entregas en plata o servicios: si la persona entrega PRODUCTO que suma al stock, eso se hace en la pantalla de Adelantos. El usuario confirma antes de que se ejecute.",
+      parameters: {
+        type: "object",
+        properties: {
+          adelantoId: { type: "string", description: "Id del adelanto, de plata_buscar_persona" },
+          monto: { type: "number", description: "Valor de lo entregado, en soles" },
+          descripcion: { type: "string", description: "Qué entregó" },
+          metodoPago: { type: "string", description: "efectivo | yape | plin | transferencia | tarjeta, si entró a la caja" },
+        },
+        required: ["adelantoId", "monto"],
+      },
+    },
+    requiresApproval: true,
+  },
+]);
+
+// ── n8n: disparar automatizaciones del dueño ─────────────────────────────────
+
+const n8nTools = defineTools("n8n", [
+  {
+    function: {
+      name: "n8n_listar_flujos",
+      description:
+        "Lista las automatizaciones (flujos de n8n) que el dueño dejó configuradas, con para qué sirve cada una. Usar cuando pregunten qué automatizaciones hay, o antes de disparar una si no está claro cuál.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    function: {
+      name: "n8n_disparar_flujo",
+      description:
+        "Dispara una automatización de n8n por su nombre. Manda datos del negocio a un servidor de afuera, así que el usuario confirma antes de que se ejecute. Si el nombre calza con dos flujos parecidos, el sistema lo frena y hay que preguntar cuál.",
+      parameters: {
+        type: "object",
+        properties: {
+          flujo: { type: "string", description: "Nombre o descripción del flujo, tal como lo dijo el usuario" },
+          flujoId: { type: "string", description: "Id exacto, si ya lo sabés por n8n_listar_flujos" },
+          mensaje: { type: "string", description: "Texto a mandarle al flujo" },
+          datos: { type: "object", description: "Datos estructurados para el flujo, si el usuario los dio" },
+        },
+      },
+    },
+    requiresApproval: true,
+  },
+]);
+
 export const ALL_AGENT_TOOLS: ToolDefinition[] = [
   ...inventoryTools,
   ...ordersTools,
@@ -820,6 +1010,8 @@ export const ALL_AGENT_TOOLS: ToolDefinition[] = [
   ...cajaTools,
   ...cobranzasTools,
   ...uiTools,
+  ...plataTools,
+  ...n8nTools,
 ];
 
 // Inicializa el registry usado por `isToolApprovalRequired` (declarado arriba).

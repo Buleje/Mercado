@@ -80,6 +80,40 @@ const MAX_RETRIES = 2;
 const BASE_DELAY_MS = 500;
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
+/**
+ * Cuánto esperar de verdad cuando el proveedor dice 429.
+ *
+ * Un 429 por límite POR MINUTO no es «el servidor está caído»: es «te faltan N
+ * segundos». Groq lo dice con todas las letras —en el header `retry-after` y en
+ * el texto («Please try again in 4.905s»)— y el backoff fijo de 500 ms
+ * reintentaba dos veces dentro de la misma ventana cerrada y se rendía.
+ *
+ * Medido 2026-09-04: la segunda llamada del asistente (la que ANOTA la
+ * operación después de buscar la máquina) se caía por 654 tokens y 4,9 segundos
+ * de espera. Esperar lo que pide el proveedor es la diferencia entre que la
+ * operación se anote y que el usuario vea «no pude redactar la respuesta».
+ *
+ * El tope de 12 s existe porque más que eso ya no es esperar: es colgar la
+ * pantalla. Pasado el tope, se falla y el llamador decide.
+ */
+const MAX_ESPERA_429_MS = 12_000;
+
+function esperaQuePideElProveedor(res: Response, cuerpo: string): number | null {
+  const header = res.headers.get("retry-after");
+  if (header) {
+    const seg = Number(header);
+    if (Number.isFinite(seg) && seg > 0) return Math.ceil(seg * 1000);
+  }
+  // "Please try again in 4.905s" / "in 1m2.5s"
+  const m = /try again in\s+(?:(\d+)m)?([\d.]+)s/i.exec(cuerpo);
+  if (m) {
+    const minutos = m[1] ? Number(m[1]) : 0;
+    const segundos = Number(m[2]);
+    if (Number.isFinite(segundos)) return Math.ceil((minutos * 60 + segundos) * 1000) + 250;
+  }
+  return null;
+}
+
 // ── Fetch with retry ──────────────────────────────────────────────────────────
 
 /**
@@ -113,11 +147,21 @@ export async function fetchGroqWithRetry(
 
       // Retryable status codes
       if (!res.ok && RETRYABLE_STATUS.has(res.status) && attempt <= MAX_RETRIES) {
-        lastError = `HTTP ${res.status}`;
-        const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1);
+        // El cuerpo se lee UNA vez y se guarda: si el reintento tampoco sale,
+        // este es el texto que explica por qué (y ya no se puede volver a leer).
+        const cuerpo = await res.text().catch(() => "");
+        lastError = `HTTP ${res.status}${cuerpo ? `: ${cuerpo}` : ""}`;
+        const pedida = res.status === 429 ? esperaQuePideElProveedor(res, cuerpo) : null;
+        if (pedida !== null && pedida > MAX_ESPERA_429_MS) {
+          // Más de doce segundos no es esperar: es dejar la pantalla colgada.
+          logger.warn(`[${label}] 429 con espera demasiado larga`, { esperaMs: pedida });
+          return { ok: false, error: lastError, attempts: attempt };
+        }
+        const delay = pedida ?? BASE_DELAY_MS * Math.pow(2, attempt - 1);
         logger.warn(`[${label}] Retryable error, attempt ${attempt}/${MAX_RETRIES + 1}`, {
           status: res.status,
           delayMs: delay,
+          fuente: pedida !== null ? "la que pide el proveedor" : "backoff",
         });
         await new Promise((r) => setTimeout(r, delay));
         continue;

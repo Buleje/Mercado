@@ -88,6 +88,38 @@ export const AGENT_ACTION_PERMISSIONS: Record<
   ui: {
     "abrir":                { resource: "analytics", action: "read" },
   },
+  /**
+   * Anotar plata dictada. Cada acción se gatea con el MISMO recurso que la
+   * pantalla donde se hace a mano — que el asistente sea un atajo no puede
+   * volverlo una puerta lateral al RBAC.
+   *
+   * Los activos (camiones, maquinaria) no tienen Resource propio y viven
+   * dentro de Mi Plata: el gasto de una máquina es un gasto, así que va por
+   * `expenses`. El ingreso por alquiler entra por caja o por el libro del
+   * activo, y en los dos casos es plata que entra: `cash-registers`.
+   */
+  plata: {
+    "buscar-maquina":       { resource: "expenses",       action: "read"  },
+    "buscar-persona":       { resource: "adelantos",      action: "read"  },
+    "buscar-deuda":         { resource: "sales",          action: "read"  },
+    // ESCRITURA: además del permiso, cada tool pide confirmación humana en el
+    // chat (`requiresApproval` en tool-definitions).
+    "registrar-gasto":      { resource: "expenses",       action: "write" },
+    "registrar-ingreso":    { resource: "cash-registers", action: "write" },
+    "registrar-adelanto":   { resource: "adelantos",      action: "write" },
+    "cobrar-fiado":         { resource: "sales",          action: "write" },
+    "liquidar-adelanto":    { resource: "adelantos",      action: "write" },
+  },
+  /**
+   * Disparar un flujo de n8n manda datos del negocio a un servidor de afuera.
+   * Los flujos los configura el dueño en Automatizaciones (`settings:write`),
+   * así que dispararlos se gatea con el mismo permiso que configurarlos: quien
+   * no puede elegir a dónde va la información tampoco puede mandarla.
+   */
+  n8n: {
+    "listar-flujos":        { resource: "settings", action: "read"  },
+    "disparar-flujo":       { resource: "settings", action: "write" },
+  },
   notifications: {
     "send-order-update":    { resource: "notifications", action: "write" },
     "send-stock-alert":     { resource: "notifications", action: "write" },

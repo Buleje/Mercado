@@ -161,6 +161,12 @@ export function validateCsrfToken(request: NextRequest): boolean {
     // de protección: token unguessable e irrepetible por firmante, con
     // vencimiento propio, rate-limit STRICT y un único write (POST /firmar).
     "/api/public/contratos/",
+    // Entrada de n8n (anotar operaciones dictadas por WhatsApp/Telegram).
+    // Es máquina a máquina: se autentica con `Authorization: Bearer` + el slug
+    // del negocio, NO con la cookie de sesión. El CSRF protege contra que un
+    // sitio ajeno use la sesión del navegador; acá no hay sesión que abusar —
+    // sin el token derivado de AUTH_SECRET no entra nada. Rate-limit STRICT.
+    "/api/integrations/n8n/",
   ];
   if (webhookPaths.some((p) => pathname.startsWith(p) || pathname === p)) {
     return true;

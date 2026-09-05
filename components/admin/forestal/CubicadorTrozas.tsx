@@ -12,7 +12,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Check, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Table, Trash2, AlertTriangle, Upload,
+  Check, Columns3, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Table, Trash2, AlertTriangle, Upload,
 } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { detectarComando, ESPECIES_MADERA, mejoresNumeros, PT_POR_M3 } from "@/lib/forestal/cubicacion";
@@ -21,7 +21,7 @@ import {
 } from "@/lib/forestal/cubicacion-trozas";
 import type { TrozaImportada } from "@/lib/forestal/cubicacion-trozas-import";
 import { loadConfig } from "@/lib/forestal/cubicador-config";
-import { useVozContinua } from "./hooks/useVozContinua";
+import { useVozContinua } from "@/hooks/use-voz-continua";
 import ImportarTrozasModal from "./ImportarTrozasModal";
 
 interface Fila extends TrozaCubicada {
@@ -36,6 +36,16 @@ const storageKey = () => {
   return `buleje-cubicacion-trozas-${slug}`;
 };
 const saveLocal = (rows: Fila[]) => { try { localStorage.setItem(storageKey(), JSON.stringify(rows)); } catch { /* quota */ } };
+
+/** Columnas opcionales de la tabla del patio — # /Ø menor/Ø mayor/Largo quedan
+ *  siempre fijas (la medida primaria); Especie y m³ se pueden ocultar y la
+ *  elección queda guardada por tenant hasta que se cambie de nuevo. */
+type ColOpcionalTroza = "especie" | "m3";
+const COLS_OPCIONALES_TROZA: { key: ColOpcionalTroza; label: string }[] = [
+  { key: "especie", label: "Especie" },
+  { key: "m3", label: "m³" },
+];
+const COLS_DEFAULT_TROZA: Record<ColOpcionalTroza, boolean> = { especie: true, m3: true };
 
 /** Repite en voz lo dictado, con la MISMA config del cubicador de aserrada. */
 function hablar(texto: string) {
@@ -61,6 +71,25 @@ export default function CubicadorTrozas() {
   const [gtfM3, setGtfM3] = useState("");
   const [paused, setPaused] = useState(false);
   const [importando, setImportando] = useState(false);
+  /** Columnas opcionales ocultas/mostradas — por tenant, hasta que se cambie. */
+  const [colsVisibles, setColsVisibles] = useState<Record<ColOpcionalTroza, boolean>>(COLS_DEFAULT_TROZA);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`${storageKey()}-cols`);
+      if (raw) setColsVisibles({ ...COLS_DEFAULT_TROZA, ...(JSON.parse(raw) as Partial<Record<ColOpcionalTroza, boolean>>) });
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => { try { localStorage.setItem(`${storageKey()}-cols`, JSON.stringify(colsVisibles)); } catch { /* quota */ } }, [colsVisibles]);
+  const [colsMenuOpen, setColsMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!colsMenuOpen) return;
+    const cerrar = () => setColsMenuOpen(false);
+    window.addEventListener("click", cerrar);
+    return () => window.removeEventListener("click", cerrar);
+  }, [colsMenuOpen]);
+  /** Columnas antes del total de m³ ahora mismo — el pie de tabla las abarca
+   *  todas; con Especie oculta, un colSpan fijo se quedaba corto o largo. */
+  const colSpanTotales = 4 /* # + Ø menor + Ø mayor + Largo */ + (colsVisibles.especie ? 1 : 0);
   const idRef = useRef(0);
   const carryRef = useRef<number[]>([]);
   const pausedRef = useRef(false);
@@ -267,6 +296,48 @@ export default function CubicadorTrozas() {
             <button type="button" onClick={() => setImportando(true)} className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
               <Upload className="h-3.5 w-3.5" /> Importar
             </button>
+            {/* Columnas opcionales: ocultar/mostrar Especie y m³ — queda
+                guardado por tenant hasta que se vuelva a tocar. */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setColsMenuOpen((v) => !v); }}
+                title="Elegir columnas visibles de la tabla"
+                aria-label="Elegir columnas visibles"
+                aria-expanded={colsMenuOpen}
+                className={`inline-flex items-center gap-1.5 rounded-lg border-2 px-3 py-1.5 text-xs font-bold transition ${colsMenuOpen ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"}`}
+              >
+                <Columns3 className="h-3.5 w-3.5" /> Columnas
+              </button>
+              {colsMenuOpen && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute right-0 top-full z-20 mt-1 min-w-[170px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
+                >
+                  <p className="px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Columnas visibles</p>
+                  {COLS_OPCIONALES_TROZA.map(({ key, label }) => (
+                    <label key={key} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+                      <input
+                        type="checkbox"
+                        checked={colsVisibles[key]}
+                        onChange={(e) => setColsVisibles((c) => ({ ...c, [key]: e.target.checked }))}
+                        className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                  <div className="mt-1 border-t border-[var(--rule-soft)] pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setColsVisibles(COLS_DEFAULT_TROZA)}
+                      className="w-full rounded-lg px-2 py-1.5 text-left text-sm font-bold text-[var(--accent)] hover:bg-primary/10"
+                    >
+                      Restablecer todas
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             {rows.length > 0 && (
               <>
                 <button type="button" onClick={exportarCSV} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">CSV</button>
@@ -291,7 +362,10 @@ export default function CubicadorTrozas() {
               <thead>
                 <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
                   <th className="px-3 py-2">#</th><th className="px-3 py-2">Ø menor (cm)</th><th className="px-3 py-2">Ø mayor (cm)</th>
-                  <th className="px-3 py-2">Largo (m)</th><th className="px-3 py-2">Especie</th><th className="px-3 py-2 text-right">m³</th><th className="px-3 py-2" />
+                  <th className="px-3 py-2">Largo (m)</th>
+                  {colsVisibles.especie && <th className="px-3 py-2">Especie</th>}
+                  {colsVisibles.m3 && <th className="px-3 py-2 text-right">m³</th>}
+                  <th className="px-3 py-2" />
                 </tr>
               </thead>
               <tbody>
@@ -300,9 +374,9 @@ export default function CubicadorTrozas() {
                     <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">{i + 1}</td>
                     <td className="px-3 py-2"><CeldaNum value={r.d1} onChange={(v) => editar(r.id, "d1", v)} /></td>
                     <td className="px-3 py-2"><CeldaNum value={r.d2} onChange={(v) => editar(r.id, "d2", v)} /></td>
-                    <td className="px-3 py-2"><CeldaNum value={r.largo} onChange={(v) => editar(r.id, "largo", v)} paso={0.1} /></td>
-                    <td className="px-3 py-2 text-[var(--text-secondary)]">{r.especie ?? "—"}</td>
-                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(r.m3)}</td>
+                    <td className="px-3 py-2"><CeldaNum value={r.largo} onChange={(v) => editar(r.id, "largo", v)} /></td>
+                    {colsVisibles.especie && <td className="px-3 py-2 text-[var(--text-secondary)]">{r.especie ?? "—"}</td>}
+                    {colsVisibles.m3 && <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(r.m3)}</td>}
                     <td className="px-3 py-2 text-right">
                       <button type="button" onClick={() => borrar(r.id)} aria-label={`Borrar troza ${i + 1}`} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]">
                         <Trash2 className="h-4 w-4" />
@@ -312,9 +386,9 @@ export default function CubicadorTrozas() {
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-[var(--rule-base)] bg-primary/10 font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
-                  <td className="px-3 py-2.5" colSpan={5}>Total · {totales.trozas} {totales.trozas === 1 ? "troza" : "trozas"}</td>
-                  <td className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]">{fmtM3(totales.m3)} m³</td>
+                <tr className="border-t-2 border-[var(--rule-base)] bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                  <td className="px-3 py-2.5" colSpan={colSpanTotales}>Total · {totales.trozas} {totales.trozas === 1 ? "troza" : "trozas"}</td>
+                  {colsVisibles.m3 && <td className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]">{fmtM3(totales.m3)} m³</td>}
                   <td />
                 </tr>
               </tfoot>
@@ -346,7 +420,7 @@ export default function CubicadorTrozas() {
         {/* Referencias */}
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
           <Ref label="Total rolliza" value={`${fmtM3(totales.m3)} m³`} />
-          <Ref label="Equivalente volumétrico" value={`${(totales.m3 * PT_POR_M3).toLocaleString("es-PE", { maximumFractionDigits: 0 })} PT`} hint="1 m³ = 423.78 PT" />
+          <Ref label="Equivalente volumétrico" value={`${(totales.m3 * PT_POR_M3).toLocaleString("es-PE", { maximumFractionDigits: 0 })} PT`} hint={`1 m³ = ${PT_POR_M3} PT — el factor con el que se compra y se vende`} />
           <Ref label="Fórmula" value="Smalian" hint="promedio de áreas × largo" />
         </div>
       </div>
@@ -372,14 +446,35 @@ function CampoNum({ label, value, onChange, placeholder }: { label: string; valu
   );
 }
 
-function CeldaNum({ value, onChange, paso = 1 }: { value: number; onChange: (v: number) => void; paso?: number }) {
+/**
+ * Buffer de texto LOCAL, no `type="number"`: con el valor atado directo a la
+ * medida de la troza, seleccionar todo y borrar para tipear de nuevo hacía
+ * que el campo VOLVIERA solo al valor viejo a mitad de tecleo — en cuanto el
+ * cambio no daba un número válido (`n>0`) React forzaba `value={value}` otra
+ * vez. Acá el buffer manda mientras la celda tiene el foco; recién se
+ * sincroniza con el valor de afuera al perderlo (mismo arreglo que `Num` en
+ * CubicadorMadera.tsx — cada cubicador define su propia celda, pero el bug y
+ * la solución son los mismos).
+ */
+function CeldaNum({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [texto, setTexto] = useState(String(value));
+  const enfocado = useRef(false);
+  useEffect(() => { if (!enfocado.current) setTexto(String(value)); }, [value]);
+
   return (
     <input
-      type="number"
+      type="text"
       inputMode="decimal"
-      step={paso}
-      value={value}
-      onChange={(e) => { const n = Number(e.target.value); if (n > 0) onChange(n); }}
+      autoComplete="off"
+      value={texto}
+      onFocus={(e) => { enfocado.current = true; e.currentTarget.select(); }}
+      onBlur={() => { enfocado.current = false; setTexto(String(value)); }}
+      onChange={(e) => {
+        const limpio = e.target.value.replace(/[^\d.,]/g, "").replace(",", ".");
+        setTexto(limpio);
+        const n = Number(limpio);
+        if (limpio !== "" && Number.isFinite(n) && n > 0) onChange(n);
+      }}
       className="h-8 w-20 rounded-lg border border-[var(--rule-base)] bg-transparent px-2 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
     />
   );
