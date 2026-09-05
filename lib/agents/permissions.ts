@@ -54,6 +54,7 @@ export const AGENT_ACTION_PERMISSIONS: Record<
     "margin-analysis":      { resource: "analytics", action: "read" },
     "sales-trend":          { resource: "analytics", action: "read" },
     "category-breakdown":   { resource: "analytics", action: "read" },
+    "avisos":               { resource: "analytics", action: "read" },
   },
   /**
    * El libro forestal no tiene Resource propio en el RBAC (26 recursos, ninguno
@@ -102,6 +103,11 @@ export const AGENT_ACTION_PERMISSIONS: Record<
     "buscar-maquina":       { resource: "expenses",       action: "read"  },
     "buscar-persona":       { resource: "adelantos",      action: "read"  },
     "buscar-deuda":         { resource: "sales",          action: "read"  },
+    "buscar-proveedor":     { resource: "suppliers",      action: "read"  },
+    "buscar-cuenta":        { resource: "cash-registers", action: "read"  },
+    // Los lotes forestales no tienen Resource propio (igual que el libro CTP);
+    // buscar el código de uno es leer inventario de madera.
+    "buscar-lote":          { resource: "inventory",      action: "read"  },
     // ESCRITURA: además del permiso, cada tool pide confirmación humana en el
     // chat (`requiresApproval` en tool-definitions).
     "registrar-gasto":      { resource: "expenses",       action: "write" },
@@ -109,6 +115,12 @@ export const AGENT_ACTION_PERMISSIONS: Record<
     "registrar-adelanto":   { resource: "adelantos",      action: "write" },
     "cobrar-fiado":         { resource: "sales",          action: "write" },
     "liquidar-adelanto":    { resource: "adelantos",      action: "write" },
+    // La OC queda PENDIENTE: es el documento de compra, no el ingreso de stock
+    // (recibirla, que sí mueve inventario, se hace en Compras).
+    "registrar-compra":     { resource: "purchases",      action: "write" },
+    "mover-tesoreria":      { resource: "cash-registers", action: "write" },
+    // Un flete es un gasto del viaje; se gatea como el resto de los gastos.
+    "registrar-flete":      { resource: "expenses",       action: "write" },
   },
   /**
    * Disparar un flujo de n8n manda datos del negocio a un servidor de afuera.

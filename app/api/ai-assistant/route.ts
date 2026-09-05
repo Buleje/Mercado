@@ -1061,6 +1061,9 @@ const TOOLS_QUE_PRECEDEN_ESCRITURA = new Set([
   "plata_buscar_maquina",
   "plata_buscar_persona",
   "plata_buscar_deuda",
+  "plata_buscar_proveedor",
+  "plata_buscar_cuenta",
+  "plata_buscar_lote",
   "inventory_buscar_producto",
 ]);
 
@@ -1126,6 +1129,12 @@ const TOOL_LABELS: Record<string, string> = {
   plata_registrar_adelanto: "Anotar el adelanto",
   plata_cobrar_fiado: "Registrar el cobro",
   plata_liquidar_adelanto: "Descontar del adelanto",
+  plata_buscar_proveedor: "Buscando el proveedor...",
+  plata_buscar_cuenta: "Mirando tus cuentas...",
+  plata_buscar_lote: "Buscando el lote...",
+  plata_registrar_compra: "Anotar la compra",
+  plata_mover_tesoreria: "Mover la plata",
+  plata_registrar_flete: "Anotar el flete",
   n8n_listar_flujos: "Mirando tus automatizaciones...",
   n8n_disparar_flujo: "Disparar la automatización",
   pricing_margin_check: "Verificando márgenes...",

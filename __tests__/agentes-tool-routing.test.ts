@@ -103,3 +103,49 @@ describe("el presupuesto de tokens, que es la razón de todo esto", () => {
     expect(tokensAproximados(elegidas)).toBeLessThan(tokensAproximados(ALL_AGENT_TOOLS) / 2);
   });
 });
+
+describe("las operaciones de la segunda tanda", () => {
+  it("comprarle a un proveedor lleva buscar proveedor, buscar producto Y anotar la compra", () => {
+    // Las tres tienen que viajar juntas: sin la búsqueda de producto, el modelo
+    // tiene con qué escribir la orden y no con qué saber qué producto es.
+    const t = nombres("compré 20 sacos de arroz costeño a 120 cada uno a Distribuidora Ucayali");
+    expect(t).toContain("plata_buscar_proveedor");
+    expect(t).toContain("inventory_buscar_producto");
+    expect(t).toContain("plata_registrar_compra");
+  });
+
+  it("mover plata entre cuentas lleva buscar cuenta y mover tesorería", () => {
+    const t = nombres("pasá 5000 soles del BCP a la caja chica");
+    expect(t).toContain("plata_buscar_cuenta");
+    expect(t).toContain("plata_mover_tesoreria");
+  });
+
+  it("un flete se activa por «flete», por «viaje» y por «placa»", () => {
+    for (const frase of [
+      "anotá el flete de 800 soles",
+      "el viaje del camión costó 800",
+      "la placa A4B-892 trajo 30 m3 por 800 soles",
+    ]) {
+      expect(nombres(frase)).toContain("plata_registrar_flete");
+    }
+  });
+
+  it("un gasto contra un lote lleva la búsqueda del código exacto", () => {
+    const t = nombres("anotame 200 soles de estibaje para el lote L-2026-003");
+    expect(t).toContain("plata_buscar_lote");
+    expect(t).toContain("plata_registrar_gasto");
+  });
+
+  it("ninguna frase concreta manda el catálogo entero", () => {
+    // El catálogo completo ya pesa más que el límite POR MINUTO de la cuenta:
+    // si una frase lo activara todo, la operación no se podría anotar.
+    for (const frase of [
+      "compré 20 sacos de arroz a Distribuidora Ucayali",
+      "pasá 5000 del BCP a la caja chica",
+      "anotame el flete de la placa A4B-892",
+      "¿cómo viene el negocio?",
+    ]) {
+      expect(tokensAproximados(toolsParaMensaje(frase))).toBeLessThan(6000);
+    }
+  });
+});

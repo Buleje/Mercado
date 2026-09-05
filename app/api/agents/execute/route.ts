@@ -110,6 +110,34 @@ export async function POST(req: NextRequest) {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
+const TERMINALES = new Set(["completed", "failed", "cancelled"]);
+
+/**
+ * El evento dice «terminó»; la tarea todavía no lo sabe.
+ *
+ * Varios agentes (analytics, inventory, orders, customers, notifications,
+ * pricing) emiten `task:completed` ELLOS MISMOS, antes de devolverle el
+ * resultado al orchestrator — que es quien lo guarda. Leer la tarea en el
+ * instante del evento la agarra todavía en `running` y sin `result`.
+ *
+ * Medido 2026-09-04: `analytics/daily-kpis` por este endpoint devolvía
+ * `status: "running"` sin resultado, con la tarea resuelta 2 segundos antes.
+ * Este endpoint es el que se usa para verificar un agente SIN gastar cuota de
+ * LLM, así que una respuesta que miente es peor que no tenerlo.
+ *
+ * Se espera a que la tarea esté de verdad en estado terminal, con un tope
+ * corto: pasado eso se devuelve lo que haya, y el `_timeout` lo declara.
+ */
+async function esperarTarea(taskId: string, topeMs = 2_000): Promise<Record<string, unknown> | undefined> {
+  const hasta = Date.now() + topeMs;
+  for (;;) {
+    const t = orchestrator.getTask(taskId) as Record<string, unknown> | undefined;
+    if (t && TERMINALES.has(String(t.status))) return t;
+    if (Date.now() >= hasta) return t;
+    await new Promise((r) => setTimeout(r, 20));
+  }
+}
+
 /**
  * Wait for a task to reach a terminal state (completed | failed | cancelled)
  * or timeout after EXECUTION_TIMEOUT_MS.
@@ -124,7 +152,7 @@ function waitForCompletion(taskId: string): Promise<Record<string, unknown>> {
       unsubCompleted();
       unsubFailed();
       clearTimeout(timer);
-      resolve((orchestrator.getTask(taskId) as Record<string, unknown> | undefined) ?? fallback);
+      void esperarTarea(taskId).then((t) => resolve(t ?? fallback));
     };
 
     const unsubCompleted = agentBus.on("task:completed", (data) => {

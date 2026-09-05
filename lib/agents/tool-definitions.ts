@@ -471,6 +471,17 @@ const analyticsTools = defineTools("analytics", [
 
 // ── Notifications tools ───────────────────────────────────────────────────────
 
+const avisosTool = defineTools("analytics", [
+  {
+    function: {
+      name: "analytics_avisos",
+      description:
+        "Lo que vale la pena contarle al dueño HOY sin que pregunte: combustible que se disparó en una máquina, fletes sin pagar, adelantos vencidos, fiados de más de un mes, máquinas paradas. Usar cuando pregunten «¿qué hay de nuevo?», «¿algo urgente?», «¿cómo viene todo?». Si devuelve cero, decilo tal cual: no inventes una alerta para no venir con las manos vacías.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+]);
+
 const notificationsTools = defineTools("notifications", [
   {
     function: {
@@ -966,6 +977,113 @@ const plataTools = defineTools("plata", [
     },
     requiresApproval: true,
   },
+  {
+    function: {
+      name: "plata_buscar_proveedor",
+      description:
+        "Busca un proveedor del padrón por nombre, RUC o documento, y devuelve su proveedorId. Usar ANTES de anotar una compra: sin el id, cada dictado escribe una variante distinta del mismo proveedor y después no suman juntas.",
+      parameters: {
+        type: "object",
+        properties: { texto: { type: "string", description: "Nombre, RUC o documento del proveedor" } },
+        required: ["texto"],
+      },
+    },
+  },
+  {
+    function: {
+      name: "plata_buscar_cuenta",
+      description:
+        "Lista las cuentas de tesorería (banco, caja fuerte, billetera) con su saldo, o busca una por nombre. Usar ANTES de mover plata entre cuentas. Sin texto devuelve todas, que es lo que hace falta para «pasá plata del banco a la caja».",
+      parameters: {
+        type: "object",
+        properties: { texto: { type: "string", description: "Nombre o banco de la cuenta. Opcional." } },
+      },
+    },
+  },
+  {
+    function: {
+      name: "plata_buscar_lote",
+      description:
+        "Busca un lote de producción forestal por su código (L-2026-001) y devuelve el código EXACTO para usar como centroCosto de un gasto. Usar cuando el usuario dice que un gasto es «del lote tal».",
+      parameters: {
+        type: "object",
+        properties: { texto: { type: "string", description: "Código del lote o parte de él. Opcional: sin texto lista los últimos." } },
+      },
+    },
+  },
+  {
+    function: {
+      name: "plata_registrar_compra",
+      description:
+        "Anota una compra a un proveedor como orden de compra PENDIENTE. Requiere el proveedorId (de plata_buscar_proveedor) y, por cada ítem, el productId exacto (de inventory_buscar_producto), la cantidad y el costo unitario. NO sube el stock: eso pasa cuando marcás la orden como recibida en Compras, mirando lo que llegó de verdad. El usuario confirma antes de que se ejecute.",
+      parameters: {
+        type: "object",
+        properties: {
+          proveedorId: { type: "string", description: "Id del proveedor, de plata_buscar_proveedor" },
+          items: {
+            type: "array",
+            description: "Lo que se compró, una entrada por producto",
+            items: {
+              type: "object",
+              properties: {
+                productId: { type: "number", description: "Id del producto, de inventory_buscar_producto" },
+                cantidad: { type: "number", description: "Cuántas unidades (entero)" },
+                costoUnitario: { type: "number", description: "Cuánto cuesta cada una, en soles" },
+              },
+              required: ["productId", "cantidad", "costoUnitario"],
+            },
+          },
+          metodoPago: { type: "string", description: "efectivo | yape | plin | transferencia | tarjeta | credito" },
+          notas: { type: "string", description: "Detalle extra de la compra" },
+        },
+        required: ["proveedorId", "items"],
+      },
+    },
+    requiresApproval: true,
+  },
+  {
+    function: {
+      name: "plata_mover_tesoreria",
+      description:
+        "Mueve plata de una cuenta de tesorería. Con cuentaDestinoId es una TRANSFERENCIA entre cuentas; sin ella es un movimiento suelto (entra o sale) y hay que decir el tipo y el concepto. Requiere los ids de plata_buscar_cuenta. Si no alcanza el saldo, o si las monedas no coinciden, el sistema lo frena. El usuario confirma antes de que se ejecute.",
+      parameters: {
+        type: "object",
+        properties: {
+          cuentaId: { type: "string", description: "Cuenta de origen (o la única, si es movimiento suelto)" },
+          cuentaDestinoId: { type: "string", description: "Cuenta de destino. Sólo para transferencias." },
+          monto: { type: "number", description: "Cuánta plata, en la moneda de la cuenta" },
+          tipo: { type: "string", description: "ingreso | egreso — sólo para movimientos sueltos" },
+          descripcion: { type: "string", description: "De qué es el movimiento" },
+        },
+        required: ["cuentaId", "monto"],
+      },
+    },
+    requiresApproval: true,
+  },
+  {
+    function: {
+      name: "plata_registrar_flete",
+      description:
+        "Anota un viaje de madera: el que la TRAE (tipo ingreso) o el que se la lleva (tipo despacho). Con el volumen en m³ el sistema calcula el costo por m³, que es el número que se compara entre transportistas. El usuario confirma antes de que se ejecute.",
+      parameters: {
+        type: "object",
+        properties: {
+          monto: { type: "number", description: "Cuánto costó el viaje, en soles" },
+          placa: { type: "string", description: "Placa del camión" },
+          transportista: { type: "string", description: "Quién hizo el viaje" },
+          volumenM3: { type: "number", description: "Metros cúbicos movidos" },
+          tipo: { type: "string", description: "ingreso (trae madera) | despacho (se la lleva). Por defecto ingreso." },
+          gtfNumber: { type: "string", description: "N° de la guía forestal del viaje" },
+          pagaQuien: { type: "string", description: "ctp | proveedor | destinatario. Por defecto ctp." },
+          pagado: { type: "boolean", description: "true si ya se pagó. Por defecto queda pendiente." },
+          fecha: { type: "string", description: "AAAA-MM-DD. Omitir si es hoy." },
+          notas: { type: "string", description: "Detalle extra del viaje" },
+        },
+        required: ["monto"],
+      },
+    },
+    requiresApproval: true,
+  },
 ]);
 
 // ── n8n: disparar automatizaciones del dueño ─────────────────────────────────
@@ -1003,6 +1121,7 @@ export const ALL_AGENT_TOOLS: ToolDefinition[] = [
   ...ordersTools,
   ...customersTools,
   ...analyticsTools,
+  ...avisosTool,
   ...notificationsTools,
   ...pricingTools,
   ...forestalTools,

@@ -62,10 +62,24 @@ const PALABRAS: Record<AgentDomain, readonly string[]> = {
     "placa", "horometro", "horómetro", "repuesto", "mantenimiento", "peaje",
     "operador", "yape", "plin", "efectivo", "transferencia", "soles", "plata",
     "luz", "agua", "internet", "sueldo", "planilla", "boleta", "factura", "recibo",
+    // Compra a proveedor, tesorería y fletes — mismo dominio, mismo vocabulario
+    // de todos los días.
+    "proveedor", "proveedores", "distribuidora", "orden", "pedido", "compras",
+    "saco", "sacos", "caja", "cajas", "bidon", "bidón", "docena", "unidad", "unidades",
+    "banco", "bcp", "interbank", "bbva", "scotiabank", "cuenta", "cuentas",
+    "transferi", "transferí", "transferir", "transferencia", "pasa", "pasar", "pase",
+    "deposito", "depósito", "deposite", "deposité", "retire", "retiré", "retiro",
+    "caja chica", "chica", "tesoreria", "tesorería", "billetera", "saldo",
+    "viaje", "viajes", "flete", "fletes", "camionada", "transportista", "chofer",
+    "conductor", "m3", "metros", "cubicos", "cúbicos", "lote", "lotes",
   ],
   cobranzas: ["debe", "deben", "deuda", "deudas", "fiado", "fiados", "adelanto", "adelantos", "cobrar", "cobranza", "moroso", "morosos", "calle"],
   caja: ["caja", "cajon", "cajón", "arqueo", "turno", "cierre", "apertura", "efectivo"],
-  inventory: ["stock", "inventario", "almacen", "almacén", "producto", "productos", "agotado", "agotados", "falta", "faltante", "vence", "vencen", "vencimiento", "lote", "lotes", "reponer", "reposicion", "reposición", "kardex", "ajustar", "conteo"],
+  // «compré 20 sacos de arroz» activa inventory ADEMÁS de plata: anotar la orden
+  // de compra necesita el productId, y ese lo da `inventory_buscar_producto`.
+  // Sin estas palabras el modelo tenía la herramienta de escribir y no la de
+  // encontrar qué escribir.
+  inventory: ["stock", "inventario", "almacen", "almacén", "producto", "productos", "agotado", "agotados", "falta", "faltante", "vence", "vencen", "vencimiento", "lote", "lotes", "reponer", "reposicion", "reposición", "kardex", "ajustar", "conteo", "compre", "compré", "compra", "compras", "compramos", "saco", "sacos", "docena", "docenas", "paquete", "paquetes", "bulto", "bultos", "botella", "botellas", "kilo", "kilos"],
   orders: ["pedido", "pedidos", "orden", "ordenes", "órdenes", "entrega", "entregas", "delivery", "reparto", "devolucion", "devolución", "devoluciones", "venta", "ventas", "vendi", "vendí"],
   customers: ["cliente", "clientes", "comprador", "compradores", "segmento", "segmentacion", "segmentación", "cumpleanos", "cumpleaños", "fidelidad", "recurrente"],
   analytics: ["kpi", "kpis", "indicador", "indicadores", "margen", "margenes", "márgenes", "tendencia", "grafico", "gráfico", "analisis", "análisis", "rentabilidad", "utilidad", "ganancia", "ganancias", "categoria", "categoría", "rendimiento", "resumen", "balance"],
