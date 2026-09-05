@@ -253,6 +253,31 @@ export async function PATCH(req: NextRequest) {
     const d = parsed.data;
     const user = g.auth.username ?? "unknown";
 
+    /**
+     * Deshacer un lote CON producción declarada no es trabajo de patio.
+     *
+     * Todo lo demás de este endpoint —armar el lote, agregar y quitar trozas,
+     * consumirlo, cerrarlo— es lo que hace un almacenero todos los días.
+     * `deshacer-forzado` es otra cosa: ANULA corridas ya asentadas en el Libro
+     * de Operaciones y borra el lote. Un asiento anulado del libro que se
+     * presenta ante SERFOR es un acto contable, no una corrección de patio.
+     *
+     * El guard de arriba admite `almacenero` porque cubre las nueve acciones;
+     * ésta se recorta acá, junto a lo que hace, y no cambiando el guard entero
+     * —que dejaría al almacenero sin poder cargar trozas.
+     */
+    if (d.accion === "deshacer-forzado" && !["admin", "owner"].includes(g.auth.role)) {
+      return NextResponse.json(
+        {
+          error: "forbidden",
+          message:
+            "Deshacer un lote con producción declarada anula asientos del Libro de Operaciones. " +
+            "Sólo el dueño o un administrador puede hacerlo.",
+        },
+        { status: 403 },
+      );
+    }
+
     if (d.accion === "agregar") {
       const r = await ForestLoteAserrioDB.agregarTrozas(g.auth.tenantId, d.loteId, d.trozaIds, user);
       return NextResponse.json(r);

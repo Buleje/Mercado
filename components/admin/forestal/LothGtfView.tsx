@@ -15,6 +15,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
 import { documentoGtfLoth, type LothGtfCaratula, type LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { esc } from "@/lib/forestal/ctp-documento-print";
 import VerificarGtfSerfor from "./VerificarGtfSerfor";
 
 interface GtfItem {
@@ -698,6 +699,22 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
 }
 
 // ─── Impresión (ventana nueva, aislada) — QR real vía lazy-import ───────────
+
+/**
+ * ⛔ Todo lo que se imprime en estas dos funciones —titular, transportista,
+ * placa, observaciones, el motivo de anulación, el código y la especie de cada
+ * troza— lo tipea una persona en el formulario y llega acá desde la base SIN
+ * pasar por React, que es lo que normalmente escapa por nosotros. Un
+ * `<img onerror=...>` en «observaciones» se ejecutaba al imprimir la guía, en
+ * una ventana con el mismo origen que el panel.
+ *
+ * Se usa el `esc()` compartido (`ctp-documento-print`), el mismo que ya protegía
+ * la hoja oficial del CTP: un escape propio acá sería una segunda versión que
+ * mañana se arregla en un lado y no en el otro.
+ *
+ * NO se aplica al SVG del QR ni al CSS: eso es markup a propósito, generado por
+ * nosotros, no texto de nadie.
+ */
 /**
  * Imprime la guía en la hoja de casilleros SERFOR — la MISMA que usa el Libro
  * CTP. Antes cada libro tenía su papel: el del título habilitante, que es el que
@@ -708,14 +725,14 @@ function printGtfOficial(g: Gtf, caratula: LothGtfCaratula | null) {
   const w = window.open("", "_blank", "width=920,height=1000");
   if (!w) return;
   w.document.write(
-    `<!doctype html><html><head><meta charset="utf-8"><title>${titulo}</title><style>${css}</style></head><body>${cuerpo}</body></html>`,
+    `<!doctype html><html><head><meta charset="utf-8"><title>${esc(titulo)}</title><style>${css}</style></head><body>${cuerpo}</body></html>`,
   );
   w.document.close();
 }
 
 async function printGtf(g: Gtf) {
   const items = Array.isArray(g.items) ? g.items : [];
-  const rows = items.map((x, i) => `<tr><td>${i + 1}</td><td>${x.code ?? ""}</td><td>${x.species ?? ""}${x.cites ? " <b>(CITES)</b>" : ""}</td><td style="text-align:right">${x.diamMayorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.diamMenorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.lengthM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.volumeM3 != null ? fmtM3(x.volumeM3) : ""}</td></tr>`).join("");
+  const rows = items.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.code)}</td><td>${esc(x.species)}${x.cites ? " <b>(CITES)</b>" : ""}</td><td style="text-align:right">${x.diamMayorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.diamMenorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.lengthM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.volumeM3 != null ? fmtM3(x.volumeM3) : ""}</td></tr>`).join("");
   const vol = g.volumenTotalM3 ? Number(g.volumenTotalM3).toFixed(4) : "0";
 
   // QR real: codifica una cadena de verificación interna escaneable
@@ -727,7 +744,7 @@ async function printGtf(g: Gtf) {
   } catch {
     qrSvg = `<div style="font-family:monospace">◫◫◫</div>`;
   }
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>GTF ${g.gtfNumber}</title>
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>GTF ${esc(g.gtfNumber)}</title>
   <style>
     body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:28px;font-size:12px}
     h1{font-size:16px;margin:0} .sub{color:#555;font-size:11px}
@@ -744,25 +761,25 @@ async function printGtf(g: Gtf) {
     <div class="qr">${qrSvg}<div style="font-size:9px;margin-top:4px">verif. interna</div></div>
     <h1>GUÍA DE TRANSPORTE FORESTAL</h1>
     <div class="sub">Documento interno de gestión — no oficial (la GTF oficial se emite por SNIFFS)</div>
-    ${g.status === "anulada" ? `<div class="anul">ANULADA — ${g.annulledReason ?? ""}</div>` : ""}
+    ${g.status === "anulada" ? `<div class="anul">ANULADA — ${esc(g.annulledReason)}</div>` : ""}
     <div class="box"><div class="grid">
-      <div><span class="k">N° GTF:</span> <span class="v">${g.gtfNumber}</span></div>
+      <div><span class="k">N° GTF:</span> <span class="v">${esc(g.gtfNumber)}</span></div>
       <div><span class="k">Fecha:</span> <span class="v">${fmtDate(g.gtfDate)}</span></div>
-      <div><span class="k">Titular:</span> <span class="v">${g.titularName ?? "—"}</span></div>
-      <div><span class="k">Título habilitante:</span> <span class="v">${g.tituloHabilitante ?? "—"}</span></div>
-      <div><span class="k">Parcela de corta:</span> <span class="v">${g.parcelaCorta ?? "—"}</span></div>
+      <div><span class="k">Titular:</span> <span class="v">${esc(g.titularName ?? "—")}</span></div>
+      <div><span class="k">Título habilitante:</span> <span class="v">${esc(g.tituloHabilitante ?? "—")}</span></div>
+      <div><span class="k">Parcela de corta:</span> <span class="v">${esc(g.parcelaCorta ?? "—")}</span></div>
       <div><span class="k">Tipo:</span> <span class="v">${g.tipo === "producto" ? "Producto terminado" : "Trozas"}</span></div>
     </div></div>
     <div class="box"><div class="grid">
-      <div><span class="k">Transportista:</span> <span class="v">${g.transportista ?? "—"}</span> ${g.transportistaDoc ? `(${g.transportistaDoc})` : ""}</div>
-      <div><span class="k">Conductor:</span> <span class="v">${g.conductor ?? "—"}</span> ${g.conductorLicencia ? `Lic. ${g.conductorLicencia}` : ""}</div>
-      <div><span class="k">Placa:</span> <span class="v">${g.placaVehiculo ?? "—"}</span></div>
-      <div><span class="k">Origen → Destino:</span> <span class="v">${g.origen ?? "—"} → ${g.destino ?? "—"}</span></div>
+      <div><span class="k">Transportista:</span> <span class="v">${esc(g.transportista ?? "—")}</span> ${g.transportistaDoc ? `(${esc(g.transportistaDoc)})` : ""}</div>
+      <div><span class="k">Conductor:</span> <span class="v">${esc(g.conductor ?? "—")}</span> ${g.conductorLicencia ? `Lic. ${esc(g.conductorLicencia)}` : ""}</div>
+      <div><span class="k">Placa:</span> <span class="v">${esc(g.placaVehiculo ?? "—")}</span></div>
+      <div><span class="k">Origen → Destino:</span> <span class="v">${esc(g.origen ?? "—")} → ${esc(g.destino ?? "—")}</span></div>
     </div></div>
     <h3 style="margin:14px 0 0">Lista de trozas / productos</h3>
     <table><thead><tr><th>N°</th><th>Código</th><th>Especie</th><th>Ø may (m)</th><th>Ø men (m)</th><th>Long. (m)</th><th>Vol. (m³)</th></tr></thead><tbody>${rows}</tbody></table>
     <div class="tot">Volumen total: ${vol} m³ · ${items.length} piezas</div>
-    ${g.observations ? `<div class="box"><span class="k">Observaciones:</span> ${g.observations}</div>` : ""}
+    ${g.observations ? `<div class="box"><span class="k">Observaciones:</span> ${esc(g.observations)}</div>` : ""}
     <div class="dj">Declaración jurada: la información consignada es veraz y los productos provienen del título habilitante señalado. La presente guía no presenta enmendaduras ni alteraciones.</div>
     <div style="margin-top:30px;display:flex;justify-content:space-between"><div>______________________<br>Firma del emisor</div><div>______________________<br>Sello</div></div>
   </body></html>`;
