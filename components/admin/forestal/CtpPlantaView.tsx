@@ -312,7 +312,31 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
       {/* Qué se mueve en la planta AHORA (del Libro) — el contexto del mapa. */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard density="compact" label="Zonas mapeadas" value={String(zonas.length)} subValue={areaTotal > 0 ? `${areaTotal >= 10000 ? `${(areaTotal / 10000).toFixed(2)} ha` : `${Math.round(areaTotal).toLocaleString("es-PE")} m²`} en total` : "sin dibujar"} icon={MapIcon} emphasis="neutral" />
-        <StatCard density="compact" label="Materia prima en patio" value={saldos ? `${n2(saldos.materiaPrima.saldoM3)} m³` : "—"} subValue="troza sin consumir" icon={Boxes} emphasis={saldos && saldos.materiaPrima.saldoM3 < 0 ? "error" : "success"} />
+        {/*
+          ⛔ Esto NO es «el patio»: es el saldo del LIBRO por guía
+          (Σ ingresos − Σ consumo declarado). Puede dar negativo cuando una
+          corrida declara haber consumido más de lo que la guía trajo, y con la
+          etiqueta vieja —«Materia prima en patio · troza sin consumir»— la
+          pantalla llegaba a decir «−81.81 m³ de troza sin consumir», que leído
+          literal es un patio con volumen negativo.
+
+          El patio de verdad se cuenta PIEZA POR PIEZA en la pestaña Trozas, y da
+          otro número a propósito: son dos preguntas distintas. Acá se dice cuál
+          de las dos es ésta, y cuando el saldo no cierra se explica en vez de
+          disfrazarlo de existencia.
+        */}
+        <StatCard
+          density="compact"
+          label="Saldo del libro (por guía)"
+          value={saldos ? `${n2(saldos.materiaPrima.saldoM3)} m³` : "—"}
+          subValue={
+            saldos && saldos.materiaPrima.saldoM3 < 0
+              ? `se declaró consumir ${n2(saldos.materiaPrima.consumidoM3)} m³ y entraron ${n2(saldos.materiaPrima.ingresoM3)}`
+              : "ingresado − consumido"
+          }
+          icon={Boxes}
+          emphasis={saldos && saldos.materiaPrima.saldoM3 < 0 ? "error" : "success"}
+        />
         <StatCard density="compact" label="Producto terminado" value={saldos ? n2(saldos.productoStock) : "—"} subValue="aserrada lista" icon={PackageCheck} emphasis="neutral" />
         <StatCard density="compact" label="Despachado en el período" value={saldos ? n2(saldos.despachado) : "—"} subValue={period.label} icon={Truck} emphasis="neutral" />
       </div>

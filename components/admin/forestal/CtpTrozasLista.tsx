@@ -135,6 +135,19 @@ export default function CtpTrozasLista({
      salió del patio. Ofrecer la casilla igual sería ofrecer un rechazo. */
   const apartables = useMemo(() => visibles.filter((t) => estadoDeTroza(t) === "libre"), [visibles]);
   const todasElegidas = apartables.length > 0 && apartables.every((t) => elegidas.has(t.id));
+  /**
+   * Las libres de TODO lo filtrado, no sólo de las 200 que se están mostrando.
+   *
+   * La casilla de la cabecera marca lo visible —es lo que el usuario ve y lo que
+   * espera— pero con el patio grande eso se queda corto: filtrar por una guía que
+   * trajo 800 piezas y querer apartarlas todas obligaba a «ver más» cuatro veces,
+   * marcando de a 200. Cuando hay más detrás, se ofrece tomarlas todas de una.
+   */
+  const apartablesFiltradas = useMemo(
+    () => filtradas.filter((t) => estadoDeTroza(t) === "libre"),
+    [filtradas],
+  );
+  const hayMasParaElegir = todasElegidas && apartablesFiltradas.length > apartables.length;
   const piezasElegidas = useMemo(
     () => trozas.filter((t) => elegidas.has(t.id)).map((t) => ({ id: t.id, codigo: t.codificacion ?? t.codigoPlanta, especie: t.especieComun })),
     [trozas, elegidas],
@@ -257,6 +270,15 @@ export default function CtpTrozasLista({
           >
             <Layers className="h-4 w-4" /> Apartar en un lote
           </button>
+          {hayMasParaElegir && (
+            <button
+              type="button"
+              onClick={() => setElegidas(new Set(apartablesFiltradas.map((t) => t.id)))}
+              className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] underline dark:text-[var(--accent)]"
+            >
+              Elegir las {apartablesFiltradas.length} que cumplen el filtro
+            </button>
+          )}
           <button type="button" onClick={() => setElegidas(new Set())} className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] underline">
             Soltar la selección
           </button>
