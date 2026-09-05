@@ -18,10 +18,41 @@ import "server-only";
 
 import { logger } from "@/lib/logger";
 
-/** Lo que Groq acepta hoy. `ogg` es el de Telegram; `m4a` el del iPhone. */
-export const FORMATOS_AUDIO = [
-  "flac", "mp3", "mp4", "mpeg", "mpga", "m4a", "ogg", "oga", "wav", "webm",
+/**
+ * Las extensiones que Groq acepta, TAL CUAL las publica su error.
+ *
+ * Copiadas de la respuesta del servidor, no de la documentación: es la lista
+ * contra la que realmente valida.
+ */
+const FORMATOS_GROQ = [
+  "flac", "mp3", "mp4", "mpeg", "mpga", "m4a", "ogg", "opus", "wav", "webm",
 ] as const;
+
+/**
+ * ⛔ Extensiones que Groq NO conoce pero cuyo contenido sí sabe leer.
+ *
+ * `.oga` es Opus dentro de un contenedor Ogg — el MISMO archivo que `.ogg`, con
+ * otro nombre. Y es justo lo que manda Telegram en cada nota de voz. Groq
+ * valida por extensión antes de mirar el contenido, así que rechazaba con
+ * «file must be one of the following types» un audio que decodifica perfecto.
+ *
+ * Se renombra al subirlo. El archivo no se toca: sólo el nombre con el que
+ * viaja.
+ *
+ * Esto no lo atrapó la prueba original porque el audio de prueba se generó como
+ * `.ogg`: el formato que Telegram usa de verdad nunca pasó por acá.
+ */
+const ALIAS: Record<string, string> = {
+  oga: "ogg",
+  weba: "webm",
+  mpg: "mpeg",
+  mp2: "mpga",
+  // Lo que graba un iPhone si el navegador no convierte.
+  caf: "m4a",
+};
+
+/** Lo que aceptamos de entrada: lo de Groq más lo que sabemos traducir. */
+export const FORMATOS_AUDIO = [...FORMATOS_GROQ, ...Object.keys(ALIAS)] as const;
 
 /** 25 MB es el tope de Groq; un audio de voz de 10 minutos pesa ~1 MB. */
 export const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
@@ -65,12 +96,18 @@ export async function transcribirAudio(
   }
 
   const extension = nombre.split(".").pop()?.toLowerCase() ?? "";
-  if (!FORMATOS_AUDIO.includes(extension as (typeof FORMATOS_AUDIO)[number])) {
+  const paraGroq = ALIAS[extension] ?? extension;
+  if (!FORMATOS_GROQ.includes(paraGroq as (typeof FORMATOS_GROQ)[number])) {
     return {
       ok: false,
-      error: `No sé leer archivos ".${extension}". Mandá el audio en ${FORMATOS_AUDIO.slice(0, 5).join(", ")}…`,
+      error: `No sé leer archivos ".${extension}". Mandá el audio en ${FORMATOS_GROQ.slice(0, 5).join(", ")}…`,
     };
   }
+  /**
+   * El nombre con el que sube, no el que llegó: si la extensión es una que Groq
+   * no conoce, viaja con su equivalente. El contenido es el mismo byte por byte.
+   */
+  const nombreParaGroq = paraGroq === extension ? nombre : `${nombre.slice(0, -extension.length)}${paraGroq}`;
 
   /**
    * `Buffer` de Node no encaja en `BlobPart` (su `ArrayBufferLike` puede ser
@@ -88,7 +125,7 @@ export async function transcribirAudio(
   }
 
   const form = new FormData();
-  form.append("file", blob, nombre);
+  form.append("file", blob, nombreParaGroq);
   form.append("model", "whisper-large-v3-turbo");
   form.append("language", "es");
   form.append("prompt", VOCABULARIO);
