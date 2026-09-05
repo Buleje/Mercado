@@ -82,11 +82,12 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
       const saldosParams = applyCtpPeriodParams(new URLSearchParams({ saldos: "1" }), period);
       const trazaParams = applyCtpPeriodParams(new URLSearchParams({ traza: "1" }), period);
       const prodParams = applyCtpPeriodParams(new URLSearchParams({ section: "produccion" }), period);
+      const concilParams = applyCtpPeriodParams(new URLSearchParams({ conciliacion: "1" }), period);
 
       /* Deduplicado (ADR-347): los cinco los pide también la vista activa en el
          mismo montaje. Ficha y producción son INFORMATIVAS: si fallan, el panel
          core sigue. */
-      const [wood, saldosBody, trazaBody, fichaJson, prodJson] = await Promise.all([
+      const [wood, saldosBody, trazaBody, fichaJson, prodJson, concilBody] = await Promise.all([
         ctpGet<{
           stats: WoodEntryStats;
           entries?: { gtfNumber: string; speciesCites: boolean; status: string; notes: string | null }[];
@@ -101,6 +102,17 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         }),
         ctpGet<unknown>(`/api/admin/forestal/ctp?${prodParams}`).catch((err) => {
           logger.warn("[ctp-compliance] producción no cargó", { error: String(err) });
+          return null;
+        }),
+        /* La conciliación (ADR-139) es la que sabe la existencia FINAL: apertura
+           heredada + movimiento del período. Sin ella, «especies en negativo»
+           castiga el movimiento suelto y le resta hasta 25 puntos a una planta
+           que arrancó el mes con stock y cerró en positivo. Best-effort: si no
+           llega, se usa el movimiento, que es lo que se sabe. */
+        ctpGet<{ conciliacion: { materiaPrima: { especie: string; negativa: boolean }[] } }>(
+          `/api/admin/forestal/ctp?${concilParams}`,
+        ).catch((err) => {
+          logger.warn("[ctp-compliance] conciliación no cargó", { error: String(err) });
           return null;
         }),
       ]);
@@ -162,7 +174,13 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         fueraPlazo: wood.stats.lateCount,
         pendientes: wood.stats.byStatus.pendiente,
         citesCount: wood.stats.citesCount,
-        especiesEnNegativo: saldos.materiaPrima.especiesEnNegativo,
+        /* La existencia final manda; el movimiento del período es el respaldo.
+           Son cosas distintas y confundirlas inventa una infracción: consumir
+           más de lo que entró es normal cuando había stock heredado. */
+        especiesEnNegativo:
+          concilBody?.conciliacion?.materiaPrima != null
+            ? concilBody.conciliacion.materiaPrima.filter((m) => m.negativa).length
+            : saldos.materiaPrima.especiesEnNegativo,
         stockNegativo: productosNegativos.length,
         despachosSinTraza: trazaBody.traza.incompletos,
         citesSinPermiso: citesSinPermisoEspecies.length,
