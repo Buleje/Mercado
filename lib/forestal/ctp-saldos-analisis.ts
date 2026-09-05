@@ -37,6 +37,17 @@ export interface EspecieSaldo {
   consumidoM3: number;
   saldoM3: number;
   pendienteM3: number;
+  /**
+   * Trozas de esta especie que HOY se pueden mandar a la sierra.
+   *
+   * Es el conteo físico del patio (mismo predicado `estaDisponible()` que usa
+   * la pestaña Trozas), no un derivado del m³. Los dos pueden discrepar y no es
+   * un error: el saldo en m³ resta lo consumido contra lo ingresado VALIDADO,
+   * así que una planta que declaró producción sobre inventario de apertura
+   * queda en negativo con el patio lleno. Cuando eso pasa, decir "no hay
+   * rolliza" es falso — hay piezas, lo que falta es el ingreso que las respalde.
+   */
+  piezasDisponibles?: number;
 }
 
 export interface MateriaPrimaTotales {
@@ -242,19 +253,49 @@ export function composicionSaldo(
   porEspecie: ReadonlyArray<EspecieSaldo>,
   max = 6,
 ): RebanadaSaldo[] {
+  return rebanar(porEspecie, (e) => e.saldoM3, max);
+}
+
+/**
+ * La misma composición, pero contando PIEZAS del patio en vez de m³.
+ *
+ * Es la lectura de repuesto para cuando el saldo en m³ no tiene nada positivo
+ * que repartir. Pasa de verdad: una planta que declaró producción contra
+ * inventario de apertura queda con el m³ en negativo y el patio lleno de
+ * trozas. Con una sola lectura, la tarjeta de composición mostraba un hueco de
+ * trescientos píxeles al lado de un patio con 57 piezas — que además se ven en
+ * Antigüedad, dos bloques más abajo, en la misma pantalla.
+ *
+ * No se mezclan nunca: son unidades distintas y la tarjeta dice cuál está
+ * mostrando. Un anillo que suma m³ con piezas no significa nada.
+ */
+export function composicionPiezas(
+  porEspecie: ReadonlyArray<EspecieSaldo>,
+  max = 6,
+): RebanadaSaldo[] {
+  return rebanar(porEspecie, (e) => e.piezasDisponibles ?? 0, max, (v) => Math.round(v));
+}
+
+/** Top-N + cola agrupada. Único lugar donde vive la regla de las «Otras». */
+function rebanar(
+  porEspecie: ReadonlyArray<EspecieSaldo>,
+  valor: (e: EspecieSaldo) => number,
+  max: number,
+  redondear: (v: number) => number = r2,
+): RebanadaSaldo[] {
   const positivos = porEspecie
-    .filter((e) => e.saldoM3 > EPS)
-    .sort((a, b) => b.saldoM3 - a.saldoM3);
+    .filter((e) => valor(e) > EPS)
+    .sort((a, b) => valor(b) - valor(a));
   if (positivos.length <= max) {
-    return positivos.map((e) => ({ name: e.especie, value: r2(e.saldoM3), especies: 1 }));
+    return positivos.map((e) => ({ name: e.especie, value: redondear(valor(e)), especies: 1 }));
   }
   const cabeza = positivos.slice(0, max - 1);
   const cola = positivos.slice(max - 1);
   return [
-    ...cabeza.map((e) => ({ name: e.especie, value: r2(e.saldoM3), especies: 1 })),
+    ...cabeza.map((e) => ({ name: e.especie, value: redondear(valor(e)), especies: 1 })),
     {
       name: "Otras",
-      value: r2(cola.reduce((a, e) => a + e.saldoM3, 0)),
+      value: redondear(cola.reduce((a, e) => a + valor(e), 0)),
       especies: cola.length,
     },
   ];

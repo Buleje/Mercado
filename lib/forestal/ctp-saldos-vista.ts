@@ -131,6 +131,17 @@ export type ResumenDeSaldo = {
   guias: number;
   /** Piezas disponibles de todo lo que suma este resumen. */
   piezas: number;
+  /**
+   * Piezas físicas de TODAS las filas, incluidas las que quedaron en negativo.
+   *
+   * `piezas` sólo cuenta las positivas, que es lo correcto para el disponible
+   * en m³. Pero cuando una especie se sobreconsumió, su saldo es negativo y su
+   * patio NO está vacío: quedan trozas paradas que la sierra puede tomar. Con
+   * un solo contador, la pantalla decía «0 m³ · no hay rolliza» sobre un patio
+   * con 57 piezas — y el mismo tablero mostraba esas piezas dos bloques más
+   * abajo, en Antigüedad. Este es el número que reconcilia las dos lecturas.
+   */
+  piezasTotales: number;
 };
 
 export function resumir(filas: readonly FilaDeSaldo[]): ResumenDeSaldo {
@@ -152,6 +163,7 @@ export function resumir(filas: readonly FilaDeSaldo[]): ResumenDeSaldo {
     porAgotarse: filas.filter((f) => f.disponible > 0 && f.usadoPct >= 90).map((f) => f.nombre),
     guias: positivas.reduce((s, f) => s + f.guias, 0),
     piezas: positivas.reduce((s, f) => s + f.piezas, 0),
+    piezasTotales: filas.reduce((s, f) => s + f.piezas, 0),
   };
 }
 

@@ -29,6 +29,8 @@ export interface SpeciesBalance {
   consumidoM3: number;
   saldoM3: number;
   ingresosCount: number;
+  /** Trozas de la especie que siguen en el patio y se pueden aserrar. */
+  piezasDisponibles?: number;
 }
 
 export interface SaldosData {

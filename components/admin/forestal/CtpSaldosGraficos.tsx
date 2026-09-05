@@ -27,6 +27,7 @@ import { useMemo } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { BulejeDonutChart, BulejeStackedBar, BulejeWaterfallChart } from "@/components/ui-system/charts";
 import {
+  composicionPiezas,
   composicionSaldo,
   pasosDeBalance,
   rankingEspecies,
@@ -74,9 +75,26 @@ export default function CtpSaldosGraficos({
 }) {
   const pasos = useMemo(() => pasosDeBalance(materiaPrima, apertura), [materiaPrima, apertura]);
 
-  const patio = useMemo(() => composicionSaldo(porEspecie), [porEspecie]);
-  const totalPatio = useMemo(() => patio.reduce((a, r) => a + r.value, 0), [patio]);
-  const rampa = useMemo(() => rampaPara(patio.length), [patio.length]);
+  /**
+   * De qué está hecho el patio. Primero en m³ —la unidad del libro—; si el
+   * saldo no tiene nada positivo que repartir, en TROZAS, que es lo que hay
+   * físicamente. Nunca las dos juntas: son unidades distintas y el anillo
+   * dejaría de significar algo.
+   */
+  const patio = useMemo(() => {
+    const enM3 = composicionSaldo(porEspecie);
+    if (enM3.length > 0) return { rebanadas: enM3, unidad: "m3" as const };
+    return { rebanadas: composicionPiezas(porEspecie), unidad: "piezas" as const };
+  }, [porEspecie]);
+  const rebanadas = patio.rebanadas;
+  const totalPatio = useMemo(() => rebanadas.reduce((a, r) => a + r.value, 0), [rebanadas]);
+  const rampa = useMemo(() => rampaPara(rebanadas.length), [rebanadas.length]);
+  const enPiezas = patio.unidad === "piezas";
+  /** Formateador y rótulo de la unidad activa, en un solo lugar. */
+  const fmtUnidad = enPiezas
+    ? (v: number | string) => `${Number(v).toLocaleString("es-PE")} trozas`
+    : m3;
+  const rotuloUnidad = enPiezas ? "trozas en patio" : "m³ en patio";
 
   // Cada barra es el volumen FÍSICO de la especie, partido por estado. El
   // sobreconsumo va aparte y en color de problema: sumarlo al consumo normal
@@ -94,10 +112,27 @@ export default function CtpSaldosGraficos({
   );
   const haySobreconsumo = porEstado.some((e) => e.Sobreconsumo > 0);
   const haySinValidar = porEstado.some((e) => e["Sin validar"] > 0);
+  const hayDisponible = porEstado.some((e) => e.Disponible > 0);
+  const hayConsumido = porEstado.some((e) => e.Consumido > 0);
+
+  /**
+   * Sólo los tramos que existen.
+   *
+   * «Sin validar» y «Sobreconsumo» ya se condicionaban; «Disponible» y
+   * «Consumido» no, y con el patio en cero la leyenda anunciaba un tramo teal
+   * que no está dibujado en ninguna barra. Una leyenda que nombra colores
+   * ausentes hace dudar de los que sí están.
+   */
+  const tramos = [
+    ...(hayDisponible ? [{ key: "Disponible", label: "Disponible", color: "accent" as const }] : []),
+    ...(hayConsumido ? [{ key: "Consumido", label: "Consumido", color: "secondary" as const }] : []),
+    ...(haySinValidar ? [{ key: "Sin validar", label: "Sin validar", color: "tertiary" as const }] : []),
+    ...(haySobreconsumo ? [{ key: "Sobreconsumo", label: "Sobreconsumo", color: "error" as const }] : []),
+  ];
 
   return (
     <div className="charts-forestal space-y-4">
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className={`grid items-start gap-4 ${rebanadas.length > 0 ? "lg:grid-cols-2" : ""}`}>
         {/* ── Cómo se llegó al saldo ───────────────────────────────────────── */}
         <BulejeWaterfallChart
           steps={pasos}
@@ -116,72 +151,115 @@ export default function CtpSaldosGraficos({
         />
 
         {/* ── De qué especie depende el patio ──────────────────────────────── */}
-        <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-            Composición
-          </p>
-          <CardTitle as="h3" className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-            De qué especie está hecho el saldo
-          </CardTitle>
-          {patio.length > 0 ? (
-            <div className="mt-3 flex flex-col items-center gap-5 sm:flex-row">
-              {/* Tamaño fijo, sin medir: dentro de un flex el contenedor se
-                  resolvía en 0 —al montar en móvil y al redimensionar— y la
-                  dona quedaba como un hueco con el número flotando. */}
-              <div className="shrink-0">
-              <BulejeDonutChart
-                data={patio}
-                colors={rampa}
-                width={190}
-                height={180}
-                innerRadius={52}
-                outerRadius={76}
-                format={m3}
-                ariaLabel="Composición del saldo en patio por especie"
-                label={
-                  <div className="text-center">
-                    <p className="font-mono text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{n2(totalPatio)}</p>
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">m³ en patio</p>
-                  </div>
-                }
-              />
-              </div>
-              {/* La leyenda lleva el valor al lado: el color solo no dice cuánto,
-                  y una dona sin cifras obliga a estimar ángulos a ojo. */}
-              <ul className="w-full min-w-0 flex-1 space-y-1.5">
-                {patio.map((r, i) => (
-                  <li key={r.name} className="flex items-center gap-2 text-sm">
-                    <span
-                      className="h-3 w-3 shrink-0 rounded-full"
-                      style={{ background: rampa[i % rampa.length] }}
-                      aria-hidden
-                    />
-                    <span className="truncate text-[var(--text-secondary)]">
-                      {r.name}
-                      {r.especies > 1 && (
-                        <span className="text-[var(--text-tertiary)]"> ({r.especies} especies)</span>
-                      )}
-                    </span>
-                    <span className="ml-auto shrink-0 font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
-                      {n2(r.value)} m³
-                    </span>
-                    <span className="w-12 shrink-0 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
-                      {totalPatio > 0 ? `${((r.value / totalPatio) * 100).toFixed(0)} %` : "—"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <p className="py-10 text-center text-sm text-[var(--text-tertiary)]">
-              Sin saldo positivo en patio: todo lo ingresado ya se transformó.
+        {rebanadas.length > 0 && (
+          <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+            <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Composición
             </p>
-          )}
-        </div>
+            <CardTitle as="h3" className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+              {enPiezas ? "De qué especie son las trozas paradas" : "De qué especie está hecho el saldo"}
+            </CardTitle>
+            {enPiezas && (
+              /* Decir la unidad y por qué cambió. Un anillo que dice «57» donde
+                 antes decía «m³» sin avisar es peor que no dibujarlo. */
+              <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+                El saldo en m³ no tiene nada positivo que repartir, así que acá va el conteo físico del patio —las
+                mismas piezas que se ven en Antigüedad—.
+              </p>
+            )}
+
+            {rebanadas.length === 1 ? (
+              /* Una sola rebanada es un anillo del 100 %: la forma no compara
+                 nada y ocupa 180 px para decir lo que entra en una línea. */
+              <div className="mt-4 flex items-start gap-3">
+                <span
+                  className="mt-1.5 h-4 w-4 shrink-0 rounded-full"
+                  style={{ background: rampa[0] }}
+                  aria-hidden
+                />
+                <div className="min-w-0">
+                  <p className="font-mono text-3xl font-extrabold leading-none tabular-nums text-[var(--text-primary)]">
+                    {enPiezas ? totalPatio.toLocaleString("es-PE") : n2(totalPatio)}
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                    {rotuloUnidad}, {rebanadas[0].especies > 1 ? "repartidas entre" : "todas de"}{" "}
+                    <strong className="font-bold text-[var(--text-primary)]">{rebanadas[0].name}</strong>
+                    {rebanadas[0].especies > 1 ? ` (${rebanadas[0].especies} especies)` : " — una sola especie"}.
+                  </p>
+                  <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+                    Todo el patio cuelga de un mismo permiso: un problema con ese título habilitante para la planta
+                    entera.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-3 flex flex-col items-center gap-5 sm:flex-row">
+                {/* Tamaño fijo, sin medir: dentro de un flex el contenedor se
+                    resolvía en 0 —al montar en móvil y al redimensionar— y la
+                    dona quedaba como un hueco con el número flotando. */}
+                <div className="shrink-0">
+                  <BulejeDonutChart
+                    data={rebanadas}
+                    colors={rampa}
+                    width={190}
+                    height={180}
+                    innerRadius={52}
+                    outerRadius={76}
+                    format={fmtUnidad}
+                    ariaLabel={`Composición del patio por especie, en ${enPiezas ? "trozas" : "metros cúbicos"}`}
+                    label={
+                      <div className="text-center">
+                        <p className="font-mono text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
+                          {enPiezas ? totalPatio.toLocaleString("es-PE") : n2(totalPatio)}
+                        </p>
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                          {rotuloUnidad}
+                        </p>
+                      </div>
+                    }
+                  />
+                </div>
+                {/* La leyenda lleva el valor al lado: el color solo no dice cuánto,
+                    y una dona sin cifras obliga a estimar ángulos a ojo. */}
+                <ul className="w-full min-w-0 flex-1 space-y-1.5">
+                  {rebanadas.map((r, i) => (
+                    <li key={r.name} className="flex items-center gap-2 text-sm">
+                      <span
+                        className="h-3 w-3 shrink-0 rounded-full"
+                        style={{ background: rampa[i % rampa.length] }}
+                        aria-hidden
+                      />
+                      <span className="truncate text-[var(--text-secondary)]">
+                        {r.name}
+                        {r.especies > 1 && (
+                          <span className="text-[var(--text-tertiary)]"> ({r.especies} especies)</span>
+                        )}
+                      </span>
+                      <span className="ml-auto shrink-0 font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
+                        {enPiezas ? r.value.toLocaleString("es-PE") : `${n2(r.value)} m³`}
+                      </span>
+                      <span className="w-12 shrink-0 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
+                        {totalPatio > 0 ? `${((r.value / totalPatio) * 100).toFixed(0)} %` : "—"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
+      {/* Sin m³ positivos y sin piezas no hay composición que dibujar. La frase
+          va suelta en vez de dentro de una tarjeta de 300 px vacía. */}
+      {rebanadas.length === 0 && (
+        <p className="rounded-xl bg-[var(--surface-sunken)] px-4 py-3 text-sm text-[var(--text-tertiary)]">
+          Sin saldo positivo ni trozas en patio: todo lo que ingresó ya se transformó o salió.
+        </p>
+      )}
+
       {/* ── En qué estado está el volumen de cada especie ───────────────────── */}
-      {porEstado.length > 0 && (
+      {porEstado.length > 0 && tramos.length > 0 && (
         <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Estado del volumen
@@ -190,8 +268,11 @@ export default function CtpSaldosGraficos({
             Cada especie, tramo por tramo (m³)
           </CardTitle>
           <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-            La barra completa es la madera que entró físicamente. Cuanto más largo el tramo
-            «Disponible», más queda por aserrar.
+            La barra completa es la madera que entró físicamente.
+            {/* El pie explicaba «Disponible» aunque ese tramo no estuviera en
+                ninguna barra: con el patio en cero, describía un color que no
+                existe en el dibujo. */}
+            {hayDisponible && " Cuanto más largo el tramo «Disponible», más queda por aserrar."}
             {haySinValidar && " «Sin validar» está en el patio pero todavía no cuenta como saldo."}
             {haySobreconsumo && " «Sobreconsumo» es volumen transformado sin ingreso que lo respalde: hay que corregirlo."}
           </p>
@@ -207,12 +288,7 @@ export default function CtpSaldosGraficos({
                lo lleva (lo que queda = teal, el problema = rojo) y los dos
                tramos históricos se separan por luminosidad, que es una
                dimensión libre. */
-            stacks={[
-              { key: "Disponible", label: "Disponible", color: "accent" },
-              { key: "Consumido", label: "Consumido", color: "secondary" },
-              ...(haySinValidar ? [{ key: "Sin validar", label: "Sin validar", color: "tertiary" as const }] : []),
-              ...(haySobreconsumo ? [{ key: "Sobreconsumo", label: "Sobreconsumo", color: "error" as const }] : []),
-            ]}
+            stacks={tramos}
             height={Math.max(200, porEstado.length * 46 + 70)}
             maxBarSize={26}
             yAxisFormat={(v) => `${v}`}

@@ -10,6 +10,17 @@
  *
  * La barra de cada fila muestra su peso en el total, así el volumen se compara
  * de un vistazo sin leer los números uno por uno.
+ *
+ * ── Lo que este bloque NO puede hacer: esconder lo que está en rojo ─────────
+ * El gate era «¿hay una fila con saldo positivo?». Con una especie
+ * sobreconsumida —saldo −81.81 m³ y 57 trozas paradas en el patio— la respuesta
+ * es no, y la sección entera se reemplazaba por «No hay rolliza en el patio en
+ * este período». Tres cosas mal en una línea: desaparecía la única fila que hay
+ * que corregir, afirmaba un patio vacío que el bloque de Antigüedad de la MISMA
+ * pantalla contradice, y dejaba al operador sin la tabla justo cuando más la
+ * necesita. Ahora la tabla se dibuja siempre que haya filas; lo que se apaga es
+ * el reparto —que sí necesita volumen positivo para tener sentido— y con su
+ * motivo escrito.
  */
 
 import { useState } from "react";
@@ -41,7 +52,18 @@ export default function DisponiblePorTipo({
    */
   onKardex?: (especie: string) => void;
 }) {
-  const [vista, setVista] = useState<"trozas" | "aserrada">("trozas");
+  /**
+   * Arranca en la pestaña que TIENE algo.
+   *
+   * Con el patio en cero y 59.85 m³ de aserrada esperando camión, abrir en
+   * «Rolliza» mostraba media pantalla de cartel vacío mientras el dato estaba a
+   * un click. Se calcula una sola vez: después manda la elección del operador,
+   * que no se le puede mover la pestaña bajo el dedo al recargar.
+   */
+  const [vista, setVista] = useState<"trozas" | "aserrada">(() => {
+    const hayRolliza = especies.some((e) => e.saldoM3 > 0 || (e.piezasDisponibles ?? 0) > 0);
+    return hayRolliza || !productos.some((p) => p.stock > 0) ? "trozas" : "aserrada";
+  });
   /**
    * Qué se está mirando de esa madera.
    *
@@ -49,8 +71,19 @@ export default function DisponiblePorTipo({
    * números que ya estaban en las tarjetas de arriba («La que más pesa» era
    * «Depende de» con otro nombre) y sus dos alertas ahora viven en «Qué
    * revisar», que además dice cuál especie y lleva a corregirla.
+   *
+   * Arranca en «Detalle» cuando no hay volumen positivo: repartir cero entre N
+   * filas no dibuja nada, y la fila que hay que ver —la que quedó en rojo—
+   * vive del otro lado.
    */
-  const [panel, setPanel] = useState<"reparto" | "detalle">("reparto");
+  const [panel, setPanel] = useState<"reparto" | "detalle">(() =>
+    /* Se mira la pestaña con la que se ABRE, no cualquiera de las dos: con
+       rolliza en cero y aserrada con stock, decidir sobre «alguna tiene algo»
+       llevaba de vuelta al panel vacío. */
+    (vista === "trozas" ? especies.some((e) => e.saldoM3 > 0) : productos.some((p) => p.stock > 0))
+      ? "reparto"
+      : "detalle",
+  );
 
   const filas = vista === "trozas" ? filasDeTrozas(especies) : filasDeAserrada(productos);
   const r = resumir(filas);
@@ -92,11 +125,26 @@ export default function DisponiblePorTipo({
                 </>
               )}
             </span>
+            {/* Un «0.00 m³» a secas sobre un patio con piezas es la lectura que
+                hace desconfiar del tablero entero. El m³ del libro y el conteo
+                físico son dos cuentas distintas; acá se dicen las dos. */}
+            {res.conStock === 0 && res.piezasTotales > 0 && (
+              <span className="mt-0.5 block text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                saldo en negativo · {nf(res.piezasTotales)}{" "}
+                {v === "trozas"
+                  ? res.piezasTotales === 1
+                    ? "troza sigue en el patio"
+                    : "trozas siguen en el patio"
+                  : res.piezasTotales === 1
+                    ? "pieza sigue en depósito"
+                    : "piezas siguen en depósito"}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
-      {r.principal ? (
+      {filas.length > 0 ? (
         <>
           {/* Sub-pestañas: una pregunta por vez. */}
           <div className="flex flex-wrap gap-1 border-b border-[var(--rule-base)]" role="tablist" aria-label="Qué mirar">
@@ -132,6 +180,17 @@ export default function DisponiblePorTipo({
                 · {n3(r.disponibleM3)} m³ disponibles
               </span>
             </p>
+            {/* Repartir cero entre N filas no dibuja nada. En vez de un panel en
+                blanco, el motivo — que además es accionable. */}
+            {grafico.length === 0 && (
+              <p className="text-sm text-[var(--text-secondary)]">
+                No hay volumen positivo que repartir:{" "}
+                {r.enNegativo > 0
+                  ? `${r.enNegativo} ${r.enNegativo === 1 ? (vista === "trozas" ? "especie quedó" : "producto quedó") : vista === "trozas" ? "especies quedaron" : "productos quedaron"} en negativo.`
+                  : "todo lo que entró ya se transformó."}{" "}
+                El detalle fila por fila está en la pestaña de al lado.
+              </p>
+            )}
             {grafico.map((g) => (
               <div key={g.nombre} className="space-y-0.5">
                 <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
@@ -250,7 +309,11 @@ export default function DisponiblePorTipo({
                     {n3(r.disponibleM3)}
                   </td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-primary)]">
-                    {r.piezas > 0 ? nf(r.piezas) : "—"}
+                    {/* Las piezas se cuentan TODAS, también las de una fila en
+                        negativo: una troza en el patio es física, no depende del
+                        signo del m³. Con el criterio del volumen, el total decía
+                        «—» debajo de una fila que mostraba 57. */}
+                    {r.piezasTotales > 0 ? nf(r.piezasTotales) : "—"}
                   </td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-primary)]">
                     {n3(filas.reduce((a, f) => a + f.total, 0))}
@@ -270,7 +333,9 @@ export default function DisponiblePorTipo({
         </>
       ) : (
         <p className="rounded-xl bg-[var(--surface-sunken)] p-4 text-base text-[var(--text-tertiary)]">
-          No hay {vista === "trozas" ? "rolliza en el patio" : "aserrada en el depósito"} en este período.
+          {vista === "trozas"
+            ? "Ninguna especie tuvo movimiento de rolliza en este período: no hay ingreso ni consumo que mostrar."
+            : "Todavía no se declaró producción aserrada en este período."}
         </p>
       )}
     </section>

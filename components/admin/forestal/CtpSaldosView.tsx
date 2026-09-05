@@ -159,6 +159,9 @@ export function CtpSaldosView({
             porEspecie={data.porEspecie}
             productos={data.productos}
             period={period}
+            /* La trayectoria del saldo al lado del número. Sale de la curva, que
+               es un pedido aparte: si no llegó, el héroe se dibuja sin rastro. */
+            serieSaldo={curva?.puntos.map((p) => Number(p.saldo))}
           />
 
           {/* Lo primero que se pregunta quien abre esta pantalla: cuánta
