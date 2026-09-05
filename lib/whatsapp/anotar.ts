@@ -30,6 +30,7 @@ import { logger } from "@/lib/logger";
 import { transcribirAudio } from "@/lib/ai/transcribir";
 import { conversar } from "@/lib/asistente/conversar";
 import { olvidar, anotarHecho } from "@/lib/asistente/memoria";
+import { nombreDelNegocio } from "@/lib/asistente/negocio";
 import { WhatsAppDuenosDB } from "@/lib/db/whatsapp-duenos.db";
 import { TenantsDB } from "@/lib/db/tenants.db";
 import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
@@ -237,15 +238,25 @@ export async function manejarMensajeDeDueno(msg: MensajeDueno): Promise<void> {
    * confirmaciones, no una: aprobarlas juntas obligaría a aceptar o rechazar el
    * paquete entero cuando una sola está mal.
    */
+  /**
+   * El negocio va EN la pregunta. Acá pesa más que en Telegram: el mismo número
+   * de WhatsApp atiende clientes y anota, y quien dicta puede tener el panel
+   * abierto en otro negocio. «¿Lo anoto?» sin decir dónde manda a buscar el dato
+   * al lugar equivocado (pasó de verdad el 2026-09-05).
+   */
+  const negocio = await nombreDelNegocio(tenantId);
+  const dondePregunta = negocio ? `¿Lo anoto en *${negocio}*?` : "¿Lo anoto?";
+
   for (const p of r.pendientes) {
-    await mandarBotones(cred, telefono, `📝 *${p.resumen}*\n\n¿Lo anoto?`, [
+    await mandarBotones(cred, telefono, `📝 *${p.resumen}*\n\n${dondePregunta}`, [
       { id: `${BOTON_OK}:${p.id}`, titulo: "✅ Confirmar" },
       { id: `${BOTON_NO}:${p.id}`, titulo: "✖ Cancelar" },
     ]);
   }
 
+  // Las que se registraron sin pasar por tarjeta también dicen dónde quedaron.
   for (const reg of r.registradas) {
-    await mandarTexto(cred, telefono, `✅ ${reg.resumen}`);
+    await mandarTexto(cred, telefono, `✅ ${reg.resumen}` + (negocio ? `\n📍 _${negocio}_` : ""));
   }
 
   // Ni texto ni operaciones: hay que decir algo, o el bot se queda mudo.
@@ -301,6 +312,9 @@ async function manejarBoton(msg: MensajeDueno): Promise<void> {
   const datos = (res.data ?? {}) as Record<string, unknown>;
   const donde = datos.dondeVerlo as { pantalla?: string } | undefined;
   logger.info("[whatsapp/dueño] operación anotada", { tenantId, tool: pendiente.toolName });
+  // Negocio Y pantalla: son las dos mitades de «dónde lo veo».
+  const negocioConfirmado = await nombreDelNegocio(tenantId);
+  const ubicacion = [negocioConfirmado, donde?.pantalla].filter(Boolean);
   /**
    * Que la conversación sepa que esto YA quedó anotado. Sin esto, un «anotalo»
    * dos minutos después vuelve a proponer la misma operación como si nada.
@@ -310,7 +324,7 @@ async function manejarBoton(msg: MensajeDueno): Promise<void> {
     cred,
     telefono,
     `✅ ${String(datos.confirmacion ?? "Operación registrada.")}` +
-      (donde?.pantalla ? `\n\n📍 _${donde.pantalla}_` : ""),
+      (ubicacion.length ? `\n\n📍 _${ubicacion.join(" › ")}_` : ""),
   );
 }
 

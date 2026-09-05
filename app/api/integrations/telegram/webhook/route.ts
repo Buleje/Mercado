@@ -34,6 +34,7 @@ import { TenantsDB } from "@/lib/db/tenants.db";
 import { transcribirAudio } from "@/lib/ai/transcribir";
 import { conversar } from "@/lib/asistente/conversar";
 import { olvidar, anotarHecho } from "@/lib/asistente/memoria";
+import { nombreDelNegocio } from "@/lib/asistente/negocio";
 import { canjearCodigo } from "@/lib/telegram/vinculacion";
 import {
   secretoValido, botConfigurado, mandarMensaje, editarMensaje, contestarBoton,
@@ -284,15 +285,27 @@ async function manejarMensaje(msg: TgMessage): Promise<void> {
    * confirmaciones, no una: aprobarlas juntas obligaría a aceptar o rechazar el
    * paquete entero cuando una sola está mal.
    */
+  /**
+   * El negocio va EN la pregunta, no en una nota al pie. El mismo chat puede
+   * estar vinculado a un negocio distinto del que se está mirando en el panel,
+   * y «¿lo anoto?» sin decir dónde manda a buscar el dato al lugar equivocado.
+   */
+  const negocio = await nombreDelNegocio(tenantId);
+  const dondePregunta = negocio ? `¿Lo anoto en <b>${esc(negocio)}</b>?` : "¿Lo anoto?";
+
   for (const p of r.pendientes) {
-    await mandarMensaje(chatId, `📝 <b>${esc(p.resumen)}</b>\n\n¿Lo anoto?`, [
+    await mandarMensaje(chatId, `📝 <b>${esc(p.resumen)}</b>\n\n${dondePregunta}`, [
       { texto: "✅ Confirmar", data: `ok:${p.id}` },
       { texto: "✖ Cancelar", data: `no:${p.id}` },
     ]);
   }
 
+  // Las que se registraron sin pasar por tarjeta también dicen dónde quedaron.
   for (const reg of r.registradas) {
-    await mandarMensaje(chatId, `✅ ${esc(reg.resumen)}`);
+    await mandarMensaje(
+      chatId,
+      `✅ ${esc(reg.resumen)}` + (negocio ? `\n📍 <i>${esc(negocio)}</i>` : ""),
+    );
   }
 
   // Ni texto ni operaciones: hay que decir algo, o el bot se queda mudo.
@@ -366,10 +379,14 @@ async function manejarBoton(cb: TgCallback): Promise<void> {
    * dos minutos después vuelve a proponer la misma operación como si nada.
    */
   anotarHecho(`telegram:${chatId}`, tenantId, String(datos.confirmacion ?? pendiente.toolName));
+  // La confirmación dice negocio Y pantalla: son las dos mitades de «dónde lo
+  // veo». Con una sola, buscarlo sigue siendo adivinar.
+  const negocioConfirmado = await nombreDelNegocio(tenantId);
+  const ubicacion = [negocioConfirmado, donde?.pantalla].filter(Boolean).map((x) => esc(String(x)));
   await editarMensaje(
     chatId,
     messageId,
     `✅ ${esc(String(datos.confirmacion ?? "Operación registrada."))}` +
-      (donde?.pantalla ? `\n\n📍 <i>${esc(donde.pantalla)}</i>` : ""),
+      (ubicacion.length ? `\n\n📍 <i>${ubicacion.join(" › ")}</i>` : ""),
   );
 }
