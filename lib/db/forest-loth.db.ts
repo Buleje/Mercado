@@ -20,6 +20,7 @@ import { auditLoth } from "@/lib/forestal/loth-audit";
 import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
 import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
 import { dmcParaEspecie } from "@/lib/forestal/loth-poa";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export { LOTH_SECTIONS };
 export type { LothSection };
@@ -185,7 +186,7 @@ function describeEntry(e: {
 }): string {
   const code = e.trozaCode || e.treeCode || e.productType || "—";
   const esp = e.speciesCommon ? ` · ${e.speciesCommon}` : "";
-  const vol = e.volumeM3 != null ? ` · ${Number(e.volumeM3).toFixed(4)} m³` : "";
+  const vol = e.volumeM3 != null ? ` · ${fmtM3(Number(e.volumeM3))} m³` : "";
   const qty = e.quantity != null ? ` · ${Number(e.quantity).toFixed(4)} ${e.unit ?? ""}`.trimEnd() : "";
   const gtf = e.gtfNumber ? ` · GTF ${e.gtfNumber}` : "";
   return `Registró ${e.section} #${e.lineNo}: ${code}${esp}${vol}${qty}${gtf}`;

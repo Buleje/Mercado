@@ -20,6 +20,8 @@
  * PURO y client-safe.
  */
 
+import { fmtM3 } from "./cubicacion-formato";
+
 /** Una troza, con lo que hace falta para cerrar su recepción. */
 export interface TrozaRecepcion {
   id: string;
@@ -107,7 +109,7 @@ export function avisosRecepcion(b: BalanceRecepcion, volumenDelIngreso: number |
   if (b.faltantes > 0) {
     avisos.push(
       `${b.faltantes} de ${b.declaradas} troza${b.declaradas === 1 ? "" : "s"} no llegó al patio ` +
-        `(${b.brechaM3.toFixed(4)} m³ menos de lo que declara la guía).`,
+        `(${fmtM3(b.brechaM3)} m³ menos de lo que declara la guía).`,
     );
   }
   // El volumen del ingreso es el que manda en los saldos (I2). Si la recepción
@@ -117,8 +119,8 @@ export function avisosRecepcion(b: BalanceRecepcion, volumenDelIngreso: number |
     const dif = r4(volumenDelIngreso - b.volumenRecibido);
     if (Math.abs(dif) > 0.001) {
       avisos.push(
-        `El ingreso está registrado con ${volumenDelIngreso.toFixed(4)} m³ y lo recibido suma ` +
-          `${b.volumenRecibido.toFixed(4)} m³. Corregí el volumen del ingreso o explicá la diferencia.`,
+        `El ingreso está registrado con ${fmtM3(volumenDelIngreso)} m³ y lo recibido suma ` +
+          `${fmtM3(b.volumenRecibido)} m³. Corregí el volumen del ingreso o explicá la diferencia.`,
       );
     }
   }

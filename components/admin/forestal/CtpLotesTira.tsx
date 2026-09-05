@@ -17,6 +17,7 @@ import { ChevronRight, Layers } from "@buleje/design-system/icons";
 import { pieTablarDe, piezasLibres, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { Btn } from "./ctp-shared";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export default function CtpLotesTira({ onIr }: { onIr: () => void }) {
   const [lotes, setLotes] = useState<LoteAserrio[] | null>(null);
@@ -51,7 +52,7 @@ export default function CtpLotesTira({ onIr }: { onIr: () => void }) {
           </b>{" "}
           ·{" "}
           <span className="font-mono tabular-nums">
-            {piezas} pza · {volumen.toFixed(4)} m³ · {pieTablarDe(volumen).toLocaleString("es-PE")} pt
+            {piezas} pza · {fmtM3(volumen)} m³ · {pieTablarDe(volumen).toLocaleString("es-PE")} pt
           </span>{" "}
           · {lotes.slice(0, 3).map((l) => l.code).join(", ")}
           {lotes.length > 3 ? ` y ${lotes.length - 3} más` : ""}

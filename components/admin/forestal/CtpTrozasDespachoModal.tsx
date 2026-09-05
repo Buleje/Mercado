@@ -26,6 +26,7 @@ import {
 } from "@/lib/forestal/consumo-trozas";
 import { r4, uidDeFila, type FilaDespacho } from "@/lib/forestal/despacho-lista";
 import { Btn, ModalFooter } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 
 const CAMPO =
@@ -129,7 +130,7 @@ export default function CtpTrozasDespachoModal({
             seleccionadas.length > 0 ? (
               <span>
                 <b className="text-[var(--text-primary)]">{seleccionadas.length}</b> troza{seleccionadas.length === 1 ? "" : "s"} ·{" "}
-                <span className="font-mono tabular-nums">{totalM3.toFixed(4)} m³</span>
+                <span className="font-mono tabular-nums">{fmtM3(totalM3)} m³</span>
               </span>
             ) : (
               <span>{visibles.length} pieza{visibles.length === 1 ? "" : "s"} en el patio</span>
@@ -239,7 +240,7 @@ export default function CtpTrozasDespachoModal({
                   <td className="px-3 py-2 text-xs tabular-nums text-[var(--text-tertiary)]">{fmtDia(t.fechaRecepcion ?? t.fechaIngreso)}</td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{t.largoM ?? "—"}</td>
                   <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                    {Number(t.volumenM3 ?? 0).toFixed(4)}
+                    {fmtM3(Number(t.volumenM3 ?? 0))}
                   </td>
                   <td className="px-3 py-2 text-xs">
                     {bloqueo ? (

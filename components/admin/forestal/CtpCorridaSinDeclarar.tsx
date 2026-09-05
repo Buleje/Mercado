@@ -38,6 +38,7 @@ import CtpSumarALaCorrida from "./CtpSumarALaCorrida";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { Btn, formatDate } from "./ctp-shared";
 import type { CtpEntry } from "./ctp-section-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Lo que le queda al lote de esta corrida sin aserrar. */
 export interface RestoDelLote {
@@ -211,7 +212,7 @@ export default function CtpCorridaSinDeclarar({
       const rend = entrada > 0 ? ` · rendimiento ${Math.round((datos.volumen / entrada) * 1000) / 10} %` : "";
       onListo(
         `Corrida N° ${corrida.lineNo} cerrada`,
-        `Declaró ${datos.volumen.toFixed(4)} m³ en ${datos.paquetes.length} paquete(s)${rend}. ` +
+        `Declaró ${fmtM3(datos.volumen)} m³ en ${datos.paquetes.length} paquete(s)${rend}. ` +
           "Ya se puede despachar de esta corrida.",
       );
     } catch (e) {
@@ -239,7 +240,7 @@ export default function CtpCorridaSinDeclarar({
          declarar lo que salga. */
       onAviso?.(
         `Corrida N° ${corrida.lineNo}: ${r.piezas} troza${r.piezas === 1 ? "" : "s"} más a la sierra`,
-        `Entraron ${r.volumenM3.toFixed(4)} m³ más — la corrida va por ${r.volumenTotalM3.toFixed(4)} m³ ` +
+        `Entraron ${fmtM3(r.volumenM3)} m³ más — la corrida va por ${fmtM3(r.volumenTotalM3)} m³ ` +
           "y sigue abierta para declarar lo que salga.",
       );
     } catch (e) {
@@ -265,7 +266,7 @@ export default function CtpCorridaSinDeclarar({
       const r = await onQuitarPiezas({ trozaIds: fuera.map((t) => t.id) });
       onAviso?.(
         `Corrida N° ${corrida.lineNo}: ${r.piezas} troza${r.piezas === 1 ? "" : "s"} fuera de la sierra`,
-        `Salieron ${r.volumenM3.toFixed(4)} m³ — la corrida queda en ${r.volumenTotalM3.toFixed(4)} m³` +
+        `Salieron ${fmtM3(r.volumenM3)} m³ — la corrida queda en ${fmtM3(r.volumenTotalM3)} m³` +
           (r.lotesReabiertos.length > 0
             ? `. Volvió a abrirse ${r.lotesReabiertos.join(", ")} con esa madera.`
             : "."),
@@ -340,7 +341,7 @@ export default function CtpCorridaSinDeclarar({
           </p>
           <p className="font-mono text-sm tabular-nums text-[var(--text-tertiary)]">
             {formatDate(corrida.entryDate)} · {corrida.speciesCommon ?? "Sin especie"} · entraron{" "}
-            <b className="text-[var(--text-secondary)]">{entrada.toFixed(4)} m³</b> ·{" "}
+            <b className="text-[var(--text-secondary)]">{fmtM3(entrada)} m³</b> ·{" "}
             {pieTablarDe(entrada).toLocaleString("es-PE")} pt
           </p>
         </div>
@@ -396,7 +397,7 @@ export default function CtpCorridaSinDeclarar({
            hay piezas a la vista» NO prueba que la corrida se haya cargado sólo
            por volumen. Se dice lo que se sabe —lo que el libro tiene anotado— y
            el operador saca la conclusión con el dato, no con una suposición. */
-        vacio={`Esta corrida no tiene piezas marcadas a la vista. En el libro figura con ${entrada.toFixed(4)} m³ de materia prima.`}
+        vacio={`Esta corrida no tiene piezas marcadas a la vista. En el libro figura con ${fmtM3(entrada)} m³ de materia prima.`}
       />
 
       {/**
@@ -412,9 +413,9 @@ export default function CtpCorridaSinDeclarar({
           />
           <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
             Destildaste <b className="tabular-nums text-[var(--text-primary)]">{fuera.length}</b> troza
-            {fuera.length === 1 ? "" : "s"} ({volumenFuera.toFixed(4)} m³): la corrida queda en{" "}
+            {fuera.length === 1 ? "" : "s"} ({fmtM3(volumenFuera)} m³): la corrida queda en{" "}
             <b className="font-mono tabular-nums text-[var(--text-primary)]">
-              {(entrada - volumenFuera).toFixed(4)} m³
+              {fmtM3(entrada - volumenFuera)} m³
             </b>{" "}
             y esa madera vuelve a estar libre.{" "}
             <b>«Declarar producción» las saca y sigue</b>; acá las sacás sin declarar todavía.
@@ -438,8 +439,8 @@ export default function CtpCorridaSinDeclarar({
           rendimiento se calcula sobre el volumen del libro, no sobre la tabla. */}
       {trozas.length > 0 && Math.abs(volumenPiezas - entrada) > 0.01 && (
         <p className="rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-          Las piezas suman <b className="font-mono tabular-nums">{volumenPiezas.toFixed(4)} m³</b> y la corrida
-          declaró <b className="font-mono tabular-nums">{entrada.toFixed(4)} m³</b>. El rendimiento se calcula
+          Las piezas suman <b className="font-mono tabular-nums">{fmtM3(volumenPiezas)} m³</b> y la corrida
+          declaró <b className="font-mono tabular-nums">{fmtM3(entrada)} m³</b>. El rendimiento se calcula
           sobre lo declarado.
         </p>
       )}
@@ -482,7 +483,7 @@ export default function CtpCorridaSinDeclarar({
           error={error}
           titulo={`Declarar la producción de la corrida N° ${corrida.lineNo}`}
           descripcion={
-            `${material.especie} · entró ${entrada.toFixed(4)} m³` +
+            `${material.especie} · entró ${fmtM3(entrada)} m³` +
             (corrida.materiaPrimaRef ? ` · lote ${corrida.materiaPrimaRef}` : "")
           }
           onConfirmar={(datos) => void declarar(datos)}

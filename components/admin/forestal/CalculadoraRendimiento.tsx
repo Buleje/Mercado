@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Gauge, Percent, Download } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Totales de lo que ya está cubicado en las otras herramientas (localStorage). */
 function totalesCubicador(): { aserradoPt: number; trozasM3: number } {
@@ -163,8 +164,8 @@ export default function CalculadoraRendimiento() {
                 Merma <span className="font-mono tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{fmtPct(resultado.mermaPct)}%</span>
               </div>
               <div className="text-xs text-[var(--text-tertiary)]">
-                {unidad === "pt" ? `${salida} PT = ${Number(resultado.outM3).toFixed(4)} m³ aserrados · ` : ""}
-                merma {Number(resultado.mermaM3).toFixed(4)} m³
+                {unidad === "pt" ? `${salida} PT = ${fmtM3(Number(resultado.outM3))} m³ aserrados · ` : ""}
+                merma {fmtM3(Number(resultado.mermaM3))} m³
               </div>
             </>
           ) : (

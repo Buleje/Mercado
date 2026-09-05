@@ -38,6 +38,7 @@ import CtpRegistrarProduccionModal, {
   type ProduccionRegistrada,
 } from "./CtpRegistrarProduccionModal";
 import { Btn } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const fmtDia = (iso: string | null) => {
   if (!iso) return "—";
@@ -151,11 +152,11 @@ export default function CtpProduccionPendiente({
       setAbierta(null);
       onListo(
         `Corrida N° ${abierta.lineNo} ampliada`,
-        `Se agregaron ${datos.paquetes.length} paquete(s) por ${datos.volumen.toFixed(4)} m³: la corrida ` +
-          `declara ahora ${total.toFixed(4)} m³ sobre ${abierta.entradaM3.toFixed(4)} m³ de materia prima ` +
+        `Se agregaron ${datos.paquetes.length} paquete(s) por ${fmtM3(datos.volumen)} m³: la corrida ` +
+          `declara ahora ${fmtM3(total)} m³ sobre ${fmtM3(abierta.entradaM3)} m³ de materia prima ` +
           `(${Math.round((total / abierta.entradaM3) * 1000) / 10} %).` +
           (queda >= 0.001
-            ? ` Todavía admite ${queda.toFixed(4)} m³ más hasta el tope del ${RENDIMIENTO_TOPE_PCT} %.`
+            ? ` Todavía admite ${fmtM3(queda)} m³ más hasta el tope del ${RENDIMIENTO_TOPE_PCT} %.`
             : ` Llegó al tope del ${RENDIMIENTO_TOPE_PCT} %.`),
       );
     } catch (e) {
@@ -233,12 +234,12 @@ export default function CtpProduccionPendiente({
             </span>
             <span className="flex items-center gap-1.5 font-mono text-sm tabular-nums text-[var(--text-secondary)]">
               <Gauge className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-              {c.declaradoM3.toFixed(4)} / {c.topeM3.toFixed(4)} m³ · {c.rendimientoPct} %
+              {fmtM3(c.declaradoM3)} / {fmtM3(c.topeM3)} m³ · {c.rendimientoPct} %
             </span>
             {/* «admite hasta», no «quedan»: lo segundo se lee como un faltante
                 que hay que llenar, y el margen es un tope. */}
             <span className="font-mono text-sm font-bold tabular-nums text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
-              admite hasta {c.margenM3.toFixed(4)} m³ más
+              admite hasta {fmtM3(c.margenM3)} m³ más
             </span>
             <span className="flex-1" />
             <Btn
@@ -276,8 +277,8 @@ export default function CtpProduccionPendiente({
           paquetesPrevios={paquetesPrevios}
           titulo={`Terminar de declarar la corrida N° ${abierta.lineNo}`}
           descripcion={
-            `${abierta.producto} · ya declaró ${abierta.declaradoM3.toFixed(4)} m³ y admite ` +
-            `${abierta.margenM3.toFixed(4)} m³ más hasta el tope del ${RENDIMIENTO_TOPE_PCT} %`
+            `${abierta.producto} · ya declaró ${fmtM3(abierta.declaradoM3)} m³ y admite ` +
+            `${fmtM3(abierta.margenM3)} m³ más hasta el tope del ${RENDIMIENTO_TOPE_PCT} %`
           }
           ctaLabel="Agregar a la corrida"
           onConfirmar={(datos) => void ampliar(datos)}

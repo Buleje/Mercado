@@ -22,6 +22,7 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 interface ChainStep {
   section: string;
@@ -193,7 +194,7 @@ export default function LothCadenaModal({ code, onClose }: { code: string; onClo
                         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[var(--text-secondary)]">
                           {step.trozaCode && <span className="inline-flex items-center gap-1">Troza <b className="font-mono">{step.trozaCode}</b></span>}
                           {step.productType && <span className="inline-flex items-center gap-1"><ArrowRight className="h-3 w-3 text-[var(--text-tertiary)]" />{step.productType}</span>}
-                          {step.volumeM3 != null && <span className="font-mono tabular-nums font-bold text-[var(--text-primary)]">{Number(step.volumeM3).toFixed(4)} m³</span>}
+                          {step.volumeM3 != null && <span className="font-mono tabular-nums font-bold text-[var(--text-primary)]">{fmtM3(Number(step.volumeM3))} m³</span>}
                           {step.quantity != null && <span className="font-mono tabular-nums font-bold text-[var(--text-primary)]">{Number(step.quantity).toFixed(2)} {unitLabel(step.unit)}</span>}
                           {step.gtfNumber && <span className="inline-flex items-center gap-1 text-[var(--text-tertiary)]"><Truck className="h-3 w-3" /><span className="font-mono">{step.gtfNumber}</span></span>}
                         </div>

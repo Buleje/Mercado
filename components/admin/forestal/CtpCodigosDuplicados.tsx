@@ -26,6 +26,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CardTitle, EmptyState } from "@buleje/design-system";
 import { AlertTriangle, Check, Hash, Loader2, ShieldCheck } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 interface PiezaDup {
   id: string;
@@ -230,7 +231,7 @@ export default function CtpCodigosDuplicados() {
                       <span className="font-mono font-bold text-[var(--text-primary)]">{p.codificacion ?? "sin codificación"}</span>
                       <span className="text-[var(--text-secondary)]">{p.especieComun ?? "—"}</span>
                       <span className="font-mono tabular-nums text-[var(--text-tertiary)]">
-                        {p.volumenM3 != null ? `${p.volumenM3.toFixed(4)} m³` : "—"}
+                        {p.volumenM3 != null ? `${fmtM3(p.volumenM3)} m³` : "—"}
                       </span>
                       <span className="text-[var(--text-tertiary)]">GTF {p.gtfNumber} · {fecha(p.entryDate)}</span>
                       {p.consumida && (

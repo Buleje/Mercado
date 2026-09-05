@@ -10,6 +10,8 @@
  * sin levantar el módulo.
  */
 
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+
 /** Tolerancia de redondeo del volumen: por debajo, es el mismo número. */
 const TOLERANCIA_M3 = 0.005; // 0,5 %
 
@@ -75,7 +77,7 @@ export function cotejarAnexoConLibro(anexo: AnexoPublico | null, linea: LineaPub
     comparado++;
     const dif = Math.abs(vA - vL);
     if (dif / Math.max(vA, vL) > TOLERANCIA_M3) {
-      discrepancias.push(`El anexo declara ${vA.toFixed(4)} m³ y el libro registra ${vL.toFixed(4)} m³.`);
+      discrepancias.push(`El anexo declara ${fmtM3(vA)} m³ y el libro registra ${fmtM3(vL)} m³.`);
     }
   }
 

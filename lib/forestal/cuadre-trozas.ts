@@ -17,6 +17,8 @@
  * Quien alimente `trozasM3` tiene que haber filtrado `trozaOrigenId = null`.
  */
 
+import { fmtM3 } from "./cubicacion-formato";
+
 /** El redondeo de SERFOR (4 decimales), no un margen de cortesía. */
 export const TOLERANCIA_M3 = 0.001;
 
@@ -48,11 +50,11 @@ export function cuadreDeIngreso(
   if (Math.abs(brecha) <= TOLERANCIA_M3) return { estado: "cuadra", brecha: 0 };
 
   return brecha > 0
-    ? { estado: "faltan", brecha, aviso: `faltan ${brecha.toFixed(4)} m³ por detallar` }
+    ? { estado: "faltan", brecha, aviso: `faltan ${fmtM3(brecha)} m³ por detallar` }
     : {
         estado: "sobran",
         brecha,
-        aviso: `${Math.abs(brecha).toFixed(4)} m³ de más en las piezas`,
+        aviso: `${fmtM3(Math.abs(brecha))} m³ de más en las piezas`,
       };
 }
 

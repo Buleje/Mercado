@@ -15,6 +15,8 @@
  * decirlas antes de guardar que descubrirlas con media guía registrada.
  */
 
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+
 /**
  * Tolerancia de volumen, en m³.
  *
@@ -185,7 +187,7 @@ export function problemasDeLista(filas: readonly FilaDespacho[]): string[] {
 
   for (const t of trozasSobreDeclaradas(filas)) {
     problemas.push(
-      `La troza ${rotuloDeFila(t)} mide ${t.disponibleCorrida.toFixed(4)} m³ y la lista declara ${t.volumen.toFixed(4)}.`,
+      `La troza ${rotuloDeFila(t)} mide ${fmtM3(t.disponibleCorrida)} m³ y la lista declara ${fmtM3(t.volumen)}.`,
     );
   }
 

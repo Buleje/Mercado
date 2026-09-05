@@ -10,6 +10,7 @@
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { formatUtmFull, parseUtmZone, fromUtm, toUtm } from "@/lib/forestal/loth-utm";
 import { CATEGORIA_COLOR, CATEGORIA_LABEL, type PoaCategoria } from "@/lib/forestal/loth-poa";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export const SECTION_COLOR: Record<string, string> = {
   tala: "#16a34a",
@@ -172,7 +173,7 @@ const fmtDate = (iso: string): string => {
 /** Popup de una operación del libro (incluye su coordenada UTM y la bandera EUDR). */
 export function operacionPopupHtml(g: GeoEntry, dentro: boolean, declarada: boolean): string {
   const medida =
-    g.volumeM3 != null ? `${g.volumeM3.toFixed(4)} m³` : g.quantity != null ? `${g.quantity.toFixed(2)} ${g.unit ?? ""}` : "";
+    g.volumeM3 != null ? `${fmtM3(g.volumeM3)} m³` : g.quantity != null ? `${g.quantity.toFixed(2)} ${g.unit ?? ""}` : "";
   const foto = g.photoUrl
     ? `<img src="${esc(g.photoUrl)}" alt="" style="margin-top:6px;width:100%;max-height:120px;object-fit:cover;border-radius:6px" />`
     : "";
@@ -213,7 +214,7 @@ export function arbolPopupHtml(t: CensoTree, dentro: boolean, declarada: boolean
     }</div>
     <div>${esc(t.species)}</div>
     ${t.dapM != null ? `<div>DAP ${t.dapM.toFixed(2)} m</div>` : ""}
-    ${t.volumeM3 != null ? `<div style="font-weight:700">${t.volumeM3.toFixed(4)} m³ estimados</div>` : ""}
+    ${t.volumeM3 != null ? `<div style="font-weight:700">${fmtM3(t.volumeM3)} m³ estimados</div>` : ""}
     <div style="font-family:ui-monospace,monospace;font-size:10.5px;opacity:.75">${esc(t.utmZona)} · E ${Math.round(t.utmX)} · N ${Math.round(t.utmY)}</div>
     ${flag}
   </div>`;

@@ -18,6 +18,7 @@ import type { TraceOperation } from "@/lib/forestal/loth-trace";
 import { printTrozaPasaporte, type PasaporteCaratula } from "@/lib/forestal/loth-pasaporte-print";
 import LothTraceEmbudo from "./LothTraceEmbudo";
 import { etapasDe, fmtFechaLarga, fmtDias, plural, tonoDe, type TraceNav } from "./loth-trace-ui";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const num = (v: string | null, dp = 4) => (v == null ? "—" : Number(v).toFixed(dp));
 
@@ -122,14 +123,14 @@ function TraceTimeline({ op, nav }: { op: TraceOperation; nav?: TraceNav }) {
       <div key="1">
         <span>
           <Code>{op.tree}</Code> · Ø {num(op.tala[0].diamMayorM, 2)}/{num(op.tala[0].diamMenorM, 2)} m · L{" "}
-          {num(op.tala[0].lengthM, 2)} m · <Vol>{talaVol.toFixed(4)} m³</Vol>
+          {num(op.tala[0].lengthM, 2)} m · <Vol>{fmtM3(talaVol)} m³</Vol>
         </span>
         <GpsPhoto entry={op.tala[0]} />
       </div>
     ) : null,
     <div key="2" className="space-y-1.5">
       <div className="text-[var(--text-tertiary)]">
-        {plural(op.trozado.length, "troza", "trozas")} · <Vol>{op.trozadoVolM3.toFixed(4)} m³</Vol>
+        {plural(op.trozado.length, "troza", "trozas")} · <Vol>{fmtM3(op.trozadoVolM3)} m³</Vol>
         <span className="ml-1">
           · {despachadas} despachadas · {consumidas} consumidas ·{" "}
           <span className={op.trozasEnPatio > 0 ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : ""}>
@@ -171,7 +172,7 @@ function TraceTimeline({ op, nav }: { op: TraceOperation; nav?: TraceNav }) {
         </span>
       ))}
       <span className="text-[var(--text-tertiary)]">
-        · <Vol>{op.consumoVolM3.toFixed(4)} m³</Vol> al aserrío
+        · <Vol>{fmtM3(op.consumoVolM3)} m³</Vol> al aserrío
       </span>
     </span>,
     <div key="5" className="flex flex-wrap gap-x-4 gap-y-0.5">

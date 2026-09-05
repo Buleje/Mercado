@@ -20,6 +20,7 @@ import type { BloqueDistribuido } from "@/lib/forestal/cubicacion-reparto";
 import type { ResumenJornadas } from "@/lib/forestal/registrar-jornadas";
 import type { Jornada } from "@/lib/forestal/consumo-en-jornadas";
 import { Btn } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const TONO_RESULTADO: Record<string, string> = {
   declarada: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
@@ -106,10 +107,10 @@ export default function CtpJornadasDelTurno({
                 <td className="py-1 pr-2 font-mono tabular-nums text-[var(--text-secondary)]">{j.fecha}</td>
                 <td className="py-1 pr-2 font-mono text-xs text-[var(--text-secondary)]">{j.etiquetas.join(", ")}</td>
                 <td className="py-1 pr-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                  {Number(j.rollizaM3).toFixed(4)}
+                  {fmtM3(Number(j.rollizaM3))}
                 </td>
                 <td className="py-1 pr-2 text-right font-mono tabular-nums font-bold text-[var(--text-primary)]">
-                  {Number(j.m3).toFixed(4)}
+                  {fmtM3(Number(j.m3))}
                 </td>
                 <td className="py-1 text-right font-mono tabular-nums text-[var(--text-secondary)]">{j.piezas}</td>
               </tr>

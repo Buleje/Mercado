@@ -31,6 +31,7 @@ import {
   numerarTrozas,
 } from "@/lib/forestal/trozas-recepcion";
 import CtpRecepcionTrozaCard from "./CtpRecepcionTrozaCard";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export interface TrozaEditable extends TrozaRecepcion {
   especieComun?: string | null;
@@ -184,7 +185,7 @@ export default function CtpRecepcionTrozas({
         </div>
         <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
           <b className="text-[var(--text-primary)]">{balance.recibidas}</b>/{balance.declaradas} piezas ·{" "}
-          <b className="text-[var(--text-primary)]">{balance.volumenRecibido.toFixed(4)}</b> m³ recibidos
+          <b className="text-[var(--text-primary)]">{fmtM3(balance.volumenRecibido)}</b> m³ recibidos
         </span>
       </div>
 
@@ -280,7 +281,7 @@ export default function CtpRecepcionTrozas({
                   </td>
                   <td className="px-3 py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                    {t.volumenM3 != null ? Number(t.volumenM3).toFixed(4) : "—"}
+                    {t.volumenM3 != null ? fmtM3(Number(t.volumenM3)) : "—"}
                   </td>
                   <td className="px-3 py-2">
                     <input

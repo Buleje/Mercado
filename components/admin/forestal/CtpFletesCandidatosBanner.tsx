@@ -15,6 +15,7 @@ import { AlertCircle, Plus } from "@buleje/design-system/icons";
 import { claveBusqueda, formatearPlaca } from "@/lib/forestal/directorio";
 import { TIPO_TRANSPORTE_LABEL, type CandidatoFlete } from "@/lib/forestal/fletes";
 import { Btn } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Fecha date-only en UTC: sin esto, un viaje del día 1 se muestra el 31 en Lima. */
 const fecha = (iso: string) =>
@@ -110,7 +111,7 @@ export default function CtpFletesCandidatosBanner({
                       <span className="block truncate text-xs text-[var(--text-tertiary)]">
                         {[
                           c.proveedorNombre,
-                          c.volumenM3 != null ? `${Number(c.volumenM3).toFixed(4)} m³` : null,
+                          c.volumenM3 != null ? `${fmtM3(Number(c.volumenM3))} m³` : null,
                           c.conductorNombre ? `conductor ${c.conductorNombre}` : null,
                           TIPO_TRANSPORTE_LABEL[c.tipoTransporte],
                         ]

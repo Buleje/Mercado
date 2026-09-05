@@ -29,6 +29,7 @@ import {
   type FilaDeclarada,
 } from "@/lib/forestal/cubicacion-cuadre";
 import { hoyISO, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { useCubicacionesGuardadas } from "@/hooks/use-cubicaciones-guardadas";
 import { CeldaNum, useTecladoGrilla } from "./celdas-excel";
 import { TipoSelect } from "./tipo-badge";
@@ -213,7 +214,7 @@ export default function CtpCubicarProductoModal({
       const j = (await r.json().catch(() => ({}))) as { cubicacion?: CubicacionRegistro; message?: string; error?: string };
       if (!r.ok) throw new Error(j?.message ?? j?.error ?? `El servidor respondió ${r.status}`);
       onGuardada(
-        `Cubicación guardada: ${totales.piezas} piezas · ${fmtPt(totales.pieTablar)} pt · ${totales.m3.toFixed(4)} m³` +
+        `Cubicación guardada: ${totales.piezas} piezas · ${fmtPt(totales.pieTablar)} pt · ${fmtM3(totales.m3)} m³` +
           (hayProblema ? " (con diferencias respecto del libro)" : ""),
         j.cubicacion,
       );
@@ -234,14 +235,14 @@ export default function CtpCubicarProductoModal({
       description={
         declaradas.length === 0
           ? "Medí la madera y después tildá en la tabla contra qué registros tiene que cuadrar"
-          : `${declaradas.length} registro(s) elegidos · ${cuadre.total.piezasDeclaradas} piezas · ${cuadre.total.m3Declarado.toFixed(4)} m³ declarados`
+          : `${declaradas.length} registro(s) elegidos · ${cuadre.total.piezasDeclaradas} piezas · ${fmtM3(cuadre.total.m3Declarado)} m³ declarados`
       }
       footer={
         <ModalFooter
           error={error}
           nota={
             <span className="font-mono tabular-nums">
-              {totales.piezas} pza · {fmtPt(totales.pieTablar)} pt · {totales.m3.toFixed(4)} m³
+              {totales.piezas} pza · {fmtPt(totales.pieTablar)} pt · {fmtM3(totales.m3)} m³
             </span>
           }
         >
@@ -313,8 +314,8 @@ export default function CtpCubicarProductoModal({
                   <td className="px-3 py-2 font-bold text-[var(--text-primary)]">{f.especie}</td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums">{f.piezasMedidas}</td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.piezasDeclaradas}</td>
-                  <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{f.m3Medido.toFixed(4)}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.m3Declarado.toFixed(4)}</td>
+                  <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(f.m3Medido)}</td>
+                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(f.m3Declarado)}</td>
                   <td
                     className={`px-3 py-2 text-right font-mono font-bold tabular-nums ${
                       f.tono === "ok"
@@ -324,7 +325,7 @@ export default function CtpCubicarProductoModal({
                           : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                     }`}
                   >
-                    {f.deltaM3 > 0 ? "+" : ""}{f.deltaM3.toFixed(4)} m³
+                    {f.deltaM3 > 0 ? "+" : ""}{fmtM3(f.deltaM3)} m³
                     {f.deltaPiezas !== 0 && (
                       <span className="ml-1 text-xs font-normal">
                         ({f.deltaPiezas > 0 ? "+" : ""}{f.deltaPiezas} pza)
@@ -337,10 +338,10 @@ export default function CtpCubicarProductoModal({
                 <td className="px-3 py-2">Total</td>
                 <td className="px-3 py-2 text-right font-mono tabular-nums">{cuadre.total.piezasMedidas}</td>
                 <td className="px-3 py-2 text-right font-mono tabular-nums">{cuadre.total.piezasDeclaradas}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">{cuadre.total.m3Medido.toFixed(4)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">{cuadre.total.m3Declarado.toFixed(4)}</td>
+                <td className="px-3 py-2 text-right font-mono tabular-nums">{fmtM3(cuadre.total.m3Medido)}</td>
+                <td className="px-3 py-2 text-right font-mono tabular-nums">{fmtM3(cuadre.total.m3Declarado)}</td>
                 <td className="px-3 py-2 text-right font-mono tabular-nums">
-                  {cuadre.total.deltaM3 > 0 ? "+" : ""}{cuadre.total.deltaM3.toFixed(4)} m³
+                  {cuadre.total.deltaM3 > 0 ? "+" : ""}{fmtM3(cuadre.total.deltaM3)} m³
                 </td>
               </tr>
             </TbodyCtp>
@@ -382,7 +383,7 @@ export default function CtpCubicarProductoModal({
               <option value="">Medir de nuevo</option>
               {guardadas.lista.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.nombre} · {c.totales.piezas} pza · {c.totales.m3.toFixed(4)} m³ · {c.fecha}
+                  {c.nombre} · {c.totales.piezas} pza · {fmtM3(c.totales.m3)} m³ · {c.fecha}
                 </option>
               ))}
             </select>
@@ -485,7 +486,7 @@ export default function CtpCubicarProductoModal({
                       {p ? fmtPt(p.pieTablar) : "—"}
                     </td>
                     <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                      {p ? p.m3.toFixed(4) : "—"}
+                      {p ? fmtM3(p.m3) : "—"}
                     </td>
                     <td className="px-2 py-1.5 text-right">
                       <button

@@ -15,6 +15,7 @@ import { useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, Loader2, Plus, Scissors, Trash2, X } from "@buleje/design-system/icons";
 import { smalianVolume, type LothEntryDTO } from "@/lib/forestal/loth-constants";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 interface Renglon {
   id: number;
@@ -155,7 +156,7 @@ export default function LothTrozadoMultipleModal({
                   <option value="">Elegí el árbol a trozar…</option>
                   {talas.map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.treeCode} · {t.speciesCommon ?? "sin especie"} · {t.volumeM3 ? `${Number(t.volumeM3).toFixed(4)} m³` : "sin volumen"}
+                      {t.treeCode} · {t.speciesCommon ?? "sin especie"} · {t.volumeM3 ? `${fmtM3(Number(t.volumeM3))} m³` : "sin volumen"}
                     </option>
                   ))}
                 </select>
@@ -210,7 +211,7 @@ export default function LothTrozadoMultipleModal({
                               />
                             </td>
                             <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                              {r.vol > 0 ? r.vol.toFixed(4) : "—"}
+                              {r.vol > 0 ? fmtM3(r.vol) : "—"}
                             </td>
                             <td className="px-3 py-2">
                               <input
@@ -258,10 +259,10 @@ export default function LothTrozadoMultipleModal({
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <span className="text-sm font-bold text-[var(--text-primary)]">
                         {listas.length} troza{listas.length === 1 ? "" : "s"} ·{" "}
-                        <span className="font-mono tabular-nums">{totalM3.toFixed(4)} m³</span>
+                        <span className="font-mono tabular-nums">{fmtM3(totalM3)} m³</span>
                       </span>
                       <span className="text-sm text-[var(--text-secondary)]">
-                        de <span className="font-mono tabular-nums">{taladoM3.toFixed(4)} m³</span> tumbados
+                        de <span className="font-mono tabular-nums">{fmtM3(taladoM3)} m³</span> tumbados
                         {rendimiento != null && (
                           <b className="ml-2 font-mono tabular-nums text-[var(--text-primary)]">{rendimiento.toFixed(1)}%</b>
                         )}

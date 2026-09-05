@@ -21,6 +21,7 @@ import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
 import { Btn } from "./ctp-shared";
 import { TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Cuánto del libro se barre. Si se corta, se DICE (un tope callado se lee como «no hay más»). */
 const PAGINA = 200;
@@ -177,14 +178,14 @@ export default function CtpDescuadresPanel() {
                     <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{f.gtfNumber}</td>
                     <td className="px-3 py-2 text-[var(--text-secondary)]">{f.especie}</td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                      {f.declarado.toFixed(4)}
+                      {fmtM3(f.declarado)}
                     </td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                      {f.lista.toFixed(4)}
+                      {fmtM3(f.lista)}
                     </td>
                     <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                       {f.brecha > 0 ? "+" : ""}
-                      {f.brecha.toFixed(4)}
+                      {fmtM3(f.brecha)}
                     </td>
                     <td className="px-3 py-2 text-right">
                       <Btn
@@ -201,7 +202,7 @@ export default function CtpDescuadresPanel() {
           </div>
 
           <p className="text-xs text-[var(--text-tertiary)]">
-            <b className="font-mono tabular-nums">{brechaTotal.toFixed(4)} m³</b> de brecha en {guias} guía
+            <b className="font-mono tabular-nums">{fmtM3(brechaTotal)} m³</b> de brecha en {guias} guía
             {guias === 1 ? "" : "s"}.
             {truncado && ` Se barrieron los primeros ${PAGINA * PAGINAS_MAX} ingresos del libro: puede haber más.`}
           </p>

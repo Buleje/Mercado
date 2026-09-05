@@ -30,6 +30,8 @@
  * PURO y client-safe.
  */
 
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+
 /** Área de un círculo en m², a partir de un diámetro en cm. */
 const areaM2 = (diamCm: number) => (Math.PI / 4) * (diamCm / 100) ** 2;
 
@@ -225,12 +227,12 @@ export function propuestaDeCorreccion(
     {
       cantidad: 1,
       volumenM3: f.huberM3,
-      resumen: `Es UNA troza: el volumen pasa a ${f.huberM3.toFixed(4)} m³ (lo que dan sus medidas).`,
+      resumen: `Es UNA troza: el volumen pasa a ${fmtM3(f.huberM3)} m³ (lo que dan sus medidas).`,
     },
     {
       cantidad: n,
       volumenM3: r4(f.huberM3 * n),
-      resumen: `Son ${n} trozas de esas medidas: la cantidad pasa a ${n} y el volumen a ${r4(f.huberM3 * n).toFixed(4)} m³.`,
+      resumen: `Son ${n} trozas de esas medidas: la cantidad pasa a ${n} y el volumen a ${fmtM3(r4(f.huberM3 * n))} m³.`,
     },
   ];
 }

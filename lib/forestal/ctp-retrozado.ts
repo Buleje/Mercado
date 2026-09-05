@@ -16,6 +16,8 @@
  * Puro y sin red: se testea contra los números de esa guía.
  */
 
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+
 /** Un pedazo a crear, tal como lo carga el operador. */
 export type RetrozoNuevo = {
   d1Cm: number;
@@ -157,8 +159,8 @@ export function calcularRetrozado(madre: TrozaMadre, nuevos: RetrozoNuevo[]): Re
 
   if (madre.volumenM3 != null && volumenRetrozado - madre.volumenM3 > EPSILON) {
     errores.push(
-      `Los pedazos suman ${volumenRetrozado.toFixed(4)} m³ y la troza tiene ${madre.volumenM3.toFixed(4)} m³.` +
-        (yaCortado > 0 ? ` (Ya estaban cortados ${yaCortado.toFixed(4)} m³.)` : ""),
+      `Los pedazos suman ${fmtM3(volumenRetrozado)} m³ y la troza tiene ${fmtM3(madre.volumenM3)} m³.` +
+        (yaCortado > 0 ? ` (Ya estaban cortados ${fmtM3(yaCortado)} m³.)` : ""),
     );
   }
 

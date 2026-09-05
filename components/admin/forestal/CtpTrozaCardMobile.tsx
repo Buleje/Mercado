@@ -16,6 +16,7 @@
 import { Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { LABEL_BLOQUEO, motivoBloqueo, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export default function CtpTrozaCardMobile({
   troza: t,
@@ -84,7 +85,7 @@ export default function CtpTrozaCardMobile({
 
         <span className="shrink-0 text-right">
           <span className="block font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">
-            {t.volumenM3 != null ? Number(t.volumenM3).toFixed(4) : "—"}
+            {t.volumenM3 != null ? fmtM3(Number(t.volumenM3)) : "—"}
           </span>
           <span className="block text-sm text-[var(--text-tertiary)]">m³</span>
         </span>

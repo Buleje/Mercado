@@ -25,6 +25,7 @@ import {
 } from "@/lib/forestal/produccion-paquetes";
 import { Btn } from "./ctp-shared";
 import { TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export default function CtpSobreTopePanel({ onNavigate }: { onNavigate?: () => void }) {
   const [filas, setFilas] = useState<CorridaSobreTope[] | null>(null);
@@ -110,16 +111,16 @@ export default function CtpSobreTopePanel({ onNavigate }: { onNavigate?: () => v
                   <td className="px-3 py-2 text-[var(--text-secondary)]">{f.producto}</td>
                   <td className="px-3 py-2 font-mono text-xs text-[var(--text-tertiary)]">{f.lote ?? "—"}</td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                    {f.entradaM3.toFixed(4)}
+                    {fmtM3(f.entradaM3)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                    {f.salidaM3.toFixed(4)}
+                    {fmtM3(f.salidaM3)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
                     {f.rendimientoPct} %
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                    {f.excesoM3.toFixed(4)} m³
+                    {fmtM3(f.excesoM3)} m³
                   </td>
                 </tr>
               ))}

@@ -20,6 +20,7 @@ import {
   type CensoImportContext,
   type CensoImportResult,
 } from "@/lib/forestal/loth-censo-import";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const EJEMPLO = `N° Árbol\tEspecie\tDAP (cm)\tAltura comercial\tZona\tEste\tNorte
 85-TOR\tTornillo\t80\t16\t18L\t545000\t9012000
@@ -148,7 +149,7 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
                         <td className="px-2 py-1.5 text-[var(--text-secondary)]">{f.speciesCommon || "—"}</td>
                         <td className="px-2 py-1.5 text-right font-mono tabular-nums">{f.dapM?.toFixed(2) ?? "—"}</td>
                         <td className="px-2 py-1.5 text-right font-mono tabular-nums">{f.alturaComercialM?.toFixed(1) ?? "—"}</td>
-                        <td className="px-2 py-1.5 text-right font-mono tabular-nums">{f.volumenEstimadoM3?.toFixed(4) ?? "—"}</td>
+                        <td className="px-2 py-1.5 text-right font-mono tabular-nums">{f.volumenEstimadoM3 != null ? fmtM3(f.volumenEstimadoM3) : "—"}</td>
                         <td className="px-2 py-1.5 font-mono text-xs text-[var(--text-tertiary)]">
                           {f.utmX != null ? `${f.utmZona ?? ""} ${Math.round(f.utmX)}/${Math.round(f.utmY ?? 0)}` : "—"}
                         </td>

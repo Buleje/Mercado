@@ -16,6 +16,7 @@
  */
 
 import type { PoaAnalisis } from "./loth-poa";
+import { fmtM3 } from "./cubicacion-formato";
 
 export interface PoaPrintMeta {
   titular: string | null;
@@ -50,7 +51,7 @@ export function printLothPoa(analisis: PoaAnalisis, meta: PoaPrintMeta): void {
       <td class="num">${e.bajoDmc || "—"}</td>
       <td class="num">${e.semilleros || "—"}</td>
       <td class="num"><b>${e.aprovechables}</b></td>
-      <td class="num"><b>${e.volumenAprovechableM3.toFixed(4)}</b></td>
+      <td class="num"><b>${fmtM3(e.volumenAprovechableM3)}</b></td>
       <td class="num">${e.volumenAutorizadoM3 != null ? e.volumenAutorizadoM3.toFixed(2) : "—"}</td>
     </tr>`,
     )
@@ -62,7 +63,7 @@ export function printLothPoa(analisis: PoaAnalisis, meta: PoaPrintMeta): void {
     .map(
       (a) =>
         `<tr><td><b>${esc(a.treeCode)}</b></td><td>${esc(a.speciesCommon)}</td><td class="num">${a.dapCm != null ? a.dapCm.toFixed(1) : "—"}</td><td class="num">${
-          a.volumenEstimadoM3 != null ? a.volumenEstimadoM3.toFixed(4) : "—"
+          a.volumenEstimadoM3 != null ? fmtM3(a.volumenEstimadoM3) : "—"
         }</td></tr>`,
     )
     .join("");
@@ -134,7 +135,7 @@ export function printLothPoa(analisis: PoaAnalisis, meta: PoaPrintMeta): void {
             totales.aprovechables + totales.semilleros
           }</td><td class="num">${totales.bajoDmc}</td><td class="num">${totales.semilleros}</td><td class="num">${
             totales.aprovechables
-          }</td><td class="num">${totales.volumenAprovechableM3.toFixed(4)}</td><td class="num">${totales.volumenAutorizadoM3.toFixed(2)}</td></tr></tfoot>`
+          }</td><td class="num">${fmtM3(totales.volumenAprovechableM3)}</td><td class="num">${totales.volumenAutorizadoM3.toFixed(2)}</td></tr></tfoot>`
         : ""
     }
   </table>

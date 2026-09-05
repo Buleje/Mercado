@@ -28,6 +28,7 @@ import { listSpecies, findSpeciesByCommonName } from "@/data/forestry-species";
 import { claveEspecie, LOTH_SECTIONS, type LothEntryDTO, type LothSection } from "@/lib/forestal/loth-constants";
 import { estadoVencimiento, permisoParaEspecie, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
 import { fromUtm, parseUtmZone } from "@/lib/forestal/loth-utm";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import LothGpsField from "./LothGpsField";
 
 interface Props {
@@ -646,7 +647,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                     </span>
                     <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
                       {it.dapM ? `Ø ${it.dapM.toFixed(2)}m ` : ""}
-                      {it.vol != null ? `${it.vol.toFixed(4)} m³` : it.quantity != null ? `${it.quantity.toFixed(2)} ${it.unit ?? ""}` : ""}
+                      {it.vol != null ? `${fmtM3(it.vol)} m³` : it.quantity != null ? `${it.quantity.toFixed(2)} ${it.unit ?? ""}` : ""}
                     </span>
                   </button>
                 ))
@@ -679,7 +680,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 {censusTree.speciesCommon}
                 {censusTree.dapM ? ` · DAP ${Number(censusTree.dapM).toFixed(2)} m` : ""}
                 {censusTree.alturaComercialM ? ` · Hc ${Number(censusTree.alturaComercialM).toFixed(2)} m` : ""}
-                {censusTree.volumenEstimadoM3 ? ` · vol. est. ${Number(censusTree.volumenEstimadoM3).toFixed(4)} m³` : ""}
+                {censusTree.volumenEstimadoM3 ? ` · vol. est. ${fmtM3(Number(censusTree.volumenEstimadoM3))} m³` : ""}
                 {censusTree.estado === "talado" && (
                   <span className="ml-1 font-bold text-[var(--data-warning-700)]">· ya marcado como talado</span>
                 )}

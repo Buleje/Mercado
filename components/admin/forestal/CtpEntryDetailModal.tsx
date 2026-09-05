@@ -31,6 +31,7 @@ import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { Btn, COMPROBANTE_LABEL, diasDeRegistro, estaFueraDePlazo, formatDate, formatDateTime, MODAL_BODY, ModalFooter, originLabel, parseCitesPermiso, PLAZO_REGISTRO_DIAS, productLabel, STATUS_META, type WoodEntry } from "./ctp-shared";
 import { faltantesIngresoPorTipo, UNIDADES_LOCTP } from "@/lib/forestal/loctp-campos";
 import CtpIngresoCompletitud from "./CtpIngresoCompletitud";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /**
  * La unidad declarada. Dos formas a propósito: el símbolo para el número grande
@@ -70,7 +71,7 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCam
       onClose={onClose}
       variant="info"
       title={entry.libroNro != null ? `Ingreso N° ${entry.libroNro} · ${entry.gtfNumber}` : `Ingreso · ${entry.gtfNumber}`}
-      description={`${entry.speciesCommonName} · ${Number(entry.volumeM3).toFixed(4)} m³`}
+      description={`${entry.speciesCommonName} · ${fmtM3(Number(entry.volumeM3))} m³`}
       icon={TreePine}
       className="sm:w-[min(95vw,84rem)] sm:max-w-none sm:max-h-[95vh]"
       /* La ficha mide ~1270px de contenido en 870 visibles: la única acción
@@ -255,7 +256,7 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCam
           </Section>
 
           <Section title="Medidas" icon={Scale}>
-            <Field label="Volumen" value={`${Number(entry.volumeM3).toFixed(4)} m³`} mono />
+            <Field label="Volumen" value={`${fmtM3(Number(entry.volumeM3))} m³`} mono />
             <Field label="Piezas" value={String(entry.pieces)} mono />
             <Field label="Largo promedio" value={entry.avgLengthM ? `${Number(entry.avgLengthM).toFixed(2)} m` : null} mono />
             <Field label="Diámetro promedio" value={entry.avgDiameterCm ? `${Number(entry.avgDiameterCm).toFixed(2)} cm` : null} mono />

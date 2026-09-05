@@ -25,6 +25,7 @@ import type { FichaCtp } from "@/hooks/use-ficha-ctp";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
 import CtpArchivadorAuto, { type GuiaParaArchivar } from "./CtpArchivadorAuto";
 import { Btn } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export default function CtpGuiaRegistrada({
   lineas,
@@ -81,7 +82,7 @@ export default function CtpGuiaRegistrada({
         html,
         pieCorrido: d.pieCorrido,
         etiquetas: ["forestal", "GTF", "salida", gtfNumber].filter((t) => Boolean(t.trim())),
-        descripcion: `${d.titulo} emitida por el CTP — ${lineas} ${lineas === 1 ? "producto" : "productos"}, ${total.toFixed(4)} m³${datos.destinatario.nombre ? `, destino ${datos.destinatario.nombre}` : ""}.`,
+        descripcion: `${d.titulo} emitida por el CTP — ${lineas} ${lineas === 1 ? "producto" : "productos"}, ${fmtM3(total)} m³${datos.destinatario.nombre ? `, destino ${datos.destinatario.nombre}` : ""}.`,
       }]);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -98,7 +99,7 @@ export default function CtpGuiaRegistrada({
           Guía {gtfNumber} registrada — {lineas} {lineas === 1 ? "línea" : "líneas"} en el libro
         </p>
         <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          {total.toFixed(4)} m³ con su cadena de custodia declarada. Ya se puede emitir el anexo 04 y el
+          {fmtM3(total)} m³ con su cadena de custodia declarada. Ya se puede emitir el anexo 04 y el
           certificado desde la ficha de cada despacho.
         </p>
 

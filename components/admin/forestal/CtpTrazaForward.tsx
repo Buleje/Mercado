@@ -21,6 +21,7 @@ import {
 } from "@buleje/design-system/icons";
 import { formatDate } from "./ctp-shared";
 import type { TrazaForwardIngreso } from "@/lib/db/forest-ctp.db";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export default function TrazaForwardSection({ entryId }: { entryId: string }) {
   const [data, setData] = useState<TrazaForwardIngreso | null>(null);
@@ -98,7 +99,7 @@ export default function TrazaForwardSection({ entryId }: { entryId: string }) {
                       </p>
                     </div>
                     <span className="shrink-0 text-right font-mono text-xs font-bold tabular-nums text-[var(--text-secondary)]">
-                      {c.volumeConsumidoM3.toFixed(4)} m³
+                      {fmtM3(c.volumeConsumidoM3)} m³
                       <span className="block text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]">de este ingreso</span>
                     </span>
                   </div>

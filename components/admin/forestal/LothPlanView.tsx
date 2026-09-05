@@ -25,6 +25,7 @@ import LothPlanTalaPanel from "./LothPlanTalaPanel";
 import LothEspecieFichas, { type FichaEspecie } from "./LothEspecieFichas";
 import LothEspecieFueraModal from "./LothEspecieFueraModal";
 import { analizarZafra } from "@/lib/forestal/loth-zafra";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import { toast } from "sonner";
@@ -842,7 +843,7 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
             <Field label="DAP — diámetro a la altura del pecho (m)"><input type="number" step="0.001" value={f.dapM} onChange={(e) => set("dapM", e.target.value)} placeholder="0.850" className={cls} /></Field>
             <Field label="Altura comercial (m)"><input type="number" step="0.01" value={f.alturaComercialM} onChange={(e) => set("alturaComercialM", e.target.value)} placeholder="18.00" className={cls} /></Field>
             <Field label="Factor de forma"><input type="number" step="0.01" value={f.factorForma} onChange={(e) => set("factorForma", e.target.value)} placeholder="0.65" className={cls} /></Field>
-            <Field label="Volumen estimado (m³)"><input disabled value={auto > 0 ? auto.toFixed(4) : ""} placeholder="se calcula solo" className={`${cls} opacity-70`} /></Field>
+            <Field label="Volumen estimado (m³)"><input disabled value={auto > 0 ? fmtM3(auto) : ""} placeholder="se calcula solo" className={`${cls} opacity-70`} /></Field>
           </div>
           <p className="text-xs text-[var(--text-tertiary)]">El volumen sale de DAP² × π/4 × altura comercial × factor de forma. Si el árbol está por debajo del DMC de su especie, el libro va a bloquear su tala.</p>
           <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">

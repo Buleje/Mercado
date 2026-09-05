@@ -25,6 +25,7 @@ import {
   type TrozaConsumible,
 } from "@/lib/forestal/consumo-trozas";
 import CtpTrozaCardMobile from "./CtpTrozaCardMobile";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Mismo campo que los filtros de Ingresos: el módulo se lee como uno solo. */
 const CAMPO =
@@ -102,7 +103,7 @@ export default function CtpTrozasPicker({
           Trozas que entran a la sierra
         </CardTitle>
         <span className="ml-auto font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
-          {totales.piezas} pza · {totales.volumenM3.toFixed(4)} m³ ·{" "}
+          {totales.piezas} pza · {fmtM3(totales.volumenM3)} m³ ·{" "}
           {totales.pieTablar.toLocaleString("es-PE")} pt
         </span>
       </div>
@@ -207,7 +208,7 @@ export default function CtpTrozasPicker({
                   {g.especie && <> · {g.especie}</>} · {g.piezas} pza
                 </span>
                 <span className="shrink-0 font-mono tabular-nums text-[var(--text-primary)]">
-                  {g.volumenM3.toFixed(4)} m³
+                  {fmtM3(g.volumenM3)} m³
                 </span>
               </li>
             ))}

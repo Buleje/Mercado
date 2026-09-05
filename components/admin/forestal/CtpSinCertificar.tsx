@@ -21,6 +21,7 @@
 import { AlertTriangle, ChevronRight, ShieldCheck } from "@buleje/design-system/icons";
 import { formatDate } from "./ctp-shared";
 import { Btn } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export interface DespachoSinCertificar {
   id: string;
@@ -44,7 +45,7 @@ function explicar(d: DespachoSinCertificar): { que: string; donde: string } {
   }
   if (d.motivo === "atribucion_parcial") {
     return {
-      que: `Le faltan ${d.sinAtribuir.toFixed(4)} m³ por atribuir de los ${d.declarado.toFixed(4)} que declara.`,
+      que: `Le faltan ${fmtM3(d.sinAtribuir)} m³ por atribuir de los ${fmtM3(d.declarado)} que declara.`,
       donde: "Abrí la ficha y completá el origen del resto.",
     };
   }

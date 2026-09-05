@@ -18,6 +18,7 @@ import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
   descuadreDeEspecie,
   propuestasDeCuadre,
@@ -60,7 +61,7 @@ interface AsientoDescuadrado {
   verificacion: ResumenVerificacion;
 }
 
-const m3 = (n: number) => `${n.toFixed(4)} m³`;
+const m3 = (n: number) => `${fmtM3(n)} m³`;
 
 function Testigo({ titulo, casillero, volumen, piezas, resaltado }: {
   titulo: string;
@@ -343,13 +344,13 @@ export default function CtpCuadrarGuiaModal({
                               {f.cantidad}
                             </td>
                             <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
-                              {f.huberM3?.toFixed(4) ?? "—"}
+                              {f.huberM3 != null ? fmtM3(f.huberM3) : "—"}
                             </td>
                             <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
-                              {f.smalianM3?.toFixed(4) ?? "—"}
+                              {f.smalianM3 != null ? fmtM3(f.smalianM3) : "—"}
                             </td>
                             <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                              {f.declaradoM3?.toFixed(4) ?? "—"}
+                              {f.declaradoM3 != null ? fmtM3(f.declaradoM3) : "—"}
                             </td>
                             <td
                               className={`px-3 py-2 text-right font-mono font-bold tabular-nums ${

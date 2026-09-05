@@ -23,6 +23,7 @@ import {
   type GuiaEmitida,
 } from "@/lib/forestal/guias-emitidas";
 import { Btn, I, TablaSkeleton, VistaHeader } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const fecha = (iso: string) =>
   new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" });
@@ -219,7 +220,7 @@ export default function CtpGuiasEmitidasView({
                   className="shrink-0 rounded bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                   title="Esta guía ampara madera sin corrida de producción atribuida. Completá el origen desde Despacho ▸ cadena de custodia."
                 >
-                  {g.sinOrigen.toFixed(4)} {g.unidad ?? ""} sin origen
+                  {g.unidad === "m3" ? fmtM3(g.sinOrigen) : g.sinOrigen.toFixed(4)} {g.unidad ?? ""} sin origen
                 </span>
               )}
             </li>

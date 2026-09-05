@@ -35,6 +35,7 @@ import CtpFleteModal from "./CtpFleteModal";
 import CtpFletesCandidatosBanner from "./CtpFletesCandidatosBanner";
 import CtpCuentaCorriente from "./CtpCuentaCorriente";
 import { Btn, IconAction, TablaSkeleton, VistaHeader } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 type Pestaña = "viajes" | "transportistas" | "proveedores" | "cuenta";
 
@@ -124,7 +125,7 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
           subValue={
             resumen.costoPorM3 == null
               ? "Falta monto o volumen"
-              : `ponderado · ${Number(resumen.volumen).toFixed(4)} m³ movidos`
+              : `ponderado · ${fmtM3(Number(resumen.volumen))} m³ movidos`
           }
           icon={Truck}
           emphasis="success"
@@ -288,7 +289,7 @@ function ListaViajes({
               <span className="block truncate text-xs text-[var(--text-tertiary)]">
                 {[
                   TIPO_FLETE_LABEL[f.tipo],
-                  f.volumenM3 != null ? `${Number(f.volumenM3).toFixed(4)} m³` : null,
+                  f.volumenM3 != null ? `${fmtM3(Number(f.volumenM3))} m³` : null,
                   unitario != null ? `${soles(unitario)}/m³` : null,
                   PAGADOR_LABEL[f.pagaQuien],
                   f.proveedorNombre,

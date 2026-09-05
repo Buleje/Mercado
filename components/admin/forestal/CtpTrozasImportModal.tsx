@@ -21,6 +21,7 @@ import {
   type TrozaImportada,
 } from "@/lib/forestal/trozas-import";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const EJEMPLO = `Código\tEspecie\tD1\tD2\tLargo\nT-01\tTornillo\t45\t40\t3.5`;
 
@@ -66,7 +67,7 @@ export default function CtpTrozasImportModal({
         <ModalFooter
           nota={
             texto.trim()
-              ? `${resultado.trozas.length} troza(s) · ${resultado.volumenTotal.toFixed(4)} m³${resultado.errores.length > 0 ? ` · ${resultado.errores.length} fila(s) rechazada(s)` : ""}`
+              ? `${resultado.trozas.length} troza(s) · ${fmtM3(resultado.volumenTotal)} m³${resultado.errores.length > 0 ? ` · ${resultado.errores.length} fila(s) rechazada(s)` : ""}`
               : undefined
           }
         >
@@ -136,7 +137,7 @@ export default function CtpTrozasImportModal({
                       {t.dimensiones ?? "—"}
                     </span>
                     <span className="w-20 shrink-0 text-right font-mono tabular-nums text-[var(--text-primary)]">
-                      {t.volumenM3?.toFixed(4)}
+                      {t.volumenM3 != null ? fmtM3(t.volumenM3) : ""}
                     </span>
                   </li>
                 ))}

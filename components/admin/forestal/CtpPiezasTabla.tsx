@@ -18,6 +18,7 @@ import type { TrozaImportada } from "@/lib/forestal/trozas-import";
 import type { CampoOrden, DireccionOrden } from "@/lib/forestal/trozas-recepcion";
 import { normalizarCodigo } from "@/lib/forestal/trozas-recepcion";
 import type { CodigoTomado } from "@/hooks/use-codigos-planta";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const TH = "px-2 py-2 text-left align-bottom text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
 const TD = "px-2 py-1.5 align-middle";
@@ -202,7 +203,7 @@ export default function CtpPiezasTabla({
                 <td className={`${TD} text-right font-mono tabular-nums text-[var(--text-tertiary)]`}>{t.d2Cm ?? "—"}</td>
                 <td className={`${TD} text-right font-mono tabular-nums text-[var(--text-tertiary)]`}>{t.largoM ?? "—"}</td>
                 <td className={`${TD} text-right font-mono font-bold tabular-nums text-[var(--text-primary)]`}>
-                  {t.volumenM3 != null ? t.volumenM3.toFixed(4) : "—"}
+                  {t.volumenM3 != null ? fmtM3(t.volumenM3) : "—"}
                 </td>
               </tr>
             );

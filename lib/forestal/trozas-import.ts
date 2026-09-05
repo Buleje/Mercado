@@ -27,6 +27,7 @@
  */
 
 import { volumenHuber } from "./ctp-retrozado";
+import { fmtM3 } from "./cubicacion-formato";
 
 export interface TrozaImportada {
   orden: number;
@@ -288,5 +289,5 @@ export function compararConDeclarado(volumenTrozas: number, volumenLinea: number
   const dif = Math.abs(volumenTrozas - volumenLinea);
   if (dif / volumenLinea <= 0.02) return null;
   const signo = volumenTrozas > volumenLinea ? "más" : "menos";
-  return `Las trozas suman ${volumenTrozas.toFixed(4)} m³, ${signo} que los ${volumenLinea.toFixed(4)} m³ declarados en el ingreso (${((dif / volumenLinea) * 100).toFixed(1)} % de diferencia).`;
+  return `Las trozas suman ${fmtM3(volumenTrozas)} m³, ${signo} que los ${fmtM3(volumenLinea)} m³ declarados en el ingreso (${((dif / volumenLinea) * 100).toFixed(1)} % de diferencia).`;
 }

@@ -21,6 +21,7 @@ import {
   seccionDoc,
   tituloDoc,
 } from "./ctp-documento-print";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export interface RenglonLegajo {
   libroNro: number | null;
@@ -67,7 +68,7 @@ export function portadaLegajo(i: {
       <td>${esc(r.providerName)}</td>
       <td>${esc(r.especie)}</td>
       <td class="c">${r.piezas ?? ""}</td>
-      <td class="r vol">${m3(r.volumenM3).toFixed(4)}</td>
+      <td class="r vol">${fmtM3(m3(r.volumenM3))}</td>
       <td class="c est">${esc(r.estado)}</td>
       <td class="c">${r.conGuia ? "Sí" : "—"}</td>
     </tr>`,
@@ -89,7 +90,7 @@ export function portadaLegajo(i: {
     { k: "Ingresos", v: String(i.renglones.length) },
     { k: "Guías distintas", v: String(guias) },
     { k: "Piezas", v: piezas ? String(piezas) : "" },
-    { k: "Volumen total", v: total.toFixed(4), u: "m³", tono: "ok" },
+    { k: "Volumen total", v: fmtM3(total), u: "m³", tono: "ok" },
     { k: "Sin ficha SERFOR", v: sinGuia ? String(sinGuia) : "", tono: "aviso" },
   ])}
 
@@ -104,7 +105,7 @@ export function portadaLegajo(i: {
     <tfoot><tr>
       <td colspan="6" class="lbl">Total del legajo</td>
       <td class="c">${piezas || ""}</td>
-      <td class="r vol">${total.toFixed(4)}</td>
+      <td class="r vol">${fmtM3(total)}</td>
       <td colspan="2"></td>
     </tr></tfoot>
   </table>
@@ -120,7 +121,7 @@ export function portadaLegajo(i: {
 
   <div class="doc-pie">
     <span>Legajo de ${i.renglones.length} ingreso(s)</span>
-    <span>${total.toFixed(4)} m³ · Libro de Operaciones del CTP</span>
+    <span>${fmtM3(total)} m³ · Libro de Operaciones del CTP</span>
   </div>`;
 }
 

@@ -6,7 +6,7 @@
  * export y el detalle: si cada uno sumara por su cuenta, la tarjeta de arriba y
  * la tabla de abajo podrían decir cifras distintas del mismo lote.
  *
- * El PT sale de `PT_POR_M3` (423.78), la MISMA constante del cubicador: la
+ * El PT sale de `PT_POR_M3` (424), la MISMA constante del cubicador: la
  * conversión no se re-escribe por ahí, o dos pantallas convierten distinto.
  */
 

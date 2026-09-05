@@ -21,6 +21,7 @@ import { AlertTriangle, Loader2, PackageOpen, Search } from "@buleje/design-syst
 import { DataTable, EmptyState } from "@buleje/design-system";
 import EspecieFoto from "./EspecieFoto";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 type Troza = {
   id: string;
@@ -225,7 +226,7 @@ export default function CtpTrozasBuscador() {
                       {t.diametroCm != null ? t.diametroCm.toFixed(1) : "—"}
                     </td>
                     <td className="px-4 py-2.5 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {t.volumenM3 != null ? `${t.volumenM3.toFixed(4)} m³` : "—"}
+                      {t.volumenM3 != null ? `${fmtM3(t.volumenM3)} m³` : "—"}
                     </td>
                   </tr>
                 ))}
@@ -239,7 +240,7 @@ export default function CtpTrozasBuscador() {
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="font-mono font-bold text-[var(--text-primary)]">{t.codificacion ?? "—"}</span>
                   <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
-                    {t.volumenM3 != null ? `${t.volumenM3.toFixed(4)} m³` : "—"}
+                    {t.volumenM3 != null ? `${fmtM3(t.volumenM3)} m³` : "—"}
                   </span>
                 </div>
                 <p className="mt-0.5 flex items-center gap-2 text-sm text-[var(--text-secondary)]">

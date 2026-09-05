@@ -16,6 +16,7 @@ import { AlertTriangle, ArrowDown, TreePine } from "@buleje/design-system/icons"
 import type { TraceFila } from "@/lib/forestal/loth-trace-tabla";
 import { FLAG_LABEL, FLAG_TONE } from "@/lib/forestal/loth-arbol";
 import { fmtFecha, tonoDe, type TraceNav, type TraceOrden } from "./loth-trace-ui";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const CELL = "px-3 py-2 text-sm";
 const NUM = `${CELL} text-right font-mono tabular-nums`;
@@ -165,18 +166,18 @@ function Fila({
         {f.especie ?? "—"}
         {f.cites && <span className="ml-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">CITES</span>}
       </td>
-      <td className={NUM}>{f.censoM3?.toFixed(4) ?? "—"}</td>
-      <td className={NUM}>{f.taladoM3?.toFixed(4) ?? "—"}</td>
+      <td className={NUM}>{f.censoM3 != null ? fmtM3(f.censoM3) : "—"}</td>
+      <td className={NUM}>{f.taladoM3 != null ? fmtM3(f.taladoM3) : "—"}</td>
       <td className={`${NUM} font-bold ${desvio != null && desvio > 25 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]"}`}>
         {f.precisionCensoPct != null ? `${f.precisionCensoPct.toFixed(1)}%` : "—"}
       </td>
-      <td className={NUM}>{f.trozadoM3 > 0 ? f.trozadoM3.toFixed(4) : "—"}</td>
+      <td className={NUM}>{f.trozadoM3 > 0 ? fmtM3(f.trozadoM3) : "—"}</td>
       <td className={`${NUM} font-bold ${tono.texto}`}>{f.rendimientoPct != null ? `${f.rendimientoPct.toFixed(1)}%` : "—"}</td>
       <td className={`${NUM} ${f.mermaVeredicto && f.mermaVeredicto !== "ok" ? `font-bold ${tono.texto}` : "text-[var(--text-secondary)]"}`}>
         {f.mermaPct != null ? `${f.mermaM3.toFixed(3)} · ${f.mermaPct.toFixed(0)}%` : "—"}
       </td>
       <td className={NUM}>
-        {f.movilizadoM3 > 0 ? f.movilizadoM3.toFixed(4) : "—"}
+        {f.movilizadoM3 > 0 ? fmtM3(f.movilizadoM3) : "—"}
         {f.patioM3 > 0 && (
           <span className="block text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
             {f.patioM3.toFixed(2)} en patio

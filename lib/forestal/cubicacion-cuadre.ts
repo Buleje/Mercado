@@ -16,6 +16,7 @@
 
 import type { PiezaCubicada } from "./cubicacion";
 import { tipoDePieza } from "./cubicacion-tipo";
+import { fmtM3 } from "./cubicacion-formato";
 
 /** Lo que el Libro CTP afirma del producto que se está cubicando. */
 export interface DeclaradoEnLibro {
@@ -147,7 +148,7 @@ export function cuadrarConLibro(
       avisos.push({
         campo: "volumen",
         tono: "ok",
-        texto: `El volumen cuadra: ${totalM3.toFixed(4)} m³ contra ${declarado.volumenM3.toFixed(4)} declarados.`,
+        texto: `El volumen cuadra: ${fmtM3(totalM3)} m³ contra ${fmtM3(declarado.volumenM3)} declarados.`,
         delta,
       });
     } else {
@@ -155,8 +156,8 @@ export function cuadrarConLibro(
         campo: "volumen",
         tono: pct >= DIFERENCIA_GRAVE_PCT ? "error" : "aviso",
         texto:
-          `La cubicación da ${totalM3.toFixed(4)} m³ y el libro declara ${declarado.volumenM3.toFixed(4)} ` +
-          `(${delta > 0 ? "+" : ""}${delta.toFixed(4)} m³, ${pct.toFixed(1)} %). ` +
+          `La cubicación da ${fmtM3(totalM3)} m³ y el libro declara ${fmtM3(declarado.volumenM3)} ` +
+          `(${delta > 0 ? "+" : ""}${fmtM3(delta)} m³, ${pct.toFixed(1)} %). ` +
           (delta > 0
             ? "Medir de más que lo declarado es lo que un control lee como carga sin amparo."
             : "Si sobró madera declarada, revisá si parte salió en otra guía."),
@@ -293,7 +294,7 @@ export function cuadrarConjunto(
       avisos.push({
         campo: "especie",
         tono: "error",
-        texto: `Se midieron ${f.m3Medido.toFixed(4)} m³ de ${f.especie} y no hay ninguna fila elegida de esa especie.`,
+        texto: `Se midieron ${fmtM3(f.m3Medido)} m³ de ${f.especie} y no hay ninguna fila elegida de esa especie.`,
         delta: f.deltaM3,
       });
       continue;
@@ -302,7 +303,7 @@ export function cuadrarConjunto(
       avisos.push({
         campo: "especie",
         tono: "error",
-        texto: `Elegiste ${f.m3Declarado.toFixed(4)} m³ de ${f.especie} y la cubicación no tiene ninguna pieza de esa especie.`,
+        texto: `Elegiste ${fmtM3(f.m3Declarado)} m³ de ${f.especie} y la cubicación no tiene ninguna pieza de esa especie.`,
         delta: f.deltaM3,
       });
       continue;
@@ -311,8 +312,8 @@ export function cuadrarConjunto(
       campo: "volumen",
       tono: f.tono,
       texto:
-        `${f.especie}: medidos ${f.m3Medido.toFixed(4)} m³ contra ${f.m3Declarado.toFixed(4)} declarados ` +
-        `(${f.deltaM3 > 0 ? "+" : ""}${f.deltaM3.toFixed(4)} m³` +
+        `${f.especie}: medidos ${fmtM3(f.m3Medido)} m³ contra ${fmtM3(f.m3Declarado)} declarados ` +
+        `(${f.deltaM3 > 0 ? "+" : ""}${fmtM3(f.deltaM3)} m³` +
         (f.deltaPiezas !== 0 ? `, ${f.deltaPiezas > 0 ? "+" : ""}${f.deltaPiezas} piezas` : "") +
         ").",
       delta: f.deltaM3,

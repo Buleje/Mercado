@@ -39,6 +39,7 @@ import {
 import { pieTablarDe, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Lo que el modal devuelve cuando se firma. */
 export interface ConfirmacionConsumo {
@@ -184,7 +185,7 @@ export default function CtpConsumirLoteModal({
           error={error}
           nota={
             <span className="font-mono tabular-nums">
-              {totales.piezas} pza · {totales.volumenM3.toFixed(4)} m³ ·{" "}
+              {totales.piezas} pza · {fmtM3(totales.volumenM3)} m³ ·{" "}
               {pieTablarDe(totales.volumenM3).toLocaleString("es-PE")} pt · {totales.guias} guía
               {totales.guias === 1 ? "" : "s"}
             </span>
@@ -213,7 +214,7 @@ export default function CtpConsumirLoteModal({
                 : `${yaEnElLote.size} ya en el lote`
             }
           />
-          <Cifra icon={TreePine} label="Volumen" valor={`${totales.volumenM3.toFixed(4)} m³`} detalle={`${pieTablarDe(totales.volumenM3).toLocaleString("es-PE")} pt`} />
+          <Cifra icon={TreePine} label="Volumen" valor={`${fmtM3(totales.volumenM3)} m³`} detalle={`${pieTablarDe(totales.volumenM3).toLocaleString("es-PE")} pt`} />
           <Cifra icon={Layers} label="Especies" valor={String(totales.especies)} detalle={lote.speciesCommon} />
           <Cifra
             icon={CalendarDays}
@@ -312,13 +313,13 @@ export default function CtpConsumirLoteModal({
                     </td>
                     <td className="px-3 py-2 text-right font-mono font-bold tabular-nums">
                       <span className={pasado ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]"}>
-                        {g.volumenM3.toFixed(4)} m³
+                        {fmtM3(g.volumenM3)} m³
                       </span>
                       {/* El cupo al lado del pedido: es la comparación que
                           decide, y separada en dos lugares no se hace. */}
                       {cupo?.disponible != null && (
                         <div className="text-xs font-normal text-[var(--text-tertiary)]">
-                          de {cupo.disponible.toFixed(4)} sin consumir
+                          de {fmtM3(cupo.disponible)} sin consumir
                         </div>
                       )}
                     </td>
@@ -391,7 +392,7 @@ export default function CtpConsumirLoteModal({
                   <td className="px-3 py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
                   <td className="px-3 py-2 font-mono text-[var(--text-tertiary)]">{t.gtfNumber ?? "—"}</td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
-                    {t.volumenM3 != null ? Number(t.volumenM3).toFixed(4) : "—"}
+                    {t.volumenM3 != null ? fmtM3(Number(t.volumenM3)) : "—"}
                   </td>
                   <td className="px-3 py-2 text-right">
                     {fija ? (
@@ -429,7 +430,7 @@ export default function CtpConsumirLoteModal({
           sustantivo="pieza"
           extra={
             <span className="font-mono tabular-nums">
-              {totales.volumenM3.toFixed(4)} m³ entran a la sierra
+              {fmtM3(totales.volumenM3)} m³ entran a la sierra
             </span>
           }
         />

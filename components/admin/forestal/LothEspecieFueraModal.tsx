@@ -18,6 +18,7 @@ import { useState } from "react";
 import { AlertTriangle, Ban, Loader2, Plus, ShieldAlert } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export interface LothEspecieFueraModalProps {
   planId: string;
@@ -101,7 +102,7 @@ export default function LothEspecieFueraModal({
       open
       onClose={onClose}
       title={`${especie}: censada fuera del plan`}
-      description={`${arboles.length} ${arboles.length === 1 ? "árbol" : "árboles"} · ${m3.toFixed(4)} m³`}
+      description={`${arboles.length} ${arboles.length === 1 ? "árbol" : "árboles"} · ${fmtM3(m3)} m³`}
       icon={ShieldAlert}
       className="max-w-2xl"
     >

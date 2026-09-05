@@ -13,6 +13,7 @@ import { CSS_LISTA_TROZAS, htmlListaTrozas } from "@/lib/forestal/ctp-lista-troz
 import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { balanceRecepcion } from "@/lib/forestal/recepcion-trozas";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /**
  * La lista de trozas que amparó este ingreso (ADR-312).
@@ -290,10 +291,10 @@ export default function CtpTrozasDeIngreso({
             </span>
           )}
           <span className="flex items-baseline gap-1.5">
-            <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">{total.toFixed(4)} m³</span>
+            <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(total)} m³</span>
             {cuadre.estado === "cuadra" && (
               <span
-                title={`Las piezas suman lo mismo que el volumen declarado del ingreso (${volumenDelIngreso?.toFixed(4)} m³).`}
+                title={`Las piezas suman lo mismo que el volumen declarado del ingreso (${volumenDelIngreso != null ? fmtM3(volumenDelIngreso) : "—"} m³).`}
                 className="inline-flex items-center gap-1 rounded-lg bg-[var(--data-success-500)]/15 px-2 py-0.5 text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
               >
                 <Check className="h-3 w-3" strokeWidth={3} /> cuadra
@@ -301,7 +302,7 @@ export default function CtpTrozasDeIngreso({
             )}
             {descuadra(cuadre) && (
               <span
-                title={`El ingreso declara ${volumenDelIngreso?.toFixed(4)} m³ y las piezas suman ${total.toFixed(4)} m³. O falta cargar trozas, o el volumen del ingreso no es el de la guía.`}
+                title={`El ingreso declara ${volumenDelIngreso != null ? fmtM3(volumenDelIngreso) : "—"} m³ y las piezas suman ${fmtM3(total)} m³. O falta cargar trozas, o el volumen del ingreso no es el de la guía.`}
                 className="inline-flex items-center gap-1 rounded-lg bg-[var(--data-warning-500)]/15 px-2 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
               >
                 <AlertTriangle className="h-3 w-3" />
@@ -336,11 +337,11 @@ export default function CtpTrozasDeIngreso({
           <p className="text-sm text-[var(--text-secondary)]">
             El ingreso declara{" "}
             <strong className="font-mono tabular-nums text-[var(--text-primary)]">
-              {volumenDelIngreso?.toFixed(4)} m³
+              {volumenDelIngreso != null ? fmtM3(volumenDelIngreso) : "—"} m³
             </strong>{" "}
             y las {trozas.length} piezas suman{" "}
             <strong className="font-mono tabular-nums text-[var(--text-primary)]">
-              {total.toFixed(4)} m³
+              {fmtM3(total)} m³
             </strong>
             . O falta cargar piezas, o el volumen no es el de la guía.
           </p>
@@ -364,7 +365,7 @@ export default function CtpTrozasDeIngreso({
               onClick={() => {
                 if (
                   window.confirm(
-                    `El volumen del ingreso pasará de ${volumenDelIngreso?.toFixed(4)} a ${total.toFixed(4)} m³.\n\n` +
+                    `El volumen del ingreso pasará de ${volumenDelIngreso != null ? fmtM3(volumenDelIngreso) : "—"} a ${fmtM3(total)} m³.\n\n` +
                       `Hacelo sólo si el volumen estaba mal tipeado. Si lo que falta son piezas por cargar, este cambio haría que el libro declare menos madera de la que ampara la guía.`,
                   )
                 ) {
@@ -374,7 +375,7 @@ export default function CtpTrozasDeIngreso({
               className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)] disabled:opacity-60"
             >
               {arreglando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" aria-hidden />}
-              Corregir el volumen a {total.toFixed(4)} m³
+              Corregir el volumen a {fmtM3(total)} m³
             </button>
           </div>
           {errorArreglo && (
@@ -461,7 +462,7 @@ export default function CtpTrozasDeIngreso({
                       {t.diametroCm != null ? `${t.diametroCm.toFixed(1)} cm` : "—"}
                     </td>
                     <td className="px-4 py-2.5 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {t.volumenM3 != null ? `${t.volumenM3.toFixed(4)} m³` : "—"}
+                      {t.volumenM3 != null ? `${fmtM3(t.volumenM3)} m³` : "—"}
                     </td>
                     <td className="px-2 py-2.5 text-right">
                       {/* Sólo se ofrece cortar si queda madera: con la troza ya
@@ -505,7 +506,7 @@ export default function CtpTrozasDeIngreso({
                         {r.diametroCm != null ? `${r.diametroCm.toFixed(1)} cm` : "—"}
                       </td>
                       <td className="px-4 py-2 text-right font-mono text-xs font-bold tabular-nums text-[var(--text-secondary)]">
-                        {r.volumenM3 != null ? `${r.volumenM3.toFixed(4)} m³` : "—"}
+                        {r.volumenM3 != null ? `${fmtM3(r.volumenM3)} m³` : "—"}
                       </td>
                       <td />
                     </tr>
@@ -514,7 +515,7 @@ export default function CtpTrozasDeIngreso({
                   {pedazos.length > 0 && (
                     <tr className="border-b border-[var(--rule-soft)] last:border-0">
                       <td colSpan={9} className="px-4 py-1.5 pl-8 text-xs text-[var(--text-tertiary)]">
-                        Cortado {cortado.toFixed(4)} m³ · quedan {Math.max(0, libre).toFixed(4)} m³ sin cortar
+                        Cortado {fmtM3(cortado)} m³ · quedan {fmtM3(Math.max(0, libre))} m³ sin cortar
                       </td>
                     </tr>
                   )}
@@ -531,7 +532,7 @@ export default function CtpTrozasDeIngreso({
             <div className="flex items-baseline justify-between gap-2">
               <span className="font-mono font-bold text-[var(--text-primary)]">{t.codificacion ?? "—"}</span>
               <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
-                {t.volumenM3 != null ? `${t.volumenM3.toFixed(4)} m³` : "—"}
+                {t.volumenM3 != null ? `${fmtM3(t.volumenM3)} m³` : "—"}
               </span>
             </div>
             <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{t.especieComun ?? "—"}</p>
@@ -601,7 +602,7 @@ export default function CtpTrozasDeIngreso({
             ),
             descripcion:
               `Lista de trozas${gtfNumber ? ` de la GTF ${gtfNumber}` : ""} — ` +
-              `${trozas.length} pieza(s), ${total.toFixed(4)} m³${titular ? `, ${titular}` : ""}.`,
+              `${trozas.length} pieza(s), ${fmtM3(total)} m³${titular ? `, ${titular}` : ""}.`,
           })}
           onClose={() => setViendoLista(false)}
         />

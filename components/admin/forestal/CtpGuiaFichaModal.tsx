@@ -24,6 +24,7 @@ import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { formatDate, productLabel, StatusBadge, type WoodEntry, type WoodEntryStatus } from "./ctp-shared";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Una pieza de la guía, como la devuelve el endpoint de trozas. */
 export interface TrozaDeFicha {
@@ -42,7 +43,7 @@ export interface TrozaDeFicha {
 
 const n4 = (v: unknown) => {
   const n = Number(v ?? 0);
-  return Number.isFinite(n) ? n.toFixed(4) : "—";
+  return Number.isFinite(n) ? fmtM3(n) : "—";
 };
 
 function Seccion({ titulo, rango, children }: { titulo: string; rango?: string; children: React.ReactNode }) {
@@ -104,7 +105,7 @@ export default function CtpGuiaFichaModal({
       variant="info"
       icon={FileText}
       title={`Guía ${guia.gtfNumber}`}
-      description={`${guia.providerName} · ${guia.lineas.length} asiento${guia.lineas.length === 1 ? "" : "s"} · ${guia.volumenM3.toFixed(4)} m³`}
+      description={`${guia.providerName} · ${guia.lineas.length} asiento${guia.lineas.length === 1 ? "" : "s"} · ${fmtM3(guia.volumenM3)} m³`}
       footer={
         <ModalFooter
           error={error}
@@ -153,7 +154,7 @@ export default function CtpGuiaFichaModal({
             </b>
           </span>
           <span className="font-mono tabular-nums text-[var(--text-secondary)]">
-            {guia.volumenM3.toFixed(4)} m³ · {pieTablarDe(guia.volumenM3).toLocaleString("es-PE")} pt
+            {fmtM3(guia.volumenM3)} m³ · {pieTablarDe(guia.volumenM3).toLocaleString("es-PE")} pt
           </span>
         </div>
 
@@ -165,8 +166,8 @@ export default function CtpGuiaFichaModal({
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             <span className="flex-1">
               <b>Esta guía no cuadra consigo misma.</b> Declara{" "}
-              <span className="font-mono tabular-nums">{guia.volumenM3.toFixed(4)} m³</span> por especie y su lista de
-              trozas suma <span className="font-mono tabular-nums">{(guia.trozasM3 ?? 0).toFixed(4)} m³</span>. Se puede
+              <span className="font-mono tabular-nums">{fmtM3(guia.volumenM3)} m³</span> por especie y su lista de
+              trozas suma <span className="font-mono tabular-nums">{fmtM3(guia.trozasM3 ?? 0)} m³</span>. Se puede
               recibir igual —el documento es el que es— pero no se va a poder consumir hasta cuadrarla.
             </span>
             {onCuadrar && (

@@ -5,6 +5,7 @@ import { ArrowDownRight, Boxes, PackageOpen, Target, Truck, AlertTriangle } from
 import type { CadenaLote, MetaEspecie } from "@/lib/forestal/ctp-cadena-lote";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { RENDIMIENTO_REF_ASERRADA } from "@/lib/forestal/ctp-rendimiento";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** El código del schema es `m3`; en pantalla se lee `m³`. */
 const UNIDAD: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "un." };
@@ -72,7 +73,7 @@ export default function CtpCadenaLote({ cadena }: { cadena: CadenaLote }) {
             titulo={`GTF ${o.gtfNumber}`}
             sub={[o.especie, o.proveedor].filter(Boolean).join(" · ")}
             extra={[o.originCode, o.serforNumeroRegistro].filter(Boolean).join(" · ")}
-            cantidad={`${o.consumidoM3.toFixed(4)} m³`}
+            cantidad={`${fmtM3(o.consumidoM3)} m³`}
             nota={o.corridas > 1 ? `en ${o.corridas} corridas` : undefined}
           />
         ))}
@@ -168,11 +169,11 @@ function MetaRendimiento({ meta }: { meta: MetaEspecie[] }) {
                     </span>
                   )}
                 </td>
-                <TdMeta>{m.trozasM3.toFixed(4)}</TdMeta>
-                <TdMeta>{m.metaM3.toFixed(4)}</TdMeta>
-                <TdMeta>{m.producidoM3.toFixed(4)}</TdMeta>
+                <TdMeta>{fmtM3(m.trozasM3)}</TdMeta>
+                <TdMeta>{fmtM3(m.metaM3)}</TdMeta>
+                <TdMeta>{fmtM3(m.producidoM3)}</TdMeta>
                 <TdMeta>{pt(m.producidoPt)}</TdMeta>
-                <TdMeta fuerte={m.saldoM3 > 0}>{m.saldoM3.toFixed(4)}</TdMeta>
+                <TdMeta fuerte={m.saldoM3 > 0}>{fmtM3(m.saldoM3)}</TdMeta>
                 <TdMeta fuerte={m.saldoM3 > 0}>{pt(m.saldoPt)}</TdMeta>
                 <TdMeta>{m.rendimientoPct != null ? `${m.rendimientoPct}%` : "—"}</TdMeta>
               </tr>

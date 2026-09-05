@@ -13,6 +13,7 @@
  */
 
 import { RENDIMIENTO_META } from "./loctp-catalogos";
+import { fmtM3 } from "./cubicacion-formato";
 
 export interface PaqueteBorrador {
   /** Id local del borrador — no viaja al servidor. */
@@ -122,9 +123,9 @@ export function motivosParaGuardar(
     if (declarado > tope) {
       const pct = opts.topePct ?? RENDIMIENTO_TOPE_PCT;
       motivos.push(
-        `Los paquetes suman ${declarado.toFixed(4)} m³ y el tope de rendimiento (${pct} %) permite ` +
-          `${tope.toFixed(4)} m³ con los ${Number(opts.consumidoM3).toFixed(4)} m³ que entraron. ` +
-          `Sacá ${Number((declarado - tope).toFixed(4))} m³.`,
+        `Los paquetes suman ${fmtM3(declarado)} m³ y el tope de rendimiento (${pct} %) permite ` +
+          `${fmtM3(tope)} m³ con los ${fmtM3(Number(opts.consumidoM3))} m³ que entraron. ` +
+          `Sacá ${fmtM3(declarado - tope)} m³.`,
       );
     }
   }

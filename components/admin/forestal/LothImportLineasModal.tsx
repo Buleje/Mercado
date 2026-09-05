@@ -17,6 +17,7 @@ import { AlertTriangle, CheckCircle2, FileUp, Loader2, Upload, X } from "@buleje
 import { parseImportLineas, type FilaImport } from "@/lib/forestal/loth-import-lineas";
 import { SECTION_META } from "./LothEntryForm";
 import type { LothSection } from "@/lib/forestal/loth-constants";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const EJEMPLO: Record<string, string> = {
   tala: "Cód. árbol,Especie,Fecha,Ø mayor,Ø menor,Longitud\n001-TOR,Tornillo,21/07/2026,0.65,0.65,18",
@@ -270,7 +271,7 @@ function FilaPrevia({ f, omitida, onToggle }: { f: FilaImport; omitida: boolean;
       <td className="px-2 py-1.5 font-mono text-[var(--text-primary)]">{f.trozaCode ?? "—"}</td>
       <td className="px-2 py-1.5 text-[var(--text-secondary)]">{f.speciesCommon ?? "—"}</td>
       <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-        {f.volumeM3 != null ? f.volumeM3.toFixed(4) : f.quantity != null ? `${f.quantity} ${f.unit ?? ""}` : "—"}
+        {f.volumeM3 != null ? fmtM3(f.volumeM3) : f.quantity != null ? `${f.quantity} ${f.unit ?? ""}` : "—"}
         {f.volumenCalculado && <span className="ml-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">(Smalian)</span>}
       </td>
       <td className="px-2 py-1.5">

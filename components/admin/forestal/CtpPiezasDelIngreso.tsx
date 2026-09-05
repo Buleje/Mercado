@@ -26,6 +26,7 @@ import {
   AlertTriangle, CalendarClock, Check, Eraser, Hash, Loader2, PackageCheck, X,
 } from "@buleje/design-system/icons";
 import type { TrozaImportada } from "@/lib/forestal/trozas-import";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
   codigosRepetidos,
   fecharRecepcion,
@@ -316,7 +317,7 @@ export default function CtpPiezasDelIngreso({
       {/* Lo declarado contra lo que entra: el número que cuadra con la pila. */}
       <p className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-sm tabular-nums text-[var(--text-secondary)]">
         <span>
-          Declara <b className="text-[var(--text-primary)]">{resumen.declaradas}</b> · {resumen.m3Declarado.toFixed(4)} m³
+          Declara <b className="text-[var(--text-primary)]">{resumen.declaradas}</b> · {fmtM3(resumen.m3Declarado)} m³
         </span>
         <span
           className={
@@ -325,7 +326,7 @@ export default function CtpPiezasDelIngreso({
               : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
           }
         >
-          Entra <b>{resumen.recibidas}</b> · {resumen.m3Recibido.toFixed(4)} m³
+          Entra <b>{resumen.recibidas}</b> · {fmtM3(resumen.m3Recibido)} m³
         </span>
         {resumen.sinCodigo > 0 && (
           <span className="text-[var(--text-tertiary)]">{resumen.sinCodigo} sin código de planta</span>

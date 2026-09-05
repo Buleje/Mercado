@@ -32,6 +32,7 @@ import { leerGtfDatos, type GtfDatos } from "./ctp-gtf-datos";
 import { cuerpoGtfOficial, type LineaProducto } from "./ctp-gtf-formato";
 import type { GuiaIngreso } from "./ingresos-por-guia";
 import type { TrozaListada } from "./ctp-lista-trozas";
+import { fmtM3 } from "./cubicacion-formato";
 
 const t = (v: unknown): string => (v == null ? "" : String(v).trim());
 const num = (v: unknown): number => {
@@ -177,7 +178,7 @@ export function documentoGtfDesdeLibro(
 
   const fichas: FichaResumen[] = [
     { k: "Fuente", v: "Libro de Operaciones" },
-    { k: "Volumen declarado", v: volumen ? volumen.toFixed(4) : "", u: "m³" },
+    { k: "Volumen declarado", v: volumen ? fmtM3(volumen) : "", u: "m³" },
     { k: "Piezas declaradas", v: piezas ? String(piezas) : "" },
     { k: "Especies", v: especies ? String(especies) : "" },
     { k: "Asientos", v: String(guia.lineas.length) },

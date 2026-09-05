@@ -11,6 +11,7 @@
 
 import { AlertTriangle, Trash2 } from "@buleje/design-system/icons";
 import { Field, I } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export interface ConsumoRow {
   woodEntryId: string;
@@ -83,7 +84,7 @@ export default function CtpConsumosPicker({
                       <span className="truncate font-mono text-sm font-bold text-[var(--text-primary)]">{c.code ?? "—"}</span>
                       {c.species && <span className="truncate text-xs text-[var(--text-secondary)]">{c.species}</span>}
                     </div>
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">disp. {Number(c.disponible).toFixed(4)} m³</span>
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">disp. {fmtM3(Number(c.disponible))} m³</span>
                   </div>
                   <input
                     type="number" step="0.0001" min="0" max={c.disponible}
@@ -109,12 +110,12 @@ export default function CtpConsumosPicker({
         {consumos.length > 0 && (
           <div className="flex items-center justify-between border-t border-[var(--rule-soft)] pt-2 text-xs">
             <span className="text-[var(--text-tertiary)]">Total atribuido</span>
-            <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalAtribuido.toFixed(4)} m³</span>
+            <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalAtribuido)} m³</span>
           </div>
         )}
         {sobreAtribuido && (
           <p className="flex items-center gap-1.5 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-error-700)]">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> El total atribuido ({totalAtribuido.toFixed(4)} m³) supera el volumen declarado ({volumeDeclared.toFixed(4)} m³).
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> El total atribuido ({fmtM3(totalAtribuido)} m³) supera el volumen declarado ({fmtM3(volumeDeclared)} m³).
           </p>
         )}
       </div>

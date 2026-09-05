@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { fichaDeTroza, type TonoPatio } from "@/lib/forestal/patio-vista";
 import { antiguedad, buscarLocal, esViejo, guardar, leer } from "@/lib/forestal/patio-cache";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** El tono decide el color de TODA la ficha: se lee de lejos, no en detalle. */
 const TONO: Record<TonoPatio, { caja: string; chip: string }> = {
@@ -184,7 +185,7 @@ export default function PatioBuscador() {
                 {f.detalle && <p className="mt-1 text-base text-[var(--text-secondary)]">{f.detalle}</p>}
                 <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-base">
                   <Dato k="Especie" v={t.especieComun ?? "—"} />
-                  <Dato k="Volumen" v={t.volumenM3 != null ? `${Number(t.volumenM3).toFixed(4)} m³` : "—"} />
+                  <Dato k="Volumen" v={t.volumenM3 != null ? `${fmtM3(Number(t.volumenM3))} m³` : "—"} />
                   <Dato k="Guía" v={t.gtfNumber ?? "—"} mono />
                   {f.codigoAlterno && <Dato k="Cód. guía" v={f.codigoAlterno} mono />}
                 </dl>

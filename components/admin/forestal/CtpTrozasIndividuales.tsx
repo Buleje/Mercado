@@ -19,6 +19,7 @@ import { DataTable } from "@buleje/design-system";
 import { Download, Loader2, PackageOpen, Search } from "@buleje/design-system/icons";
 import { LABEL_BLOQUEO, motivoBloqueo } from "@/lib/forestal/consumo-trozas";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import EspecieFoto from "./EspecieFoto";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
 
@@ -156,7 +157,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
         <div className="flex items-center gap-3">
           <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
             <b className="text-[var(--text-primary)]">{filtradas.length}</b>
-            {filtradas.length !== datos.total && <> de {datos.total}</>} trozas · {sumaVisible.toFixed(4)} m³
+            {filtradas.length !== datos.total && <> de {datos.total}</>} trozas · {fmtM3(sumaVisible)} m³
           </span>
           <button type="button" onClick={exportar} className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
             <Download className="h-4 w-4" /> CSV
@@ -225,7 +226,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
                 Total · {filtradas.length} {filtradas.length === 1 ? "troza" : "trozas"}
                 {filtradas.length !== datos.total && <span className="font-normal"> (de {datos.total} del período)</span>}
               </th>
-              <td className={`${TD} ${NUM}`}>{sumaVisible.toFixed(4)}</td>
+              <td className={`${TD} ${NUM}`}>{fmtM3(sumaVisible)}</td>
               <td className={TD} colSpan={2} />
             </tr>
           </tfoot>

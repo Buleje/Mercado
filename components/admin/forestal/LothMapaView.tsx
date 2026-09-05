@@ -54,6 +54,7 @@ import { cargarWaybackReleases, EUDR_CUTOFF, releaseParaFecha, type WaybackRelea
 import { arbolesEnFaja } from "@/lib/forestal/loth-faja";
 import { cargarElevaciones, construirPerfil, muestrearTraza, type PerfilElevacion } from "@/lib/forestal/loth-elevacion";
 import { descargarImagenMapa, type ImagenBase } from "@/lib/forestal/loth-mapa-imagen";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { printLothPlano, type PlanoBasemap } from "@/lib/forestal/loth-plano-print";
 import { printLothEudrDds } from "@/lib/forestal/loth-eudr-print";
 import LothEudrRail from "./LothEudrRail";
@@ -632,7 +633,7 @@ export default function LothMapaView({
           lat: t.lat,
           lng: t.lng,
           name: t.code,
-          description: `Censo · ${t.species}${t.volumeM3 != null ? ` · ${t.volumeM3.toFixed(4)} m³` : ""}`,
+          description: `Censo · ${t.species}${t.volumeM3 != null ? ` · ${fmtM3(t.volumeM3)} m³` : ""}`,
         })),
         ...geoAll.map((g) => ({
           lat: g.lat,

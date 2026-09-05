@@ -26,6 +26,7 @@ import {
   type PoaConfig,
 } from "@/lib/forestal/loth-poa";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const CELL = "px-3 py-2 text-sm";
 const NUM = `${CELL} text-right font-mono tabular-nums`;
@@ -102,7 +103,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
 
       {/* Indicadores */}
       <div className="grid gap-2 border-b-2 border-[var(--rule-base)] p-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Aprovechables" valor={String(totales.aprovechables)} sub={`${totales.volumenAprovechableM3.toFixed(4)} m³`} tone="success" />
+        <Kpi label="Aprovechables" valor={String(totales.aprovechables)} sub={`${fmtM3(totales.volumenAprovechableM3)} m³`} tone="success" />
         <Kpi label="Semilleros en pie" valor={String(totales.semilleros)} sub={`${config.semillerosPct}% de los ≥ DMC`} tone="accent" />
         <Kpi label="Bajo DMC" valor={String(totales.bajoDmc)} sub="no aprovechables por norma" tone="warning" />
         <Kpi
@@ -206,7 +207,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
                 <td className={`${NUM} text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]`}>{e.bajoDmc || "—"}</td>
                 <td className={`${NUM} text-[#0d9488]`}>{e.semilleros || "—"}</td>
                 <td className={`${NUM} font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]`}>{e.aprovechables}</td>
-                <td className={`${NUM} font-bold`}>{e.volumenAprovechableM3.toFixed(4)}</td>
+                <td className={`${NUM} font-bold`}>{fmtM3(e.volumenAprovechableM3)}</td>
                 <td className={NUM}>{e.volumenAutorizadoM3 != null ? e.volumenAutorizadoM3.toFixed(2) : "—"}</td>
               </tr>
             ))}
@@ -229,7 +230,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
                 <td className={NUM}>{totales.bajoDmc}</td>
                 <td className={NUM}>{totales.semilleros}</td>
                 <td className={NUM}>{totales.aprovechables}</td>
-                <td className={NUM}>{totales.volumenAprovechableM3.toFixed(4)}</td>
+                <td className={NUM}>{fmtM3(totales.volumenAprovechableM3)}</td>
                 <td className={NUM}>{totales.volumenAutorizadoM3.toFixed(2)}</td>
               </tr>
             </tfoot>

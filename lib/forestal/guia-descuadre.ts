@@ -24,6 +24,8 @@
  * (mensaje) y el modal de cuadre (propuesta).
  */
 
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+
 /** Un litro. La misma tolerancia que el resto del libro: el aserradero mide con
  *  cinta, no con epsilon de punto flotante. */
 export const TOLERANCIA_M3 = 0.001;
@@ -160,8 +162,8 @@ export function propuestasDeCuadre(d: DescuadreDeGuia): PropuestaDeCuadre[] {
       lado: "cabecera",
       troza: { id: s.id, codificacion: s.codificacion, cantidad: 1, volumenM3: s.unitarioM3 },
       resumen:
-        `La pieza ${s.codificacion ?? "—"} pasa de ${s.cantidad} trozas · ${s.volumenM3.toFixed(4)} m³ ` +
-        `a 1 troza · ${s.unitarioM3.toFixed(4)} m³.`,
+        `La pieza ${s.codificacion ?? "—"} pasa de ${s.cantidad} trozas · ${fmtM3(s.volumenM3)} m³ ` +
+        `a 1 troza · ${fmtM3(s.unitarioM3)} m³.`,
     });
   }
 
@@ -173,7 +175,7 @@ export function propuestasDeCuadre(d: DescuadreDeGuia): PropuestaDeCuadre[] {
       volumeM3: d.listaM3,
       pieces: d.piezasEnLista,
       resumen:
-        `El ingreso pasa de ${d.declaradoM3.toFixed(4)} m³ a ${d.listaM3.toFixed(4)} m³ ` +
+        `El ingreso pasa de ${fmtM3(d.declaradoM3)} m³ a ${fmtM3(d.listaM3)} m³ ` +
         `(${d.piezasEnLista} piezas).`,
     });
   }
@@ -186,12 +188,12 @@ export function explicarDescuadre(d: DescuadreDeGuia, gtfNumber?: string | null)
   const guia = gtfNumber ? `La guía ${gtfNumber}` : "La guía";
   const especie = d.especie ? ` de ${d.especie}` : "";
   const base =
-    `${guia} declara ${d.declaradoM3.toFixed(4)} m³${especie} en su cabecera, ` +
-    `pero su lista de trozas suma ${d.listaM3.toFixed(4)} m³.`;
+    `${guia} declara ${fmtM3(d.declaradoM3)} m³${especie} en su cabecera, ` +
+    `pero su lista de trozas suma ${fmtM3(d.listaM3)} m³.`;
   if (!d.sospechosa) return `${base} El documento no cuadra consigo mismo: revisalo antes de seguir.`;
   const s = d.sospechosa;
   return (
     `${base} La pieza ${s.codificacion ?? "—"} figura con cantidad ${s.cantidad} ` +
-    `(${s.volumenM3.toFixed(4)} m³, ${s.unitarioM3.toFixed(4)} m³ cada una): contándola como una sola, los dos lados cierran.`
+    `(${fmtM3(s.volumenM3)} m³, ${fmtM3(s.unitarioM3)} m³ cada una): contándola como una sola, los dos lados cierran.`
   );
 }

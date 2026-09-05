@@ -7,6 +7,7 @@ import { Scissors, Plus, Trash2, Loader2, AlertTriangle, Check } from "@buleje/d
 import { csrfHeaders } from "@/lib/csrf-client";
 import { calcularRetrozado, volumenHuber, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
 import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, useHayCambios } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /**
  * Cortar una troza en pedazos — Apartado 2 del LO-CTP (ADR-313).
@@ -117,7 +118,7 @@ export default function CtpRetrozarModal({
       onClose={cerrar}
       variant="info"
       title={`Retrozar ${troza.codificacion ?? "la troza"}`}
-      description={`${troza.especieComun ?? "—"} · ${troza.volumenM3?.toFixed(4) ?? "—"} m³`}
+      description={`${troza.especieComun ?? "—"} · ${troza.volumenM3 != null ? fmtM3(troza.volumenM3) : "—"} m³`}
       icon={Scissors}
       className="sm:w-[min(95vw,72rem)] sm:max-w-none sm:max-h-[92vh]"
       footer={
@@ -125,7 +126,7 @@ export default function CtpRetrozarModal({
           error={error}
           nota={
             calculo?.ok
-              ? `${calculo.retrozos.length} pedazo(s) · ${calculo.volumenRetrozado.toFixed(4)} m³ cortados, ${calculo.volumenLibre.toFixed(4)} m³ sin asignar.`
+              ? `${calculo.retrozos.length} pedazo(s) · ${fmtM3(calculo.volumenRetrozado)} m³ cortados, ${fmtM3(calculo.volumenLibre)} m³ sin asignar.`
               : undefined
           }
           atajo
@@ -143,10 +144,10 @@ export default function CtpRetrozarModal({
         <div className="grid grid-cols-2 gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 sm:grid-cols-4">
           <Dato label="Troza" valor={troza.codificacion ?? "—"} mono />
           <Dato label="Medidas (guía)" valor={troza.dimensiones ?? "—"} mono />
-          <Dato label="Volumen" valor={`${troza.volumenM3?.toFixed(4) ?? "0"} m³`} mono />
+          <Dato label="Volumen" valor={`${troza.volumenM3 != null ? fmtM3(troza.volumenM3) : "0"} m³`} mono />
           <Dato
             label="Ya cortado"
-            valor={`${previos.reduce((a, r) => a + (r.volumenM3 ?? 0), 0).toFixed(4)} m³`}
+            valor={`${fmtM3(previos.reduce((a, r) => a + (r.volumenM3 ?? 0), 0))} m³`}
             mono
           />
         </div>
@@ -196,7 +197,7 @@ export default function CtpRetrozarModal({
                           min="0"
                           value={f.volumen}
                           onChange={(e) => set(i, "volumen", e.target.value)}
-                          placeholder={auto > 0 ? auto.toFixed(4) : "—"}
+                          placeholder={auto > 0 ? fmtM3(auto) : "—"}
                           className={`${I} h-10 w-28 font-mono`}
                         />
                       </td>
@@ -262,8 +263,8 @@ export default function CtpRetrozarModal({
               <Check className="h-3.5 w-3.5" /> {calculo.retrozos.length} pedazo{calculo.retrozos.length === 1 ? "" : "s"}
             </p>
             <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-[var(--text-secondary)]">
-              <span>Cortado: <b className="font-mono text-[var(--text-primary)]">{calculo.volumenRetrozado.toFixed(4)} m³</b></span>
-              <span>Sin cortar: <b className="font-mono text-[var(--text-primary)]">{calculo.volumenLibre.toFixed(4)} m³</b></span>
+              <span>Cortado: <b className="font-mono text-[var(--text-primary)]">{fmtM3(calculo.volumenRetrozado)} m³</b></span>
+              <span>Sin cortar: <b className="font-mono text-[var(--text-primary)]">{fmtM3(calculo.volumenLibre)} m³</b></span>
             </div>
             {calculo.volumenLibre > 0.001 && (
               <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
