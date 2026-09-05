@@ -16,12 +16,14 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Printer, RefreshCw } from "@buleje/design-system/icons";
+import { AlertTriangle, Clock, Printer, RefreshCw } from "@buleje/design-system/icons";
 import { Btn, PanelSkeleton, VistaHeader } from "./ctp-shared";
-import { Etapa, ProduccionDelLote, SalidaDelLote, TablaDeTrozas } from "./historia/EtapasDelLote";
+import { COLOR_ETAPA, Etapa, ProduccionDelLote, SalidaDelLote, TablaDeTrozas } from "./historia/EtapasDelLote";
+import DescargarLotes from "./historia/DescargarLotes";
 import { useHistoriaLote } from "@/hooks/use-historia-lote";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { esLoteDeInventario } from "@/lib/forestal/lotes-aserrio";
+import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import { imprimirHistoriaLote } from "@/lib/forestal/historia-lote-print";
 
 const n4 = (v: number | null | undefined) => (v == null ? "—" : v.toFixed(4));
@@ -67,9 +69,16 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
             </option>
           ))}
         </select>
-        <Btn variant="dark" size="md" onClick={() => h && imprimirHistoriaLote(h)} disabled={!h}>
+        {/* Dos puertas distintas a propósito: «Imprimir» abre la hoja para
+            mirarla y mandarla a papel; «Descargar» baja el archivo —uno o
+            varios lotes— sin pasar por el diálogo del sistema. */}
+        <Btn variant="secondary" size="md" onClick={() => h && imprimirHistoriaLote(h)} disabled={!h}>
           <Printer className="h-4 w-4" /> Imprimir
         </Btn>
+        <DescargarLotes
+          lotes={lotes.map((l) => ({ id: l.id, code: l.code, status: l.status, piezas: l.trozas?.length ?? 0 }))}
+          loteActual={loteId}
+        />
         <Btn variant="secondary" size="md" onClick={() => void recargar()} disabled={cargando}>
           <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} /> Recargar
         </Btn>
@@ -104,15 +113,36 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
 
           {/* El recorrido en una línea: quien sólo quiere el número no baja. */}
           <dl className="grid grid-cols-2 divide-[var(--rule-soft)] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] sm:grid-cols-4 sm:divide-x">
-            <Paso termino="Se apartó" valor={`${nf(h.armado.piezas)} pz`} pie={`${n4(h.armado.m3)} m³ en la pila`} />
-            <Paso termino="Entró a la sierra" valor={`${n4(h.consumo.m3Total)} m³`} pie={`${nf(h.consumo.piezasConsumidas)} piezas consumidas`} />
+            <Paso n={1} termino="Se apartó" valor={`${nf(h.armado.piezas)} pz`} pie={`${n4(h.armado.m3)} m³ en la pila`} />
+            <Paso n={2} termino="Entró a la sierra" valor={`${n4(h.consumo.m3Total)} m³`} pie={`${nf(h.consumo.piezasConsumidas)} piezas consumidas`} />
             <Paso
+              n={3}
               termino="Salió aserrado"
               valor={h.produccion.total ? `${n4(h.produccion.total.cantidad)} ${unidad(h.produccion.total.unit)}` : "—"}
-              pie={h.produccion.rendimientoPct != null ? `${Number(h.produccion.rendimientoPct).toFixed(2)} % de rendimiento` : "sin rendimiento que calcular"}
+              pie={pieRendimiento(h)}
             />
-            <Paso termino="Se despachó" valor={`${n4(h.salida.total)} m³`} pie={`${n4(h.salida.enStock)} m³ todavía en planta`} />
+            <Paso n={4} termino="Se despachó" valor={`${n4(h.salida.total)} m³`} pie={`${n4(h.salida.enStock)} m³ todavía en planta`} />
           </dl>
+
+          {/* Cuánto tardó entre etapa y etapa. No sale de ninguna tabla del
+              libro y es con lo que se decide: una pila que espera se degrada, y
+              un lote aserrado que no sale es plata quieta. */}
+          {frasesDeTiempo(h.tiempos).length > 0 && (
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-[var(--surface-sunken)] px-4 py-2 text-sm text-[var(--text-secondary)]">
+              <Clock className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+              {/* El separador se ARMA entre frases, no se prefija a cada una:
+                  con la espera en `null` —una corrida fechada antes que el
+                  armado— la línea empezaba con un «·» colgado. */}
+              {frasesDeTiempo(h.tiempos).map((f, i) => (
+                <span key={f.clave}>
+                  {i > 0 && <span className="mr-2 text-[var(--text-tertiary)]">·</span>}
+                  {f.antes}
+                  <b className="font-mono text-[var(--text-primary)]">{f.dias}</b> {f.dias === 1 ? "día" : "días"}
+                  {f.despues}
+                </span>
+              ))}
+            </p>
+          )}
 
           <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
             <Etapa
@@ -207,14 +237,59 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
   );
 }
 
-function Paso({ termino, valor, pie }: { termino: string; valor: string; pie: string }) {
+/**
+ * Un paso del recorrido. Lleva el MISMO color que su etapa de abajo: la tira de
+ * arriba y la línea de tiempo son dos vistas de lo mismo, y sin el color
+ * compartido hay que leer las dos para saber cuál corresponde a cuál.
+ */
+function Paso({ n, termino, valor, pie }: { n: 1 | 2 | 3 | 4; termino: string; valor: string; pie: string }) {
   return (
     <div className="border-t border-[var(--rule-soft)] px-4 py-3 first:border-t-0 sm:border-t-0">
-      <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+      <dt className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: COLOR_ETAPA[n] }} aria-hidden />
         {termino}
       </dt>
       <dd className="font-mono text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{valor}</dd>
       <p className="text-xs text-[var(--text-tertiary)]">{pie}</p>
     </div>
   );
+}
+
+/**
+ * El pie del rendimiento, contra el referencial SERFOR del producto.
+ *
+ * Un 47 % suelto no dice nada: contra el referencial de la madera aserrada dice
+ * si la sierra anduvo bien o si alguien declaró de más. Se usa `evaluarRendimiento`,
+ * el mismo que ya juzga las corridas en Producción y en el score — no una
+ * segunda regla que se desincronice.
+ */
+function pieRendimiento(h: NonNullable<ReturnType<typeof useHistoriaLote>["historia"]>): string {
+  const pct = h.produccion.rendimientoPct;
+  if (pct == null) return "sin rendimiento que calcular";
+  const producto = h.produccion.corridas.find((c) => c.producto)?.producto ?? null;
+  const { estado, ref } = evaluarRendimiento(producto, pct);
+  const base = `${Number(pct).toFixed(2)} % de rendimiento`;
+  if (ref == null) return `${base} · sin referencial para este producto`;
+  return estado === "alto"
+    ? `${base} · SOBRE el referencial SERFOR (${ref} %)`
+    : `${base} · referencial SERFOR ${ref} %`;
+}
+
+/** Las frases de tiempo que SÍ tienen dato, en orden del flujo. */
+function frasesDeTiempo(t: { esperaEnPatio: number | null; hastaLaSalida: number | null; edad: number | null }) {
+  return [
+    t.esperaEnPatio != null && {
+      clave: "espera",
+      antes: "Esperó ",
+      dias: t.esperaEnPatio,
+      despues: " en el patio antes de la sierra",
+    },
+    t.hastaLaSalida != null && { clave: "salida", antes: "Tardó ", dias: t.hastaLaSalida, despues: " en salir" },
+    t.edad != null && {
+      clave: "edad",
+      antes: "Lleva ",
+      dias: t.edad,
+      despues: " desde que se armó, con madera todavía adentro",
+    },
+  ].filter((x): x is { clave: string; antes: string; dias: number; despues: string } => Boolean(x));
 }

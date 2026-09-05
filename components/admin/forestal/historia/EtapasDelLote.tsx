@@ -25,6 +25,26 @@ const fecha = (iso: string | null) =>
 /** El schema guarda `m3`; el papel y la pantalla dicen `m³`. */
 const unidad = (u: string | null | undefined) => (!u || u === "m3" ? "m³" : u);
 
+/**
+ * El color de cada etapa. Cuatro categorías, cuatro tonos que se distinguen —
+ * teal, azul, coral y violeta— tomados de `--data-5..8`, que el design-system
+ * ya define por modo y ya usa para series de gráfico con más de tres categorías.
+ * No son decoración: el mismo color acompaña a la etapa en la línea, en el
+ * número y en la franja del encabezado, así que el ojo salta directo al tramo
+ * que busca sin leer los títulos.
+ *
+ * El orden sigue al flujo, no al gusto: la madera llega (azul, todavía materia
+ * prima), entra a la sierra (coral, la acción que gasta), sale transformada
+ * (teal, el color de la marca y de lo que la planta produce) y se va (violeta,
+ * deja el dominio del libro).
+ */
+export const COLOR_ETAPA = {
+  1: "var(--data-6)",
+  2: "var(--data-7)",
+  3: "var(--data-5)",
+  4: "var(--data-8)",
+} as const;
+
 export function Etapa({
   n,
   titulo,
@@ -39,17 +59,28 @@ export function Etapa({
   vacio?: string;
   children?: React.ReactNode;
 }) {
+  const color = COLOR_ETAPA[n];
   return (
-    <section className="relative border-l-2 border-[var(--rule-base)] pb-6 pl-6 last:pb-0">
-      {/* El número en la línea: marca el orden sin que haya que leerlo. */}
+    <section className="relative pb-6 pl-6 last:pb-0" style={{ borderLeft: `2px solid ${color}` }}>
+      {/* El número en la línea: marca el orden sin que haya que leerlo.
+          El COLOR va en el anillo, no en el dígito: `--data-7` sobre superficie
+          clara da ~2.9:1 y un número en ese tono no llegaría a AA. El anillo es
+          gráfico —identifica— y el dígito se queda en tinta, que se lee. */}
       <span
-        className="absolute -left-[15px] top-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] font-mono text-xs font-extrabold text-[var(--text-secondary)]"
+        className="absolute -left-[15px] top-0 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--surface-raised)] font-mono text-xs font-extrabold text-[var(--text-primary)]"
+        style={{ border: `2px solid ${color}` }}
         aria-hidden
       >
         {n}
       </span>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        <CardTitle
+          as="h3"
+          className="rounded px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]"
+          /* Tinte del 12 %: alcanza para agrupar de un vistazo y deja el texto
+             en `--text-secondary`, que sí cumple contraste en los dos modos. */
+          style={{ background: `color-mix(in oklab, ${color} 12%, transparent)` }}
+        >
           {titulo}
         </CardTitle>
         <p className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">{resumen}</p>

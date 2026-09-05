@@ -210,12 +210,30 @@ export interface EtapaSalida {
   enStock: number;
 }
 
+/**
+ * Cuánto tardó la madera entre una etapa y la siguiente.
+ *
+ * Es la lectura que ninguna tabla del libro da y con la que se decide: una pila
+ * que espera 40 días antes de entrar a la sierra se degrada, y un lote aserrado
+ * que lleva tres meses sin salir es plata quieta. `null` cuando el tramo
+ * todavía no ocurrió — no 0, que se leería como «fue inmediato».
+ */
+export interface TiemposDelLote {
+  /** Del armado al primer consumo. */
+  esperaEnPatio: number | null;
+  /** Del consumo al primer despacho. */
+  hastaLaSalida: number | null;
+  /** Del armado a hoy, si todavía no salió todo. */
+  edad: number | null;
+}
+
 export interface HistoriaLote {
   lote: LoteHistoriaInput;
   armado: EtapaArmado;
   consumo: EtapaConsumo;
   produccion: EtapaProduccion;
   salida: EtapaSalida;
+  tiempos: TiemposDelLote;
   /** Lo que la cadena NO puede afirmar. Va arriba, no al pie. */
   huecos: string[];
 }
@@ -225,7 +243,16 @@ export interface HistoriaLote {
 /** Una corrida cuenta si no está anulada: una anulada devolvió la madera al patio. */
 const corridaViva = (c: { status: string }) => c.status !== "anulado";
 
-export function construirHistoriaLote(e: EntradaHistoriaLote): HistoriaLote {
+/** Días enteros entre dos instantes; `null` si falta alguno o va para atrás. */
+function diasEntre(desde: string | null | undefined, hasta: string | null | undefined): number | null {
+  if (!desde || !hasta) return null;
+  const a = new Date(desde).getTime();
+  const b = new Date(hasta).getTime();
+  if (Number.isNaN(a) || Number.isNaN(b) || b < a) return null;
+  return Math.floor((b - a) / 86_400_000);
+}
+
+export function construirHistoriaLote(e: EntradaHistoriaLote, ahora = Date.now()): HistoriaLote {
   const huecos: string[] = [];
   const corridas = e.corridas.filter(corridaViva);
   const idsDelLote = new Set(corridas.map((c) => c.id));
@@ -400,5 +427,16 @@ export function construirHistoriaLote(e: EntradaHistoriaLote): HistoriaLote {
     enStock: r4(Math.max(0, producidoTotal - totalSalido)),
   };
 
-  return { lote: e.lote, armado, consumo, produccion, salida, huecos };
+  // ── Los tiempos ───────────────────────────────────────────────────────────
+  const primerConsumo = consumo.corridas.map((c) => c.fecha).sort()[0] ?? null;
+  const primerDespacho = salidas[0]?.fecha ?? null;
+  const tiempos: TiemposDelLote = {
+    esperaEnPatio: diasEntre(armado.fecha, primerConsumo),
+    hastaLaSalida: diasEntre(primerConsumo, primerDespacho),
+    /* La edad sólo cuenta mientras quede algo adentro: un lote que ya salió
+       entero no «tiene» días, tiene una historia cerrada. */
+    edad: salida.enStock > EPS ? diasEntre(armado.fecha, new Date(ahora).toISOString()) : null,
+  };
+
+  return { lote: e.lote, armado, consumo, produccion, salida, tiempos, huecos };
 }

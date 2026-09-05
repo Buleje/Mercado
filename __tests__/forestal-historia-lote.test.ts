@@ -269,3 +269,64 @@ describe("el caso real del tenant: lote 17-2026", () => {
     expect(h.salida.enStock).toBe(2.5448);
   });
 });
+
+/**
+ * ── Los tiempos entre etapas ──────────────────────────────────────────────
+ *
+ * Es la lectura que ninguna tabla del libro da: cuánto esperó la pila antes de
+ * la sierra y cuánto tardó en salir. Se fija que un tramo que TODAVÍA no
+ * ocurrió dé `null` y no 0 — un 0 se lee como «fue inmediato», que es lo
+ * contrario de «no pasó todavía».
+ */
+describe("los tiempos del lote", () => {
+  const conFechas = (over: Partial<EntradaHistoriaLote> = {}) =>
+    construirHistoriaLote(
+      base({
+        lote: { ...lote, fechaApertura: "2026-09-01T00:00:00.000Z" },
+        corridas: [corrida({ id: "C1", entryDate: "2026-09-06T00:00:00.000Z", quantity: 10, volumeInputM3: 20 })],
+        ...over,
+      }),
+      // "Ahora" inyectado: un cálculo con reloj propio no se puede testear.
+      new Date("2026-09-21T00:00:00.000Z").getTime(),
+    );
+
+  it("cuenta los días que la pila esperó antes de la sierra", () => {
+    expect(conFechas().tiempos.esperaEnPatio).toBe(5);
+  });
+
+  it("sin consumo todavía, la espera es null — no 0", () => {
+    expect(construirHistoriaLote(base({ lote: { ...lote, fechaApertura: "2026-09-01" } })).tiempos.esperaEnPatio).toBeNull();
+  });
+
+  it("cuenta los días hasta el primer despacho", () => {
+    const h = conFechas({
+      despachos: [{ id: "D1", lineNo: 20, entryDate: "2026-09-16T00:00:00.000Z", gtfNumber: "G", destino: null, unit: "m3", status: "registrado" }],
+      origenes: [{ despachoEntryId: "D1", produccionEntryId: "C1", quantity: 4 }],
+      corridasDeLotes: [{ produccionEntryId: "C1", loteId: "L1", loteCode: "17-2026" }],
+    });
+    expect(h.tiempos.hastaLaSalida).toBe(10);
+  });
+
+  it("la edad cuenta sólo mientras queda madera adentro", () => {
+    // 10 producidos, 0 despachados → sigue vivo: 20 días desde el armado.
+    expect(conFechas().tiempos.edad).toBe(20);
+    // Todo despachado → la historia se cerró, no «tiene» días.
+    const salioTodo = conFechas({
+      despachos: [{ id: "D1", lineNo: 20, entryDate: "2026-09-16T00:00:00.000Z", gtfNumber: "G", destino: null, unit: "m3", status: "registrado" }],
+      origenes: [{ despachoEntryId: "D1", produccionEntryId: "C1", quantity: 10 }],
+      corridasDeLotes: [{ produccionEntryId: "C1", loteId: "L1", loteCode: "17-2026" }],
+    });
+    expect(salioTodo.salida.enStock).toBe(0);
+    expect(salioTodo.tiempos.edad).toBeNull();
+  });
+
+  it("una fecha que va para atrás no inventa un negativo", () => {
+    const h = construirHistoriaLote(
+      base({
+        lote: { ...lote, fechaApertura: "2026-09-10" },
+        corridas: [corrida({ entryDate: "2026-09-01", quantity: 1, volumeInputM3: 2 })],
+      }),
+    );
+    expect(h.tiempos.esperaEnPatio).toBeNull();
+  });
+});
