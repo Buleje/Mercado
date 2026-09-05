@@ -115,7 +115,17 @@ export interface ConciliacionPeriodo {
   fuenteApertura: "cierre" | "calculada" | "sin_apertura";
   /** Etiqueta del cierre que dio la apertura, si aplica ("marzo de 2026"). */
   aperturaLabel: string | null;
-  materiaPrima: { especie: string; cites: boolean; apertura: number; ingreso: number; consumido: number; final: number; negativa: boolean }[];
+  materiaPrima: {
+    especie: string;
+    cites: boolean;
+    apertura: number;
+    ingreso: number;
+    consumido: number;
+    /** m³ que salieron SIN aserrar (ADR-363). También dejan el patio. */
+    despachadoDirecto: number;
+    final: number;
+    negativa: boolean;
+  }[];
   productos: { producto: string; apertura: number; producido: number; despachado: number; final: number; negativo: boolean }[];
 }
 
@@ -1549,7 +1559,22 @@ export class ForestCtpDB {
       }),
       prisma.forestCtpEntry.findMany({
         where: ctpWhere,
-        select: { section: true, productType: true, speciesCommon: true, volumeInputM3: true, quantity: true, unit: true, pieces: true },
+        select: {
+          section: true,
+          productType: true,
+          speciesCommon: true,
+          volumeInputM3: true,
+          quantity: true,
+          unit: true,
+          pieces: true,
+          /* Cuántas guías respaldan el consumo de esta corrida. Cero NO es un
+             error —el libro admite huecos, el certificado no—, pero es dónde
+             vive el sobreconsumo: un saldo negativo se explica casi siempre por
+             corridas que declararon volumen sin ninguna GTF atribuida. Sin este
+             conteo, el aviso sólo puede decir «o falta validar un ingreso, o una
+             corrida cargó de más» y manda a buscar a mano. */
+          _count: { select: { consumos: true } },
+        },
       }),
       /* La madera que salió SIN ASERRAR (ADR-363) también dejó el patio, pero no
          pasó por ninguna corrida: si no se resta acá, el saldo de materia prima
@@ -1627,6 +1652,12 @@ export class ForestCtpDB {
     }
 
     let consumidoM3 = 0;
+    /* De dónde sale ese consumo. No cambia el total: lo PARTE, para que el aviso
+       de saldo negativo pueda decir dónde mirar en vez de enumerar hipótesis. */
+    let consumoSinOrigenM3 = 0;
+    let consumoSinOrigenCount = 0;
+    let consumoSinDeclararM3 = 0;
+    let consumoSinDeclararCount = 0;
     // Agrupado por clave normalizada; se guarda la etiqueta de la 1ª aparición.
     const prod: Record<string, { label: string; producido: number; despachado: number; piezasProducido: number; piezasDespachado: number }> = {};
     for (const e of ctp) {
@@ -1636,6 +1667,18 @@ export class ForestCtpDB {
         const consumido = Number(e.volumeInputM3 ?? 0);
         consumidoM3 += consumido;
         bucket(e.speciesCommon).consumidoM3 += consumido;
+        if (consumido > 0 && e._count.consumos === 0) {
+          consumoSinOrigenM3 += consumido;
+          consumoSinOrigenCount += 1;
+        }
+        /* Corrida abierta (ADR-364): consumió y todavía no declaró qué salió.
+           Su madera ya bajó del patio, así que resta del saldo, pero el producto
+           que la respalda no existe todavía. Es un estado normal a media
+           jornada; deja de serlo cuando se olvida. */
+        if (consumido > 0 && e.quantity == null) {
+          consumoSinDeclararM3 += consumido;
+          consumoSinDeclararCount += 1;
+        }
         prod[key].producido += Number(e.quantity ?? 0);
         prod[key].piezasProducido += e.pieces ?? 0;
       }
@@ -1700,20 +1743,34 @@ export class ForestCtpDB {
         saldoM3: r4(ingresoM3 - consumidoM3 - despachadoDirectoM3),
         pendienteM3: r4(pendienteM3),
         especiesEnNegativo: porEspecie.filter((e) => e.saldoM3 < 0).length,
+        /** m³ consumidos en corridas SIN ninguna guía atribuida (ADR-134 D3). */
+        consumoSinOrigenM3: r4(consumoSinOrigenM3),
+        consumoSinOrigenCount,
+        /** m³ consumidos en corridas que todavía no declararon qué salió. */
+        consumoSinDeclararM3: r4(consumoSinDeclararM3),
+        consumoSinDeclararCount,
       },
       porEspecie,
       // `label` y no la clave: la clave va normalizada en minúsculas para
       // agrupar, pero lo que se muestra es "Tablones · Tornillo".
-      productos: Object.values(prod).map((v) => ({
-        producto: v.label,
-        producido: r4(v.producido),
-        despachado: r4(v.despachado),
-        stock: r4(v.producido - v.despachado),
-        /* Piezas producidas menos despachadas: mismo criterio que el
-           volumen (`stock`), sobre el mismo campo `pieces` que ya guarda
-           cada línea del libro — no una cuenta nueva. */
-        piezasDisponibles: Math.max(0, v.piezasProducido - v.piezasDespachado),
-      })),
+      productos: Object.values(prod)
+        /* Una corrida abierta —consumió, no declaró— no tiene productType, así
+           que caía en la clave "— · TORNILLO" y publicaba una línea de producto
+           con producido, despachado y stock en cero. Un producto que nunca
+           existió, con nombre de dato roto, en la tabla que se firma. El
+           consumo de esa corrida sigue contando en `consumidoM3` y ahora se
+           reporta con nombre propio en `consumoSinDeclararM3`. */
+        .filter((v) => v.producido !== 0 || v.despachado !== 0 || v.piezasProducido !== 0 || v.piezasDespachado !== 0)
+        .map((v) => ({
+          producto: v.label,
+          producido: r4(v.producido),
+          despachado: r4(v.despachado),
+          stock: r4(v.producido - v.despachado),
+          /* Piezas producidas menos despachadas: mismo criterio que el
+             volumen (`stock`), sobre el mismo campo `pieces` que ya guarda
+             cada línea del libro — no una cuenta nueva. */
+          piezasDisponibles: Math.max(0, v.piezasProducido - v.piezasDespachado),
+        })),
     };
   }
 
@@ -1776,20 +1833,47 @@ export class ForestCtpDB {
       await ForestCtpDB.aperturaDePeriodo(tenantId, opts.fromDate);
 
     // ── Combinar apertura + movimientos → final (materia prima) ───────────
-    const mp = new Map<string, { label: string; cites: boolean; apertura: number; ingreso: number; consumido: number }>();
-    const mpKey = (s: string) => s.trim().toLowerCase();
+    const mp = new Map<string, { label: string; cites: boolean; apertura: number; ingreso: number; consumido: number; despachadoDirecto: number }>();
+    /* `speciesKey` y NO un `trim().toLowerCase()` propio: la apertura puede venir
+       de un snapshot de cierre escrito hace meses y el movimiento de la tabla de
+       hoy. Con dos normalizaciones distintas, "Ishpíngo" heredado e "Ishpingo"
+       del mes caían en filas separadas — la apertura sin movimiento y el consumo
+       sin apertura— y la conciliación inventaba una existencia negativa que no
+       existe. Es el mismo bug que `speciesKey` documenta arriba, en la misma
+       clase; acá había una tercera normalización que se lo saltaba. */
     const mpUpsert = (especie: string, cites: boolean) => {
-      const key = mpKey(especie);
+      const key = speciesKey(especie);
       let x = mp.get(key);
-      if (!x) { x = { label: especie, cites, apertura: 0, ingreso: 0, consumido: 0 }; mp.set(key, x); }
+      if (!x) { x = { label: especie, cites, apertura: 0, ingreso: 0, consumido: 0, despachadoDirecto: 0 }; mp.set(key, x); }
       if (cites) x.cites = true;
       return x;
     };
     for (const a of aperturaMP) mpUpsert(a.especie, a.cites).apertura = a.existencia;
-    for (const e of mov.porEspecie) { const x = mpUpsert(e.especie, e.cites); x.ingreso = e.ingresoM3; x.consumido = e.consumidoM3; }
+    for (const e of mov.porEspecie) {
+      const x = mpUpsert(e.especie, e.cites);
+      x.ingreso = e.ingresoM3;
+      x.consumido = e.consumidoM3;
+      x.despachadoDirecto = e.despachadoDirectoM3 ?? 0;
+    }
 
     const materiaPrima = [...mp.values()]
-      .map((x) => { const final = r4(x.apertura + x.ingreso - x.consumido); return { especie: x.label, cites: x.cites, apertura: r4(x.apertura), ingreso: r4(x.ingreso), consumido: r4(x.consumido), final, negativa: final < 0 }; })
+      .map((x) => {
+        /* La madera vendida en rollo (ADR-363) también dejó el patio. `saldos()`
+           la resta desde que existe la figura; la conciliación no, así que la
+           existencia final del rollforward declaraba madera que ya se fue en un
+           camión — y no coincidía con el KPI de la misma pantalla. */
+        const final = r4(x.apertura + x.ingreso - x.consumido - x.despachadoDirecto);
+        return {
+          especie: x.label,
+          cites: x.cites,
+          apertura: r4(x.apertura),
+          ingreso: r4(x.ingreso),
+          consumido: r4(x.consumido),
+          despachadoDirecto: r4(x.despachadoDirecto),
+          final,
+          negativa: final < 0,
+        };
+      })
       .sort((a, b) => (a.negativa === b.negativa ? b.final - a.final : a.negativa ? -1 : 1));
 
     // ── Combinar apertura + movimientos → final (productos) ───────────────

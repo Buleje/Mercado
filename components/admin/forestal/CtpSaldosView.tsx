@@ -99,9 +99,14 @@ export function CtpSaldosView({
             porEspecie: data.porEspecie,
             productos: data.productos,
             valleDelPeriodo: curva?.valle ?? null,
+            /* La existencia FINAL manda sobre el movimiento del período: una
+               planta con stock heredado puede consumir más de lo que recibió
+               sin que el libro tenga nada malo. Va sólo si la conciliación
+               llegó; si no, el aviso se queda con lo que se sabe. */
+            existenciaFinal: concil?.materiaPrima.map((m) => ({ especie: m.especie, final: m.final })),
           })
         : [],
-    [data, curva],
+    [data, curva, concil],
   );
 
   // Existencia heredada del cierre anterior. Es la que hace que la cascada

@@ -39,7 +39,7 @@ export interface ExistenciasReportData {
   concil?: {
     fuenteApertura: "cierre" | "calculada" | "sin_apertura";
     aperturaLabel: string | null;
-    materiaPrima: { especie: string; cites: boolean; apertura: number; ingreso: number; consumido: number; final: number; negativa: boolean }[];
+    materiaPrima: { especie: string; cites: boolean; apertura: number; ingreso: number; consumido: number; despachadoDirecto?: number; final: number; negativa: boolean }[];
     productos: { producto: string; apertura: number; producido: number; despachado: number; final: number; negativo: boolean }[];
   } | null;
   ficha?: CtpReportFicha | null;
@@ -93,6 +93,11 @@ export function printExistencias(d: ExistenciasReportData): void {
     )
     .join("");
 
+  /* La madera vendida en rollo (ADR-363) también baja del patio. Si hubo, la
+     columna va: sin ella, apertura + ingreso − consumido no da el final que se
+     imprime y el fiscalizador ve una tabla que no cierra. Si no hubo, no se
+     imprime una columna de ceros. */
+  const hayDirecto = (d.concil?.materiaPrima ?? []).some((s) => (s.despachadoDirecto ?? 0) > 0.0001);
   const concilBlock =
     d.concil && d.concil.materiaPrima.length > 0
       ? `<h2>Conciliación del período · apertura → cierre</h2>
@@ -104,12 +109,14 @@ export function printExistencias(d: ExistenciasReportData): void {
           : "sin apertura previa"
     }.</p>
     <table>
-      <thead><tr><th>Especie</th><th class="num">Apertura</th><th class="num">Ingreso</th><th class="num">Consumido</th><th class="num">Final</th></tr></thead>
+      <thead><tr><th>Especie</th><th class="num">Apertura</th><th class="num">Ingreso</th><th class="num">Consumido</th>${
+        hayDirecto ? '<th class="num">Salió sin aserrar</th>' : ""
+      }<th class="num">Final</th></tr></thead>
       <tbody>${d.concil.materiaPrima
         .map(
           (s) => `<tr>
         <td>${esc(s.especie)}${s.cites ? '<span class="cites">CITES</span>' : ""}</td>
-        ${num(s.apertura)}${num(s.ingreso)}${num(s.consumido)}${num(s.final)}
+        ${num(s.apertura)}${num(s.ingreso)}${num(s.consumido)}${hayDirecto ? num(s.despachadoDirecto ?? 0) : ""}${num(s.final)}
       </tr>`,
         )
         .join("")}</tbody>

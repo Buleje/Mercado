@@ -41,6 +41,12 @@ export interface SaldosData {
     saldoM3: number;
     pendienteM3: number;
     especiesEnNegativo: number;
+    /** m³ consumidos en corridas SIN ninguna guía atribuida: donde vive el faltante. */
+    consumoSinOrigenM3?: number;
+    consumoSinOrigenCount?: number;
+    /** m³ consumidos en corridas que todavía no declararon qué salió (ADR-364). */
+    consumoSinDeclararM3?: number;
+    consumoSinDeclararCount?: number;
   };
   porEspecie: SpeciesBalance[];
   productos: { producto: string; producido: number; despachado: number; stock: number }[];
@@ -52,6 +58,8 @@ export interface ConcilMP {
   apertura: number;
   ingreso: number;
   consumido: number;
+  /** m³ que salieron SIN aserrar (ADR-363): bajan del patio igual que el consumo. */
+  despachadoDirecto?: number;
   final: number;
   negativa: boolean;
 }

@@ -14,6 +14,12 @@
  *
  * Y el verde del ingreso pasa a `--data-success-600` con variante dark: el 700
  * sobre superficie oscura quedaba casi negro y la columna no se leía.
+ *
+ * La columna «− Salió sin aserrar» (ADR-363) aparece SÓLO si hubo: esa madera
+ * dejó el patio sin pasar por la sierra, y sin restarla la fila no cerraba —
+ * apertura + ingreso − consumido daba un final más alto que el KPI de arriba,
+ * que sí la descontaba. Un cero permanente sería una sexta columna que nadie
+ * lee; una columna ausente cuando el hecho existe es una tabla que no cuadra.
  */
 
 import { CardTitle, DataTable } from "@buleje/design-system";
@@ -43,10 +49,12 @@ export default function TablaConciliacion({
       apertura: a.apertura + s.apertura,
       ingreso: a.ingreso + s.ingreso,
       consumido: a.consumido + s.consumido,
+      directo: a.directo + (s.despachadoDirecto ?? 0),
       final: a.final + s.final,
     }),
-    { apertura: 0, ingreso: 0, consumido: 0, final: 0 },
+    { apertura: 0, ingreso: 0, consumido: 0, directo: 0, final: 0 },
   );
+  const hayDirecto = total.directo > 0.0001;
 
   return (
     <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
@@ -66,6 +74,7 @@ export default function TablaConciliacion({
             <Th className="text-right">Apertura (m³)</Th>
             <Th className="text-right">+ Ingreso</Th>
             <Th className="text-right">− Consumido</Th>
+            {hayDirecto && <Th className="text-right">− Salió sin aserrar</Th>}
             <Th className="text-right">= Final (m³)</Th>
             {onKardex && <Th className="text-right">&nbsp;</Th>}
           </tr>
@@ -86,6 +95,11 @@ export default function TablaConciliacion({
                 {n2(s.ingreso)}
               </td>
               <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(s.consumido)}</td>
+              {hayDirecto && (
+                <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                  {n2(s.despachadoDirecto ?? 0)}
+                </td>
+              )}
               <td
                 className={`px-4 py-2 text-right font-mono font-bold tabular-nums ${
                   s.negativa ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]"
@@ -118,6 +132,9 @@ export default function TablaConciliacion({
               {n2(total.ingreso)}
             </td>
             <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n2(total.consumido)}</td>
+            {hayDirecto && (
+              <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n2(total.directo)}</td>
+            )}
             <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n2(total.final)}</td>
             {onKardex && <td />}
           </tr>
