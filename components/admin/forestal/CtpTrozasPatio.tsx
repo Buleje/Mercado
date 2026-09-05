@@ -147,6 +147,97 @@ export default function CtpTrozasPatio({
           />
         </div>
 
+        {/*
+          ── Una LÍNEA por dimensión, no un panel por dimensión ─────────────
+          Antes esto eran dos tarjetas más debajo de los KPIs, en un grid de dos
+          columnas: la de la izquierda se estiraba a la altura de la derecha y
+          quedaba con un hueco vertical enorme, y la lista —lo único accionable—
+          arrancaba fuera de pantalla. Son tres cortes del MISMO patio, así que
+          van juntos y en línea: cada pastilla sigue filtrando la lista.
+        */}
+        <div className="mt-3 space-y-2 border-t-2 border-[var(--rule-soft)] pt-3">
+          <Fila titulo="En qué anda">
+            {resumen.porEstado.map(({ estado, piezas, m3 }) => {
+              const m = ESTADO_META[estado];
+              const activo = estadoFiltro === estado;
+              return (
+                <Pastilla
+                  key={estado}
+                  activo={activo}
+                  punto={TONO[m.tono].punto}
+                  titulo={m.hint}
+                  onClick={() => onEstadoFiltro(activo ? null : estado)}
+                  label={m.label}
+                  piezas={piezas}
+                  m3={m3}
+                />
+              );
+            })}
+            {resumen.porEstado.length === 0 && !cargando && (
+              <span className="text-xs text-[var(--text-secondary)]">
+                Todavía no hay trozas cargadas. Llegan con el alta de la guía desde SERFOR.
+              </span>
+            )}
+          </Fila>
+
+          <Fila
+            titulo="Paradas hace"
+            nota={
+              edad.sinFecha > 0
+                ? `desde que bajó del camión · ${edad.sinFecha} sin fecha`
+                : "desde que bajó del camión"
+            }
+            explicacion="Cuenta desde que la pieza bajó del camión (o desde el asiento de su guía si no se sabe) y sólo mira lo que sigue parado."
+          >
+            {tramosConPiezas.map((t) => {
+              const activo = tramoFiltro === t.key;
+              return (
+                <Pastilla
+                  key={t.key}
+                  activo={activo}
+                  punto={TONO[t.tono].punto}
+                  titulo="Tocá para ver sólo estas en la lista"
+                  onClick={() => onTramoFiltro(activo ? null : t.key)}
+                  label={t.label}
+                  piezas={t.piezas}
+                  m3={t.m3}
+                />
+              );
+            })}
+            {tramosConPiezas.length === 0 && (
+              <span className="text-xs text-[var(--text-secondary)]">Nada parado.</span>
+            )}
+          </Fila>
+
+          {/* Con UNA sola especie la barra siempre da 100 % y no dice nada: el
+              dato ya está en la fila de estados. Se muestra desde dos. */}
+          {resumen.porEspecie.length > 1 && (
+            <Fila titulo="Especies" nota={resumen.porEspecie.length > 8 ? `${resumen.porEspecie.length} en total` : undefined}>
+              {resumen.porEspecie.slice(0, 8).map((e) => (
+                <span
+                  key={e.especie}
+                  title={`${n2(e.m3Libres)} m³ libres de ${n2(e.m3)} m³`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 py-1"
+                >
+                  <span
+                    className="h-1.5 w-8 shrink-0 overflow-hidden rounded-full bg-[var(--rule-base)]"
+                    aria-hidden="true"
+                  >
+                    <span
+                      className="block h-full rounded-full bg-[var(--accent)]"
+                      style={{ width: `${maxEspecie > 0 ? (e.m3 / maxEspecie) * 100 : 0}%` }}
+                    />
+                  </span>
+                  <span className="truncate text-xs font-bold text-[var(--text-primary)]">{e.especie}</span>
+                  <span className="font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-secondary)]">
+                    {e.piezas} pz
+                  </span>
+                </span>
+              ))}
+            </Fila>
+          )}
+        </div>
+
         {resumen.sinCodificar > 0 && (
           <p className="mt-2 rounded-lg bg-[var(--data-warning-500)]/12 px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
             {resumen.sinCodificar} {resumen.sinCodificar === 1 ? "pieza no tiene" : "piezas no tienen"} codificación: no se pueden pedir por su código en una fiscalización.
@@ -158,130 +249,59 @@ export default function CtpTrozasPatio({
           </p>
         )}
       </div>
-
-      <div className="grid gap-3 xl:grid-cols-2">
-        {/* ── En qué anda cada pieza ─────────────────────────────────────── */}
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
-          <CardTitle as="h3" className="mb-2 text-sm font-bold text-[var(--text-primary)]">En qué anda cada pieza</CardTitle>
-          <ul className="space-y-1">
-            {resumen.porEstado.map(({ estado, piezas, m3 }) => {
-              const m = ESTADO_META[estado];
-              const tono = TONO[m.tono];
-              const activo = estadoFiltro === estado;
-              return (
-                <li key={estado}>
-                  <button
-                    type="button"
-                    onClick={() => onEstadoFiltro(activo ? null : estado)}
-                    aria-pressed={activo}
-                    title={`${m.hint} · tocá para ver sólo estas en la lista`}
-                    className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors ${activo ? "bg-primary/10 ring-2 ring-[var(--accent)] dark:bg-[var(--accent)]/12" : "bg-[var(--surface-sunken)] hover:bg-[var(--surface-canvas)]"}`}
-                  >
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: tono.punto }} aria-hidden="true" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-xs font-bold text-[var(--text-primary)]">{m.label}</span>
-                      <span className="block truncate text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{m.hint}</span>
-                    </span>
-                    {/* El conteo va en el token de texto y NO en el color del
-                        estado: medido, `--data-warning-700` da 3.68:1 en light
-                        y el número queda ilegible. El color ya está en el punto
-                        de la izquierda, que es una marca y no un dato. */}
-                    <span className="shrink-0 text-right">
-                      <span className="block font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">{piezas}</span>
-                      <span className="block font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-secondary)]">{n2(m3)} m³</span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-            {resumen.porEstado.length === 0 && !cargando && (
-              <li className="rounded-lg border-2 border-dashed border-[var(--rule-base)] p-4 text-center text-xs text-[var(--text-secondary)]">
-                Todavía no hay trozas cargadas. Llegan con el alta de la guía desde SERFOR.
-              </li>
-            )}
-          </ul>
-        </div>
-
-        {/* ── Hace cuánto están ahí + qué especies ───────────────────────── */}
-        <div className="space-y-3">
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
-            <CardTitle as="h3" className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-              <Clock className="h-4 w-4 text-[var(--accent)]" /> Hace cuánto están paradas
-            </CardTitle>
-            {/*
-              Sólo los tramos que TIENEN piezas. Un patio recién cargado dejaba
-              dos filas en cero con su barra vacía y su botón deshabilitado:
-              ocupan el alto de un panel para decir «no hay nada que mirar acá».
-              Cuando todo cae en un solo tramo, ni siquiera hace falta la lista
-              —lo dice el pie— pero se deja la fila para poder filtrar con ella.
-            */}
-            <ul className="space-y-1">
-              {tramosConPiezas.map((t) => {
-                const tono = TONO[t.tono];
-                const pct = resumen.enPatio.piezas > 0 ? (t.piezas / resumen.enPatio.piezas) * 100 : 0;
-                const activo = tramoFiltro === t.key;
-                return (
-                  <li key={t.key}>
-                    <button
-                      type="button"
-                      onClick={() => onTramoFiltro(activo ? null : t.key)}
-                      aria-pressed={activo}
-                      disabled={t.piezas === 0}
-                      title="Tocá para ver sólo estas en la lista"
-                      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 transition-colors disabled:cursor-default disabled:opacity-60 ${activo ? "bg-primary/10 ring-2 ring-[var(--accent)] dark:bg-[var(--accent)]/12" : "bg-[var(--surface-sunken)] enabled:hover:bg-[var(--surface-canvas)]"}`}
-                    >
-                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: tono.punto }} aria-hidden="true" />
-                      <span className="min-w-0 flex-1 text-left text-xs font-bold text-[var(--text-primary)]">{t.label}</span>
-                      <span className="h-1.5 w-14 shrink-0 overflow-hidden rounded-full bg-[var(--rule-base)]">
-                        <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: tono.punto }} />
-                      </span>
-                      <span className="shrink-0 text-right">
-                        <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">{t.piezas}</span>
-                        <span className="ml-1.5 font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-secondary)]">{n2(t.m3)} m³</span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-            <p className="mt-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
-              Cuenta desde que la pieza bajó del camión (o desde el asiento de su guía) y sólo mira lo que sigue parado
-              {edad.sinFecha > 0 && <> · {edad.sinFecha} sin fecha, fuera del reparto</>}.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
-            <CardTitle as="h3" className="mb-2 text-sm font-bold text-[var(--text-primary)]">Por especie</CardTitle>
-            <ul className="max-h-52 space-y-1 overflow-y-auto">
-              {resumen.porEspecie.slice(0, 12).map((e) => (
-                <li key={e.especie} className="rounded-lg bg-[var(--surface-sunken)] px-2.5 py-1.5">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="min-w-0 truncate text-xs font-bold text-[var(--text-primary)]">{e.especie}</span>
-                    <span className="shrink-0 font-mono text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-secondary)]">
-                      {e.piezas} pz · {n2(e.m3)} m³
-                    </span>
-                  </div>
-                  <div className="mt-1 flex items-center gap-1.5">
-                    <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--rule-base)]">
-                      <span className="block h-full rounded-full bg-[var(--accent)]" style={{ width: `${(e.m3 / maxEspecie) * 100}%` }} />
-                    </span>
-                    <span className="shrink-0 font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-                      {n2(e.m3Libres)} m³ libres
-                    </span>
-                  </div>
-                </li>
-              ))}
-              {resumen.porEspecie.length === 0 && !cargando && (
-                <li className="rounded-lg border-2 border-dashed border-[var(--rule-base)] p-4 text-center text-xs text-[var(--text-secondary)]">Sin especies para mostrar.</li>
-              )}
-            </ul>
-            {resumen.porEspecie.length > 12 && (
-              <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">y {resumen.porEspecie.length - 12} especies más</p>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
+  );
+}
+
+/** Una dimensión del patio: su nombre a la izquierda, sus pastillas a la derecha. */
+function Fila({ titulo, nota, explicacion, children }: {
+  titulo: string; nota?: string; explicacion?: string; children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+      <span
+        title={explicacion}
+        className="w-[7.5rem] shrink-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]"
+      >
+        {titulo}
+      </span>
+      {children}
+      {nota && (
+        <span title={explicacion} className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+          {nota}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Un corte del patio, clickeable: filtra la lista de abajo.
+ *
+ * El punto de color lleva el tono y el número va en el token de texto — medido:
+ * `--data-warning-700` da 3.68:1 en light y el número queda ilegible. El color
+ * es una marca, no un dato.
+ */
+function Pastilla({ activo, punto, label, piezas, m3, titulo, onClick }: {
+  activo: boolean; punto: string; label: string; piezas: number; m3: number; titulo?: string; onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={activo}
+      title={titulo}
+      className={`inline-flex items-center gap-1.5 rounded-lg border-2 px-2 py-1 transition-colors ${
+        activo
+          ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12"
+          : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-canvas)]"
+      }`}
+    >
+      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: punto }} aria-hidden="true" />
+      <span className="text-xs font-bold text-[var(--text-primary)]">{label}</span>
+      <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">{piezas}</span>
+      <span className="font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-secondary)]">{n2(m3)} m³</span>
+    </button>
   );
 }
 

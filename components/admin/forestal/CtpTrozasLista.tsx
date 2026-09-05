@@ -349,22 +349,29 @@ export default function CtpTrozasLista({
                       encuentran las piezas sin origen legal para cerrarlas. */}
                   <th className={TH}>
                     <span className="block">Guía / origen</span>
-                    <div className="mt-1 space-y-1">
-                      <FiltroColumna
-                        label="Guía"
-                        value={guia ?? ""}
-                        options={guiasFaceta}
-                        onChange={(v) => setGuia(v || null)}
-                        placeholder="Todas las guías"
-                      />
-                      <FiltroColumna
-                        label="Título habilitante"
-                        value={titulo ?? ""}
-                        options={titulosFaceta}
-                        etiqueta={(v) => (v === SIN_TITULO ? "Sin título declarado" : v)}
-                        onChange={(v) => setTitulo(v || null)}
-                        placeholder="Todos los títulos"
-                      />
+                    {/* Lado a lado y no apilados: apilados hacían esta columna
+                        el doble de alta que las demás y descuadraban la fila
+                        entera de la cabecera. */}
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      <span className="min-w-[8rem] flex-1">
+                        <FiltroColumna
+                          label="Guía"
+                          value={guia ?? ""}
+                          options={guiasFaceta}
+                          onChange={(v) => setGuia(v || null)}
+                          placeholder="Guía"
+                        />
+                      </span>
+                      <span className="min-w-[8rem] flex-1">
+                        <FiltroColumna
+                          label="Título habilitante"
+                          value={titulo ?? ""}
+                          options={titulosFaceta}
+                          etiqueta={(v) => (v === SIN_TITULO ? "Sin título" : v)}
+                          onChange={(v) => setTitulo(v || null)}
+                          placeholder="Título"
+                        />
+                      </span>
                     </div>
                   </th>
                 </tr>
