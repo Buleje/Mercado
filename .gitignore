@@ -138,6 +138,13 @@ build-output.txt
 /snap-*.mjs
 # Playwright MCP working directory (exploration artifacts)
 /.playwright-mcp/
+# Snapshots de accesibilidad volcados a mano durante debug con Playwright
+/snap*.md
+# Directorios de scratch de sesión (fixtures de subida, corridas de prueba)
+/.scratch-*/
+# Scripts de un solo uso: se escriben para una corrida y no se vuelven a correr
+/*.tmp.ts
+/scripts/tmp-*.ts
 # Vitest JSON reports (local per-session debugging)
 /vitest-result*.json
 /vitest-full.json
