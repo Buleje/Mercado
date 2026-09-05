@@ -13,7 +13,10 @@
 
 import { DataTable } from "@buleje/design-system";
 import type { Distribucion } from "@/lib/forestal/cubicacion-reparto";
+import type { DimensionResumen } from "@/lib/forestal/cubicacion-resumen";
+import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { fmtM3, fmtPct, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { TipoBadge } from "./tipo-badge";
 
 interface FilaDif {
   tipo: string;
@@ -58,11 +61,11 @@ export function filasDeDiferencia(d: Distribucion): FilaDif[] {
   return [...mapa.values()].sort((a, b) => b.m3 + b.m3Falta - (a.m3 + a.m3Falta));
 }
 
-const TH = "px-3 py-2.5 text-left align-bottom text-sm font-bold uppercase tracking-wide text-[var(--text-secondary)]";
-const TD = "px-3 py-2.5 align-middle";
+const TH = "px-3 py-3 text-left align-bottom text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]";
+const TD = "px-3 py-3 align-middle";
 const NUM = "text-right font-mono tabular-nums";
 
-export function DiferenciaDistribucion({ dist }: { dist: Distribucion }) {
+export function DiferenciaDistribucion({ dist, dim }: { dist: Distribucion; dim?: DimensionResumen }) {
   const filas = filasDeDiferencia(dist);
   if (filas.length === 0) return null;
 
@@ -93,17 +96,17 @@ export function DiferenciaDistribucion({ dist }: { dist: Distribucion }) {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-        <DataTable className="w-full min-w-[620px] text-base">
+        <DataTable className="w-full min-w-[680px] table-fixed text-base">
           <caption className="sr-only">Lo distribuido contra lo que falta, por tipo</caption>
           <thead className="border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
             <tr>
               <th scope="col" className={TH}>Tipo</th>
-              <th scope="col" className={`${TH} text-right`}>Piezas</th>
-              <th scope="col" className={`${TH} text-right`}>Pie tablar</th>
-              <th scope="col" className={`${TH} text-right`}>m³</th>
-              <th scope="col" className={`${TH} text-right`} title="Lo que ningún bloque respalda todavía">Faltan pzas</th>
-              <th scope="col" className={`${TH} text-right`}>Faltan PT</th>
-              <th scope="col" className={`${TH} text-right`}>Faltan m³</th>
+              <th scope="col" className={`${TH} w-24 text-right`}>Piezas</th>
+              <th scope="col" className={`${TH} w-28 text-right`}>Pie tablar</th>
+              <th scope="col" className={`${TH} w-24 text-right`}>m³</th>
+              <th scope="col" className={`${TH} w-28 text-right`} title="Lo que ningún bloque respalda todavía">Faltan pzas</th>
+              <th scope="col" className={`${TH} w-28 text-right`}>Faltan PT</th>
+              <th scope="col" className={`${TH} w-28 text-right`}>Faltan m³</th>
             </tr>
           </thead>
           <tbody>
@@ -111,7 +114,9 @@ export function DiferenciaDistribucion({ dist }: { dist: Distribucion }) {
               const falta = f.piezasFalta > 0 || f.m3Falta > 0.0001;
               return (
                 <tr key={f.tipo} className="border-t border-[var(--rule-soft)] even:bg-[var(--surface-canvas)]/50">
-                  <td className={`${TD} font-bold text-[var(--text-primary)]`}>{f.tipo}</td>
+                  <td className={`${TD} font-bold text-[var(--text-primary)]`}>
+                    {dim === "tipo" ? <TipoBadge tipo={f.tipo as TipoComercial} /> : f.tipo}
+                  </td>
                   <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPiezas(f.piezas)}</td>
                   <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPt(f.pieTablar)}</td>
                   <td className={`${TD} ${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(f.m3)}</td>

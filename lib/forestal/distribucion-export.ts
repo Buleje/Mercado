@@ -23,7 +23,7 @@
  */
 import type { Workbook, Worksheet } from "exceljs";
 import { toInches, toFeet, type Unidad } from "./cubicacion";
-import { claveMarca, type Distribucion, type EspecieDistribucion } from "./cubicacion-reparto";
+import { claveMarca, esAserradaDirecta, type Distribucion, type EspecieDistribucion } from "./cubicacion-reparto";
 
 const TEAL = "FF008060";
 const GRIS = "FFE6F4F0";
@@ -47,10 +47,13 @@ export function filtrarPorEspecies(d: Distribucion, soloEspecies?: ReadonlySet<s
   const sum = (f: (e: EspecieDistribucion) => number) => r4(especies.reduce((a, e) => a + f(e), 0));
   const totRolliza = sum((e) => e.rollizaM3);
   const totAserrada = sum((e) => e.aserradaM3);
+  const totAmparadaDirecta = sum((e) => e.amparadaDirectaM3);
   return {
     especies,
     totales: {
       rollizaM3: totRolliza,
+      aserradaDirectaM3: sum((e) => e.aserradaDirectaM3),
+      amparadaDirectaM3: totAmparadaDirecta,
       capacidadM3: sum((e) => e.capacidadM3),
       aserradaM3: totAserrada,
       aserradaPt: r2(especies.reduce((a, e) => a + e.aserradaPt, 0)),
@@ -59,7 +62,9 @@ export function filtrarPorEspecies(d: Distribucion, soloEspecies?: ReadonlySet<s
       faltanteM3: sum((e) => e.faltanteM3),
       libreM3: sum((e) => e.libreM3),
       rollizaFaltanteM3: sum((e) => e.rollizaFaltanteM3),
-      rendimientoPct: totRolliza > EPS_FILTRO ? r2((totAserrada / totRolliza) * 100) : null,
+      /* Mismo criterio que `distribuirPorCapacidad`: lo amparado por bloques
+         de aserrada directa no entra al rendimiento de la sierra. */
+      rendimientoPct: totRolliza > EPS_FILTRO ? r2(((totAserrada - totAmparadaDirecta) / totRolliza) * 100) : null,
       costoRolliza: especies.some((e) => e.costoRolliza == null && e.rollizaM3 > EPS_FILTRO)
         ? null
         : r2(especies.reduce((a, e) => a + (e.costoRolliza ?? 0), 0)),
@@ -70,6 +75,8 @@ export function filtrarPorEspecies(d: Distribucion, soloEspecies?: ReadonlySet<s
 }
 /** El volumen del negocio va en 3 decimales: es como se mide y se declara. */
 const m3 = (n: number) => n.toFixed(3);
+/** Igual, pero `null` (un bloque sin troza de origen) se escribe como «—», no como 0. */
+const m3Opt = (n: number | null) => (n == null ? "—" : n.toFixed(3));
 const pulg = (v: number, u: string) => r2(toInches(v, u as Unidad));
 const pies = (v: number, u: string) => r2(toFeet(v, u as Unidad));
 /** El encabezado de la dimensión elegida ("tipo" → "Tipo"). */
@@ -111,10 +118,20 @@ export interface FilaMedida {
 export interface FilaBloqueTipo {
   n: number;
   bloque: string;
-  /** m³ (R) — la rolliza que entró a ESTE bloque, la misma cifra en cada tipo. */
-  rollizaM3: number;
+  /** N° de permiso (título habilitante) de origen del bloque, si se conoce. */
+  permiso: string | null;
+  /**
+   * m³ (R) — la rolliza que entró a ESTE bloque, la misma cifra en cada tipo.
+   * En un bloque de ASERRADA DIRECTA es `null`: no hubo troza que entrara, y
+   * repetir ahí su m³ de tabla lo declararía como rolliza.
+   */
+  rollizaM3: number | null;
+  /** Cómo se cargó el bloque — "Rolliza" o "Aserrada directa". */
+  cargadoComo: "Rolliza" | "Aserrada directa";
   especie: string;
   dias: number;
+  /** Día en que se aserró el bloque (AAAA-MM-DD), o `null` si no se dijo. */
+  fecha: string | null;
   tipo: string;
   piezas: number;
   pieTablar: number;
@@ -133,9 +150,12 @@ export function filasPorBloqueYTipo(d: Distribucion): FilaBloqueTipo[] {
         out.push({
           n: out.length + 1,
           bloque: b.bloque.etiqueta || "Sin etiqueta",
-          rollizaM3: b.bloque.m3,
+          permiso: b.bloque.permiso ?? null,
+          rollizaM3: esAserradaDirecta(b.bloque) ? null : b.bloque.m3,
+          cargadoComo: esAserradaDirecta(b.bloque) ? "Aserrada directa" : "Rolliza",
           especie: e.especie,
           dias: b.dias,
+          fecha: b.bloque.fecha ?? null,
           tipo: g.label,
           piezas: g.piezas,
           pieTablar: g.pieTablar,
@@ -152,8 +172,14 @@ export interface ResumenBloque {
   especie: string;
   bloque: string;
   dias: number;
-  rollizaM3: number;
-  aprovechablePct: number;
+  /** Día en que se aserró el bloque (AAAA-MM-DD), o `null` si no se dijo. */
+  fecha: string | null;
+  /** `null` en un bloque de aserrada directa: no entró troza. */
+  rollizaM3: number | null;
+  /** `null` en un bloque de aserrada directa: no hay nada que aprovechar. */
+  aprovechablePct: number | null;
+  /** Cómo se cargó el bloque — "Rolliza" o "Aserrada directa". */
+  cargadoComo: "Rolliza" | "Aserrada directa";
   capacidadM3: number;
   usadoM3: number;
   libreM3: number;
@@ -225,8 +251,10 @@ export function resumenDeBloques(d: Distribucion): ResumenBloque[] {
         especie: e.especie,
         bloque: b.bloque.etiqueta || "Sin etiqueta",
         dias: b.dias,
-        rollizaM3: b.bloque.m3,
-        aprovechablePct: b.aprovechablePct,
+        fecha: b.bloque.fecha ?? null,
+        rollizaM3: esAserradaDirecta(b.bloque) ? null : b.bloque.m3,
+        aprovechablePct: esAserradaDirecta(b.bloque) ? null : b.aprovechablePct,
+        cargadoComo: esAserradaDirecta(b.bloque) ? "Aserrada directa" : "Rolliza",
         capacidadM3: b.capacidadM3,
         usadoM3: b.usadoM3,
         libreM3: b.libreM3,
@@ -298,24 +326,31 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
   doc.text("Distribución de rolliza sobre lo aserrado", 40, 44);
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(110);
   doc.text(
-    `Fecha: ${fecha()} · Agrupado: ${etiquetaDim} · Rolliza ${m3(t.rollizaM3)} m³ · ampara ${m3(t.capacidadM3)} m³ · amparado ${m3(t.amparadaM3)} m³ de ${m3(t.aserradaM3)} producidos` +
+    /* «ampara» acá es lo que ampara LA ROLLIZA: la capacidad de un bloque de
+       aserrada directa es su propio m³ y se declara aparte, en la frase
+       siguiente. Sumarlas decía «9 m³ de rolliza amparan 6.450» cuando
+       amparan 4.950 y el resto ya venía aserrado. */
+    `Fecha: ${fecha()} · Agrupado: ${etiquetaDim} · Rolliza ${m3(t.rollizaM3)} m³ · ampara ${m3(t.capacidadM3 - t.aserradaDirectaM3)} m³ · amparado ${m3(t.amparadaM3)} m³ de ${m3(t.aserradaM3)} producidos` +
+    (t.aserradaDirectaM3 > EPS_FILTRO ? ` · Aserrada directa ${m3(t.aserradaDirectaM3)} m³ (A), sin troza de origen, ampara ${m3(t.amparadaDirectaM3)} m³` : "") +
     (soloEspecies && soloEspecies.size > 0 ? ` · Filtrado a: ${[...soloEspecies].join(", ")}` : ""),
     40, 62,
   );
   doc.text(
-    "Cada bloque ampara hasta su capacidad (m³ × % aprovechable) y reparte PIEZAS ENTERAS entre los tipos pendientes, en proporción al volumen.",
+    "Cada bloque ampara hasta su capacidad (m³ × % aprovechable) y reparte PIEZAS ENTERAS entre los tipos pendientes, en proporción al volumen." +
+    (t.aserradaDirectaM3 > EPS_FILTRO ? " Los bloques de aserrada directa amparan su propio m³ (A) y no cuentan como rolliza ni en el rendimiento." : ""),
     40, 76,
   );
 
   // ── 1. Resumen por bloque: qué entró y qué amparó cada uno ───────────────
   const bloques = resumenDeBloques(d);
   autoTable(doc, {
-    head: [["Bloque (GTF / lote)", "Especie", "Días", "Rolliza m³", "% aprov.", "Ampara m³", "Usa m³", "Libre m³", "Piezas", "Pie tablar"]],
+    head: [["Bloque (GTF / lote)", "Cargado como", "Especie", "Días", "Fecha", "Rolliza m³", "% aprov.", "Ampara m³", "Usa m³", "Libre m³", "Piezas", "Pie tablar"]],
     body: bloques.map((b) => [
-      b.bloque, b.especie, String(b.dias), m3(b.rollizaM3), b.aprovechablePct.toFixed(1), m3(b.capacidadM3),
+      b.bloque, b.cargadoComo, b.especie, String(b.dias), b.fecha ?? "", m3Opt(b.rollizaM3),
+      b.aprovechablePct == null ? "—" : b.aprovechablePct.toFixed(1), m3(b.capacidadM3),
       m3(b.usadoM3), m3(b.libreM3), piezasTxt(b.piezas), b.pieTablar.toFixed(2),
     ]),
-    foot: [["TOTAL", "", "", m3(t.rollizaM3), "", m3(t.capacidadM3), m3(t.amparadaM3), m3(t.libreM3),
+    foot: [["TOTAL", "", "", "", "", m3(t.rollizaM3), "", m3(t.capacidadM3), m3(t.amparadaM3), m3(t.libreM3),
       piezasTxt(bloques.reduce((a, b) => a + b.piezas, 0)), t.amparadaPt.toFixed(2)]],
     startY: 90,
     // Sin esto el pie se repite en cada página y el TOTAL aparece ANTES de las
@@ -324,7 +359,7 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
     styles: { fontSize: 7.5, cellPadding: 3 },
     headStyles: { fillColor: [0, 128, 96], textColor: 255 },
     footStyles: { fillColor: [0, 128, 96], textColor: 255, fontStyle: "bold" },
-    columnStyles: { 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" }, 8: { halign: "right" }, 9: { halign: "right" } },
+    columnStyles: { 2: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" }, 8: { halign: "right" }, 9: { halign: "right" }, 10: { halign: "right" } },
   });
 
   // ── 2. Distribución por bloque y tipo: comercial tanto, corta tanto… ──────
@@ -351,7 +386,7 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
       accBloqueTipo = { piezas: 0, pt: 0, m3: 0 };
     }
     accBloqueTipo.piezas += f.piezas; accBloqueTipo.pt += f.pieTablar; accBloqueTipo.m3 += f.m3;
-    bodyTipo.push([f.bloque, m3(f.rollizaM3), f.especie, f.tipo, piezasTxt(f.piezas), f.pieTablar.toFixed(2), m3(f.m3)]);
+    bodyTipo.push([f.bloque, m3Opt(f.rollizaM3), f.especie, f.tipo, piezasTxt(f.piezas), f.pieTablar.toFixed(2), m3(f.m3)]);
   }
   cerrarBloqueTipo();
   if (bodyTipo.length === 0) bodyTipo.push(["", "", "Ningún bloque amparó aserrada todavía.", "", "", "", ""]);
@@ -498,9 +533,12 @@ export async function exportarDistribucionExcel(d: Distribucion, etiquetaDim: st
   wt.columns = [
     { header: "N°", key: "n", width: 6 },
     { header: "Bloque (GTF / lote)", key: "bloque", width: 26 },
+    { header: "N° de permiso", key: "permiso", width: 20 },
+    { header: "Cargado como", key: "cargado", width: 17 },
     { header: "m³ (R)", key: "rolliza", width: 11 },
     { header: "Especie", key: "especie", width: 14 },
     { header: "Días", key: "dias", width: 7 },
+    { header: "Fecha", key: "fecha", width: 13 },
     { header: dimCol, key: "tipo", width: 18 },
     { header: "Piezas", key: "piezas", width: 9 },
     { header: "Pie tablar", key: "pt", width: 12 },
@@ -522,7 +560,7 @@ export async function exportarDistribucionExcel(d: Distribucion, etiquetaDim: st
       accBloqueTipo = { piezas: 0, pt: 0, m3: 0 };
     }
     accBloqueTipo.piezas += f.piezas; accBloqueTipo.pt += f.pieTablar; accBloqueTipo.m3 += f.m3;
-    wt.addRow({ n: f.n, bloque: f.bloque, rolliza: f.rollizaM3, especie: f.especie, dias: f.dias, tipo: f.tipo, piezas: f.piezas, pt: f.pieTablar, m3: f.m3 });
+    wt.addRow({ n: f.n, bloque: f.bloque, permiso: f.permiso ?? "", cargado: f.cargadoComo, rolliza: f.rollizaM3 ?? "", especie: f.especie, dias: f.dias, fecha: f.fecha ?? "", tipo: f.tipo, piezas: f.piezas, pt: f.pieTablar, m3: f.m3 });
   }
   cerrarBloqueTipoXls();
   formatoNumerico(wt, ["rolliza", "m3"], "0.000");
@@ -603,6 +641,8 @@ export async function exportarDistribucionExcel(d: Distribucion, etiquetaDim: st
     { header: "Especie", key: "especie", width: 14 },
     { header: "Bloque (GTF / lote)", key: "bloque", width: 26 },
     { header: "Días", key: "dias", width: 7 },
+    { header: "Fecha", key: "fecha", width: 13 },
+    { header: "Cargado como", key: "cargado", width: 17 },
     { header: "Rolliza m³", key: "rolliza", width: 11 },
     { header: "% aprovechable", key: "ap", width: 15 },
     { header: "Ampara m³", key: "cap", width: 11 },
@@ -616,8 +656,8 @@ export async function exportarDistribucionExcel(d: Distribucion, etiquetaDim: st
   estilarHeader(wr);
   for (const b of resumenDeBloques(d)) {
     wr.addRow({
-      especie: b.especie, bloque: b.bloque, dias: b.dias,
-      rolliza: b.rollizaM3, ap: b.aprovechablePct, cap: b.capacidadM3,
+      especie: b.especie, bloque: b.bloque, dias: b.dias, fecha: b.fecha ?? "",
+      cargado: b.cargadoComo, rolliza: b.rollizaM3 ?? "", ap: b.aprovechablePct ?? "", cap: b.capacidadM3,
       usado: b.usadoM3, libre: b.libreM3, piezas: b.piezas, pt: b.pieTablar,
       // `null` y no 0: sin costo cargado, la celda queda vacía en vez de decir
       // que la madera fue gratis.
@@ -632,7 +672,15 @@ export async function exportarDistribucionExcel(d: Distribucion, etiquetaDim: st
   });
   pintarFila(wr, tr, TEAL, true);
   wr.addRow({});
-  wr.addRow({ especie: "Rendimiento general", bloque: t.rendimientoPct == null ? "sin rolliza que comparar" : `${t.rendimientoPct.toFixed(2)} %` });
+  wr.addRow({
+    especie: "Rendimiento general",
+    bloque: t.rendimientoPct == null
+      ? "sin rolliza que comparar"
+      : `${t.rendimientoPct.toFixed(2)} %${t.aserradaDirectaM3 > EPS_FILTRO ? " (sin contar la aserrada directa)" : ""}`,
+  });
+  if (t.aserradaDirectaM3 > EPS_FILTRO) {
+    wr.addRow({ especie: "Aserrada directa cargada", bloque: `${m3(t.aserradaDirectaM3)} m³ (A) sin troza de origen — ampara ${m3(t.amparadaDirectaM3)} m³` });
+  }
   wr.addRow({ especie: "Falta por distribuir", bloque: `${m3(t.faltanteM3)} m³ — pide ${m3(t.rollizaFaltanteM3)} m³ de troza` });
   // La misma firma que va al pie del PDF: el Excel y el PDF tienen que decir
   // lo mismo sobre quién responde por la distribución, no sólo uno de los dos.

@@ -13,7 +13,7 @@ import {
   repartirPorDia,
   type BloqueRolliza,
 } from "@/lib/forestal/cubicacion-reparto";
-import { PT_POR_M3 as PT_M3_TEST, type PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { PT_POR_M3 as PT_M3_TEST, cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 
 /**
  * Un RENGLÓN con el m³ pedido, repartido en piezas de verdad.
@@ -950,5 +950,364 @@ describe("amparadaPt · el pie tablar del respaldo, no el del lote", () => {
       "tipo",
     );
     expect(d.totales.amparadaPt).toBeCloseTo(d.totales.aserradaPt, 1);
+  });
+});
+
+describe("porPermiso · dos permisos de la misma especie nunca quedan combinados sin que se note (2026-09-01)", () => {
+  it("sin `permiso` en ningún bloque, un solo grupo con `permiso: null` — comportamiento de siempre", () => {
+    const d = distribuirPorCapacidad(
+      [bloque("1", "Tornillo", 20, { aprovechablePct: 55 })],
+      [pieza("a", "Tornillo", 11, "Comercial")],
+      "tipo",
+    );
+    const e = d.especies[0];
+    expect(e.porPermiso).toHaveLength(1);
+    expect(e.porPermiso[0].permiso).toBeNull();
+    expect(e.porPermiso[0].rollizaM3).toBe(20);
+    expect(e.porPermiso[0].amparadaM3).toBe(e.amparadaM3);
+  });
+
+  it("dos permisos de la misma especie: dos grupos separados, cada uno con lo suyo", () => {
+    const d = distribuirPorCapacidad(
+      [
+        bloque("1", "Tornillo", 20, { aprovechablePct: 55, permiso: "19-SEC/REG-PLT-2018-020" }),
+        bloque("2", "Tornillo", 10, { aprovechablePct: 55, permiso: "19-SEC/REG-PLT-2026-032" }),
+      ],
+      [pieza("a", "Tornillo", 9, "Comercial")],
+      "tipo",
+    );
+    const e = d.especies[0];
+    expect(e.porPermiso).toHaveLength(2);
+    // El orden es el orden de carga (mismo principio que entre bloques).
+    expect(e.porPermiso.map((p) => p.permiso)).toEqual([
+      "19-SEC/REG-PLT-2018-020",
+      "19-SEC/REG-PLT-2026-032",
+    ]);
+    expect(e.porPermiso[0].rollizaM3).toBe(20);
+    expect(e.porPermiso[1].rollizaM3).toBe(10);
+    // El primero cargado se lleva la aserrada disponible; el resto queda 0 —
+    // MISMA regla que ya rige entre bloques del mismo permiso (no prorrateo).
+    expect(e.porPermiso[0].amparadaM3).toBe(9);
+    expect(e.porPermiso[1].amparadaM3).toBe(0);
+    // Los dos grupos suman exactamente el total de la especie.
+    expect(e.porPermiso[0].amparadaM3 + e.porPermiso[1].amparadaM3).toBe(e.amparadaM3);
+    expect(e.porPermiso[0].rollizaM3 + e.porPermiso[1].rollizaM3).toBe(e.rollizaM3);
+  });
+
+  it("un bloque sin permiso y otro con — dos grupos, el sin-dato queda en `null`", () => {
+    const d = distribuirPorCapacidad(
+      [
+        bloque("1", "Cedro", 5, { aprovechablePct: 55 }),
+        bloque("2", "Cedro", 5, { aprovechablePct: 55, permiso: "19-SEC/REG-PLT-2018-020" }),
+      ],
+      [pieza("a", "Cedro", 4, "Comercial")],
+      "tipo",
+    );
+    const permisos = d.especies[0].porPermiso.map((p) => p.permiso);
+    expect(permisos.includes(null)).toBe(true);
+    expect(permisos.includes("19-SEC/REG-PLT-2018-020")).toBe(true);
+  });
+});
+
+/**
+ * ⭐ El bloque de ASERRADA DIRECTA (Brandon, 2026-09-01).
+ *
+ * La otra forma de cargar: la madera entró YA aserrada —comprada así, saldo de
+ * inventario, un lote que nunca pasó por la sierra— así que no hay troza que
+ * convertir. Su m³ ES el amparado, se le declaran las piezas a mano, y convive
+ * en la misma tabla con los bloques de rolliza.
+ *
+ * Lo que NO se mezcla son los totales: una tabla que ya vino aserrada no es
+ * rolliza que entró, y contarla como tal ensuciaría el rendimiento de la
+ * sierra — el número con el que se juzga si el aserradero anda bien.
+ */
+describe("⭐ bloques de ASERRADA DIRECTA · cargar lo aserrado sin rolliza", () => {
+  const aserrada = (id: string, especie: string, m3: number, extra: Partial<BloqueRolliza> = {}): BloqueRolliza =>
+    bloque(id, especie, m3, { tipo: "aserrada", ...extra });
+
+  it("un bloque sin `tipo` sigue siendo de rolliza: lo guardado antes no cambia de significado", () => {
+    const b = bloque("1", "Tornillo", 20);
+    expect(b.tipo).toBeUndefined();
+    expect(aprovechableDe(b)).toBe(APROVECHABLE_DEFAULT);
+    expect(capacidadDe(b)).toBeCloseTo(11, 4);
+  });
+
+  it("su m³ ES el amparado: no se le aplica ningún % aprovechable", () => {
+    expect(capacidadDe(aserrada("1", "Tornillo", 8))).toBeCloseTo(8, 4);
+    expect(aprovechableDe(aserrada("1", "Tornillo", 8))).toBe(100);
+    // Ni siquiera si alguien dejó un % viejo tipeado en el campo.
+    expect(capacidadDe(aserrada("1", "Tornillo", 8, { aprovechablePct: 30 }))).toBeCloseTo(8, 4);
+  });
+
+  it("«ampara a mano» no puede contradecir el m³ cargado", () => {
+    // En rolliza el manual manda; acá el m³ YA es el amparado, no hay supuesto que corregir.
+    expect(capacidadDe(aserrada("1", "Tornillo", 8, { amparaManualM3: 3 }))).toBeCloseTo(8, 4);
+  });
+
+  it("recibe medidas del reparto igual que cualquier bloque", () => {
+    const d = distribuirPorCapacidad([aserrada("1", "Tornillo", 5)], [pieza("p", "Tornillo", 10)]);
+    const b = d.especies[0].bloques[0];
+    expect(b.usadoM3).toBeGreaterThan(4.9);
+    expect(b.asignado.length).toBeGreaterThan(0);
+    expect(b.asignado[0].medidas.length).toBeGreaterThan(0);
+    expect(b.asignado.reduce((a, g) => a + g.piezas, 0)).toBeGreaterThan(0);
+  });
+
+  it("el tope de PIEZAS corta el bloque aunque le sobre volumen", () => {
+    const d = distribuirPorCapacidad([aserrada("1", "Tornillo", 5, { piezasManual: 40 })], [pieza("p", "Tornillo", 10)]);
+    const b = d.especies[0].bloques[0];
+    expect(b.asignado.reduce((a, g) => a + g.piezas, 0)).toBe(40);
+    expect(b.usadoM3).toBeLessThan(5);
+  });
+
+  it("NO suma rolliza: la troza y la tabla se cuentan por separado", () => {
+    const d = distribuirPorCapacidad(
+      [bloque("1", "Tornillo", 20), aserrada("2", "Tornillo", 5)],
+      [pieza("p", "Tornillo", 30)],
+    );
+    const e = d.especies[0];
+    expect(e.rollizaM3).toBeCloseTo(20, 4);
+    expect(e.aserradaDirectaM3).toBeCloseTo(5, 4);
+    expect(d.totales.rollizaM3).toBeCloseTo(20, 4);
+    expect(d.totales.aserradaDirectaM3).toBeCloseTo(5, 4);
+    // Capacidad total = 11 (rolliza al 55 %) + 5 (aserrada directa tal cual).
+    expect(e.capacidadM3).toBeCloseTo(16, 4);
+  });
+
+  it("lo que ampara la aserrada directa NO infla el rendimiento de la sierra", () => {
+    const soloRolliza = distribuirPorCapacidad([bloque("1", "Tornillo", 20)], [pieza("p", "Tornillo", 11)]);
+    // 11 aserrados de 20 de troza = 55 %.
+    expect(soloRolliza.totales.rendimientoPct).toBeCloseTo(55, 1);
+
+    // Mismo lote y misma troza, pero 5 m³ de esa aserrada vinieron ya aserrados:
+    // el rendimiento tiene que BAJAR, no subir — la sierra no cortó esos 5.
+    const conDirecta = distribuirPorCapacidad(
+      [aserrada("0", "Tornillo", 5), bloque("1", "Tornillo", 20)],
+      [pieza("p", "Tornillo", 11)],
+    );
+    expect(conDirecta.totales.amparadaDirectaM3).toBeGreaterThan(4.9);
+    expect(conDirecta.totales.rendimientoPct).toBeLessThan(55);
+    expect(conDirecta.totales.rendimientoPct).toBeCloseTo(30, 0);
+  });
+
+  it("un lote respaldado SÓLO con aserrada directa no se avisa como «sin rolliza»", () => {
+    const d = distribuirPorCapacidad([aserrada("1", "Tornillo", 10)], [pieza("p", "Tornillo", 10)]);
+    expect(d.especies[0].estado).toBe("ok");
+    expect(d.aserradaHuerfana).toEqual([]);
+    expect(d.totales.faltanteM3).toBeLessThan(0.05);
+    // Sin rolliza no hay rendimiento que declarar: null, nunca un 0 ni un ∞.
+    expect(d.totales.rendimientoPct).toBeNull();
+  });
+
+  it("la troza que pide el faltante sale del % de un bloque de ROLLIZA, no del 100 % de la aserrada directa", () => {
+    // Rolliza al 50 % primero, aserrada directa después: el faltante pide el doble de su m³.
+    const d = distribuirPorCapacidad(
+      [bloque("1", "Tornillo", 2, { aprovechablePct: 50 }), aserrada("2", "Tornillo", 1)],
+      [pieza("p", "Tornillo", 10)],
+    );
+    const e = d.especies[0];
+    expect(e.faltanteM3).toBeCloseTo(8, 1);
+    expect(e.rollizaFaltanteM3).toBeCloseTo(16, 0);
+  });
+
+  it("el CSV declara cómo se cargó cada bloque y deja la rolliza en blanco cuando no la hubo", () => {
+    const d = distribuirPorCapacidad(
+      [bloque("1", "Tornillo", 20), aserrada("2", "Tornillo", 5)],
+      [pieza("p", "Tornillo", 30)],
+    );
+    const csv = distribucionACsv(d, "Por tipo");
+    expect(csv).toContain("Cargado como");
+    expect(csv).toContain("Aserrada directa");
+    expect(csv).toContain("ASERRADA DIRECTA CARGADA");
+    // La fila del bloque directo no declara m³ de rolliza ni % aprovechable.
+    const filaDirecta = csv.split("\r\n").find((l) => l.startsWith("Tornillo;GTF-2;Aserrada directa;"));
+    expect(filaDirecta).toBeDefined();
+    expect(filaDirecta!.split(";")[3]).toBe("");
+    expect(filaDirecta!.split(";")[4]).toBe("");
+  });
+});
+
+/**
+ * ⛔ El filtro de GRUPOS: «este bloque lleva sólo Comercial» (Brandon, 2026-09-02).
+ *
+ * Tener tres bloques que reciben los tres la MISMA mezcla no separa nada — que
+ * es lo que pasaba antes de esto: se podían crear N bloques, pero el reparto le
+ * daba a cada uno una tajada proporcional de todos los tipos pendientes.
+ *
+ * A diferencia del filtro de LARGO, éste es **excluyente**: no reserva
+ * prioridad y después completa, sino que el grupo excluido no entra ni aunque
+ * al bloque le sobre capacidad. Completar sería justo lo que el filtro impide.
+ */
+describe("⛔ gruposFiltro · qué tipo lleva cada bloque", () => {
+  /** Lote con dos tipos bien separados de la misma especie. */
+  const lote = () => [
+    pieza("com", "Tornillo", 10, "Comercial"),
+    pieza("cor", "Tornillo", 10, "Corta"),
+  ];
+  /**
+   * La clave de grupo lleva el `dim` adentro, igual que un override de línea.
+   * Bajo «Por tipo» la clave ES el tipo tal cual (`tipoDePieza`), sin
+   * normalizar a minúscula — medido, no supuesto: escribirlo en minúscula
+   * dejaba el filtro sin matchear nada y el bloque en cero.
+   */
+  const soloTipo = (...tipos: string[]) => tipos.map((t) => claveOverrideLinea("tipo", t));
+
+  it("sin filtro, el bloque toma la MEZCLA de los dos tipos (el de siempre)", () => {
+    const d = distribuirPorCapacidad([bloque("1", "Tornillo", 10)], lote());
+    const labels = d.especies[0].bloques[0].asignado.map((g) => g.label).sort();
+    expect(labels.length).toBe(2);
+  });
+
+  it("con filtro, el bloque lleva SÓLO ese grupo", () => {
+    const d = distribuirPorCapacidad(
+      [bloque("1", "Tornillo", 10, { gruposFiltro: soloTipo("Comercial") })],
+      lote(),
+    );
+    const b = d.especies[0].bloques[0];
+    expect(b.asignado.map((g) => g.clave)).toEqual(["Comercial"]);
+  });
+
+  it("⭐ es EXCLUYENTE: aunque le sobre capacidad, NO se completa con el grupo excluido", () => {
+    // Capacidad de sobra (100 m³ al 55 % = 55) para 20 m³ de lote.
+    const d = distribuirPorCapacidad(
+      [bloque("1", "Tornillo", 100, { gruposFiltro: soloTipo("Comercial") })],
+      lote(),
+    );
+    const b = d.especies[0].bloques[0];
+    expect(b.asignado.map((g) => g.clave)).toEqual(["Comercial"]);
+    expect(b.libreM3).toBeGreaterThan(30);
+    // Y la corta queda ENTERA en el faltante, no repartida a escondidas.
+    expect(d.especies[0].faltante.map((f) => f.clave)).toEqual(["Corta"]);
+    expect(d.especies[0].faltante[0].m3).toBeCloseTo(10, 1);
+  });
+
+  it("⭐ dos bloques, un tipo cada uno: cada uno se lleva LO SUYO y nada más", () => {
+    const d = distribuirPorCapacidad(
+      [
+        bloque("1", "Tornillo", 20, { tipo: "aserrada", gruposFiltro: soloTipo("Comercial") }),
+        bloque("2", "Tornillo", 20, { tipo: "aserrada", gruposFiltro: soloTipo("Corta") }),
+      ],
+      lote(),
+    );
+    const [b1, b2] = d.especies[0].bloques;
+    expect(b1.asignado.map((g) => g.clave)).toEqual(["Comercial"]);
+    expect(b2.asignado.map((g) => g.clave)).toEqual(["Corta"]);
+    expect(b1.usadoM3).toBeCloseTo(10, 1);
+    expect(b2.usadoM3).toBeCloseTo(10, 1);
+    expect(d.especies[0].faltanteM3).toBeLessThan(0.05);
+  });
+
+  it("un filtro con VARIOS grupos admite todos los que nombra", () => {
+    const d = distribuirPorCapacidad(
+      [bloque("1", "Tornillo", 100, { gruposFiltro: soloTipo("Comercial", "Corta") })],
+      lote(),
+    );
+    expect(d.especies[0].bloques[0].asignado.map((g) => g.clave).sort()).toEqual(["Comercial", "Corta"]);
+  });
+
+  it("un filtro armado bajo OTRA vista queda inactivo, no vacía el bloque", () => {
+    // Claves de «Por largo» mientras la tabla agrupa «Por tipo»: el filtro no
+    // aplica y el bloque vuelve a tomar de todo (mismo criterio que los
+    // overrides de línea), en vez de quedarse en cero sin explicación.
+    const d = distribuirPorCapacidad(
+      [bloque("1", "Tornillo", 100, { gruposFiltro: [claveOverrideLinea("largo", "10")] })],
+      lote(),
+      "tipo",
+    );
+    expect(d.especies[0].bloques[0].asignado.length).toBe(2);
+  });
+
+  it("una lista vacía o basura no filtra nada", () => {
+    for (const f of [[], ["", "tipo|"], null]) {
+      const d = distribuirPorCapacidad([bloque("1", "Tornillo", 100, { gruposFiltro: f })], lote());
+      expect(d.especies[0].bloques[0].asignado.length, JSON.stringify(f)).toBe(2);
+    }
+  });
+
+  it("el override de una línea GANA sobre el filtro: lo dicho a mano manda", () => {
+    const d = distribuirPorCapacidad(
+      [bloque("1", "Tornillo", 100, {
+        gruposFiltro: soloTipo("Comercial"),
+        overridesLinea: { [claveOverrideLinea("tipo", "Corta")]: { m3: 4 } },
+      })],
+      lote(),
+    );
+    const claves = d.especies[0].bloques[0].asignado.map((g) => g.clave).sort();
+    expect(claves).toContain("Corta");
+  });
+
+  it("piezas y m³ siguen cerrando contra el lote con el filtro puesto", () => {
+    const d = distribuirPorCapacidad(
+      [
+        bloque("1", "Tornillo", 20, { tipo: "aserrada", gruposFiltro: soloTipo("Comercial") }),
+        bloque("2", "Tornillo", 20, { tipo: "aserrada", gruposFiltro: soloTipo("Corta") }),
+      ],
+      lote(),
+    );
+    const e = d.especies[0];
+    const repartidas = e.bloques.reduce((a, b) => a + b.asignado.reduce((x, g) => x + g.piezas, 0), 0);
+    const faltantes = e.faltante.reduce((a, f) => a + f.piezas, 0);
+    expect(repartidas + faltantes).toBe(2 * PIEZAS_POR_RENGLON);
+  });
+});
+
+/**
+ * El llenado tiene que EXPRIMIR la capacidad, no sólo repartirla razonablemente
+ * (Brandon, 2026-09-02: «se tiene que aprovechar al máximo, al 100 o similar»).
+ *
+ * Este test es una búsqueda numérica: 200 lotes al azar, cada uno con un bloque
+ * de capacidad aleatoria, comparados contra la mejor combinación posible de
+ * piezas enteras (DP exacta sobre milésimas). Con el greedy por orden el
+ * aprovechamiento medio era 98,6 % y el peor caso dejaba 24 litros afuera; con
+ * la DP del reparto son 98,9 % y 11 litros. Los umbrales de abajo son la red:
+ * si alguien vuelve a tocar el llenado y baja de acá, el reparto empeoró.
+ */
+describe("aprovechamiento de la capacidad", () => {
+  it("ampara ≥98,5 % de lo que permite la mejor combinación, y nunca se pasa", () => {
+    /** Mejor volumen alcanzable con piezas enteras (subset-sum, en milésimas). */
+    const optimo = (unidades: number[], cap: number): number => {
+      const dp = new Uint8Array(cap + 1); dp[0] = 1;
+      for (const u of unidades) for (let c = cap; c >= u; c--) if (dp[c - u]) dp[c] = 1;
+      for (let c = cap; c >= 0; c--) if (dp[c]) return c;
+      return 0;
+    };
+    let semilla = 42;
+    const rnd = () => (semilla = (semilla * 1103515245 + 12345) % 2147483648) / 2147483648;
+    let aprov = 0;
+    let peor = 0;
+    for (let n = 0; n < 200; n++) {
+      const piezas: PiezaCubicada[] = [];
+      for (let i = 0; i < 2 + Math.floor(rnd() * 5); i++) {
+        const e = [1, 2, 3][Math.floor(rnd() * 3)];
+        const a = [4, 6, 8, 10][Math.floor(rnd() * 4)];
+        const l = [8, 10, 12, 14][Math.floor(rnd() * 4)];
+        const cantidad = 1 + Math.floor(rnd() * 20);
+        const base = { cantidad, espesor: e, ancho: a, largo: l, uEspesor: "pulg" as const, uAncho: "pulg" as const, uLargo: "pies" as const };
+        const { pieTablar, m3 } = cubicarPieza(base);
+        piezas.push({ id: `p${i}`, ...base, especie: "Tornillo", pieTablar, m3 });
+      }
+      const total = piezas.reduce((s, p) => s + p.m3, 0);
+      const cap = Math.round(total * (0.3 + rnd() * 0.6) * 1000) / 1000;
+      const d = distribuirPorCapacidad(
+        [{ id: "b", etiqueta: "B", especie: "Tornillo", m3: cap, tipo: "aserrada", origen: "manual" }],
+        piezas,
+      );
+      const usado = d.totales.amparadaM3;
+      /* Nunca se ampara más de lo que el bloque respalda, salvo el margen de
+         cierre —hasta 50 litros y nunca más del 20 % del propio bloque— que
+         existe para no dejar una pieza real fuera de todo papel, y que la
+         pantalla muestra como «ampara de más». */
+      expect(usado).toBeLessThanOrEqual(cap + Math.min(0.05, cap * 0.2) + 0.0005);
+      const unidades: number[] = [];
+      for (const p of piezas) {
+        const u = Math.ceil((p.m3 / p.cantidad) * 1000 - 1e-9);
+        for (let k = 0; k < p.cantidad; k++) unidades.push(u);
+      }
+      const techo = optimo(unidades, Math.floor(cap * 1000 + 1e-6)) / 1000;
+      aprov += techo > 0 ? usado / techo : 1;
+      peor = Math.max(peor, techo - usado);
+    }
+    expect(aprov / 200).toBeGreaterThan(0.985);
+    expect(peor).toBeLessThan(0.02);
   });
 });
