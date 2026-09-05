@@ -335,7 +335,16 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
               : "ingresado − consumido"
           }
           icon={Boxes}
-          emphasis={saldos && saldos.materiaPrima.saldoM3 < 0 ? "error" : "success"}
+          /*
+            Ámbar y no rojo cuando no cierra. El rojo dice «esto está roto» y el
+            libro ADMITE huecos —lo que no los admite es el certificado
+            (`trazabilidadCompleta()`)—: un saldo negativo casi siempre es
+            inventario de apertura, madera que ya se estaba aserrando cuando
+            arrancó el libro y que nunca entró como ingreso. Pintarlo de error
+            hace que el operador aprenda a ignorar el único color que debería
+            frenarlo. El subtexto de acá arriba ya dice los dos números.
+          */
+          emphasis={saldos && saldos.materiaPrima.saldoM3 < 0 ? "warning" : "success"}
         />
         <StatCard density="compact" label="Producto terminado" value={saldos ? n2(saldos.productoStock) : "—"} subValue="aserrada lista" icon={PackageCheck} emphasis="neutral" />
         <StatCard density="compact" label="Despachado en el período" value={saldos ? n2(saldos.despachado) : "—"} subValue={period.label} icon={Truck} emphasis="neutral" />

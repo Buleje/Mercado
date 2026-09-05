@@ -786,13 +786,26 @@ export default function CtpPlantaMapa({
             Leaflet (no compiten con sus panes internos) y con 500 quedaban por
             encima de cualquier modal —el `AdminModal` es z-50—, tapando el
             registro de la guía de transporte. */}
+        {/*
+          Plegable, y abierta por defecto. La leyenda explica el color de cada
+          zona —hace falta la primera vez— pero flota sobre la esquina del
+          satélite y tapa imagen justo cuando uno quiere mirar el terreno de
+          abajo. Con `<details>` se cierra a un chip de una línea y se vuelve a
+          abrir; sin `pointer-events-auto` no se podría tocar (el contenedor lo
+          apaga para no robarle clicks al mapa).
+        */}
         {ready && tiposPresentes.length > 0 && (
-          <div className="pointer-events-none absolute right-3 top-3 z-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-md)]">
-            <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Tipo de zona</p>
-            <div className="space-y-0.5">
+          <details
+            open
+            className="pointer-events-auto absolute right-3 top-3 z-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-md)] [&_summary::-webkit-details-marker]:hidden"
+          >
+            <summary className="cursor-pointer list-none text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
+              Tipo de zona
+            </summary>
+            <div className="mt-1 space-y-0.5">
               {tiposPresentes.map((t) => <span key={t.tipo} className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]"><span className="h-3 w-3 shrink-0 rounded-full" style={{ background: t.ring }} />{t.label}</span>)}
             </div>
-          </div>
+          </details>
         )}
         {cursor && <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">{Number(cursor.lat).toFixed(5)}, {Number(cursor.lng).toFixed(5)}</div>}
         {/* Aviso de zoom digital: el satélite no tiene más detalle a este zoom en
