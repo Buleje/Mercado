@@ -31,6 +31,7 @@ export const CTP_VISTAS: readonly SubvistaModulo[] = [
   { key: "despacho", label: "Despacho", hint: "Salida de producto" },
   { key: "trozas", label: "Trozas", hint: "Buscar una pieza por su codificación" },
   { key: "radar", label: "Radar", hint: "Cadena de custodia visual" },
+  { key: "historia-lote", label: "Historia del lote", hint: "Todo lo que pasó con una pila: qué trozas se apartaron, qué corrida se las comió, qué salió y con qué guía se fue" },
   { key: "planta", label: "Planta", hint: "Mapa del aserradero" },
   { key: "eudr", label: "EUDR", hint: "Geolocalización + dossier UE" },
   { key: "guias", label: "Guías emitidas", hint: "Las GTF de salida del CTP y cuáles quedaron a medio llenar" },

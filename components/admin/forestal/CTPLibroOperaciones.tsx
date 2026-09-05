@@ -42,6 +42,7 @@ import {
   Scale,
   Search,
   Share2,
+  History,
   ShieldCheck,
   TreePine,
   TrendingUp,
@@ -75,6 +76,7 @@ import CtpRentabilidadPanel from "./CtpRentabilidadPanel";
 import CtpSerforImportModal from "./CtpSerforImportModal";
 import VaciarLibroModal from "./VaciarLibroModal";
 import CtpTrazaRadar from "./CtpTrazaRadar";
+import CtpHistoriaLoteView from "./CtpHistoriaLoteView";
 import CtpPlantaView from "./CtpPlantaView";
 import CtpAsistente from "./CtpAsistente";
 import CtpAnalisis from "./CtpAnalisis";
@@ -99,7 +101,7 @@ import {
 } from "./ctp-shared";
 import { CTP_VISTAS } from "@/lib/admin/subvistas-modulos";
 
-type CtpView = "ingresos" | "gtf-ingresadas" | "lotes" | "consumos" | "produccion" | "disponibles" | "despacho" | "trozas" | "radar" | "planta" | "tablero" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "fletes" | "guias" | "directorio" | "ficha";
+type CtpView = "ingresos" | "gtf-ingresadas" | "lotes" | "consumos" | "produccion" | "disponibles" | "despacho" | "trozas" | "radar" | "historia-lote" | "planta" | "tablero" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "fletes" | "guias" | "directorio" | "ficha";
 
 /**
  * Las doce vistas, agrupadas por la fase del libro a la que sirven. El orden
@@ -135,6 +137,11 @@ const CTP_GROUPS: LibroGroup[] = [
     views: [
       { key: "trozas", ...CTP_VISTAS_POR_KEY["trozas"], icon: PackageOpen, tecla: "t" },
       { key: "radar", ...CTP_VISTAS_POR_KEY["radar"], icon: Share2, tecla: "r" },
+      /* El expediente del lote va en Trazabilidad y no en «Lotes de aserrío»:
+         esa vista es operativa —armar, cargar, producir— y contesta «¿qué hago
+         hoy?». Esta contesta la que llega después, de un comprador o de un
+         fiscalizador: «¿qué pasó con este lote?». */
+      { key: "historia-lote", ...CTP_VISTAS_POR_KEY["historia-lote"], icon: History, tecla: "h" },
       { key: "planta", ...CTP_VISTAS_POR_KEY["planta"], icon: MapPin, tecla: "m" },
       { key: "eudr", ...CTP_VISTAS_POR_KEY["eudr"], icon: Globe, tecla: "u" },
       { key: "guias", ...CTP_VISTAS_POR_KEY["guias"], icon: FileText, tecla: "e" },
@@ -547,6 +554,7 @@ export default function CTPLibroOperaciones() {
           />
         )}
         {view === "radar" && <CtpTrazaRadar period={period} />}
+        {view === "historia-lote" && <CtpHistoriaLoteView />}
         {view === "planta" && <CtpPlantaView period={period} />}
         {view === "saldos" && (
           <CtpSaldosView

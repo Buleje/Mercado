@@ -23,6 +23,16 @@ const Query = z.object({
   status: z.enum(["abierto", "consumido", "cerrado"]).optional(),
   especie: z.string().trim().max(120).optional(),
   limite: z.coerce.number().int().min(1).max(500).optional(),
+  /**
+   * `?historia=<loteId>` devuelve el expediente de UN lote —armado, consumo,
+   * producción y salida— en vez del listado.
+   *
+   * Va en el mismo GET y no en un endpoint aparte porque es el mismo recurso
+   * leído con más profundidad; y va aparte del listado porque su tramo de
+   * salida hace dos saltos más (guías del lote → todos los orígenes de esas
+   * guías) que no tiene sentido pagar para pintar tarjetas.
+   */
+  historia: z.string().trim().min(1).max(60).optional(),
 });
 
 /**
@@ -210,6 +220,13 @@ export async function GET(req: NextRequest) {
     if (g.error) return g.error;
     const parsed = Query.safeParse(Object.fromEntries(req.nextUrl.searchParams));
     if (!parsed.success) return NextResponse.json({ error: "invalid_query", issues: parsed.error.issues }, { status: 400 });
+    if (parsed.data.historia) {
+      const historia = await ForestLoteAserrioDB.historia(g.auth.tenantId, parsed.data.historia);
+      // 404 y no un `{historia:null}`: un lote que no existe (o de otro tenant)
+      // no es una historia vacía, es una dirección equivocada.
+      if (!historia) return NextResponse.json({ error: "lote_no_encontrado" }, { status: 404 });
+      return NextResponse.json({ historia });
+    }
     const lotes = await ForestLoteAserrioDB.list(g.auth.tenantId, parsed.data);
     return NextResponse.json({ lotes, total: lotes.length });
   } catch (e) {

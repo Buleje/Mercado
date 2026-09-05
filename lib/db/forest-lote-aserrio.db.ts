@@ -8,6 +8,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { vivaLinea } from "./wood-entries.db";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { ORIGEN_LOTE_INVENTARIO } from "@/lib/forestal/lotes-aserrio";
+import { construirHistoriaLote } from "@/lib/forestal/historia-lote";
 
 /**
  * Lote de ASERRÍO (ADR-334): las trozas de una misma especie que van juntas a
@@ -372,6 +373,222 @@ export class ForestLoteAserrioDB {
   }
 
   /** Abre un lote vacío para una especie. */
+  /**
+   * El expediente completo de un lote: armado → consumo → producción → salida.
+   *
+   * Junta lo que ya vive en cuatro tablas y se lo pasa a `construirHistoriaLote`,
+   * que es donde están las reglas (y los tests). Acá sólo se recolecta.
+   *
+   * ── El tramo caro es el de salida, y por qué se pide así ──────────────────
+   * `list()` ya trae `despachadoQty`: un total por corrida. No alcanza para
+   * decir CON QUÉ guía salió ni junto a qué otros lotes viajó, que es la
+   * pregunta que un comprador hace y la que la EUDR obliga a contestar. Para
+   * eso hacen falta DOS saltos que `list()` no da:
+   *
+   *   1. de las corridas del lote a sus despachos,
+   *   2. **de vuelta**, de esos despachos a TODOS sus orígenes — incluidos los
+   *      de corridas ajenas, que son justamente los compañeros de viaje.
+   *
+   * El segundo salto es el que obliga a una consulta aparte: sin él, la guía
+   * declara 17.7 m³ y el lote sólo puede explicar 2.1.
+   */
+  static async historia(tenantId: string, loteId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+
+    const lote = await prisma.forestLoteAserrio.findFirst({
+      where: { id: loteId, tenantId, deletedAt: null },
+      include: {
+        trozas: {
+          orderBy: { orden: "asc" },
+          select: {
+            id: true, codificacion: true, codigoPlanta: true, especieComun: true,
+            d1Cm: true, d2Cm: true, largoM: true, volumenM3: true,
+            despachadaEnId: true, noRecepcionada: true, descarte: true,
+            /* El ESTADO de la corrida, no el id pelado: una pieza que apunta a
+               una corrida anulada volvió al patio (ADR-326 §6). */
+            consumidaEn: { select: { id: true, status: true, deletedAt: true } },
+            /* La guía y el permiso viajan en el INGRESO, no en la troza —misma
+               fuente que `TrozaConsumible.permiso`. Sin esto la lista de piezas
+               no puede decir de qué GTF salió cada palo, que es lo primero que
+               se cruza en una fiscalización. */
+            entry: { select: { gtfNumber: true, originCode: true } },
+          },
+        },
+      },
+    });
+    if (!lote) return null;
+
+    /* Las corridas del lote: las que se comieron sus piezas MÁS la que lo cerró,
+       sin repetirla. Una corrida anulada se trae igual y la lib la descarta:
+       filtrar acá escondería por qué un lote quedó sin producción. */
+    const idsCorridas = [
+      ...new Set(
+        [
+          ...lote.trozas.map((t) => t.consumidaEn?.id).filter((x): x is string => Boolean(x)),
+          lote.produccionEntryId,
+        ].filter((x): x is string => Boolean(x)),
+      ),
+    ];
+
+    const corridas = idsCorridas.length
+      ? await prisma.forestCtpEntry.findMany({
+          where: { tenantId, id: { in: idsCorridas }, deletedAt: null },
+          orderBy: { lineNo: "asc" },
+          select: {
+            id: true, lineNo: true, entryDate: true, productType: true, speciesCommon: true,
+            quantity: true, unit: true, volumeInputM3: true, status: true, observations: true,
+            paquetes: {
+              where: { deletedAt: null },
+              orderBy: { createdAt: "asc" },
+              select: { id: true, codigo: true, productType: true, presentacion: true, cantidad: true, volumenM3: true },
+            },
+          },
+        })
+      : [];
+
+    // ── Salto 1: de las corridas del lote a las guías que se las llevaron ────
+    const propios = idsCorridas.length
+      ? await prisma.forestCtpDespachoOrigen.findMany({
+          where: { tenantId, produccionEntryId: { in: idsCorridas }, despacho: { deletedAt: null } },
+          select: { despachoEntryId: true },
+        })
+      : [];
+    const idsDespachos = [...new Set(propios.map((o) => o.despachoEntryId))];
+
+    // ── Salto 2: de esas guías a TODOS sus orígenes (los ajenos incluidos) ──
+    const [origenes, despachos] = await Promise.all([
+      idsDespachos.length
+        ? prisma.forestCtpDespachoOrigen.findMany({
+            where: { tenantId, despachoEntryId: { in: idsDespachos } },
+            select: { despachoEntryId: true, produccionEntryId: true, quantity: true },
+          })
+        : [],
+      idsDespachos.length
+        ? prisma.forestCtpEntry.findMany({
+            where: { tenantId, id: { in: idsDespachos }, deletedAt: null },
+            select: { id: true, lineNo: true, entryDate: true, gtfNumber: true, destino: true, unit: true, status: true },
+          })
+        : [],
+    ]);
+
+    /* Y de cada corrida que alimentó esas guías, de qué lote de aserrío salió.
+       Son las dos vías por las que una corrida pertenece a un lote y hay que
+       mirar LAS DOS: la que lo cerró (`produccionEntryId`) y la que se comió
+       sus piezas (`trozas.consumidaEnId`). Con una sola, media guía queda «sin
+       lote» teniendo lote. */
+    const idsAjenas = [...new Set(origenes.map((o) => o.produccionEntryId))];
+    const lotesDeEsasCorridas = idsAjenas.length
+      ? await prisma.forestLoteAserrio.findMany({
+          where: {
+            tenantId,
+            deletedAt: null,
+            OR: [
+              { produccionEntryId: { in: idsAjenas } },
+              { trozas: { some: { consumidaEnId: { in: idsAjenas } } } },
+            ],
+          },
+          select: {
+            id: true,
+            code: true,
+            produccionEntryId: true,
+            trozas: {
+              where: { consumidaEnId: { in: idsAjenas } },
+              select: { consumidaEnId: true },
+            },
+          },
+        })
+      : [];
+
+    const corridasDeLotes: { produccionEntryId: string; loteId: string; loteCode: string }[] = [];
+    const visto = new Set<string>();
+    const anotar = (produccionEntryId: string, loteId: string, loteCode: string) => {
+      const clave = `${produccionEntryId}::${loteId}`;
+      if (visto.has(clave)) return;
+      visto.add(clave);
+      corridasDeLotes.push({ produccionEntryId, loteId, loteCode });
+    };
+    for (const l of lotesDeEsasCorridas) {
+      if (l.produccionEntryId && idsAjenas.includes(l.produccionEntryId)) anotar(l.produccionEntryId, l.id, l.code);
+      for (const t of l.trozas) if (t.consumidaEnId) anotar(t.consumidaEnId, l.id, l.code);
+    }
+
+    const iso = (d: Date | null) => (d ? d.toISOString() : null);
+    const num = (v: unknown) => (v == null ? null : Number(v));
+
+    return construirHistoriaLote({
+      lote: {
+        id: lote.id,
+        code: lote.code,
+        speciesCommon: lote.speciesCommon,
+        speciesScientific: lote.speciesScientific,
+        status: lote.status,
+        notes: lote.notes,
+        tipoProductoConsumir: lote.tipoProductoConsumir,
+        fechaApertura: iso(lote.fechaApertura),
+        fechaConsumo: iso(lote.fechaConsumo),
+        inicioProceso: iso(lote.inicioProceso),
+        finProceso: iso(lote.finProceso),
+        createdBy: lote.createdBy,
+      },
+      trozas: lote.trozas.map((t) => ({
+        id: t.id,
+        codificacion: t.codificacion,
+        codigoPlanta: t.codigoPlanta,
+        especieComun: t.especieComun,
+        gtfNumber: t.entry?.gtfNumber ?? null,
+        permiso: t.entry?.originCode ?? null,
+        d1Cm: num(t.d1Cm),
+        d2Cm: num(t.d2Cm),
+        largoM: num(t.largoM),
+        volumenM3: num(t.volumenM3),
+        /* Sólo cuenta como consumida si la corrida sigue VIVA: un id que apunta
+           a una corrida anulada no bloquea nada (regla de las tres lecturas). */
+        consumidaEnId:
+          t.consumidaEn && t.consumidaEn.deletedAt == null && t.consumidaEn.status !== "anulado"
+            ? t.consumidaEn.id
+            : null,
+        despachadaEnId: t.despachadaEnId,
+        noRecepcionada: t.noRecepcionada,
+        descarte: t.descarte,
+      })),
+      corridas: corridas.map((c) => ({
+        id: c.id,
+        lineNo: c.lineNo,
+        entryDate: c.entryDate.toISOString(),
+        productType: c.productType,
+        speciesCommon: c.speciesCommon,
+        quantity: num(c.quantity),
+        unit: c.unit,
+        volumeInputM3: num(c.volumeInputM3),
+        status: c.status,
+        observations: c.observations,
+        paquetes: c.paquetes.map((p) => ({
+          id: p.id,
+          codigo: p.codigo,
+          productType: p.productType,
+          presentacion: p.presentacion,
+          cantidad: p.cantidad,
+          volumenM3: Number(p.volumenM3),
+        })),
+      })),
+      origenes: origenes.map((o) => ({
+        despachoEntryId: o.despachoEntryId,
+        produccionEntryId: o.produccionEntryId,
+        quantity: Number(o.quantity),
+      })),
+      despachos: despachos.map((d) => ({
+        id: d.id,
+        lineNo: d.lineNo,
+        entryDate: d.entryDate.toISOString(),
+        gtfNumber: d.gtfNumber,
+        destino: d.destino,
+        unit: d.unit,
+        status: d.status,
+      })),
+      corridasDeLotes,
+    });
+  }
+
   static async create(tenantId: string, input: LoteAserrioInput) {
     if (!tenantId) throw new Error("tenantId is required");
     const especie = input.speciesCommon.trim();
