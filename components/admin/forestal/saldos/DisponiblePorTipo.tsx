@@ -25,6 +25,7 @@ import {
 } from "@/lib/forestal/ctp-saldos-vista";
 
 const n3 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 3 });
+const nf = (v: number) => v.toLocaleString("es-PE");
 
 export default function DisponiblePorTipo({
   especies,
@@ -66,7 +67,7 @@ export default function DisponiblePorTipo({
         {(
           [
             ["trozas", "Rolliza en patio", "Lo que se puede aserrar", totales.trozas, resTrozas],
-            ["aserrada", "Aserrada en depósito", "Lo que se puede vender", totales.aserrada, resAserrada],
+            ["aserrada", "Madera Disponible", "Lo que se puede vender", totales.aserrada, resAserrada],
           ] as const
         ).map(([v, titulo, sub, total, res]) => (
           <button
@@ -86,6 +87,7 @@ export default function DisponiblePorTipo({
                 <>
                   {" · "}
                   {res.conStock} {v === "trozas" ? "especies" : "productos"}
+                  {res.piezas > 0 && ` · ${nf(res.piezas)} pza`}
                   {res.guias > 0 && ` · ${res.guias} guías`}
                 </>
               )}
@@ -163,6 +165,7 @@ export default function DisponiblePorTipo({
                     {vista === "trozas" ? "Especie" : "Producto"}
                   </th>
                   <th className="px-3 py-2 text-right font-bold text-[var(--text-secondary)]">Disponible</th>
+                  <th className="px-3 py-2 text-right font-bold text-[var(--text-secondary)]">Piezas</th>
                   <th className="px-3 py-2 text-right font-bold text-[var(--text-secondary)]">
                     {vista === "trozas" ? "Ingresó" : "Se produjo"}
                   </th>
@@ -194,6 +197,7 @@ export default function DisponiblePorTipo({
                     >
                       {n3(f.disponible)}
                     </td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)]">{f.piezas > 0 ? nf(f.piezas) : "—"}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)]">{n3(f.total)}</td>
                     {vista === "trozas" && (
                       <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)]">
@@ -244,6 +248,9 @@ export default function DisponiblePorTipo({
                   </td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-primary)]">
                     {n3(r.disponibleM3)}
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-primary)]">
+                    {r.piezas > 0 ? nf(r.piezas) : "—"}
                   </td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-primary)]">
                     {n3(filas.reduce((a, f) => a + f.total, 0))}

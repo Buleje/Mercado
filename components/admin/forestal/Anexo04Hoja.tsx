@@ -7,7 +7,7 @@
  * del formato oficial) y se estiliza con un CSS propio en vez de tokens — lo que
  * se ve acá es exactamente lo que se descarga.
  */
-import { memo, type CSSProperties } from "react";
+import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   geometriaHoja, fmtAnexo, fmtMedida, notaUnidad,
   BLOQUES_POR_HOJA, FUENTES, HEAD_COLS, PAGINA, TEXTO_LEGAL, ETIQUETAS_FIRMA, aPx,
@@ -42,6 +42,11 @@ export const ANEXO04_CSS = `
 .anx-fila { display: flex; }
 .anx-cell { display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: ${aPx(FUENTES.celda)}px; line-height: 1; }
 .anx-cell.r { justify-content: flex-end; padding-right: 2px; }
+/* Modo edición (Excel-like): celda editable resaltada en amarillo tenue para
+   que se note dónde se puede tocar; foco en celeste, como una hoja de cálculo. */
+.anx-cell.ed { background: #fffbdd; cursor: text; }
+.anx-input { width: 100%; height: 100%; border: 0; background: transparent; padding: 0; margin: 0; text-align: center; font: inherit; color: inherit; outline: none; }
+.anx-input:focus { background: #cfe8ff; }
 .anx-head .anx-cell { font-size: ${aPx(FUENTES.tablaHead)}px; font-weight: 700; }
 .anx-sub { display: flex; align-items: stretch; }
 .anx-sub-lbl { display: flex; align-items: center; justify-content: flex-end; padding-right: 3px; font-size: ${aPx(FUENTES.subtotalLabel)}px; font-weight: 700; }
@@ -56,13 +61,51 @@ export const ANEXO04_CSS = `
 .anx-nota { font-size: ${aPx(FUENTES.nota)}px; color: #787878; display: flex; justify-content: space-between; }
 `;
 
+/** Campos de una fila que se pueden corregir a mano en modo edición. */
+export type CampoEditable = "cantidad" | "espesor" | "ancho" | "largo";
+
+/**
+ * Input de una celda del anexo en modo edición — buffer de texto LOCAL, igual
+ * que `Num` en CubicadorMadera.tsx: con el valor atado directo al número de
+ * la fila, borrar para retipear hacía que el campo VOLVIERA solo al valor
+ * viejo a mitad de tecleo. Recién sincroniza con el valor de afuera al perder
+ * el foco.
+ */
+function CeldaEditable({ valor, onCommit }: { valor: number; onCommit: (n: number) => void }) {
+  const [texto, setTexto] = useState(String(valor));
+  const enfocado = useRef(false);
+  useEffect(() => { if (!enfocado.current) setTexto(String(valor)); }, [valor]);
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      value={texto}
+      onFocus={(e) => { enfocado.current = true; e.currentTarget.select(); }}
+      onBlur={() => { enfocado.current = false; setTexto(String(valor)); }}
+      onChange={(e) => {
+        const limpio = e.target.value.replace(/[^\d.,]/g, "").replace(",", ".");
+        setTexto(limpio);
+        const n = Number(limpio);
+        if (limpio !== "" && Number.isFinite(n) && n > 0) onCommit(n);
+      }}
+      className="anx-input"
+    />
+  );
+}
+
 /**
  * Los 4 bloques con sus 35 filas: ~840 celdas por hoja. Va MEMOIZADO y aparte
  * de la cabecera porque sólo depende de la hoja — sin esto, tipear la razón
  * social re-renderizaba toda la grilla y el input se sentía pegajoso (~100ms
- * por tecla con 3 hojas).
+ * por tecla con 3 hojas). `editando`/`onEditarCelda` entran como props más:
+ * al tocar una medida, `hoja` cambia de referencia (el total se recalcula) y
+ * ACÁ SÍ conviene re-renderizar — es la corrección que se está mirando.
  */
-const Bloques = memo(function Bloques({ hoja, compacto }: { hoja: HojaAnexo04; compacto: boolean }) {
+const Bloques = memo(function Bloques({ hoja, compacto, editando, onEditarCelda }: {
+  hoja: HojaAnexo04; compacto: boolean; editando: boolean;
+  onEditarCelda?: (id: string, campo: CampoEditable, valor: number) => void;
+}) {
   const g = geometriaHoja(hoja.filasPorBloque);
   const wLabel = g.cols.slice(0, 5).reduce((a, c) => a + c, 0);
   return (
@@ -84,19 +127,28 @@ const Bloques = memo(function Bloques({ hoja, compacto }: { hoja: HojaAnexo04; c
             </div>
             {Array.from({ length: hoja.filasPorBloque }).map((_, f) => {
               const fila = b?.filas[f];
-              const celdas = [
-                String(f + 1),
-                fila ? String(fila.cantidad) : "",
-                fila ? fmtMedida(fila.e) : "",
-                fila ? fmtMedida(fila.a) : "",
-                fila ? fmtMedida(fila.l) : "",
-                fmtAnexo(fila ? fila.v : 0),
+              // Cant./E/A/L son editables (columnas 1 a 4); N° y V (0 y 5) no
+              // — V es SIEMPRE derivado, nunca se escribe directo.
+              const columnas: { campo: CampoEditable | null; valor: number | null; texto: string }[] = [
+                { campo: null, valor: null, texto: String(f + 1) },
+                { campo: "cantidad", valor: fila?.cantidad ?? null, texto: fila ? String(fila.cantidad) : "" },
+                { campo: "espesor", valor: fila?.e ?? null, texto: fila ? fmtMedida(fila.e) : "" },
+                { campo: "ancho", valor: fila?.a ?? null, texto: fila ? fmtMedida(fila.a) : "" },
+                { campo: "largo", valor: fila?.l ?? null, texto: fila ? fmtMedida(fila.l) : "" },
+                { campo: null, valor: null, texto: fmtAnexo(fila ? fila.v : 0) },
               ];
               return (
                 <div key={f} className="anx-fila" style={caja(x0, g.yFilas + f * g.hFila, g.bloqueW, g.hFila)}>
-                  {celdas.map((c, j) => (
-                    <div key={j} className={`anx-b anx-cell${j === 5 ? " r" : ""}`} style={{ width: px(g.cols[j]) }}>{c}</div>
-                  ))}
+                  {columnas.map(({ campo, valor, texto }, j) => {
+                    const editable = editando && fila && campo && valor != null && onEditarCelda;
+                    return (
+                      <div key={j} className={`anx-b anx-cell${j === 5 ? " r" : ""}${editable ? " ed" : ""}`} style={{ width: px(g.cols[j]) }}>
+                        {editable
+                          ? <CeldaEditable valor={valor} onCommit={(n) => onEditarCelda(fila!.id, campo, campo === "cantidad" ? Math.round(n) : n)} />
+                          : texto}
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
@@ -112,13 +164,16 @@ const Bloques = memo(function Bloques({ hoja, compacto }: { hoja: HojaAnexo04; c
 });
 
 export default function Anexo04Hoja({
-  hoja, datos, anexo, nro, total,
+  hoja, datos, anexo, nro, total, editando = false, onEditarCelda,
 }: {
   hoja: HojaAnexo04;
   datos: DatosAnexo04;
   anexo: Anexo04;
   nro: number;
   total: number;
+  /** Modo edición: Cant./E/A/L se vuelven celdas tocables, estilo Excel. */
+  editando?: boolean;
+  onEditarCelda?: (id: string, campo: CampoEditable, valor: number) => void;
 }) {
   const g = geometriaHoja(hoja.filasPorBloque);
   const m = PAGINA.margen;
@@ -152,7 +207,7 @@ export default function Anexo04Hoja({
       </div>
 
       {/* Los 4 bloques (especie × tipo, sin mezclar) */}
-      <Bloques hoja={hoja} compacto={datos.modo === "compacto"} />
+      <Bloques hoja={hoja} compacto={datos.modo === "compacto"} editando={editando} onEditarCelda={onEditarCelda} />
 
       {/* (12) Observaciones + firmas (13)-(16) */}
       <div className="anx-b anx-obs" style={caja(m, g.yObs, g.contentW, g.hObs)}>

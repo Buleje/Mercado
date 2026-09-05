@@ -21,6 +21,8 @@ export type SaldoEspecie = {
   saldoM3: number;
   pendienteM3?: number;
   ingresosCount?: number;
+  /** Trozas de esta especie que hoy se pueden mandar a la sierra. */
+  piezasDisponibles?: number;
 };
 
 export type SaldoProducto = {
@@ -28,6 +30,8 @@ export type SaldoProducto = {
   producido: number;
   despachado: number;
   stock: number;
+  /** Piezas producidas menos despachadas, mismo criterio que `stock`. */
+  piezasDisponibles?: number;
 };
 
 /** Una fila lista para la tabla y el gráfico, con su peso en el total. */
@@ -53,6 +57,8 @@ export type FilaDeSaldo = {
   guias: number;
   /** m³ promedio por guía. Da la escala de cada partida de un vistazo. */
   promedioPorGuia: number;
+  /** Piezas disponibles hoy (trozas en rolliza, piezas de paquete en aserrada). */
+  piezas: number;
 };
 
 const r3 = (n: number) => Math.round(n * 1000) / 1000;
@@ -81,6 +87,7 @@ export function filasDeTrozas(especies: readonly SaldoEspecie[]): FilaDeSaldo[] 
       negativo: e.saldoM3 < 0,
       guias: e.ingresosCount ?? 0,
       promedioPorGuia: e.ingresosCount ? r3(e.ingresoM3 / e.ingresosCount) : 0,
+      piezas: e.piezasDisponibles ?? 0,
     }))
     .sort((a, b) => b.disponible - a.disponible);
 }
@@ -102,6 +109,7 @@ export function filasDeAserrada(productos: readonly SaldoProducto[]): FilaDeSald
          0 y la pantalla no lo muestra, en vez de inventar un conteo. */
       guias: 0,
       promedioPorGuia: 0,
+      piezas: p.piezasDisponibles ?? 0,
     }))
     .sort((a, b) => b.disponible - a.disponible);
 }
@@ -121,6 +129,8 @@ export type ResumenDeSaldo = {
   porAgotarse: string[];
   /** Guías que respaldan todo lo disponible. 0 = el dato no vino. */
   guias: number;
+  /** Piezas disponibles de todo lo que suma este resumen. */
+  piezas: number;
 };
 
 export function resumir(filas: readonly FilaDeSaldo[]): ResumenDeSaldo {
@@ -141,6 +151,7 @@ export function resumir(filas: readonly FilaDeSaldo[]): ResumenDeSaldo {
        es una especie que no se trabaja más. */
     porAgotarse: filas.filter((f) => f.disponible > 0 && f.usadoPct >= 90).map((f) => f.nombre),
     guias: positivas.reduce((s, f) => s + f.guias, 0),
+    piezas: positivas.reduce((s, f) => s + f.piezas, 0),
   };
 }
 

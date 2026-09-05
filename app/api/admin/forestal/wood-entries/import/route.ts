@@ -59,6 +59,12 @@ const ingresoSchema = z.object({
   providerName: z.string().trim().min(1, "Sin titular / proveedor").max(200),
   originType: z.enum(ORIGIN).optional().default("otro"),
   originRegion: z.string().trim().max(80).nullable().optional(),
+  /** (9) "Código de origen/procedencia" del formato LO-CTP — el contrato/título
+   *  habilitante con el que salió la madera de la fuente. */
+  originCode: z.string().trim().max(120).nullable().optional(),
+  /** (5) "N° de fuente de origen o procedencia" — la resolución que emite la
+   *  ARFFS. Texto libre a propósito: el formato varía por región. */
+  originSourceNumber: z.string().trim().max(120).nullable().optional(),
   speciesCommonName: z.string().trim().min(1, "Sin especie").max(120),
   speciesScientificName: z.string().trim().max(160).nullable().optional(),
   speciesCites: z.boolean().optional().default(false),
@@ -395,20 +401,34 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
       }
       try {
         const volumeInputM3 = resolved.reduce((a, c) => a + c.volumeM3, 0);
-        /* El BULTO, no sólo el volumen. Un paquete necesita código libre y
-           piezas (`cantidad` es NOT NULL: un paquete sin piezas no es un
-           paquete). Si algo de eso falta, la corrida entra igual —el volumen es
-           el dato que no se puede perder— y el detalle explica por qué quedó
-           sin paquete. */
-        const codigo = d.codigoProducto?.trim() ?? "";
-        const clave = codigo.toLowerCase();
+        /* El BULTO, no sólo el volumen. Un paquete necesita código y piezas
+           (`cantidad` es NOT NULL: un paquete sin piezas no es un paquete). Si
+           el archivo no trae ninguno de los dos, la corrida entra igual —el
+           volumen es el dato que no se puede perder— y el detalle explica por
+           qué quedó sin paquete.
+
+           El código es único POR PLANTA (@@unique), pero un inventario de
+           apertura junta lotes de fechas distintas que reutilizan etiquetas
+           cortas («S1», «DRW»): antes, esa colisión hacía que la corrida
+           entrara con su volumen y perdiera EN SILENCIO el código, las piezas
+           y las medidas del paquete — justo lo que "Productos disponibles"
+           necesita para mostrarlo. Ahora se DESAMBIGUA con el lote, y si el
+           lote tampoco alcanza, con un número: nada de lo que trae el archivo
+           se pierde, y el reporte dice cuándo se renombró. */
+        const base = d.codigoProducto?.trim() ?? "";
+        const lote = d.materiaPrimaRef?.trim() || "";
+        let codigo = base;
+        if (base !== "") {
+          if (codigosUsados.has(codigo.toLowerCase()) && lote) codigo = `${base}-${lote}`;
+          for (let n = 2; codigosUsados.has(codigo.toLowerCase()); n++) codigo = `${base}-${n}`;
+        }
+        const renombrado = codigo !== base;
         const piezasDelPaquete = d.pieces ?? 0;
-        const puedeEmpaquetar = codigo !== "" && piezasDelPaquete > 0 && d.quantity > 0 && !codigosUsados.has(clave);
-        const sinPaquetePorque = codigo === "" ? null
-          : codigosUsados.has(clave) ? `el código de paquete "${codigo}" ya está usado`
-          : piezasDelPaquete <= 0 ? `el paquete "${codigo}" no declara piezas`
+        const puedeEmpaquetar = base !== "" && piezasDelPaquete > 0 && d.quantity > 0;
+        const sinPaquetePorque = base === "" ? null
+          : piezasDelPaquete <= 0 ? `el paquete "${base}" no declara piezas`
           : null;
-        if (puedeEmpaquetar) codigosUsados.add(clave);
+        if (puedeEmpaquetar) codigosUsados.add(codigo.toLowerCase());
 
         const corrida = await ForestCtpDB.create(auth.tenantId, {
           section: "produccion",
@@ -423,6 +443,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
                   espesorCm: d.medidas?.espesorCm ?? null,
                   anchoCm: d.medidas?.anchoCm ?? null,
                   largoM: d.medidas?.largoM ?? null,
+                  observations: renombrado ? `Código del archivo: "${base}" (ya estaba en uso en la planta)` : null,
                 }],
               }
             : {}),
@@ -488,9 +509,13 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
             `Corrida importada (${resolved.length} consumo${resolved.length === 1 ? "" : "s"}` +
             `${piezas > 0 ? `, ${piezas} troza${piezas === 1 ? "" : "s"}` : ""}` +
             `${puedeEmpaquetar ? `, paquete ${codigo}` : ""})` +
-            /* Que se sepa por qué el bulto no quedó: un código repetido en el
-               archivo es información del aserradero, no un error nuestro. */
-            (sinPaquetePorque ? ` · sin paquete: ${sinPaquetePorque}` : ""),
+            /* El marcador " · AVISO: " es lo que el reporte del cliente busca
+               para sacar esto de la cuenta agregada y mostrarlo fila por fila:
+               antes quedaba adentro de un mensaje que sólo se contaba, nunca
+               se mostraba, y un código renombrado o un bulto sin paquete
+               pasaban inadvertidos. */
+            (renombrado ? ` · AVISO: el código "${base}" ya estaba en uso — este paquete quedó como "${codigo}"` : "") +
+            (sinPaquetePorque ? ` · AVISO: sin paquete — ${sinPaquetePorque}` : ""),
         });
       } catch (e) {
         errores++;
@@ -658,6 +683,8 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         providerName: d.providerName,
         originType: d.originType as WoodOriginType,
         originRegion: d.originRegion ?? null,
+        originCode: d.originCode ?? null,
+        originSourceNumber: d.originSourceNumber ?? null,
         speciesCommonName: d.speciesCommonName,
         speciesScientificName: d.speciesScientificName ?? null,
         speciesCites: d.speciesCites,

@@ -23,6 +23,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { TIPOS_PRODUCTO_SALIDA, presentacionSugerida } from "@/lib/forestal/loctp-catalogos";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { Btn, Field, I, ModalBody, ModalFooter } from "./ctp-shared";
 
 export interface OrigenDeReproceso {
@@ -118,7 +119,7 @@ export default function CtpReprocesoModal({
       onListo(
         "Reproceso registrado",
         `Volvieron a la sierra ${r4(entraN).toFixed(4)} de la corrida N° ${origen.lineNo ?? "—"} y salieron ` +
-          `${r4(saleN).toFixed(4)} m³ de ${producto}. El producto original deja de estar disponible.`,
+          `${fmtM3(r4(saleN))} m³ de ${producto}. El producto original deja de estar disponible.`,
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -159,7 +160,7 @@ export default function CtpReprocesoModal({
           <Field span={6} label="Producto que sale" required>
             <select className={I} value={producto} onChange={(e) => setProducto(e.target.value)}>
               {TIPOS_PRODUCTO_SALIDA.map((t) => (
-                <option key={t.valor} value={t.valor}>{t.label}</option>
+                <option key={t.valor} value={t.valor} title={t.label}>{t.valor}</option>
               ))}
             </select>
           </Field>

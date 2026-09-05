@@ -42,7 +42,11 @@ export default function ReporteDeImport({
     }
   };
 
-  const hayQueRevisar = reporte.problemas.length > 0 || reporte.incompletas.length > 0 || reporte.avisosDeCadena.length > 0;
+  const hayQueRevisar =
+    reporte.problemas.length > 0 ||
+    reporte.incompletas.length > 0 ||
+    reporte.avisosDeCadena.length > 0 ||
+    reporte.avisosDeFila.length > 0;
 
   return (
     <div className="space-y-3 rounded-xl border-2 border-[var(--rule-base)] p-4">
@@ -137,6 +141,27 @@ export default function ReporteDeImport({
           )}
         </div>
       ))}
+
+      {/* ── Entró, pero con algo para revisar (código renombrado, sin paquete) ── */}
+      {reporte.avisosDeFila.length > 0 && (
+        <div className="rounded-lg bg-[var(--data-warning)]/5 p-3">
+          <p className="text-base font-extrabold text-[var(--data-warning)]">
+            {reporte.avisosDeFila.length} {reporte.avisosDeFila.length === 1 ? "fila entró" : "filas entraron"} con
+            un aviso
+          </p>
+          {reporte.avisosDeFila.slice(0, 8).map((a, i) => (
+            <p key={i} className="mt-0.5 text-sm text-[var(--text-secondary)]">
+              {TITULO_FORMATO[a.formato]}
+              {a.fila != null && <>, fila <span className="tabular-nums">{a.fila}</span></>}: {a.mensaje}
+            </p>
+          ))}
+          {reporte.avisosDeFila.length > 8 && (
+            <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+              y {reporte.avisosDeFila.length - 8} más — están todos en el CSV.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* ── Filas incompletas, detectadas antes de mandar nada ──────────── */}
       {reporte.incompletas.length > 0 && (

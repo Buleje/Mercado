@@ -24,6 +24,11 @@ const EspeciesFotosBiblioteca = dynamic(() => import("./EspeciesFotosBiblioteca"
 
 type Tool = "cubicador" | "trozas" | "rendimiento" | "resumenes" | "especies";
 const HERRAMIENTAS_MODULE_ID = "forestal-herramientas";
+/** Salto de una sola vez desde otro módulo (ej. «Resumen por permiso» en
+ *  Consumo, que siembra bloques de rolliza y quiere abrir directo en
+ *  Resúmenes). Se lee y se borra: no es la pestaña que se recuerda de ahí en
+ *  más, sólo la de ESTA visita. */
+export const TOOL_ONCE_KEY = "buleje-herramientas-tool-once";
 const TOOLS: { key: Tool; label: string; icon: typeof Calculator; hint: string }[] = [
   { key: "cubicador", label: "Cubicador de madera", icon: Calculator, hint: "Aserrada: pie tablar + m³ por voz" },
   { key: "trozas", label: "Cubicador de trozas", icon: Ruler, hint: "Rolliza: Smalian en patio, contra la GTF" },
@@ -38,7 +43,15 @@ const TOOL_GROUPS: LibroGroup[] = [
 ];
 
 export default function ForestalHerramientas() {
-  const [tool, setTool] = useState<Tool>("cubicador");
+  const [tool, setTool] = useState<Tool>(() => {
+    if (typeof window === "undefined") return "cubicador";
+    try {
+      const v = sessionStorage.getItem(TOOL_ONCE_KEY);
+      sessionStorage.removeItem(TOOL_ONCE_KEY);
+      if (v && TOOLS.some((t) => t.key === v)) return v as Tool;
+    } catch { /* ignore */ }
+    return "cubicador";
+  });
 
   return (
     <LibroChrome

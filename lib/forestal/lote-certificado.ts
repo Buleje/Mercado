@@ -14,6 +14,7 @@
  */
 
 import { CSS_CERTIFICADO_TRAZABILIDAD } from "@/lib/forestal/ctp-certificado-css";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const esc = (v: unknown) =>
   String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -108,7 +109,7 @@ export async function printCertificadoLote(
             return `<tr>
               <td class="mono">${l.code ? esc(l.code) : "<i>sin lote</i>"}</td>
               <td class="mono right">${l.piezas}</td>
-              <td class="mono right">${n4(l.volumenM3)} m³</td>
+              <td class="mono right">${fmtM3(l.volumenM3)} m³</td>
               <td class="mono codigos">${visibles.length ? visibles.map(esc).join(" · ") : "—"}${
                 resto > 0 ? ` <i>y ${resto} más</i>` : ""
               }</td>

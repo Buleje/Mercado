@@ -194,7 +194,7 @@ describe("Meta de rendimiento por especie", () => {
   it("convierte el pie tablar de una corrida a m³ para poder compararlo", () => {
     const enPt = construirCadenaLote(
       [consumo({})],
-      [corrida({ unit: "pt", quantity: 423.78 })],
+      [corrida({ unit: "pt", quantity: 424 })], // PT_POR_M3: 424 pt = 1 m³
       [],
     );
     expect(enPt.meta[0]!.producidoM3).toBeCloseTo(1, 4);

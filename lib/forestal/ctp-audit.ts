@@ -18,6 +18,7 @@
  */
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Entidades del libro — coinciden con los modelos Prisma para poder cruzarlas.
  * `ForestCtpFicha` no es un modelo Prisma: la ficha legal del CTP vive en el KV
@@ -52,6 +53,7 @@ export type CtpAuditEntity =
   // KV: cubicaciones guardadas del cubicador — la medición del lote, previa al
   // libro (al libro entra después como producción, con su propio registro).
   | "ForestCubicacion"
+  | "ForestDistribucion"
   /** Trámite/oficio presentado a la autoridad (ADR-308). */
   | "ForestTramite"
   /** Registro de Plantación Forestal — RNPF (ADR-380). */
@@ -78,8 +80,15 @@ export type CtpAuditAction =
   // busca antes que ninguno: un libro que aparece vacío sin este registro es un
   // libro que alguien borró sin dejar rastro.
   | "ctp_libro_purga"
+  // Vaciado PARCIAL por alcance (Brandon, 2026-09-01): trozas disponibles,
+  // madera aserrada disponible, o sólo Consumos — nunca toca lo que un
+  // despacho, reproceso o lote de producción todavía referencia.
+  | "ctp_libro_purga_parcial"
   // ── Lote de aserrío (ADR-334): armar la materia prima antes de la corrida ──
   | "ctp_lote_aserrio_create"
+  // Lote declarado como inventario (Brandon, 2026-08-31): entra y sale en el
+  // mismo acto, sin trozas reales — ver `ORIGEN_LOTE_INVENTARIO`.
+  | "ctp_lote_aserrio_inventario_create"
   | "ctp_lote_aserrio_update"
   | "ctp_lote_aserrio_delete"
   | "ctp_lote_aserrio_trozas_add"
@@ -98,6 +107,10 @@ export type CtpAuditAction =
   // madera libre vuelve al patio. No es `delete` — el lote y sus corridas siguen
   // siendo parte del libro.
   | "ctp_lote_aserrio_cerrar"
+  /* Volver a abrir un lote aserrado para seguir cargándolo (2026-09-02). Se
+     audita como cualquier cambio de estado: un lote que vuelve a admitir
+     madera después de haber producido tiene que poder explicarse. */
+  | "ctp_lote_aserrio_reabrir"
   // Ingresos de materia prima
   | "ctp_ingreso_create"
   // Corrección de un ingreso pendiente (typo de GTF, volumen mal tipeado): el
@@ -131,6 +144,10 @@ export type CtpAuditAction =
   | "ctp_linea_produccion_declarada"
   | "ctp_linea_annul"
   | "ctp_linea_delete"
+  /** Marcado a mano como "ya se usó": sale de Productos disponibles sin
+   *  despacharse ni reprocesarse (Brandon, 2026-09-01). Reversible. */
+  | "ctp_linea_marcar_usado"
+  | "ctp_linea_desmarcar_usado"
   // Atribución de origen y costeo — lo más sensible del módulo
   | "ctp_consumos_set"
   /** Qué PIEZAS entraron a la sierra en una corrida (ADR-326). */
@@ -202,6 +219,11 @@ export type CtpAuditAction =
   | "ctp_cuenta_delete"
   | "ctp_cubicacion_update"
   | "ctp_cubicacion_delete"
+  // Distribuciones de rolliza guardadas (Brandon, 2026-09-01): los bloques
+  // cargados en "Distribución de rolliza sobre lo aserrado", con nombre.
+  | "ctp_distribucion_create"
+  | "ctp_distribucion_update"
+  | "ctp_distribucion_delete"
   // ANEXO N° 04 emitido con la GTF (lista de productos transformados)
   | "ctp_anexo04_emit"
   | "ctp_anexo04_update"
@@ -243,4 +265,4 @@ export function auditCtp(params: {
 
 /** m³ con la precisión forestal del módulo, para los detalles del log. */
 export const m3 = (v: number | string | null | undefined): string =>
-  v == null ? "—" : `${Number(v).toFixed(4)} m³`;
+  v == null ? "—" : `${fmtM3(Number(v))} m³`;

@@ -33,16 +33,54 @@ const dia = z
   .nullish()
   .transform((v) => (v ? new Date(`${v}T12:00:00.000Z`) : null));
 
-const postSchema = z.object({
-  speciesCommon: z.string().trim().min(1, "El lote necesita una especie").max(120),
-  speciesScientific: z.string().trim().max(160).nullish(),
-  notes: z.string().trim().max(500).nullish(),
-  // Programación del lote (ADR-342): los campos del formulario oficial.
-  ordenProduccion: z.string().trim().max(80).nullish(),
-  tipoProductoConsumir: z.string().trim().max(60).nullish(),
-  inicioProceso: dia,
-  finProceso: dia,
+/** Un paquete de producción declarado (ADR-349), igual que en `declarar_produccion`. */
+const paqueteSchema = z.object({
+  codigo: z.string().trim().min(1).max(60),
+  productType: z.string().trim().max(80).nullish(),
+  presentacion: z.string().trim().max(80).nullish(),
+  cantidad: z.coerce.number().int().nonnegative().max(99999),
+  volumenM3: z.coerce.number().positive().max(999999),
+  espesorCm: z.coerce.number().positive().max(9999).nullish(),
+  anchoCm: z.coerce.number().positive().max(9999).nullish(),
+  largoM: z.coerce.number().positive().max(999).nullish(),
+  observations: z.string().trim().max(300).nullish(),
 });
+
+/**
+ * Dos formas de abrir un lote (Brandon, 2026-08-31): la de siempre, sin madera
+ * —se carga después en Consumos— y la de INVENTARIO, que declara de una vez
+ * cuánto se consumió y qué salió, sin trozas reales (`crearInventario`).
+ * `modo` es obligatorio para poder discriminar: `z.discriminatedUnion` no
+ * admite un campo opcional como llave.
+ */
+/** Código a mano (Brandon, 2026-08-31): vacío = correlativo automático. */
+const codigoLote = z.string().trim().min(1).max(60).nullish();
+
+const postSchema = z.discriminatedUnion("modo", [
+  z.object({
+    modo: z.literal("abierto"),
+    code: codigoLote,
+    speciesCommon: z.string().trim().min(1, "El lote necesita una especie").max(120),
+    speciesScientific: z.string().trim().max(160).nullish(),
+    notes: z.string().trim().max(500).nullish(),
+    // Programación del lote (ADR-342): los campos del formulario oficial.
+    ordenProduccion: z.string().trim().max(80).nullish(),
+    tipoProductoConsumir: z.string().trim().max(60).nullish(),
+    inicioProceso: dia,
+    finProceso: dia,
+  }),
+  z.object({
+    modo: z.literal("inventario"),
+    code: codigoLote,
+    speciesCommon: z.string().trim().min(1, "El lote necesita una especie").max(120),
+    speciesScientific: z.string().trim().max(160).nullish(),
+    volumenConsumidoM3: z.coerce.number().positive().max(999999),
+    fecha: dia,
+    finProceso: dia,
+    notes: z.string().trim().max(500).nullish(),
+    paquetes: z.array(paqueteSchema).min(1).max(200),
+  }),
+]);
 
 const patchSchema = z.discriminatedUnion("accion", [
   z.object({
@@ -55,10 +93,34 @@ const patchSchema = z.discriminatedUnion("accion", [
     loteId: z.string().trim().min(1).max(60),
     trozaId: z.string().trim().min(1).max(60),
   }),
+  /**
+   * Editar la identidad/programación del lote (Brandon, 2026-08-31): código,
+   * especie, orden, tipo de producto a consumir, ventana del proceso y nota.
+   * Todos opcionales — sólo se toca lo que venga en el body.
+   */
   z.object({
     accion: z.literal("editar"),
     loteId: z.string().trim().min(1).max(60),
+    code: codigoLote,
+    speciesCommon: z.string().trim().min(1).max(120).optional(),
+    speciesScientific: z.string().trim().max(160).nullish(),
+    ordenProduccion: z.string().trim().max(80).nullish(),
+    tipoProductoConsumir: z.string().trim().max(60).nullish(),
+    inicioProceso: dia,
+    finProceso: dia,
     notes: z.string().trim().max(500).nullish(),
+  }),
+  /**
+   * DESHACER un lote consumido cuya corrida sigue viva (Brandon, 2026-08-31):
+   * "eliminar el registro de producción" desde la propia pestaña de Lotes, sin
+   * ir primero a Producción a anular la línea.
+   */
+  z.object({
+    accion: z.literal("deshacer-forzado"),
+    loteId: z.string().trim().min(1).max(60),
+    motivo: z.string().trim().min(3).max(500),
+    /** Confirma eliminar aunque la corrida ya tenga despacho/reproceso registrado. */
+    forzar: z.boolean().optional(),
   }),
   /**
    * CONSUMIR el lote en el patio (ADR-340): las piezas elegidas entran al lote y
@@ -105,6 +167,15 @@ const patchSchema = z.discriminatedUnion("accion", [
     loteId: z.string().trim().min(1).max(60),
     motivo: z.string().trim().min(3).max(300),
   }),
+  /**
+   * REABRIR un lote ya aserrado para seguirle cargando madera (2026-09-02): un
+   * lote entra a la sierra en varias tandas, no en un solo acto. Las piezas ya
+   * consumidas no se tocan — ver `ForestLoteAserrioDB.reabrir`.
+   */
+  z.object({
+    accion: z.literal("reabrir"),
+    loteId: z.string().trim().min(1).max(60),
+  }),
 ]);
 
 async function guard(req: NextRequest, roles: AdminRole[] = ["admin", "almacenero", "owner"]) {
@@ -144,9 +215,21 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "validation_error", issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })) }, { status: 400 });
     }
+    const user = g.auth.username ?? "unknown";
+    if (parsed.data.modo === "inventario") {
+      const { modo: _modo, fecha, finProceso, ...resto } = parsed.data;
+      const r = await ForestLoteAserrioDB.crearInventario(g.auth.tenantId, {
+        ...resto,
+        fecha: fecha ?? undefined,
+        finProceso: finProceso ?? undefined,
+        createdBy: user,
+      });
+      return NextResponse.json({ lote: r.lote, corrida: r.corrida }, { status: 201 });
+    }
+    const { modo: _modo, ...resto } = parsed.data;
     const lote = await ForestLoteAserrioDB.create(g.auth.tenantId, {
-      ...parsed.data,
-      createdBy: g.auth.username ?? "unknown",
+      ...resto,
+      createdBy: user,
     });
     return NextResponse.json({ lote }, { status: 201 });
   } catch (e) {
@@ -211,6 +294,10 @@ export async function PATCH(req: NextRequest) {
       });
       return NextResponse.json(r);
     }
+    if (d.accion === "reabrir") {
+      const r = await ForestLoteAserrioDB.reabrir(g.auth.tenantId, { loteId: d.loteId, user });
+      return NextResponse.json(r);
+    }
     if (d.accion === "quitar-corrida") {
       const r = await ForestLoteAserrioDB.quitarDeCorrida(g.auth.tenantId, {
         corridaId: d.corridaId,
@@ -219,7 +306,30 @@ export async function PATCH(req: NextRequest) {
       });
       return NextResponse.json(r);
     }
-    const lote = await ForestLoteAserrioDB.update(g.auth.tenantId, d.loteId, { notes: d.notes ?? null }, user);
+    if (d.accion === "deshacer-forzado") {
+      const r = await ForestLoteAserrioDB.deshacerConProduccion(g.auth.tenantId, {
+        loteId: d.loteId,
+        motivo: d.motivo,
+        forzar: d.forzar,
+        user,
+      });
+      return NextResponse.json(r);
+    }
+    const lote = await ForestLoteAserrioDB.update(
+      g.auth.tenantId,
+      d.loteId,
+      {
+        code: d.code,
+        speciesCommon: d.speciesCommon,
+        speciesScientific: d.speciesScientific,
+        ordenProduccion: d.ordenProduccion,
+        tipoProductoConsumir: d.tipoProductoConsumir,
+        inicioProceso: d.inicioProceso,
+        finProceso: d.finProceso,
+        notes: d.notes,
+      },
+      user,
+    );
     return NextResponse.json({ lote });
   } catch (e) {
     return ctpErrorResponse(e, "forestal.lotes-aserrio.PATCH", "");

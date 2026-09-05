@@ -43,6 +43,7 @@ import { repartirGtfEnIngresos } from "@/lib/forestal/serfor-gtf-a-ingresos";
 import { gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { gtfDatosDesdeSerfor } from "@/lib/forestal/serfor-gtf-a-datos";
 import CtpGuiaOficialForm from "./CtpGuiaOficialForm";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Lo que se copia al duplicar un ingreso: el camión siguiente del mismo
  *  proveedor y la misma concesión. Nunca la GTF ni el volumen. */
@@ -923,7 +924,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
     }
   }
 
-  const volumeDisplay = Number(data.volumeM3) > 0 ? Number(data.volumeM3).toFixed(4) : null;
+  const volumeDisplay = Number(data.volumeM3) > 0 ? fmtM3(Number(data.volumeM3)) : null;
 
   // ═════════════════════════════════════════════════════════════════════
   // RENDER — dos paneles: formulario + vista previa
@@ -1545,7 +1546,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                       className="absolute right-1.5 top-1/2 inline-flex h-8 -translate-y-1/2 items-center gap-1 rounded-lg bg-[var(--data-success-100)] px-2.5 text-xs font-bold text-[var(--data-success-700)] transition-colors hover:bg-[var(--data-success-100)]"
                     >
                       <Sparkles className="h-3 w-3" />
-                      {autoVolume.toFixed(4)}
+                      {fmtM3(autoVolume)}
                     </button>
                   )}
                 </div>
@@ -1608,7 +1609,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
               title="Lista de trozas"
               hint={
                 trozasManuales.length > 0
-                  ? `${trozasManuales.length} pieza(s) · ${trozasManuales.reduce((a, t) => a + (t.volumenM3 ?? 0), 0).toFixed(4)} m³`
+                  ? `${trozasManuales.length} pieza(s) · ${fmtM3(trozasManuales.reduce((a, t) => a + (t.volumenM3 ?? 0), 0))} m³`
                   : "La que acompaña a la guía (casillero 35)"
               }
               className="xl:col-span-2"
@@ -1629,7 +1630,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 {trozasManuales.length > 0 && (
                   <>
                     <span className="text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-                      {trozasManuales.length} troza(s) · {trozasManuales.reduce((a, t) => a + (t.volumenM3 ?? 0), 0).toFixed(4)} m³
+                      {trozasManuales.length} troza(s) · {fmtM3(trozasManuales.reduce((a, t) => a + (t.volumenM3 ?? 0), 0))} m³
                     </span>
                     <button
                       type="button"
@@ -1995,13 +1996,13 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   Volumen total
                 </div>
                 <div className="mt-1 font-mono text-2xl font-bold tabular-nums text-[var(--text-primary)]">
-                  {volumeDisplay ?? "0.0000"}
+                  {volumeDisplay ?? fmtM3(0)}
                   <span className="ml-1 text-sm font-medium text-[var(--text-tertiary)]">m³</span>
                 </div>
                 {autoVolume > 0 && data.productType === "rolliza" && modo === "manual" && (
                   <div className="mt-1.5 flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                     <Sparkles className="h-3 w-3 text-[var(--data-success-600)]" />
-                    Cubicación: {autoVolume.toFixed(4)} m³
+                    Cubicación: {fmtM3(autoVolume)} m³
                   </div>
                 )}
                 {serforGtf?.volumenTotal != null && (
@@ -2035,7 +2036,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                           )}
                         </span>
                         <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                          {l.volumenM3.toFixed(4)} m³
+                          {fmtM3(l.volumenM3)} m³
                         </span>
                       </li>
                     ))}

@@ -168,8 +168,6 @@ const CTP_VIEW_KEYS = CTP_GROUPS.flatMap((g) => g.views.map((v) => v.key));
 /** Las mismas claves, tipadas: es lo que valida la vista que pide la URL. */
 const CTP_VIEW_KEYS_TIPADAS = CTP_VIEW_KEYS as CtpView[];
 const CTP_MODULE_ID = "ctp-libro";
-/** Vistas que YA muestran los pendientes en detalle: la tira arriba sobraría. */
-const SIN_TIRA: CtpView[] = ["cumplimiento", "cierre"];
 /** Vistas que no leen el período: Análisis (6 meses fijos), Cierre (por mes) y
  *  Ficha (identidad). Con el selector visible parecería que no hace nada.
  *  Lotes tampoco: es el estado VIVO del patio (lo que está apartado hoy), no un
@@ -453,6 +451,12 @@ export default function CTPLibroOperaciones() {
               <Search className="h-4 w-4" />
               <span className="max-lg:sr-only">Buscar guía</span>
             </button>
+            {/* Los avisos del libro (Brandon, 2026-09-02): campana acá, al lado
+                de «Modo patio», en vez de una tira de chips arriba de cada
+                vista. La tira costaba uno o dos renglones en las doce pestañas
+                y con seis avisos hacía wrap; son avisos, se miran cuando se
+                quiere. El número sigue a la vista en el badge. */}
+            <CtpPendientes estado={pendientes} onIr={irA} />
             {/* La puerta al modo patio. Va acá y no en el sidebar porque se abre
                 UNA vez, en la tablet que se lleva a la pila, y de ahí no se
                 vuelve al panel: es otra sesión de trabajo, no otra pestaña. */}
@@ -479,7 +483,6 @@ export default function CTPLibroOperaciones() {
         {/* Lo anotado sin señal y lo que falta hacer: semáforo de camino, no
             contenido — una tira de chips arriba de la vista. */}
         <CtpPatioBandeja cola={cola} />
-        {!SIN_TIRA.includes(view) && <CtpPendientes estado={pendientes} onIr={irA} />}
 
         {view === "ingresos" && (
           <CtpIngresosView
@@ -529,6 +532,7 @@ export default function CTPLibroOperaciones() {
             /* Sin lotes abiertos no hay nada que producir: el CTA lleva a
                armarlos en vez de abrir un menú vacío. */
             onIr={irA}
+            onVerTodoElHistorico={() => setPeriodKey("todo")}
           />
         )}
         {view === "disponibles" && <CtpProductosDisponibles period={period} />}

@@ -14,6 +14,7 @@ import { AlertTriangle, Calculator, Copy, FileText, Loader2, Search, Table, Tras
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { filtrarCubicaciones, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
+import { m3DesdePt } from "@/lib/forestal/cubicacion";
 
 const fmtPt = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtM3 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
@@ -36,6 +37,19 @@ export default function CubicacionesGuardadas({
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [borrando, setBorrando] = useState<string | null>(null);
+  /** Qué fila mostró "Copiado" último — se apaga sola, no queda pegado si se
+   *  copian varios códigos seguidos (Brandon, 2026-09-01: código de cubicación
+   *  para pegarlo después en Resumen por Permiso como objetivo). */
+  const [copiadoId, setCopiadoId] = useState<string | null>(null);
+  const copiarCodigo = (c: CubicacionRegistro) => {
+    navigator.clipboard
+      ?.writeText(c.id)
+      .then(() => {
+        setCopiadoId(c.id);
+        setTimeout(() => setCopiadoId((v) => (v === c.id ? null : v)), 1500);
+      })
+      .catch(() => setCopiadoId(null));
+  };
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -130,12 +144,21 @@ export default function CubicacionesGuardadas({
                     {c.especie ? ` · ${c.especie}` : ""}
                     {c.createdBy ? ` · ${c.createdBy}` : ""}
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => copiarCodigo(c)}
+                    title={`Copiar el código de esta cubicación (${c.id}) — pegalo en Resumen por Permiso como objetivo`}
+                    className="mt-1 inline-flex items-center gap-1 rounded-md border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                  >
+                    <Copy className="h-3 w-3" aria-hidden />
+                    {copiadoId === c.id ? "Código copiado" : `Código …${c.id.slice(-8)}`}
+                  </button>
                 </div>
                 <div className="flex shrink-0 items-center gap-4">
                   <div className="text-right">
                     <div className="font-mono text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{fmtPt(c.totales.pieTablar)} PT</div>
                     <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                      {c.totales.piezas} pzas · {fmtM3(c.totales.m3)} m³{c.valor > 0 ? ` · S/ ${soles(c.valor)}` : ""}
+                      {c.totales.piezas} pzas · {fmtM3(m3DesdePt(c.totales.pieTablar))} m³{c.valor > 0 ? ` · S/ ${soles(c.valor)}` : ""}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">

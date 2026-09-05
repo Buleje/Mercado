@@ -30,6 +30,7 @@ export interface LineaDeGuia {
   docType?: string | null;
   providerName: string;
   originCode?: string | null;
+  originSourceNumber?: string | null;
   originType?: string | null;
   speciesCommonName: string;
   speciesScientificName?: string | null;
@@ -68,6 +69,8 @@ export interface GuiaIngreso<L extends LineaDeGuia = LineaDeGuia> {
   entryDate: string | Date;
   providerName: string;
   originCode: string | null;
+  /** «N° de fuente de origen o procedencia» — la resolución de la ARFFS. */
+  originSourceNumber: string | null;
   /** N° de libro del primero y del último asiento: el folio que cita la autoridad. */
   libroDesde: number | null;
   libroHasta: number | null;
@@ -178,6 +181,7 @@ export function resumirGuia<L extends LineaDeGuia>(lineas: readonly L[]): GuiaIn
     entryDate: primera.entryDate,
     providerName: primera.providerName,
     originCode: orden.find((l) => txt(l.originCode))?.originCode ?? null,
+    originSourceNumber: orden.find((l) => txt(l.originSourceNumber))?.originSourceNumber ?? null,
     libroDesde: libros.length ? Math.min(...libros) : null,
     libroHasta: libros.length ? Math.max(...libros) : null,
     /* Por volumen: la especie que manda en el papel es la que más madera trae. */

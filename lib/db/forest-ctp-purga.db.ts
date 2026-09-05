@@ -6,29 +6,41 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 
 /**
- * Vaciar el Libro de Operaciones del CTP.
+ * Vaciar el Libro de Operaciones del CTP — entero o por alcance.
  *
  * Es la operación más destructiva del módulo: borra el registro que acredita el
  * origen legal de la madera. Existe porque un libro cargado mal —una importación
  * de prueba, un archivo equivocado— deja el saldo inservible y rehacerlo fila
  * por fila no es viable. Pero se trata como lo que es.
  *
- * TRES GUARDS, y ninguno es opcional:
+ * GUARDS, y ninguno es opcional:
  *
  * 1. **Los períodos cerrados no se tocan.** Un mes cerrado ya se presentó ante
  *    SERFOR; borrarlo deja al titular sin poder respaldar lo que declaró. Si hay
- *    alguno, la purga se niega y dice cuál — reabrirlo es una decisión aparte,
- *    con su propio rastro.
- * 2. **Siempre se cuenta antes de borrar**, y el conteo se le muestra al
+ *    alguno, la purga se niega ENTERA y dice cuál — reabrirlo es una decisión
+ *    aparte, con su propio rastro. Aplica a los cuatro alcances por igual.
+ * 2. **Un alcance parcial nunca rompe lo que deja vivo.** `soloSinTocar()` saca
+ *    de la lista cualquier corrida que un despacho, un reproceso o un lote de
+ *    producción todavía referencia — el `onDelete: Restrict` de esas tres
+ *    relaciones es la red de seguridad si el filtro se equivocara, pero el
+ *    filtro va primero para poder decir CUÁNTAS se saltaron en vez de fallar
+ *    la transacción entera (Brandon, 2026-09-01).
+ * 3. **Siempre se cuenta antes de borrar**, y el conteo se le muestra al
  *    operador. Un «¿seguro?» sin números no es una confirmación informada.
- * 3. **Queda auditado** con el detalle de cuánto se borró de cada cosa. Un libro
+ * 4. **Queda auditado** con el detalle de cuánto se borró de cada cosa. Un libro
  *    que desaparece sin rastro es exactamente lo que un fiscalizador buscaría.
  *
- * Las tablas puente (`ForestCtpConsumo`, `ForestCtpDespachoOrigen`,
- * `ForestCtpReproceso`) y las trozas caen por `onDelete: Cascade`. Se borran los
- * padres y la base se encarga del resto, que es lo único que garantiza no dejar
- * atribuciones huérfanas apuntando a corridas que ya no existen.
+ * ## Los cuatro alcances
+ *
+ * | Alcance | Qué borra | Qué NUNCA toca |
+ * |---|---|---|
+ * | `trozas_disponibles` | Trozas del patio sin consumir, sin despachar, sin hijos de retrozado | El ingreso (GTF) — queda como evidencia, aunque quede en 0 piezas |
+ * | `madera_disponible` | Corridas de producción con saldo (`quantity > 0`) y CERO despacho/reproceso/lote encima | Cualquier corrida que un despacho, reproceso o lote de producción referencie |
+ * | `consumo` | TODAS las corridas de producción sin despacho/reproceso/lote encima (incluye las que no llegaron a declarar `quantity`) | Idem — se salta y CUENTA las que están tocadas |
+ * | `todo` | El libro entero: ingresos, trozas, producción, despachos, puentes | Nada — es el purge histórico, sin cambios de comportamiento |
  */
+
+export type ScopeVaciado = "trozas_disponibles" | "madera_disponible" | "consumo" | "todo";
 
 export type ConteoDelLibro = {
   ingresos: number;
@@ -38,12 +50,105 @@ export type ConteoDelLibro = {
   consumos: number;
   origenes: number;
   total: number;
+  /** Sólo en `consumo`/`madera_disponible`: corridas que se salvaron por tener
+   *  despacho, reproceso o lote encima — no es un error, es el guard actuando. */
+  saltadas?: number;
 };
 
+/** Una troza "disponible" para el vaciado: nunca tocó ni la sierra ni un camión,
+ *  y no es una madre con hijos de retrozado (borrarla arrastraría a hijos que
+ *  bien podrían estar consumidos). */
+const TROZA_DISPONIBLE_WHERE = (tenantId: string) => ({
+  tenantId,
+  consumidaEnId: null,
+  despachadaEnId: null,
+  retrozos: { none: {} },
+});
+
+/**
+ * Las corridas de PRODUCCIÓN que nada más referencia todavía — el candidato
+ * seguro para un vaciado parcial. `soloConSaldo` filtra además a las que
+ * declararon `quantity > 0` (madera aserrada disponible); sin el flag, trae
+ * también las que consumieron trozas pero nunca llegaron a declarar producto
+ * (una corrida a medio declarar sigue siendo "Consumo" del libro).
+ */
+async function corridasSinTocar(
+  tenantId: string,
+  soloConSaldo: boolean,
+): Promise<{ id: string; quantity: unknown }[]> {
+  const vivas = await prisma.forestCtpEntry.findMany({
+    where: { tenantId, section: "produccion", deletedAt: null, status: "registrado" },
+    select: { id: true, quantity: true },
+  });
+  if (vivas.length === 0) return [];
+  const ids = vivas.map((v) => v.id);
+
+  const [despachos, reprocesosOrigen, reprocesosDestino, loteMiembros] = await Promise.all([
+    prisma.forestCtpDespachoOrigen.findMany({
+      where: { tenantId, produccionEntryId: { in: ids } },
+      select: { produccionEntryId: true },
+      distinct: ["produccionEntryId"],
+    }),
+    prisma.forestCtpReproceso.findMany({
+      where: { tenantId, origenEntryId: { in: ids } },
+      select: { origenEntryId: true },
+      distinct: ["origenEntryId"],
+    }),
+    /* También como DESTINO: si esta corrida nació de reprocesar otra, borrarla
+       se llevaría en cascada el reproceso que la originó — y el saldo de la
+       corrida de ORIGEN (que ya la contaba como "reprocesada") de golpe
+       recuperaría ese volumen como disponible sin que nadie lo haya tocado. */
+    prisma.forestCtpReproceso.findMany({
+      where: { tenantId, destinoEntryId: { in: ids } },
+      select: { destinoEntryId: true },
+      distinct: ["destinoEntryId"],
+    }),
+    prisma.forestProdLoteMiembro.findMany({
+      where: { tenantId, produccionEntryId: { in: ids } },
+      select: { produccionEntryId: true },
+      distinct: ["produccionEntryId"],
+    }),
+  ]);
+  const tocadas = new Set<string>([
+    ...despachos.map((d) => d.produccionEntryId),
+    ...reprocesosOrigen.map((r) => r.origenEntryId),
+    ...reprocesosDestino.map((r) => r.destinoEntryId),
+    ...loteMiembros.map((l) => l.produccionEntryId),
+  ]);
+
+  return vivas.filter((v) => !tocadas.has(v.id) && (!soloConSaldo || Number(v.quantity ?? 0) > 0));
+}
+
 export class ForestCtpPurgaDB {
-  /** Qué hay en el libro, para mostrarlo ANTES de borrar. */
-  static async contar(tenantId: string): Promise<ConteoDelLibro> {
+  /** Qué hay en el libro (o en el alcance elegido), para mostrarlo ANTES de borrar. */
+  static async contar(tenantId: string, scope: ScopeVaciado = "todo"): Promise<ConteoDelLibro> {
     if (!tenantId) throw new Error("tenantId is required");
+
+    if (scope === "trozas_disponibles") {
+      const trozas = await prisma.woodEntryTroza.count({ where: TROZA_DISPONIBLE_WHERE(tenantId) });
+      return { ingresos: 0, trozas, produccion: 0, despachos: 0, consumos: 0, origenes: 0, total: trozas };
+    }
+
+    if (scope === "madera_disponible" || scope === "consumo") {
+      const [candidatas, vivasCount] = await Promise.all([
+        corridasSinTocar(tenantId, scope === "madera_disponible"),
+        prisma.forestCtpEntry.count({ where: { tenantId, section: "produccion", deletedAt: null, status: "registrado" } }),
+      ]);
+      const ids = candidatas.map((c) => c.id);
+      const consumos = ids.length
+        ? await prisma.forestCtpConsumo.count({ where: { tenantId, ctpEntryId: { in: ids } } })
+        : 0;
+      return {
+        ingresos: 0,
+        trozas: 0,
+        produccion: candidatas.length,
+        despachos: 0,
+        consumos,
+        origenes: 0,
+        total: candidatas.length,
+        saltadas: Math.max(0, vivasCount - candidatas.length),
+      };
+    }
 
     const [ingresos, trozas, entradas, consumos, origenes] = await Promise.all([
       prisma.woodEntry.count({ where: { tenantId } }),
@@ -70,7 +175,7 @@ export class ForestCtpPurgaDB {
     };
   }
 
-  /** Los períodos cerrados que impiden vaciar. Vacío = se puede. */
+  /** Los períodos cerrados que impiden vaciar (cualquier alcance). Vacío = se puede. */
   static async periodosQueBloquean(tenantId: string): Promise<string[]> {
     if (!tenantId) throw new Error("tenantId is required");
     const cierres = await ForestCtpCierreDB.list(tenantId);
@@ -80,15 +185,17 @@ export class ForestCtpPurgaDB {
   }
 
   /**
-   * Vacía el libro entero.
+   * Vacía el libro — entero o por alcance.
    *
-   * Devuelve lo que había, para poder decir exactamente qué se borró. Todo en
-   * una transacción: media purga deja un libro peor que el que había —corridas
-   * sin sus ingresos— y eso sí sería irrecuperable.
+   * Devuelve lo que se borró (y, en un alcance parcial, cuánto se salvó), para
+   * poder decir exactamente qué pasó. Todo en una transacción: media purga deja
+   * un libro peor que el que había —corridas sin sus ingresos— y eso sí sería
+   * irrecuperable.
    */
   static async vaciar(
     tenantId: string,
     usuario: string,
+    scope: ScopeVaciado = "todo",
   ): Promise<{ ok: true; borrado: ConteoDelLibro } | { ok: false; motivo: string; periodos: string[] }> {
     if (!tenantId) throw new Error("tenantId is required");
 
@@ -103,7 +210,51 @@ export class ForestCtpPurgaDB {
       };
     }
 
-    const borrado = await ForestCtpPurgaDB.contar(tenantId);
+    if (scope === "trozas_disponibles") {
+      const borrado = await ForestCtpPurgaDB.contar(tenantId, scope);
+      await prisma.woodEntryTroza.deleteMany({ where: TROZA_DISPONIBLE_WHERE(tenantId) });
+      auditCtp({
+        tenantId,
+        action: "ctp_libro_purga_parcial",
+        entity: "ForestCtpLibro",
+        entityId: tenantId,
+        detail: `VACIÓ trozas disponibles: ${borrado.trozas} pieza(s) del patio sin consumir ni despachar. Los ingresos (GTF) quedaron intactos.`,
+        user: usuario,
+      });
+      try { invalidateByPrefix(`wood-entries:${tenantId}`); } catch (e) {
+        logger.error("[forest-ctp-purga] no se pudo invalidar el caché", { error: String(e) });
+      }
+      return { ok: true, borrado };
+    }
+
+    if (scope === "madera_disponible" || scope === "consumo") {
+      const borrado = await ForestCtpPurgaDB.contar(tenantId, scope);
+      const candidatas = await corridasSinTocar(tenantId, scope === "madera_disponible");
+      const ids = candidatas.map((c) => c.id);
+      if (ids.length > 0) {
+        await prisma.$transaction(async (tx) => {
+          await tx.forestCtpConsumo.deleteMany({ where: { tenantId, ctpEntryId: { in: ids } } });
+          await tx.forestCtpEntry.deleteMany({ where: { tenantId, id: { in: ids } } });
+        });
+      }
+      auditCtp({
+        tenantId,
+        action: "ctp_libro_purga_parcial",
+        entity: "ForestCtpLibro",
+        entityId: tenantId,
+        detail:
+          `VACIÓ ${scope === "madera_disponible" ? "madera aserrada disponible" : "Consumos"}: ${borrado.produccion} ` +
+          `corrida(s) de producción, ${borrado.consumos} consumo(s) atribuido(s). ` +
+          `${borrado.saltadas ?? 0} corrida(s) se salvaron por tener despacho, reproceso o lote de producción encima.`,
+        user: usuario,
+      });
+      try { invalidateByPrefix(`forest-ctp:${tenantId}`); } catch (e) {
+        logger.error("[forest-ctp-purga] no se pudo invalidar el caché", { error: String(e) });
+      }
+      return { ok: true, borrado };
+    }
+
+    const borrado = await ForestCtpPurgaDB.contar(tenantId, "todo");
 
     await prisma.$transaction(async (tx) => {
       /* Orden: primero lo que cuelga, después los padres. Las cascadas ya se

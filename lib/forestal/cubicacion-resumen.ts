@@ -12,12 +12,13 @@ import { tipoDePieza } from "./cubicacion-tipo";
 
 /** Cómo se puede agrupar el lote. El orden es el de los chips en la UI. */
 export const DIMENSIONES_RESUMEN = [
-  "especie", "tipo", "largo", "seccion", "medida", "espesor", "ancho",
+  "especie", "dueno", "tipo", "largo", "seccion", "medida", "espesor", "ancho",
 ] as const;
 export type DimensionResumen = (typeof DIMENSIONES_RESUMEN)[number];
 
 export const ETIQUETA_DIMENSION: Record<DimensionResumen, string> = {
   especie: "Por especie",
+  dueno: "Por dueño",
   tipo: "Por tipo",
   largo: "Por largo",
   seccion: "Por sección (esp × anc)",
@@ -68,6 +69,10 @@ export function claveYLabel(r: PiezaCubicada, dim: DimensionResumen): { clave: s
     case "especie": {
       const e = r.especie?.trim() || "Sin especie";
       return { clave: e.toLowerCase(), label: e };
+    }
+    case "dueno": {
+      const d = r.dueno?.trim() || "Sin dueño";
+      return { clave: d.toLowerCase(), label: d };
     }
     case "tipo": {
       const t = tipoDePieza(r);

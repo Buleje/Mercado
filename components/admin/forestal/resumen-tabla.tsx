@@ -12,19 +12,35 @@
 
 import type { ReactNode } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
-import type { LucideIcon } from "@buleje/design-system/icons";
+import { Info, type LucideIcon } from "@buleje/design-system/icons";
+import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import type { GrupoResumen, ResumenLote } from "@/lib/forestal/cubicacion-resumen";
 import { fmtM3, fmtPct, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoBadge } from "./tipo-badge";
 
-/** Tarjeta de sección: misma caja para las siete lecturas del lote. */
-export function SeccionResumen({ id, icon: Icono, titulo, hint, acciones, children, className = "" }: {
+/**
+ * Tarjeta de sección: misma caja para las siete lecturas del lote.
+ *
+ * Dos ranuras de texto y NO son intercambiables (Brandon, 2026-09-02: «lo que
+ * confunde mucho es texto suelto muy amplio; quiero un icono de información y
+ * al pasar el mouse que se vea ahí»):
+ *
+ *   `hint`  → el DATO de una línea, siempre visible («155 piezas · 3.264 m³»).
+ *   `ayuda` → la EXPLICACIÓN, escondida detrás del ⓘ del título.
+ *
+ * El párrafo de cuatro renglones arriba de una tabla no se lee: se salta, y
+ * empuja la tabla fuera de la pantalla. Detrás del ⓘ sigue estando entero para
+ * quien lo necesite la primera vez.
+ */
+export function SeccionResumen({ id, icon: Icono, titulo, hint, ayuda, acciones, children, className = "" }: {
   id?: string;
   icon?: LucideIcon;
   titulo: string;
-  /** Una línea que explica qué contesta la sección — no decorativa: la gente no sabe qué mira. */
+  /** El dato de una línea, siempre visible. Corto: si necesita comas, va en `ayuda`. */
   hint?: ReactNode;
+  /** La explicación larga — vive detrás del ⓘ del título, no ocupa pantalla. */
+  ayuda?: ReactNode;
   acciones?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -41,6 +57,17 @@ export function SeccionResumen({ id, icon: Icono, titulo, hint, acciones, childr
           <CardTitle as="h4" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
             {Icono && <Icono className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />}
             {titulo}
+            {ayuda && (
+              <AdminTooltip content={ayuda} className="max-w-[320px] text-sm font-normal normal-case leading-relaxed tracking-normal">
+                <button
+                  type="button"
+                  aria-label={`Qué es «${titulo}»`}
+                  className="shrink-0 rounded-full text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] print:hidden"
+                >
+                  <Info className="h-4 w-4" aria-hidden />
+                </button>
+              </AdminTooltip>
+            )}
           </CardTitle>
           {hint && <div className="mt-0.5 text-sm text-[var(--text-tertiary)]">{hint}</div>}
         </div>

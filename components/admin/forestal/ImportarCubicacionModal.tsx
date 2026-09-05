@@ -17,6 +17,7 @@ import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
 import { parsearFilasImportadas, interpretarOcrPiezas, interpretarDictadoAudio, PLANTILLA_IMPORT, type PiezaImportada, type ResultadoImport } from "@/lib/forestal/cubicacion-import";
 import { leerArchivoAFilas } from "@/lib/forestal/cubicacion-import-file";
 import { descargarPlantillaImport } from "@/lib/forestal/cubicador-export";
+import { loadConfig } from "@/lib/forestal/cubicador-config";
 
 const fmtPt = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -107,7 +108,10 @@ export default function ImportarCubicacionModal({
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
       setTranscript(String(j.transcript ?? ""));
-      setResultado(interpretarDictadoAudio(String(j.transcript ?? "")));
+      // El vocabulario de comandos ("fijo"/"especie"/"eliminá el último") es el
+      // MISMO que el operario personalizó para el micrófono en vivo en Ajustes
+      // — si no, el importador de audio sólo reconocería las frases DEFAULT.
+      setResultado(interpretarDictadoAudio(String(j.transcript ?? ""), loadConfig().comandos));
     } catch (e) {
       setErrorGeneral(e instanceof Error ? e.message : String(e));
     } finally {
@@ -193,9 +197,18 @@ export default function ImportarCubicacionModal({
             Sacale una foto (o subí una) a la planilla de cubicación escrita a mano — cantidad, espesor, ancho y largo por fila. La IA lee la letra y arma la lista; <b>vos la revisás</b> contra la foto antes de sumarla al lote. Las filas donde la IA no estuvo segura salen resaltadas.
           </p>
         ) : (
-          <p className="mb-3 text-sm text-[var(--text-secondary)]">
-            Subí un audio donde dictaste las medidas seguidas, tabla por tabla — sólo espesor, ancho y largo, sin pausas (&ldquo;dos ocho once, dos ocho diez…&rdquo;). Se transcribe y se separa en piezas automáticamente; <b>vos revisás</b> el transcript y la lista antes de sumarla al lote. Todavía no reconoce &ldquo;N piezas de…&rdquo; ni especie — cada tabla dictada entra como 1 pieza, sin especie, y la editás después en la fila.
-          </p>
+          <div className="mb-3 text-sm text-[var(--text-secondary)]">
+            <p>
+              Subí un audio donde dictaste las medidas tabla por tabla — espesor, ancho y largo (&ldquo;dos ocho once, dos ocho diez…&rdquo;). Se transcribe y se separa en piezas automáticamente; <b>vos revisás</b> el transcript y la lista antes de sumarla al lote.
+            </p>
+            <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--text-tertiary)]">
+              <span>Igual que el micrófono en vivo, entiende:</span>
+              <span><b className="text-[var(--text-secondary)]">&ldquo;cinco tablas de dos por ocho por diez&rdquo;</b> (cantidad)</span>
+              <span><b className="text-[var(--text-secondary)]">&ldquo;especie cedro&rdquo;</b></span>
+              <span><b className="text-[var(--text-secondary)]">&ldquo;pon fijo el largo a diez&rdquo;</b> / <b className="text-[var(--text-secondary)]">&ldquo;quitá el fijo&rdquo;</b></span>
+              <span><b className="text-[var(--text-secondary)]">&ldquo;eliminá el último&rdquo;</b> si te corregiste al dictar</span>
+            </p>
+          </div>
         )}
 
         {filasActuales > 0 && (

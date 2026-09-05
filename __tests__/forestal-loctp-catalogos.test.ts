@@ -9,12 +9,14 @@ import {
   TIPOS_PRODUCTO_LOCTP,
   TIPOS_PRODUCTO_SALIDA,
   aPieTablar,
+  PT_POR_M3,
   esLineaProduccion,
   juzgarRendimiento,
   presentacionSugerida,
   productoDelTipoComercial,
   sugerirCodigoPaquete,
 } from "@/lib/forestal/loctp-catalogos";
+import { PT_POR_M3 as PT_CUBICADOR } from "@/lib/forestal/cubicacion";
 
 /**
  * ADR-314 — los catálogos del negocio maderero.
@@ -135,9 +137,20 @@ describe("Rendimiento contra la meta", () => {
 });
 
 describe("Pie tablar", () => {
-  it("convierte para mostrar, con el factor peruano", () => {
+  it("convierte con el factor comercial de la plaza: 1 m³ = 424 PT", () => {
+    /* Brandon, 2026-09-02: «1 m³ equivale a 424, así aplicalo». Es el factor
+       con el que se compra y se vende en la selva; la conversión física exacta
+       (423.776) queda de lado a propósito — el papel y el comprador tienen que
+       decir el mismo número. */
     expect(aPieTablar(1)).toBe(424);
     expect(aPieTablar(3.268)).toBeCloseTo(1385.6, 1);
+  });
+
+  it("es la MISMA constante que usa el cubicador — no una copia", () => {
+    /* Este archivo decía 424 y el cubicador 423.78: dos conversiones para la
+       misma madera, y dos pantallas del libro que no cuadraban entre sí. */
+    expect(PT_POR_M3).toBe(PT_CUBICADOR);
+    expect(PT_POR_M3).toBe(424);
   });
 
   it("sin volumen no inventa", () => {

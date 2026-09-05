@@ -27,7 +27,8 @@ import {
 export interface EstadoFiltroPatio {
   texto: string;
   especie: string;
-  guia: string;
+  /** Una o más guías a la vez (Brandon, 2026-09-01). */
+  guia: string[];
   permiso: string;
   resolucion: string;
   proveedor: string;
@@ -36,7 +37,7 @@ export interface EstadoFiltroPatio {
   set: {
     texto: (v: string) => void;
     especie: (v: string) => void;
-    guia: (v: string) => void;
+    guia: (v: string[]) => void;
     permiso: (v: string) => void;
     resolucion: (v: string) => void;
     proveedor: (v: string) => void;
@@ -68,7 +69,7 @@ export function useFiltroPatio(
 ): EstadoFiltroPatio {
   const [texto, setTexto] = useState("");
   const [especie, setEspecie] = useState("");
-  const [guia, setGuia] = useState("");
+  const [guia, setGuia] = useState<string[]>([]);
   const [permiso, setPermiso] = useState("");
   const [resolucion, setResolucion] = useState("");
   const [proveedor, setProveedor] = useState("");
@@ -105,7 +106,7 @@ export function useFiltroPatio(
   const limpiar = useCallback(() => {
     setTexto("");
     setEspecie("");
-    setGuia("");
+    setGuia([]);
     setPermiso("");
     setResolucion("");
     setProveedor("");
@@ -128,7 +129,7 @@ export function useFiltroPatio(
     texto, especie, guia, permiso, resolucion, proveedor, soloLibres,
     set,
     limpiar,
-    hayFiltro: Boolean(texto || especie || guia || permiso || resolucion || proveedor),
+    hayFiltro: Boolean(texto || especie || guia.length > 0 || permiso || resolucion || proveedor),
     opciones,
     delPatio,
     filtradas,

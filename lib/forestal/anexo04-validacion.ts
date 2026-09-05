@@ -87,6 +87,49 @@ function piezasRaras(piezas: PiezaCubicada[]): number {
 }
 
 /**
+ * De dónde salieron las piezas que se están por declarar: de bloques de
+ * ROLLIZA (hubo troza, hay GTF de entrada) o de bloques de MADERA YA ASERRADA
+ * cargados directo en la distribución (Brandon, 2026-09-01).
+ *
+ * Se cuenta por bloque, no por pieza: lo que cambia el respaldo documental es
+ * de qué bloque salió el conjunto, no cuántas tablas trajo cada uno.
+ */
+export interface ProcedenciaBloques {
+  rolliza: number;
+  aserradaDirecta: number;
+}
+
+/**
+ * Avisos por la procedencia de las piezas.
+ *
+ * **No toca ningún casillero del formato oficial**: el ANEXO N° 04 no tiene
+ * dónde declarar esto y no se inventan campos. Es un aviso de pantalla, para
+ * que quien firma sepa qué está amparando antes de firmarlo — que es
+ * exactamente lo que hace el resto del checklist.
+ *
+ * Nivel «aviso», nunca «error»: declarar madera comprada ya aserrada es
+ * legítimo; lo que no es legítimo es firmarla creyendo que viene de una troza
+ * propia.
+ */
+export function avisosDeProcedencia(p?: ProcedenciaBloques | null): AvisoAnexo04[] {
+  if (!p) return [];
+  const { rolliza, aserradaDirecta } = p;
+  if (aserradaDirecta <= 0) return [];
+  if (rolliza <= 0) {
+    return [{
+      nivel: "aviso",
+      mensaje: aserradaDirecta === 1
+        ? "Estas piezas salen de un bloque cargado como madera YA ASERRADA: no hay troza de origen detrás. El respaldo no es una GTF de rolliza — revisá con qué documento entró esa madera antes de firmar."
+        : `Estas piezas salen de ${aserradaDirecta} bloques cargados como madera YA ASERRADA: no hay troza de origen detrás. El respaldo no es una GTF de rolliza — revisá con qué documento entró esa madera antes de firmar.`,
+    }];
+  }
+  return [{
+    nivel: "aviso",
+    mensaje: `Este anexo junta dos procedencias en una sola hoja: ${rolliza} bloque${rolliza === 1 ? "" : "s"} de rolliza y ${aserradaDirecta} de madera ya aserrada. Cada una se respalda con un documento distinto — si el fiscalizador pide el origen, no hay uno solo que cubra todo.`,
+  }];
+}
+
+/**
  * Revisa el anexo tal como se va a imprimir. Devuelve la lista de avisos en
  * orden de gravedad (errores primero).
  */

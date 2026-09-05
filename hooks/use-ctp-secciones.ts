@@ -30,6 +30,11 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
   const [entries, setEntries] = useState<CtpEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /** Cuánto hay en TOTAL para esta sección, sin la ventana de fecha del
+   *  período activo — `undefined` cuando el período es "todo" (no hay nada
+   *  que esconder). Sirve para avisar que el período está tapando corridas
+   *  reales, no que se perdieron (memoria: "17 vs 13"). */
+  const [totalSinFiltro, setTotalSinFiltro] = useState<number | undefined>(undefined);
   /** Despachos que YA tienen anexo emitido (se marcan en la fila). */
   const [conAnexo, setConAnexo] = useState<Set<string>>(new Set());
   /** Cuántos anexos hay en la bandeja (el badge del botón). */
@@ -52,7 +57,9 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
       if (search.trim()) p.set("search", search.trim());
       const r = await fetch(`/api/admin/forestal/ctp?${p}`, { credentials: "include" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
-      setEntries((await r.json()).entries ?? []);
+      const j: { entries?: CtpEntry[]; totalSinFiltro?: number } = await r.json();
+      setEntries(j.entries ?? []);
+      setTotalSinFiltro(j.totalSinFiltro);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, [section, search, period]);
@@ -209,7 +216,7 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
 
   return {
     // datos crudos
-    entries, loading, error, setError, recargar: load,
+    entries, loading, error, setError, recargar: load, totalSinFiltro,
     // anexos emitidos (sólo despacho)
     conAnexo, totalAnexos, recargarAnexos: cargarAnexos, sinAnexo,
     // filtros y orden

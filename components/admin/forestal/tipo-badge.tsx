@@ -38,7 +38,7 @@ export function tipoBadgeCls(tono: Tono): string {
 
 export function TipoBadge({ tipo, title }: { tipo: TipoComercial; title?: string }) {
   return (
-    <span title={title ?? `Según sus medidas (espesor·ancho·largo): ${tipo}`} className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold ${tipoBadgeCls(tonoTipo(tipo))}`}>
+    <span title={title ?? `Según sus medidas (espesor·ancho·largo): ${tipo}`} className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-bold ${tipoBadgeCls(tonoTipo(tipo))}`}>
       {tipoCorto(tipo)}
     </span>
   );

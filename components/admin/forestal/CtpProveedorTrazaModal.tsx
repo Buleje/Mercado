@@ -21,7 +21,11 @@ import {
   type TrazabilidadProveedor,
 } from "@/lib/forestal/proveedor-trazabilidad";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
+/** Producido/despachado suman corridas y despachos que pueden estar en m³,
+ *  pies tablares o unidades (`FilaCorridaProveedor.unit`): a diferencia de los
+ *  campos `*M3` del balance, acá NO se puede asumir m³ sin mentir la unidad. */
 const n4 = (n: number) => n.toFixed(4);
 const soles = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fecha = (iso: string) =>
@@ -92,8 +96,8 @@ export default function CtpProveedorTrazaModal({ proveedor, onClose }: { proveed
             )}
 
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <Dato label="Guías" valor={String(b.guias)} pie={`${n4(b.ingresadoM3)} m³ ingresados`} />
-              <Dato label="Consumido" valor={`${n4(b.consumidoM3)} m³`} pie={`${n4(b.enPatioM3)} m³ siguen en patio`} />
+              <Dato label="Guías" valor={String(b.guias)} pie={`${fmtM3(b.ingresadoM3)} m³ ingresados`} />
+              <Dato label="Consumido" valor={`${fmtM3(b.consumidoM3)} m³`} pie={`${fmtM3(b.enPatioM3)} m³ siguen en patio`} />
               <Dato
                 label="Rendimiento"
                 valor={b.rendimientoPct == null ? "—" : `${Number(b.rendimientoPct).toFixed(1)}%`}
@@ -116,7 +120,7 @@ export default function CtpProveedorTrazaModal({ proveedor, onClose }: { proveed
               <Dato
                 label="S/ por m³"
                 valor={unitario == null ? "—" : soles(unitario)}
-                pie={unitario == null ? "falta factura" : `sobre ${n4(b.volumenConCostoM3)} m³ facturados`}
+                pie={unitario == null ? "falta factura" : `sobre ${fmtM3(b.volumenConCostoM3)} m³ facturados`}
                 tono={unitario == null ? "muted" : "ok"}
               />
             </div>
@@ -136,7 +140,7 @@ export default function CtpProveedorTrazaModal({ proveedor, onClose }: { proveed
                       </span>
                       <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{e.guias} guía(s)</span>
                       <span className="w-24 text-right font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
-                        {n4(e.ingresadoM3)}
+                        {fmtM3(e.ingresadoM3)}
                       </span>
                     </li>
                   ))}
@@ -166,12 +170,12 @@ export default function CtpProveedorTrazaModal({ proveedor, onClose }: { proveed
                       </span>
                       <span className="w-32 shrink-0 truncate font-mono text-xs text-[var(--text-primary)]">{g.gtfNumber}</span>
                       <span className="min-w-0 flex-1 truncate text-[var(--text-secondary)]">{g.especie}</span>
-                      <span className="w-20 text-right font-mono tabular-nums text-[var(--text-primary)]">{n4(g.volumeM3)}</span>
+                      <span className="w-20 text-right font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(g.volumeM3)}</span>
                       <span
                         className="w-20 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]"
                         title="Lo que sigue en el patio de esta guía"
                       >
-                        {n4(g.saldoM3)}
+                        {fmtM3(g.saldoM3)}
                       </span>
                     </li>
                   ))}

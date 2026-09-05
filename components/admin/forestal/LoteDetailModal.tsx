@@ -20,6 +20,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { printCertificadoLote, printEtiquetaLote } from "@/lib/forestal/lote-certificado";
 import LoteMiembrosEditor, { loteRowsValidas, type LoteRow } from "./LoteMiembrosEditor";
 import { Btn, I, MODAL_BODY } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const UNIT_LABELS: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "unidad" };
 const n4 = (v: number) => v.toFixed(4);
@@ -295,7 +296,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
                             {l.code ?? <span className="italic text-[var(--text-tertiary)]">sin lote</span>}
                           </td>
                           <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{l.piezas}</td>
-                          <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{n4(l.volumenM3)} m³</td>
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(l.volumenM3)} m³</td>
                           <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">
                             {l.codigos.join(" · ") || "—"}
                           </td>

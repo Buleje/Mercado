@@ -45,9 +45,33 @@ export type ReporteImport = {
   incompletas: { formato: FormatoCtp; fila: number; motivos: string[] }[];
   /** Avisos de la cadena (rendimientos raros, despachos sin respaldo). */
   avisosDeCadena: { lote: string; nivel: "error" | "aviso"; mensaje: string }[];
+  /**
+   * Filas que SÍ entraron, pero con un detalle que el operador tiene que ver:
+   * un código de paquete que se tuvo que renombrar por chocar con uno que ya
+   * estaba en la planta, un bulto que entró sin paquete por falta de piezas.
+   *
+   * Van aparte de `problemas` porque no son errores —la fila se importó— pero
+   * aparte de `creados` porque un conteo agregado («40 filas importadas») se
+   * los comía enteros: el código renombrado o el paquete perdido no se veían
+   * en ningún lado.
+   */
+  avisosDeFila: { formato: FormatoCtp; fila?: number; codigo: string; mensaje: string }[];
   /** true si no hay nada que arreglar. */
   limpio: boolean;
 };
+
+/**
+ * Separa el mensaje de fila de sus avisos incrustados.
+ *
+ * El servidor los marca con " · AVISO: " porque son del MISMO mensaje que ya
+ * viaja por fila — agregar un campo nuevo al contrato de los dos endpoints de
+ * import (`wood-entries/import` y `ctp-serfor-import`) para esto solo hubiera
+ * significado tocar cuatro lugares para llevar el mismo string.
+ */
+function extraerAvisos(mensaje: string): { limpio: string; avisos: string[] } {
+  const partes = mensaje.split(" · AVISO: ");
+  return { limpio: partes[0], avisos: partes.slice(1) };
+}
 
 /**
  * Quita los datos variables del mensaje para poder agrupar.
@@ -105,12 +129,20 @@ export function armarReporte(
   let totalExistentes = 0;
   let totalConError = 0;
   const porCausa = new Map<string, ProblemaAgrupado>();
+  const avisosDeFila: ReporteImport["avisosDeFila"] = [];
 
   for (const r of resultados) {
     if (r.respuesta.resumen.creados > 0) {
       creados.push({ formato: r.formato, cantidad: r.respuesta.resumen.creados });
     }
     for (const f of r.respuesta.filas) {
+      /* Se saca ANTES de mirar la acción: una fila "creado" con avisos sigue
+         siendo un éxito para el conteo, pero el aviso tiene que salir igual. */
+      const { limpio, avisos } = extraerAvisos(f.mensaje);
+      for (const aviso of avisos) {
+        avisosDeFila.push({ formato: r.formato, fila: f.fila, codigo: f.codigo, mensaje: aviso });
+      }
+
       if (f.accion === "existe") {
         totalExistentes += 1;
         continue;
@@ -118,7 +150,7 @@ export function armarReporte(
       if (f.accion !== "error") continue;
       totalConError += 1;
 
-      const causa = causaDe(f.mensaje);
+      const causa = causaDe(limpio);
       const clave = `${r.formato}::${causa}`;
       const previo = porCausa.get(clave);
       if (previo) {
@@ -128,10 +160,10 @@ export function armarReporte(
         porCausa.set(clave, {
           formato: r.formato,
           causa,
-          ejemplo: f.mensaje,
+          ejemplo: limpio,
           filas: f.fila != null ? [f.fila] : [],
           codigos: f.codigo && f.codigo !== "—" ? [f.codigo] : [],
-          comoArreglar: consejoPara(f.mensaje, r.formato),
+          comoArreglar: consejoPara(limpio, r.formato),
         });
       }
     }
@@ -150,7 +182,8 @@ export function armarReporte(
     problemas,
     incompletas,
     avisosDeCadena,
-    limpio: totalConError === 0 && incompletas.length === 0 && avisosDeCadena.length === 0,
+    avisosDeFila,
+    limpio: totalConError === 0 && incompletas.length === 0 && avisosDeCadena.length === 0 && avisosDeFila.length === 0,
   };
 }
 
@@ -203,6 +236,13 @@ export function reporteACsv(r: ReporteImport, nombreArchivo?: string): string {
     lineas.push([], ["Filas incompletas en el archivo"], ["Sección", "Fila", "Qué falta"]);
     for (const i of r.incompletas) {
       lineas.push([TITULO_FORMATO[i.formato], String(i.fila), i.motivos.join(" · ")]);
+    }
+  }
+
+  if (r.avisosDeFila.length > 0) {
+    lineas.push([], ["Entraron, pero revisá esto"], ["Sección", "Fila", "Código", "Aviso"]);
+    for (const a of r.avisosDeFila) {
+      lineas.push([TITULO_FORMATO[a.formato], a.fila != null ? String(a.fila) : "", a.codigo, a.mensaje]);
     }
   }
 

@@ -13,14 +13,18 @@
  * grande tiene que ser el verdadero y la diferencia se explica al lado.
  */
 
-import { Boxes, ChevronRight, Play, Plus, Trash2, TreePine } from "@buleje/design-system/icons";
+import { Archive, Boxes, ChevronRight, Play, Plus, Trash2, TreePine } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import type { FotoEspecie } from "@/lib/forestal/especies-fotos";
 import {
   ESTADO_LOTE,
+  TONO_ESTADO_LOTE,
   alertasDeLote,
   diasDeEspera,
+  esLoteDeInventario,
   juzgarRendimientoLote,
+  loteVencido,
+  margenLote,
   pieTablarDe,
   piezasLibres,
   rendimientoLote,
@@ -33,13 +37,7 @@ import { estadoSalida } from "./ctp-section-shared";
 import { Btn } from "./ctp-shared";
 import { IconAction } from "@/components/admin/shared/module-primitives";
 import EspecieFoto from "./EspecieFoto";
-
-const TONO_ESTADO: Record<string, string> = {
-  abierto: "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
-  consumido:
-    "border-[var(--data-success-500)]/50 bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]",
-  cerrado: "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-};
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const fmtFecha = (iso: string | null) => {
   if (!iso) return null;
@@ -79,10 +77,20 @@ export default function CtpLoteCard({
   const dias = diasDeEspera(lote, ahora);
   const rend = rendimientoLote(lote);
   const veredicto = juzgarRendimientoLote(rend);
+  const margen = margenLote(lote);
+  const vencido = loteVencido(lote, ahora);
   const corrida = lote.produccion;
   /* ¿La madera de este lote ya se fue? La regla es la MISMA que usa la tabla de
      Producción para sus corridas — se importa, no se re-escribe (ADR-337). */
   const salida = salidaDelLote(lote);
+  /* «Sobra» del lote es lo que TODAVÍA se puede meter a Producción (Brandon,
+     2026-09-01: "es volumen sobrante para producción") — NO lo ya producido
+     esperando despacho (eso es `salida.enPatio`, otro badge). Abierto: rolliza
+     sin aserrar (`vLibre`). Ya aserrado: lo que falta para tocar el tope del
+     56% (`margen`, la MISMA cuenta que agrega el KPI "Volumen sobrante" de
+     arriba de la lista — single source, no dos fórmulas al mismo número). */
+  const sobraM3 = abierto ? vLibre : (margen?.margenM3 ?? 0);
+  const sobraEsRolliza = abierto;
   const salio = corrida
     ? estadoSalida({
         section: "produccion",
@@ -93,18 +101,57 @@ export default function CtpLoteCard({
     : null;
 
   return (
-    <article className="flex h-full flex-col gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 transition-colors hover:border-[var(--accent)]">
+    <article
+      className={`flex h-full flex-col gap-3 rounded-2xl border-2 bg-[var(--surface-raised)] p-4 transition-colors ${
+        vencido
+          ? "border-[var(--data-error-500)] hover:border-[var(--data-error-700)]"
+          : "border-[var(--rule-base)] hover:border-[var(--accent)]"
+      }`}
+    >
       <header className="flex flex-wrap items-center justify-between gap-2">
-        <CardTitle as="h3" className="font-mono text-base font-bold text-[var(--text-primary)]">
-          {lote.code}
-        </CardTitle>
-        <span
-          title={estado.hint}
-          className={`rounded-full border-2 px-2.5 py-0.5 text-sm font-bold ${TONO_ESTADO[estado.tono]}`}
-        >
-          {estado.label}
+        <span className="flex items-center gap-2">
+          <CardTitle as="h3" className="font-mono text-base font-bold text-[var(--text-primary)]">
+            {lote.code}
+          </CardTitle>
+          {esLoteDeInventario(lote) && (
+            <span
+              title="Declarado directamente: sin trozas del patio registradas pieza por pieza"
+              className="flex items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-2 py-0.5 text-sm font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+            >
+              <Archive className="h-3.5 w-3.5" aria-hidden /> Inventario
+            </span>
+          )}
+        </span>
+        <span className="flex items-center gap-1.5">
+          {vencido && (
+            <span
+              title="El fin del proceso ya pasó y el lote sigue abierto"
+              className="rounded-full border-2 border-[var(--data-error-500)] bg-[var(--data-error-500)]/12 px-2.5 py-0.5 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+            >
+              Vencido
+            </span>
+          )}
+          <span
+            title={estado.hint}
+            className={`rounded-full border-2 px-2.5 py-0.5 text-sm font-bold ${TONO_ESTADO_LOTE[lote.status]}`}
+          >
+            {estado.label}
+          </span>
         </span>
       </header>
+
+      {sobraM3 > 1e-4 && (
+        <p
+          title={
+            sobraEsRolliza
+              ? "Rolliza que todavía no entró a la sierra — se puede aserrar o distribuir desde Consumos → Ver resumen por permiso"
+              : `Con ${fmtM3(margen?.entradaM3 ?? 0)} m³ que entraron, el tope del 56 % permite ${fmtM3(margen?.topeM3 ?? 0)} m³ y ya se declararon ${fmtM3(margen?.declaradoM3 ?? 0)} m³`
+          }
+          className="inline-flex w-fit items-center gap-1.5 rounded-lg bg-[var(--data-info-500)]/15 px-2.5 py-1 font-mono text-sm font-bold tabular-nums text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+        >
+          Sobra para Producción: {fmtM3(sobraM3)} m³ {sobraEsRolliza ? "rolliza" : ""}
+        </p>
+      )}
 
       <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
         <EspecieFoto especie={lote.speciesCommon} indice={fotos} size={28} />
@@ -125,7 +172,7 @@ export default function CtpLoteCard({
         </div>
         <div>
           <dt className="text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Volumen</dt>
-          <dd className="font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">{volumen.toFixed(4)}</dd>
+          <dd className="font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(volumen)}</dd>
         </div>
         <div>
           <dt className="text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Pie tablar</dt>
@@ -200,7 +247,7 @@ export default function CtpLoteCard({
           )}
           {rend != null && (
             <span
-              title={`Salió ${corrida?.quantity?.toFixed(4)} m³ de los ${lote.volumenM3.toFixed(4)} m³ que entraron`}
+              title={`Salió ${corrida?.quantity != null ? fmtM3(corrida.quantity) : "—"} m³ de los ${fmtM3(lote.volumenM3)} m³ que entraron`}
               className={`ml-2 inline-block rounded-lg px-1.5 py-0.5 font-mono text-sm font-bold tabular-nums ${
                 veredicto.tono === "ok"
                   ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
@@ -212,6 +259,9 @@ export default function CtpLoteCard({
               {rend}% · {veredicto.texto}
             </span>
           )}
+          {/* El "quedan X por declarar" ya se muestra arriba, en el badge
+              "Sobra para Producción" — mismo número (`margen.margenM3`), no
+              se repite acá. */}
         </p>
       )}
 
@@ -261,16 +311,18 @@ export default function CtpLoteCard({
             <TreePine className="mr-1 inline h-3.5 w-3.5" aria-hidden />
             {lote.piezas} apartada{lote.piezas === 1 ? "" : "s"}
           </span>
-          {(abierto || (lote.produccion && !lote.produccion.viva)) && (
-            <IconAction
-              icon={Trash2}
-              tone="danger"
-              // Abre la ficha, donde se confirma: deshacer suelta madera y eso
-              // no se dispara con un click suelto en una grilla de tarjetas.
-              label={`Deshacer el lote ${lote.code} (abre la ficha para confirmar)`}
-              onClick={onDeshacer}
-            />
-          )}
+          {
+            /* Eliminar CUALQUIER lote, sin excepción (Brandon, 2026-09-01) —
+               siempre visible: sólo ABRE la ficha, donde se confirma con
+               motivo. El caso "consumido/cerrado con corrida viva" pide
+               ahí mismo el paso extra de anular esa corrida. */
+          }
+          <IconAction
+            icon={Trash2}
+            tone="danger"
+            label={`Eliminar el lote ${lote.code} (abre la ficha para confirmar)`}
+            onClick={onDeshacer}
+          />
         </span>
       </footer>
     </article>

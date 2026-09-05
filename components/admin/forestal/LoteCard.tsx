@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { LABEL_OPERATIVO, estadoOperativo } from "@/lib/forestal/lote-ventana";
 import { avanceDeLote, enPieTablar, type MetaLote } from "@/lib/forestal/lote-metricas";
 import { RENDIMIENTO_REF_ASERRADA } from "@/lib/forestal/ctp-rendimiento";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export type LoteStatus = "abierto" | "cerrado" | "despachado" | "anulado";
 
@@ -128,7 +129,7 @@ function MetaChip({ meta }: { meta?: MetaLote | null }) {
         <Target className="h-3.5 w-3.5" aria-hidden /> Ref. SERFOR {RENDIMIENTO_REF_ASERRADA}%
       </span>
       <span className="font-mono tabular-nums text-[var(--text-secondary)]">
-        {n4(meta.trozasM3)} → {n4(meta.producidoM3)} m³
+        {fmtM3(meta.trozasM3)} → {fmtM3(meta.producidoM3)} m³
       </span>
       <span
         className={cn(

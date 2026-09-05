@@ -116,14 +116,14 @@ describe("Lo que la física no permite", () => {
       { d1Cm: 66, d2Cm: 58, largoM: 4.5, volumenM3: 3 },
     ]);
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errores.join(" ")).toMatch(/suman 6.0000 m³ y la troza tiene 3.2680/i);
+    if (!r.ok) expect(r.errores.join(" ")).toMatch(/suman 6.000 m³ y la troza tiene 3.268/i);
   });
 
   it("el tope es sobre el TOTAL: cuenta lo ya cortado antes", () => {
     const conHistoria = { ...troza52A, retrozosPrevios: [{ volumenM3: 3 }] };
     const r = calcularRetrozado(conHistoria, [{ d1Cm: 60, d2Cm: 55, largoM: 2, volumenM3: 0.5 }]);
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errores.join(" ")).toMatch(/Ya estaban cortados 3.0000/i);
+    if (!r.ok) expect(r.errores.join(" ")).toMatch(/Ya estaban cortados 3.000/i);
   });
 
   it("y la numeración sigue donde quedó, no reinicia", () => {

@@ -183,6 +183,16 @@ const patchSchema = z.discriminatedUnion("action", [
       .max(200)
       .optional(),
   }),
+  /**
+   * Marcar (o desmarcar) una corrida como "ya se usó" (Brandon, 2026-09-01):
+   * sale de Productos disponibles sin despacharse ni reprocesarse. Reversible.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("marcar_usado"),
+    usado: z.boolean(),
+    motivo: z.string().trim().max(500).optional(),
+  }),
 ]);
 
 /** `?from`/`?to` = instantes ISO del período (lib/forestal/ctp-period.ts). Inválido → sin límite. */
@@ -227,6 +237,7 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
           /* El período NO acota lo disponible salvo que se pida: lo que hay en
              el depósito no depende del mes que esté mirando el libro. */
           soloDelPeriodo: url.searchParams.get("soloDelPeriodo") === "1",
+          incluirUsados: url.searchParams.get("incluirUsados") === "1",
         }),
       );
     }
@@ -327,13 +338,13 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
     }
     const s = url.searchParams.get("section");
     const section = s && (CTP_SECTIONS as readonly string[]).includes(s) ? (s as (typeof CTP_SECTIONS)[number]) : undefined;
-    const { entries, total } = await ForestCtpDB.list(auth.tenantId, {
+    const { entries, total, totalSinFiltro } = await ForestCtpDB.list(auth.tenantId, {
       section,
       search: url.searchParams.get("search") ?? undefined,
       includeAnnulled: url.searchParams.get("includeAnnulled") === "1",
       ...period,
     });
-    return NextResponse.json({ entries, total });
+    return NextResponse.json({ entries, total, totalSinFiltro });
   } catch (err) {
     logger.error("[ctp.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -502,6 +513,14 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
     if (parsed.data.action === "set_venta") {
       await ForestCtpDespachoDB.setValorVenta(auth.tenantId, parsed.data.id, parsed.data.valorVenta, auth.username ?? "unknown");
       return NextResponse.json({ ok: true, margen: await ForestCtpDespachoDB.margenDeDespacho(auth.tenantId, parsed.data.id) });
+    }
+    if (parsed.data.action === "marcar_usado") {
+      const entry = await ForestCtpDB.marcarUsado(auth.tenantId, parsed.data.id, {
+        usado: parsed.data.usado,
+        motivo: parsed.data.motivo,
+        user: auth.username ?? "unknown",
+      });
+      return NextResponse.json({ entry });
     }
     return NextResponse.json({ entry: await ForestCtpDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason, auth.username ?? "unknown") });
   } catch (err) {

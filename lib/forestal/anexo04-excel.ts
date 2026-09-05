@@ -55,9 +55,12 @@ function centrar(ws: Worksheet, rango: string, texto: string, size: number, bold
 export function formulaV(c0: number, r: number, unidadV: DatosAnexo04["unidadV"]): string {
   // c0 es la columna ANTERIOR a la primera del bloque: c0+1 = N°, c0+2 = Cant…
   const [cant, e, a, l] = [2, 3, 4, 5].map((i) => `${letra(c0 + i)}${r}`);
-  const cuerpo = unidadV === "m3"
-    ? `${cant}*(${e}*0.0254)*(${a}*0.0254)*(${l}*0.3048)`
-    : `${cant}*${e}*${a}*${l}/12`;
+  /* El m³ SALE del pie tablar (PT ÷ 424), igual que en la pantalla del
+     cubicador: la conversión comercial de la plaza, no el volumen geométrico
+     (0,0254 m × 0,0254 m × 0,3048 m daría 423,776 y el Excel diría un m³ que
+     no cierra contra el que se imprimió en el papel). */
+  const pt = `${cant}*${e}*${a}*${l}/12`;
+  const cuerpo = unidadV === "m3" ? `${pt}/${PT_POR_M3}` : pt;
   return `IF(${cant}="",0,ROUND(${cuerpo},3))`;
 }
 

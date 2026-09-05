@@ -7,6 +7,7 @@ import { agruparPorGuia } from "@/lib/forestal/consumo-trozas";
 import { invalidateByPrefix } from "@/lib/cache";
 import { vivaLinea } from "./wood-entries.db";
 import { Prisma } from "@/lib/generated/prisma/client";
+import { ORIGEN_LOTE_INVENTARIO } from "@/lib/forestal/lotes-aserrio";
 
 /**
  * Lote de ASERRÍO (ADR-334): las trozas de una misma especie que van juntas a
@@ -44,6 +45,63 @@ export interface LoteAserrioInput {
   tipoProductoConsumir?: string | null;
   inicioProceso?: Date | null;
   finProceso?: Date | null;
+  /**
+   * Código elegido a mano (Brandon, 2026-08-31): sin esto se asigna el
+   * correlativo `LA-2026-00N` de siempre. `@@unique[tenantId, code]` es lo que
+   * de verdad impide el duplicado; acá se chequea ANTES para devolver un
+   * mensaje legible en vez del error crudo de Postgres.
+   */
+  code?: string | null;
+  createdBy: string;
+}
+
+/**
+ * Lo que se puede corregir de un lote ya creado (Brandon, 2026-08-31): antes
+ * sólo la nota. `undefined` = no tocar ese campo; `null` en los opcionales =
+ * borrarlo. El código es la excepción: una cadena vacía/`null` significa "no
+ * pedí cambiarlo", no "borralo" — un lote siempre necesita uno.
+ */
+export interface LoteEditInput {
+  code?: string | null;
+  speciesCommon?: string;
+  speciesScientific?: string | null;
+  notes?: string | null;
+  ordenProduccion?: string | null;
+  tipoProductoConsumir?: string | null;
+  inicioProceso?: Date | null;
+  finProceso?: Date | null;
+}
+
+/** Un paquete de producción declarado directo, sin pasar por el patio (ADR-349). */
+export interface PaqueteInventarioInput {
+  codigo: string;
+  productType?: string | null;
+  presentacion?: string | null;
+  cantidad: number;
+  volumenM3: number;
+  espesorCm?: number | null;
+  anchoCm?: number | null;
+  largoM?: number | null;
+  observations?: string | null;
+}
+
+/**
+ * Un lote declarado como INVENTARIO: existencia previa al sistema de la que se
+ * conoce cuánto se consumió en trozas y qué salió aserrado, pero no la pieza por
+ * pieza. Ver `ORIGEN_LOTE_INVENTARIO`.
+ */
+export interface LoteInventarioInput {
+  speciesCommon: string;
+  speciesScientific?: string | null;
+  /** Lo que entró a la sierra, declarado de una vez — no la suma de trozas reales. */
+  volumenConsumidoM3: number;
+  fecha?: Date;
+  /** Cierre de la ventana del proceso (ADR-342). Sin fecha = sigue abierta. */
+  finProceso?: Date | null;
+  notes?: string | null;
+  paquetes: PaqueteInventarioInput[];
+  /** Código elegido a mano; sin esto, correlativo automático. */
+  code?: string | null;
   createdBy: string;
 }
 
@@ -97,6 +155,33 @@ export class ForestLoteAserrioDB {
   }
 
   /**
+   * El código a usar: el que se pidió a mano, validado, o el correlativo de
+   * siempre si no se pidió ninguno (Brandon, 2026-08-31).
+   *
+   * `@@unique[tenantId, code]` no filtra por `deletedAt` —un lote borrado
+   * sigue bloqueando su código para siempre, igual que ya hace
+   * `siguienteCode()` al no excluirlos del cálculo—, así que el chequeo
+   * tampoco lo filtra: reportar "libre" un código que la base va a rechazar
+   * sería peor que el error crudo de Postgres.
+   */
+  private static async codigoAUsar(
+    tenantId: string,
+    pedido: string | null | undefined,
+    excluirLoteId?: string,
+  ): Promise<string> {
+    const limpio = pedido?.trim();
+    if (!limpio) return ForestLoteAserrioDB.siguienteCode(tenantId);
+    const enUso = await prisma.forestLoteAserrio.findFirst({
+      where: { tenantId, code: limpio, ...(excluirLoteId ? { id: { not: excluirLoteId } } : {}) },
+      select: { id: true },
+    });
+    if (enUso) {
+      throw new CtpInvariantError(`El código "${limpio}" ya está en uso: elegí otro.`, "LOTE_CODIGO_DUPLICADO");
+    }
+    return limpio;
+  }
+
+  /**
    * Los lotes del tenant, con el resumen de sus piezas y la corrida que se los
    * comió.
    *
@@ -128,6 +213,13 @@ export class ForestLoteAserrioDB {
             // una corrida anulada volvió al patio y sigue libre. Es la misma
             // regla que aplican las tres lecturas de una troza (ADR-326 §6).
             consumidaEn: { select: { id: true, status: true, deletedAt: true } },
+            // El permiso viaja en el ingreso (`originCode`), no en la troza —
+            // MISMA fuente que `TrozaConsumible.permiso` en trozas/patio
+            // (Brandon, 2026-09-01: "en la columna de N° de permiso se tiene
+            // que rellenar según el número de permiso de las trozas"). Sin
+            // este join, un bloque sembrado desde un lote no podía saber de
+            // qué título habilitante salió su rolliza.
+            entry: { select: { originCode: true } },
           },
           orderBy: { orden: "asc" },
         },
@@ -164,7 +256,20 @@ export class ForestLoteAserrioDB {
             where: { tenantId, id: { in: corridaIds } },
             /* `volumeInputM3` es el denominador del rendimiento: sin él la
                pantalla no puede decir cuánto más se puede declarar (ADR-365). */
-            select: { id: true, lineNo: true, entryDate: true, productType: true, quantity: true, unit: true, status: true, deletedAt: true, volumeInputM3: true, speciesCommon: true },
+            select: {
+              id: true, lineNo: true, entryDate: true, productType: true, quantity: true, unit: true,
+              status: true, deletedAt: true, volumeInputM3: true, speciesCommon: true,
+              usadoAt: true, usadoMotivo: true,
+              /* El detalle de productos de la corrida (ADR-349): una corrida
+                 declarada con el formulario oficial casi siempre trae más de
+                 un tipo, y sin esto la Ficha del Lote sólo mostraba el total
+                 (Brandon, 2026-09-01: "quiero que se vea lo que se puso"). */
+              paquetes: {
+                where: { deletedAt: null },
+                orderBy: { createdAt: "asc" },
+                select: { id: true, codigo: true, productType: true, presentacion: true, cantidad: true, volumenM3: true },
+              },
+            },
           })
         : [],
       corridaIds.length
@@ -201,6 +306,16 @@ export class ForestLoteAserrioDB {
       viva: c.deletedAt == null && c.status !== "anulado",
       despachadoQty: despachado.get(c.id) ?? 0,
       reprocesadoQty: reprocesado.get(c.id) ?? 0,
+      paquetes: c.paquetes.map((p) => ({
+        id: p.id,
+        codigo: p.codigo,
+        productType: p.productType,
+        presentacion: p.presentacion,
+        cantidad: p.cantidad,
+        volumenM3: Number(p.volumenM3),
+      })),
+      usadoAt: c.usadoAt ? c.usadoAt.toISOString() : null,
+      usadoMotivo: c.usadoMotivo,
     });
 
     return lotes.map((l) => {
@@ -224,13 +339,14 @@ export class ForestLoteAserrioDB {
       return {
         ...l,
         corridas: suyas,
-        trozas: l.trozas.map(({ consumidaEn, ...t }) => ({
+        trozas: l.trozas.map(({ consumidaEn, entry, ...t }) => ({
           ...t,
           volumenM3: num(t.volumenM3),
           largoM: num(t.largoM),
           d1Cm: num(t.d1Cm),
           d2Cm: num(t.d2Cm),
           diametroCm: num(t.diametroCm),
+          permiso: entry.originCode,
           consumidaEnId:
             consumidaEn && consumidaEn.deletedAt == null && consumidaEn.status !== "anulado"
               ? consumidaEn.id
@@ -242,7 +358,15 @@ export class ForestLoteAserrioDB {
            columna nueva. */
         produccion: c ? verCorrida(c) : null,
         piezas: l.trozas.length,
-        volumenM3: Math.round(l.trozas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
+        /* Un lote de inventario (`crearInventario`) no tiene trozas reales: su
+           volumen es el `volumeInputM3` que declaró la corrida que lo generó, NO
+           cero. Es el MISMO número que ya usa `rendimientoLote()` para esa
+           corrida — no un segundo volumen inventado aparte. Un lote real con
+           trozas sigue sumando de ellas, sin cambios. */
+        volumenM3:
+          l.trozas.length > 0 || !c
+            ? Math.round(l.trozas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000
+            : Math.round(Number(c.volumeInputM3 ?? 0) * 10000) / 10000,
       };
     });
   }
@@ -253,7 +377,7 @@ export class ForestLoteAserrioDB {
     const especie = input.speciesCommon.trim();
     if (!especie) throw new CtpInvariantError("El lote necesita una especie.", "LOTE_SIN_ESPECIE");
 
-    const code = await ForestLoteAserrioDB.siguienteCode(tenantId);
+    const code = await ForestLoteAserrioDB.codigoAUsar(tenantId, input.code);
     const lote = await prisma.forestLoteAserrio.create({
       data: {
         tenantId,
@@ -278,6 +402,119 @@ export class ForestLoteAserrioDB {
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return lote;
+  }
+
+  /**
+   * Declara un lote como INVENTARIO: entra y sale en el mismo acto, sin trozas
+   * reales que apartar ni sierra que esperar.
+   *
+   * Es la existencia previa al sistema —Brandon, 2026-08-31—: se sabe cuánto se
+   * consumió en trozas y qué salió aserrado, pero no queda un registro pieza por
+   * pieza de esa madera. Fabricar trozas falsas para que el lote "cuadre" sería
+   * peor que no tenerlas: inventaría datos de patio que un fiscalizador podría
+   * cruzar contra una guía y no encontraría nada real detrás.
+   *
+   * El input y la salida se declaran en la MISMA corrida, con la MISMA puerta
+   * que usa el resto del libro (`ForestCtpDB.declararProduccion`): el tope del
+   * 56 % y el cuadre paquetes = cantidad se validan una sola vez, no dos veces
+   * con dos reglas que podrían divergir. Sin atribución a un `WoodEntry`
+   * (`ForestCtpConsumo` queda vacío) — el libro admite el hueco; lo que no puede
+   * es EMITIR CERTIFICADO de esta corrida, y `trazabilidadCompleta()` ya bloquea
+   * eso solo.
+   *
+   * El lote nace `consumido` y ya queda enganchado a la corrida
+   * (`produccionEntryId`): desde Producción se puede completar lo que falte del
+   * margen del 56 % con la puerta que ya existe para "corridas a medio declarar"
+   * (ADR-365) — no hace falta una segunda pantalla para eso.
+   */
+  static async crearInventario(tenantId: string, input: LoteInventarioInput) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const especie = input.speciesCommon.trim();
+    if (!especie) throw new CtpInvariantError("El lote necesita una especie.", "LOTE_SIN_ESPECIE");
+    if (!(input.volumenConsumidoM3 > 0)) {
+      throw new CtpInvariantError("El volumen consumido tiene que ser mayor a 0.", "LOTE_INVENTARIO_INVALIDO");
+    }
+    if (input.paquetes.length === 0) {
+      throw new CtpInvariantError("Declará al menos un paquete de producción.", "LOTE_INVENTARIO_INVALIDO");
+    }
+
+    const code = await ForestLoteAserrioDB.codigoAUsar(tenantId, input.code);
+    const piezas = input.paquetes.reduce((a, p) => a + Math.max(0, Math.round(p.cantidad)), 0);
+    const volumenProducido = Math.round(input.paquetes.reduce((a, p) => a + Number(p.volumenM3 || 0), 0) * 10000) / 10000;
+    const notas = [ORIGEN_LOTE_INVENTARIO, input.notes?.trim()].filter(Boolean).join(" · ");
+
+    /* La corrida entra con su materia prima y sin declarar, igual que
+       `consumirEnPatio`: si el paso siguiente falla, no queda un asiento a
+       medio escribir en el libro. */
+    const corrida = await ForestCtpDB.create(tenantId, {
+      section: "produccion",
+      entryDate: input.fecha,
+      speciesCommon: especie,
+      speciesScientific: input.speciesScientific?.trim() || null,
+      volumeInputM3: input.volumenConsumidoM3,
+      materiaPrimaRef: code,
+      observations: notas,
+      createdBy: input.createdBy,
+    });
+
+    try {
+      const declarada = await ForestCtpDB.declararProduccion(
+        tenantId,
+        corrida.id,
+        {
+          quantity: volumenProducido,
+          unit: "m3",
+          pieces: piezas,
+          productType: input.paquetes[0]?.productType ?? null,
+          codigoProducto: input.paquetes[0]?.codigo ?? null,
+          /* `declararProduccion` REEMPLAZA `observations` (no lo concatena):
+             sin pasarla acá, queda en null y se pierde la marca de origen que
+             `create()` recién puso — medido en vivo contra el tenant real. */
+          observations: notas,
+          paquetes: input.paquetes,
+        },
+        input.createdBy,
+      );
+
+      const lote = await prisma.forestLoteAserrio.create({
+        data: {
+          tenantId,
+          code,
+          speciesCommon: especie,
+          speciesScientific: input.speciesScientific?.trim() || null,
+          notes: notas.slice(0, 500),
+          status: "consumido",
+          fechaConsumo: input.fecha ?? new Date(),
+          inicioProceso: input.fecha ?? null,
+          finProceso: input.finProceso ?? null,
+          produccionEntryId: corrida.id,
+          createdBy: input.createdBy,
+        },
+      });
+
+      auditCtp({
+        tenantId,
+        action: "ctp_lote_aserrio_inventario_create",
+        entity: "ForestLoteAserrio",
+        entityId: lote.id,
+        detail:
+          `Declaró el lote ${lote.code} como inventario: ${input.volumenConsumidoM3} m³ consumidos → ` +
+          `${volumenProducido} m³ producidos en ${input.paquetes.length} paquete(s), sin trozas reales`,
+        user: input.createdBy,
+      });
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+      return { lote, corrida: declarada };
+    } catch (e) {
+      /* Nada quedó declarado de verdad: se retira la corrida para no dejar una
+         línea fantasma en el libro por un intento fallido. */
+      await ForestCtpDB.softDelete(tenantId, corrida.id, input.createdBy).catch((err) =>
+        logger.error("[forestal.crearInventario] no se pudo retirar la corrida fallida", {
+          corridaId: corrida.id,
+          error: String(err),
+        }),
+      );
+      throw e;
+    }
   }
 
   /**
@@ -1037,6 +1274,77 @@ export class ForestLoteAserrioDB {
     return { code: lote.code, liberadas: libres.length, volumenM3, teniaCorridas: consumidas > 0 };
   }
 
+  /**
+   * Vuelve a abrir un lote ya ASERRADO para seguirle cargando madera.
+   *
+   * Brandon, 2026-09-02: «no importa si ya se puso en trozas anteriores y se
+   * consumieron o se produjeron, se podrá igual habilitar y poner más trozas a
+   * ese mismo lote». Es cómo trabaja el aserradero de verdad: un lote es la
+   * madera de una especie que entra a la sierra, y entra en varias tandas a lo
+   * largo de la semana — no en un único acto.
+   *
+   * Qué NO toca, y por qué:
+   *
+   *  - Las piezas ya consumidas **siguen atadas a su corrida** (`consumidaEnId`
+   *    intacto). Son un hecho del libro: soltarlas negaría que se aserraron y
+   *    movería el rendimiento ya declarado. La corrida siguiente sólo podrá
+   *    tomar las piezas nuevas, que es lo correcto.
+   *  - `produccionEntryId` y `fechaConsumo` se conservan. `deshacer()` los
+   *    limpia porque ahí la corrida dejó de existir; acá existe y sigue siendo
+   *    de este lote ([[lote-aserrio-cerrar-deja-produccionentryid-null]]).
+   *
+   * Un lote **cerrado** no se reabre por acá: «cerrado» significa producido y
+   * despachado, y su madera libre ya volvió al patio. Para ese caso el camino
+   * es armar un lote nuevo, no revivir uno que el libro dio por terminado.
+   */
+  static async reabrir(
+    tenantId: string,
+    input: { loteId: string; user: string },
+  ): Promise<{ code: string; piezasConsumidas: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const { loteId, user } = input;
+
+    const lote = await prisma.forestLoteAserrio.findFirst({
+      where: { id: loteId, tenantId, deletedAt: null },
+      include: { trozas: { select: { id: true, consumidaEnId: true } } },
+    });
+    if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
+    if (lote.status === "abierto") {
+      throw new CtpInvariantError(
+        `El lote ${lote.code} ya está abierto: se le pueden agregar piezas.`,
+        "LOTE_NO_EDITABLE",
+        { status: lote.status },
+      );
+    }
+    if (lote.status === "cerrado") {
+      throw new CtpInvariantError(
+        `El lote ${lote.code} está cerrado: se produjo y se despachó. Armá un lote nuevo para esta madera.`,
+        "LOTE_NO_EDITABLE",
+        { status: lote.status },
+      );
+    }
+
+    const piezasConsumidas = lote.trozas.filter((t) => t.consumidaEnId).length;
+    await prisma.forestLoteAserrio.update({
+      where: { id: loteId },
+      data: { status: "abierto" },
+    });
+
+    auditCtp({
+      tenantId,
+      action: "ctp_lote_aserrio_reabrir",
+      entity: "ForestLoteAserrio",
+      entityId: loteId,
+      detail:
+        `Reabrió el lote ${lote.code} para seguir cargándolo · ` +
+        `${piezasConsumidas} pieza${piezasConsumidas === 1 ? "" : "s"} ya aserrada${piezasConsumidas === 1 ? "" : "s"} siguen atadas a su corrida`,
+      user,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+
+    return { code: lote.code, piezasConsumidas };
+  }
+
   /** Saca una pieza del lote (mientras esté abierto). */
   static async quitarTroza(tenantId: string, loteId: string, trozaId: string, user: string) {
     if (!tenantId) throw new Error("tenantId is required");
@@ -1053,18 +1361,162 @@ export class ForestLoteAserrioDB {
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
   }
 
-  /** Renombra la especie / notas de un lote abierto. */
-  static async update(tenantId: string, loteId: string, cambios: { notes?: string | null }, user: string) {
+  /**
+   * Edita la identidad/programación de un lote ya creado: código, especie,
+   * orden de producción, tipo de producto a consumir, ventana del proceso y
+   * nota (Brandon, 2026-08-31) — antes sólo se podía tocar la nota.
+   *
+   * La especie NO se toca si el lote ya tiene piezas adentro: L-A1 (una
+   * especie por lote) está escrita contra las trozas que ya entraron, y
+   * cambiarla dejaría al lote diciendo una madera distinta de la que tiene.
+   */
+  static async update(tenantId: string, loteId: string, cambios: LoteEditInput, user: string) {
     if (!tenantId) throw new Error("tenantId is required");
-    const lote = await prisma.forestLoteAserrio.findFirst({ where: { id: loteId, tenantId, deletedAt: null } });
+    const lote = await prisma.forestLoteAserrio.findFirst({
+      where: { id: loteId, tenantId, deletedAt: null },
+      include: { _count: { select: { trozas: true } } },
+    });
     if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
+
+    const nuevaEspecie = cambios.speciesCommon?.trim();
+    if (nuevaEspecie && nuevaEspecie.toLowerCase() !== lote.speciesCommon.trim().toLowerCase() && lote._count.trozas > 0) {
+      throw new CtpInvariantError(
+        `El lote ${lote.code} ya tiene ${lote._count.trozas} pieza${lote._count.trozas === 1 ? "" : "s"} de ${lote.speciesCommon}: no se le puede cambiar la especie.`,
+        "LOTE_NO_EDITABLE",
+      );
+    }
+
+    // Código vacío/ausente = no se pidió cambiarlo, no "borralo": un lote
+    // siempre necesita uno.
+    const codigoPedido = cambios.code?.trim();
+    const code = codigoPedido ? await ForestLoteAserrioDB.codigoAUsar(tenantId, codigoPedido, loteId) : undefined;
+
     const actualizado = await prisma.forestLoteAserrio.update({
       where: { id: loteId },
-      data: { notes: cambios.notes?.trim() || null },
+      data: {
+        ...(code !== undefined ? { code } : {}),
+        ...(nuevaEspecie ? { speciesCommon: nuevaEspecie } : {}),
+        ...(cambios.speciesScientific !== undefined ? { speciesScientific: cambios.speciesScientific?.trim() || null } : {}),
+        ...(cambios.notes !== undefined ? { notes: cambios.notes?.trim() || null } : {}),
+        ...(cambios.ordenProduccion !== undefined ? { ordenProduccion: cambios.ordenProduccion?.trim() || null } : {}),
+        ...(cambios.tipoProductoConsumir !== undefined ? { tipoProductoConsumir: cambios.tipoProductoConsumir?.trim() || null } : {}),
+        ...(cambios.inicioProceso !== undefined ? { inicioProceso: cambios.inicioProceso } : {}),
+        ...(cambios.finProceso !== undefined ? { finProceso: cambios.finProceso } : {}),
+      },
     });
     auditCtp({ tenantId, action: "ctp_lote_aserrio_update", entity: "ForestLoteAserrio", entityId: loteId, detail: `Editó el lote ${lote.code}`, user });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return actualizado;
+  }
+
+  /**
+   * TODAS las corridas que alguna vez consumieron piezas de este lote —
+   * `produccionEntryId` (la que lo cerró entero) ∪ lo que digan las piezas
+   * (`consumidaEnId`), igual que la lista que arma `list()` para la ficha
+   * (ADR-365).
+   *
+   * `cerrar()` NUNCA toca `produccionEntryId`: un lote consumido a medias
+   * (`sumarACorrida` con sobras) y después cerrado con lo que quedó queda con
+   * `produccionEntryId` en null PARA SIEMPRE, aunque ya tenga una corrida viva
+   * comiéndole piezas. Mirar sólo `produccionEntryId` en `softDelete`/
+   * `deshacerConProduccion` dejaba borrar ese lote soltando `consumidaEnId` de
+   * piezas que una corrida todavía viva sigue contando como su materia prima
+   * — el libro quedaba con una corrida sin origen sin que nadie lo pidiera.
+   */
+  private static async corridasQueConsumieron(tenantId: string, loteId: string, produccionEntryId: string | null) {
+    const consumidas = await prisma.woodEntryTroza.findMany({
+      where: { tenantId, loteAserrioId: loteId, consumidaEnId: { not: null } },
+      select: { consumidaEnId: true },
+      distinct: ["consumidaEnId"],
+    });
+    const ids = [
+      ...new Set(
+        [produccionEntryId, ...consumidas.map((t) => t.consumidaEnId)].filter((x): x is string => Boolean(x)),
+      ),
+    ];
+    if (ids.length === 0) return [];
+    return prisma.forestCtpEntry.findMany({
+      where: { id: { in: ids }, tenantId },
+      select: { id: true, lineNo: true, status: true, deletedAt: true },
+    });
+  }
+
+  /**
+   * DESHACER un lote consumido cuya corrida sigue viva (Brandon, 2026-08-31):
+   * "eliminar el registro de producción" de un lote armado por error.
+   *
+   * `softDelete` ya deshace un lote cuya corrida se anuló POR OTRO LADO
+   * (Producción → Anular la línea); esto hace las dos cosas en un solo paso
+   * desde la propia pestaña de Lotes — pensado sobre todo para el modo
+   * inventario, donde consumo y producción nacen juntos y un lote mal
+   * declarado hoy no debería obligar a ir a otra pestaña a corregirlo.
+   *
+   * Se niega si ALGUNA de sus corridas vivas ya tiene despacho o reproceso
+   * registrado: eso es madera que ya salió o se transformó de nuevo, y anular
+   * la corrida debajo de un hecho posterior dejaría el libro sin poder
+   * explicar de dónde salió lo que ya se fue.
+   */
+  static async deshacerConProduccion(
+    tenantId: string,
+    input: { loteId: string; motivo: string; user: string; forzar?: boolean },
+  ): Promise<{ code: string; corridaAnulada: boolean }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const { loteId, motivo, user, forzar = false } = input;
+    if (motivo.trim().length < 3) {
+      throw new CtpInvariantError("Poné el motivo por el que se deshace el lote.", "LOTE_NO_EDITABLE");
+    }
+    const lote = await prisma.forestLoteAserrio.findFirst({ where: { id: loteId, tenantId, deletedAt: null } });
+    if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
+
+    const corridas = await ForestLoteAserrioDB.corridasQueConsumieron(tenantId, loteId, lote.produccionEntryId);
+    const vivas = corridas.filter((c) => c.deletedAt == null && c.status !== "anulado");
+
+    let corridaAnulada = false;
+    if (vivas.length > 0) {
+      const conSalida = (
+        await Promise.all(
+          vivas.map(async (c) => {
+            const [despachado, reprocesado] = await Promise.all([
+              prisma.forestCtpDespachoOrigen.aggregate({
+                where: { tenantId, produccionEntryId: c.id, despacho: { deletedAt: null, status: "registrado" } },
+                _sum: { quantity: true },
+              }),
+              prisma.forestCtpReproceso.aggregate({
+                where: { tenantId, origenEntryId: c.id, destino: { deletedAt: null, status: "registrado" } },
+                _sum: { quantity: true },
+              }),
+            ]);
+            const tieneSalida = Number(despachado._sum.quantity ?? 0) > 0 || Number(reprocesado._sum.quantity ?? 0) > 0;
+            return tieneSalida ? c : null;
+          }),
+        )
+      ).filter((c): c is NonNullable<typeof c> => c !== null);
+
+      if (conSalida.length > 0 && !forzar) {
+        throw new CtpInvariantError(
+          `La corrida N° ${conSalida.map((c) => c.lineNo).join(", ")} del lote ${lote.code} ya tiene despacho o reproceso registrado: confirmá "forzar" para eliminarlo igual — el despacho ya hecho queda sin corrida de origen.`,
+          "LOTE_CON_SALIDA_REGISTRADA",
+        );
+      }
+      // Misma puerta que "Anular la línea" en Producción: deja cada corrida en
+      // el libro con su motivo, en vez de borrarla — es lo que un fiscalizador
+      // tiene que poder encontrar después. Forzado con salida ya registrada,
+      // el motivo lo dice explícito: es la diferencia entre "se corrigió a
+      // tiempo" y "se borró con ventas ya hechas".
+      const conSalidaIds = new Set(conSalida.map((c) => c.id));
+      for (const c of vivas) {
+        await ForestCtpDB.annul(
+          tenantId,
+          c.id,
+          conSalidaIds.has(c.id) ? `${motivo.trim()} · FORZADO: la corrida ya tenía despacho/reproceso registrado` : motivo.trim(),
+          user,
+        );
+      }
+      corridaAnulada = true;
+    }
+
+    await ForestLoteAserrioDB.softDelete(tenantId, loteId, user);
+    return { code: lote.code, corridaAnulada };
   }
 
   /**
@@ -1078,22 +1530,22 @@ export class ForestLoteAserrioDB {
     if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
 
     /**
-     * Un lote consumido está en el libro y no se toca… salvo que la corrida que
-     * se lo comió YA NO EXISTA (se anuló o se borró). Ahí esa madera volvió al
-     * patio y el lote es un puntero a algo muerto: es la misma regla que el
-     * resto del libro aplica a las trozas —mirar el ESTADO de la corrida, no el
-     * id pelado— y sin esto el lote quedaba trabado para siempre.
+     * Un lote consumido está en el libro y no se toca… salvo que TODAS las
+     * corridas que se lo comieron ya no existan (se anularon o se borraron).
+     * Ahí esa madera volvió al patio y el lote es un puntero a algo muerto: es
+     * la misma regla que el resto del libro aplica a las trozas —mirar el
+     * ESTADO de la corrida, no el id pelado— y sin esto el lote quedaba
+     * trabado para siempre.
      */
-    let corridaViva = false;
-    if (lote.status !== "abierto" && lote.produccionEntryId) {
-      corridaViva =
-        (await prisma.forestCtpEntry.count({
-          where: { id: lote.produccionEntryId, tenantId, deletedAt: null, status: { not: "anulado" } },
-        })) > 0;
-    }
-    if (lote.status !== "abierto" && corridaViva) {
+    const corridasVivas =
+      lote.status !== "abierto"
+        ? (await ForestLoteAserrioDB.corridasQueConsumieron(tenantId, loteId, lote.produccionEntryId)).filter(
+            (c) => c.deletedAt == null && c.status !== "anulado",
+          )
+        : [];
+    if (corridasVivas.length > 0) {
       throw new CtpInvariantError(
-        `El lote ${lote.code} ya se consumió en una corrida viva: anulá la corrida primero.`,
+        `El lote ${lote.code} ya se consumió en ${corridasVivas.length === 1 ? "una corrida viva" : "corridas vivas"} (N° ${corridasVivas.map((c) => c.lineNo).join(", ")}): anulalas primero.`,
         "LOTE_NO_EDITABLE",
       );
     }

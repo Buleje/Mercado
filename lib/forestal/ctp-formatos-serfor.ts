@@ -313,6 +313,23 @@ export function detectarColumnas(formato: FormatoCtp, cabeceras: readonly unknow
       }
     }
   }
+
+  /* Caso real (Brandon, 2026-09-01, `trozas_disponibles.xlsx` del SNIFFS): el
+     N° de GTF viene en una columna SIN encabezado propio, fusionada bajo
+     «Documento de Ingreso» (que sólo declara el TIPO, "GTF"). Sin esto, la fila
+     queda sin `numeroDocumento` y `aCuerpoDelLibro` agrupa TODAS las trozas del
+     archivo en una sola guía inventada — perdiendo a cuál GTF real llegó cada
+     una, que es justo lo que un fiscalizador pregunta primero. La columna
+     inmediatamente después de «Documento de Ingreso», sin su propio
+     encabezado, es su GTF: es como el SNIFFS exporta el casillero compuesto. */
+  if (formato === "inventarioTrozas" && mapeo.numeroDocumento == null && mapeo.tipoDocumento != null) {
+    const siguiente = mapeo.tipoDocumento + 1;
+    if (siguiente < norm.length && !norm[siguiente] && !usadas.has(siguiente)) {
+      mapeo.numeroDocumento = siguiente;
+      usadas.add(siguiente);
+    }
+  }
+
   return mapeo;
 }
 

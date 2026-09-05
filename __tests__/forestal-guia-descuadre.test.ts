@@ -146,8 +146,8 @@ describe("explicarDescuadre", () => {
     })!;
     const texto = explicarDescuadre(d, "019-0000016");
     expect(texto).toContain("019-0000016");
-    expect(texto).toContain("4.1610");
-    expect(texto).toContain("8.2470");
+    expect(texto).toContain("4.161");
+    expect(texto).toContain("8.247");
     expect(texto).toContain("20/A");
     expect(texto).toContain("cantidad 3");
   });

@@ -27,13 +27,13 @@ describe("cuadreDeIngreso", () => {
   it("avisa cuánto falta por detallar", () => {
     const c = cuadreDeIngreso(10, 5, 6);
     expect(c.estado).toBe("faltan");
-    expect(descuadra(c) && c.aviso).toBe("faltan 5.0000 m³ por detallar");
+    expect(descuadra(c) && c.aviso).toBe("faltan 5.000 m³ por detallar");
   });
 
   it("avisa también cuando las piezas se pasan del ingreso", () => {
     const c = cuadreDeIngreso(5, 8.25, 9);
     expect(c.estado).toBe("sobran");
-    expect(descuadra(c) && c.aviso).toBe("3.2500 m³ de más en las piezas");
+    expect(descuadra(c) && c.aviso).toBe("3.250 m³ de más en las piezas");
   });
 
   /**

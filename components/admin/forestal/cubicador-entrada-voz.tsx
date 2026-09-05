@@ -56,6 +56,13 @@ interface PanelEntradaVozProps {
   onAplicarFijas: (next: MedidasFijas) => void;
   especie: string;
   onEspecieChange: (v: string) => void;
+  /** De quién es lo que se va a dictar — se aplica a lo que sigue, igual que especie. */
+  dueno: string;
+  onDuenoChange: (v: string) => void;
+  /** Dueños ya usados (lote actual + aprendidos), para el datalist del combobox. */
+  duenosConocidos: string[];
+  /** Abre el modal de gestión: crear/guardar/borrar/elegir un dueño de la lista. */
+  onAbrirDuenos: () => void;
   liveGroups: { triples: number[][]; resto: number[] } | null;
   errMsg: string | null;
   lastAdded: PiezaCubicada | null;
@@ -80,6 +87,7 @@ export default function PanelEntradaVoz({
   config, onUpdateConfig, voices, onProbarVoz,
   supported, listening, onToggleListen, paused,
   fijas, onAplicarFijas, especie, onEspecieChange,
+  dueno, onDuenoChange, duenosConocidos, onAbrirDuenos,
   liveGroups, errMsg, lastAdded, addedFlash, onDeshacer, fmtPt, fmtM3,
   manual, onManualChange, onConfirmarCarga,
   apartadoEnCurso, proximoApartado, onCerrarApartado, onEscucharApartado,
@@ -179,6 +187,7 @@ export default function PanelEntradaVoz({
             <CmdField label="Continuar" value={frasesToText(config.comandos.continuar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, continuar: textToFrases(v) } })} />
             <CmdField label="Borrar último" value={frasesToText(config.comandos.borrarUltimo)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, borrarUltimo: textToFrases(v) } })} />
             <CmdField label="Especie (prefijos)" value={frasesToText(config.comandos.especie)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, especie: textToFrases(v) } })} />
+            <CmdField label="Dueño (prefijos)" value={frasesToText(config.comandos.dueno ?? [])} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, dueno: textToFrases(v) } })} />
             <CmdField label="Fijar medida" value={frasesToText(config.comandos.fijar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, fijar: textToFrases(v) } })} />
             <CmdField label="Soltar lo fijo" value={frasesToText(config.comandos.desfijar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, desfijar: textToFrases(v) } })} />
           </div>
@@ -257,12 +266,63 @@ export default function PanelEntradaVoz({
                 </select>
               </label>
 
+              {/* Dueño: sin catálogo cerrado — combobox (input + datalist) para
+                  poder CREAR uno nuevo o ESCOGER uno ya usado. Se pone fijo al
+                  elegirlo, igual que la especie, hasta que se cambie a mano. */}
+              <label className="mt-2 inline-flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Dueño</span>
+                <input
+                  type="text"
+                  list="cub-duenos-datalist"
+                  value={dueno}
+                  onChange={(ev) => onDuenoChange(ev.target.value)}
+                  placeholder="Sin dueño"
+                  aria-label="Dueño de lo que se va a cubicar"
+                  className="w-32 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[var(--text-tertiary)]"
+                />
+                {dueno && (
+                  <button
+                    type="button"
+                    onClick={() => onDuenoChange("")}
+                    aria-label="Quitar el dueño"
+                    className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={onAbrirDuenos}
+                  title="Crear, guardar o borrar dueños de la lista"
+                  aria-label="Gestionar dueños guardados"
+                  className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </label>
+              {duenosConocidos.length > 0 && (
+                <p className="mt-1 flex flex-wrap gap-1.5">
+                  {duenosConocidos.slice(0, 6).map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => onDuenoChange(d)}
+                      aria-pressed={dueno === d}
+                      className={`rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold transition ${dueno === d ? "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </p>
+              )}
+
               {/* Comandos de voz disponibles */}
               <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                 <span>Comandos por voz:</span>
                 <span><b className="text-[var(--text-secondary)]">«pausá»</b> / <b className="text-[var(--text-secondary)]">«continuá»</b></span>
                 <span><b className="text-[var(--text-secondary)]">«eliminá el último»</b></span>
                 <span><b className="text-[var(--text-secondary)]">«especie tornillo»</b></span>
+                <span><b className="text-[var(--text-secondary)]">«dueño Juan»</b></span>
                 <span><b className="text-[var(--text-secondary)]">«pon fijo el largo a cuatro»</b> / <b className="text-[var(--text-secondary)]">«quitá el fijo»</b></span>
               </p>
 
@@ -357,6 +417,19 @@ export default function PanelEntradaVoz({
             onFijar={() => onAplicarFijas(fijas.largo != null ? (() => { const n = { ...fijas }; delete n.largo; return n; })() : { ...fijas, largo: Number(manual.largo) || 0 })}
           />
           <button type="button" onClick={() => onConfirmarCarga(grillaId)} className="col-span-2 inline-flex h-11 items-center justify-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] sm:col-auto sm:h-10"><Plus className="h-4 w-4" /> Agregar a mano</button>
+          {/* Precarga la medida típica del Comercial mínimo (2×8×10, Brandon
+              2026-09-01) — NO agrega nada sola: sólo llena los campos para que
+              el operario confirme la cantidad real que sacó y la agregue con
+              "Agregar a mano", como cualquier otra pieza medida de verdad. Un
+              piso automático sin pieza real detrás falsearía el Anexo 04. */}
+          <button
+            type="button"
+            onClick={() => onManualChange({ cantidad: "1", espesor: "2", ancho: "8", largo: "10" })}
+            title="Precarga 2×8×10 (Comercial) — confirmá la cantidad real que sacaste y tocá «Agregar a mano»"
+            className="col-span-2 inline-flex h-11 items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] sm:col-auto sm:h-10"
+          >
+            <Plus className="h-4 w-4" /> Comercial mínimo
+          </button>
           {/* Mismo toggle que arriba, repetido acá: cargando a mano la vista
               suele estar scrolleada lejos del botón del micrófono — apagar la
               voz (más rápido para cargar seguido) tiene que estar a mano

@@ -14,6 +14,7 @@ import { findSpeciesByCommonName } from "@/data/forestry-species";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
 import { documentoGtfLoth, type LothGtfCaratula, type LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import VerificarGtfSerfor from "./VerificarGtfSerfor";
 
 interface GtfItem {
@@ -332,7 +333,7 @@ export default function LothGtfView({
                   <td className="px-4 py-2.5"><span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">{g.tipo === "producto" ? "Producto" : "Trozas"}</span></td>
                   <td className="px-4 py-2.5 text-[var(--text-primary)]">{g.titularName ?? "—"}</td>
                   <td className="px-4 py-2.5 text-[var(--text-secondary)]">{g.destino ?? "—"}</td>
-                  <td className="px-4 py-2.5 text-right"><span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{g.volumenTotalM3 ? Number(g.volumenTotalM3).toFixed(4) : "—"}</span></td>
+                  <td className="px-4 py-2.5 text-right"><span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{g.volumenTotalM3 ? fmtM3(Number(g.volumenTotalM3)) : "—"}</span></td>
                   <td className="px-4 py-2.5">{g.status === "anulada" ? <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">ANULADA</span> : <span className="rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]">Emitida</span>}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center justify-end gap-2">
@@ -374,7 +375,7 @@ export default function LothGtfView({
               ? `${gtfs.length} guía${gtfs.length === 1 ? "" : "s"}`
               : `${filtradas.length} de ${gtfs.length} guías`}
             {" · "}
-            <span className="font-mono tabular-nums">{volumenFiltrado.toFixed(4)}</span> m³
+            <span className="font-mono tabular-nums">{fmtM3(volumenFiltrado)}</span> m³
             {totalPaginas > 1 && ` · página ${pagActual + 1} de ${totalPaginas}`}
           </p>
           {totalPaginas > 1 && (
@@ -438,7 +439,7 @@ function AnularGtfForm({ gtf, onConfirm, onCancel }: { gtf: Gtf; onConfirm: (r: 
       <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
         <p>
-          Se anulan <strong>{gtf.volumenTotalM3 ? Number(gtf.volumenTotalM3).toFixed(4) : "—"} m³</strong>
+          Se anulan <strong>{gtf.volumenTotalM3 ? fmtM3(Number(gtf.volumenTotalM3)) : "—"} m³</strong>
           {gtf.destino ? <> con destino <strong>{gtf.destino}</strong></> : null}. La guía sigue apareciendo en el libro, marcada como anulada.
         </p>
       </div>
@@ -641,7 +642,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
           <Field label="Especie"><input value={it.species} onChange={(e) => setItem("species", e.target.value)} placeholder="Tornillo" className={I} /></Field>
           <Field label="Ø mayor"><input type="number" step="0.001" value={it.diamMayorM} onChange={(e) => setItem("diamMayorM", e.target.value)} className={I} /></Field>
           <Field label="Ø menor"><input type="number" step="0.001" value={it.diamMenorM} onChange={(e) => setItem("diamMenorM", e.target.value)} className={I} /></Field>
-          <Field label={`Long. ${autoVol > 0 ? `→ ${autoVol.toFixed(4)}` : ""}`}><input type="number" step="0.01" value={it.lengthM} onChange={(e) => setItem("lengthM", e.target.value)} className={I} /></Field>
+          <Field label={`Long. ${autoVol > 0 ? `→ ${fmtM3(autoVol)}` : ""}`}><input type="number" step="0.01" value={it.lengthM} onChange={(e) => setItem("lengthM", e.target.value)} className={I} /></Field>
           <button type="button" onClick={addItem} className="h-10 rounded-lg bg-[var(--data-success-700)] text-sm font-bold text-white hover:opacity-90">+ Agregar</button>
         </div>
         {items.length > 0 && (
@@ -663,11 +664,11 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
                     <td className="text-right font-mono tabular-nums">{x.diamMayorM?.toFixed(2) ?? "—"}</td>
                     <td className="text-right font-mono tabular-nums">{x.diamMenorM?.toFixed(2) ?? "—"}</td>
                     <td className="text-right font-mono tabular-nums">{x.lengthM?.toFixed(2) ?? "—"}</td>
-                    <td className="text-right font-mono tabular-nums font-bold">{x.volumeM3?.toFixed(4) ?? "—"}</td>
+                    <td className="text-right font-mono tabular-nums font-bold">{x.volumeM3 != null ? fmtM3(x.volumeM3) : "—"}</td>
                     <td className="text-right"><button type="button" onClick={() => setItems((arr) => arr.filter((_, j) => j !== i))} className="text-[var(--data-error-600)]"><Trash2 className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 ))}
-                <tr className="border-t-2 border-[var(--rule-base)] font-bold"><td colSpan={5} className="py-1.5 text-right">Volumen total</td><td className="text-right font-mono tabular-nums text-[var(--data-success-700)]">{totalVol.toFixed(4)}</td><td></td></tr>
+                <tr className="border-t-2 border-[var(--rule-base)] font-bold"><td colSpan={5} className="py-1.5 text-right">Volumen total</td><td className="text-right font-mono tabular-nums text-[var(--data-success-700)]">{fmtM3(totalVol)}</td><td></td></tr>
               </tbody>
             </DataTable>
           </div>
@@ -676,7 +677,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
 
       <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-wrap items-center justify-between gap-2 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
         <span className="text-xs font-semibold text-[var(--text-tertiary)]">
-          {items.length} {items.length === 1 ? "ítem" : "ítems"} · <span className="font-mono tabular-nums">{totalVol.toFixed(4)}</span> m³
+          {items.length} {items.length === 1 ? "ítem" : "ítems"} · <span className="font-mono tabular-nums">{fmtM3(totalVol)}</span> m³
           {items.length === 0 && <span className="ml-2 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">— agregá al menos una troza</span>}
           {items.length > 0 && hasMissingRequired && (
             <span className="ml-2 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">— completá transportista, conductor y placa</span>
@@ -714,7 +715,7 @@ function printGtfOficial(g: Gtf, caratula: LothGtfCaratula | null) {
 
 async function printGtf(g: Gtf) {
   const items = Array.isArray(g.items) ? g.items : [];
-  const rows = items.map((x, i) => `<tr><td>${i + 1}</td><td>${x.code ?? ""}</td><td>${x.species ?? ""}${x.cites ? " <b>(CITES)</b>" : ""}</td><td style="text-align:right">${x.diamMayorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.diamMenorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.lengthM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.volumeM3?.toFixed?.(4) ?? ""}</td></tr>`).join("");
+  const rows = items.map((x, i) => `<tr><td>${i + 1}</td><td>${x.code ?? ""}</td><td>${x.species ?? ""}${x.cites ? " <b>(CITES)</b>" : ""}</td><td style="text-align:right">${x.diamMayorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.diamMenorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.lengthM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.volumeM3 != null ? fmtM3(x.volumeM3) : ""}</td></tr>`).join("");
   const vol = g.volumenTotalM3 ? Number(g.volumenTotalM3).toFixed(4) : "0";
 
   // QR real: codifica una cadena de verificación interna escaneable

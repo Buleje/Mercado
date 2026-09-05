@@ -14,6 +14,7 @@ import type { DatosLiquidacion, Liquidacion } from "./cubicacion-liquidacion";
 import { fechaLarga } from "./cubicacion-liquidacion";
 import type { ApartadosAsignados, NombresApartado } from "./cubicacion-apartados";
 import { resumenApartados, etiquetaApartado } from "./cubicacion-apartados";
+import { fmtM3 } from "./cubicacion-formato";
 
 export interface ExportOpts {
   precioPt: number;      // S/ por pie tablar (0 = sin precio)
@@ -43,6 +44,8 @@ const apartadoTxt = (r: PiezaCubicada, opts: ExportOpts) => {
   return n != null ? etiquetaApartado(n, opts.nombresApartado ?? {}) : "—";
 };
 const conApartados = (opts: ExportOpts) => Object.keys(opts.asignados ?? {}).length > 0;
+/** El lote asignó dueño a algo — igual criterio que apartados: sin uso, sin columna/hoja de más. */
+const conDueno = (rows: PiezaCubicada[]) => rows.some((r) => r.dueno?.trim());
 
 const fecha = () => new Date().toISOString().slice(0, 10);
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -132,13 +135,13 @@ export async function exportarPDF(rows: PiezaCubicada[], opts: ExportOpts): Prom
         String(++n), String(r.cantidad),
         String(espPulg(r.espesor, r.uEspesor)), String(espPulg(r.ancho, r.uAncho)), String(larPies(r.largo, r.uLargo)),
         g.tipo, r.especie ?? "—", ...apCol(r),
-        r.pieTablar.toFixed(2), r.m3.toFixed(4), ...val(r.pieTablar * precioPieza(r, opts)),
+        r.pieTablar.toFixed(2), fmtM3(r.m3), ...val(r.pieTablar * precioPieza(r, opts)),
       ]);
     }
     subtotalRows.add(body.length);
-    body.push(["", String(g.sub.piezas), "", "", "", `Subtotal ${g.tipo}`, "", ...apColVacia(), r2(g.sub.pt).toFixed(2), r4(g.sub.m3).toFixed(4), ...val(r2(g.sub.valor))]);
+    body.push(["", String(g.sub.piezas), "", "", "", `Subtotal ${g.tipo}`, "", ...apColVacia(), r2(g.sub.pt).toFixed(2), fmtM3(r4(g.sub.m3)), ...val(r2(g.sub.valor))]);
   }
-  const foot = [["", String(t.piezas), "", "", "", "TOTAL GENERAL", "", ...apColVacia(), `${t.pt.toFixed(2)} PT`, t.m3.toFixed(4), ...val(r2(totalValor))]];
+  const foot = [["", String(t.piezas), "", "", "", "TOTAL GENERAL", "", ...apColVacia(), `${t.pt.toFixed(2)} PT`, fmtM3(t.m3), ...val(r2(totalValor))]];
 
   autoTable(doc, {
     head, body, foot,
@@ -209,7 +212,9 @@ function agregarResumenEnVivo(ws: Worksheet, headers: string[]) {
   const filas: { label: string; formula: string; fmt: string }[] = [
     { label: "Piezas totales", formula: `SUMPRODUCT(${filaValida}*(${cantExpr}))`, fmt: "#,##0" },
     { label: "Pie tablar total", formula: `ROUND(SUMPRODUCT(${filaValida}*${rEsp}*${rAnc}*${rLar}/12*(${cantExpr})),2)`, fmt: "#,##0.00" },
-    { label: "Volumen total (m³)", formula: `ROUND(SUMPRODUCT(${filaValida}*(${rEsp}*0.0254)*(${rAnc}*0.0254)*(${rLar}*0.3048)*(${cantExpr})),4)`, fmt: "#,##0.0000" },
+    // m³ = PT ÷ 424 (la misma cuenta que la columna de la pantalla), no el
+    // volumen geométrico: si no, el Excel y la tabla no cierran entre sí.
+    { label: "Volumen total (m³)", formula: `ROUND(SUMPRODUCT(${filaValida}*${rEsp}*${rAnc}*${rLar}/12*(${cantExpr}))/${PT_POR_M3},4)`, fmt: "#,##0.0000" },
   ];
   if (idxEspecie >= 0) {
     const rEspecie = rango(idxEspecie);
@@ -388,8 +393,9 @@ function hojaApartados(wb: Workbook, rows: PiezaCubicada[], asignados: Apartados
  * Excel (.xlsx) con 3 hojas fijas: "Detalle" (piezas numeradas, ORDENADAS por
  * tipo — comercial primero — con subtotal por tipo y total general), "Resumen
  * por tipo" y "Por especie". Espesor/ancho en pulgadas y largo en pies (unidad
- * de comercio). Con apartados asignados, suma una 4ª hoja "Por apartado" y una
- * columna "Apartado" en el Detalle.
+ * de comercio). Con dueño asignado, suma una hoja "Por dueño" y una columna
+ * "Dueño" en el Detalle; con apartados asignados, suma "Por apartado" y una
+ * columna "Apartado" — cada una sólo si el lote realmente la usa.
  */
 export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Promise<void> {
   const ExcelJS = (await import("exceljs")).default;
@@ -397,6 +403,7 @@ export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Pr
   wb.creator = "Cubicador de Buleje";
   const conPrecio = tieneValor(rows, opts);
   const conAp = conApartados(opts);
+  const conDue = conDueno(rows);
   const { grupos, total } = agruparDetallePorTipo(rows, opts);
   const precio = precioResolver(opts);
 
@@ -410,6 +417,7 @@ export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Pr
     { header: "Largo (pies)", key: "lar", width: 13 },
     { header: "Tipo", key: "tipo", width: 18 },
     { header: "Especie", key: "especie", width: 16 },
+    ...(conDue ? [{ header: "Dueño", key: "dueno", width: 18 }] : []),
     ...(conAp ? [{ header: "Apartado", key: "apartado", width: 14 }] : []),
     { header: "Pie tablar", key: "pt", width: 12 },
     { header: "m³", key: "m3", width: 11 },
@@ -424,6 +432,7 @@ export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Pr
         n: ++n, cant: r.cantidad,
         esp: espPulg(r.espesor, r.uEspesor), anc: espPulg(r.ancho, r.uAncho), lar: larPies(r.largo, r.uLargo),
         tipo: g.tipo, especie: r.especie ?? "",
+        ...(conDue ? { dueno: r.dueno ?? "" } : {}),
         ...(conAp ? { apartado: apartadoTxt(r, opts) } : {}),
         pt: r.pieTablar, m3: r.m3,
         ...(conPrecio ? { val: r.pieTablar * precioPieza(r, opts) } : {}),
@@ -456,7 +465,10 @@ export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Pr
   // ── Hoja 3: Por especie (ordenada por pie tablar, la que más pesa arriba) ──
   hojaResumen(wb, "Por especie", "Especie", agruparPor(rows, "especie", precio), conPrecio);
 
-  // ── Hoja 4: Por apartado (sólo si el lote separó en bloques) ──
+  // ── Hoja 4: Por dueño (sólo si el lote tiene algo asignado) ──
+  if (conDue) hojaResumen(wb, "Por dueño", "Dueño", agruparPor(rows, "dueno", precio), conPrecio);
+
+  // ── Hoja 5: Por apartado (sólo si el lote separó en bloques) ──
   if (conAp) hojaApartados(wb, rows, opts.asignados ?? {}, opts.nombresApartado ?? {});
 
   const buf = await wb.xlsx.writeBuffer();

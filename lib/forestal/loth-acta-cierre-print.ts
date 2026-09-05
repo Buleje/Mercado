@@ -12,6 +12,7 @@
 
 import { esc, idRow, openCtpReport } from "./ctp-print-shared";
 import { eudrSignatureBlock } from "./eudr-map-figure";
+import { fmtM3 } from "./cubicacion-formato";
 import type { ResumenPeriodo } from "./loth-cierre-resumen";
 import type { LothSection } from "./loth-constants";
 
@@ -58,7 +59,7 @@ export function printActaCierre(
     .map(
       (s) =>
         `<tr class="${s.lineas === 0 ? "off" : ""}"><td>${SECCION_LABEL[s.section]}</td><td class="num">${s.lineas}</td><td class="num">${
-          s.volumenM3 > 0 ? s.volumenM3.toFixed(4) : "—"
+          s.volumenM3 > 0 ? fmtM3(s.volumenM3) : "—"
         }</td><td class="num">${s.cantidad > 0 ? s.cantidad.toFixed(4) : "—"}</td></tr>`,
     )
     .join("");
@@ -116,9 +117,9 @@ export function printActaCierre(
       <table class="sec">
         <thead><tr><th>Sección</th><th class="num">Líneas</th><th class="num">Volumen m³</th><th class="num">Cantidad</th></tr></thead>
         <tbody>${filas}</tbody>
-        <tfoot><tr><td>Total</td><td class="num">${resumen.lineas}</td><td class="num">${resumen.porSeccion
-          .reduce((a, s) => a + s.volumenM3, 0)
-          .toFixed(4)}</td><td class="num">${resumen.porSeccion.reduce((a, s) => a + s.cantidad, 0).toFixed(4)}</td></tr></tfoot>
+        <tfoot><tr><td>Total</td><td class="num">${resumen.lineas}</td><td class="num">${fmtM3(
+          resumen.porSeccion.reduce((a, s) => a + s.volumenM3, 0),
+        )}</td><td class="num">${resumen.porSeccion.reduce((a, s) => a + s.cantidad, 0).toFixed(4)}</td></tr></tfoot>
       </table>
       ${resumen.especies.length ? `<p class="foot">Especies del período: ${esc(resumen.especies.join(", "))}.</p>` : ""}
       ${observaciones}

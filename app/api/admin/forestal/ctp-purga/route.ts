@@ -3,13 +3,13 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
-import { ForestCtpPurgaDB } from "@/lib/db/forest-ctp-purga.db";
+import { ForestCtpPurgaDB, type ScopeVaciado } from "@/lib/db/forest-ctp-purga.db";
 import { withApiHandler } from "@/lib/api-handler";
 
 /**
- * Vaciar el Libro de Operaciones del CTP.
+ * Vaciar el Libro de Operaciones del CTP — entero o por alcance (Brandon, 2026-09-01).
  *
- * GET  → qué hay y si se puede borrar (para mostrarlo antes de preguntar).
+ * GET  → qué hay (en el alcance elegido) y si se puede borrar (para mostrarlo antes de preguntar).
  * POST → lo vacía. Exige la palabra de confirmación en el body.
  *
  * Sólo `admin`: no es una tarea de cajero ni de almacenero. La confirmación
@@ -19,10 +19,14 @@ import { withApiHandler } from "@/lib/api-handler";
 
 const PALABRA = "VACIAR LIBRO";
 
+const SCOPES = ["trozas_disponibles", "madera_disponible", "consumo", "todo"] as const;
+const scopeSchema = z.enum(SCOPES).catch("todo");
+
 const bodySchema = z.object({
   /* Literal, no un boolean: un `{confirmar:true}` se manda sin querer; esta
      frase hay que escribirla. */
   confirmacion: z.string().trim(),
+  scope: z.enum(SCOPES).optional(),
 });
 
 export const GET = withApiHandler("forestal-ctp-purga-get", async (req: NextRequest) => {
@@ -32,8 +36,9 @@ export const GET = withApiHandler("forestal-ctp-purga-get", async (req: NextRequ
     return NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
   }
 
+  const scope: ScopeVaciado = scopeSchema.parse(new URL(req.url).searchParams.get("scope"));
   const [conteo, periodos] = await Promise.all([
-    ForestCtpPurgaDB.contar(auth.tenantId),
+    ForestCtpPurgaDB.contar(auth.tenantId, scope),
     ForestCtpPurgaDB.periodosQueBloquean(auth.tenantId),
   ]);
   return NextResponse.json({ conteo, periodos, sePuede: periodos.length === 0, palabra: PALABRA });
@@ -66,7 +71,7 @@ export const POST = withApiHandler("forestal-ctp-purga", async (req: NextRequest
     );
   }
 
-  const r = await ForestCtpPurgaDB.vaciar(auth.tenantId, auth.username ?? "admin");
+  const r = await ForestCtpPurgaDB.vaciar(auth.tenantId, auth.username ?? "admin", parsed.data.scope ?? "todo");
   if (!r.ok) {
     return NextResponse.json({ error: "periodo_cerrado", message: r.motivo, periodos: r.periodos }, { status: 409 });
   }

@@ -4,6 +4,8 @@ import {
   diasDeEspera,
   filtrarLotes,
   loteAserrioPorCorrida,
+  loteVencido,
+  margenLote,
   piezasLibres,
   rendimientoLote,
   resumenLotes,
@@ -99,6 +101,32 @@ describe("rendimiento del lote", () => {
   });
 });
 
+describe("margen declarable del lote (ADR-365)", () => {
+  it("es el mismo número que ofrece 'Agregar producción a esta corrida' en Producción", () => {
+    // 10 m³ consumidos, tope 56% = 5.6, ya declarado 4 → quedan 1.6.
+    const l = lote({
+      status: "consumido",
+      produccion: corrida({ quantity: 4, volumeInputM3: 10 }),
+    });
+    expect(margenLote(l)?.margenM3).toBeCloseTo(1.6, 4);
+  });
+
+  it("null cuando ya se llegó al tope: no hay nada más que declarar", () => {
+    const l = lote({ status: "consumido", produccion: corrida({ quantity: 5.6, volumeInputM3: 10 }) });
+    expect(margenLote(l)).toBeNull();
+  });
+
+  it("null en otra unidad: dividir pt por m³ no es un margen", () => {
+    const l = lote({ status: "consumido", produccion: corrida({ unit: "pt", quantity: 1200, volumeInputM3: 10 }) });
+    expect(margenLote(l)).toBeNull();
+  });
+
+  it("null si la corrida se anuló o el lote no tiene producción", () => {
+    expect(margenLote(lote({ status: "consumido", produccion: corrida({ viva: false, volumeInputM3: 10 }) }))).toBeNull();
+    expect(margenLote(lote())).toBeNull();
+  });
+});
+
 describe("resumen del tablero", () => {
   const abierto = lote({ id: "l1", code: "LA-2026-001" });
   const abiertoConFuga = lote({
@@ -111,14 +139,14 @@ describe("resumen del tablero", () => {
     code: "LA-2026-003",
     status: "consumido",
     trozas: [troza("e", 40)],
-    produccion: corrida({ quantity: 24 }), // 60%
+    produccion: corrida({ quantity: 24, volumeInputM3: 40 }), // 60%
   });
   const aserradoBajo = lote({
     id: "l4",
     code: "LA-2026-004",
     status: "consumido",
     trozas: [troza("f", 1)],
-    produccion: corrida({ quantity: 0.2 }), // 20%
+    produccion: corrida({ quantity: 0.2, volumeInputM3: 1 }), // 20%
   });
   const aserradoEnPt = lote({
     id: "l5",
@@ -151,6 +179,34 @@ describe("resumen del tablero", () => {
 
   it("sin corridas comparables el rendimiento es nulo, no cero", () => {
     expect(resumenLotes([abierto, aserradoEnPt]).rendimientoPct).toBeNull();
+  });
+
+  it("suma el margen declarable SOLO de los que todavía tienen espacio bajo el tope", () => {
+    // aserradoAlto: 40 m³ → tope 22.4, declaró 24 → sobre el tope, no aporta.
+    // aserradoBajo: 1 m³ → tope 0.56, declaró 0.2 → quedan 0.36.
+    const r = resumenLotes([aserradoAlto, aserradoBajo]);
+    expect(r.margenTotalM3).toBeCloseTo(0.36, 4);
+  });
+});
+
+describe("lote vencido (ADR-342)", () => {
+  const hoy = new Date("2026-08-31T12:00:00.000Z");
+
+  it("vencido: abierto, con fecha de fin ya pasada", () => {
+    expect(loteVencido(lote({ status: "abierto", finProceso: "2026-08-20T00:00:00.000Z" }), hoy)).toBe(true);
+  });
+
+  it("no vencido: la fecha de fin todavía no llegó", () => {
+    expect(loteVencido(lote({ status: "abierto", finProceso: "2026-09-15T00:00:00.000Z" }), hoy)).toBe(false);
+  });
+
+  it("no vencido: sin fecha de fin declarada", () => {
+    expect(loteVencido(lote({ status: "abierto", finProceso: null }), hoy)).toBe(false);
+  });
+
+  it("un lote consumido o cerrado no está 'vencido' aunque su fecha haya pasado: ya terminó su proceso", () => {
+    expect(loteVencido(lote({ status: "consumido", finProceso: "2026-08-20T00:00:00.000Z" }), hoy)).toBe(false);
+    expect(loteVencido(lote({ status: "cerrado", finProceso: "2026-08-20T00:00:00.000Z" }), hoy)).toBe(false);
   });
 });
 

@@ -20,16 +20,23 @@ import {
   Layers,
   PackageOpen,
   RefreshCw,
+  RotateCcw,
+  Table,
 } from "@buleje/design-system/icons";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import type { LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import type { CtpEntry, CtpSection } from "./ctp-section-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Un lote abierto con lo que tiene esperando la sierra. */
 export interface LoteConMadera {
   lote: LoteAserrio;
   piezas: number;
   volumenM3: number;
+  /** m³ que le quedan por declarar debajo del tope — la recuperación (ADR-365). */
+  margenM3?: number;
+  /** Nació de una declaración de inventario: no tiene trozas que tildar. */
+  inventario?: boolean;
 }
 
 /** Lo que se hace de vez en cuando: descargar, recargar y las del período. */
@@ -43,6 +50,7 @@ export function accionesDeSeccion({
   onSimular,
   onParteDeTurno,
   onAnexos,
+  onLibro,
 }: {
   section: CtpSection;
   /** Cuántas líneas hay bajo el filtro actual (es lo que se descarga). */
@@ -54,6 +62,13 @@ export function accionesDeSeccion({
   onSimular: () => void;
   onParteDeTurno: () => void;
   onAnexos: () => void;
+  /**
+   * Abrir el LIBRO de producción —la tabla «Todos / Registrados»— en un modal
+   * (Brandon, 2026-09-02). La pantalla de Producción es para trabajar sobre el
+   * lote que entra a la sierra; lo ya registrado se consulta, y una consulta no
+   * necesita ocupar el lugar donde se decide.
+   */
+  onLibro?: () => void;
 }): MenuAccion[] {
   const lista: MenuAccion[] = [
     {
@@ -75,6 +90,18 @@ export function accionesDeSeccion({
   ];
 
   if (section === "produccion") {
+    if (onLibro) {
+      /* Primero de la lista: es la consulta de todos los días —«¿qué declaré
+         este mes?»— y antes vivía a la vista, ocupando la pantalla entera. */
+      lista.unshift({
+        id: "libro",
+        label: "Producción · Todos y registrados",
+        hint: "La tabla del libro en grande: las corridas del período con sus chips Todos / Registrados",
+        icon: Table,
+        meta: visibles > 0 ? String(visibles) : undefined,
+        onSelect: onLibro,
+      });
+    }
     lista.push(
       {
         id: "simular",
@@ -126,14 +153,30 @@ export function accionesDeLotes({
   onElegir: (loteId: string) => void;
   onIr?: (vista: string) => void;
 }): MenuAccion[] {
-  const lista: MenuAccion[] = lotes.map(({ lote, piezas, volumenM3 }) => {
-    const cuantas = piezas || lote.piezas;
+  const lista: MenuAccion[] = lotes.map(({ lote, volumenM3, margenM3 = 0, inventario = false, piezas: libres }) => {
+    /*
+     * `libres` son las piezas del lote que TODAVÍA no entraron a una corrida —
+     * las únicas que se pueden meter a la sierra hoy.
+     *
+     * Antes acá había `piezas || lote.piezas`, y ese fallback mentía: sobre un
+     * lote ya aserrado, `libres` es 0 y `lote.piezas` sigue contando las tres
+     * que ya se consumieron, así que el menú prometía «3 piezas esperando la
+     * sierra» al lado de «0.000 m³». Medido en pantalla con LA-2026-050.
+     */
+    const soloMargen = libres === 0 && margenM3 > 0.01;
     return {
       id: lote.id,
       label: `${lote.code} · ${lote.speciesCommon}`,
-      hint: `${cuantas} pieza${cuantas === 1 ? "" : "s"} esperando la sierra`,
-      meta: `${volumenM3.toFixed(4)} m³`,
-      icon: Layers,
+      hint: soloMargen
+        ? "Ya aserrado: queda volumen por declarar (recuperación)"
+        : inventario
+          ? "Declarado por inventario: su volumen se declara directo"
+          : libres > 0
+            ? `${libres} pieza${libres === 1 ? "" : "s"} esperando la sierra` +
+              (margenM3 > 0.01 ? ` · y ${fmtM3(margenM3)} m³ por declarar` : "")
+            : "Sin piezas libres — abrilo para ver qué tiene",
+      meta: soloMargen ? `${fmtM3(margenM3)} m³` : `${fmtM3(volumenM3)} m³`,
+      icon: inventario ? ClipboardList : soloMargen ? RotateCcw : Layers,
       activo: loteAbierto === lote.id,
       onSelect: () => onElegir(lote.id),
     };
@@ -169,7 +212,7 @@ export function accionesPorDeclarar(
        distintos y el rótulo tiene que decir cuál es cuál. */
     label: `Corrida N° ${c.lineNo}${c.materiaPrimaRef ? ` · del lote ${c.materiaPrimaRef}` : ""}`,
     hint: "Ya consumió su madera: abre sus trozas para declarar qué salió de la sierra",
-    meta: `${Number(c.volumeInputM3 ?? 0).toFixed(4)} m³`,
+    meta: `${fmtM3(Number(c.volumeInputM3 ?? 0))} m³`,
     icon: Boxes,
     activo: abiertaId === c.id,
     onSelect: () => onAbrir(c),

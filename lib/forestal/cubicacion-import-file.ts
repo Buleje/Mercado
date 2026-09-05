@@ -7,8 +7,40 @@
 
 import type { Celda } from "./cubicacion-import";
 
-/** Parte una línea CSV respetando comillas y separadores , o ; */
-function parsearLineaCsv(linea: string): string[] {
+/**
+ * El separador de columnas del texto: tab > `;` > `,`.
+ *
+ * NO se aceptan los tres a la vez, y no es un detalle: acá el decimal se
+ * escribe con **coma** («14,5 m³»), así que partir por coma cuando el archivo
+ * ya venía separado por tabs o por `;` corta el número en dos y corre todas
+ * las columnas siguientes una posición. Se detectó pegando una planilla real:
+ * «14,5» entraba como 14 y el % aprovechable de esa fila aparecía en la
+ * columna de piezas — con `tsc`, `lint` y los tests en verde, porque es
+ * semántica de datos y no de tipos.
+ *
+ * Se decide por el archivo entero (no por línea): una fila sin comas no puede
+ * cambiar cómo se lee la de al lado. Las comillas no cuentan — lo que está
+ * entre comillas es contenido, no estructura.
+ */
+function separadorDe(lineas: readonly string[]): string {
+  const fuera = (linea: string, sep: string): number => {
+    let n = 0;
+    let enComillas = false;
+    for (let i = 0; i < linea.length; i++) {
+      const c = linea[i];
+      if (c === '"') { enComillas = !enComillas; continue; }
+      if (!enComillas && c === sep) n++;
+    }
+    return n;
+  };
+  const total = (sep: string) => lineas.reduce((a, l) => a + fuera(l, sep), 0);
+  if (total("\t") > 0) return "\t";
+  if (total(";") > 0) return ";";
+  return ",";
+}
+
+/** Parte una línea respetando comillas, con el separador ya elegido. */
+function parsearLineaCsv(linea: string, sep: string): string[] {
   const out: string[] = [];
   let campo = "";
   let enComillas = false;
@@ -20,7 +52,7 @@ function parsearLineaCsv(linea: string): string[] {
       else campo += c;
     } else if (c === '"') {
       enComillas = true;
-    } else if (c === "," || c === ";" || c === "\t") {
+    } else if (c === sep) {
       out.push(campo); campo = "";
     } else {
       campo += c;
@@ -30,13 +62,26 @@ function parsearLineaCsv(linea: string): string[] {
   return out.map((s) => s.trim());
 }
 
+/**
+ * Texto pegado (o un CSV ya leído) → matriz de celdas.
+ *
+ * Exportado porque pegar desde Excel es el camino más corto que hay: lo que va
+ * al portapapeles es TSV, que `parsearLineaCsv` ya entiende (parte por tab
+ * igual que por `,` y `;`). Sin esto, cada pantalla que quiera aceptar un
+ * pegado se escribe su propio partidor y se come las comillas mal.
+ */
+export function leerTextoAFilas(texto: string): Celda[][] {
+  return leerCsv(texto);
+}
+
 function leerCsv(texto: string): Celda[][] {
-  return texto
+  const lineas = texto
     .replace(/\r\n/g, "\n")
     .replace(/^﻿/, "") // BOM que meten Excel/LibreOffice
     .split("\n")
-    .filter((l) => l.length > 0)
-    .map(parsearLineaCsv);
+    .filter((l) => l.length > 0);
+  const sep = separadorDe(lineas);
+  return lineas.map((l) => parsearLineaCsv(l, sep));
 }
 
 async function leerXlsx(buf: ArrayBuffer): Promise<Celda[][]> {

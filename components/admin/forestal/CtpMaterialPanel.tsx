@@ -25,6 +25,7 @@ import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import type { OrigenMateriaPrima } from "@/lib/forestal/produccion-paquetes";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Un paquete que la corrida ya declaró en una tanda anterior (ADR-361). */
 export interface PaquetePrevio {
@@ -136,7 +137,7 @@ export default function CtpMaterialPanel({
                   <td className="px-3 py-2 text-[var(--text-secondary)]">{g.proveedor ?? "—"}</td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums">{g.piezas}</td>
                   <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                    {g.volumenM3.toFixed(4)}
+                    {fmtM3(g.volumenM3)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                     {g.pieTablar.toLocaleString("es-PE")}
@@ -158,7 +159,7 @@ export default function CtpMaterialPanel({
                 <li key={o.permiso ?? "sin"} className="flex flex-wrap items-baseline justify-between gap-2 px-3 py-1.5 text-sm">
                   <b className="font-mono text-[var(--text-primary)]">{o.permiso ?? "sin título declarado"}</b>
                   <span className="font-mono tabular-nums text-[var(--text-secondary)]">
-                    {o.piezas} pza · {o.volumenM3.toFixed(4)} m³
+                    {o.piezas} pza · {fmtM3(o.volumenM3)} m³
                   </span>
                 </li>
               ))}
@@ -193,14 +194,14 @@ export default function CtpMaterialPanel({
                       : `${n(p.espesorCm, 2)} × ${n(p.anchoCm, 2)} cm × ${n(p.largoM, 2)} m`}
                   </td>
                   <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                    {n(p.volumenM3)}
+                    {p.volumenM3 == null || p.volumenM3 === "" ? "—" : fmtM3(Number(p.volumenM3))}
                   </td>
                 </tr>
               ))}
             </TbodyCtp>
           </TablaCtp>
           <p className="mt-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
-            Ya declarados: <b className="font-mono tabular-nums text-[var(--text-primary)]">{totalPrevio.toFixed(4)} m³</b>{" "}
+            Ya declarados: <b className="font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(totalPrevio)} m³</b>{" "}
             en {paquetesPrevios?.length ?? 0} paquete{(paquetesPrevios?.length ?? 0) === 1 ? "" : "s"} ·{" "}
             {pieTablarDe(totalPrevio).toLocaleString("es-PE")} pt. Lo que cargues abajo se suma a esto.
           </p>

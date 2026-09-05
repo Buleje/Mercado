@@ -37,6 +37,7 @@ import CtpAtribucionEditor from "./CtpAtribucionEditor";
 import CtpGtfSeccion from "./CtpGtfSeccion";
 import CtpHistorial from "./CtpHistorial";
 import { Btn, MODAL_BODY } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export interface DespachoResumen {
   id: string;
@@ -94,7 +95,11 @@ const COGS_MOTIVO: Record<Exclude<CogsDTO["motivo"], "ok">, string> = {
   sin_cantidad: "El despacho no declara cantidad.",
 };
 
-const n4 = (v: number) => v.toFixed(4);
+/** `${valor} ${unidad}` con la precisión de tres decimales de SERFOR, salvo que
+ *  el despacho declare otra unidad (kg, pt, unidad): ahí se deja el número tal
+ *  cual, con su propia unidad. */
+const fmtCantidad = (v: number, unit: string | null | undefined) =>
+  !unit || unit === "m3" ? fmtM3(v) : v.toFixed(4);
 const money = (v: number, moneda: string | null) =>
   `${moneda === "USD" ? "US$" : "S/"} ${v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -175,7 +180,7 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
       onClose={onClose}
       variant="info"
       title={`Despacho · línea #${entry.lineNo}`}
-      description={`${entry.speciesCommon ?? "—"} · ${entry.quantity ? n4(Number(entry.quantity)) : "—"} ${unitLabel}${entry.gtfNumber ? ` · GTF ${entry.gtfNumber}` : ""}`}
+      description={`${entry.speciesCommon ?? "—"} · ${entry.quantity ? fmtCantidad(Number(entry.quantity), entry.unit) : "—"} ${unitLabel}${entry.gtfNumber ? ` · GTF ${entry.gtfNumber}` : ""}`}
       icon={Truck}
     >
       <div className={`space-y-4 ${MODAL_BODY}`}>
@@ -203,7 +208,7 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
             {traza.completa ? (
               <SuccessAlert
                 title="Cadena de custodia completa"
-                description={`El 100% del volumen (${n4(traza.atribuido)} ${unitLabel}) tiene corrida de producción e ingreso con GTF identificados. Se puede certificar.`}
+                description={`El 100% del volumen (${fmtCantidad(traza.atribuido, entry.unit)} ${unitLabel}) tiene corrida de producción e ingreso con GTF identificados. Se puede certificar.`}
               />
             ) : (
               <WarningAlert
@@ -214,9 +219,9 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
             )}
 
             <div className="grid grid-cols-3 gap-3">
-              <MiniStat label="Declarado" value={`${n4(traza.declarado)}`} suffix={unitLabel} />
-              <MiniStat label="Atribuido" value={`${n4(traza.atribuido)}`} suffix={unitLabel} tone={traza.atribuido > 0 ? "ok" : undefined} />
-              <MiniStat label="Sin atribuir" value={`${n4(traza.sinAtribuir)}`} suffix={unitLabel} tone={traza.sinAtribuir > 0 ? "bad" : "ok"} />
+              <MiniStat label="Declarado" value={`${fmtCantidad(traza.declarado, entry.unit)}`} suffix={unitLabel} />
+              <MiniStat label="Atribuido" value={`${fmtCantidad(traza.atribuido, entry.unit)}`} suffix={unitLabel} tone={traza.atribuido > 0 ? "ok" : undefined} />
+              <MiniStat label="Sin atribuir" value={`${fmtCantidad(traza.sinAtribuir, entry.unit)}`} suffix={unitLabel} tone={traza.sinAtribuir > 0 ? "bad" : "ok"} />
             </div>
 
             {/* 2. La cadena: corrida → guías de ingreso, con costo por tramo */}
@@ -270,7 +275,7 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                         return (
                           <tr key={c.produccionEntryId} className="border-t border-[var(--rule-soft)]">
                             <td className="px-3 py-2 font-mono text-xs font-bold text-[var(--text-primary)]">#{c.lineNo}</td>
-                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{n4(c.quantity)}</td>
+                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtCantidad(c.quantity, entry.unit)}</td>
                             <td className="px-3 py-2">
                               {c.loteAserrio ? (
                                 <span

@@ -1,61 +1,16 @@
 "use client";
 
 /**
- * resumen-vistas — las piezas visuales de la pestaña Resúmenes: la barra de
- * composición y la lectura del lote.
+ * resumen-vistas — la lectura del lote: lo que el número dice y no se ve en la
+ * tabla, con su ícono y su tono.
  *
- * Por qué una barra y no un chart: la pregunta es "¿en qué se me fue el
- * volumen?", y para eso una barra apilada con los 4-6 grupos que importan se
- * lee de un vistazo, imprime bien y no arrastra una librería.
+ * Acá vivía también `BarraComposicion` (las dos barras apiladas «Composición
+ * por tipo / por especie» del encabezado). Se borró junto con su único uso
+ * (Brandon, 2026-09-02: «quitalo porque confunde»): decían en porcentaje lo
+ * mismo que la frase del hero y que la vista «Tablas».
  */
-import type { GrupoResumen } from "@/lib/forestal/cubicacion-resumen";
-import { fmtPct } from "@/lib/forestal/cubicacion-formato";
 import type { Insight } from "@/lib/forestal/cubicacion-insights";
 import { AlertTriangle, Lightbulb, Info } from "@buleje/design-system/icons";
-
-/** Tonos de la barra: el DS ya define la escala de datos, se rota sobre ella. */
-const TONOS = [
-  "var(--accent)",
-  "var(--data-info-500)",
-  "var(--data-success-500)",
-  "var(--data-warning-500)",
-  "var(--data-error-500)",
-  "var(--text-tertiary)",
-];
-
-/**
- * Composición del lote en una sola barra: cada grupo ocupa su % del pie tablar.
- * Los grupos chicos se juntan en "otros" para que la barra siga siendo legible.
- */
-export function BarraComposicion({ grupos, titulo }: { grupos: GrupoResumen[]; titulo: string }) {
-  const visibles = grupos.slice(0, 5);
-  const resto = grupos.slice(5);
-  const restoPct = resto.reduce((a, g) => a + g.pctPt, 0);
-  const items = [
-    ...visibles.map((g, i) => ({ label: g.label, pct: g.pctPt, tono: TONOS[i] })),
-    ...(resto.length > 0 ? [{ label: `otros ${resto.length}`, pct: restoPct, tono: TONOS[5] }] : []),
-  ].filter((i) => i.pct > 0);
-
-  return (
-    <div>
-      <div className="mb-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{titulo}</div>
-      <div className="flex h-5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)] ring-1 ring-inset ring-[var(--rule-soft)]" role="img" aria-label={items.map((i) => `${i.label} ${Math.round(i.pct)}%`).join(", ")}>
-        {items.map((i) => (
-          <div key={i.label} className="border-r border-[var(--surface-raised)] last:border-r-0" style={{ width: `${i.pct}%`, background: i.tono }} title={`${i.label} · ${fmtPct(i.pct)}%`} />
-        ))}
-      </div>
-      <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-        {items.map((i) => (
-          <li key={i.label} className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-            <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: i.tono }} />
-            <span className="font-bold text-[var(--text-primary)]">{i.label}</span>
-            <span className="font-mono tabular-nums text-[var(--text-tertiary)]">{fmtPct(i.pct)}%</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 const ICONO = { alerta: AlertTriangle, oportunidad: Lightbulb, info: Info } as const;
 const TONO_CLS = {

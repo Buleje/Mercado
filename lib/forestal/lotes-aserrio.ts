@@ -16,8 +16,26 @@
 
 import { PT_POR_M3 } from "./cubicacion";
 import { juzgarRendimientoConsumo } from "./loctp-consumos-analisis";
+import { corridasAMedioDeclarar, type CorridaAMedioDeclarar } from "./produccion-paquetes";
 
 export type EstadoLoteAserrio = "abierto" | "consumido" | "cerrado";
+
+/**
+ * Marca de origen de un lote declarado como INVENTARIO (sin trozas reales).
+ *
+ * Va en `notes` y no en un campo nuevo del schema: es el mismo patrón que
+ * `PROVEEDOR_INVENTARIO_APERTURA` para las guías — una existencia previa al
+ * sistema no tiene trozas que registrar pieza por pieza, y forzarlas fabricaría
+ * datos de patio que nunca existieron. El volumen consumido y lo producido SÍ
+ * quedan en la corrida que este lote apunta (`produccionEntryId`), que es la
+ * fuente real — acá sólo se guarda el motivo de por qué el lote nació sin ellas.
+ */
+export const ORIGEN_LOTE_INVENTARIO = "Inventario declarado directamente (sin trozas reales)";
+
+/** Un lote nacido de una declaración de inventario, no del patio pieza por pieza. */
+export function esLoteDeInventario(lote: Pick<LoteAserrio, "notes">): boolean {
+  return (lote.notes ?? "").includes(ORIGEN_LOTE_INVENTARIO);
+}
 
 /** Una pieza guardada en el lote. */
 export interface TrozaDelLote {
@@ -31,6 +49,8 @@ export interface TrozaDelLote {
   d2Cm?: number | null;
   diametroCm?: number | null;
   woodEntryId?: string;
+  /** N° de permiso (título habilitante) del ingreso — viaja en `WoodEntry.originCode`. */
+  permiso?: string | null;
   /**
    * La corrida que YA se comió esta pieza, o `null` si sigue libre.
    *
@@ -39,6 +59,22 @@ export interface TrozaDelLote {
    * lo que bloquea es el ESTADO de la corrida, nunca el id pelado.
    */
   consumidaEnId?: string | null;
+}
+
+/**
+ * Un paquete de la corrida (ADR-349): el detalle de producto que compone su
+ * `quantity` total. Una corrida declarada con el formulario oficial casi
+ * siempre trae más de un tipo de producto —comercial, larga/angosta, etc.—
+ * y sin este detalle la Ficha del Lote sólo mostraba el total, no de qué
+ * estaba hecho.
+ */
+export interface PaqueteDeCorrida {
+  id: string;
+  codigo: string;
+  productType: string | null;
+  presentacion: string | null;
+  cantidad: number;
+  volumenM3: number;
 }
 
 /** La corrida de producción que se hizo con el lote. */
@@ -58,6 +94,12 @@ export interface CorridaDelLote {
   /** Cuánto de lo que produjo ya se despachó y cuánto se reprocesó. */
   despachadoQty?: number;
   reprocesadoQty?: number;
+  /** El detalle de productos que compone `quantity` (ADR-349). Opcional como
+   *  `despachadoQty`/`reprocesadoQty`: no todos los llamadores lo necesitan. */
+  paquetes?: PaqueteDeCorrida[];
+  /** Marcada a mano como "ya usada": sale de Productos disponibles (Brandon, 2026-09-01). */
+  usadoAt?: string | null;
+  usadoMotivo?: string | null;
 }
 
 export interface LoteAserrio {
@@ -111,6 +153,15 @@ export const ESTADO_LOTE: Record<
   },
 };
 
+/** Colores del badge de estado — single source para toda pantalla que lea un lote
+ *  (tarjeta, ficha de sólo lectura, combos): el mismo estado se ve igual en todas. */
+export const TONO_ESTADO_LOTE: Record<EstadoLoteAserrio, string> = {
+  abierto: "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+  consumido:
+    "border-[var(--data-success-500)]/50 bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]",
+  cerrado: "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+};
+
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
 
 /** Pie tablar, como lo muestra el picker de piezas: la misma madera, un solo número. */
@@ -151,6 +202,35 @@ export function rendimientoLote(lote: LoteAserrio): number | null {
 
 /** El veredicto del rendimiento — el MISMO que usa Consumos, no otro criterio. */
 export const juzgarRendimientoLote = juzgarRendimientoConsumo;
+
+/**
+ * Cuánto más se le puede declarar a la corrida de este lote, bajo el techo del
+ * 56 % (ADR-358/365).
+ *
+ * REUSA `corridasAMedioDeclarar` —la misma función que decide qué corridas
+ * ofrece "Agregar producción" en Producción— en vez de recalcular el margen
+ * acá con otra fórmula: dos caminos al mismo número ya divergieron una vez en
+ * este proyecto («47 vs 30»). `null` = no hay margen que mostrar (corrida
+ * anulada, en otra unidad, o ya en el tope).
+ */
+export function margenLote(lote: Pick<LoteAserrio, "produccion">): CorridaAMedioDeclarar | null {
+  const c = lote.produccion;
+  if (!c || !c.viva) return null;
+  const [medio] = corridasAMedioDeclarar([
+    {
+      id: c.id,
+      lineNo: c.lineNo,
+      entryDate: c.entryDate,
+      productType: c.productType,
+      speciesCommon: c.speciesCommon,
+      volumeInputM3: c.volumeInputM3,
+      quantity: c.quantity,
+      unit: c.unit,
+      status: c.status,
+    },
+  ]);
+  return medio ?? null;
+}
 
 /** Qué pasó con lo que salió del lote: sigue en el patio, salió a medias o se fue. */
 export interface SalidaDelLote {
@@ -204,6 +284,19 @@ export interface AlertaLote {
   texto: string;
 }
 
+/**
+ * El lote prometió terminar el proceso para una fecha (`finProceso`, ADR-342)
+ * y esa fecha ya pasó sin que se cerrara ni se aserrara entero.
+ *
+ * Sólo aplica a lotes ABIERTOS: uno consumido o cerrado ya terminó su proceso,
+ * pasó la fecha o no, y no hay nada "vencido" que avisar.
+ */
+export function loteVencido(lote: Pick<LoteAserrio, "status" | "finProceso">, ahora: Date): boolean {
+  if (lote.status !== "abierto" || !lote.finProceso) return false;
+  const fin = new Date(lote.finProceso);
+  return !Number.isNaN(fin.getTime()) && fin.getTime() < ahora.getTime();
+}
+
 /** Qué hay que mirarle a este lote. Informan, no bloquean. */
 export function alertasDeLote(lote: LoteAserrio, ahora: Date): AlertaLote[] {
   const alertas: AlertaLote[] = [];
@@ -225,6 +318,12 @@ export function alertasDeLote(lote: LoteAserrio, ahora: Date): AlertaLote[] {
       alertas.push({
         tono: "warning",
         texto: `Esperando la sierra hace ${dias} días: esa madera figura apartada.`,
+      });
+    }
+    if (loteVencido(lote, ahora)) {
+      alertas.push({
+        tono: "warning",
+        texto: `El proceso tenía fecha de fin ${new Date(lote.finProceso!).toLocaleDateString("es-PE", { timeZone: "UTC" })} y ya pasó: cerralo o ponele una fecha nueva.`,
       });
     }
   }
@@ -314,6 +413,12 @@ export interface ResumenLotes {
   /** Cuántos lotes aserrados no pudieron entrar al rendimiento (otra unidad). */
   sinRendimiento: number;
   especies: number;
+  /**
+   * Suma de lo que TODOS los lotes aserrados todavía pueden declarar bajo el
+   * tope del 56 % (ADR-358/365) — el volumen que "quedó acumulado" esperando
+   * una tanda más, sin tener que abrir cada tarjeta para sumarlo a mano.
+   */
+  margenTotalM3: number;
 }
 
 /**
@@ -332,6 +437,7 @@ export function resumenLotes(lotes: readonly LoteAserrio[]): ResumenLotes {
   let entradaConRend = 0;
   let salidaConRend = 0;
   let sinRendimiento = 0;
+  let margenTotalM3 = 0;
 
   for (const l of lotes) {
     if (l.status === "abierto") {
@@ -344,6 +450,7 @@ export function resumenLotes(lotes: readonly LoteAserrio[]): ResumenLotes {
     }
     consumidos += 1;
     volumenAserrado += l.volumenM3;
+    margenTotalM3 += margenLote(l)?.margenM3 ?? 0;
     const pct = rendimientoLote(l);
     if (pct == null) {
       sinRendimiento += 1;
@@ -364,6 +471,7 @@ export function resumenLotes(lotes: readonly LoteAserrio[]): ResumenLotes {
     rendimientoPct: entradaConRend > 0 ? Math.round((salidaConRend / entradaConRend) * 1000) / 10 : null,
     sinRendimiento,
     especies: new Set(lotes.map((l) => norm(l.speciesCommon)).filter(Boolean)).size,
+    margenTotalM3: r4(margenTotalM3),
   };
 }
 

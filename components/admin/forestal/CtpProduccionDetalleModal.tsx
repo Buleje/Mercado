@@ -28,6 +28,7 @@ import {
 import { csrfHeaders } from "@/lib/csrf-client";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import CtpAtribucionEditor from "./CtpAtribucionEditor";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import CtpHistorial from "./CtpHistorial";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { Btn, MODAL_BODY } from "./ctp-shared";
@@ -160,7 +161,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
       onClose={onClose}
       variant="info"
       title={`Producción · línea #${entry.lineNo}`}
-      description={`${entry.productType ?? "—"} · ${entry.speciesCommon ?? "—"} · ${entry.quantity ? n4(Number(entry.quantity)) : "—"} ${unitLabel}`}
+      description={`${entry.productType ?? "—"} · ${entry.speciesCommon ?? "—"} · ${entry.quantity ? (entry.unit === "m3" ? fmtM3(Number(entry.quantity)) : n4(Number(entry.quantity))) : "—"} ${unitLabel}`}
       icon={Boxes}
     >
       <div className={`space-y-4 ${MODAL_BODY}`}>
@@ -197,7 +198,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                 description={
                   declarado > 0
                     ? "La cadena de custodia se corta acá: todo despacho que cite esta corrida queda sin certificado. Usá «Editar atribución» para decir de qué guías salieron sus " +
-                      `${n4(declarado)} m³.`
+                      `${fmtM3(declarado)} m³.`
                     : "Esta corrida declaró producto y no de qué madera salió: su rendimiento queda en blanco y ningún despacho que la cite se puede certificar. " +
                       "Con «Editar atribución» le declarás sus guías, y el volumen que sumen queda como su materia prima."
                 }
@@ -206,18 +207,18 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
               <WarningAlert
                 icon={AlertCircle}
                 title="Atribución parcial de materia prima"
-                description={`Quedan ${n4(costo.sinAtribuirM3)} m³ del volumen consumido sin guía de origen.`}
+                description={`Quedan ${fmtM3(costo.sinAtribuirM3)} m³ del volumen consumido sin guía de origen.`}
               />
             ) : (
               <SuccessAlert
                 title="Materia prima 100% identificada"
-                description={`Los ${n4(costo.atribuidoM3)} m³ consumidos tienen guía GTF de ingreso.`}
+                description={`Los ${fmtM3(costo.atribuidoM3)} m³ consumidos tienen guía GTF de ingreso.`}
               />
             )}
 
             <div className="grid grid-cols-3 gap-3">
-              <MiniStat label="Consumido (m³)" value={n4(declarado)} />
-              <MiniStat label="Atribuido (m³)" value={n4(costo.atribuidoM3)} tone={costo.atribuidoM3 > 0 ? "ok" : undefined} />
+              <MiniStat label="Consumido (m³)" value={fmtM3(declarado)} />
+              <MiniStat label="Atribuido (m³)" value={fmtM3(costo.atribuidoM3)} tone={costo.atribuidoM3 > 0 ? "ok" : undefined} />
               <MiniStat label="Rendimiento" value={entry.rendimientoPct ? `${Number(entry.rendimientoPct).toFixed(1)}%` : "—"} />
             </div>
 
@@ -289,7 +290,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                             <td className="px-3 py-2 font-mono text-xs font-bold text-[var(--text-primary)]">{c.woodEntry.gtfNumber}</td>
                             <td className="px-3 py-2 text-[var(--text-secondary)]">{c.woodEntry.speciesCommonName ?? "—"}</td>
                             <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{fmtDate(c.woodEntry.entryDate)}</td>
-                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{n4(Number(c.volumeM3))}</td>
+                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(Number(c.volumeM3))}</td>
                             <td className="px-3 py-2 text-right">
                               {unit != null ? (
                                 <span className="inline-flex items-center gap-1 font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">

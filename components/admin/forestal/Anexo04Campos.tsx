@@ -9,12 +9,35 @@
  * quedan guardados por tenant para elegirlos de una lista en vez de re-tipear
  * nombre, DNI y cargo cada vez.
  */
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, ImageIcon, Trash2, UserPlus } from "@buleje/design-system/icons";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Check, ImageIcon, List, Trash2, UserPlus } from "@buleje/design-system/icons";
 import {
-  siguienteCorrelativo, type DatosAnexo04, type EmisorGuardado,
+  fmtAnexo, siguienteCorrelativo, type Anexo04, type DatosAnexo04, type EmisorGuardado,
 } from "@/lib/forestal/anexo04-serfor";
+import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { claveTenant } from "@/hooks/use-anexo04-datos";
+
+/**
+ * Junta los bloques de una MISMA especie·tipo aunque el lote haya pasado de
+ * 35 piezas y sigan en un bloque de continuación en otra hoja — para "más
+ * detalles" el operario quiere UNA línea por especie·tipo, no una por
+ * recuadro impreso.
+ */
+function resumenPorEspecieTipo(anexo: Anexo04) {
+  const filas = new Map<string, { especie: string; tipo: string; piezas: number; pt: number; m3: number }>();
+  for (const hoja of anexo.hojas) {
+    for (const b of hoja.bloques) {
+      const key = `${b.especie}||${b.tipo}`;
+      const pt = anexo.unidadV === "pt" ? b.subtotal : b.m3 * PT_POR_M3;
+      const prev = filas.get(key) ?? { especie: b.especie, tipo: b.tipo, piezas: 0, pt: 0, m3: 0 };
+      prev.piezas += b.filas.reduce((a, f) => a + f.cantidad, 0);
+      prev.pt += pt;
+      prev.m3 += b.m3;
+      filas.set(key, prev);
+    }
+  }
+  return [...filas.values()];
+}
 
 const INPUT = "h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 const LABEL = "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
@@ -83,15 +106,18 @@ function ImagenGuardada({ src, label, donde, onArchivo, onQuitar }: {
 }
 
 export default function Anexo04Campos({
-  datos, onChange, ficha, onError,
+  datos, onChange, ficha, onError, anexo,
 }: {
   datos: DatosAnexo04;
   onChange: (patch: Partial<DatosAnexo04>) => void;
   /** Identidad legal del CTP, para llenar la cabecera con lo registrado. */
   ficha?: { razonSocial?: string; representante?: string; representanteDni?: string } | null;
   onError?: (msg: string) => void;
+  /** Para el resumen por especie·tipo debajo de Observaciones. */
+  anexo: Anexo04;
 }) {
   const [emisores, setEmisores] = useState<EmisorGuardado[]>([]);
+  const resumen = useMemo(() => resumenPorEspecieTipo(anexo), [anexo]);
 
   useEffect(() => {
     try {
@@ -188,6 +214,39 @@ export default function Anexo04Campos({
           className="mt-1 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
         />
       </label>
+
+      {/* Más datos para leer la lista de un vistazo — piezas/PT/m³ por especie
+          · tipo. Sólo en PANTALLA (no se imprime): el (12) Observaciones es
+          una declaración jurada y no se le agrega nada solo. El botón lo
+          copia ahí SI el emisor quiere dejarlo escrito en el papel. */}
+      {resumen.length > 0 && (
+        <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className={LABEL}>Detalle por especie · tipo</span>
+            <button
+              type="button"
+              onClick={() => {
+                const texto = resumen
+                  .map((r) => `${r.especie} · ${r.tipo}: ${r.piezas} pzas · ${fmtAnexo(r.pt)} PT · ${fmtAnexo(r.m3)} m³`)
+                  .join("\n");
+                onChange({ observaciones: datos.observaciones ? `${datos.observaciones}\n${texto}` : texto });
+              }}
+              title="Agrega este detalle al texto de (12) Observaciones — queda editable, se puede borrar después"
+              className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:underline"
+            >
+              <List className="h-3 w-3" /> Agregar a observaciones
+            </button>
+          </div>
+          <ul className="mt-1.5 space-y-1">
+            {resumen.map((r) => (
+              <li key={`${r.especie}||${r.tipo}`} className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-xs">
+                <span className="font-semibold text-[var(--text-primary)]">{r.especie} · {r.tipo}</span>
+                <span className="font-mono tabular-nums text-[var(--text-secondary)]">{r.piezas} pzas · {fmtAnexo(r.pt)} PT · {fmtAnexo(r.m3)} m³</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Firmante (13)-(16) + emisores guardados */}
       <label className="block"><span className={LABEL}>(14) Nombres y apellidos</span>

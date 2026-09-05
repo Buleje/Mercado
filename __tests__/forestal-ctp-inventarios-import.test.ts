@@ -74,13 +74,22 @@ describe("inventario de rolliza en patio · troza por troza", () => {
     expect(t.especieCientifica).toBe("Cedrelinga cateniformis");
   });
 
-  it("las trozas sin guía NO se juntan en un ingreso inventado", () => {
+  it("las trozas sin guía de UNA MISMA importación van a una sola guía tipo inventario", () => {
+    // Pedido de Brandon (2026-08-31): un patio de cien piezas sin GTF real es
+    // UNA foto tomada una vez, no cien guías sueltas.
     const cuerpo = aCuerpoDelLibro("inventarioTrozas", [
       troza(2, "A-1", "", 1),
       troza(3, "A-2", "", 1),
     ]) as Record<string, unknown>[];
-    expect(cuerpo).toHaveLength(2);
-    expect(new Set(cuerpo.map((c) => c.gtfNumber)).size).toBe(2);
+    expect(cuerpo).toHaveLength(1);
+    expect((cuerpo[0].trozas as unknown[])).toHaveLength(2);
+    expect(cuerpo[0].volumeM3).toBeCloseTo(2, 4);
+  });
+
+  it("dos importaciones distintas (dos llamadas) NO comparten guía", () => {
+    const primera = aCuerpoDelLibro("inventarioTrozas", [troza(2, "A-1", "", 1)]) as Record<string, unknown>[];
+    const segunda = aCuerpoDelLibro("inventarioTrozas", [troza(2, "A-2", "", 1)]) as Record<string, unknown>[];
+    expect(primera[0].gtfNumber).not.toBe(segunda[0].gtfNumber);
   });
 
   it("la que ya se consumió no vuelve a entrar como existencia", () => {

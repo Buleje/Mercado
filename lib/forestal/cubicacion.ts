@@ -6,7 +6,7 @@
  * Convención peruana de comercio de madera aserrada:
  *   - Espesor y ancho se miden en PULGADAS, el largo en PIES.
  *   - Unidad de venta = PIE TABLAR (PT): PT = (espesor" × ancho" × largo_pies) / 12.
- *   - 1 m³ ≈ 423.78 PT.
+ *   - 1 m³ = 424 PT (factor comercial de la plaza — ver `PT_POR_M3`).
  */
 
 export type Unidad = "pulg" | "cm" | "pies" | "m";
@@ -22,6 +22,12 @@ export interface PiezaCubicada {
   uLargo: Unidad;
   especie?: string;
   /**
+   * De quién es esta madera. Un mismo lote puede cubicar piezas de VARIOS
+   * dueños a la vez (aserrío por encargo) — sin esto quedaban mezcladas y no
+   * había forma de separar después qué le corresponde a cada uno.
+   */
+  dueno?: string;
+  /**
    * Tipo comercial forzado a mano. `undefined` = lo decide la medida
    * (`clasificarTipo`). Se lee SIEMPRE por `tipoDePieza`, nunca directo: es lo
    * que mantiene la pantalla, el Excel y el Anexo 04 diciendo lo mismo.
@@ -33,7 +39,36 @@ export interface PiezaCubicada {
   m3: number;
 }
 
-export const PT_POR_M3 = 423.78;
+/**
+ * **1 m³ = 424 pie tablar.** Decisión de Brandon (2026-09-02), reafirmada:
+ * «1 m³ equivale a 424, así aplicalo; en PT, dividir el PT / 424».
+ *
+ * Es el factor con el que se compra y se vende madera en la selva peruana. La
+ * conversión FÍSICA exacta es otra —un pie tablar son 144 pulg³ y la pulgada
+ * 0.0254 m, así que darían 423.776— pero acá manda la convención comercial: el
+ * papel, el comprador y el libro tienen que decir el mismo número, y ese número
+ * es el que se usa en la plaza.
+ *
+ * La diferencia contra el factor físico es de 0.05 % (6 PT cada 30 m³). Lo que
+ * NO se puede tener es las dos a la vez: hasta hoy este archivo decía 423.78 y
+ * `loctp-catalogos.ts` decía 424, y por eso dos pantallas del mismo libro no
+ * cuadraban entre sí. Ahora hay una sola, acá, y todo el módulo la importa.
+ */
+export const PT_POR_M3 = 424;
+export const M3_POR_PT = 1 / PT_POR_M3;
+
+/**
+ * Pie tablar APROXIMADO que rendiría un volumen de madera ROLLIZA al pasar por
+ * la sierra (Brandon, 2026-09-01): no es la conversión directa (`PT_POR_M3`,
+ * que es para volumen YA aserrado) — es una estimación de cuánto saldría
+ * aserrado, usando el tope de rendimiento del 56 % (`RENDIMIENTO_META`,
+ * `loctp-catalogos.ts`) como aproximación. Se muestra siempre etiquetado como
+ * "aprox."/"aserrable": es un derivado, no el dato real (que sale de declarar
+ * la corrida en Producción).
+ */
+export function pieTablarAserrableDe(m3Rolliza: number, rendimientoMeta: number): number {
+  return Math.round(m3Rolliza * rendimientoMeta * PT_POR_M3);
+}
 
 /** Especies comerciales de la Selva Central — single-source para todas las
  *  herramientas forestales (cubicadores, calculadoras). */
@@ -47,15 +82,23 @@ export const toInches = (v: number, u: Unidad): number =>
   u === "pulg" ? v : u === "cm" ? v / 2.54 : u === "m" ? v * 39.3700787 : v * 12;
 export const toFeet = (v: number, u: Unidad): number =>
   u === "pies" ? v : u === "pulg" ? v / 12 : u === "m" ? v * 3.2808399 : v / 30.48;
-const toMeters = (v: number, u: Unidad): number =>
-  u === "m" ? v : u === "pulg" ? v * 0.0254 : u === "cm" ? v / 100 : v * 0.3048;
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 
 /**
- * Cubica una pieza: pie tablar y m³ TOTALES (× cantidad). El PT usa la fórmula
- * comercial (espesor" × ancho" × largo_pies ÷ 12); el m³ es el volumen real.
+ * Cubica una pieza: pie tablar y m³ TOTALES (× cantidad).
+ *
+ * El PT sale de la fórmula comercial —espesor" × ancho" × largo_pies ÷ 12— y el
+ * **m³ sale del PT**, dividiendo por 424 (Brandon, 2026-09-02: «en PT, dividir
+ * el PT / 424, eso aplicalo ahí»).
+ *
+ * Antes el m³ se calculaba aparte, multiplicando las medidas pasadas a metros:
+ * el volumen geométrico. Eran dos caminos independientes, y por eso las dos
+ * columnas de una misma fila nunca cerraban exactamente al dividirlas a mano —
+ * caían sobre 423.776, no sobre el 424 con el que se compra la madera. Con el
+ * m³ derivado del PT, la tabla cierra con la cuenta que se hace en la plaza:
+ * **m³ × 424 = PT**, y al revés, siempre.
  */
 export function cubicarPieza(p: {
   cantidad: number;
@@ -70,9 +113,69 @@ export function cubicarPieza(p: {
   const anchoPulg = toInches(p.ancho, p.uAncho);
   const largoPies = toFeet(p.largo, p.uLargo);
   const ptUnit = (espPulg * anchoPulg * largoPies) / 12;
-  const m3Unit = toMeters(p.espesor, p.uEspesor) * toMeters(p.ancho, p.uAncho) * toMeters(p.largo, p.uLargo);
   const cant = p.cantidad > 0 ? p.cantidad : 1;
-  return { pieTablar: r2(ptUnit * cant), m3: r4(m3Unit * cant) };
+  /* El PT se redondea PRIMERO y el m³ se deriva de ese PT ya redondeado: así el
+     número que se ve en la columna de al lado es exactamente el que hay que
+     dividir por 424 para llegar al m³ que se ve. Derivarlo del PT crudo dejaría
+     filas donde `PT ÷ 424` no da el m³ que muestra la pantalla. */
+  const pieTablar = r2(ptUnit * cant);
+  return { pieTablar, m3: r4(pieTablar / PT_POR_M3) };
+}
+
+/** m³ a partir del pie tablar — la conversión comercial, en un solo lugar. */
+export const m3DesdePt = (pt: number): number => r4(pt / PT_POR_M3);
+
+/**
+ * Vuelve a cubicar una lista de piezas GUARDADAS, desde sus medidas.
+ *
+ * POR QUÉ EXISTE: el `pieTablar`/`m3` viaja guardado (localStorage del lote
+ * activo, cubicaciones en la DB, Excel importado). Un lote medido antes de que
+ * el m³ pasara a derivarse del pie tablar sigue trayendo el volumen geométrico
+ * —13.026 PT guardados como 30,738 m³ en vez de 30,722— y el total de la
+ * pantalla suma ese número viejo sin recalcularlo (Brandon, 2026-09-01). Al
+ * hidratar SIEMPRE se re-cubica: las medidas son el dato, el volumen es
+ * derivado, y ningún archivo viejo puede volver a contradecir la fórmula.
+ *
+ * Devuelve el MISMO array si nada cambió, para no invalidar memos ni disparar
+ * un guardado inútil.
+ */
+export function recubicarPiezas<T extends PiezaCubicada>(piezas: T[]): T[] {
+  let cambio = false;
+  const next = piezas.map((p) => {
+    const { pieTablar, m3 } = cubicarPieza(p);
+    if (pieTablar === p.pieTablar && m3 === p.m3) return p;
+    cambio = true;
+    return { ...p, pieTablar, m3 };
+  });
+  return cambio ? next : piezas;
+}
+
+/**
+ * Junta piezas de la MISMA medida (especie + tipo + dueño + espesor×ancho×largo,
+ * en la MISMA unidad) en una sola fila, sumando cantidad/pieTablar/m³.
+ *
+ * Nace de un Anexo 04 CONJUNTO (Brandon, 2026-09-02): dos bloques de rolliza
+ * distinta pueden haber cortado la MISMA medida —15 piezas de 6×6×2 en uno,
+ * 12 en el otro—, y el papel tiene que declarar 27 en una sola fila, no la
+ * misma medida repetida dos veces. `pieTablar`/`m3` ya vienen `cantidad ×
+ * unitario`: sumarlos es exacto, no hace falta volver a cubicar. El dueño va
+ * en la clave para no mezclar la madera de dos encargos aunque coincida la
+ * medida — cada uno sigue en su propia fila.
+ */
+export function unificarPorMedida(piezas: PiezaCubicada[]): PiezaCubicada[] {
+  const mapa = new Map<string, PiezaCubicada>();
+  for (const p of piezas) {
+    const clave = [p.especie ?? "", p.tipo ?? "", p.dueno ?? "", p.espesor, p.uEspesor, p.ancho, p.uAncho, p.largo, p.uLargo].join("|");
+    const acc = mapa.get(clave);
+    if (acc) {
+      acc.cantidad += p.cantidad;
+      acc.pieTablar = r2(acc.pieTablar + p.pieTablar);
+      acc.m3 = r4(acc.m3 + p.m3);
+    } else {
+      mapa.set(clave, { ...p });
+    }
+  }
+  return [...mapa.values()];
 }
 
 // ─── Parser de dictado por voz ──────────────────────────────────────────────
@@ -142,6 +245,12 @@ export interface DictadoParse {
  */
 function normalizeText(input: string): string {
   let s = " " + stripAccents(input.toLowerCase()) + " ";
+  // Puntuación pegada a la palabra ("once," sin espacio antes de la coma) rompe
+  // `wordsToDigits`, que tokeniza por espacios: "once," no matchea "once" en la
+  // tabla y el número se pierde en silencio. Un transcript de Whisper puntúa así
+  // de memoria — se neutraliza ANTES de tokenizar. La "coma" hablada (decimal
+  // peruano, "dos coma cinco") es la PALABRA "coma", no este carácter: no choca.
+  s = s.replace(/[,;:]+/g, " ");
   s = s.replace(/\s[x×*]\s/g, " por ");
   s = wordsToDigits(s);
   s = s.replace(/(\d+)\s+(?:punto|coma)\s+(\d+)/g, "$1.$2");
@@ -375,6 +484,8 @@ export type Comando =
   | { tipo: "continuar" }
   | { tipo: "borrar-ultimo" }
   | { tipo: "especie"; palabra: string }
+  /** "dueño Juan" → asigna el dueño a lo que sigue (mismo mecanismo que especie). */
+  | { tipo: "dueno"; palabra: string }
   /** "pon fijo el largo a cuatro" → el largo deja de dictarse. */
   | { tipo: "fijar"; dimension: Dimension; valor: number }
   /** "quita el fijo" (todo) o "desfijá el largo" (una sola). */
@@ -397,21 +508,25 @@ export interface ComandosCfg {
   /** Opcionales: la config vieja guardada no los trae → fallback al default. */
   resumen?: string[];
   total?: string[];
+  /** Prefijos de dueño ("dueño Juan"). Opcional por el mismo motivo. */
+  dueno?: string[];
 }
 export const COMANDOS_DEFAULT: ComandosCfg = {
   pausar: ["pausa", "pausar", "para", "pare", "deten", "alto"],
   continuar: ["continua", "continuar", "reanuda", "sigue", "seguir", "dale", "adelante"],
   borrarUltimo: ["elimina el ultimo", "borra el ultimo", "quita el ultimo", "ultimo", "deshacer", "deshace", "borra eso"],
-  especie: ["especie", "madera"],
+  especie: ["especie", "especies", "madera"],
   fijar: ["fijo", "fija", "fijar", "fijalo", "deja fijo"],
   desfijar: ["quita el fijo", "quitar fijo", "saca el fijo", "desfija", "desfijar", "libera", "liberar", "sin fijo", "todo libre"],
   resumen: ["resumen", "muestra", "muestrame", "agrupa", "agrupame", "agrupalo", "agrupar"],
   total: ["cuanto llevo", "cuanto va", "cuanto tengo", "lee el total", "leer el total", "dame el total", "dime el total", "el total"],
+  dueno: ["dueño", "propietario"],
 };
 
 /** Sinónimos de cada dimensión del RESUMEN (agrupado hablado del lote). */
 const PALABRAS_RESUMEN: Record<string, string[]> = {
   especie: ["especie", "especies"],
+  dueno: ["dueño", "dueños", "propietario"],
   seccion: ["seccion", "secciones", "escuadria"],
   medida: ["medida completa", "medidas"],
   espesor: ["espesor", "grueso", "grosor"],
@@ -504,6 +619,14 @@ export function detectarComando(input: string, cfg: ComandosCfg = COMANDOS_DEFAU
     if (!t) continue;
     const m = s.match(new RegExp(`${escRe(t)}\\s+(?:de\\s+|es\\s+)?([a-z]+)`));
     if (m) return { tipo: "especie", palabra: m[1] };
+  }
+  // DUEÑO ("dueño Juan", "propietario Pérez") — mismo patrón que especie, una
+  // sola palabra: nombres compuestos se ponen mejor desde el selector.
+  for (const pre of cfg.dueno ?? COMANDOS_DEFAULT.dueno!) {
+    const t = stripAccents(pre.toLowerCase()).trim();
+    if (!t) continue;
+    const m = s.match(new RegExp(`${escRe(t)}\\s+(?:de\\s+|es\\s+)?([a-z]+)`));
+    if (m) return { tipo: "dueno", palabra: m[1] };
   }
   if (hit(cfg.pausar)) return { tipo: "pausar" };
   if (hit(cfg.continuar)) return { tipo: "continuar" };

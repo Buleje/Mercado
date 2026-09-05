@@ -54,14 +54,58 @@ export default function CtpApartados({
   apartados,
   activo,
   onIr,
+  enLinea = false,
 }: {
   apartados: readonly Apartado[];
   activo: string;
   onIr: (id: string) => void;
+  /**
+   * Modo `enLinea`: sin caja propia ni flechas, para entrar en la MISMA fila
+   * que los filtros de la vista (Brandon, 2026-09-02: «quiero que la sección
+   * de trozas en el patio y sección 2 · consumo estén en la misma fila de
+   * filtros»). Con dos apartados las flechas ← → no aportan nada —los dos
+   * botones ya están a la vista— y la caja gastaba un renglón entero de
+   * pantalla arriba de la tabla que se viene a mirar.
+   */
+  enLinea?: boolean;
 }) {
   const i = Math.max(0, apartados.findIndex((a) => a.id === activo));
   const anterior = apartados[i - 1];
   const siguiente = apartados[i + 1];
+
+  if (enLinea) {
+    return (
+      <nav aria-label="Apartados de la vista" className="flex min-w-0 shrink-0 flex-wrap items-center gap-2">
+        {apartados.map((a, n) => {
+          const esActivo = a.id === activo;
+          return (
+            <button
+              key={a.id}
+              type="button"
+              onClick={() => onIr(a.id)}
+              aria-current={esActivo ? "step" : undefined}
+              title={a.hint}
+              /* `h-12` = la altura de los campos de filtro de la barra: si
+                 fueran más bajos, la fila se leería como dos filas. */
+              className={`inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-2xl border-2 px-3 text-sm font-bold transition-colors ${
+                esActivo
+                  ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]"
+              }`}
+            >
+              <span className="font-mono text-[length:var(--ts-2xs)] opacity-70">{String(n + 1).padStart(2, "0")}</span>
+              {a.label}
+              {a.contador != null && (
+                <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] tabular-nums">
+                  {a.contador}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+    );
+  }
 
   return (
     <nav

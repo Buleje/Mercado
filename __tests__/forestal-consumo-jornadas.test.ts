@@ -23,6 +23,7 @@ const bloque = (id: string, rolliza: number, usado: number, piezas = 10): Bloque
   capacidadM3: rolliza * 0.56,
   usadoM3: usado,
   libreM3: Math.max(0, rolliza * 0.56 - usado),
+  piezasLibres: null, // el bloque de este fixture no declara conteo a mano
   asignado: usado > 0 ? [grupo("tabla", piezas, usado)] : [],
   dias: 1,
   porDia: [],

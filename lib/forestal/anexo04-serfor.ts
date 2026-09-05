@@ -70,6 +70,7 @@ export function siguienteCorrelativo(actual: string): string {
 
 export interface FilaAnexo04 {
   /** Correlativo dentro del bloque (1..35). */ n: number;
+  /** id de la `PiezaCubicada` de origen — permite editarla desde la grilla. */ id: string;
   cantidad: number;
   /** (7) Espesor en pulgadas. */ e: number;
   /** (8) Ancho en pulgadas. */ a: number;
@@ -248,6 +249,7 @@ export function construirAnexo04(
     trocear(g.piezas, FILAS_OFICIAL).forEach((chunk, i) => {
       const filas = chunk.map((r, j) => ({
         n: j + 1,
+        id: r.id,
         cantidad: r.cantidad,
         e: r2(toInches(r.espesor, r.uEspesor)),
         a: r2(toInches(r.ancho, r.uAncho)),

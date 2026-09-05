@@ -11,19 +11,19 @@
  * tenant en localStorage: en el aserradero se emite guía tras guía y nadie
  * quiere re-tipear la razón social ni el DNI del responsable.
  */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { FileText, X } from "@buleje/design-system/icons";
-import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { construirAnexo04, fmtAnexo } from "@/lib/forestal/anexo04-serfor";
-import { validarAnexo04, anexoPresentable, type DeclaradoEnLibro } from "@/lib/forestal/anexo04-validacion";
+import { validarAnexo04, avisosDeProcedencia, anexoPresentable, type DeclaradoEnLibro, type ProcedenciaBloques } from "@/lib/forestal/anexo04-validacion";
 import { useAnexo04Datos } from "@/hooks/use-anexo04-datos";
 import Anexo04Campos from "./Anexo04Campos";
 import Anexo04Origen, { ORIGEN_ACTUAL } from "./Anexo04Origen";
 import Anexo04Historial, { ICONO_HISTORIAL } from "./Anexo04Historial";
 import Anexo04Checklist from "./Anexo04Checklist";
 import Anexo04Preview from "./Anexo04Preview";
-import { ANEXO04_CSS } from "./Anexo04Hoja";
+import { ANEXO04_CSS, type CampoEditable } from "./Anexo04Hoja";
 import Anexo04Acciones from "./Anexo04Acciones";
 import { inicioDeEmision, type AnexoEmitido } from "@/lib/forestal/anexo04-registro";
 import { useAnexosEmitidos } from "@/hooks/use-anexos-emitidos";
@@ -50,7 +50,7 @@ function imprimirHtml(html: string) {
 }
 
 export default function Anexo04Modal({
-  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, ctpEntryId, declarado, abrirHistorial = false, despacho,
+  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, ctpEntryId, declarado, abrirHistorial = false, despacho, procedencia,
 }: {
   /** Lote abierto en el cubicador; puede venir vacío (p. ej. desde el Libro CTP). */
   rows: PiezaCubicada[];
@@ -66,6 +66,12 @@ export default function Anexo04Modal({
   declarado?: DeclaradoEnLibro | null;
   /** Abre con la bandeja de emitidos desplegada (consulta, no emisión). */
   abrirHistorial?: boolean;
+  /**
+   * De qué bloques de la distribución salieron estas piezas (rolliza vs
+   * madera ya aserrada). Sólo alimenta el CHECKLIST — el formato oficial no
+   * cambia ni un casillero: es un aviso para quien firma, no un campo nuevo.
+   */
+  procedencia?: ProcedenciaBloques | null;
   /** Descarga el PDF interno detallado (el de siempre, con precios y tipos). */
   onPdfDetallado?: () => void;
   onCerrar: () => void;
@@ -156,23 +162,90 @@ export default function Anexo04Modal({
   // la grilla (840 celdas por hoja).
   const filas = piezasGuardadas ?? rows;
   const especie = piezasGuardadas ? especieOrigen : especieGlobal;
+
+  /**
+   * Filtro por dueño — cuando el origen trae piezas de MÁS DE UNO, permite
+   * generar el anexo de un solo dueño a la vez en vez de mezclarlos en un
+   * documento (pedido: aserrío por encargo, cada dueño se lleva su propio
+   * ANEXO N° 04). "todos" = comportamiento de siempre, sin filtrar.
+   *
+   * Se resetea al cambiar de origen por el mismo motivo que `overrides`: un
+   * nombre de dueño de OTRO conjunto de piezas no tiene por qué existir acá.
+   */
+  const duenosDisponibles = useMemo(
+    () => [...new Set(filas.map((r) => r.dueno?.trim()).filter((d): d is string => !!d))],
+    [filas],
+  );
+  const [duenoFiltro, setDuenoFiltro] = useState<string | "todos">("todos");
+  useEffect(() => { setDuenoFiltro("todos"); }, [origen]);
+  const filasPorDueno = useMemo(
+    () => (duenoFiltro === "todos" ? filas : filas.filter((r) => (r.dueno?.trim() || "") === duenoFiltro)),
+    [filas, duenoFiltro],
+  );
+
+  /**
+   * Correcciones de "Editar medidas" (modo Excel de la hoja) — LOCALES a esta
+   * sesión del anexo, por id de pieza. A propósito NO tocan el lote real
+   * (`rows`) ni la cubicación guardada (`piezasGuardadas`): el anexo es una
+   * declaración que se está preparando para imprimir, y este modal se abre
+   * desde CUATRO lugares distintos (cubicador, Libro CTP, reparto…) — mutar
+   * la fuente desde acá exigiría un callback distinto y confiable en cada
+   * uno. Cambiar de origen (`origen`) descarta las correcciones: apuntan a
+   * ids de OTRO conjunto de piezas y quedarían pegadas por error.
+   */
+  const [overrides, setOverrides] = useState<Record<string, Partial<Pick<PiezaCubicada, "cantidad" | "espesor" | "ancho" | "largo" | "uEspesor" | "uAncho" | "uLargo">>>>({});
+  useEffect(() => { setOverrides({}); }, [origen]);
+  const filasEditadas = useMemo(() => {
+    if (Object.keys(overrides).length === 0) return filasPorDueno;
+    return filasPorDueno.map((r) => {
+      const ov = overrides[r.id];
+      if (!ov) return r;
+      const upd = { ...r, ...ov };
+      const { pieTablar, m3 } = cubicarPieza(upd);
+      return { ...upd, pieTablar, m3 };
+    });
+  }, [filasPorDueno, overrides]);
+  /**
+   * La celda edita en la UNIDAD que se ve impresa: E/A en pulgadas, L en
+   * pies (la convención del anexo, `notaUnidad`) — sin esto, una pieza
+   * cargada en cm quedaría con un espesor "8" interpretado en su unidad
+   * vieja y el pie tablar saldría mal.
+   */
+  const onEditarCelda = useCallback((id: string, campo: CampoEditable, valor: number) => {
+    setOverrides((prev) => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [campo]: valor,
+        ...(campo === "espesor" ? { uEspesor: "pulg" as const } : {}),
+        ...(campo === "ancho" ? { uAncho: "pulg" as const } : {}),
+        ...(campo === "largo" ? { uLargo: "pies" as const } : {}),
+      },
+    }));
+  }, []);
+
   const anexo = useMemo(
-    () => construirAnexo04(filas, { unidadV: datos.unidadV, modo: datos.modo }, { especieGlobal: especie, totalManualM3: totalManual }),
-    [filas, datos.unidadV, datos.modo, especie, totalManual],
+    () => construirAnexo04(filasEditadas, { unidadV: datos.unidadV, modo: datos.modo }, { especieGlobal: especie, totalManualM3: totalManual }),
+    [filasEditadas, datos.unidadV, datos.modo, especie, totalManual],
   );
   const escala = Math.max(0.25, fit * factor);
 
 
   const { generando, descargarPdf, descargarExcel, reDescargar, pdfDeLote } = useAnexo04Salidas({
-    filas, datos, especieGlobal: especie, ctpEntryId, totalManualM3: totalManual, onAviso,
+    filas: filasEditadas, datos, especieGlobal: especie, ctpEntryId, totalManualM3: totalManual, onAviso,
     onRegistrado: () => setHistorialToken((t) => t + 1),
   });
   // Checklist de emisión: lo que la ARFFS devuelve (errores) y lo que un
   // fiscalizador va a preguntar (avisos). No bloquea: la hoja en blanco para
   // llenar a mano es un uso legítimo del formato.
   const avisos = useMemo(
-    () => validarAnexo04(datos, anexo, filas, { declarado: contraste, emitidos, ctpEntryId, ficha }),
-    [datos, anexo, filas, contraste, emitidos, ctpEntryId, ficha],
+    () => [
+      ...validarAnexo04(datos, anexo, filasEditadas, { declarado: contraste, emitidos, ctpEntryId, ficha }),
+      /* Al final: es lo que hay que MIRAR, no lo que impide presentar — los
+         errores del formato siguen arriba, donde se leen primero. */
+      ...avisosDeProcedencia(procedencia),
+    ],
+    [datos, anexo, filasEditadas, contraste, emitidos, ctpEntryId, ficha, procedencia],
   );
   const presentable = anexoPresentable(avisos);
 
@@ -221,6 +294,11 @@ export default function Anexo04Modal({
           <div>
             <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
               <FileText className="h-5 w-5 text-[var(--accent)]" /> Vista previa · ANEXO N° 04
+              {duenoFiltro !== "todos" && (
+                <span className="rounded-full bg-primary/12 px-2.5 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                  Cubicación de {duenoFiltro}
+                </span>
+              )}
             </CardTitle>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-1 text-xs text-[var(--text-tertiary)]">
               <span>
@@ -278,7 +356,7 @@ export default function Anexo04Modal({
         <div className="grid gap-4 lg:grid-cols-[19rem_1fr]">
           {/* Datos del formato */}
           <div className="lg:max-h-[74vh] lg:overflow-y-auto lg:pr-1">
-            <Anexo04Campos datos={datos} onChange={set} ficha={ficha} onError={(msg) => onAviso?.(msg, "error")} />
+            <Anexo04Campos datos={datos} onChange={set} ficha={ficha} onError={(msg) => onAviso?.(msg, "error")} anexo={anexo} />
             <div className="mt-3 border-t-2 border-[var(--rule-soft)] pt-3">
               <button
                 type="button"
@@ -361,7 +439,34 @@ export default function Anexo04Modal({
                   }}
                 />
               }
+              duenoSelector={
+                duenosDisponibles.length > 1 ? (
+                  <div className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setDuenoFiltro("todos")}
+                      aria-pressed={duenoFiltro === "todos"}
+                      className={`h-7 rounded-md px-2 text-xs font-bold transition ${duenoFiltro === "todos" ? "bg-primary/12 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                    >
+                      Todos
+                    </button>
+                    {duenosDisponibles.map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setDuenoFiltro(d)}
+                        aria-pressed={duenoFiltro === d}
+                        title={`Ver sólo la cubicación de ${d}`}
+                        className={`h-7 rounded-md px-2 text-xs font-bold transition ${duenoFiltro === d ? "bg-primary/12 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                ) : undefined
+              }
               checklist={<Anexo04Checklist avisos={avisos} presentable={presentable} onSugerencia={(campo, valor) => set({ [campo]: valor })} />}
+              onEditarCelda={onEditarCelda}
             />
             )}
           </div>

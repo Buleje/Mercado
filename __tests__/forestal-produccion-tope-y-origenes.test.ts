@@ -134,8 +134,8 @@ describe("motivosParaGuardar con el tope", () => {
     const m = motivosParaGuardar([paq(6)], { consumidoM3: 10 });
     expect(m).toHaveLength(1);
     expect(m[0]).toContain("56 %");
-    expect(m[0]).toContain("5.6000 m³");
-    expect(m[0]).toContain("Sacá 0.4 m³");
+    expect(m[0]).toContain("5.600 m³");
+    expect(m[0]).toContain("Sacá 0.400 m³");
   });
 
   it("el tope mira la SUMA de los paquetes, no cada uno", () => {
@@ -250,8 +250,8 @@ describe("motivosParaGuardar al AMPLIAR (ADR-361/365)", () => {
     // 10 m³ de materia prima → tope 5.6. Ya declaró 4 y quiere agregar 2.
     const motivos = motivosParaGuardar([pq({ volumenM3: 2 })], { consumidoM3: 10, yaDeclaradoM3: 4 });
     expect(motivos).toHaveLength(1);
-    expect(motivos[0]).toContain("6.0000");
-    expect(motivos[0]).toContain("5.6000");
+    expect(motivos[0]).toContain("6.000");
+    expect(motivos[0]).toContain("5.600");
   });
 
   it("lo que entra en el margen pasa sin ruido", () => {

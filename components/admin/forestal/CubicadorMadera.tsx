@@ -9,12 +9,12 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers } from "@buleje/design-system/icons";
+import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Columns3 } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   cubicarPieza, mejoresNumeros, detectarComando, ESPECIES_MADERA,
-  esEco, leerDictado, medidaSospechosa, partirConFijas, numerosPorPieza,
+  esEco, leerDictado, medidaSospechosa, partirConFijas, numerosPorPieza, PT_POR_M3, recubicarPiezas, m3DesdePt,
   type PiezaCubicada, type Unidad, type MedidasFijas,
 } from "@/lib/forestal/cubicacion";
 import {
@@ -36,6 +36,7 @@ import ImportarCubicacionModal from "./ImportarCubicacionModal";
 import LiquidacionModal from "./LiquidacionModal";
 import EnviarLibroModal from "./EnviarLibroModal";
 import Anexo04Modal from "./Anexo04Modal";
+import DuenosModal from "./DuenosModal";
 import { clasificarTipo, ORDEN_TIPO, tipoDePieza, tipoEsManual, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoSelect } from "./tipo-badge";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
@@ -73,13 +74,12 @@ const GRILLA_CARGA_FIN = "cub-carga-fin";
 const GRILLA_TABLA = "cub-tabla";
 /** Orden de tabulación de la fila de carga: Cant → Espesor → Ancho → Largo. */
 const COL_CANT = 0, COL_ESPESOR = 1, COL_ANCHO = 2, COL_LARGO = 3;
-/**
- * Mismas 4 columnas navegables en TODAS las filas de la tabla del lote —
- * referencia ESTABLE (módulo, no un array literal por render) para que
- * `useTecladoGrilla` no tenga que ir al DOM a averiguarlo en cada Enter o
- * flecha (ver `totalFilas`/`columnas` en `celdas-excel.tsx`).
- */
-const TABLA_COLUMNAS = [COL_CANT, COL_ESPESOR, COL_ANCHO, COL_LARGO] as const;
+/** Las 4 columnas navegables de la fila de carga, en orden — TODAS. Dentro
+ *  del componente se filtra por `colsVisibles` (ver `tablaColumnas`): con
+ *  Cant./Espesor/Ancho/Largo ahora ocultables en la TABLA, la fila de carga
+ *  de arriba sigue teniendo las 4 fijas — sólo cambia la navegación de la
+ *  tabla, que ya no puede ser un array de módulo (depende de estado). */
+const TABLA_COLUMNAS_TODAS = [COL_CANT, COL_ESPESOR, COL_ANCHO, COL_LARGO] as const;
 
 /**
  * Índice de cada columna de la tabla del lote, para la selección de rango.
@@ -93,6 +93,42 @@ const TCOL = {
   numero: 0, cant: 1, espesor: 2, ancho: 3, largo: 4, medida: 5,
   tipo: 6, especie: 7, apartado: 8, pt: 9, m3: 10, acciones: 11,
 } as const;
+
+/**
+ * Columnas OPCIONALES de la tabla del lote — TODAS se pueden ocultar/mostrar
+ * y la elección queda guardada por tenant hasta que se cambie de nuevo.
+ *
+ * Sólo "Marcar" (el tilde del PDF/Anexo 04) y "Acciones" (duplicar/editar
+ * por voz/borrar) quedan fijas: son controles operativos, no datos. Ocultar
+ * Cant./Espesor/Ancho/Largo saca esa columna de la navegación de teclado de
+ * la TABLA (`tablaColumnasVisibles`, dentro del componente) — la fila de
+ * carga de arriba (`TABLA_COLUMNAS_TODAS`) no se toca, sigue con las 4.
+ */
+type ColOpcional = "numero" | "cant" | "espesor" | "ancho" | "largo" | "medida" | "tipo" | "especie" | "dueno" | "apartado" | "pt" | "m3";
+/* Las dos cuentas del cubicador, escritas una sola vez y mostradas al pasar el
+   mouse por el encabezado: el pie tablar es la fórmula comercial y el m³ SALE
+   de él (÷ 424), no del volumen geométrico. */
+const FORMULA_PT = "Pie tablar = espesor″ × ancho″ × largo′ × cantidad ÷ 12";
+const FORMULA_M3 = `m³ = pie tablar ÷ ${PT_POR_M3}`;
+
+const COLS_OPCIONALES: { key: ColOpcional; label: string }[] = [
+  { key: "numero", label: "N°" },
+  { key: "cant", label: "Cant." },
+  { key: "espesor", label: "Espesor" },
+  { key: "ancho", label: "Ancho" },
+  { key: "largo", label: "Largo" },
+  { key: "medida", label: "Medida" },
+  { key: "tipo", label: "Tipo" },
+  { key: "especie", label: "Especie" },
+  { key: "dueno", label: "Dueño" },
+  { key: "apartado", label: "Apartado" },
+  { key: "pt", label: "Pie tablar" },
+  { key: "m3", label: "m³" },
+];
+const COLS_DEFAULT: Record<ColOpcional, boolean> = {
+  numero: true, cant: true, espesor: true, ancho: true, largo: true,
+  medida: true, tipo: true, especie: true, dueno: true, apartado: true, pt: true, m3: true,
+};
 
 // Especies de madera comunes en la Selva Central peruana (single-source en cubicacion.ts).
 const ESPECIES = ESPECIES_MADERA;
@@ -164,6 +200,39 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [supported, setSupported] = useState(true);
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [especie, setEspecie] = useState("");
+  /** De quién es lo que se está dictando ahora — se pone FIJO al elegirlo,
+   *  igual que la especie, hasta que se cambie a mano. */
+  const [dueno, setDueno] = useState("");
+  /** Dueños ya usados en este dispositivo (no sólo en el lote actual): la
+   *  lista crece sola con cada nombre nuevo, así el select/datalist ofrece
+   *  el mismo dueño de ayer sin re-tipearlo. */
+  const [duenosConocidos, setDuenosConocidos] = useState<string[]>(() => {
+    try { return JSON.parse(leerGuardado("-duenos") ?? "[]") as string[]; } catch { return []; }
+  });
+  const recordarDueno = useCallback((nombre: string) => {
+    const limpio = nombre.trim();
+    if (!limpio) return;
+    setDuenosConocidos((prev) => {
+      if (prev.some((d) => d.toLowerCase() === limpio.toLowerCase())) return prev;
+      const next = [...prev, limpio].slice(-50); // tope: no crece sin límite
+      try { localStorage.setItem(`${storageKey()}-duenos`, JSON.stringify(next)); } catch { /* quota */ }
+      return next;
+    });
+  }, []);
+  /** Cambia el dueño actual Y lo recuerda para la próxima vez — el único
+   *  camino que debería usar la UI (voz, selector, datalist de la tabla). */
+  const aplicarDueno = useCallback((v: string) => { setDueno(v); recordarDueno(v); }, [recordarDueno]);
+  /** Saca un dueño de la lista GUARDADA — no toca las piezas que ya lo usan
+   *  (son texto libre, no una referencia): borrar del catálogo no reescribe
+   *  el lote. */
+  const olvidarDueno = useCallback((nombre: string) => {
+    setDuenosConocidos((prev) => {
+      const next = prev.filter((d) => d !== nombre);
+      try { localStorage.setItem(`${storageKey()}-duenos`, JSON.stringify(next)); } catch { /* quota */ }
+      return next;
+    });
+  }, []);
+  const [showDuenosModal, setShowDuenosModal] = useState(false);
   const [config, setConfig] = useState<CubicadorConfig>(CONFIG_DEFAULT);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [showAjustes, setShowAjustes] = useState(false);
@@ -278,10 +347,27 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   // Filtros de la tabla del lote (no tocan los datos, solo la vista).
   const [filtroEspecie, setFiltroEspecie] = useState("");   // "" = todas
   const [filtroTipo, setFiltroTipo] = useState<TipoComercial | "">("");
+  const [filtroDueno, setFiltroDueno] = useState("");        // "" = todos
   const [busqueda, setBusqueda] = useState("");             // medidas / texto libre
+  /** Columnas opcionales ocultas/mostradas — por tenant, hasta que se cambie. */
+  const [colsVisibles, setColsVisibles] = useState<Record<ColOpcional, boolean>>(() => {
+    const raw = leerGuardado("-cols");
+    if (!raw) return COLS_DEFAULT;
+    try { return { ...COLS_DEFAULT, ...(JSON.parse(raw) as Partial<Record<ColOpcional, boolean>>) }; } catch { return COLS_DEFAULT; }
+  });
+  useEffect(() => { try { localStorage.setItem(`${storageKey()}-cols`, JSON.stringify(colsVisibles)); } catch { /* quota */ } }, [colsVisibles]);
+  const [colsMenuOpen, setColsMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!colsMenuOpen) return;
+    const cerrar = () => setColsMenuOpen(false);
+    window.addEventListener("click", cerrar);
+    return () => window.removeEventListener("click", cerrar);
+  }, [colsMenuOpen]);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const idRef = useRef(0);
   const especieRef = useRef(especie);
+  const duenoRef = useRef(dueno);
+  const duenosConocidosRef = useRef(duenosConocidos);
   const configRef = useRef(config);
   const wantListeningRef = useRef(false);
   /** Números sueltos entre frases + CUÁNDO llegaron (caducan a los 25s). */
@@ -307,6 +393,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   useEffect(() => { rowsRef.current = rows; }, [rows]);
   const resetVoz = () => { carryRef.current = { nums: [], ts: 0 }; lastFinalRef.current = -1; ecoRef.current = { hasta: 0, texto: "" }; };
   useEffect(() => { especieRef.current = especie; }, [especie]);
+  useEffect(() => { duenoRef.current = dueno; }, [dueno]);
+  useEffect(() => { duenosConocidosRef.current = duenosConocidos; }, [duenosConocidos]);
   // Las fijas sobreviven al refresh: un lote de un mismo largo puede llevar
   // toda la mañana y recargar la página no debería soltar la medida.
   useEffect(() => { fijasRef.current = fijas; }, [fijas]);
@@ -345,7 +433,10 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey());
-      if (raw) setRows(JSON.parse(raw) as PiezaCubicada[]);
+      /* Se RE-CUBICA al hidratar: un lote guardado antes de que el m³ saliera
+         del pie tablar trae el volumen geométrico y el total lo arrastraría
+         (13.026 PT mostraban 30,738 m³ en vez de 30,722). */
+      if (raw) setRows(recubicarPiezas(JSON.parse(raw) as PiezaCubicada[]));
     } catch { /* ignore */ }
   }, []);
 
@@ -357,7 +448,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   // con las filas frescas, sin depender de `rows` (que estaría stale).
   const addPieza = useCallback((p: {
     cantidad: number; espesor: number; ancho: number; largo: number;
-    uEspesor: Unidad; uAncho: Unidad; uLargo: Unidad; especie?: string;
+    uEspesor: Unidad; uAncho: Unidad; uLargo: Unidad; especie?: string; dueno?: string;
   }) => {
     const { pieTablar, m3 } = cubicarPieza(p);
     const row: PiezaCubicada = { id: nuevoId(), ...p, pieTablar, m3 };
@@ -369,7 +460,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
    *  cubicadas; se les da id propio para no chocar con las de la sesión. */
   const agregarVarias = useCallback((nuevas: PiezaCubicada[]) => {
     if (nuevas.length === 0) return;
-    const conId = nuevas.map((p) => ({ ...p, id: nuevoId() }));
+    // El Excel importado trae su propio pieTablar/m³: se re-cubica desde las
+    // medidas para que ninguna planilla ajena imponga otra fórmula.
+    const conId = recubicarPiezas(nuevas).map((p) => ({ ...p, id: nuevoId() }));
     setRows((prev) => { const next = [...prev, ...conId]; saveLocal(next); return next; });
     setLastAdded(conId[conId.length - 1]);
     const piezas = nuevas.reduce((a, p) => a + p.cantidad, 0);
@@ -455,6 +548,14 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           if (found) { setEspecie(found); hablar(found); }
           else setErrMsg(`No reconocí la especie "${cmd.palabra}".`);
         }
+        else if (cmd.tipo === "dueno") {
+          // Sin catálogo cerrado: si ya se usó un dueño parecido se reutiliza
+          // (mismo criterio que la especie), si no SE CREA con lo dictado.
+          const conocido = duenosConocidosRef.current.find((d) => sinAcentos(d).startsWith(cmd.palabra));
+          const nombre = conocido ?? (cmd.palabra.charAt(0).toUpperCase() + cmd.palabra.slice(1));
+          aplicarDueno(nombre);
+          hablar(nombre);
+        }
         else if (cmd.tipo === "resumen") {
           setShowResumen(true);
           const dim = cmd.dimension as DimensionResumen;
@@ -511,6 +612,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           cantidad: cantDictada, espesor, ancho, largo,
           uEspesor: "pulg", uAncho: "pulg", uLargo: "pies",
           especie: especieRef.current || undefined,
+          dueno: duenoRef.current || undefined,
         });
         ultima = { espesor, ancho, largo }; added++;
       }
@@ -583,7 +685,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     };
     recRef.current = rec;
     return () => { wantListeningRef.current = false; try { rec.stop(); } catch { /* ignore */ } };
-  }, [addPieza, updateRow, borrarUltimo, hablar, aplicarFijas]);
+  }, [addPieza, updateRow, borrarUltimo, hablar, aplicarFijas, aplicarDueno]);
 
   const stopLeer = useCallback(() => {
     readingRef.current = false; setReadingId(null);
@@ -738,7 +840,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       pushToast({ tono: "warning", msg: "Faltan medidas", detail: "Espesor, ancho y largo tienen que ser mayores a 0." });
       return false;
     }
-    addPieza({ cantidad: c, espesor: e, ancho: a, largo: l, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especieRef.current || undefined });
+    addPieza({ cantidad: c, espesor: e, ancho: a, largo: l, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especieRef.current || undefined, dueno: duenoRef.current || undefined });
     // Lo fijado se conserva; sólo se limpia lo que se vuelve a tipear en cada pieza.
     setManualSync({
       cantidad: "1",
@@ -811,6 +913,10 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const editarEspecie = useCallback((id: string, especieNueva: string) => {
     persist(rowsRef.current.map((r) => (r.id === id ? { ...r, especie: especieNueva || undefined } : r)));
   }, [persist]);
+  const editarDueno = useCallback((id: string, duenoNuevo: string) => {
+    persist(rowsRef.current.map((r) => (r.id === id ? { ...r, dueno: duenoNuevo.trim() || undefined } : r)));
+    recordarDueno(duenoNuevo);
+  }, [persist, recordarDueno]);
   /**
    * Fuerza el tipo comercial de una pieza, o lo devuelve a automático.
    *
@@ -925,11 +1031,14 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   };
   const renombrarApartadoActual = (numero: number, nombre: string) => setNombresApartado((prev) => renombrarApartado(prev, numero, nombre));
 
-  const totales = useMemo(() => ({
-    piezas: rows.reduce((a, r) => a + r.cantidad, 0),
-    pt: rows.reduce((a, r) => a + r.pieTablar, 0),
-    m3: rows.reduce((a, r) => a + r.m3, 0),
-  }), [rows]);
+  /* El m³ del TOTAL se deriva del pie tablar total, no de sumar los m³ de cada
+     fila: sumar 300 valores ya redondeados a 4 decimales corre el total unas
+     centésimas y la cuenta que se hace a mano —13.026 ÷ 424 = 30,722— dejaba de
+     dar (Brandon, 2026-09-01). Con esto, TOTAL × 424 = PT total, exacto. */
+  const totales = useMemo(() => {
+    const pt = rows.reduce((a, r) => a + r.pieTablar, 0);
+    return { piezas: rows.reduce((a, r) => a + r.cantidad, 0), pt, m3: m3DesdePt(pt) };
+  }, [rows]);
   const precio = Number(precioPt) || 0;
 
   // Especies presentes en el lote (para el editor de precio por especie).
@@ -939,13 +1048,25 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   );
   // ¿Alguna pieza sin especie? (opción "Sin especie" en el filtro).
   const haySinEspecie = useMemo(() => rows.some((r) => !r.especie?.trim()), [rows]);
+  // Dueños presentes en el lote — mismo criterio que especiesLote/haySinEspecie.
+  const duenosLote = useMemo(
+    () => [...new Set(rows.map((r) => r.dueno?.trim()).filter((d): d is string => !!d))],
+    [rows],
+  );
+  const haySinDueno = useMemo(() => rows.some((r) => !r.dueno?.trim()), [rows]);
+  // Sugerencias del datalist de la celda: lo usado en ESTE lote + lo aprendido
+  // en el dispositivo, sin duplicar.
+  const duenosParaDatalist = useMemo(
+    () => [...new Set([...duenosLote, ...duenosConocidos])],
+    [duenosLote, duenosConocidos],
+  );
   // Tipos comerciales presentes, en el orden canónico (para el filtro por tipo).
   const tiposLote = useMemo(() => {
     const set = new Set<TipoComercial>(rows.map((r) => tipoDePieza(r)));
     return ORDEN_TIPO.filter((t) => set.has(t));
   }, [rows]);
   // Vista filtrada del lote: conserva el índice original para el N° estable.
-  const filtrando = filtroEspecie !== "" || filtroTipo !== "" || busqueda.trim() !== "";
+  const filtrando = filtroEspecie !== "" || filtroTipo !== "" || filtroDueno !== "" || busqueda.trim() !== "";
   const norm = (s: string) => s.toLowerCase().replace(/[×*]/g, "x").replace(/\s+/g, "");
   const filasVisibles = useMemo(() => {
     const q = norm(busqueda);
@@ -954,14 +1075,15 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       .filter(({ r }) => {
         if (filtroEspecie && (r.especie?.trim() || "__sin__") !== filtroEspecie) return false;
         if (filtroTipo && tipoDePieza(r) !== filtroTipo) return false;
+        if (filtroDueno && (r.dueno?.trim() || "__sin__") !== filtroDueno) return false;
         if (q) {
-          const hay = norm(`${r.espesor}x${r.ancho}x${r.largo} ${r.especie ?? ""} ${tipoDePieza(r)}`);
+          const hay = norm(`${r.espesor}x${r.ancho}x${r.largo} ${r.especie ?? ""} ${r.dueno ?? ""} ${tipoDePieza(r)}`);
           if (!hay.includes(q)) return false;
         }
         return true;
       });
-  }, [rows, filtroEspecie, filtroTipo, busqueda]);
-  const limpiarFiltros = useCallback(() => { setFiltroEspecie(""); setFiltroTipo(""); setBusqueda(""); }, []);
+  }, [rows, filtroEspecie, filtroTipo, filtroDueno, busqueda]);
+  const limpiarFiltros = useCallback(() => { setFiltroEspecie(""); setFiltroTipo(""); setFiltroDueno(""); setBusqueda(""); }, []);
 
   /**
    * Ventaneo de la tabla (memoria `cubicador-freeze-lotes-grandes`): con
@@ -1016,18 +1138,35 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     const fila = filasVisibles[posicion];
     if (fila) duplicar(fila.r.id);
   }, [filasVisibles, duplicar]);
+  /**
+   * Cant./Espesor/Ancho/Largo ahora se pueden ocultar en la TABLA — la
+   * navegación de teclado tiene que saltearse la que no está. Sin esto, una
+   * flecha hacia la columna oculta buscaba un `data-col` que ya no existe en
+   * el DOM y se quedaba quieta en vez de saltar a la siguiente visible.
+   */
+  const tablaColumnasVisibles = useMemo(
+    () => TABLA_COLUMNAS_TODAS.filter((c) =>
+      c === COL_CANT ? colsVisibles.cant
+      : c === COL_ESPESOR ? colsVisibles.espesor
+      : c === COL_ANCHO ? colsVisibles.ancho
+      : colsVisibles.largo),
+    [colsVisibles.cant, colsVisibles.espesor, colsVisibles.ancho, colsVisibles.largo],
+  );
   const teclasTabla = useTecladoGrilla({
     grilla: GRILLA_TABLA,
     totalFilas: filasVisibles.length,
-    columnas: TABLA_COLUMNAS,
+    columnas: tablaColumnasVisibles,
     onEliminarFila: onEliminarFilaVisible,
     onDuplicarFila: onDuplicarFilaVisible,
   });
   // Totales de la vista (iguales al lote si no hay filtro activo).
-  const totalesVisibles = useMemo(() => filasVisibles.reduce(
-    (a, { r }) => ({ piezas: a.piezas + r.cantidad, pt: a.pt + r.pieTablar, m3: a.m3 + r.m3 }),
-    { piezas: 0, pt: 0, m3: 0 },
-  ), [filasVisibles]);
+  const totalesVisibles = useMemo(() => {
+    const sub = filasVisibles.reduce(
+      (a, { r }) => ({ piezas: a.piezas + r.cantidad, pt: a.pt + r.pieTablar }),
+      { piezas: 0, pt: 0 },
+    );
+    return { ...sub, m3: m3DesdePt(sub.pt) }; // mismo criterio que el total
+  }, [filasVisibles]);
 
   // ── Gestos de planilla: marcar un rango y arrastrar para repetir ──────────
   /**
@@ -1037,15 +1176,25 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const sel = useSeleccionRango(filasVisibles.length);
   const columnasSel = useMemo<ColumnaSeleccionable[]>(() => {
     const pieza = (pos: number) => filasVisibles[pos]?.r ?? null;
-    return [
-      // Sólo columnas de la MISMA unidad. Espesor/ancho/largo se pueden marcar
-      // para copiar, pero no se suman: un lote mezcla pulgadas con centímetros
-      // y el total sería un número sin unidad.
-      { col: TCOL.cant, label: "Cant.", unidad: "pzas", decimales: 0, leer: (p) => pieza(p)?.cantidad ?? null },
-      { col: TCOL.pt, label: "Pie tablar", unidad: "PT", decimales: 2, leer: (p) => pieza(p)?.pieTablar ?? null },
-      { col: TCOL.m3, label: "m³", unidad: "m³", decimales: 3, leer: (p) => pieza(p)?.m3 ?? null },
-    ];
-  }, [filasVisibles]);
+    // Sólo columnas de la MISMA unidad. Espesor/ancho/largo se pueden marcar
+    // para copiar, pero no se suman: un lote mezcla pulgadas con centímetros
+    // y el total sería un número sin unidad. Una columna OCULTA no entra: un
+    // rango arrastrado que la salte numéricamente (de Cant. a m³, por ej.) no
+    // debe mostrar la cuenta de una columna que ni siquiera se ve.
+    const cols: ColumnaSeleccionable[] = [];
+    if (colsVisibles.cant) cols.push({ col: TCOL.cant, label: "Cant.", unidad: "pzas", decimales: 0, leer: (p) => pieza(p)?.cantidad ?? null });
+    if (colsVisibles.pt) cols.push({ col: TCOL.pt, label: "Pie tablar", unidad: "PT", decimales: 2, leer: (p) => pieza(p)?.pieTablar ?? null });
+    if (colsVisibles.m3) cols.push({ col: TCOL.m3, label: "m³", unidad: "m³", decimales: 3, leer: (p) => pieza(p)?.m3 ?? null });
+    return cols;
+  }, [filasVisibles, colsVisibles.cant, colsVisibles.pt, colsVisibles.m3]);
+  /** Cuántas columnas hay ANTES de Pie tablar/m³ ahora mismo — el rótulo del
+   *  pie de tabla las abarca todas; con columnas ocultas, un colSpan fijo se
+   *  quedaba corto o largo y desalineaba los totales. */
+  const colSpanTotales = 1 // "Marcar" (el tilde del PDF) es la única fija de las de la izquierda
+    + (colsVisibles.numero ? 1 : 0) + (colsVisibles.cant ? 1 : 0)
+    + (colsVisibles.espesor ? 1 : 0) + (colsVisibles.ancho ? 1 : 0) + (colsVisibles.largo ? 1 : 0)
+    + (colsVisibles.medida ? 1 : 0) + (colsVisibles.tipo ? 1 : 0)
+    + (colsVisibles.especie ? 1 : 0) + (colsVisibles.dueno ? 1 : 0) + (colsVisibles.apartado ? 1 : 0);
 
   /**
    * Arrastre de relleno: se toma el asa de una celda y se baja.
@@ -1054,24 +1203,26 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
    * corregir el origen no arrastra el cambio — es una copia, no un vínculo.
    */
   const rellenarCampo = useCallback(
-    (campo: "especie" | "tipo") => (origen: number, posiciones: number[]) => {
+    (campo: "especie" | "tipo" | "dueno") => (origen: number, posiciones: number[]) => {
       const base = filasVisibles[origen]?.r;
       if (!base) return;
       const ids = new Set(posiciones.map((p) => filasVisibles[p]?.r.id).filter(Boolean));
       if (ids.size === 0) return;
-      const valor = campo === "especie" ? base.especie : base.tipo;
+      const valor = campo === "especie" ? base.especie : campo === "dueno" ? base.dueno : base.tipo;
       persist(rows.map((r) => (ids.has(r.id) ? { ...r, [campo]: valor } : r)));
-      const etiqueta = campo === "especie" ? (valor || "sin especie") : (valor ?? "automático");
+      if (campo === "dueno" && typeof valor === "string") recordarDueno(valor);
+      const etiqueta = campo === "especie" ? (valor || "sin especie") : campo === "dueno" ? (valor || "sin dueño") : (valor ?? "automático");
       pushToast({
         tono: "success",
         msg: `${ids.size} ${ids.size === 1 ? "fila" : "filas"} → ${etiqueta}`,
         detail: "Arrastrá el cuadradito de la esquina para repetir un valor.",
       });
     },
-    [filasVisibles, rows, persist, pushToast],
+    [filasVisibles, rows, persist, pushToast, recordarDueno],
   );
   const rellenoEspecie = useRellenoArrastre(useMemo(() => rellenarCampo("especie"), [rellenarCampo]));
   const rellenoTipo = useRellenoArrastre(useMemo(() => rellenarCampo("tipo"), [rellenarCampo]));
+  const rellenoDueno = useRellenoArrastre(useMemo(() => rellenarCampo("dueno"), [rellenarCampo]));
   /** Arrastre de relleno de la columna Apartado: copia el número (o "sin
    *  apartado") de la fila de origen hacia las filas pisadas — mismo gesto
    *  que especie/tipo arriba. Escribe en `asignados`, no en `rows` (el
@@ -1299,7 +1450,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   /** Carga una cubicación guardada en la tabla para seguir o re-exportar. */
   const abrirCubicacion = (c: CubicacionRegistro) => {
     if (rows.length > 0 && !cubicacionActual && !window.confirm("Vas a reemplazar el lote que tenés en pantalla y no está guardado. ¿Seguir?")) return;
-    persist(c.piezas);
+    persist(recubicarPiezas(c.piezas));
     setEspecie(c.especie ?? "");
     setPrecioPt(c.precioPt ? String(c.precioPt) : "");
     setForm({ nombre: c.nombre, fecha: c.fecha, cliente: c.cliente ?? "", notas: c.notas ?? "" });
@@ -1374,6 +1525,10 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         onAplicarFijas={aplicarFijas}
         especie={especie}
         onEspecieChange={setEspecie}
+        dueno={dueno}
+        onDuenoChange={aplicarDueno}
+        duenosConocidos={duenosParaDatalist}
+        onAbrirDuenos={() => setShowDuenosModal(true)}
         liveGroups={liveGroups}
         errMsg={errMsg}
         lastAdded={lastAdded}
@@ -1615,8 +1770,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
                     <th className="px-3 py-2">{ETIQUETA_DIMENSION[dimResumen].replace("Por ", "")}</th>
                     <th className="px-3 py-2 text-right">Piezas</th>
-                    <th className="px-3 py-2 text-right">Pie tablar</th>
-                    <th className="px-3 py-2 text-right">m³</th>
+                    <th className="px-3 py-2 text-right" title={FORMULA_PT}>Pie tablar</th>
+                    <th className="px-3 py-2 text-right" title={FORMULA_M3}>m³</th>
                     <th className="px-3 py-2">Peso del lote</th>
                     {conValor && <th className="px-3 py-2 text-right">Valor</th>}
                   </tr>
@@ -1696,6 +1851,18 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 {especiesLote.map((e) => <option key={e} value={e}>{e}</option>)}
                 {haySinEspecie && <option value="__sin__">Sin especie</option>}
               </select>
+              {duenosLote.length > 0 && (
+                <select
+                  value={filtroDueno}
+                  onChange={(e) => setFiltroDueno(e.target.value)}
+                  aria-label="Filtrar por dueño"
+                  className="h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+                >
+                  <option value="">Todos los dueños</option>
+                  {duenosLote.map((d) => <option key={d} value={d}>{d}</option>)}
+                  {haySinDueno && <option value="__sin__">Sin dueño</option>}
+                </select>
+              )}
               {filtrando && (
                 <>
                   <span className="text-[length:var(--ts-xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
@@ -1706,6 +1873,48 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   </button>
                 </>
               )}
+              {/* Columnas opcionales: ocultar/mostrar y restablecer — queda
+                  guardado por tenant hasta que se vuelva a tocar. */}
+              <div className="relative ml-auto">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setColsMenuOpen((v) => !v); }}
+                  title="Elegir columnas visibles de la tabla"
+                  aria-label="Elegir columnas visibles"
+                  aria-expanded={colsMenuOpen}
+                  className={`inline-flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-bold transition ${colsMenuOpen ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
+                >
+                  <Columns3 className="h-4 w-4" /> Columnas
+                </button>
+                {colsMenuOpen && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-0 top-full z-20 mt-1 min-w-[190px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
+                  >
+                    <p className="px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Columnas visibles</p>
+                    {COLS_OPCIONALES.map(({ key, label }) => (
+                      <label key={key} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+                        <input
+                          type="checkbox"
+                          checked={colsVisibles[key]}
+                          onChange={(e) => setColsVisibles((c) => ({ ...c, [key]: e.target.checked }))}
+                          className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
+                        />
+                        {label}
+                      </label>
+                    ))}
+                    <div className="mt-1 border-t border-[var(--rule-soft)] pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setColsVisibles(COLS_DEFAULT)}
+                        className="w-full rounded-lg px-2 py-1.5 text-left text-sm font-bold text-[var(--accent)] hover:bg-primary/10"
+                      >
+                        Restablecer todas
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <div
               data-grilla={GRILLA_TABLA}
@@ -1713,6 +1922,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               style={virtualizarTabla ? { maxHeight: altoContenedorTabla ?? undefined, overflowY: "auto" } : undefined}
               onScroll={virtualizarTabla ? (e) => setScrollTopTabla(e.currentTarget.scrollTop) : undefined}
             >
+            <datalist id="cub-duenos-datalist">
+              {duenosParaDatalist.map((d) => <option key={d} value={d} />)}
+            </datalist>
             <DataTable className="w-full min-w-[960px] text-sm">
               <thead>
                 <tr className={`bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] ${virtualizarTabla ? "sticky top-0 z-10" : ""}`}>
@@ -1739,25 +1951,28 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                       className="h-4 w-4 accent-[var(--accent)]"
                     />
                   </th>
-                  <th className="px-2 py-2 text-center">N°</th>
+                  {colsVisibles.numero && <th className="px-2 py-2 text-center">N°</th>}
                   {/* Click en el título = columna entera marcada, como en una
                       planilla. Sólo en las que aportan una cuenta: marcar
                       "Medida" no suma nada y el gesto quedaría sin respuesta. */}
-                  <ThCol col={TCOL.cant} sel={sel} filas={filasVisibles.length}>Cant.</ThCol>
-                  <th className="px-3 py-2">Espesor</th><th className="px-3 py-2">Ancho</th><th className="px-3 py-2">Largo</th>
-                  <th className="px-3 py-2">Medida</th>
-                  <th className="px-3 py-2">Tipo</th>
-                  <th className="px-3 py-2">Especie</th>
-                  <th className="px-3 py-2">Apartado</th>
-                  <ThCol col={TCOL.pt} sel={sel} filas={filasVisibles.length} className="text-right">Pie tablar</ThCol>
-                  <ThCol col={TCOL.m3} sel={sel} filas={filasVisibles.length} className="text-right">m³</ThCol>
+                  {colsVisibles.cant && <ThCol col={TCOL.cant} sel={sel} filas={filasVisibles.length}>Cant.</ThCol>}
+                  {colsVisibles.espesor && <th className="px-3 py-2">Espesor</th>}
+                  {colsVisibles.ancho && <th className="px-3 py-2">Ancho</th>}
+                  {colsVisibles.largo && <th className="px-3 py-2">Largo</th>}
+                  {colsVisibles.medida && <th className="px-3 py-2">Medida</th>}
+                  {colsVisibles.tipo && <th className="px-3 py-2">Tipo</th>}
+                  {colsVisibles.especie && <th className="px-3 py-2">Especie</th>}
+                  {colsVisibles.dueno && <th className="px-3 py-2">Dueño</th>}
+                  {colsVisibles.apartado && <th className="px-3 py-2">Apartado</th>}
+                  {colsVisibles.pt && <ThCol col={TCOL.pt} sel={sel} filas={filasVisibles.length} className="text-right" hint={FORMULA_PT}>Pie tablar</ThCol>}
+                  {colsVisibles.m3 && <ThCol col={TCOL.m3} sel={sel} filas={filasVisibles.length} className="text-right" hint={FORMULA_M3}>m³</ThCol>}
                   <th className="px-3 py-2" />
                 </tr>
               </thead>
               <tbody>
                 {filasVisibles.length === 0 && (
                   <tr>
-                    <td colSpan={13} className="px-3 py-8 text-center text-sm text-[var(--text-tertiary)]">
+                    <td colSpan={14} className="px-3 py-8 text-center text-sm text-[var(--text-tertiary)]">
                       Ninguna pieza coincide con el filtro.{" "}
                       <button type="button" onClick={limpiarFiltros} className="font-bold text-[var(--accent)] underline">Limpiar filtros</button>
                     </td>
@@ -1765,7 +1980,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 )}
                 {virtualizarTabla && colchonSuperior > 0 && (
                   <tr aria-hidden="true">
-                    <td colSpan={13} style={{ height: colchonSuperior, padding: 0, border: 0 }} />
+                    <td colSpan={14} style={{ height: colchonSuperior, padding: 0, border: 0 }} />
                   </tr>
                 )}
                 {filasEnVentana.map(({ r, indice }, i) => {
@@ -1783,7 +1998,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   const forzado = tipoEsManual(r);
                   // Vista previa del arrastre: la fila se pinta ANTES de soltar,
                   // así se ve hasta dónde va a llegar sin tener que adivinar.
-                  const enRelleno = rellenoEspecie.objetivo.includes(pos) || rellenoTipo.objetivo.includes(pos) || rellenoApartado.objetivo.includes(pos);
+                  const enRelleno = rellenoEspecie.objetivo.includes(pos) || rellenoTipo.objetivo.includes(pos) || rellenoApartado.objetivo.includes(pos) || rellenoDueno.objetivo.includes(pos);
                   const numeroAp = asignados[r.id];
                   return (
                   <tr
@@ -1793,7 +2008,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     /* El arrastre se extiende a nivel FILA y no celda por celda:
                        el asa se baja por cualquier parte de la fila, y repetir
                        el handler en once `<td>` sólo multiplicaba el trabajo. */
-                    onMouseEnter={() => { rellenoEspecie.extender(pos); rellenoTipo.extender(pos); rellenoApartado.extender(pos); }}
+                    onMouseEnter={() => { rellenoEspecie.extender(pos); rellenoTipo.extender(pos); rellenoApartado.extender(pos); rellenoDueno.extender(pos); }}
                     className={`border-t border-[var(--rule-soft)] transition-colors ${enRelleno ? "bg-primary/10 outline-dashed outline-2 -outline-offset-2 outline-[var(--accent)]" : rowCls || (rara ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : "")}`}
                   >
                     <td className="px-2 py-2 text-center">
@@ -1809,50 +2024,78 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                         className="h-4 w-4 accent-[var(--accent)]"
                       />
                     </td>
-                    <td className="px-2 py-2 text-center font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{indice + 1}</td>
-                    <td {...sel.props(pos, TCOL.cant)} className={`px-3 py-2 ${sel.seleccionada(pos, TCOL.cant) ? CELDA_SELECCIONADA : ""}`}><Num v={r.cantidad} onV={(n) => editarCampo(r.id, "cantidad", n)} etiqueta={`Cantidad de la fila ${r.espesor}×${r.ancho}×${r.largo}`} fila={pos} col={COL_CANT} onKeyDown={teclasTabla} /></td>
-                    <td className="px-3 py-2"><Dim v={r.espesor} u={r.uEspesor} onU={(u) => cambiarUnidad(r.id, "uEspesor", u)} onV={(n) => editarCampo(r.id, "espesor", n)} etiqueta="Espesor" fila={pos} col={COL_ESPESOR} onKeyDown={teclasTabla} /></td>
-                    <td className="px-3 py-2"><Dim v={r.ancho} u={r.uAncho} onU={(u) => cambiarUnidad(r.id, "uAncho", u)} onV={(n) => editarCampo(r.id, "ancho", n)} etiqueta="Ancho" fila={pos} col={COL_ANCHO} onKeyDown={teclasTabla} /></td>
-                    <td className="px-3 py-2"><Dim v={r.largo} u={r.uLargo} onU={(u) => cambiarUnidad(r.id, "uLargo", u)} onV={(n) => editarCampo(r.id, "largo", n)} etiqueta="Largo" fila={pos} col={COL_LARGO} onKeyDown={teclasTabla} /></td>
-                    <td className="px-3 py-2 whitespace-nowrap font-mono text-sm font-bold tabular-nums text-[var(--text-secondary)]">
-                      {r.espesor}×{r.ancho}×{r.largo}
-                    </td>
+                    {colsVisibles.numero && <td className="px-2 py-2 text-center font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{indice + 1}</td>}
+                    {colsVisibles.cant && (
+                      <td {...sel.props(pos, TCOL.cant)} className={`px-3 py-2 ${sel.seleccionada(pos, TCOL.cant) ? CELDA_SELECCIONADA : ""}`}><Num v={r.cantidad} onV={(n) => editarCampo(r.id, "cantidad", n)} etiqueta={`Cantidad de la fila ${r.espesor}×${r.ancho}×${r.largo}`} fila={pos} col={COL_CANT} onKeyDown={teclasTabla} /></td>
+                    )}
+                    {colsVisibles.espesor && (
+                      <td className="px-3 py-2"><Dim v={r.espesor} u={r.uEspesor} onU={(u) => cambiarUnidad(r.id, "uEspesor", u)} onV={(n) => editarCampo(r.id, "espesor", n)} etiqueta="Espesor" fila={pos} col={COL_ESPESOR} onKeyDown={teclasTabla} /></td>
+                    )}
+                    {colsVisibles.ancho && (
+                      <td className="px-3 py-2"><Dim v={r.ancho} u={r.uAncho} onU={(u) => cambiarUnidad(r.id, "uAncho", u)} onV={(n) => editarCampo(r.id, "ancho", n)} etiqueta="Ancho" fila={pos} col={COL_ANCHO} onKeyDown={teclasTabla} /></td>
+                    )}
+                    {colsVisibles.largo && (
+                      <td className="px-3 py-2"><Dim v={r.largo} u={r.uLargo} onU={(u) => cambiarUnidad(r.id, "uLargo", u)} onV={(n) => editarCampo(r.id, "largo", n)} etiqueta="Largo" fila={pos} col={COL_LARGO} onKeyDown={teclasTabla} /></td>
+                    )}
+                    {colsVisibles.medida && (
+                      <td className="px-3 py-2 whitespace-nowrap font-mono text-sm font-bold tabular-nums text-[var(--text-secondary)]">
+                        {r.espesor}×{r.ancho}×{r.largo}
+                      </td>
+                    )}
                     {/* Tipo editable: la medida propone, el operario dispone. */}
-                    <td className="group/celda relative px-3 py-2">
-                      <TipoSelect
-                        tipo={tipo}
-                        auto={clasificarTipo(r)}
-                        manual={forzado}
-                        opciones={ORDEN_TIPO}
-                        onCambiar={(t) => editarTipo(r.id, t)}
-                        etiqueta={`Tipo comercial de la pieza ${r.espesor}×${r.ancho}×${r.largo}`}
-                      />
-                      <AsaRelleno onTomar={() => rellenoTipo.iniciar(pos)} titulo="Arrastrá hacia abajo para poner este tipo en las filas siguientes" />
-                    </td>
-                    <td className="group/celda relative px-3 py-2">
-                      <select
-                        value={r.especie ?? ""}
-                        onChange={(e) => editarEspecie(r.id, e.target.value)}
-                        aria-label="Especie de la pieza"
-                        className="max-w-[110px] rounded-md border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
-                      >
-                        <option value="">—</option>
-                        {ESPECIES.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      <AsaRelleno onTomar={() => rellenoEspecie.iniciar(pos)} titulo="Arrastrá hacia abajo para poner esta especie en las filas siguientes" />
-                    </td>
+                    {colsVisibles.tipo && (
+                      <td className="group/celda relative px-3 py-2">
+                        <TipoSelect
+                          tipo={tipo}
+                          auto={clasificarTipo(r)}
+                          manual={forzado}
+                          opciones={ORDEN_TIPO}
+                          onCambiar={(t) => editarTipo(r.id, t)}
+                          etiqueta={`Tipo comercial de la pieza ${r.espesor}×${r.ancho}×${r.largo}`}
+                        />
+                        <AsaRelleno onTomar={() => rellenoTipo.iniciar(pos)} titulo="Arrastrá hacia abajo para poner este tipo en las filas siguientes" />
+                      </td>
+                    )}
+                    {colsVisibles.especie && (
+                      <td className="group/celda relative px-3 py-2">
+                        <select
+                          value={r.especie ?? ""}
+                          onChange={(e) => editarEspecie(r.id, e.target.value)}
+                          aria-label="Especie de la pieza"
+                          className="max-w-[110px] rounded-md border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+                        >
+                          <option value="">—</option>
+                          {ESPECIES.map((s) => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <AsaRelleno onTomar={() => rellenoEspecie.iniciar(pos)} titulo="Arrastrá hacia abajo para poner esta especie en las filas siguientes" />
+                      </td>
+                    )}
+                    {/* Dueño: sin catálogo cerrado (a diferencia de especie) — input +
+                        datalist para poder escribir uno nuevo o elegir uno ya usado. */}
+                    {colsVisibles.dueno && (
+                      <td className="group/celda relative px-3 py-2">
+                        <DuenoCell valor={r.dueno ?? ""} onCommit={(v) => editarDueno(r.id, v)} />
+                        <AsaRelleno onTomar={() => rellenoDueno.iniciar(pos)} titulo="Arrastrá hacia abajo para poner este dueño en las filas siguientes" />
+                      </td>
+                    )}
                     {/* Apartado: se asigna con "Cerrar apartado" (o arrastrando
                         el asa como especie/tipo) — acá sólo se ve y se copia. */}
-                    <td className="group/celda relative px-3 py-2">
-                      {numeroAp != null ? (
-                        <span className={`font-mono text-sm font-bold ${colorClaseApartado(numeroAp)}`}>{etiquetaApartado(numeroAp, nombresApartado)}</span>
-                      ) : (
-                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">—</span>
-                      )}
-                      <AsaRelleno onTomar={() => rellenoApartado.iniciar(pos)} titulo="Arrastrá hacia abajo para poner este apartado en las filas siguientes" />
-                    </td>
-                    <td {...sel.props(pos, TCOL.pt)} className={`px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)] ${sel.seleccionada(pos, TCOL.pt) ? CELDA_SELECCIONADA : ""}`}>{fmtPt(r.pieTablar)}</td>
-                    <td {...sel.props(pos, TCOL.m3)} className={`px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)] ${sel.seleccionada(pos, TCOL.m3) ? CELDA_SELECCIONADA : ""}`}>{fmtM3(r.m3)}</td>
+                    {colsVisibles.apartado && (
+                      <td className="group/celda relative px-3 py-2">
+                        {numeroAp != null ? (
+                          <span className={`font-mono text-sm font-bold ${colorClaseApartado(numeroAp)}`}>{etiquetaApartado(numeroAp, nombresApartado)}</span>
+                        ) : (
+                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">—</span>
+                        )}
+                        <AsaRelleno onTomar={() => rellenoApartado.iniciar(pos)} titulo="Arrastrá hacia abajo para poner este apartado en las filas siguientes" />
+                      </td>
+                    )}
+                    {colsVisibles.pt && (
+                      <td {...sel.props(pos, TCOL.pt)} className={`px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)] ${sel.seleccionada(pos, TCOL.pt) ? CELDA_SELECCIONADA : ""}`}>{fmtPt(r.pieTablar)}</td>
+                    )}
+                    {colsVisibles.m3 && (
+                      <td {...sel.props(pos, TCOL.m3)} className={`px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)] ${sel.seleccionada(pos, TCOL.m3) ? CELDA_SELECCIONADA : ""}`}>{fmtM3(r.m3)}</td>
+                    )}
                     <td className="px-3 py-2">
                       <div className="flex items-center justify-end gap-1.5">
                         {rara && (
@@ -1874,15 +2117,37 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 })}
                 {virtualizarTabla && colchonInferior > 0 && (
                   <tr aria-hidden="true">
-                    <td colSpan={13} style={{ height: colchonInferior, padding: 0, border: 0 }} />
+                    <td colSpan={14} style={{ height: colchonInferior, padding: 0, border: 0 }} />
                   </tr>
                 )}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-[var(--rule-base)] bg-primary/10 font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
-                  <td className="px-3 py-2.5" colSpan={8}>{filtrando ? "Filtro" : "Total"} · {(filtrando ? totalesVisibles : totales).piezas} piezas</td>
-                  <td className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]">{fmtPt((filtrando ? totalesVisibles : totales).pt)} PT</td>
-                  <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--accent)]">{fmtM3((filtrando ? totalesVisibles : totales).m3)}</td>
+                <tr className="border-t-2 border-[var(--rule-base)] bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                  <td className="px-3 py-2.5" colSpan={colSpanTotales}>{filtrando ? "Filtro" : "Total"} · {(filtrando ? totalesVisibles : totales).piezas} piezas</td>
+                  {/*
+                    Los `title` dicen la equivalencia entre las dos columnas
+                    (Brandon, 2026-09-02: «30.738 × 424 me da 13032 pero en PT
+                    sale 13026»). Ya no hay nada que reconciliar —el m³ SALE del
+                    PT dividido por 424— pero el factor se dice igual: sin él,
+                    quien cruce las columnas con la calculadora no tiene con qué
+                    verificar que le está dando bien.
+                  */}
+                  {colsVisibles.pt && (
+                    <td
+                      className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]"
+                      title={`${fmtPt((filtrando ? totalesVisibles : totales).pt)} PT ÷ ${PT_POR_M3} = ${fmtM3((filtrando ? totalesVisibles : totales).pt / PT_POR_M3)} m³`}
+                    >
+                      {fmtPt((filtrando ? totalesVisibles : totales).pt)} PT
+                    </td>
+                  )}
+                  {colsVisibles.m3 && (
+                    <td
+                      className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--accent)]"
+                      title={`${fmtM3((filtrando ? totalesVisibles : totales).m3)} m³ × ${PT_POR_M3} = ${fmtPt((filtrando ? totalesVisibles : totales).m3 * PT_POR_M3)} PT. El total suma cada fila ya redondeada, así que puede moverse unas centésimas del cociente exacto.`}
+                    >
+                      {fmtM3((filtrando ? totalesVisibles : totales).m3)}
+                    </td>
+                  )}
                   <td />
                 </tr>
               </tfoot>
@@ -1914,6 +2179,10 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         onAplicarFijas={aplicarFijas}
         especie={especie}
         onEspecieChange={setEspecie}
+        dueno={dueno}
+        onDuenoChange={aplicarDueno}
+        duenosConocidos={duenosParaDatalist}
+        onAbrirDuenos={() => setShowDuenosModal(true)}
         liveGroups={liveGroups}
         errMsg={errMsg}
         lastAdded={lastAdded}
@@ -1935,6 +2204,17 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           filasActuales={rows.length}
           onAgregar={(piezas) => { agregarVarias(piezas); setEnviado(false); }}
           onCerrar={() => setShowImportar(false)}
+        />
+      )}
+
+      {showDuenosModal && (
+        <DuenosModal
+          duenos={duenosConocidos}
+          actual={dueno}
+          onAgregar={recordarDueno}
+          onQuitar={olvidarDueno}
+          onElegir={(d) => { aplicarDueno(d); setShowDuenosModal(false); }}
+          onClose={() => setShowDuenosModal(false)}
         />
       )}
 
@@ -1994,12 +2274,15 @@ function ThCol({
   sel,
   filas,
   className = "",
+  hint,
   children,
 }: {
   col: number;
   sel: { marcarColumna: (col: number, filas: number) => void };
   filas: number;
   className?: string;
+  /** Cómo se calcula la columna — se lee al pasar el mouse por el encabezado. */
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -2007,7 +2290,7 @@ function ThCol({
       <button
         type="button"
         onClick={() => sel.marcarColumna(col, filas)}
-        title="Marcar la columna entera y ver la cuenta"
+        title={hint ? `${hint} · Clic: marcar la columna entera` : "Marcar la columna entera y ver la cuenta"}
         className="inline-flex items-center gap-1 uppercase tracking-wide transition-colors hover:text-[var(--accent)]"
       >
         {children}
@@ -2018,28 +2301,76 @@ function ThCol({
 }
 
 /**
+ * Dueño editable en la tabla — texto libre (con datalist), no un `<select>`
+ * como especie: no hay catálogo cerrado, cualquier nombre nuevo es válido.
+ *
+ * Mismo buffer LOCAL que `Num` de acá abajo: comitea recién al perder el
+ * foco (o Enter), para no disparar `recordarDueno` con cada letra tipeada
+ * (guardaría "J", "Ju", "Jua"… como dueños "conocidos" a medio escribir) y
+ * para no pisar lo que se está tipeando si otra fila cambia mientras tanto.
+ */
+function DuenoCell({ valor, onCommit }: { valor: string; onCommit: (v: string) => void }) {
+  const [texto, setTexto] = useState(valor);
+  const enfocado = useRef(false);
+  useEffect(() => { if (!enfocado.current) setTexto(valor); }, [valor]);
+  return (
+    <input
+      list="cub-duenos-datalist"
+      value={texto}
+      onFocus={() => { enfocado.current = true; }}
+      onChange={(e) => setTexto(e.target.value)}
+      onBlur={() => { enfocado.current = false; if (texto !== valor) onCommit(texto); }}
+      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+      aria-label="Dueño de la pieza"
+      placeholder="—"
+      className="w-[110px] rounded-md border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+    />
+  );
+}
+
+/**
  * Número editable en la tabla: se corrige a mano sin volver a dictar.
  *
  * `fila`/`col` lo enganchan a la navegación de teclado de la grilla (flechas para
  * moverse, Ctrl+D duplicar, Ctrl+Supr eliminar).
+ *
+ * Buffer de texto LOCAL, no `type="number"`: con el valor atado directo al
+ * número del lote, seleccionar todo y borrar para tipear de nuevo hacía que
+ * el campo VOLVIERA solo al valor viejo a mitad de tecleo — en cuanto el
+ * cambio no daba un número válido (`n>0`) React forzaba `value={v}` otra
+ * vez — y encima `type="number"` rechaza la coma decimal peruana. Acá el
+ * buffer manda mientras la celda tiene el foco; recién se sincroniza con el
+ * valor de afuera al perderlo (otra fila cambiando no debe pisar lo que se
+ * está tipeando en ésta). De paso, `type="text"` hace que ← → naveguen el
+ * CURSOR dentro del número cuando no está en el borde — igual que en
+ * `celdas-excel.tsx` — en vez de saltar de celda con cada toque de flecha.
  */
 function Num({ v, onV, etiqueta, ancho = "w-14", fila, col, onKeyDown }: {
   v: number; onV: (n: number) => void; etiqueta: string; ancho?: string;
   fila?: number; col?: number; onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }) {
+  const [texto, setTexto] = useState(String(v));
+  const enfocado = useRef(false);
+  useEffect(() => { if (!enfocado.current) setTexto(String(v)); }, [v]);
+
   return (
     <input
-      type="number"
+      type="text"
       inputMode="decimal"
-      min={0}
-      step="any"
-      value={v}
+      autoComplete="off"
+      value={texto}
       aria-label={etiqueta}
       data-fila={fila}
       data-col={col}
       onKeyDown={onKeyDown}
-      onFocus={(e) => e.currentTarget.select()}
-      onChange={(e) => { const n = Number(e.target.value); if (n > 0) onV(n); }}
+      onFocus={(e) => { enfocado.current = true; e.currentTarget.select(); }}
+      onBlur={() => { enfocado.current = false; setTexto(String(v)); }}
+      onChange={(e) => {
+        const limpio = e.target.value.replace(/[^\d.,]/g, "").replace(",", ".");
+        setTexto(limpio);
+        const n = Number(limpio);
+        if (limpio !== "" && Number.isFinite(n) && n > 0) onV(n);
+      }}
       className={`${ancho} rounded-md border border-transparent bg-transparent px-1 py-0.5 font-mono font-bold tabular-nums text-[var(--text-primary)] outline-none hover:border-[var(--rule-base)] focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] focus:ring-2 focus:ring-[var(--accent)]/25`}
     />
   );

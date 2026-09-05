@@ -1,8 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
   cubicarPieza, parseDictado, parseVozDims, mejoresNumeros, partirEnPiezas, detectarComando,
-  leerDictado, medidaSospechosa, partirConFijas, numerosPorPieza,
+  leerDictado, medidaSospechosa, partirConFijas, numerosPorPieza, unificarPorMedida,
+  M3_POR_PT, PT_POR_M3, recubicarPiezas, m3DesdePt,
+  type PiezaCubicada,
 } from "@/lib/forestal/cubicacion";
+import { totalesDe } from "@/lib/forestal/cubicacion-registro";
 
 describe("cubicarPieza", () => {
   it("pie tablar comercial 2x8x10 pulg/pulg/pies", () => {
@@ -13,6 +16,52 @@ describe("cubicarPieza", () => {
     const r = cubicarPieza({ cantidad: 5, espesor: 2, ancho: 8, largo: 10, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies" });
     expect(r.pieTablar).toBeCloseTo(66.67, 1);
     expect(r.m3).toBeCloseTo(0.157, 2);
+  });
+});
+
+describe("unificarPorMedida — Anexo 04 conjunto (2026-09-02)", () => {
+  const pieza = (over: Partial<PiezaCubicada>): PiezaCubicada => ({
+    id: "x", cantidad: 1, espesor: 6, ancho: 6, largo: 2,
+    uEspesor: "pulg", uAncho: "pulg", uLargo: "pies",
+    especie: "TORNILLO", tipo: "Comercial", pieTablar: 6, m3: 0.014,
+    ...over,
+  });
+
+  it("junta la MISMA medida de dos bloques distintos en una sola fila (15 + 12 = 27)", () => {
+    const a = pieza({ id: "blqA-1", cantidad: 15, pieTablar: 90, m3: 0.21 });
+    const b = pieza({ id: "blqB-1", cantidad: 12, pieTablar: 72, m3: 0.168 });
+    const out = unificarPorMedida([a, b]);
+    expect(out).toHaveLength(1);
+    expect(out[0].cantidad).toBe(27);
+    expect(out[0].pieTablar).toBeCloseTo(162, 2);
+    expect(out[0].m3).toBeCloseTo(0.378, 3);
+  });
+
+  it("NO junta medidas distintas (ancho o largo diferente)", () => {
+    const a = pieza({ id: "1", ancho: 6 });
+    const b = pieza({ id: "2", ancho: 8 });
+    expect(unificarPorMedida([a, b])).toHaveLength(2);
+  });
+
+  it("NO junta la misma medida de dos dueños distintos — aserrío por encargo", () => {
+    const a = pieza({ id: "1", dueno: "Pérez" });
+    const b = pieza({ id: "2", dueno: "Gómez" });
+    expect(unificarPorMedida([a, b])).toHaveLength(2);
+  });
+
+  it("NO junta la misma medida con especie distinta", () => {
+    const a = pieza({ id: "1", especie: "TORNILLO" });
+    const b = pieza({ id: "2", especie: "CEDRO" });
+    expect(unificarPorMedida([a, b])).toHaveLength(2);
+  });
+
+  it("piezas ya únicas quedan igual (caso de un solo bloque)", () => {
+    const a = pieza({ id: "1", ancho: 6 });
+    const b = pieza({ id: "2", ancho: 8 });
+    const c = pieza({ id: "3", largo: 4 });
+    const out = unificarPorMedida([a, b, c]);
+    expect(out).toHaveLength(3);
+    expect(out.map((p) => p.cantidad)).toEqual([1, 1, 1]);
   });
 });
 
@@ -333,5 +382,76 @@ describe("dictar con medidas fijas: números pegados y de dos cifras (regresión
     const r = mejoresNumeros(["9999"]);
     expect(r.length).toBeGreaterThan(0);
     expect(r.every((n) => n > 0)).toBe(true);
+  });
+});
+
+describe("PT ↔ m³ · una sola conversión en todo el módulo", () => {
+  it("el factor es el comercial: 1 m³ = 424 PT", () => {
+    // Brandon, 2026-09-02: «1 m³ equivale a 424, así aplicalo». La conversión
+    // física exacta sería 423.776; acá manda la de la plaza.
+    expect(PT_POR_M3).toBe(424);
+    expect(M3_POR_PT).toBeCloseTo(1 / 424, 12);
+    expect(PT_POR_M3 * M3_POR_PT).toBeCloseTo(1, 12);
+  });
+
+  it("el m³ de una pieza SALE del PT dividido por 424", () => {
+    /*
+     * La regla que pidió Brandon: «en PT, dividir el PT / 424». Antes el m³ se
+     * calculaba aparte (volumen geométrico con las medidas en metros) y las dos
+     * columnas de una misma fila caían sobre 423.776 — al dividirlas a mano
+     * nunca daban el 424 con el que se compra la madera.
+     */
+    for (const p of [
+      { cantidad: 1, espesor: 2, ancho: 8, largo: 10, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies" },
+      { cantidad: 7, espesor: 1, ancho: 6, largo: 8, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies" },
+      { cantidad: 3, espesor: 5, ancho: 20, largo: 3, uEspesor: "cm", uAncho: "cm", uLargo: "m" },
+      { cantidad: 500, espesor: 2, ancho: 8, largo: 10, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies" },
+    ] as const) {
+      const { pieTablar, m3 } = cubicarPieza(p);
+      // El m³ es exactamente `PT / 424`, redondeado a 4 decimales: la misma
+      // cuenta que se hace con la calculadora mirando la pantalla.
+      expect(m3).toBe(Math.round((pieTablar / 424) * 10000) / 10000);
+    }
+  });
+
+  it("13026 PT son 30.722 m³ — el caso que no cuadraba", () => {
+    // Con el factor viejo (423.78) daban 30.738 y la cuenta a mano no cerraba.
+    expect(13026 / PT_POR_M3).toBeCloseTo(30.722, 3);
+    expect(Math.round(30.722 * PT_POR_M3)).toBe(13026);
+  });
+});
+
+describe("recubicarPiezas — lo guardado no impone su propia fórmula", () => {
+  /** Una fila como quedó GUARDADA antes: m³ del volumen geométrico (÷ 423,776). */
+  const vieja: PiezaCubicada = {
+    id: "p-vieja", cantidad: 10, espesor: 2, ancho: 8, largo: 10,
+    uEspesor: "pulg", uAncho: "pulg", uLargo: "pies",
+    pieTablar: 133.33, m3: 0.3146, // 133.33 / 423.776 — el número viejo
+  };
+
+  it("recalcula el m³ del archivo viejo con el factor comercial", () => {
+    const [r] = recubicarPiezas([vieja]);
+    expect(r.pieTablar).toBeCloseTo(133.33, 2);
+    expect(r.m3).toBe(m3DesdePt(r.pieTablar)); // 0.3145
+    expect(r.m3).not.toBe(vieja.m3);
+  });
+
+  it("devuelve el MISMO array si ya estaba bien (no invalida memos)", () => {
+    const ok = recubicarPiezas([vieja]);
+    expect(recubicarPiezas(ok)).toBe(ok);
+  });
+
+  it("el total sale del pie tablar: 13.026 PT → 30,722 m³, no 30,738", () => {
+    // 300 filas de 43,42 PT = 13.026 PT exactos. Sumar los m³ fila por fila
+    // (ya redondeados) corría el total; derivarlo del PT lo deja exacto.
+    const piezas: PiezaCubicada[] = Array.from({ length: 300 }, (_, i) => ({
+      id: `p-${i}`, cantidad: 1, espesor: 2, ancho: 8, largo: 10,
+      uEspesor: "pulg", uAncho: "pulg", uLargo: "pies",
+      pieTablar: 43.42, m3: 0.1024,
+    }));
+    const t = totalesDe(piezas);
+    expect(t.pieTablar).toBeCloseTo(13026, 2);
+    expect(t.m3).toBeCloseTo(30.722, 3);
+    expect(Math.round(t.m3 * PT_POR_M3)).toBe(13026); // cierra al revés
   });
 });

@@ -199,16 +199,22 @@ export function juzgarRendimiento(pct: number | null | undefined): "bueno" | "ba
 }
 
 /**
- * Pie tablar: 1 m³ ≈ 424 pt.
+ * Pie tablar: 1 m³ = 424 pt.
  *
  * Es la unidad en que se vende la madera aserrada en Perú, pero el libro
  * calcula todo en m³ (ADR-311): esto convierte para MOSTRAR, nunca para guardar.
+ *
+ * Se RE-EXPORTA del cubicador, no se define acá. Este archivo decía `424` y el
+ * cubicador `423.78`: dos conversiones para la misma madera en el mismo
+ * módulo. Sobre 30 m³ eran 6 PT de diferencia — bastante para que dos pantallas
+ * del libro no cuadraran entre sí y nadie supiera cuál creer.
  */
-export const PT_POR_M3 = 424;
+export { PT_POR_M3 } from "./cubicacion";
+import { PT_POR_M3 as PT_M3 } from "./cubicacion";
 
 export function aPieTablar(m3: number | null | undefined): number | null {
   if (m3 == null || !Number.isFinite(m3)) return null;
-  return Number((m3 * PT_POR_M3).toFixed(1));
+  return Number((m3 * PT_M3).toFixed(1));
 }
 
 /**

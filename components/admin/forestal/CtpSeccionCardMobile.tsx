@@ -10,13 +10,14 @@
  * inventario / Anular) full-width. Misma data y mismos handlers que la tabla.
  */
 
-import { AlertCircle, Boxes, Calendar, FileText, Link2, Paperclip, PackagePlus, Truck } from "@buleje/design-system/icons";
+import { AlertCircle, Boxes, Calendar, Download, FileText, Link2, Paperclip, PackagePlus, Truck } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import { estadoDeGuia } from "@/lib/forestal/gtf-estado";
 import type { CtpEntry, CtpSection } from "./CtpSectionViews";
 import { UNIT_LABELS } from "./ctp-section-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 interface CtpSeccionCardMobileProps {
   entry: CtpEntry;
@@ -71,6 +72,17 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
             {e.cites && (
               <span className="shrink-0 rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>
             )}
+            {/* Mismo texto que escribe el importador ("Inventario de apertura")
+                en `aCuerpoDelLibro`: sin este aviso, un paquete importado se ve
+                igual que uno que salió de la sierra hoy. */}
+            {e.observations?.startsWith("Inventario de apertura") && (
+              <span
+                title="Existencia de apertura: entró por el importador del libro"
+                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+              >
+                <Download className="h-3 w-3 shrink-0" aria-hidden /> Importado
+              </span>
+            )}
           </div>
           {e.speciesScientific && <p className="truncate text-xs italic text-[var(--text-tertiary)]">{e.speciesScientific}</p>}
         </div>
@@ -90,6 +102,11 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
         </span>
         {section === "produccion" ? (
           <>
+          {e.pieces != null && (
+            <span className="text-sm text-[var(--text-secondary)]">
+              <strong className="font-mono tabular-nums text-[var(--text-primary)]">{e.pieces}</strong> pz
+            </span>
+          )}
           {rend && (
             <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${rend.estado === "alto" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" : "bg-[var(--data-info-100)] text-[var(--data-info-700)]"}`}>
               {rend.estado === "alto" && <AlertCircle className="h-3.5 w-3.5" aria-label={`Rendimiento sobre el referencial SERFOR (${rend.ref}%)`} />}
@@ -133,7 +150,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
         <Row icon={Calendar} label="Fecha" value={fmtDate(e.entryDate)} />
         <Row label="Producto" value={e.productType ?? "—"} />
         {section === "produccion" ? (
-          <Row label="Consumido" value={`${n4(e.volumeInputM3)} m³`} />
+          <Row label="Consumido" value={`${e.volumeInputM3 == null ? "—" : fmtM3(Number(e.volumeInputM3))} m³`} />
         ) : (
           <>
             <Row label="GTF salida" value={e.gtfNumber ?? "—"} mono />

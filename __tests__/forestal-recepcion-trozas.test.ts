@@ -75,7 +75,7 @@ describe("avisos de la recepción", () => {
     const b = balanceRecepcion([troza({ id: "a", volumenM3: 3 }), troza({ id: "b", volumenM3: 2, noRecepcionada: true })]);
     const avisos = avisosRecepcion(b, 3);
     expect(avisos.join(" ")).toMatch(/1 de 2 troza/);
-    expect(avisos.join(" ")).toMatch(/2\.0000 m³ menos/);
+    expect(avisos.join(" ")).toMatch(/2\.000 m³ menos/);
   });
 
   it("avisa cuando el ingreso quedó con un volumen distinto del recibido", () => {

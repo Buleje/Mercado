@@ -18,7 +18,7 @@
  * quedar el aserradero, y recién con eso a la vista aparece el botón.
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle, Download, FileText, Upload, X } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { logger } from "@/lib/logger";
@@ -121,6 +121,19 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
    * tardar: sin esto la pantalla se queda quieta y no hay forma de distinguir
    * «está trabajando» de «se colgó». */
   const [avance, setAvance] = useState<{ hechas: number; total: number } | null>(null);
+  /** Filas de la sección en curso: un import de UNA sola sección —el caso más
+   *  común— se quedaba en «1 de 1» toda la corrida sin decir nada más, y con
+   *  filas que tardan (piezas, atribución) parecía colgado. */
+  const [pasoFilas, setPasoFilas] = useState<number | null>(null);
+  /** Segundos desde que arrancó el envío en curso: cuando el % no se mueve
+   *  (una sola sección larga), el contador vivo es lo único que dice "sigue
+   *  trabajando" en vez de "se colgó". */
+  const [segundos, setSegundos] = useState(0);
+  useEffect(() => {
+    if (!cargando) { setSegundos(0); return; }
+    const id = setInterval(() => setSegundos((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [cargando]);
   const [err, setErr] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -292,6 +305,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
          corrida no encontraría su origen y entraría sin consumos. */
       for (const [i, s] of orden.entries()) {
         setPaso(TITULO_FORMATO[s.formato]);
+        setPasoFilas(s.parseadas.length);
         setAvance({ hechas: i, total: orden.length });
         const destino = ENDPOINT_DE[s.formato];
         const res = await fetch(destino.url, {
@@ -351,6 +365,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
     } finally {
       setCargando(false);
       setPaso(null);
+      setPasoFilas(null);
       setModoEnvio(null);
       setAvance(null);
     }
@@ -645,9 +660,21 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
               <p className="flex flex-wrap items-baseline justify-between gap-2 text-base font-extrabold text-[var(--text-primary)]">
                 <span>
                   {modoEnvio === "commit" ? "Importando" : "Revisando"} {paso ?? "…"}
+                  {/* Un import de UNA sola sección —el caso más común— se
+                      quedaba en "1 de 1" toda la corrida sin más información:
+                      la cantidad de filas es lo único que dice cuánto hay
+                      adentro de ese "1". */}
+                  {pasoFilas != null && (
+                    <span className="ml-1 text-sm font-semibold text-[var(--text-tertiary)]">
+                      · {pasoFilas} {pasoFilas === 1 ? "fila" : "filas"}
+                    </span>
+                  )}
                 </span>
                 <span className="tabular-nums text-[var(--text-tertiary)]">
                   {avance.hechas + 1} de {avance.total}
+                  {/* Recién a los 3s: antes de eso el contador sólo agrega
+                      ruido a algo que ya se ve andar. */}
+                  {segundos >= 3 && <span className="ml-1">· {segundos}s</span>}
                 </span>
               </p>
               <div
@@ -656,7 +683,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
                 aria-valuemax={avance.total}
                 aria-valuenow={avance.hechas}
                 aria-label="Avance de la importación"
-                className="h-2 w-full overflow-hidden rounded-full bg-[var(--surface-raised)]"
+                className="relative h-2 w-full overflow-hidden rounded-full bg-[var(--surface-raised)]"
               >
                 <div
                   className="h-full rounded-full bg-primary transition-[width] duration-300"
@@ -665,6 +692,18 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
                      miente justo cuando el operador la mira para saber si puede
                      irse. */
                   style={{ width: `${Math.round((avance.hechas / avance.total) * 100)}%` }}
+                />
+                {/* El segmento de la sección EN CURSO parpadea: sin esto, una
+                    sección lenta (piezas, atribución de consumos) deja la
+                    barra clavada en el mismo % durante varios segundos y se
+                    lee como colgada en vez de trabajando. */}
+                <div
+                  aria-hidden
+                  className="absolute top-0 h-full animate-pulse rounded-full bg-primary/40 transition-[left,width] duration-300"
+                  style={{
+                    left: `${Math.round((avance.hechas / avance.total) * 100)}%`,
+                    width: `${Math.round((1 / avance.total) * 100)}%`,
+                  }}
                 />
               </div>
               <p className="text-sm text-[var(--text-tertiary)]">

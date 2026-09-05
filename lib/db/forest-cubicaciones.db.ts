@@ -1,7 +1,8 @@
 import "server-only";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
-import { construirRegistro, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
+import { construirRegistro, totalesDe, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
+import { recubicarPiezas } from "@/lib/forestal/cubicacion";
 
 /**
  * ForestCubicacionesDB — cubicaciones guardadas del aserradero.
@@ -19,6 +20,23 @@ const KEY_PREFIX = "ctp-cubicaciones:";
 /** Tope por tenant: el KV es un JSON; sin límite, un dictado diario lo infla. */
 const MAX_GUARDADAS = 300;
 
+/**
+ * Corrige el VOLUMEN de una cubicación vieja al leerla: el m³ se re-deriva del
+ * pie tablar (÷ 424, `PT_POR_M3`) porque las guardadas antes del cambio traen
+ * el volumen geométrico —13.026 PT figuraban como 30,738 m³ en vez de 30,722—
+ * y ese número congelado seguía apareciendo en el historial, en el Anexo 04 y
+ * en el cuadre contra el Libro (Brandon, 2026-09-01).
+ *
+ * Lo que NO se toca: `precioPt` y `valor` siguen congelados al momento de
+ * guardar —son el papel que se firmó—; acá sólo se corrige una unidad derivada,
+ * que nunca debió guardarse con otra fórmula que la de la pantalla.
+ */
+function normalizarVolumen(c: CubicacionRegistro): CubicacionRegistro {
+  const piezas = recubicarPiezas(c.piezas);
+  if (piezas === c.piezas && c.totales?.m3 === totalesDe(piezas).m3) return c;
+  return { ...c, piezas, totales: totalesDe(piezas) };
+}
+
 export const ForestCubicacionesDB = {
   /** Todas las cubicaciones del tenant, la más reciente primero. */
   async list(tenantId: string): Promise<CubicacionRegistro[]> {
@@ -27,6 +45,7 @@ export const ForestCubicacionesDB = {
     if (!Array.isArray(raw)) return [];
     return (raw as CubicacionRegistro[])
       .filter((c) => c && typeof c.id === "string" && Array.isArray(c.piezas))
+      .map(normalizarVolumen)
       .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
   },
 

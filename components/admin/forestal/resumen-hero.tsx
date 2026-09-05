@@ -15,7 +15,6 @@ import { BarChart3, Boxes, Coins, Layers, Ruler } from "@buleje/design-system/ic
 import { CardTitle } from "@buleje/design-system";
 import type { ResumenLote } from "@/lib/forestal/cubicacion-resumen";
 import { fmtM3, fmtPct, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
-import { BarraComposicion } from "./resumen-vistas";
 import { KpiResumen } from "./resumen-tabla";
 
 /**
@@ -86,11 +85,12 @@ export function HeroResumen({ total, renglones, porEspecie, porTipo, conValor, a
           />
         </div>
 
-        {/* En qué se fue el volumen: dos barras que se leen de un vistazo */}
-        <div className="mt-5 grid gap-4 border-t border-[var(--rule-soft)] pt-4 sm:grid-cols-2">
-          <BarraComposicion grupos={porTipo.grupos} titulo="Composición por tipo (del pie tablar)" />
-          <BarraComposicion grupos={porEspecie.grupos} titulo="Composición por especie (del pie tablar)" />
-        </div>
+        {/* Las dos barras de «Composición por tipo / por especie» vivían acá y
+            se quitaron (Brandon, 2026-09-02: «esto de la imagen quitalo porque
+            confunde»): repetían en porcentaje lo que la frase de arriba ya
+            dice en palabras —«encabeza Tornillo con 81.9 % del pie tablar»— y
+            lo que la vista «Tablas» desglosa fila por fila. Tres lecturas del
+            mismo reparto, dos de ellas de adorno. */}
       </div>
     </div>
   );

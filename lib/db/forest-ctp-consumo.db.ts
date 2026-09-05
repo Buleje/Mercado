@@ -118,6 +118,16 @@ export class CtpInvariantError extends Error {
       | "LOTE_NO_ENCONTRADO"
       /** El lote ya se consumió: sus piezas entraron a la sierra y no se mueven. */
       | "LOTE_NO_EDITABLE"
+      /** El lote de inventario (`crearInventario`) no trae un volumen o un
+       *  paquete válido: no hay trozas reales que puedan contradecirlo después. */
+      | "LOTE_INVENTARIO_INVALIDO"
+      /** El código de lote pedido a mano ya lo tiene otro lote del tenant. */
+      | "LOTE_CODIGO_DUPLICADO"
+      /** Deshacer un lote cuya corrida ya tiene despacho/reproceso: hace falta
+       *  `forzar` explícito — no es un error normal, es una confirmación. */
+      | "LOTE_CON_SALIDA_REGISTRADA"
+      /** Falta el motivo de una acción que lo exige (ej. marcar "ya usado"). */
+      | "MOTIVO_REQUERIDO"
       // ── Retrozado (ADR-313) ──
       /** De una troza no salen pedazos más grandes que ella, ni más volumen del
        *  que tiene. Es física, no una preferencia de negocio. */

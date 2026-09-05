@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   agruparPorGuia,
   avisosSeleccion,
+  bloquesDeGuiaDe,
   estaDisponible,
   filtrarTrozas,
   motivoBloqueo,
@@ -95,8 +96,8 @@ describe("totales de la selección", () => {
     const t = totalesSeleccion([troza({ id: "a", volumenM3: 3 }), troza({ id: "b", volumenM3: 2 })]);
     expect(t.piezas).toBe(2);
     expect(t.volumenM3).toBe(5);
-    // 1 m³ ≈ 423.78 pt, el mismo factor del cubicador.
-    expect(t.pieTablar).toBe(Math.round(5 * 423.78));
+    // 1 m³ = 424 pt, el mismo factor del cubicador (PT_POR_M3).
+    expect(t.pieTablar).toBe(Math.round(5 * 424));
     expect(t.guias).toBe(1);
     expect(t.especies).toBe(1);
   });
@@ -214,7 +215,7 @@ describe("cuposDeGuia — el tope de I2, antes de firmar (ADR-353)", () => {
     // Con consumo previo, es cupo: el arreglo es elegir menos.
     const [sinCupo] = cuposDeGuia([pieza({ volumenM3: 6, guiaVolumenM3: 10, guiaConsumidoM3: 8 })]);
     expect(sinCupo.descuadrado).toBe(false);
-    expect(motivosDeCupo([sinCupo])[0]).toMatch(/Sacá 4.0000 m³/);
+    expect(motivosDeCupo([sinCupo])[0]).toMatch(/Sacá 4.000 m³/);
   });
 
   it("un litro de redondeo NO es un exceso", () => {
@@ -235,5 +236,30 @@ describe("cuposDeGuia — el tope de I2, antes de firmar (ADR-353)", () => {
       pieza({ woodEntryId: "w2", gtfNumber: "B", volumenM3: 2, guiaVolumenM3: 10 }),
     ]);
     expect(cupos.filter((c) => c.exceso > 0).map((c) => c.gtfNumber)).toEqual(["A"]);
+  });
+});
+
+describe("bloquesDeGuiaDe — sembrar la Distribución de rolliza desde el Libro (2026-09-01)", () => {
+  it("un bloque por guía+especie, con el permiso de sus trozas", () => {
+    const bloques = bloquesDeGuiaDe([
+      troza({ gtfNumber: "019-001-0000011", especieComun: "Tornillo", volumenM3: 0.6, permiso: "19-SEC/REG-PLT-2018-020" }),
+      troza({ gtfNumber: "019-001-0000011", especieComun: "Tornillo", volumenM3: 0.4, permiso: "19-SEC/REG-PLT-2018-020" }),
+    ]);
+    expect(bloques).toEqual([
+      { etiqueta: "019-001-0000011", especie: "Tornillo", m3: 1, permiso: "19-SEC/REG-PLT-2018-020" },
+    ]);
+  });
+
+  it("nunca funde dos permisos en un bloque, aunque compartan especie", () => {
+    const bloques = bloquesDeGuiaDe([
+      troza({ gtfNumber: "A", especieComun: "Tornillo", volumenM3: 5, permiso: "19-SEC/REG-PLT-2018-020" }),
+      troza({ gtfNumber: "B", especieComun: "Tornillo", volumenM3: 3, permiso: "19-SEC/REG-PLT-2026-032" }),
+    ]);
+    expect(bloques.map((b) => b.permiso).sort()).toEqual(["19-SEC/REG-PLT-2018-020", "19-SEC/REG-PLT-2026-032"]);
+  });
+
+  it("sin permiso en la troza, el bloque queda con `null` — no con un string vacío que parezca dato", () => {
+    const [b] = bloquesDeGuiaDe([troza({ permiso: undefined })]);
+    expect(b.permiso).toBeNull();
   });
 });

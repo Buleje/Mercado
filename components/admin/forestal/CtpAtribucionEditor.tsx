@@ -21,6 +21,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Loader2, Search, Trash2 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 interface EditorRow {
   id: string;
@@ -64,6 +65,10 @@ const CONFIG = {
 } as const;
 
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
+
+/** `unitLabel` no siempre es m³ ("origenes" también atribuye en pt/kg/unidad):
+ *  los tres decimales de SERFOR sólo aplican cuando de verdad se está en m³. */
+const fmtCantidad = (v: number, unit: string) => (unit === "m³" ? fmtM3(v) : v.toFixed(4));
 
 export default function CtpAtribucionEditor({
   kind,
@@ -198,7 +203,7 @@ export default function CtpAtribucionEditor({
                   {it.species && <span className="truncate text-xs text-[var(--text-secondary)]">{it.species}</span>}
                 </span>
                 <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
-                  {Number(it.disponible ?? 0).toFixed(4)} {unitLabel} disp.
+                  {fmtCantidad(Number(it.disponible ?? 0), unitLabel)} {unitLabel} disp.
                 </span>
               </button>
             </li>
@@ -222,7 +227,7 @@ export default function CtpAtribucionEditor({
                     <span className="truncate font-mono text-sm font-bold text-[var(--text-primary)]">{r.label}</span>
                     {r.sub && <span className="truncate text-xs text-[var(--text-secondary)]">{r.sub}</span>}
                   </div>
-                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">máx. {r.disponible.toFixed(4)} {unitLabel}</span>
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">máx. {fmtCantidad(r.disponible, unitLabel)} {unitLabel}</span>
                 </div>
                 <input
                   type="number"
@@ -250,7 +255,7 @@ export default function CtpAtribucionEditor({
       {/* Avisos — espejo de los pickers del form */}
       <div className="flex items-center justify-between border-t border-[var(--rule-soft)] pt-2 text-xs">
         <span className="text-[var(--text-tertiary)]">Total atribuido</span>
-        <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{total.toFixed(4)} / {declared.toFixed(4)} {unitLabel}</span>
+        <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtCantidad(total, unitLabel)} / {fmtCantidad(declared, unitLabel)} {unitLabel}</span>
       </div>
       {overDisponible && (
         <p className="flex items-center gap-1.5 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-error-700)]">
@@ -259,12 +264,12 @@ export default function CtpAtribucionEditor({
       )}
       {sobre && (
         <p className="flex items-center gap-1.5 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-error-700)]">
-          <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> El total atribuido supera lo declarado ({declared.toFixed(4)} {unitLabel}).
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> El total atribuido supera lo declarado ({fmtCantidad(declared, unitLabel)} {unitLabel}).
         </p>
       )}
       {faltante > 0 && (
         <p className="flex items-center gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-warning-700)]">
-          <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> Quedan {faltante.toFixed(4)} {unitLabel} sin atribuir: la cadena queda incompleta.
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> Quedan {fmtCantidad(faltante, unitLabel)} {unitLabel} sin atribuir: la cadena queda incompleta.
         </p>
       )}
       {error && <p className="text-xs font-bold text-[var(--data-error-700)]">{error}</p>}

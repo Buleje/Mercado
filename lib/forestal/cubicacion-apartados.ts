@@ -9,6 +9,7 @@
  * cubicaciones guardadas) y la cubicación continua sigue exactamente igual.
  */
 import type { PiezaCubicada } from "./cubicacion";
+import { m3DesdePt } from "./cubicacion";
 
 /** pieza.id → número de apartado (1-indexado). */
 export type ApartadosAsignados = Record<string, number>;
@@ -32,7 +33,6 @@ export interface ApartadoResumen extends TotalPiezas {
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
-const r4 = (n: number) => Math.round(n * 10000) / 10000;
 
 /** Totaliza cualquier lista de filas — el mismo cálculo que un apartado
  *  cerrado, pero también sirve para previsualizar el bloque TODAVÍA sin
@@ -43,11 +43,15 @@ export function totalizarFilas(filas: PiezaCubicada[]): TotalPiezas {
     const e = f.especie?.trim() || "Sin especie";
     if (!especies.includes(e)) especies.push(e);
   }
+  const pieTablar = r2(filas.reduce((a, f) => a + f.pieTablar, 0));
   return {
     filas: filas.length,
     piezas: filas.reduce((a, f) => a + (f.cantidad > 0 ? f.cantidad : 1), 0),
-    pieTablar: r2(filas.reduce((a, f) => a + f.pieTablar, 0)),
-    m3: r4(filas.reduce((a, f) => a + f.m3, 0)),
+    pieTablar,
+    // El m³ del bloque sale del pie tablar (÷ 424), igual que el total de la
+    // tabla: sumar los m³ ya redondeados de cada fila movía el número unas
+    // milésimas y los dos totales de la misma pantalla no coincidían.
+    m3: m3DesdePt(pieTablar),
     especies,
     ids: filas.map((f) => f.id),
   };

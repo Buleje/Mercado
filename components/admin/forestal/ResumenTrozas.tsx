@@ -12,7 +12,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
-import { Download, Layers, PackageOpen, RefreshCw } from "@buleje/design-system/icons";
+import { Download, Layers, RefreshCw } from "@buleje/design-system/icons";
 import type { TrozaCubicada } from "@/lib/forestal/cubicacion-trozas";
 import {
   agruparTrozasPor, DIMENSIONES_TROZAS, ETIQUETA_DIMENSION_TROZAS, resumenTrozasACsv,
@@ -120,23 +120,26 @@ export default function ResumenTrozas() {
     a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
 
-  if (rows.length === 0) {
-    return (
-      <SeccionResumen icon={Layers} titulo="Cubicación de trozas (patio)" hint="Piezas, PT y m³ por especie y por tipo — se arma solo mientras cargás.">
-        <div className="flex flex-col items-center gap-2 py-8 text-center">
-          <PackageOpen className="h-8 w-8 text-[var(--text-tertiary)]" />
-          <p className="text-sm text-[var(--text-tertiary)]">Todavía no hay trozas cubicadas en <b>Cubicador de trozas</b>.</p>
-          <button type="button" onClick={recargar} className={`mt-1 ${BTN}`}><RefreshCw className="h-4 w-4" /> Actualizar</button>
-        </div>
-      </SeccionResumen>
-    );
-  }
+  /**
+   * Sin trozas cubicadas la sección DESAPARECE (Brandon, 2026-09-01: «si no hay
+   * datos entonces ese bloque se ocultará hasta que haya datos»). Antes ocupaba
+   * media pantalla con un cartel vacío justo encima de la tabla que sí se está
+   * mirando —«Distribución de rolliza sobre lo aserrado»—, empujándola fuera
+   * de la vista.
+   *
+   * No se pierde el acceso: `CubicacionResumenes` monta esta sección cada vez
+   * que se entra al chip «Rolliza», así que volver del cubicador de trozas la
+   * hace releer y reaparecer; y el evento `storage` la trae en vivo si se
+   * cubicó en otra pestaña.
+   */
+  if (rows.length === 0) return null;
 
   return (
     <SeccionResumen
       icon={Layers}
       titulo="Cubicación de trozas (patio)"
       hint={`${rows.length} ${rows.length === 1 ? "troza" : "trozas"} · ${fmtPt(resumen.total.pt)} PT · ${fmtM3(resumen.total.m3)} m³ en total`}
+      ayuda="La rolliza que hay en el patio, leída tal cual se cubicó en «Cubicador de trozas»: piezas, PT y m³ por especie y por tipo. Se actualiza sola mientras cargás. Es otro lote que el de la aserrada — acá no se distribuye nada, sólo se lee lo que entró."
       acciones={
         <>
           <button type="button" onClick={recargar} title="Volver a leer el patio del cubicador de trozas" className={`${BTN} print:hidden`}>

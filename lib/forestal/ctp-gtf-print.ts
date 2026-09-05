@@ -45,8 +45,11 @@ import {
 import type { CtpFicha } from "@/lib/forestal/ctp-ficha-types";
 import { COPIAS_GTF, faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { CSS_GTF_OFICIAL, cuerpoGtfOficial, fechaGtf, type LineaProducto } from "@/lib/forestal/ctp-gtf-formato";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
-const n4 = (v: number) => v.toFixed(4);
+/** `unitLabel` no siempre es m³ (kg/pt/unidad, según la corrida): los tres
+ *  decimales de SERFOR sólo aplican cuando de verdad se está declarando m³. */
+const n4 = (v: number, unit?: string) => (unit === "m³" ? fmtM3(v) : v.toFixed(4));
 
 export interface GtfDespacho {
   /** id del despacho — target del QR de verificación pública. */
@@ -121,7 +124,7 @@ export async function documentoGtfSalida(
     .map(
       (c) => `<tr>
         <td class="cod">${c.lineNo != null ? `#${c.lineNo}` : "Sin transformar"}</td>
-        <td class="r vol">${n4(c.quantity)} ${esc(despacho.unitLabel)}</td>
+        <td class="r vol">${n4(c.quantity, despacho.unitLabel)} ${esc(despacho.unitLabel)}</td>
         <td>${c.guias.length ? c.guias.map(esc).join(" · ") : "—"}</td>
       </tr>`,
     )
@@ -185,7 +188,7 @@ export async function documentoGtfSalida(
   const fichas: FichaResumen[] = [
     { k: "Destinatario", v: datos.destinatario?.nombre ?? despacho.destino ?? "" },
     { k: "Producto", v: despacho.speciesCommon ?? "", tono: despacho.cites ? "aviso" : undefined },
-    { k: "Cantidad", v: despacho.quantity ? n4(Number(despacho.quantity)) : "", u: despacho.unitLabel },
+    { k: "Cantidad", v: despacho.quantity ? n4(Number(despacho.quantity), despacho.unitLabel) : "", u: despacho.unitLabel },
     { k: "Vehículo", v: datos.vehiculo?.placa ?? "" },
     { k: "Vence", v: fechaGtf(datos.traslado?.fechaFin) },
   ];

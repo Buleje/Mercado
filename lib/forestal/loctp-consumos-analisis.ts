@@ -25,7 +25,7 @@ const EPS = 1e-4;
 /** Sólo estas unidades se pueden sumar entre sí para medir rendimiento. */
 const UNIDAD_VOLUMEN = /^m3?$|^m³$|^metros? c[úu]bicos?$/i;
 
-export type AgrupacionConsumo = "ninguna" | "especie" | "guia" | "corrida";
+export type AgrupacionConsumo = "ninguna" | "especie" | "guia" | "corrida" | "permiso";
 
 export interface GrupoConsumo {
   /** Con qué se agrupó (nombre de especie, N° de guía, corrida…). */
@@ -35,6 +35,10 @@ export interface GrupoConsumo {
   cantidad: number;
   /** Cuántas guías distintas aportaron — dice si el grupo mezcla orígenes. */
   guias: number;
+  /** El grupo por especie, adentro — útil cuando se agrupa por algo que NO es
+   *  la especie (permiso, guía): un permiso puede traer más de una especie y
+   *  el total solo no dice de qué está hecho (Brandon, 2026-09-01). */
+  porEspecie: { especie: string; cantidad: number }[];
 }
 
 /**
@@ -50,7 +54,13 @@ export function agruparConsumos(
 ): GrupoConsumo[] {
   if (por === "ninguna") return [];
   const clave = (f: FilaConsumo): string =>
-    por === "especie" ? f.especieComun || "—" : por === "guia" ? f.gtf || "—" : f.observaciones || "—";
+    por === "especie"
+      ? f.especieComun || "—"
+      : por === "guia"
+        ? f.gtf || "—"
+        : por === "permiso"
+          ? f.codigoOrigen || "Sin permiso"
+          : f.observaciones || "—";
 
   const mapa = new Map<string, FilaConsumo[]>();
   for (const f of filas) {
@@ -60,12 +70,24 @@ export function agruparConsumos(
     else mapa.set(k, [f]);
   }
 
+  const porEspecieDe = (fs: FilaConsumo[]): { especie: string; cantidad: number }[] => {
+    const m = new Map<string, number>();
+    for (const f of fs) {
+      const e = f.especieComun || "—";
+      m.set(e, (m.get(e) ?? 0) + (Number(f.cantidad) || 0));
+    }
+    return [...m.entries()]
+      .map(([especie, cantidad]) => ({ especie, cantidad: r4(cantidad) }))
+      .sort((a, b) => b.cantidad - a.cantidad);
+  };
+
   return [...mapa.entries()]
     .map(([k, fs]) => ({
       clave: k,
       filas: fs,
       cantidad: r4(fs.reduce((a, f) => a + (Number(f.cantidad) || 0), 0)),
       guias: new Set(fs.map((f) => f.gtf).filter(Boolean)).size,
+      porEspecie: porEspecieDe(fs),
     }))
     .sort((a, b) => b.cantidad - a.cantidad || a.clave.localeCompare(b.clave, "es"));
 }

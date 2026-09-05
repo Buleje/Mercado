@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, PackageOpen } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { recubicarPiezas } from "@/lib/forestal/cubicacion";
 import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 
 export const ORIGEN_ACTUAL = "actual";
@@ -50,7 +51,7 @@ export default function Anexo04Origen({
         setGuardadas([...lista.filter((c) => ids.includes(c.id)), ...lista.filter((c) => !ids.includes(c.id))]);
         setSugeridas(ids);
         const auto = lista.find((c) => ids.includes(c.id));
-        if (auto && piezasActuales === 0) onCambio(auto.id, auto.piezas, auto);
+        if (auto && piezasActuales === 0) onCambio(auto.id, recubicarPiezas(auto.piezas), auto);
       })
       // Sin historial (o sin red) el selector queda con el lote actual: es una
       // ayuda, no un requisito para emitir el anexo.
@@ -63,7 +64,7 @@ export default function Anexo04Origen({
   const elegir = (id: string) => {
     if (id === ORIGEN_ACTUAL) { onCambio(id, null); return; }
     const c = guardadas.find((g) => g.id === id);
-    onCambio(id, c?.piezas ?? [], c);
+    onCambio(id, recubicarPiezas(c?.piezas ?? []), c);
   };
 
   return (

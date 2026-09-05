@@ -24,6 +24,7 @@ import {
   type LothSection,
 } from "@/lib/forestal/loth-constants";
 import { totalRelevante, totalesDe, type OrdenCampo, type OrdenDir } from "@/lib/forestal/loth-seccion";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export interface ColDef {
   key: string;
@@ -212,11 +213,13 @@ export default function LothSeccionTabla({
                   {i === cols.length - 1 && (
                     <span className="font-mono text-base font-black tabular-nums text-[var(--text-primary)]">
                       {queSuma === "volumen"
-                        ? `${totales.volumenM3.toFixed(4)} m³`
+                        ? `${fmtM3(totales.volumenM3)} m³`
                         : queSuma === "cantidad"
                           ? totales.unidades.length > 1
                             ? "—"
-                            : `${totales.cantidad.toFixed(4)} ${totales.unidades[0] === "m3" ? "m³" : (totales.unidades[0] ?? "")}`
+                            : totales.unidades[0] === "m3"
+                              ? `${fmtM3(totales.cantidad)} m³`
+                              : `${totales.cantidad.toFixed(4)} ${totales.unidades[0] ?? ""}`
                           : ""}
                     </span>
                   )}

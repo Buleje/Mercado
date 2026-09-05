@@ -9,11 +9,13 @@
  * ficha; en 360px una tabla anidada no se lee.
  */
 
-import { CheckCheck, PackageCheck } from "@buleje/design-system/icons";
+import { CheckCheck, Download, PackageCheck } from "@buleje/design-system/icons";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
+import { PROVEEDOR_INVENTARIO_APERTURA } from "@/lib/forestal/ctp-serfor-a-libro";
 import EspecieFoto from "./EspecieFoto";
 import type { useEspeciesFotos } from "./hooks/use-especies-fotos";
 import { StatusBadge, formatDate, type WoodEntry, type WoodEntryStatus } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export default function CtpGuiaCardMobile({
   guia,
@@ -62,7 +64,17 @@ export default function CtpGuiaCardMobile({
           >
             {guia.gtfNumber}
           </button>
-          <p className="truncate text-sm text-[var(--text-secondary)]">{guia.providerName}</p>
+          <p className="flex items-center gap-1.5 truncate text-sm text-[var(--text-secondary)]">
+            {guia.providerName}
+            {guia.providerName === PROVEEDOR_INVENTARIO_APERTURA && (
+              <span
+                title="Existencia de apertura: entró por el importador del libro"
+                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+              >
+                <Download className="h-3 w-3 shrink-0" aria-hidden /> Importado
+              </span>
+            )}
+          </p>
           <p className="text-sm text-[var(--text-tertiary)]">
             {formatDate(guia.entryDate)} · {guia.lineas.length} asiento{guia.lineas.length === 1 ? "" : "s"} del libro
           </p>
@@ -87,14 +99,14 @@ export default function CtpGuiaCardMobile({
               </span>
             )}
             <span className="shrink-0 font-mono tabular-nums text-[var(--text-secondary)]">
-              {e.volumenM3.toFixed(4)} m³
+              {fmtM3(e.volumenM3)} m³
             </span>
           </li>
         ))}
       </ul>
 
       <p className="mt-3 border-t border-[var(--rule-soft)] pt-2 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
-        {guia.volumenM3.toFixed(4)} m³ ·{" "}
+        {fmtM3(guia.volumenM3)} m³ ·{" "}
         <span className="font-normal text-[var(--text-tertiary)]">
           {guia.trozasCount > 0 ? `${guia.trozasCount} trozas` : `${guia.piezas} piezas`}
           {guia.trozasCount > 0 && ` · ${guia.trozasDecididas}/${guia.trozasCount} recibidas`}

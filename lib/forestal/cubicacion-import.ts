@@ -11,7 +11,7 @@
  * el archivo).
  */
 
-import { cubicarPieza, ESPECIES_MADERA, medidaSospechosa, mejoresNumeros, partirConFijas, type PiezaCubicada, type Unidad } from "./cubicacion";
+import { COMANDOS_DEFAULT, cubicarPieza, detectarComando, ESPECIES_MADERA, leerDictado, medidaSospechosa, partirConFijas, type ComandosCfg, type MedidasFijas, type PiezaCubicada, type Unidad } from "./cubicacion";
 
 /** Una celda del archivo tal como la devuelve la lectura (string o número). */
 export type Celda = string | number | null | undefined;
@@ -32,6 +32,11 @@ export interface ResultadoImport {
 }
 
 type Campo = "cantidad" | "espesor" | "ancho" | "largo" | "especie" | "uEspesor" | "uAncho" | "uLargo";
+
+/** `columnas` no aplica cuando el origen no es una matriz de celdas (foto/audio). */
+const COLUMNAS_SIN_MAPEO: Record<Campo, number | null> = {
+  cantidad: null, espesor: null, ancho: null, largo: null, especie: null, uEspesor: null, uAncho: null, uLargo: null,
+};
 
 export const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
@@ -238,58 +243,124 @@ export function interpretarOcrPiezas(piezas: PiezaOcrRaw[]): ResultadoImport {
     });
   });
 
-  return { piezas: out, errores, columnas: { cantidad: null, espesor: null, ancho: null, largo: null, especie: null, uEspesor: null, uAncho: null, uLargo: null } };
+  return { piezas: out, errores, columnas: COLUMNAS_SIN_MAPEO };
 }
 
 let contadorAudio = 0;
 
 /**
- * Interpreta el TEXTO transcrito de un audio dictado en continuo — "dos ocho
- * once, dos ocho diez, ..." tabla por tabla — usando el MISMO parser que el
- * dictado por voz en vivo (`mejoresNumeros`/`partirConFijas`), pero aplicado
- * una sola vez sobre el transcript completo en vez de frase por frase (acá no
- * hay un micrófono devolviendo alternativas en tiempo real, hay un texto ya
- * transcrito de punta a punta por Whisper).
- *
- * No soporta "N piezas de..." ni especie ni comandos de voz (pausar/fijar) —
- * es deliberadamente el caso simple: sólo tríos espesor·ancho·largo, cantidad
- * 1 cada uno. Si el archivo no cierra en tríos completos, el sobrante queda
- * reportado como error (nunca se inventa una tercera medida).
+ * Separa el transcript en oraciones por `.!?;` y saltos de línea — SALVO un
+ * punto entre dos dígitos ("2.5"), que es un decimal, no un final de oración.
  */
-export function interpretarDictadoAudio(texto: string): ResultadoImport {
+function separarEnOraciones(texto: string): string[] {
+  const DECIMAL = "․"; // "one dot leader" — no aparece en un transcript real
+  const protegido = texto.replace(/(\d)\.(\d)/g, `$1${DECIMAL}$2`);
+  return protegido.split(/[.!?;\n]+/).map((s) => s.trim().replace(new RegExp(DECIMAL, "g"), ".")).filter(Boolean);
+}
+
+/**
+ * Interpreta el TEXTO transcrito de un audio dictado en continuo — tabla por
+ * tabla, con los MISMOS comandos que el dictado por voz en vivo: cantidad
+ * ("cinco tablas de dos por ocho por diez"), especie ("especie cedro"),
+ * medidas fijas ("pon fijo el largo a diez" / "quitá el fijo") y corrección
+ * ("eliminá el último"). Reusa `detectarComando`/`leerDictado`/
+ * `partirConFijas` — el MISMO parser que usa el micrófono en vivo, una sola
+ * fuente de verdad para "qué significa cada comando" y "cómo se separan los
+ * números dictados". `cfg` es el vocabulario de frases-gatillo: pasale el que
+ * el operario personalizó en Ajustes (`loadConfig().comandos`) para que
+ * "graba" también reconozca sus propias frases, no sólo las DEFAULT.
+ *
+ * El transcript se recorre ORACIÓN por ORACIÓN — separadas por los puntos que
+ * Whisper mete en cada pausa real del audio — en vez de como un bloque único
+ * de números. Así una medida mal escuchada o un comando en el medio del
+ * audio queda CONTENIDO en su propia oración: no corre (desalinea) todas las
+ * piezas que vienen después, que es lo que pasaba tratando el archivo entero
+ * como una sola tira de números. Lo que no cierra en una pieza completa se
+ * reporta con la oración exacta de la que salió — nunca se inventa una
+ * tercera medida ni se adivina a qué pieza pertenecía un número suelto.
+ */
+export function interpretarDictadoAudio(texto: string, cfg: ComandosCfg = COMANDOS_DEFAULT): ResultadoImport {
   const errores: { fila: number; motivo: string }[] = [];
   const out: PiezaImportada[] = [];
 
-  const nums = mejoresNumeros([texto], {}, 0);
-  if (nums.length === 0) {
+  const oraciones = separarEnOraciones(texto);
+  if (oraciones.length === 0) {
     errores.push({ fila: 1, motivo: "No se reconoció ningún número en el audio. Dictá más despacio y separá bien cada medida." });
-    return { piezas: out, errores, columnas: { cantidad: null, espesor: null, ancho: null, largo: null, especie: null, uEspesor: null, uAncho: null, uLargo: null } };
+    return { piezas: out, errores, columnas: COLUMNAS_SIN_MAPEO };
   }
 
-  const { piezas: trios, resto } = partirConFijas(nums, {});
-  trios.forEach((t, i) => {
-    const filaNro = i + 1;
-    const base = { cantidad: 1, espesor: t.espesor, ancho: t.ancho, largo: t.largo, uEspesor: "pulg" as Unidad, uAncho: "pulg" as Unidad, uLargo: "pies" as Unidad };
+  let fijas: MedidasFijas = {};
+  let especieActual: string | undefined;
+  let duenoActual: string | undefined;
+  let carry: number[] = [];
+
+  const agregarPieza = (espesor: number, ancho: number, largo: number, cantidad: number) => {
+    const base = { cantidad, espesor, ancho, largo, uEspesor: "pulg" as Unidad, uAncho: "pulg" as Unidad, uLargo: "pies" as Unidad };
     const { pieTablar, m3 } = cubicarPieza(base);
     out.push({
       id: `aud-p-${Date.now()}-${contadorAudio++}`,
       ...base,
-      especie: undefined,
+      especie: especieActual,
+      dueno: duenoActual,
       pieTablar,
       m3,
-      filaOrigen: filaNro,
-      sospechosa: medidaSospechosa(t.espesor, t.ancho, t.largo),
+      filaOrigen: out.length + 1,
+      sospechosa: medidaSospechosa(espesor, ancho, largo),
     });
+  };
+
+  oraciones.forEach((oracion, i) => {
+    const filaNro = i + 1;
+    const cmd = detectarComando(oracion, cfg);
+    if (cmd) {
+      // Fijar/desfijar cambia cuántos números trae cada pieza: lo que había
+      // quedado a medio dictar con la regla anterior ya no cierra — mejor
+      // avisar que perderlo en silencio.
+      if (cmd.tipo === "fijar" || cmd.tipo === "desfijar") {
+        if (carry.length > 0) {
+          errores.push({ fila: filaNro, motivo: `Quedaron ${carry.length} número(s) sueltos sin formar pieza antes de "${oracion}": ${carry.join(", ")}.` });
+        }
+        carry = [];
+        if (cmd.tipo === "fijar") fijas = { ...fijas, [cmd.dimension]: cmd.valor };
+        else if (cmd.dimension) { const next = { ...fijas }; delete next[cmd.dimension]; fijas = next; }
+        else fijas = {};
+      } else if (cmd.tipo === "especie") {
+        const encontrada = ESPECIES_MADERA.find((e) => sinAcentos(e).startsWith(cmd.palabra));
+        if (encontrada) especieActual = encontrada;
+        else errores.push({ fila: filaNro, motivo: `No reconocí la especie "${cmd.palabra}" dictada en "${oracion}" — lo que sigue se importa sin especie hasta que la corrijas.` });
+      } else if (cmd.tipo === "dueno") {
+        // Sin lista cerrada (el dueño no es un catálogo fijo como la especie):
+        // lo que se dictó SE CREA, capitalizado, y se aplica a lo que sigue.
+        duenoActual = cmd.palabra.charAt(0).toUpperCase() + cmd.palabra.slice(1);
+      } else if (cmd.tipo === "borrar-ultimo") {
+        if (out.length > 0) out.pop();
+        else errores.push({ fila: filaNro, motivo: `Dijiste "${oracion}" pero todavía no había ninguna pieza para quitar.` });
+      }
+      // pausar/continuar/resumen/total no aplican a un archivo ya grabado.
+      return;
+    }
+
+    const { cantidad, nums } = leerDictado(oracion, fijas, carry.length);
+    const todos = [...carry, ...nums];
+    if (todos.length === 0) return; // oración sin números ni comando: ruido de la transcripción, se ignora
+
+    const { piezas: trios, resto } = partirConFijas(todos, fijas);
+    trios.forEach((t) => agregarPieza(t.espesor, t.ancho, t.largo, cantidad));
+    carry = resto;
   });
 
-  if (resto.length > 0) {
+  if (carry.length > 0) {
     errores.push({
-      fila: trios.length + 1,
-      motivo: `Quedaron ${resto.length} número${resto.length === 1 ? "" : "s"} suelto${resto.length === 1 ? "" : "s"} al final sin formar una pieza completa: ${resto.join(", ")}.`,
+      fila: out.length + 1,
+      motivo: `Quedaron ${carry.length} número${carry.length === 1 ? "" : "s"} suelto${carry.length === 1 ? "" : "s"} al final sin formar una pieza completa: ${carry.join(", ")}.`,
     });
   }
 
-  return { piezas: out, errores, columnas: { cantidad: null, espesor: null, ancho: null, largo: null, especie: null, uEspesor: null, uAncho: null, uLargo: null } };
+  if (out.length === 0 && errores.length === 0) {
+    errores.push({ fila: 1, motivo: "No se reconoció ningún número en el audio. Dictá más despacio y separá bien cada medida." });
+  }
+
+  return { piezas: out, errores, columnas: COLUMNAS_SIN_MAPEO };
 }
 
 /** Encabezado + una fila de ejemplo para la plantilla descargable. */

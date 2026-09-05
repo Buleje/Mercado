@@ -16,6 +16,7 @@
 import { applyCtpPeriodParams, type CtpPeriod } from "./ctp-period";
 import { estadoVencimiento, type CtpFicha } from "./ctp-ficha-types";
 import { evaluarRendimiento } from "./ctp-rendimiento";
+import { fmtM3 } from "./cubicacion-formato";
 
 const TITULO_LABEL_INF: Record<string, string> = {
   concesion: "Concesión forestal", permiso: "Permiso forestal", autorizacion: "Autorización",
@@ -87,9 +88,9 @@ export async function printInformePeriodo(period: CtpPeriod): Promise<void> {
     .map(
       (s) => `<tr>
         <td>${esc(s.especie)}${s.cites ? ' <span class="cites">CITES</span>' : ""}${s.scientific ? `<br/><i class="sci">${esc(s.scientific)}</i>` : ""}</td>
-        <td class="mono right">${n4(s.ingresoM3)}</td>
-        <td class="mono right">${n4(s.consumidoM3)}</td>
-        <td class="mono right ${s.saldoM3 < 0 ? "neg" : ""}">${n4(s.saldoM3)}</td>
+        <td class="mono right">${fmtM3(s.ingresoM3)}</td>
+        <td class="mono right">${fmtM3(s.consumidoM3)}</td>
+        <td class="mono right ${s.saldoM3 < 0 ? "neg" : ""}">${fmtM3(s.saldoM3)}</td>
       </tr>`,
     )
     .join("") || `<tr><td colspan="4" class="empty">Sin movimientos de materia prima en el período.</td></tr>`;
@@ -167,11 +168,11 @@ export async function printInformePeriodo(period: CtpPeriod): Promise<void> {
 
     <div class="kpis">
       <div class="kpi"><div class="l">Ingresos de materia prima</div><div class="v">${stats?.totalCount ?? 0}</div></div>
-      <div class="kpi"><div class="l">Volumen ingresado (m³)</div><div class="v">${n4(stats?.totalVolumeM3 ?? 0)}</div></div>
+      <div class="kpi"><div class="l">Volumen ingresado (m³)</div><div class="v">${fmtM3(stats?.totalVolumeM3 ?? 0)}</div></div>
       <div class="kpi"><div class="l">Especies CITES</div><div class="v">${stats?.citesCount ?? 0}</div></div>
       <div class="kpi"><div class="l">Corridas de producción</div><div class="v">${produccion.length}</div></div>
       <div class="kpi"><div class="l">Despachos</div><div class="v">${despachos.length}</div></div>
-      <div class="kpi"><div class="l">Materia prima consumida (m³)</div><div class="v">${n4(saldos?.materiaPrima.consumidoM3 ?? 0)}</div></div>
+      <div class="kpi"><div class="l">Materia prima consumida (m³)</div><div class="v">${fmtM3(saldos?.materiaPrima.consumidoM3 ?? 0)}</div></div>
     </div>
 
     <div class="box">

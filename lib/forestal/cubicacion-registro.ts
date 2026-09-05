@@ -11,7 +11,7 @@
  */
 
 import type { PiezaCubicada } from "./cubicacion";
-import { cubicarPieza } from "./cubicacion";
+import { cubicarPieza, m3DesdePt } from "./cubicacion";
 
 export interface CubicacionTotales {
   piezas: number;
@@ -55,17 +55,19 @@ export interface CubicacionRegistro {
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
-const r4 = (n: number) => Math.round(n * 10000) / 10000;
 
 /** Fecha de hoy en formato date-only, sin arrastrar la hora. */
 export const hoyISO = (): string => new Date().toISOString().slice(0, 10);
 
 /** Totales de un conjunto de piezas (los mismos que muestra la tabla). */
 export function totalesDe(piezas: PiezaCubicada[]): CubicacionTotales {
+  // El m³ sale del pie tablar total (÷ 424), igual que el total de la pantalla:
+  // sumar los m³ ya redondeados de cada fila corría el total unas centésimas.
+  const pieTablar = r2(piezas.reduce((a, p) => a + (Number(p.pieTablar) || 0), 0));
   return {
     piezas: piezas.reduce((a, p) => a + (Number(p.cantidad) || 0), 0),
-    pieTablar: r2(piezas.reduce((a, p) => a + (Number(p.pieTablar) || 0), 0)),
-    m3: r4(piezas.reduce((a, p) => a + (Number(p.m3) || 0), 0)),
+    pieTablar,
+    m3: m3DesdePt(pieTablar),
   };
 }
 

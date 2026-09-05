@@ -18,9 +18,10 @@
  */
 
 import { useMemo, useState } from "react";
-import { CalendarDays, Layers, Ruler, Scale } from "@buleje/design-system/icons";
+import { CalendarDays, ChevronDown, Layers, Ruler, Scale } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { recubicarPiezas } from "@/lib/forestal/cubicacion";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import {
   APROVECHABLE_DEFAULT,
@@ -34,6 +35,7 @@ import CtpJornadasDelTurno from "./CtpJornadasDelTurno";
 import type { Jornada } from "@/lib/forestal/consumo-en-jornadas";
 import type { ResumenJornadas } from "@/lib/forestal/registrar-jornadas";
 import { Btn, I } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Una troza elegida para la sierra, con lo que el reparto necesita de ella. */
 export interface TrozaParaReparto {
@@ -64,6 +66,11 @@ export default function CtpCubicacionParaConsumo({
   onAviso: (mensaje: string) => void;
 }) {
   const [abierto, setAbierto] = useState(false);
+  /** Colapsado por defecto (Brandon, 2026-09-01): ocupaba una franja entera
+   *  aunque la mayoría de las veces está en «Ninguna — sólo consumir». Se
+   *  reabre solo cuando hay algo que mostrar (una cubicación recién guardada)
+   *  o cuando el operario lo pide. */
+  const [expandido, setExpandido] = useState(false);
   const [elegida, setElegida] = useState<string>("");
   const [dias, setDias] = useState(1);
   const [aprovechable, setAprovechable] = useState(APROVECHABLE_DEFAULT);
@@ -73,7 +80,8 @@ export default function CtpCubicacionParaConsumo({
 
   const lista = useMemo(() => [...recien, ...guardadas.lista], [recien, guardadas.lista]);
   const cubicacion = useMemo(() => lista.find((c) => c.id === elegida) ?? null, [lista, elegida]);
-  const piezas: PiezaCubicada[] = cubicacion?.piezas ?? [];
+  // Re-cubicadas: una cubicación guardada hace meses puede traer el m³ viejo.
+  const piezas: PiezaCubicada[] = useMemo(() => recubicarPiezas(cubicacion?.piezas ?? []), [cubicacion]);
 
   /* Las trozas elegidas son los bloques: cada una ampara hasta su capacidad y lo
      que no entra queda como faltante — no se prorratea (ADR de reparto). */
@@ -111,19 +119,38 @@ export default function CtpCubicacionParaConsumo({
   return (
     <section className="space-y-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <Ruler className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
-          Cubicación de lo aserrado
-        </CardTitle>
-        <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
-          Medí lo que salió de la sierra y usalo al cargar el consumo: el reparto dice qué le toca a cada troza y
-          a cada día.
-        </p>
+        <button
+          type="button"
+          onClick={() => setExpandido((v) => !v)}
+          aria-expanded={expandido}
+          className="flex min-w-0 flex-1 items-center gap-x-3 gap-y-1 text-left"
+        >
+          <Ruler className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+            Cubicación de lo aserrado
+          </CardTitle>
+          {expandido ? (
+            <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
+              Medí lo que salió de la sierra y usalo al cargar el consumo: el reparto dice qué le toca a cada
+              troza y a cada día.
+            </p>
+          ) : (
+            <span className="min-w-0 flex-1 truncate text-sm text-[var(--text-tertiary)]">
+              {cubicacion ? `${cubicacion.nombre} · ${fmtM3(totales.m3)} m³` : "Ninguna — sólo consumir"}
+            </span>
+          )}
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform ${expandido ? "rotate-180" : ""}`}
+            aria-hidden
+          />
+        </button>
         <Btn variant="primary" onClick={() => setAbierto(true)}>
           <Ruler className="h-4 w-4" /> Cubicar madera
         </Btn>
       </header>
 
+      {expandido && (
+      <div className="space-y-2">
       <div className="grid gap-2 sm:grid-cols-12">
         <label className="sm:col-span-6">
           <span className="mb-1 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
@@ -133,7 +160,7 @@ export default function CtpCubicacionParaConsumo({
             <option value="">Ninguna — sólo consumir</option>
             {lista.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.nombre} · {c.totales.piezas} pza · {c.totales.m3.toFixed(4)} m³ · {c.fecha}
+                {c.nombre} · {c.totales.piezas} pza · {fmtM3(c.totales.m3)} m³ · {c.fecha}
               </option>
             ))}
           </select>
@@ -170,10 +197,10 @@ export default function CtpCubicacionParaConsumo({
       {/* El resumen: qué se midió, contra cuánta rolliza y con qué rendimiento. */}
       {cubicacion && (
         <div className="grid gap-2 sm:grid-cols-4">
-          <Cifra icon={Layers} label="Aserrada medida" valor={`${totales.m3.toFixed(4)} m³`} sub={`${totales.piezas} piezas · ${pieTablarDe(totales.m3).toLocaleString("es-PE")} pt`} />
-          <Cifra icon={Scale} label="Rolliza elegida" valor={`${totales.rollizaM3.toFixed(4)} m³`} sub={`${trozas.length} troza${trozas.length === 1 ? "" : "s"} tildada${trozas.length === 1 ? "" : "s"}`} />
+          <Cifra icon={Layers} label="Aserrada medida" valor={`${fmtM3(totales.m3)} m³`} sub={`${totales.piezas} piezas · ${pieTablarDe(totales.m3).toLocaleString("es-PE")} pt`} />
+          <Cifra icon={Scale} label="Rolliza elegida" valor={`${fmtM3(totales.rollizaM3)} m³`} sub={`${trozas.length} troza${trozas.length === 1 ? "" : "s"} tildada${trozas.length === 1 ? "" : "s"}`} />
           <Cifra icon={Scale} label="Rendimiento" valor={rendimiento != null ? `${rendimiento} %` : "—"} sub={`Aprovechable declarado ${aprovechable} %`} />
-          <Cifra icon={CalendarDays} label="Días" valor={String(dias)} sub={dias === 1 ? "Todo en una jornada" : `${(totales.m3 / dias).toFixed(4)} m³ por día`} />
+          <Cifra icon={CalendarDays} label="Días" valor={String(dias)} sub={dias === 1 ? "Todo en una jornada" : `${fmtM3(totales.m3 / dias)} m³ por día`} />
         </div>
       )}
 
@@ -186,7 +213,7 @@ export default function CtpCubicacionParaConsumo({
               <div className="flex flex-wrap items-baseline justify-between gap-2 bg-[var(--surface-sunken)] px-3 py-1.5">
                 <b className="text-sm text-[var(--text-primary)]">{esp.especie}</b>
                 <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
-                  rolliza {esp.rollizaM3.toFixed(4)} m³ · aserrada {esp.aserradaM3.toFixed(4)} m³
+                  rolliza {fmtM3(esp.rollizaM3)} m³ · aserrada {fmtM3(esp.aserradaM3)} m³
                   {esp.rendimientoPct != null ? ` · ${esp.rendimientoPct} %` : ""}
                 </span>
               </div>
@@ -196,8 +223,8 @@ export default function CtpCubicacionParaConsumo({
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <span className="font-mono font-bold text-[var(--text-primary)]">{b.bloque.etiqueta}</span>
                       <span className="font-mono tabular-nums text-[var(--text-secondary)]">
-                        ampara {b.capacidadM3.toFixed(4)} m³ · usado {b.usadoM3.toFixed(4)} m³
-                        {b.libreM3 > 0 ? ` · libre ${b.libreM3.toFixed(4)}` : ""}
+                        ampara {fmtM3(b.capacidadM3)} m³ · usado {fmtM3(b.usadoM3)} m³
+                        {b.libreM3 > 0 ? ` · libre ${fmtM3(b.libreM3)}` : ""}
                       </span>
                     </div>
                     {b.porDia.length > 1 && (
@@ -207,7 +234,7 @@ export default function CtpCubicacionParaConsumo({
                             key={d.dia}
                             className="rounded-lg bg-[var(--surface-sunken)] px-2 py-0.5 font-mono text-xs tabular-nums text-[var(--text-secondary)]"
                           >
-                            día {d.dia}: {d.m3.toFixed(4)} m³ · {d.piezas} pza
+                            día {d.dia}: {fmtM3(d.m3)} m³ · {d.piezas} pza
                           </span>
                         ))}
                       </div>
@@ -219,8 +246,8 @@ export default function CtpCubicacionParaConsumo({
           ))}
           {distribucion.totales.faltanteM3 > 0 && (
             <p className="rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-              Quedan {distribucion.totales.faltanteM3.toFixed(4)} m³ de aserrada que ninguna troza elegida puede
-              amparar (harían falta {distribucion.totales.rollizaFaltanteM3.toFixed(4)} m³ de rolliza al{" "}
+              Quedan {fmtM3(distribucion.totales.faltanteM3)} m³ de aserrada que ninguna troza elegida puede
+              amparar (harían falta {fmtM3(distribucion.totales.rollizaFaltanteM3)} m³ de rolliza al{" "}
               {aprovechable} %). Tildá más trozas o revisá el aprovechable.
             </p>
           )}
@@ -243,6 +270,8 @@ export default function CtpCubicacionParaConsumo({
           }}
         />
       )}
+      </div>
+      )}
 
       {abierto && (
         <CtpCubicarProductoModal
@@ -255,6 +284,7 @@ export default function CtpCubicacionParaConsumo({
             if (registro) {
               setRecien((p) => [registro, ...p]);
               setElegida(registro.id);
+              setExpandido(true);
             }
             onAviso(msg);
           }}

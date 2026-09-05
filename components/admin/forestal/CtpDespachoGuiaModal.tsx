@@ -30,6 +30,7 @@ import type { Parte, RolParte } from "@/lib/forestal/directorio";
 import { faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { rellenarGuia, siguienteNumeroGtf } from "@/lib/forestal/gtf-autocompletar";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
   enviosDeLista,
   filasDeCorridas,
@@ -313,6 +314,7 @@ export default function CtpDespachoGuiaModal({
   const total = volumenTotal(filas);
   /** La unidad de la guía: la de sus productos (la lista no admite mezclarlas). */
   const unidadLista = UNIT_LABELS[filas[0]?.unidad ?? "m3"] ?? filas[0]?.unidad ?? "m³";
+  const totalFmt = unidadLista === "m³" ? fmtM3(total) : total.toFixed(4);
   const problemas = useMemo(() => (filas.length === 0 ? [] : problemasDeLista(filas)), [filas]);
   const faltanGuia = useMemo(() => faltantesGtf(datos), [datos]);
   /* Registrar ya NO exige el N° de guía (ADR-374): la línea entra al libro
@@ -469,7 +471,7 @@ export default function CtpDespachoGuiaModal({
               nota={
                 <span>
                   <b className="text-[var(--text-primary)]">{registrado.lineas}</b> {registrado.lineas === 1 ? "línea" : "líneas"} en el libro ·{" "}
-                  <span className="font-mono tabular-nums">{total.toFixed(4)} {unidadLista}</span>
+                  <span className="font-mono tabular-nums">{totalFmt} {unidadLista}</span>
                 </span>
               }
             >
@@ -501,7 +503,7 @@ export default function CtpDespachoGuiaModal({
               <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span>
                   <b className="text-[var(--text-primary)]">{filas.length}</b> producto{filas.length === 1 ? "" : "s"} ·{" "}
-                  <span className="font-mono tabular-nums">{total.toFixed(4)} {unidadLista}</span>
+                  <span className="font-mono tabular-nums">{totalFmt} {unidadLista}</span>
                 </span>
                 {/* Por qué NO se puede registrar todavía. Un botón apagado sin
                     motivo manda a buscar a ojo entre dos pestañas. */}
@@ -566,7 +568,7 @@ export default function CtpDespachoGuiaModal({
             <DatoFranja label="Número de resolución" valor={titulo?.resolucion || "—"} />
             {/* La unidad sale de la lista: casi siempre m³, pero una guía de
                 producto medido en pies tablares no dice «m³». */}
-            <DatoFranja label="Volumen a movilizar" valor={`${total.toFixed(4)} ${unidadLista}`} mono />
+            <DatoFranja label="Volumen a movilizar" valor={`${totalFmt} ${unidadLista}`} mono />
           </div>
 
           {/* Registrada: lo único que queda por hacer es el papel. Las pestañas

@@ -209,7 +209,7 @@ describe("trozas que salen sin aserrar (ADR-363)", () => {
   it("avisa si se declara más volumen del que la troza mide", () => {
     const p = problemasDeLista([troza({ volumen: 2, disponibleCorrida: 1.2 })]);
     expect(p).toHaveLength(1);
-    expect(p[0]).toContain("1.2000");
+    expect(p[0]).toContain("1.200");
   });
 
   it("las trozas de una especie van en UNA línea del libro, con sus piezas", () => {

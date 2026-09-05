@@ -49,6 +49,7 @@ export function loadConfig(): CubicadorConfig {
         especie: p.comandos?.especie ?? COMANDOS_DEFAULT.especie,
         fijar: p.comandos?.fijar ?? COMANDOS_DEFAULT.fijar,
         desfijar: p.comandos?.desfijar ?? COMANDOS_DEFAULT.desfijar,
+        dueno: p.comandos?.dueno ?? COMANDOS_DEFAULT.dueno,
       },
     };
   } catch { return CONFIG_DEFAULT; }

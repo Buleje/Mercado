@@ -26,10 +26,10 @@ const lote = (over: Partial<Parameters<typeof avanceDeLote>[0]> = {}) => ({
 });
 
 describe("enPieTablar", () => {
-  it("usa la constante del cubicador, no un 424 redondeado", () => {
-    // 1 m³ = 423.78 pt. Con 424 daría 424.0 y el PDF del cubicador diría otra cosa.
-    expect(enPieTablar(1)).toBe(423.8); // r1 sobre 423.78
-    expect(enPieTablar(10)).toBe(4237.8);
+  it("usa la constante del cubicador (424 pt por m³)", () => {
+    // 1 m³ = 424 pt (PT_POR_M3): el MISMO factor que la tabla del cubicador.
+    expect(enPieTablar(1)).toBe(424);
+    expect(enPieTablar(10)).toBe(4240);
   });
 
   it("un valor no finito da 0, no NaN en pantalla", () => {
@@ -79,8 +79,8 @@ describe("resumenLotes", () => {
       lote({ totalCantidad: 1, despachado: 0, disponible: 1 }),
       lote({ totalCantidad: 1, despachado: 0, disponible: 1 }),
     ]);
-    // Sumar y convertir, no convertir y sumar: 2 × 423.78 = 847.56 → 847.6
-    expect(r.armadoPt).toBe(847.6);
+    // Sumar y convertir, no convertir y sumar: 2 × 424 = 848
+    expect(r.armadoPt).toBe(848);
   });
 });
 
@@ -141,7 +141,7 @@ describe("metaDeLote", () => {
 
   it("convierte a pie tablar con la constante del cubicador", () => {
     const m = metaDeLote([especie({ trozasM3: 10, metaM3: 1, producidoM3: 1 })]);
-    expect(m?.metaPt).toBe(423.8);
+    expect(m?.metaPt).toBe(424);
   });
 });
 

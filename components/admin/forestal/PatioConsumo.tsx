@@ -20,6 +20,7 @@ import { URL_TROZAS_CONSUMO, escribirDelPatio } from "@/lib/forestal/patio-cola"
 import { antiguedad, guardar as guardarCache, leer } from "@/lib/forestal/patio-cache";
 import { cn } from "@/lib/utils";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import CtpTrozasPicker from "./CtpTrozasPicker";
 
 export interface CorridaPatio {
@@ -194,7 +195,9 @@ export default function PatioConsumo() {
                         #{c.lineNo} · {c.productType ?? "—"}
                       </span>
                       <span className="block truncate text-base text-[var(--text-secondary)]">
-                        {c.speciesCommon ?? "—"} · {Number(c.quantity ?? 0).toFixed(4)} {c.unit ?? ""}
+                        {c.speciesCommon ?? "—"} ·{" "}
+                        {!c.unit || c.unit === "m3" ? fmtM3(Number(c.quantity ?? 0)) : Number(c.quantity ?? 0).toFixed(4)}{" "}
+                        {c.unit ?? ""}
                       </span>
                     </span>
                     <span className="shrink-0 text-base text-[var(--text-tertiary)]">{fmtFecha(c.entryDate)}</span>

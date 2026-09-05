@@ -20,6 +20,7 @@ import LoteForm from "./LoteForm";
 import LoteDetailModal from "./LoteDetailModal";
 import LotesTabla from "./LotesTabla";
 import LoteCard, { type LoteRow, type LoteStatus } from "./LoteCard";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 interface Stats { total: number; abiertos: number; cerrados: number; despachados: number; cantidadTotal: number }
 
@@ -30,8 +31,6 @@ const STATUS_FILTERS: { key: LoteStatus | "todos"; label: string }[] = [
   { key: "despachado", label: "Despachados" },
   { key: "anulado", label: "Anulados" },
 ];
-
-const n4 = (v: number | string | null | undefined) => (Number(v) || 0).toFixed(4);
 
 export default function ForestLotesModule() {
   const [lotes, setLotes] = useState<LoteRow[]>([]);
@@ -110,7 +109,7 @@ export default function ForestLotesModule() {
         <StatCard
           density="compact"
           label="Armado"
-          value={`${n4(resumen.armadoM3)} m³`}
+          value={`${fmtM3(resumen.armadoM3)} m³`}
           subValue={`${resumen.armadoPt.toLocaleString("es-PE")} pt`}
           icon={Boxes}
           emphasis="neutral"
@@ -118,7 +117,7 @@ export default function ForestLotesModule() {
         <StatCard
           density="compact"
           label="Despachado"
-          value={`${n4(resumen.despachadoM3)} m³`}
+          value={`${fmtM3(resumen.despachadoM3)} m³`}
           subValue={resumen.avancePct == null ? "Sin lotes armados" : `${resumen.avancePct}% de lo armado`}
           icon={Truck}
           emphasis="neutral"
@@ -126,7 +125,7 @@ export default function ForestLotesModule() {
         <StatCard
           density="compact"
           label="Disponible"
-          value={`${n4(resumen.disponibleM3)} m³`}
+          value={`${fmtM3(resumen.disponibleM3)} m³`}
           subValue={
             resumen.lotesOtraUnidad > 0
               ? `${resumen.disponiblePt.toLocaleString("es-PE")} pt · +${resumen.lotesOtraUnidad} en otra unidad`

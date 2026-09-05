@@ -17,7 +17,9 @@ import { saldosDeCorridas } from "./forest-ctp-saldo-corrida";
 import { WoodEntriesDB } from "./wood-entries.db";
 import { agruparMovimiento, pasoParaBarras, type MovimientoDelLibro } from "@/lib/forestal/movimiento-libro";
 import { RENDIMIENTO_TOPE_PCT, topeDeclarableM3 } from "@/lib/forestal/produccion-paquetes";
+import { estaDisponible, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
 export type CtpSection = (typeof CTP_SECTIONS)[number];
@@ -91,6 +93,15 @@ export interface SpeciesBalance {
   /** ingresoM3 − consumidoM3 − despachadoDirectoM3. Negativo = salió más de lo que entró. */
   saldoM3: number;
   ingresosCount: number;
+  /**
+   * Trozas de esta especie que HOY se pueden mandar a la sierra —mismo
+   * predicado que el patio (`estaDisponible`, ADR-345): ni consumida, ni
+   * despachada sin aserrar, ni sin recepcionar, ni descarte, ni madre
+   * retrozada. Es el conteo que se ve parado frente a la pila, no una cuenta
+   * nueva — reusar el predicado evita la tercera lectura divergente de la
+   * misma madera (memoria: "47 vs 30").
+   */
+  piezasDisponibles: number;
 }
 
 /**
@@ -165,6 +176,25 @@ export interface CtpEntryInput {
    * tenant, orientación y que el producto/unidad coincidan.
    */
   origenes?: { produccionEntryId: string; quantity: number | string }[];
+  /**
+   * Los paquetes que esta corrida ya declara (ADR-349), cuando el llamador los
+   * trae de entrada — el import del libro y del inventario de aserrada, que no
+   * pasan por `declararProduccion`. El código es único por planta: el llamador
+   * valida que esté libre ANTES de llamar (`codigosDePaqueteEnUso`); acá se
+   * confía en esa validación, igual que hacen `ampliarProduccion` y
+   * `declararProduccion` con la suya.
+   */
+  paquetes?: {
+    codigo: string;
+    cantidad: number;
+    volumenM3: number | string;
+    productType?: string | null;
+    presentacion?: string | null;
+    espesorCm?: number | string | null;
+    anchoCm?: number | string | null;
+    largoM?: number | string | null;
+    observations?: string | null;
+  }[];
   createdBy: string;
 }
 
@@ -382,6 +412,30 @@ export class ForestCtpDB {
           moneda: input.moneda?.trim() || "PEN",
           status: "registrado",
           createdBy: input.createdBy,
+          /* El BULTO de la corrida (ADR-349), cuando el llamador lo trae. Sin
+             esto el import escribía el volumen y descartaba en silencio el
+             código, las piezas y las medidas del paquete — el dato estaba en
+             el archivo y nunca llegaba a "Productos disponibles". */
+          ...(input.paquetes && input.paquetes.length > 0
+            ? {
+                paquetes: {
+                  create: input.paquetes.map((p) => ({
+                    tenantId,
+                    codigo: p.codigo.trim(),
+                    productType: p.productType?.trim() || input.productType?.trim() || null,
+                    presentacion: p.presentacion?.trim() || null,
+                    cantidad: Math.max(0, Math.round(p.cantidad)),
+                    unit: "m3",
+                    volumenM3: p.volumenM3,
+                    espesorCm: p.espesorCm ?? null,
+                    anchoCm: p.anchoCm ?? null,
+                    largoM: p.largoM ?? null,
+                    observations: p.observations?.trim() || null,
+                    createdBy: input.createdBy,
+                  })),
+                },
+              }
+            : {}),
         },
       });
     }, CTP_TX_OPTS);
@@ -438,6 +492,20 @@ export class ForestCtpDB {
     ]);
 
     /**
+     * Cuánto hay en TOTAL para esta sección, sin la ventana de fecha.
+     *
+     * "Productos disponibles" no filtra por período a propósito (ADR: es una
+     * FOTO del depósito, no un movimiento del mes) — así que una corrida vieja
+     * sigue apareciendo ahí aunque el libro la esconda por fecha. Sin este
+     * número, la diferencia se lee como "se comió un registro" cuando en
+     * realidad está fuera de la ventana activa. Sólo se pide cuando HAY un
+     * rango: sin fecha no hay nada que esconder.
+     */
+    const totalSinFiltro = range
+      ? await prisma.forestCtpEntry.count({ where: { ...where, entryDate: undefined } })
+      : undefined;
+
+    /**
      * ¿Cuánto de cada despacho tiene origen declarado?
      *
      * La atribución parcial es LEGAL (invariante I4: siempre `≤`, nunca `==` —
@@ -469,6 +537,7 @@ export class ForestCtpDB {
           e.section === "despacho" ? { ...e, atribuidoQty: atribuido.get(e.id) ?? 0 } : e,
         ),
         total,
+        totalSinFiltro,
       };
     }
 
@@ -484,7 +553,7 @@ export class ForestCtpDB {
      * Cierra el trío: el ingreso se cuadra contra sus piezas, la corrida contra
      * su materia prima, el despacho contra su corrida.
      */
-    const [salidas, reprocesos, consumos] = await Promise.all([
+    const [salidas, reprocesos, consumos, consumosConOrigen] = await Promise.all([
       prisma.forestCtpDespachoOrigen.groupBy({
         by: ["produccionEntryId"],
         where: { tenantId, produccionEntryId: { in: corridas }, despacho: { deletedAt: null, status: "registrado" } },
@@ -503,10 +572,26 @@ export class ForestCtpDB {
         where: { tenantId, ctpEntryId: { in: corridas } },
         _sum: { volumeM3: true },
       }),
+      /* El N° de Permiso de la corrida es el `originCode` del ingreso que la
+       * alimentó (mismo dato que ya usa `productosDisponibles` como
+       * `titularOrigen`) — no un campo propio: una corrida no tiene permiso
+       * propio, hereda el de la madera que consumió. `groupBy` no puede
+       * traer el campo del padre (`WoodEntry`), así que va por `findMany`. */
+      prisma.forestCtpConsumo.findMany({
+        where: { tenantId, ctpEntryId: { in: corridas } },
+        select: { ctpEntryId: true, woodEntry: { select: { originCode: true } } },
+      }),
     ]);
     const desp = new Map(salidas.map((r) => [r.produccionEntryId, Number(r._sum.quantity ?? 0)]));
     const repro = new Map(reprocesos.map((r) => [r.origenEntryId, Number(r._sum.quantity ?? 0)]));
     const mpAtribuida = new Map(consumos.map((c) => [c.ctpEntryId, Number(c._sum.volumeM3 ?? 0)]));
+    const permisoDeCorrida = new Map<string, string[]>();
+    for (const c of consumosConOrigen) {
+      const codigo = (c.woodEntry?.originCode ?? "").trim();
+      if (!codigo) continue;
+      const previos = permisoDeCorrida.get(c.ctpEntryId) ?? [];
+      if (!previos.includes(codigo)) permisoDeCorrida.set(c.ctpEntryId, [...previos, codigo]);
+    }
 
     return {
       entries: entries.map((e) =>
@@ -516,12 +601,17 @@ export class ForestCtpDB {
               despachadoQty: desp.get(e.id) ?? 0,
               reprocesadoQty: repro.get(e.id) ?? 0,
               mpAtribuidaM3: mpAtribuida.get(e.id) ?? 0,
+              /* Varios ingresos con distinto permiso pueden alimentar la
+                 misma corrida (dos guías de dos concesiones aserradas
+                 juntas): se listan todos, no se elige uno. */
+              permisoOrigen: permisoDeCorrida.get(e.id) ?? [],
             }
           : e.section === "despacho"
             ? { ...e, atribuidoQty: atribuido.get(e.id) ?? 0 }
             : e,
       ),
       total,
+      totalSinFiltro,
     };
   }
 
@@ -711,8 +801,8 @@ export class ForestCtpDB {
         const tope = topeDeclarableM3(entrada);
         if (total > tope + 0.001) {
           throw new CtpInvariantError(
-            `Con ${entrada.toFixed(4)} m³ de materia prima el tope (${RENDIMIENTO_TOPE_PCT} %) permite ` +
-              `${tope.toFixed(4)} m³ en total. Esta corrida ya declaró ${r4(Number(actual.quantity))} y estás ` +
+            `Con ${fmtM3(entrada)} m³ de materia prima el tope (${RENDIMIENTO_TOPE_PCT} %) permite ` +
+              `${fmtM3(tope)} m³ en total. Esta corrida ya declaró ${r4(Number(actual.quantity))} y estás ` +
               `agregando ${suma}: quedan ${r4(Math.max(0, tope - Number(actual.quantity)))} m³.`,
             "RENDIMIENTO_SOBRE_TOPE",
           );
@@ -837,8 +927,8 @@ export class ForestCtpDB {
       const tope = topeDeclarableM3(entrada);
       if (campos.quantity > tope + 0.001) {
         throw new CtpInvariantError(
-          `Con ${entrada.toFixed(4)} m³ de materia prima el tope de rendimiento (${RENDIMIENTO_TOPE_PCT} %) ` +
-            `permite ${tope.toFixed(4)} m³; estás declarando ${campos.quantity}.`,
+          `Con ${fmtM3(entrada)} m³ de materia prima el tope de rendimiento (${RENDIMIENTO_TOPE_PCT} %) ` +
+            `permite ${fmtM3(tope)} m³; estás declarando ${campos.quantity}.`,
           "RENDIMIENTO_SOBRE_TOPE",
         );
       }
@@ -1177,6 +1267,53 @@ export class ForestCtpDB {
     return e;
   }
 
+  /**
+   * Marca (o desmarca) una corrida de PRODUCCIÓN como "ya se usó" (Brandon,
+   * 2026-09-01): sale de "Productos disponibles" sin despacharla ni
+   * reprocesarla.
+   *
+   * Para el resto que quedó sin salida formal —mermas, ajustes de inventario,
+   * existencias de apertura ya repartidas por fuera del libro— fabricar un
+   * despacho que no ocurrió rompería I3/I5 y falsearía la cadena de custodia.
+   * Esto es sólo una etiqueta de visibilidad: el saldo real que da
+   * `saldosDeCorridas` NO cambia, y la corrida sigue en el libro con su
+   * historia completa. Reversible por diseño: desmarcar la vuelve a mostrar.
+   */
+  static async marcarUsado(
+    tenantId: string,
+    id: string,
+    input: { usado: boolean; motivo?: string; user: string },
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const { usado, motivo, user } = input;
+    if (usado && !motivo?.trim()) {
+      throw new CtpInvariantError("Poné el motivo por el que se marca como usado.", "MOTIVO_REQUERIDO");
+    }
+    const e = await prisma.forestCtpEntry.findFirst({ where: { id, tenantId, deletedAt: null } });
+    if (!e) throw new CtpInvariantError("Esa línea no existe.", "LOTE_NO_ENCONTRADO");
+    if (e.section !== "produccion") {
+      throw new CtpInvariantError("Sólo una corrida de producción se puede marcar como usada.", "LOTE_NO_EDITABLE");
+    }
+    const actualizada = await prisma.forestCtpEntry.update({
+      where: { id, tenantId },
+      data: usado
+        ? { usadoAt: new Date(), usadoPor: user, usadoMotivo: motivo!.trim() }
+        : { usadoAt: null, usadoPor: null, usadoMotivo: null },
+    });
+    auditCtp({
+      tenantId,
+      action: usado ? "ctp_linea_marcar_usado" : "ctp_linea_desmarcar_usado",
+      entity: "ForestCtpEntry",
+      entityId: id,
+      detail: usado
+        ? `Marcó la corrida N° ${e.lineNo} como ya usada: sale de Productos disponibles · motivo: ${motivo!.trim()}`
+        : `Desmarcó la corrida N° ${e.lineNo}: vuelve a Productos disponibles`,
+      user,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    return actualizada;
+  }
+
   static async softDelete(tenantId: string, id: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     const curDel = await prisma.forestCtpEntry.findFirst({ where: { id, tenantId }, select: { entryDate: true } });
@@ -1258,6 +1395,10 @@ export class ForestCtpDB {
       producto?: string;
       /** Acotar a lo producido en el período. Por omisión se ve TODO lo que hay. */
       soloDelPeriodo?: boolean;
+      /** Traer TAMBIÉN lo marcado como "ya usado" (Brandon, 2026-09-01): por
+       *  omisión quedan afuera — es justo lo que pide esa marca —, pero hace
+       *  falta poder mirarlas para desmarcar una por error. */
+      incluirUsados?: boolean;
     } = {},
   ) {
     if (!tenantId) throw new Error("tenantId is required");
@@ -1269,6 +1410,7 @@ export class ForestCtpDB {
       /* Sin cantidad declarada no hay producto: es una corrida que consumió y
          todavía no dijo qué salió (ADR-340). */
       quantity: { not: null },
+      ...(opts.incluirUsados ? {} : { usadoAt: null }),
     };
     if (opts.soloDelPeriodo && (opts.fromDate || opts.toDate)) {
       where.entryDate = {
@@ -1341,6 +1483,14 @@ export class ForestCtpDB {
           /** Título habilitante / plan de manejo del que salió esa madera. */
           titularOrigen,
           rendimientoPct: c.rendimientoPct != null ? Number(c.rendimientoPct) : null,
+          /* Con qué texto arranca la nota de la corrida — "Inventario de
+             apertura" es lo que escribe siempre el import (`ctp-serfor-a-libro.ts`):
+             alcanza para que la pantalla distinga un paquete importado de uno
+             que salió hoy de la sierra, sin columna nueva en el schema. */
+          observations: c.observations,
+          /** Marcado a mano como "ya usado" (Brandon, 2026-09-01): `null` = sigue disponible como siempre. */
+          usadoAt: c.usadoAt ? c.usadoAt.toISOString() : null,
+          usadoMotivo: c.usadoMotivo,
           producido: s?.producido ?? 0,
           despachado: s?.despachado ?? 0,
           reprocesado: s?.reprocesado ?? 0,
@@ -1386,7 +1536,7 @@ export class ForestCtpDB {
       ctpWhere.entryDate = range;
     }
 
-    const [ingresos, ctp, trozasFuera] = await Promise.all([
+    const [ingresos, ctp, trozasFuera, trozasPatio] = await Promise.all([
       prisma.woodEntry.findMany({
         where: woodWhere,
         select: {
@@ -1399,7 +1549,7 @@ export class ForestCtpDB {
       }),
       prisma.forestCtpEntry.findMany({
         where: ctpWhere,
-        select: { section: true, productType: true, speciesCommon: true, volumeInputM3: true, quantity: true, unit: true },
+        select: { section: true, productType: true, speciesCommon: true, volumeInputM3: true, quantity: true, unit: true, pieces: true },
       }),
       /* La madera que salió SIN ASERRAR (ADR-363) también dejó el patio, pero no
          pasó por ninguna corrida: si no se resta acá, el saldo de materia prima
@@ -1412,6 +1562,25 @@ export class ForestCtpDB {
           despachadaEn: { deletedAt: null, status: "registrado", ...(range ? { entryDate: range } : {}) },
         },
         select: { volumenM3: true, especieComun: true, entry: { select: { speciesCommonName: true } } },
+      }),
+      /* Piezas del patio, para el conteo de "cantidad de piezas" (pedido de
+         Brandon): mismo `estaDisponible()` que usa la pantalla del patio — no
+         una cuenta aparte, que es justo el patrón que ya rompió dos veces
+         (memoria: "47 vs 30"). Se filtra por la fecha del ingreso, igual que
+         el resto de `saldos()`. */
+      prisma.woodEntryTroza.findMany({
+        where: { tenantId, entry: { deletedAt: null, status: { in: ["validado", "procesado", "pendiente"] }, ...(range ? { entryDate: range } : {}) } },
+        select: {
+          id: true,
+          especieComun: true,
+          volumenM3: true,
+          consumidaEnId: true,
+          despachadaEnId: true,
+          noRecepcionada: true,
+          descarte: true,
+          entry: { select: { speciesCommonName: true } },
+          _count: { select: { retrozos: true } },
+        },
       }),
     ]);
 
@@ -1430,6 +1599,7 @@ export class ForestCtpDB {
           despachadoDirectoM3: 0,
           saldoM3: 0,
           ingresosCount: 0,
+          piezasDisponibles: 0,
         };
         bySpecies.set(key, b);
       }
@@ -1458,19 +1628,21 @@ export class ForestCtpDB {
 
     let consumidoM3 = 0;
     // Agrupado por clave normalizada; se guarda la etiqueta de la 1ª aparición.
-    const prod: Record<string, { label: string; producido: number; despachado: number }> = {};
+    const prod: Record<string, { label: string; producido: number; despachado: number; piezasProducido: number; piezasDespachado: number }> = {};
     for (const e of ctp) {
       const key = productKey(e.productType, e.speciesCommon);
-      prod[key] ??= { label: productLabel(e.productType, e.speciesCommon), producido: 0, despachado: 0 };
+      prod[key] ??= { label: productLabel(e.productType, e.speciesCommon), producido: 0, despachado: 0, piezasProducido: 0, piezasDespachado: 0 };
       if (e.section === "produccion") {
         const consumido = Number(e.volumeInputM3 ?? 0);
         consumidoM3 += consumido;
         bucket(e.speciesCommon).consumidoM3 += consumido;
         prod[key].producido += Number(e.quantity ?? 0);
+        prod[key].piezasProducido += e.pieces ?? 0;
       }
       if (e.section === "despacho") {
         bucket(e.speciesCommon);
         prod[key].despachado += Number(e.quantity ?? 0);
+        prod[key].piezasDespachado += e.pieces ?? 0;
       }
     }
 
@@ -1483,6 +1655,23 @@ export class ForestCtpDB {
       if (!(vol > 0)) continue;
       bucket(t.especieComun ?? t.entry.speciesCommonName).despachadoDirectoM3 += vol;
       despachadoDirectoM3 += vol;
+    }
+
+    for (const t of trozasPatio) {
+      const candidata: TrozaConsumible = {
+        id: t.id,
+        woodEntryId: "",
+        codificacion: null,
+        especieComun: t.especieComun,
+        volumenM3: t.volumenM3 != null ? Number(t.volumenM3) : null,
+        consumidaEnId: t.consumidaEnId,
+        despachadaEnId: t.despachadaEnId,
+        noRecepcionada: t.noRecepcionada,
+        descarte: t.descarte,
+        retrozos: t._count.retrozos,
+      };
+      if (!estaDisponible(candidata)) continue;
+      bucket(t.especieComun ?? t.entry.speciesCommonName).piezasDisponibles += 1;
     }
 
     const porEspecie = [...bySpecies.values()]
@@ -1520,6 +1709,10 @@ export class ForestCtpDB {
         producido: r4(v.producido),
         despachado: r4(v.despachado),
         stock: r4(v.producido - v.despachado),
+        /* Piezas producidas menos despachadas: mismo criterio que el
+           volumen (`stock`), sobre el mismo campo `pieces` que ya guarda
+           cada línea del libro — no una cuenta nueva. */
+        piezasDisponibles: Math.max(0, v.piezasProducido - v.piezasDespachado),
       })),
     };
   }

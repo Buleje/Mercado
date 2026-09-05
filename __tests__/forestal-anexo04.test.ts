@@ -54,7 +54,7 @@ describe("construirAnexo04 — bloques y subtotales", () => {
   });
 
   it("volumen total (3) en m³ y correlativo por bloque", () => {
-    expect(anexo.totalM3).toBeCloseTo(10.646, 2);
+    expect(anexo.totalM3).toBeCloseTo(10.64, 2); // m³ = PT ÷ 424 (no volumen geométrico)
     expect(anexo.totalPiezas).toBe(324);
     expect(anexo.hojas[0].bloques[1].filas.map((f) => f.n)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
   });
@@ -225,7 +225,7 @@ describe("construirAnexo04 — paginación", () => {
   it("unidadV m³ cambia la columna V y el subtotal, no el volumen total", () => {
     const anexo = construirAnexo04(LOTE, { unidadV: "m3", modo: "oficial" });
     expect(anexo.hojas[0].bloques[0].subtotal).toBeCloseTo(5.968, 2);
-    expect(anexo.totalM3).toBeCloseTo(10.646, 2);
+    expect(anexo.totalM3).toBeCloseTo(10.64, 2); // m³ = PT ÷ 424 (no volumen geométrico)
   });
 });
 
@@ -297,8 +297,8 @@ describe("Excel del anexo — la fórmula de V apunta a las columnas correctas",
     expect(formulaV(12, 11, "pt")).toBe('IF(N11="",0,ROUND(N11*O11*P11*Q11/12,3))');
   });
 
-  it("en m³ multiplica por los factores de conversión, no divide por 12", () => {
-    expect(formulaV(0, 12, "m3")).toBe('IF(B12="",0,ROUND(B12*(C12*0.0254)*(D12*0.0254)*(E12*0.3048),3))');
+  it("en m³ divide el pie tablar por 424 (la conversión comercial)", () => {
+    expect(formulaV(0, 12, "m3")).toBe('IF(B12="",0,ROUND(B12*C12*D12*E12/12/424,3))');
   });
 });
 

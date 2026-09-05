@@ -16,6 +16,7 @@ import { ChevronLeft, ChevronRight, Tag } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { RENDIMIENTO_REF_ASERRADA } from "@/lib/forestal/ctp-rendimiento";
 import { paginar, type MetaLote } from "@/lib/forestal/lote-metricas";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export interface LoteFila {
   id: string;
@@ -36,6 +37,10 @@ export interface LoteFila {
 }
 
 const n4 = (v: number | string | null | undefined) => (Number(v) || 0).toFixed(4);
+/** `l.unit` no siempre es m³ (kg/pt/unidad, según el lote): los tres decimales
+ *  de SERFOR sólo aplican cuando de verdad se está declarando m³. */
+const nCantidad = (v: number | string | null | undefined, unit: string) =>
+  unit === "m3" ? fmtM3(Number(v) || 0) : n4(v);
 const UNIDAD: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "u" };
 
 /**
@@ -66,7 +71,7 @@ function SaldoMeta({ meta }: { meta: MetaLote | null | undefined }) {
       }
     >
       {porEncima ? "+" : "−"}
-      {n4(Math.abs(meta.saldoM3))}
+      {fmtM3(Math.abs(meta.saldoM3))}
     </span>
   );
 }
@@ -153,19 +158,19 @@ export default function LotesTabla({
                   )}
                 </td>
                 <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
-                  {n4(l.totalCantidad)} <span className="text-[var(--text-tertiary)]">{UNIDAD[l.unit] ?? l.unit}</span>
+                  {nCantidad(l.totalCantidad, l.unit)} <span className="text-[var(--text-tertiary)]">{UNIDAD[l.unit] ?? l.unit}</span>
                 </td>
                 <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                  {n4(l.despachado)}
+                  {nCantidad(l.despachado, l.unit)}
                 </td>
                 <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                  {n4(l.disponible)}
+                  {nCantidad(l.disponible, l.unit)}
                 </td>
                 <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                  {l.meta ? n4(l.meta.trozasM3) : "—"}
+                  {l.meta ? fmtM3(l.meta.trozasM3) : "—"}
                 </td>
                 <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                  {l.meta ? n4(l.meta.metaM3) : "—"}
+                  {l.meta ? fmtM3(l.meta.metaM3) : "—"}
                 </td>
                 <td className="px-3 py-2 text-right">
                   <SaldoMeta meta={l.meta} />
@@ -189,11 +194,11 @@ export default function LotesTabla({
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums">{n4(tot.armado)}</td>
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums">{n4(tot.despachado)}</td>
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums">{n4(tot.disponible)}</td>
+              <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtM3(tot.armado)}</td>
+              <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtM3(tot.despachado)}</td>
+              <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtM3(tot.disponible)}</td>
               <td className="px-3 py-2.5" colSpan={2} />
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums">{n4(tot.saldo)}</td>
+              <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtM3(tot.saldo)}</td>
               <td className="px-3 py-2.5" colSpan={2} />
             </tr>
           </tfoot>

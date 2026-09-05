@@ -92,6 +92,49 @@ describe("detectarColumnas · Ingresos", () => {
   });
 });
 
+describe("detectarColumnas · inventarioTrozas (Brandon, 2026-09-01)", () => {
+  /**
+   * Las cabeceras EXACTAS de `trozas_disponibles.xlsx`, el reporte real que
+   * exportó el SNIFFS: «Documento de Ingreso» declara el TIPO ("GTF") y el N°
+   * de GTF viene en la columna de al lado, SIN encabezado propio (celda
+   * fusionada). Sin el fallback posicional, `numeroDocumento` queda sin
+   * mapear y `aCuerpoDelLibro` agrupa TODAS las trozas del archivo en una
+   * sola guía inventada — perdiendo a qué GTF real llegó cada una.
+   */
+  const CAB_INV_TROZAS = [
+    "Contrato", "Numero Resolucion", "Documento de Ingreso", "", "Troza Padre", "",
+    "Codigo Planta", "Especie", "D1(cm)", "D2(cm)", "Largo(m)", "Volumen",
+    "Tipo de Producto", "Estado Actual", "Fecha del Estado",
+  ];
+  const m = detectarColumnas("inventarioTrozas", CAB_INV_TROZAS);
+
+  it("el N° de GTF se resuelve por posición cuando su columna no tiene encabezado propio", () => {
+    expect(m.tipoDocumento).toBe(2);
+    expect(m.numeroDocumento).toBe(3);
+  });
+
+  it("«Contrato» y «Numero Resolucion» no se confunden entre sí", () => {
+    expect(m.contrato).toBe(0);
+    expect(m.resolucion).toBe(1);
+  });
+
+  it("las columnas obligatorias quedan emparejadas", () => {
+    expect(columnasFaltantes("inventarioTrozas", m)).toEqual([]);
+  });
+
+  it("no inventa un N° de GTF cuando la columna de al lado SÍ tiene su propio encabezado", () => {
+    // Sin la celda fusionada: «Troza Padre» tiene nombre propio y no debe
+    // robarse como si fuera el GTF de «Documento de Ingreso».
+    const conEncabezados = [
+      "Contrato", "Numero Resolucion", "Documento de Ingreso", "Troza Padre",
+      "Codigo Planta", "Especie", "D1(cm)", "D2(cm)", "Largo(m)", "Volumen",
+    ];
+    const m2 = detectarColumnas("inventarioTrozas", conEncabezados);
+    expect(m2.numeroDocumento).toBeNull();
+    expect(m2.trozaPadre).toBe(3);
+  });
+});
+
 describe("detectarColumnas · Consumos", () => {
   const m = detectarColumnas("consumos", CAB_CONSUMOS);
 

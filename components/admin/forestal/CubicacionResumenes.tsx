@@ -27,6 +27,7 @@ import {
 } from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { recubicarPiezas } from "@/lib/forestal/cubicacion";
 import {
   agruparPor, resumenPorEspecie, resumenACsv, DIMENSIONES_RESUMEN, ETIQUETA_DIMENSION,
   type DimensionResumen,
@@ -53,7 +54,10 @@ const VISTAS: { value: Vista; label: string; icon: typeof Compass }[] = [
   { value: "metas", label: "Metas", icon: Target },
 ];
 
-function slugKey(sufijo = "") {
+/** Exportada: el modal de resumen por permiso (Consumo) siembra la MISMA
+ *  clave de rolliza para que «Distribuir esta madera» abra el tool real con
+ *  los bloques ya cargados, en vez de reinventar el guardado. */
+export function slugKey(sufijo = "") {
   let slug = "main";
   try { slug = localStorage.getItem("active-tenant-slug") ?? "main"; } catch { /* ignore */ }
   return `buleje-cubicacion-${slug}${sufijo}`;
@@ -66,7 +70,8 @@ function leerLote(): { rows: PiezaCubicada[]; precioDe: (r: PiezaCubicada) => nu
   let preciosEsp: Record<string, string> = {};
   try {
     const raw = localStorage.getItem(slugKey());
-    if (raw) rows = JSON.parse(raw) as PiezaCubicada[];
+    // Re-cubicar: el lote guardado puede traer el m³ viejo (volumen geométrico).
+    if (raw) rows = recubicarPiezas(JSON.parse(raw) as PiezaCubicada[]);
     precio = Number(localStorage.getItem(slugKey("-precio"))) || 0;
     const pe = localStorage.getItem(slugKey("-precios-especie"));
     if (pe) preciosEsp = JSON.parse(pe) as Record<string, string>;
@@ -201,6 +206,40 @@ export default function CubicacionResumenes() {
         fecha={new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
         acciones={
           <>
+            {/*
+              El selector de vista va PEGADO a las acciones (Brandon,
+              2026-09-02: «a lado izquierdo del botón actualizar, las secciones
+              para cambiar a panorama, tablas, rolliza y metas»). Antes vivía en
+              una barra propia debajo del encabezado: una fila entera de
+              pantalla para cuatro botones, y había que bajar la vista para
+              cambiar de vista.
+
+              Dual-render medido: en 390 px los cuatro rótulos con ícono piden
+              más ancho del que hay y «Metas» sale cortado. Mobile lleva la
+              versión chica sin íconos; de `sm` para arriba, la completa.
+            */}
+            <div className="sm:hidden print:hidden">
+              <SegmentedControl
+                value={vista}
+                onChange={cambiarVista}
+                size="sm"
+                label="Vista del resumen"
+                options={VISTAS.map((v) => ({ value: v.value, label: v.label }))}
+              />
+            </div>
+            <div className="hidden sm:block print:hidden">
+              <SegmentedControl
+                value={vista}
+                onChange={cambiarVista}
+                size="sm"
+                label="Vista del resumen"
+                options={VISTAS.map((v) => ({
+                  value: v.value,
+                  label: v.label,
+                  icon: <v.icon className="h-4 w-4" aria-hidden />,
+                }))}
+              />
+            </div>
             <button type="button" onClick={recargar} title="Volver a leer el lote del cubicador" className={`${BTN} print:hidden`}>
               <RefreshCw className="h-4 w-4" /> Actualizar
             </button>
@@ -213,40 +252,6 @@ export default function CubicacionResumenes() {
           </>
         }
       />
-
-      {/* La barra de vistas: cuatro preguntas, una pantalla cada una. */}
-      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-        {/* Dual-render medido: en 390 px los cuatro rótulos con ícono pedían más
-            ancho del que hay y «Metas» salía cortado. En mobile va la versión
-            chica y sin íconos; de sm para arriba, la completa. */}
-        <div className="sm:hidden">
-          <SegmentedControl
-            value={vista}
-            onChange={cambiarVista}
-            size="sm"
-            label="Vista del resumen"
-            options={VISTAS.map((v) => ({ value: v.value, label: v.label }))}
-          />
-        </div>
-        <div className="hidden sm:block">
-          <SegmentedControl
-            value={vista}
-            onChange={cambiarVista}
-            label="Vista del resumen"
-            options={VISTAS.map((v) => ({
-              value: v.value,
-              label: v.label,
-              icon: <v.icon className="h-4 w-4" aria-hidden />,
-            }))}
-          />
-        </div>
-        <span className="text-sm text-[var(--text-tertiary)]">
-          {vista === "panorama" && "Qué tengo y qué me dice el lote."}
-          {vista === "tablas" && "El detalle, partido como lo pida el cliente."}
-          {vista === "rolliza" && "El patio de trozas y de qué troza salió cada pieza."}
-          {vista === "metas" && "Qué buscabas y si mejoraste."}
-        </span>
-      </div>
 
       {/* ── Panorama ────────────────────────────────────────────────────────── */}
       {ver("panorama") && (

@@ -16,6 +16,14 @@ import { armarCadena, consumosDeCorrida, mapaCodigoAGuia, repartirConsumos } fro
 import { medidasDeTexto } from "./medidas-paquete";
 import type { FilaParseada, FormatoCtp } from "./ctp-formatos-serfor";
 
+/**
+ * El proveedor que se le pone a una troza importada como existencia de
+ * apertura, cuando el inventario no trae contrato/titular. Exportado porque la
+ * pantalla de Ingresos lo usa para reconocer una guía importada del libro —
+ * ninguna guía registrada a mano se llama así.
+ */
+export const PROVEEDOR_INVENTARIO_APERTURA = "Existencia de apertura (inventario)";
+
 /** Qué endpoint escribe cada sección. */
 export const ENDPOINT_DE: Record<FormatoCtp, { url: string; registro: string }> = {
   ingresos: { url: "/api/admin/forestal/wood-entries/import", registro: "ingresos" },
@@ -234,11 +242,18 @@ export function aCuerpoDelLibro(
          la tercera se descartan como «duplicada en el archivo» y su volumen se
          pierde sin que nadie lo note. Un ingreso ES la guía; las trozas son su
          detalle. */
+      /* Sin GTF, TODAS las trozas de esta importación van a UNA sola guía tipo
+         inventario (pedido de Brandon, 2026-08-31): antes cada una sin GTF se
+         volvía su propia guía y un patio de cien piezas se veía como cien
+         guías en «GTF ingresadas», cuando es una sola foto del patio tomada
+         una vez. La clave es un id propio de ESTA llamada —no una fecha, que
+         podría repetirse dentro del mismo día— para que dos importaciones
+         sigan siendo DOS guías: cada conteo de existencia es un acto propio,
+         no se acumulan en una única guía para siempre. */
+      const claveSinGtf = `INVENTARIO-${crypto.randomUUID()}`;
       const porGuia = new Map<string, FilaParseada[]>();
       for (const f of enStock) {
-        /* Sin GTF cada troza va sola con una clave propia: agruparlas todas bajo
-           un mismo «sin guía» las metería en un ingreso inventado. */
-        const g = txt(f.datos.numeroDocumento) || `INV-${txt(f.datos.codigoPlanta) || f.fila}`;
+        const g = txt(f.datos.numeroDocumento) || claveSinGtf;
         porGuia.set(g, [...(porGuia.get(g) ?? []), f]);
       }
 
@@ -248,7 +263,21 @@ export function aCuerpoDelLibro(
           row: primera.fila,
           gtfNumber: gtf,
           entryDate: null,
-          providerName: txt(primera.datos.contrato) || "Existencia de apertura (inventario)",
+          /* Siempre el marcador, nunca el contrato: `providerName` es el titular
+             comercial de la guía, y confundirlo con el contrato rompía el
+             reconocimiento de "guía importada de inventario" en `CtpGuiasTable`
+             (compara `providerName === PROVEEDOR_INVENTARIO_APERTURA` a secas —
+             con el contrato pisándolo, ninguna guía con contrato lo matcheaba). */
+          providerName: PROVEEDOR_INVENTARIO_APERTURA,
+          /* «Contrato» y «N° Resolución» van a los campos del formato oficial LO-CTP
+             (Sección 1, casilleros 9 y 5): `originCode` = código con el que salió de
+             la fuente, `originSourceNumber` = N° de fuente/procedencia. Antes el
+             contrato pisaba `providerName` y la resolución se enterraba en `notes`
+             como texto libre — ninguno de los dos quedaba filtrable ni visible como
+             columna (Brandon, 2026-09-01: "que importe mejor... contrato, numero de
+             resolucion"). */
+          originCode: txt(primera.datos.contrato) || null,
+          originSourceNumber: txt(primera.datos.resolucion) || null,
           speciesCommonName: especieComunDe(primera.datos.especie),
           speciesScientificName: especieCientificaDe(primera.datos.especie),
           productType: tipoDeProducto(primera.datos.tipoProducto),
@@ -294,7 +323,8 @@ export function aCuerpoDelLibro(
               .filter((t) => txt(t.datos.trozaPadre))
               .slice(0, 5)
               .map((t) => `${sinGuion(t.datos.codigoPlanta) || sinGuion(t.datos.codigoTroza)} es retrozo de ${txt(t.datos.trozaPadre)}`),
-            txt(primera.datos.resolucion) && `Res. ${txt(primera.datos.resolucion)}`,
+            // La resolución ya no se guarda como texto suelto acá: va en
+            // `originSourceNumber`, filtrable y visible como columna propia.
           ]
             .filter(Boolean)
             .join(" · "),

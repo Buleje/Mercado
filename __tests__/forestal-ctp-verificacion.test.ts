@@ -26,7 +26,7 @@ describe("cotejarAnexoConLibro", () => {
 
   it("volumen: tolera el redondeo (0,5 %) y acusa la diferencia real", () => {
     expect(cotejarAnexoConLibro({ gtf: LINEA.gtfNumber, totalPiezas: 79, totalM3: 12.53 }, LINEA).discrepancias).toEqual([]);
-    expect(cotejarAnexoConLibro({ gtf: LINEA.gtfNumber, totalPiezas: 79, totalM3: 14 }, LINEA).discrepancias[0]).toMatch(/14\.0000 m³/);
+    expect(cotejarAnexoConLibro({ gtf: LINEA.gtfNumber, totalPiezas: 79, totalM3: 14 }, LINEA).discrepancias[0]).toMatch(/14\.000 m³/);
   });
 
   it("unidades distintas no se comparan: un cotejo aproximado acusaría en falso", () => {

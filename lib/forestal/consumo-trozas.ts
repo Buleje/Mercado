@@ -13,7 +13,9 @@
  * PURO y client-safe.
  */
 
-import { PT_POR_M3 } from "./cubicacion";
+import { PT_POR_M3, pieTablarAserrableDe } from "./cubicacion";
+import { fmtM3 } from "./cubicacion-formato";
+import { RENDIMIENTO_META } from "./loctp-catalogos";
 
 /** Una troza candidata a consumirse. */
 export interface TrozaConsumible {
@@ -43,6 +45,16 @@ export interface TrozaConsumible {
   permiso?: string | null;
   /** (8) N° de resolución que aprueba el plan de manejo. */
   resolucion?: string | null;
+  /**
+   * De dónde salió el dato de esta pieza. **Es un DERIVADO**, no un campo que
+   * alguien declare: sale de si la guía que la trajo tiene su N° de constancia
+   * del SNIFFS (`serfor`) o no (`manual`, alguien la tipeó).
+   *
+   * Se muestra como lo que es —una procedencia del dato, no un sello oficial—
+   * porque en una fiscalización no pesa igual una troza que bajó del sistema
+   * de SERFOR que una cargada a mano.
+   */
+  origenDato?: "serfor" | "manual";
   /**
    * El tope que impone I2: lo que el ASIENTO declara y lo que ya se le consumió
    * (ADR-353). El consumo de una guía no puede pasar de `declarado − consumido`,
@@ -230,6 +242,109 @@ export function agruparPorGuia(trozas: readonly TrozaConsumible[]): ConsumoPorGu
   return [...porGuia.values()].sort((a, b) => b.volumenM3 - a.volumenM3);
 }
 
+export type AgrupacionPatio = "ninguna" | "especie" | "guia" | "permiso";
+
+/** Un grupo de la pila del patio, para mirarla sin contar troza por troza. */
+export interface GrupoTrozas {
+  /** Con qué se agrupó (especie, N° de guía, N° de permiso…). */
+  clave: string;
+  trozas: TrozaConsumible[];
+  piezas: number;
+  volumenM3: number;
+}
+
+/**
+ * Agrupa la pila del patio para leerla de un vistazo (Brandon, 2026-09-01):
+ * mismo patrón que `agruparConsumos` (Sección 2) — subtotal arriba, detalle
+ * plegado — aplicado a lo que TODAVÍA no se consumió. "Por N° de permiso" es
+ * el mismo agrupador que ya existe en Consumos, ahora también acá.
+ */
+export function agruparTrozas(trozas: readonly TrozaConsumible[], por: AgrupacionPatio): GrupoTrozas[] {
+  if (por === "ninguna") return [];
+  const clave = (t: TrozaConsumible): string =>
+    por === "especie" ? t.especieComun || "—" : por === "guia" ? t.gtfNumber || "—" : t.permiso || "Sin permiso";
+
+  const mapa = new Map<string, TrozaConsumible[]>();
+  for (const t of trozas) {
+    const k = clave(t);
+    const arr = mapa.get(k);
+    if (arr) arr.push(t);
+    else mapa.set(k, [t]);
+  }
+
+  return [...mapa.entries()]
+    .map(([k, ts]) => ({
+      clave: k,
+      trozas: ts,
+      piezas: ts.length,
+      volumenM3: r4(ts.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0)),
+    }))
+    .sort((a, b) => b.volumenM3 - a.volumenM3 || a.clave.localeCompare(b.clave, "es"));
+}
+
+/** El desglose por especie de UN permiso — piezas, m³ y el pie tablar aserrable. */
+export interface EspecieDeTrozas {
+  especie: string;
+  piezas: number;
+  volumenM3: number;
+  /** Aproximado (tope de rendimiento 56%): nunca se declara como el dato real. */
+  ptAserrable: number;
+}
+
+/**
+ * Especie por especie de un grupo de trozas — típicamente las de UN permiso
+ * (Brandon, 2026-09-01): «especie, piezas (trozas), m³, pt tablas» tal como se
+ * pidió, sin combinar dos permisos en la misma fila.
+ */
+export function especiesDe(trozas: readonly TrozaConsumible[]): EspecieDeTrozas[] {
+  const mapa = new Map<string, { piezas: number; volumenM3: number }>();
+  for (const t of trozas) {
+    const k = t.especieComun || "—";
+    const acc = mapa.get(k) ?? { piezas: 0, volumenM3: 0 };
+    acc.piezas += 1;
+    acc.volumenM3 += Number(t.volumenM3 ?? 0);
+    mapa.set(k, acc);
+  }
+  return [...mapa.entries()]
+    .map(([especie, v]) => ({
+      especie,
+      piezas: v.piezas,
+      volumenM3: r4(v.volumenM3),
+      ptAserrable: pieTablarAserrableDe(v.volumenM3, RENDIMIENTO_META),
+    }))
+    .sort((a, b) => b.volumenM3 - a.volumenM3 || a.especie.localeCompare(b.especie, "es"));
+}
+
+/** Un bloque de rolliza por guía+especie — lo que el Libro YA sabe. */
+export interface BloqueDeGuia {
+  etiqueta: string;
+  especie: string;
+  m3: number;
+  /** El permiso de la troza — una GTF entra siempre bajo el mismo, así que
+   *  alcanza con leerlo de cualquiera de sus trozas (Brandon, 2026-09-01). */
+  permiso: string | null;
+}
+
+/**
+ * Arma los bloques de «Distribución de rolliza sobre lo aserrado» (Herramientas
+ * → Resúmenes → Rolliza) a partir de las trozas reales de un permiso, para no
+ * tipear a mano la GTF y el m³ que el Libro ya tiene registrados.
+ */
+export function bloquesDeGuiaDe(trozas: readonly TrozaConsumible[]): BloqueDeGuia[] {
+  const mapa = new Map<string, BloqueDeGuia>();
+  for (const t of trozas) {
+    const etiqueta = t.gtfNumber || "Sin guía";
+    const especie = t.especieComun || "";
+    const k = `${etiqueta}::${especie}`;
+    const acc = mapa.get(k) ?? { etiqueta, especie, m3: 0, permiso: t.permiso || null };
+    acc.m3 += Number(t.volumenM3 ?? 0);
+    mapa.set(k, acc);
+  }
+  return [...mapa.values()]
+    .map((v) => ({ ...v, m3: r4(v.m3) }))
+    .sort((a, b) => b.m3 - a.m3);
+}
+
 /**
  * Avisos de la selección tal como quedó. No bloquean: informan.
  *
@@ -343,14 +458,14 @@ export function motivosDeCupo(cupos: readonly CupoDeGuia[]): string[] {
 export function motivoDeCupo(c: CupoDeGuia): string {
   if (c.descuadrado) {
     return (
-      `La guía ${c.gtfNumber ?? "—"} declara ${(c.declarado ?? 0).toFixed(4)} m³ de ${c.especie ?? "esa especie"} ` +
-      `en su cabecera, pero su lista de trozas suma ${c.pedido.toFixed(4)} m³. La guía no cuadra consigo misma: ` +
+      `La guía ${c.gtfNumber ?? "—"} declara ${fmtM3(c.declarado ?? 0)} m³ de ${c.especie ?? "esa especie"} ` +
+      `en su cabecera, pero su lista de trozas suma ${fmtM3(c.pedido)} m³. La guía no cuadra consigo misma: ` +
       `hay que cuadrarla antes de llevar estas piezas a la sierra.`
     );
   }
   return (
-    `De la guía ${c.gtfNumber ?? "—"} quedan ${(c.disponible ?? 0).toFixed(4)} m³ sin consumir ` +
-    `(declara ${(c.declarado ?? 0).toFixed(4)} y ya se consumieron ${c.consumido.toFixed(4)}), ` +
-    `y estás pidiendo ${c.pedido.toFixed(4)} m³. Sacá ${c.exceso.toFixed(4)} m³ de esa guía.`
+    `De la guía ${c.gtfNumber ?? "—"} quedan ${fmtM3(c.disponible ?? 0)} m³ sin consumir ` +
+    `(declara ${fmtM3(c.declarado ?? 0)} y ya se consumieron ${fmtM3(c.consumido)}), ` +
+    `y estás pidiendo ${fmtM3(c.pedido)} m³. Sacá ${fmtM3(c.exceso)} m³ de esa guía.`
   );
 }

@@ -34,6 +34,22 @@ export interface ResultadoGuardado {
   rechazadas: TrozaRechazada[];
 }
 
+/**
+ * Lo que se puede corregir de un lote ya creado (Brandon, 2026-08-31): antes
+ * sólo la nota. `undefined` = no tocar ese campo.
+ */
+export interface CambiosLote {
+  code?: string | null;
+  speciesCommon?: string;
+  speciesScientific?: string | null;
+  ordenProduccion?: string | null;
+  tipoProductoConsumir?: string | null;
+  /** `AAAA-MM-DD` o `null` para borrarla. */
+  inicioProceso?: string | null;
+  finProceso?: string | null;
+  notes?: string | null;
+}
+
 /** Toda escritura tira el caché del módulo: si no, la próxima lectura miente. */
 async function mutar<T>(body: unknown, method: "POST" | "PATCH"): Promise<T> {
   const r = await fetch(API, {
@@ -70,10 +86,39 @@ export interface EstadoLotesAserrio {
     tipoProductoConsumir?: string | null;
     inicioProceso?: string | null;
     finProceso?: string | null;
+    /** Código a mano; vacío = correlativo automático `LA-2026-00N`. */
+    code?: string | null;
     /** Vacío = el lote se declara y se carga después, en Consumos. */
     trozaIds: string[];
   }) => Promise<ResultadoGuardado>;
   agregarTrozas: (loteId: string, trozaIds: string[]) => Promise<ResultadoGuardado>;
+  /**
+   * Declara un lote como INVENTARIO (Brandon, 2026-08-31): entra y sale en el
+   * mismo acto, sin trozas reales que apartar. El volumen consumido y los
+   * paquetes producidos se declaran juntos; el tope del 56 % se valida en el
+   * servidor con la misma puerta que el resto del libro.
+   */
+  crearInventario: (input: {
+    speciesCommon: string;
+    speciesScientific?: string | null;
+    volumenConsumidoM3: number;
+    fecha?: string;
+    finProceso?: string | null;
+    /** Código a mano; vacío = correlativo automático `LA-2026-00N`. */
+    code?: string | null;
+    notes?: string | null;
+    paquetes: {
+      codigo: string;
+      productType?: string | null;
+      presentacion?: string | null;
+      cantidad: number;
+      volumenM3: number;
+      espesorCm?: number | null;
+      anchoCm?: number | null;
+      largoM?: number | null;
+      observations?: string | null;
+    }[];
+  }) => Promise<{ lote: { id: string; code: string }; corrida: { id: string; lineNo: number } }>;
   /**
    * Consumir en el patio (ADR-340): las piezas entran al lote y a la sierra con
    * la fecha dada, y se abre la corrida que declarará la producción.
@@ -123,9 +168,24 @@ export interface EstadoLotesAserrio {
     volumenM3: number;
     teniaCorridas: boolean;
   }>;
+  /**
+   * Vuelve a abrir un lote ya ASERRADO para seguirle cargando madera
+   * (2026-09-02). Las piezas que ya entraron a una corrida no se tocan: siguen
+   * atadas a ella. Un lote CERRADO no se reabre — el servidor lo rechaza.
+   */
+  reabrirLote: (loteId: string) => Promise<{ code: string; piezasConsumidas: number }>;
   quitarTroza: (loteId: string, trozaId: string) => Promise<void>;
-  editarNota: (loteId: string, notes: string | null) => Promise<void>;
+  /** Código, especie, programación y nota — lo que se puede corregir de un lote ya creado. */
+  editarLote: (loteId: string, cambios: CambiosLote) => Promise<void>;
   deshacer: (loteId: string) => Promise<void>;
+  /**
+   * DESHACER un lote consumido cuya corrida sigue viva (Brandon, 2026-08-31):
+   * anula la corrida (con motivo) y suelta el lote, en un solo paso desde
+   * Lotes. Sin `forzar`, falla si la corrida ya tiene despacho o reproceso
+   * registrado — con `forzar: true` (Brandon, 2026-09-01: "sin excepción")
+   * anula igual y ese despacho/reproceso queda sin corrida de origen.
+   */
+  deshacerForzado: (loteId: string, motivo: string, forzar?: boolean) => Promise<{ code: string; corridaAnulada: boolean }>;
 }
 
 export function useLotesAserrio(): EstadoLotesAserrio {
@@ -182,6 +242,7 @@ export function useLotesAserrio(): EstadoLotesAserrio {
          lote queda abierto y vacío — visible y deshacible, no perdido. */
       const creado = await mutar<{ lote: { id: string; code: string } }>(
         {
+          modo: "abierto",
           speciesCommon,
           speciesScientific: speciesScientific ?? null,
           notes: notes ?? null,
@@ -198,6 +259,18 @@ export function useLotesAserrio(): EstadoLotesAserrio {
       return { ...r, code: creado.lote.code };
     },
     [agregarTrozas, recargar],
+  );
+
+  const crearInventario = useCallback<EstadoLotesAserrio["crearInventario"]>(
+    async (input) => {
+      const r = await mutar<{ lote: { id: string; code: string }; corrida: { id: string; lineNo: number } }>(
+        { modo: "inventario", ...input },
+        "POST",
+      );
+      await recargar();
+      return r;
+    },
+    [recargar],
   );
 
   const consumirEnPatio = useCallback<EstadoLotesAserrio["consumirEnPatio"]>(
@@ -249,6 +322,15 @@ export function useLotesAserrio(): EstadoLotesAserrio {
     [recargar],
   );
 
+  const reabrirLote = useCallback<EstadoLotesAserrio["reabrirLote"]>(
+    async (loteId) => {
+      const r = await mutar<{ code: string; piezasConsumidas: number }>({ accion: "reabrir", loteId }, "PATCH");
+      await recargar();
+      return r;
+    },
+    [recargar],
+  );
+
   const quitarDeCorrida = useCallback<EstadoLotesAserrio["quitarDeCorrida"]>(
     async ({ corridaId, trozaIds }) => {
       const r = await mutar<{
@@ -271,9 +353,9 @@ export function useLotesAserrio(): EstadoLotesAserrio {
     [recargar],
   );
 
-  const editarNota = useCallback(
-    async (loteId: string, notes: string | null) => {
-      await mutar({ accion: "editar", loteId, notes }, "PATCH");
+  const editarLote = useCallback(
+    async (loteId: string, cambios: CambiosLote) => {
+      await mutar({ accion: "editar", loteId, ...cambios }, "PATCH");
       await recargar();
     },
     [recargar],
@@ -296,9 +378,21 @@ export function useLotesAserrio(): EstadoLotesAserrio {
     [recargar],
   );
 
+  const deshacerForzado = useCallback<EstadoLotesAserrio["deshacerForzado"]>(
+    async (loteId, motivo, forzar) => {
+      const r = await mutar<{ code: string; corridaAnulada: boolean }>(
+        { accion: "deshacer-forzado", loteId, motivo, ...(forzar ? { forzar } : {}) },
+        "PATCH",
+      );
+      await recargar();
+      return r;
+    },
+    [recargar],
+  );
+
   return {
     lotes, trozas, patioTruncado, cargando, error, recargar,
-    crearConTrozas, agregarTrozas, consumirEnPatio, sumarACorrida, quitarDeCorrida,
-    cerrarLote, quitarTroza, editarNota, deshacer,
+    crearConTrozas, crearInventario, agregarTrozas, consumirEnPatio, sumarACorrida, quitarDeCorrida,
+    cerrarLote, reabrirLote, quitarTroza, editarLote, deshacer, deshacerForzado,
   };
 }

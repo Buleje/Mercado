@@ -125,7 +125,7 @@ describe("portadaLegajo — el índice es lo que se cuenta contra la carpeta", (
 
   it("el total del índice suma lo listado", () => {
     const h = portadaLegajo({ titular: "CTP", renglones: [renglon(), renglon({ volumenM3: "9.0650" })] });
-    expect(h).toContain("13.9390");
+    expect(h).toContain("13.939");
   });
 
   it("dice cuántos ingresos NO traen la guía: son los que hay que adjuntar a mano", () => {

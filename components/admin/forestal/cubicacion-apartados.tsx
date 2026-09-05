@@ -10,6 +10,7 @@
 import { DataTable } from "@buleje/design-system";
 import { Layers, Undo2, Printer, Volume2 } from "@buleje/design-system/icons";
 import type { ApartadoResumen, NombresApartado, TotalPiezas } from "@/lib/forestal/cubicacion-apartados";
+import { m3DesdePt } from "@/lib/forestal/cubicacion";
 
 /**
  * Un color de texto por apartado — mismo criterio que la barra de composición
@@ -63,7 +64,7 @@ export default function ApartadosPanel({
 }: ApartadosPanelProps) {
   const candidatas = marcadasCount > 0 ? marcadasCount : pendientes;
   const totalPt = resumen.reduce((a, r) => a + r.pieTablar, 0);
-  const totalM3 = resumen.reduce((a, r) => a + r.m3, 0);
+  const totalM3 = m3DesdePt(totalPt); // del PT, como todos los totales de m³
   const totalPiezas = resumen.reduce((a, r) => a + r.piezas, 0);
 
   return (

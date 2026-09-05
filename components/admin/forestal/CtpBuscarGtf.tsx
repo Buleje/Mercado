@@ -29,6 +29,7 @@ import {
 import { CardTitle } from "@buleje/design-system";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { formatDate, productLabel, StatusBadge, type WoodEntry } from "./ctp-shared";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 interface DespachoHit {
   id: string;
@@ -227,7 +228,7 @@ export default function CtpBuscarGtf({
                         </div>
                         <p className="mt-0.5 truncate text-sm text-[var(--text-secondary)]">
                           {formatDate(p.corrida.entryDate)} · {productLabel(p.productType ?? "")} ·{" "}
-                          {p.corrida.speciesCommon ?? "—"} · {Number(p.volumenM3 ?? 0).toFixed(4)} m³
+                          {p.corrida.speciesCommon ?? "—"} · {fmtM3(Number(p.volumenM3 ?? 0))} m³
                           {p.corrida.lote ? ` · lote ${p.corrida.lote}` : ""}
                         </p>
                       </div>
@@ -262,7 +263,7 @@ export default function CtpBuscarGtf({
                           <StatusBadge status={e.status} />
                         </div>
                         <p className="mt-0.5 truncate text-sm text-[var(--text-secondary)]">
-                          {formatDate(e.entryDate)} · {e.speciesCommonName} · {Number(e.volumeM3).toFixed(4)} m³ ·{" "}
+                          {formatDate(e.entryDate)} · {e.speciesCommonName} · {fmtM3(Number(e.volumeM3))} m³ ·{" "}
                           {e.providerName}
                         </p>
                       </div>
@@ -306,7 +307,9 @@ export default function CtpBuscarGtf({
                         </div>
                         <p className="mt-0.5 truncate text-sm text-[var(--text-secondary)]">
                           {formatDate(d.entryDate)} · {d.speciesCommon ?? "—"} ·{" "}
-                          {d.quantity ? `${Number(d.quantity).toFixed(4)} ${d.unit ?? ""}` : "—"}
+                          {d.quantity
+                            ? `${!d.unit || d.unit === "m3" ? fmtM3(Number(d.quantity)) : Number(d.quantity).toFixed(4)} ${d.unit ?? ""}`
+                            : "—"}
                           {d.destino ? ` · ${d.destino}` : ""}
                           {d.productType ? ` · ${productLabel(d.productType)}` : ""}
                         </p>

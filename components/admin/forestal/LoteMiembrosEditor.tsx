@@ -12,6 +12,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Loader2, Search, Trash2 } from "@buleje/design-system/icons";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export interface LoteRow {
   produccionEntryId: string;
@@ -46,6 +47,9 @@ export default function LoteMiembrosEditor({
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  /** Tres decimales para m³ (SERFOR); el resto de unidades queda como estaba. */
+  const nCant = (v: number) => (unitLabel === "m³" ? fmtM3(v) : v.toFixed(4));
 
   useEffect(() => {
     let cancel = false;
@@ -132,7 +136,7 @@ export default function LoteMiembrosEditor({
                   {it.species && <span className="truncate text-xs text-[var(--text-secondary)]">{it.species}</span>}
                 </span>
                 <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
-                  {it.disponible.toFixed(4)} {unitLabel} disp.
+                  {nCant(it.disponible)} {unitLabel} disp.
                 </span>
               </button>
             </li>
@@ -157,7 +161,7 @@ export default function LoteMiembrosEditor({
                     <span className="truncate font-mono text-sm font-bold text-[var(--text-primary)]">{r.label}</span>
                     {r.sub && <span className="truncate text-xs text-[var(--text-secondary)]">{r.sub}</span>}
                   </div>
-                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">máx. {r.disponible.toFixed(4)} {unitLabel}</span>
+                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">máx. {nCant(r.disponible)} {unitLabel}</span>
                 </div>
                 <input
                   type="number"
@@ -185,7 +189,7 @@ export default function LoteMiembrosEditor({
       {rows.length > 0 && (
         <div className="flex items-center justify-between border-t border-[var(--rule-soft)] pt-2 text-xs">
           <span className="text-[var(--text-tertiary)]">Total del lote</span>
-          <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{total.toFixed(4)} {unitLabel}</span>
+          <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{nCant(total)} {unitLabel}</span>
         </div>
       )}
       {overSome && (
