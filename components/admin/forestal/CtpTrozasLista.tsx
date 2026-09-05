@@ -402,8 +402,15 @@ export default function CtpTrozasLista({
                         />
                       </td>
                       <td className={TD}>
-                        <span className="block font-mono font-bold text-[var(--text-primary)]">{t.codificacion ?? "—"}</span>
-                        {t.codigoPlanta && <span className="block font-mono text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">planta {t.codigoPlanta}</span>}
+                        <span className="block font-mono font-bold text-[var(--text-primary)]">{t.codificacion ?? t.codigoPlanta ?? "—"}</span>
+                        {/* El código de planta sólo cuando DIFIERE del del bosque.
+                            En el tenant real son el mismo número, así que cada
+                            fila repetía «12615541 / planta 12615541» y pagaba el
+                            doble de alto por decirlo dos veces. Cuando difieren
+                            sí importa: son dos formas de pedir la misma pieza. */}
+                        {t.codigoPlanta && t.codigoPlanta !== t.codificacion && (
+                          <span className="block font-mono text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">planta {t.codigoPlanta}</span>
+                        )}
                       </td>
                       <td className={TD}>
                         <span className="flex items-center gap-2 text-[var(--text-secondary)]">

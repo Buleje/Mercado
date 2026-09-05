@@ -117,6 +117,7 @@ export default function CtpTrozasPatio({
             }
             icono={Boxes}
             tono={hayApartadas ? "muted" : "ok"}
+            heroe
           />
           {hayApartadas && (
             <Cifra label="Listas para sierra" valor={cifra(libres?.piezas ?? 0)} nota={leyendo ? "" : `${n2(libres?.m3 ?? 0)} m³ sin apartar`} tono="ok" />
@@ -261,7 +262,9 @@ function Fila({ titulo, nota, explicacion, children }: {
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
       <span
         title={explicacion}
-        className="w-[7.5rem] shrink-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]"
+        /* En la tablet del patio el label va ARRIBA y las pastillas ocupan el
+           ancho: con la columna fija de 7.5rem sólo entraba una por renglón. */
+        className="w-full shrink-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] sm:w-[7.5rem]"
       >
         {titulo}
       </span>
@@ -305,16 +308,37 @@ function Pastilla({ activo, punto, label, piezas, m3, titulo, onClick }: {
   );
 }
 
-function Cifra({ label, valor, nota, tono = "muted", icono: Icono }: {
-  label: string; valor: string; nota: string; tono?: TonoPatio; icono?: typeof Boxes;
+/**
+ * Un número del panorama.
+ *
+ * `heroe` es el que la pantalla contesta primero —«¿cuánta madera tengo parada
+ * hoy?»— y por eso pesa distinto: número más grande, el teal de la marca y el
+ * borde acentuado. Los otros son de apoyo. Tres cajas idénticas no tienen
+ * jerarquía: obligan a leer las tres para saber cuál importa (DS §7: un
+ * elemento héroe por vista, el resto respira).
+ */
+function Cifra({ label, valor, nota, tono = "muted", icono: Icono, heroe = false }: {
+  label: string; valor: string; nota: string; tono?: TonoPatio; icono?: typeof Boxes; heroe?: boolean;
 }) {
   const t = TONO[tono];
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
+    <div
+      className={`rounded-xl border-2 px-3 py-2 ${
+        heroe
+          ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+          : "border-[var(--rule-base)] bg-[var(--surface-sunken)]"
+      }`}
+    >
       <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
         {Icono && <Icono className="h-3.5 w-3.5" />}{label}
       </p>
-      <p className={`font-mono text-xl font-bold leading-tight tabular-nums ${tono === "muted" ? "text-[var(--text-primary)]" : t.texto}`}>{valor}</p>
+      <p
+        className={`font-mono font-bold leading-tight tabular-nums ${
+          heroe ? "text-3xl text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-xl"
+        } ${!heroe && tono === "muted" ? "text-[var(--text-primary)]" : ""} ${!heroe && tono !== "muted" ? t.texto : ""}`}
+      >
+        {valor}
+      </p>
       <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{nota}</p>
     </div>
   );
