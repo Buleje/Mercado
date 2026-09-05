@@ -5,10 +5,12 @@
  *
  * Dos puentes con el mundo de afuera, en el orden en que se usan:
  *
- *   1. **Telegram** — le hablás al bot y anota. Es el camino directo: no hay
- *      nada que instalar del otro lado, y aguanta audio.
- *   2. **n8n** — para lo que Telegram no cubre: enganchar WhatsApp, un correo,
- *      una planilla; y disparar flujos ya armados desde el chat del panel.
+ *   1. **WhatsApp** — el número que ya usás. No hay que instalar nada ni abrir
+ *      otra app: le escribís al negocio y anota. Sólo los teléfonos habilitados
+ *      hablan con el bot; el resto sigue con la tienda.
+ *   2. **Telegram** — el otro canal directo, también con audio.
+ *   3. **n8n** — para lo que ninguno de los dos cubre: un correo, una planilla;
+ *      y disparar flujos ya armados desde el chat del panel.
  *
  * Los dos terminan en el mismo lugar (`lib/asistente/conversar`) y con la misma
  * confirmación: cambia el canal, no la regla.
@@ -21,6 +23,7 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 // `ssr: false`: los dos paneles leen credenciales y estado en vivo del servidor
 // de Telegram — no hay nada que renderizar de antemano.
+const WhatsAppAnotarPanel = dynamic(() => import("@/components/admin/automatizaciones/WhatsAppAnotarPanel"), { loading: S, ssr: false });
 const TelegramPanel = dynamic(() => import("@/components/admin/automatizaciones/TelegramPanel"), { loading: S, ssr: false });
 const N8nPanel = dynamic(() => import("@/components/admin/automatizaciones/N8nPanel"), { loading: S, ssr: false });
 
@@ -30,9 +33,10 @@ export default function AutomatizacionesModule() {
       <AdminModuleHeader
         eyebrow="Asistente · Automatizaciones"
         title="Anotar desde afuera"
-        description="Dictale al bot de Telegram, o conectá n8n para que WhatsApp y tus flujos anoten en Buleje."
+        description="Dictale por WhatsApp o Telegram, o conectá n8n para que tus flujos anoten en Buleje."
         icon={Webhook}
       />
+      <WhatsAppAnotarPanel />
       <TelegramPanel />
       <N8nPanel />
     </div>

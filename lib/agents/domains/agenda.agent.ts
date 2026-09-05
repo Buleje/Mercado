@@ -1,0 +1,241 @@
+import "server-only";
+
+/**
+ * lib/agents/domains/agenda.agent.ts
+ *
+ * Lo que hay que hacer y cuándo: «recordame el lunes a las 8 llamar al
+ * ingeniero», «¿qué tengo esta semana?», «ya llamé al ingeniero».
+ *
+ * ── Por qué reusa `Reminder` y no una tabla nueva ────────────────────────────
+ * El modelo `Reminder` ya existe y ya se ve en el panel (con su cron que marca
+ * los vencidos). Una tabla «Actividad» paralela partiría en dos la lista de
+ * pendientes del negocio: lo anotado por voz en un lado, lo anotado a mano en
+ * el otro, y ningún lugar donde estén todos. Además una tabla nueva necesita
+ * `DIRECT_URL` para migrar.
+ *
+ * ── La fecha va al revés que en plata ────────────────────────────────────────
+ * `fechaValida()` de `plata/comun.ts` RECHAZA fechas futuras a propósito: un
+ * gasto se anota cuando ya salió la plata. Una cita es exactamente lo contrario
+ * —si no es futura no hay nada que recordar— así que acá va su propio parser.
+ * Reusar aquél habría hecho que «recordame mañana» fallara con «esa fecha es
+ * futura», que es el peor mensaje de error posible.
+ */
+
+import { RemindersDB } from "@/lib/db/reminders.db";
+import { texto, esEnsayo } from "./plata/comun";
+import type { AgentTask, AgentContext, AgentResult, DomainAgent } from "../types";
+
+/**
+ * Los tipos que ya entiende la pantalla de recordatorios. Lo que dicte el
+ * usuario cae en `tarea` si no es ninguno de los otros: inventarse un tipo
+ * nuevo lo dejaría fuera de los filtros que ya existen.
+ */
+const TIPOS = ["pago", "inventario", "tarea", "vencimiento", "cliente", "general"] as const;
+const PRIORIDADES = ["alta", "media", "baja"] as const;
+
+const unDia = 86_400_000;
+
+/**
+ * Una fecha de agenda: tiene que ser futura y no delirante.
+ *
+ * Sin fecha NO se asume «hoy» —a diferencia de un gasto, donde hoy es el
+ * default obvio—: una cita sin cuándo no sirve para nada, así que se pide.
+ */
+function cuando(raw: unknown): { ok: true; fecha: Date } | { ok: false; error: string } {
+  const s = texto(raw);
+  if (!s) {
+    return {
+      ok: false,
+      error:
+        "Falta CUÁNDO. Preguntale al usuario el día (y la hora si la dijo) y mandalo en formato AAAA-MM-DD o AAAA-MM-DDTHH:mm.",
+    };
+  }
+  const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s}T09:00:00` : s);
+  if (Number.isNaN(d.getTime())) {
+    return { ok: false, error: `No entendí la fecha "${s}". Usá AAAA-MM-DD o AAAA-MM-DDTHH:mm.` };
+  }
+  // Un margen de un día hacia atrás: «recordame hoy a las 8» dictado a las 9
+  // sigue siendo una intención válida, no un error de tipeo.
+  if (d.getTime() < Date.now() - unDia) {
+    return {
+      ok: false,
+      error: `Esa fecha (${s}) ya pasó. Un recordatorio se agenda hacia adelante — confirmá el día con el usuario.`,
+    };
+  }
+  if (d.getTime() > Date.now() + 3 * 365 * unDia) {
+    return { ok: false, error: `Esa fecha (${s}) es de dentro de más de 3 años. ¿Está bien el año?` };
+  }
+  return { ok: true, fecha: d };
+}
+
+/** Cómo se lee una fecha en el resumen que el usuario confirma. */
+const legible = (d: Date) =>
+  d.toLocaleString("es-PE", {
+    weekday: "long", day: "numeric", month: "long",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+
+// ── Agendar ──────────────────────────────────────────────────────────────────
+
+async function agendar(task: AgentTask): Promise<AgentResult> {
+  const p = task.payload;
+
+  const titulo = texto(p.titulo);
+  if (!titulo) {
+    return { success: false, error: "Falta QUÉ hay que hacer. Preguntale al usuario y mandalo en `titulo`." };
+  }
+
+  const f = cuando(p.cuando);
+  if (!f.ok) return { success: false, error: f.error };
+
+  const tipoCrudo = texto(p.tipo).toLowerCase();
+  const tipo = (TIPOS as readonly string[]).includes(tipoCrudo) ? tipoCrudo : "tarea";
+  const prioridadCruda = texto(p.prioridad).toLowerCase();
+  const prioridad = (PRIORIDADES as readonly string[]).includes(prioridadCruda) ? prioridadCruda : "media";
+  const detalle = texto(p.detalle);
+  const responsable = texto(p.responsable);
+
+  /**
+   * El responsable va en la descripción y no en un campo propio: `Reminder` no
+   * tiene uno, e inventarlo obligaría a migrar. Escrito así, la pantalla que ya
+   * existe lo muestra sin cambios.
+   */
+  const descripcion = [detalle, responsable ? `Responsable: ${responsable}` : null]
+    .filter(Boolean)
+    .join(" · ");
+
+  if (esEnsayo(task)) {
+    return {
+      success: true,
+      data: {
+        resumen:
+          `Recordatorio: "${titulo}" · ${legible(f.fecha)}` +
+          `${responsable ? ` · ${responsable}` : ""}${prioridad !== "media" ? ` · prioridad ${prioridad}` : ""}.`,
+        titulo,
+        cuando: f.fecha.toISOString(),
+        tipo,
+        prioridad,
+      },
+    };
+  }
+
+  const creado = await RemindersDB.create(task.tenantId, {
+    title: titulo,
+    description: descripcion,
+    type: tipo,
+    priority: prioridad,
+    dueDate: f.fecha.toISOString(),
+    // Lo dictó una persona: no es de los que genera el sistema solo.
+    autoGenerated: false,
+  });
+
+  return {
+    success: true,
+    data: {
+      id: creado.id,
+      confirmacion: `Agendado: "${titulo}" para el ${legible(f.fecha)}.`,
+      dondeVerlo: { pantalla: "Inicio › Recordatorios", tab: "recordatorios" },
+    },
+  };
+}
+
+// ── Consultar ────────────────────────────────────────────────────────────────
+
+async function verAgenda(task: AgentTask): Promise<AgentResult> {
+  const dias = Number(task.payload.dias) > 0 ? Math.min(Number(task.payload.dias), 90) : 7;
+  const corte = Date.now() + dias * unDia;
+
+  // Se marcan los vencidos ANTES de listar: si no, algo de ayer aparece como
+  // «pendiente» y el usuario cree que todavía tiene tiempo.
+  await RemindersDB.markOverdue(task.tenantId);
+  const todos = await RemindersDB.list(task.tenantId);
+
+  const proximos = todos
+    .filter((r) => r.status !== "completado" && r.dueDate.getTime() <= corte)
+    .slice(0, 20)
+    .map((r) => ({
+      id: r.id,
+      que: r.title,
+      cuando: legible(r.dueDate),
+      estado: r.status,
+      prioridad: r.priority,
+      detalle: r.description || undefined,
+    }));
+
+  return {
+    success: true,
+    data: {
+      dias,
+      total: proximos.length,
+      vencidos: proximos.filter((r) => r.estado === "vencido").length,
+      agenda: proximos,
+      /**
+       * El veredicto va servido: sin esto el modelo recibe una lista y vuelve a
+       * preguntar qué mostrar, teniendo la respuesta al lado (misma lección que
+       * las búsquedas de `plata`).
+       */
+      resumen:
+        proximos.length === 0
+          ? `No hay nada agendado para los próximos ${dias} días.`
+          : `${proximos.length} cosa(s) en los próximos ${dias} días.`,
+    },
+  };
+}
+
+// ── Completar ────────────────────────────────────────────────────────────────
+
+async function completar(task: AgentTask): Promise<AgentResult> {
+  const id = texto(task.payload.id);
+  if (!id) {
+    return {
+      success: false,
+      error: "Falta el id del recordatorio. Buscalo con agenda_ver y usá el id que devuelve — no lo inventes.",
+    };
+  }
+
+  const todos = await RemindersDB.list(task.tenantId);
+  const r = todos.find((x) => x.id === id);
+  if (!r) {
+    return { success: false, error: `No existe un recordatorio con id "${id}" en este negocio.` };
+  }
+  if (r.status === "completado") {
+    return { success: true, data: { confirmacion: `"${r.title}" ya estaba marcado como hecho.` } };
+  }
+
+  if (esEnsayo(task)) {
+    return { success: true, data: { resumen: `Marcar como hecho: "${r.title}" (${legible(r.dueDate)}).` } };
+  }
+
+  const ok = await RemindersDB.updateForTenant(task.tenantId, id, { status: "completado" });
+  if (!ok) return { success: false, error: "No se pudo marcar el recordatorio como hecho." };
+
+  return {
+    success: true,
+    data: {
+      confirmacion: `Listo: "${r.title}" quedó marcado como hecho.`,
+      dondeVerlo: { pantalla: "Inicio › Recordatorios", tab: "recordatorios" },
+    },
+  };
+}
+
+// ── Agent ────────────────────────────────────────────────────────────────────
+
+export const agendaAgent: DomainAgent = {
+  domain: "agenda",
+  actions: ["agendar", "ver", "completar"],
+  description:
+    "Actividades, citas y recordatorios del negocio: agendar algo para una fecha, ver lo que viene y marcar lo hecho.",
+
+  async execute(task: AgentTask, _ctx: AgentContext): Promise<AgentResult> {
+    switch (task.action) {
+      case "agendar":
+        return agendar(task);
+      case "ver":
+        return verAgenda(task);
+      case "completar":
+        return completar(task);
+      default:
+        return { success: false, error: `Acción desconocida de agenda: ${task.action}` };
+    }
+  },
+};

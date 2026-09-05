@@ -1108,6 +1108,58 @@ const n8nTools = defineTools("n8n", [
   },
 ]);
 
+// ── Agenda tools ──────────────────────────────────────────────────────────────
+//
+// Las descripciones van cortas a propósito: cada token de esquema viaja en
+// CADA llamada y el free tier son 8.000 por minuto (ADR-390). Lo genérico —que
+// no se inventan ids, que se confirma antes de escribir— ya lo dice el system
+// prompt una sola vez; acá va sólo lo propio de cada tool.
+
+const agendaTools = defineTools("agenda", [
+  {
+    function: {
+      name: "agenda_ver",
+      description: "Lo que viene: actividades, citas y recordatorios pendientes o vencidos. Devuelve el id de cada uno.",
+      parameters: {
+        type: "object",
+        properties: { dias: { type: "number", description: "Ventana hacia adelante. Default 7, tope 90." } },
+      },
+    },
+  },
+  {
+    function: {
+      name: "agenda_agendar",
+      description:
+        "Agenda una actividad o cita para una fecha futura. Si el usuario no dijo CUÁNDO, preguntáselo: sin fecha no se agenda.",
+      parameters: {
+        type: "object",
+        properties: {
+          titulo: { type: "string", description: "Qué hay que hacer, en pocas palabras" },
+          cuando: { type: "string", description: "AAAA-MM-DD o AAAA-MM-DDTHH:mm. Sin hora se agenda a las 09:00" },
+          detalle: { type: "string", description: "Contexto extra, opcional" },
+          responsable: { type: "string", description: "Quién lo hace, opcional" },
+          tipo: { type: "string", description: "pago | inventario | tarea | vencimiento | cliente | general" },
+          prioridad: { type: "string", description: "alta | media | baja" },
+        },
+        required: ["titulo", "cuando"],
+      },
+    },
+    requiresApproval: true,
+  },
+  {
+    function: {
+      name: "agenda_completar",
+      description: "Marca como hecha una actividad ya agendada. El id sale de agenda_ver.",
+      parameters: {
+        type: "object",
+        properties: { id: { type: "string", description: "id del recordatorio" } },
+        required: ["id"],
+      },
+    },
+    requiresApproval: true,
+  },
+]);
+
 export const ALL_AGENT_TOOLS: ToolDefinition[] = [
   ...inventoryTools,
   ...ordersTools,
@@ -1123,6 +1175,7 @@ export const ALL_AGENT_TOOLS: ToolDefinition[] = [
   ...uiTools,
   ...plataTools,
   ...n8nTools,
+  ...agendaTools,
 ];
 
 // Inicializa el registry usado por `isToolApprovalRequired` (declarado arriba).

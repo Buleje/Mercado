@@ -315,6 +315,62 @@ async function notifyOwnerOfMessage(
   }
 }
 
+/**
+ * ¿Este mensaje es del dueño anotando, o de un cliente comprando?
+ *
+ * Devuelve `true` si ya quedó atendido como dueño y el flujo normal NO debe
+ * seguir. Cualquier fallo devuelve `false`: si el bot que anota se rompe, el
+ * mensaje sigue al Concierge en vez de perderse — un cliente sin respuesta es
+ * peor que un dictado que hay que repetir.
+ */
+async function enrutarComoDueno(
+  message: MetaTextMessage,
+  senderPhone: string,
+  tenantId: string,
+  phoneNumberId: string,
+  token: string,
+  contactNames: Map<string, string>,
+): Promise<boolean> {
+  try {
+    const { pareceVinculacion, intentarVincular, manejarMensajeDeDueno } = await import(
+      "@/lib/whatsapp/anotar"
+    );
+    const { WhatsAppDuenosDB } = await import("@/lib/db/whatsapp-duenos.db");
+
+    const cred = { phoneNumberId, token };
+    const nombre = contactNames.get(senderPhone) ?? "alguien";
+    const texto = (message.text?.body ?? message.image?.caption ?? message.audio?.caption ?? "").trim();
+
+    // Primero la vinculación: mientras el teléfono no esté en la lista, el
+    // camino normal lo manda al Concierge y nunca podría engancharse.
+    const codigo = pareceVinculacion(texto);
+    if (codigo) {
+      return await intentarVincular({ codigo, telefono: senderPhone, nombre, tenantIdDelNumero: tenantId, cred });
+    }
+
+    if (!(await WhatsAppDuenosDB.puedeAnotar(tenantId, senderPhone))) return false;
+
+    await manejarMensajeDeDueno({
+      tenantId,
+      telefono: senderPhone,
+      nombre,
+      texto,
+      audio: message.audio ? { id: message.audio.id, mime: message.audio.mime_type } : undefined,
+      imagen: message.image ? { id: message.image.id, mime: message.image.mime_type } : undefined,
+      botonId: message.interactive?.button_reply?.id,
+      cred,
+    });
+    return true;
+  } catch (err) {
+    logger.error("[whatsapp/webhook] el bot que anota falló — sigue el flujo de cliente", {
+      error: String(err),
+      from: redactPhone(senderPhone),
+      tenantId,
+    });
+    return false;
+  }
+}
+
 async function handleSingleMessage(
   message: MetaTextMessage,
   phoneNumberId: string,
@@ -375,6 +431,21 @@ async function handleSingleMessage(
     logger.warn("[whatsapp/webhook] Sin token de WhatsApp configurado", {
       tenantId: effectiveTenantId,
     });
+    return;
+  }
+
+  // ─── Bifurcación dueño / cliente (ADR-391) ──────────────────────────────────
+  //
+  // El mismo número atiende a los clientes (Concierge) y al dueño (el bot que
+  // anota en los libros). Esta decisión va ANTES del inbox y del Concierge por
+  // dos razones: lo que dicta el dueño no es una conversación de venta y no
+  // tiene por qué aparecer en la bandeja de atención; y una operación que
+  // escribe plata no puede pasar por el motor pensado para clientes.
+  //
+  // El default es SIEMPRE cliente: se requiere estar en la lista blanca de
+  // `WhatsAppDuenosDB`. Equivocarse hacia el otro lado significaría darle a un
+  // cliente una herramienta que escribe en los libros.
+  if (await enrutarComoDueno(message, senderPhone, effectiveTenantId, phoneNumberId, effectiveToken, contactNames)) {
     return;
   }
 

@@ -32,6 +32,9 @@ export const AGENT_DOMAINS = [
   "plata",
   // Puente con n8n: disparar flujos ya armados por el usuario.
   "n8n",
+  // Actividades, citas y recordatorios dictados («recordame el lunes…»).
+  // Escribe sobre el `Reminder` que ya se ve en el panel.
+  "agenda",
 ] as const;
 
 export type AgentDomain = (typeof AGENT_DOMAINS)[number];

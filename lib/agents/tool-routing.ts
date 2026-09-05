@@ -88,6 +88,10 @@ const PALABRAS: Record<AgentDomain, readonly string[]> = {
   forestal: ["forestal", "madera", "troza", "trozas", "gtf", "guia", "guía", "serfor", "osinfor", "aserradero", "aserrio", "aserrío", "cubicacion", "cubicación", "especie", "especies", "libro", "ctp", "tablas", "paquete", "paquetes"],
   documentos: ["documento", "documentos", "archivo", "archivos", "drive", "carpeta", "carpetas", "pdf", "contrato", "contratos", "vencer", "papeles"],
   n8n: ["n8n", "automatizacion", "automatización", "automatizaciones", "flujo", "flujos", "dispara", "disparar", "webhook", "integracion", "integración", "conecta", "correo", "email", "telegram", "sheets"],
+  // Los días sueltos («el lunes») NO van acá a propósito: «el lunes cobré 300»
+  // es plata, no agenda, y arrastraría estas tools a media conversación. Lo que
+  // selecciona el dominio es la INTENCIÓN de agendar, no la mención del tiempo.
+  agenda: ["recordame", "recuérdame", "recuerdame", "acordame", "agenda", "agendar", "agendame", "agéndame", "cita", "citas", "reunion", "reunión", "reuniones", "actividad", "actividades", "tarea", "tareas", "pendiente", "pendientes", "programar", "programa", "visita", "visitas", "vencimiento", "hecho", "listo", "cumpli", "cumplí"],
   ui: [],
 };
 

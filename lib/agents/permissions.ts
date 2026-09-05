@@ -123,6 +123,18 @@ export const AGENT_ACTION_PERMISSIONS: Record<
     "registrar-flete":      { resource: "expenses",       action: "write" },
   },
   /**
+   * Actividades y citas. No hay un Resource propio para recordatorios: un
+   * recordatorio ES un aviso de algo que vence, así que se gatea con
+   * `notifications` —el mismo permiso que ya cubre lo que el sistema avisa
+   * solo— en vez de inventar un recurso que ningún rol tendría asignado.
+   */
+  agenda: {
+    "ver":                  { resource: "notifications",  action: "read"  },
+    // ESCRITURA: además del permiso, pide confirmación humana.
+    "agendar":              { resource: "notifications",  action: "write" },
+    "completar":            { resource: "notifications",  action: "write" },
+  },
+  /**
    * Disparar un flujo de n8n manda datos del negocio a un servidor de afuera.
    * Los flujos los configura el dueño en Automatizaciones (`settings:write`),
    * así que dispararlos se gatea con el mismo permiso que configurarlos: quien

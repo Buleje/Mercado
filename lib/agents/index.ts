@@ -80,6 +80,7 @@ export async function ensureAgentsRegistered(): Promise<void> {
     { uiAgent },
     { plataAgent },
     { n8nAgent },
+    { agendaAgent },
   ] = await Promise.all([
     import("./domains/inventory.agent"),
     import("./domains/orders.agent"),
@@ -94,6 +95,7 @@ export async function ensureAgentsRegistered(): Promise<void> {
     import("./domains/ui.agent"),
     import("./domains/plata.agent"),
     import("./domains/n8n.agent"),
+    import("./domains/agenda.agent"),
   ]);
 
   reg.register(inventoryAgent);
@@ -109,6 +111,7 @@ export async function ensureAgentsRegistered(): Promise<void> {
   reg.register(uiAgent);
   reg.register(plataAgent);
   reg.register(n8nAgent);
+  reg.register(agendaAgent);
 
   // Initialize event hooks
   const { initAgentHooks } = await import("./hooks");
