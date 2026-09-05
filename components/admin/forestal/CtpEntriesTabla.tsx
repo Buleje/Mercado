@@ -36,6 +36,7 @@ import { estadoDeGuia } from "@/lib/forestal/gtf-estado";
 import { CAMPO_RANGO_META, type CampoRango, type RangoNumerico } from "@/lib/forestal/ctp-secciones-filtro";
 import type { totalesDeSeccion } from "@/lib/forestal/ctp-secciones-filtro";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { esInventarioDeApertura } from "@/lib/forestal/lotes-aserrio";
 
 /** Por qué columna se puede ordenar. Lo resuelve la vista; acá sólo se dibuja. */
 export type SortKey = "fecha" | "cantidad" | "rend";
@@ -198,16 +199,17 @@ function SalidaBadge({ entry }: { entry: CtpEntry }) {
 /**
  * ¿Esta línea vino del importador del libro, como existencia de apertura?
  *
- * `aCuerpoDelLibro` escribe siempre "Inventario de apertura" al arrancar las
- * notas de una corrida o un ingreso importado —es el mismo texto en los dos
- * casos (`ctp-serfor-a-libro.ts`)— así que no hace falta una columna nueva:
+ * `aCuerpoDelLibro` escribe la misma marca en los dos casos —corrida e ingreso
+ * importado (`ctp-serfor-a-libro.ts`)—, así que no hace falta una columna nueva:
  * alcanza con leer lo que el import ya deja escrito. Sin este aviso, un
  * paquete importado se ve IGUAL a uno que salió de la sierra hoy, y son datos
  * de calidad distinta: uno lo midió el aserradero, el otro lo declaró un
  * archivo.
  */
 function ImportadoBadge({ entry }: { entry: CtpEntry }) {
-  if (!entry.observations?.startsWith("Inventario de apertura")) return null;
+  // El predicado vive en `lotes-aserrio.ts`: la cadena estaba copiada en tres
+  // componentes, y tres copias de un literal se desincronizan sin avisar.
+  if (!esInventarioDeApertura(entry.observations)) return null;
   return (
     <span
       title="Existencia de apertura: entró por el importador del libro, no es una corrida registrada acá"

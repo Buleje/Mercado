@@ -459,7 +459,15 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
           /* El papel completo: paquete, lote y observaciones. Sin esto la corrida
              importada perdía sus dimensiones y su número de paquete, que es con
              lo que se la ubica en el depósito. */
-          codigoProducto: d.codigoProducto ?? null,
+          /* El código de la LÍNEA sigue al del paquete cuando hubo que
+             desambiguar. Antes se guardaba el del archivo tal cual: el paquete
+             quedaba como "S1-15-2026" en el depósito y la línea del libro decía
+             "S1" —que es el código de OTRO paquete de la planta—. El export
+             oficial imprime el de la línea, así que un fiscalizador que cruza
+             la hoja contra la pila encontraba dos códigos para lo mismo y uno
+             de ellos apuntando a madera ajena. Sin paquete no hay nada que
+             seguir: queda el del archivo, que es sólo una etiqueta. */
+          codigoProducto: puedeEmpaquetar ? codigo : (d.codigoProducto?.trim() || null),
           materiaPrimaRef: d.materiaPrimaRef ?? null,
           observations: d.notes ?? null,
           pieces: d.pieces ?? null,

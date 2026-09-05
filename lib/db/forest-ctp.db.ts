@@ -1288,6 +1288,26 @@ export class ForestCtpDB {
    * Esto es sólo una etiqueta de visibilidad: el saldo real que da
    * `saldosDeCorridas` NO cambia, y la corrida sigue en el libro con su
    * historia completa. Reversible por diseño: desmarcar la vuelve a mostrar.
+   *
+   * ── Por qué NO lleva el guard de período cerrado (ADR-139) ─────────────────
+   * Una auditoría lo marcó como bypass del candado, y la observación es cierta
+   * al pie de la letra: escribe tres campos de una línea que puede estar
+   * fechada en un mes cerrado. Se deja igual a propósito, y esta es la razón:
+   *
+   *  · El hecho que registra ocurre HOY —«este resto ya se usó»—, no en el mes
+   *    cerrado. La marca lleva `new Date()`, no `entryDate`.
+   *  · **No toca ningún número declarado.** `usadoAt` lo lee UNA sola cosa:
+   *    `productosDisponibles()`, que es la foto del depósito de hoy. `saldos()`,
+   *    `conciliacionPeriodo()`, el snapshot de cierre y el export SERFOR no lo
+   *    miran. El acta congelada del mes sigue diciendo exactamente lo mismo.
+   *  · Bloquearlo obligaría a REABRIR un período cerrado —que sí es un evento
+   *    de compliance, y queda en el historial del cierre— para esconder una
+   *    tarjeta del depósito. El remedio sería más grave que la enfermedad.
+   *
+   * ⚠️ **La condición de esa excepción es la segunda viñeta.** Si algún día un
+   * número que se declara empieza a leer `usadoAt`, esto pasa a necesitar el
+   * guard como cualquier otra escritura. La auditoría deja constancia de sobre
+   * qué período cerrado se marcó, para que un fiscalizador lo vea sin buscarlo.
    */
   static async marcarUsado(
     tenantId: string,
@@ -1304,6 +1324,9 @@ export class ForestCtpDB {
     if (e.section !== "produccion") {
       throw new CtpInvariantError("Sólo una corrida de producción se puede marcar como usada.", "LOTE_NO_EDITABLE");
     }
+    /* No bloquea (ver la cabecera), pero SÍ se deja dicho: una marca sobre una
+       línea de un mes cerrado tiene que poder rastrearse sin cruzar tablas. */
+    const cerradoUsado = await ForestCtpCierreDB.closedPeriodOf(tenantId, e.entryDate);
     const actualizada = await prisma.forestCtpEntry.update({
       where: { id, tenantId },
       data: usado
@@ -1315,9 +1338,13 @@ export class ForestCtpDB {
       action: usado ? "ctp_linea_marcar_usado" : "ctp_linea_desmarcar_usado",
       entity: "ForestCtpEntry",
       entityId: id,
-      detail: usado
-        ? `Marcó la corrida N° ${e.lineNo} como ya usada: sale de Productos disponibles · motivo: ${motivo!.trim()}`
-        : `Desmarcó la corrida N° ${e.lineNo}: vuelve a Productos disponibles`,
+      detail:
+        (usado
+          ? `Marcó la corrida N° ${e.lineNo} como ya usada: sale de Productos disponibles · motivo: ${motivo!.trim()}`
+          : `Desmarcó la corrida N° ${e.lineNo}: vuelve a Productos disponibles`) +
+        (cerradoUsado
+          ? ` · la línea está fechada en ${cerradoUsado.label}, período CERRADO (la marca no altera el acta: ningún saldo declarado lee este campo)`
+          : ""),
       user,
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}

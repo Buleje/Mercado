@@ -18,6 +18,7 @@ import { estadoDeGuia } from "@/lib/forestal/gtf-estado";
 import type { CtpEntry, CtpSection } from "./CtpSectionViews";
 import { UNIT_LABELS } from "./ctp-section-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { esInventarioDeApertura } from "@/lib/forestal/lotes-aserrio";
 
 interface CtpSeccionCardMobileProps {
   entry: CtpEntry;
@@ -72,10 +73,10 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
             {e.cites && (
               <span className="shrink-0 rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>
             )}
-            {/* Mismo texto que escribe el importador ("Inventario de apertura")
-                en `aCuerpoDelLibro`: sin este aviso, un paquete importado se ve
-                igual que uno que salió de la sierra hoy. */}
-            {e.observations?.startsWith("Inventario de apertura") && (
+            {/* Misma marca que escribe el importador en `aCuerpoDelLibro`: sin
+                este aviso, un paquete importado se ve igual que uno que salió de
+                la sierra hoy. El predicado es único (`lotes-aserrio.ts`). */}
+            {esInventarioDeApertura(e.observations) && (
               <span
                 title="Existencia de apertura: entró por el importador del libro"
                 className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"

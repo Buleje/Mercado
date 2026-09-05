@@ -75,6 +75,30 @@ function CeldaEditable({ valor, onCommit }: { valor: number; onCommit: (n: numbe
   const [texto, setTexto] = useState(String(valor));
   const enfocado = useRef(false);
   useEffect(() => { if (!enfocado.current) setTexto(String(valor)); }, [valor]);
+
+  /**
+   * El commit va DEMORADO, no por tecla.
+   *
+   * Escribir "125" confirmaba tres veces —1, 12, 125— y cada confirmación
+   * reconstruye el anexo entero: `construirAnexo04` sobre todas las filas, las
+   * tres hojas y sus ~840 celdas cada una. Además de la lentitud, el que mira
+   * la hoja ve totales calculados con "1" mientras el otro todavía tipea.
+   *
+   * Se mantiene la promesa del cartel («los totales se recalculan solos»): sigue
+   * siendo en vivo, sólo que cuando la mano para. Y salir del campo o apretar
+   * Enter confirma en el acto, sin esperar el timer: nadie tiene que adivinar
+   * si su último dígito entró.
+   */
+  const pendiente = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelar = () => { if (pendiente.current) { clearTimeout(pendiente.current); pendiente.current = null; } };
+  useEffect(() => cancelar, []);
+
+  const confirmar = (crudo: string) => {
+    cancelar();
+    const n = Number(crudo);
+    if (crudo !== "" && Number.isFinite(n) && n > 0) onCommit(n);
+  };
+
   return (
     <input
       type="text"
@@ -82,17 +106,39 @@ function CeldaEditable({ valor, onCommit }: { valor: number; onCommit: (n: numbe
       autoComplete="off"
       value={texto}
       onFocus={(e) => { enfocado.current = true; e.currentTarget.select(); }}
-      onBlur={() => { enfocado.current = false; setTexto(String(valor)); }}
+      onBlur={(e) => {
+        enfocado.current = false;
+        /* Confirmar ANTES de resincronizar: si no, el último valor tipeado se
+           pierde en silencio cuando el timer todavía no corrió. */
+        confirmar(e.currentTarget.value.replace(/[^\d.,]/g, "").replace(",", "."));
+        setTexto(String(valor));
+      }}
+      /* Enter confirma y sale, como en una planilla. Escape NO se toca: en este
+         modal ya significa «cerrar», y probándolo en el navegador cerró el
+         anexo Y el cubicador debajo, con todo lo cargado adentro. Revertir una
+         celda vale mucho menos que perder la hoja entera; para eso se retipea
+         el valor, que es lo que se hacía antes. */
+      onKeyDown={(e) => {
+        if (e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); }
+      }}
       onChange={(e) => {
         const limpio = e.target.value.replace(/[^\d.,]/g, "").replace(",", ".");
         setTexto(limpio);
-        const n = Number(limpio);
-        if (limpio !== "" && Number.isFinite(n) && n > 0) onCommit(n);
+        cancelar();
+        pendiente.current = setTimeout(() => confirmar(limpio), MS_COMMIT_CELDA);
       }}
       className="anx-input"
     />
   );
 }
+
+/**
+ * Cuánto se espera después de la última tecla para recalcular el anexo.
+ *
+ * 350 ms: por encima de la pausa entre dígitos de alguien tipeando corrido
+ * (~150 ms) y por debajo de lo que se siente como demora.
+ */
+const MS_COMMIT_CELDA = 350;
 
 /**
  * Los 4 bloques con sus 35 filas: ~840 celdas por hoja. Va MEMOIZADO y aparte

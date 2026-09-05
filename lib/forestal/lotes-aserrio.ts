@@ -37,6 +37,32 @@ export function esLoteDeInventario(lote: Pick<LoteAserrio, "notes">): boolean {
   return (lote.notes ?? "").includes(ORIGEN_LOTE_INVENTARIO);
 }
 
+/**
+ * La marca que el importador SERFOR le pone a lo que ya existía antes del libro.
+ *
+ * ⚠️ **Es texto libre haciendo de bandera estructural, y eso es una deuda.** La
+ * escribe `ctp-serfor-a-libro.ts` en `observations`/`notes`, y hasta hoy la
+ * leían TRES componentes con su propio `observations?.startsWith("Inventario de
+ * apertura")` literal —`CtpEntriesTabla`, `CtpSeccionCardMobile`,
+ * `CtpProductosDisponibles`—: tres copias de la misma cadena, y cualquiera de
+ * ellas se desincroniza en cuanto el texto cambia una coma. Es el mismo patrón
+ * que ya rompió cinco veces con la normalización de especies.
+ *
+ * Mientras no exista una columna de procedencia —lo correcto, y necesita ADR +
+ * migración—, la cadena y su predicado viven ACÁ y en ningún otro lado.
+ *
+ * `includes` y no `startsWith`: `declararProduccion()` REEMPLAZA
+ * `observations`, y el operador puede escribir adelante. Exigir que la marca
+ * arranque la línea la hace desaparecer con un prefijo cualquiera, y con ella
+ * la única señal de que esa madera no vino con guía.
+ */
+export const ORIGEN_INVENTARIO_APERTURA = "Inventario de apertura";
+
+/** ¿Esta línea del libro vino del inventario de apertura, no de una guía? */
+export function esInventarioDeApertura(observations: string | null | undefined): boolean {
+  return (observations ?? "").includes(ORIGEN_INVENTARIO_APERTURA);
+}
+
 /** Una pieza guardada en el lote. */
 export interface TrozaDelLote {
   id: string;

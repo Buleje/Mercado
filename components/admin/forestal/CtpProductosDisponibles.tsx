@@ -30,6 +30,7 @@ import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { uidDeFila } from "@/lib/forestal/despacho-lista";
 import type { FilaDeclarada } from "@/lib/forestal/cubicacion-cuadre";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { esInventarioDeApertura } from "@/lib/forestal/lotes-aserrio";
 
 interface PaqueteDisponible {
   id: string;
@@ -472,11 +473,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
               <td className="px-3 py-2 text-[var(--text-secondary)]">
                 <div className="flex flex-wrap items-center gap-1">
                   {productLabel(p?.producto ?? c.producto ?? "")}
-                  {/* Mismo texto que escribe siempre el importador del libro
-                      ("Inventario de apertura", `ctp-serfor-a-libro.ts`): sin
-                      esto un paquete importado se ve igual que uno recién
-                      aserrado, y son datos de calidad distinta. */}
-                  {c.observations?.startsWith("Inventario de apertura") && (
+                  {/* Misma marca que escribe el importador del libro
+                      (`ctp-serfor-a-libro.ts`): sin esto un paquete importado se
+                      ve igual que uno recién aserrado, y son datos de calidad
+                      distinta. El predicado es único (`lotes-aserrio.ts`). */}
+                  {esInventarioDeApertura(c.observations) && (
                     <span
                       title="Existencia de apertura: entró por el importador del libro"
                       className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"

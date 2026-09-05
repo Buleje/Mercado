@@ -15,6 +15,7 @@
 import { armarCadena, consumosDeCorrida, mapaCodigoAGuia, repartirConsumos } from "./ctp-cadena-import";
 import { medidasDeTexto } from "./medidas-paquete";
 import type { FilaParseada, FormatoCtp } from "./ctp-formatos-serfor";
+import { ORIGEN_INVENTARIO_APERTURA } from "@/lib/forestal/lotes-aserrio";
 
 /**
  * El proveedor que se le pone a una troza importada como existencia de
@@ -316,7 +317,7 @@ export function aCuerpoDelLibro(
             };
           }),
           notes: [
-            `Inventario de apertura · ${trozas.length} troza${trozas.length === 1 ? "" : "s"}`,
+            `${ORIGEN_INVENTARIO_APERTURA} · ${trozas.length} troza${trozas.length === 1 ? "" : "s"}`,
             /* La madre se conserva: sin ella un retrozo importado pierde de qué
                troza salió, que es la mitad de su trazabilidad. */
             ...trozas
@@ -367,7 +368,7 @@ export function aCuerpoDelLibro(
           presentacion: txt(f.datos.presentacion) || null,
           medidas: medidasDeTexto(dims),
           notes: [
-            "Inventario de apertura",
+            ORIGEN_INVENTARIO_APERTURA,
             lote && lote !== "S/L" && `Lote ${lote}`,
             paquete && paquete !== "-" && `Paquete ${paquete}`,
             dims && dims !== "0 X 0 X 0" && dims,
