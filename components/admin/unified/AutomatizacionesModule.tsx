@@ -10,7 +10,7 @@
  *   2. **n8n** — para lo que Telegram no cubre: enganchar WhatsApp, un correo,
  *      una planilla; y disparar flujos ya armados desde el chat del panel.
  *
- * Los dos terminan en el mismo lugar (`lib/plata/anotar`) y con la misma
+ * Los dos terminan en el mismo lugar (`lib/asistente/conversar`) y con la misma
  * confirmación: cambia el canal, no la regla.
  */
 

@@ -32,7 +32,8 @@ import { logger } from "@/lib/logger";
 import { TelegramDB } from "@/lib/db/telegram.db";
 import { TenantsDB } from "@/lib/db/tenants.db";
 import { transcribirAudio } from "@/lib/ai/transcribir";
-import { anotarOperacion } from "@/lib/plata/anotar";
+import { conversar } from "@/lib/asistente/conversar";
+import { olvidar, anotarHecho } from "@/lib/asistente/memoria";
 import { canjearCodigo } from "@/lib/telegram/vinculacion";
 import {
   secretoValido, botConfigurado, mandarMensaje, editarMensaje, contestarBoton,
@@ -76,15 +77,21 @@ function pasaElFreno(chatId: number): boolean {
 }
 
 const AYUDA =
-  "Contame qué pasó y lo anoto donde va.\n\n" +
-  "Podés <b>escribirlo</b> o mandarme un <b>audio</b>:\n" +
-  "• «anotame 25 galones de petróleo para el camión N12 a 27 el galón»\n" +
+  "Contame qué pasó y lo anoto donde va. Escribime o mandame un <b>audio</b>.\n\n" +
+  "<b>Para anotar</b>\n" +
+  "• «25 galones de petróleo para el camión N12 a 27 el galón»\n" +
   "• «le adelanté 300 soles en efectivo a Juan Pérez»\n" +
   "• «Doña Rosa me pagó 50 de lo que debía»\n" +
-  "• «pagué 180 de luz del local, por Yape»\n\n" +
-  "Antes de guardar nada te muestro qué se va a anotar y por cuánto. " +
-  "Recién cuando tocás <b>Confirmar</b> queda en los libros.\n\n" +
-  "<b>Comandos:</b> /vincular CÓDIGO · /desvincular · /ayuda";
+  "• «compré 20 sacos de arroz a 18.50 a Distribuidora Ucayali»\n" +
+  "• «pasá 2000 del BCP a la caja chica»\n" +
+  "• «el flete de la placa A4B-892, 800 soles por 30 m³»\n\n" +
+  "<b>Para preguntar</b>\n" +
+  "• «¿cuánto gasté este mes?» · «¿quién me debe?» · «¿cómo viene la caja?»\n" +
+  "• «¿qué hay de nuevo?» — te cuento lo que vi\n\n" +
+  "Podés decirme <b>varias cosas en un mismo audio</b> y las anoto todas. " +
+  "Antes de guardar te muestro qué se va a anotar y por cuánto: recién cuando " +
+  "tocás <b>Confirmar</b> queda en los libros.\n\n" +
+  "<b>Comandos:</b> /hoy · /olvidar · /desvincular · /ayuda";
 
 /**
  * Telegram REINTENTA cualquier update que no conteste 200 rápido.
@@ -176,6 +183,25 @@ async function manejarMensaje(msg: TgMessage): Promise<void> {
       return;
     }
 
+    if (base === "/hoy") {
+      const tenantId = await TelegramDB.tenantDeChat(chatId);
+      if (!tenantId) {
+        await mandarMensaje(chatId, "🔒 Este chat no está vinculado a ningún negocio.");
+        return;
+      }
+      await mostrarEscribiendo(chatId);
+      const { calcularAvisos, comoTexto } = await import("@/lib/asistente/avisos");
+      const avisos = await calcularAvisos(tenantId);
+      await mandarMensaje(chatId, `☀️ <b>Lo que veo hoy</b>\n\n${comoTexto(avisos)}`);
+      return;
+    }
+
+    if (base === "/olvidar") {
+      olvidar(`telegram:${chatId}`);
+      await mandarMensaje(chatId, "🧹 Listo, empezamos de nuevo. Contame qué pasó.");
+      return;
+    }
+
     if (base === "/desvincular") {
       const tenantId = await TelegramDB.tenantDeChat(chatId);
       if (!tenantId) {
@@ -233,10 +259,13 @@ async function manejarMensaje(msg: TgMessage): Promise<void> {
     return;
   }
 
-  // ── Interpretar y proponer ─────────────────────────────────────────────
+  // ── Entender y proponer ────────────────────────────────────────────────
   await mostrarEscribiendo(chatId);
-  const resultado = await anotarOperacion({
+  const r = await conversar({
     tenantId,
+    // La sesión es el CHAT, no la persona: es lo que hace que «el N12» después
+    // de «¿cuál de los dos?» signifique algo.
+    sesionId: `telegram:${chatId}`,
     texto: dictado,
     actorRole: ROL,
     solicitante: `telegram:${quien}`,
@@ -247,22 +276,28 @@ async function manejarMensaje(msg: TgMessage): Promise<void> {
     logger.warn("[telegram] no se pudo marcar el uso", { error: String(err) }),
   );
 
-  switch (resultado.estado) {
-    case "pendiente":
-      await mandarMensaje(chatId, `📝 <b>${esc(resultado.resumen)}</b>\n\n¿Lo anoto?`, [
-        { texto: "✅ Confirmar", data: `ok:${resultado.aprobacionId}` },
-        { texto: "✖ Cancelar", data: `no:${resultado.aprobacionId}` },
-      ]);
-      return;
-    case "registrado":
-      await mandarMensaje(chatId, `✅ ${esc(resultado.resumen)}`);
-      return;
-    case "pregunta":
-      await mandarMensaje(chatId, `🤔 ${esc(resultado.mensaje)}`);
-      return;
-    case "error":
-      await mandarMensaje(chatId, `⚠️ ${esc(resultado.mensaje)}`);
-      return;
+  // Lo que dijo va primero: suele ser la aclaración de lo que está por anotar.
+  if (r.texto) await mandarMensaje(chatId, esc(r.texto));
+
+  /**
+   * Una tarjeta por operación. Un audio que dicta tres cosas deja tres
+   * confirmaciones, no una: aprobarlas juntas obligaría a aceptar o rechazar el
+   * paquete entero cuando una sola está mal.
+   */
+  for (const p of r.pendientes) {
+    await mandarMensaje(chatId, `📝 <b>${esc(p.resumen)}</b>\n\n¿Lo anoto?`, [
+      { texto: "✅ Confirmar", data: `ok:${p.id}` },
+      { texto: "✖ Cancelar", data: `no:${p.id}` },
+    ]);
+  }
+
+  for (const reg of r.registradas) {
+    await mandarMensaje(chatId, `✅ ${esc(reg.resumen)}`);
+  }
+
+  // Ni texto ni operaciones: hay que decir algo, o el bot se queda mudo.
+  if (!r.texto && r.pendientes.length === 0 && r.registradas.length === 0) {
+    await mandarMensaje(chatId, "🤔 No terminé de entender. Decímelo de otra forma, o mandame /ayuda.");
   }
 }
 
@@ -326,6 +361,11 @@ async function manejarBoton(cb: TgCallback): Promise<void> {
   const datos = (res.data ?? {}) as Record<string, unknown>;
   const donde = datos.dondeVerlo as { pantalla?: string } | undefined;
   logger.info("[telegram] operación anotada", { tenantId, tool: pendiente.toolName });
+  /**
+   * Que la conversación sepa que esto YA quedó anotado. Sin esto, un «anotalo»
+   * dos minutos después vuelve a proponer la misma operación como si nada.
+   */
+  anotarHecho(`telegram:${chatId}`, tenantId, String(datos.confirmacion ?? pendiente.toolName));
   await editarMensaje(
     chatId,
     messageId,

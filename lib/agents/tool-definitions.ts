@@ -821,25 +821,24 @@ const cobranzasTools = defineTools("cobranzas", [
 
 // ── Plata: anotar operaciones dictadas (ESCRITURA con confirmación) ──────────
 //
-// El único bloque de tools que MUEVE plata. Tres reglas que la descripción de
-// cada tool tiene que dejar clarísimas, porque el modelo sólo lee esto:
-//   1. Nunca inventar un id: primero buscar, y con más de una coincidencia,
-//      preguntar.
-//   2. Un total dictado y un total calculado que no cuadran se preguntan, no
-//      se promedian.
-//   3. Todo lo que escribe pide confirmación al usuario antes de ejecutarse.
+// El único bloque de tools que MUEVE plata.
+//
+// ⚠️ Las descripciones son CORTAS a propósito. Viajan las 15 en cada mensaje y
+// la cuenta tiene 8.000 tokens POR MINUTO: 1.261 tokens de descripciones eran
+// el 15 % del minuto gastado en repetir quince veces reglas que el system
+// prompt dice UNA. Acá va sólo lo que es propio de cada herramienta; el «no
+// multipliques vos», el «no inventes ids» y el «el usuario confirma» viven en
+// `lib/asistente/conversar.ts` y en `app/api/ai-assistant/route.ts`.
 
 const plataTools = defineTools("plata", [
   {
     function: {
       name: "plata_buscar_maquina",
       description:
-        "Busca un camión, tractor, cargador o cualquier máquina del negocio por nombre o placa, y devuelve su maquinaId. SIEMPRE usar esto ANTES de anotar un gasto o un ingreso de una máquina: sin el maquinaId el registro no se puede hacer. Si devuelve más de una, preguntale al usuario cuál.",
+        "Busca un camión, tractor o máquina por nombre o placa y devuelve su maquinaId. Sólo si no está en la lista del negocio.",
       parameters: {
         type: "object",
-        properties: {
-          texto: { type: "string", description: "Nombre, número o placa de la máquina. Ej: 'camión N12', 'A4B-892'" },
-        },
+        properties: { texto: { type: "string", description: "Nombre, número o placa" } },
         required: ["texto"],
       },
     },
@@ -848,12 +847,10 @@ const plataTools = defineTools("plata", [
     function: {
       name: "plata_buscar_persona",
       description:
-        "Busca a una persona del padrón de adelantos por nombre o documento. Devuelve su personaId y sus adelantos abiertos con adelantoId, código y saldo. Usar ANTES de anotar un adelanto o de liquidar uno.",
+        "Busca a una persona del padrón de adelantos por nombre o documento. Devuelve personaId y sus adelantos abiertos con adelantoId y saldo.",
       parameters: {
         type: "object",
-        properties: {
-          texto: { type: "string", description: "Nombre o número de documento de la persona" },
-        },
+        properties: { texto: { type: "string", description: "Nombre o documento" } },
         required: ["texto"],
       },
     },
@@ -862,12 +859,42 @@ const plataTools = defineTools("plata", [
     function: {
       name: "plata_buscar_deuda",
       description:
-        "Busca fiados abiertos (lo que un cliente debe) por nombre o teléfono, y devuelve el fiadoId y el saldo. Usar ANTES de registrar un cobro. Sin texto, lista todas las deudas abiertas.",
+        "Busca fiados abiertos (lo que un cliente debe) por nombre o teléfono. Devuelve fiadoId y saldo. Sin texto lista todas.",
       parameters: {
         type: "object",
-        properties: {
-          texto: { type: "string", description: "Nombre o teléfono del cliente. Opcional." },
-        },
+        properties: { texto: { type: "string", description: "Nombre o teléfono del cliente" } },
+      },
+    },
+  },
+  {
+    function: {
+      name: "plata_buscar_proveedor",
+      description: "Busca un proveedor por nombre, RUC o documento. Devuelve proveedorId.",
+      parameters: {
+        type: "object",
+        properties: { texto: { type: "string", description: "Nombre, RUC o documento" } },
+        required: ["texto"],
+      },
+    },
+  },
+  {
+    function: {
+      name: "plata_buscar_cuenta",
+      description: "Lista las cuentas de tesorería con su saldo, o busca una. Sin texto devuelve todas.",
+      parameters: {
+        type: "object",
+        properties: { texto: { type: "string", description: "Nombre o banco" } },
+      },
+    },
+  },
+  {
+    function: {
+      name: "plata_buscar_lote",
+      description:
+        "Busca un lote de producción forestal y devuelve su código exacto, para usarlo como centroCosto de un gasto.",
+      parameters: {
+        type: "object",
+        properties: { texto: { type: "string", description: "Código del lote o parte de él" } },
       },
     },
   },
@@ -875,25 +902,25 @@ const plataTools = defineTools("plata", [
     function: {
       name: "plata_registrar_gasto",
       description:
-        "Anota un gasto: plata que salió. Si el gasto es de una máquina (combustible, repuesto, mantenimiento, operador, peaje) pasá el maquinaId de plata_buscar_maquina y va al libro de esa máquina; si no, va al libro de gastos del negocio. Para combustible pasá 'cantidad' (galones) y 'precioUnitario' y NO calcules el total vos: el sistema lo multiplica y lo muestra. Si el usuario dijo también un total y no coincide con cantidad × precio, el sistema lo rechaza y hay que preguntarle cuál va. El usuario confirma antes de que se ejecute.",
+        "Anota un gasto (plata que salió). Con maquinaId va al libro de esa máquina; sin él, al libro de gastos del negocio. Para combustible pasá cantidad (galones) y precioUnitario, no el total.",
       parameters: {
         type: "object",
         properties: {
-          descripcion: { type: "string", description: "Qué se compró o pagó, en las palabras del usuario. Ej: 'petróleo para el camión'" },
-          monto: { type: "number", description: "Total en soles. Omitilo si diste cantidad y precioUnitario." },
-          cantidad: { type: "number", description: "Cantidad comprada (galones de combustible, unidades)" },
-          precioUnitario: { type: "number", description: "Precio por galón o por unidad, en soles" },
+          descripcion: { type: "string", description: "Qué se compró o pagó" },
+          monto: { type: "number", description: "Total en soles. Omitir si diste cantidad y precioUnitario." },
+          cantidad: { type: "number", description: "Galones o unidades" },
+          precioUnitario: { type: "number", description: "Precio por galón o unidad" },
           categoria: {
             type: "string",
             description:
-              "De máquina: combustible | mantenimiento | repuesto | operador | peaje | otro. Del negocio: alquiler | servicios | personal | transporte | limpieza | marketing | mantenimiento | otros",
+              "De máquina: combustible|mantenimiento|repuesto|operador|peaje|otro. Del negocio: alquiler|servicios|personal|transporte|limpieza|marketing|mantenimiento|otros",
           },
-          maquinaId: { type: "string", description: "Id de la máquina, de plata_buscar_maquina. Sólo si el gasto es de una máquina." },
-          metodoPago: { type: "string", description: "efectivo | yape | plin | transferencia | tarjeta | credito" },
-          proveedor: { type: "string", description: "A quién se le pagó (grifo, ferretería, casero)" },
-          centroCosto: { type: "string", description: "Etiqueta libre para agrupar: 'delivery', 'forestal'" },
+          maquinaId: { type: "string", description: "Sólo si el gasto es de una máquina" },
+          metodoPago: { type: "string", description: "efectivo|yape|plin|transferencia|tarjeta|credito" },
+          proveedor: { type: "string", description: "A quién se le pagó" },
+          centroCosto: { type: "string", description: "Etiqueta para agrupar (ej. el código de un lote)" },
           fecha: { type: "string", description: "AAAA-MM-DD. Omitir si es hoy." },
-          notas: { type: "string", description: "Cualquier detalle extra que dijo el usuario" },
+          notas: { type: "string" },
         },
         required: ["descripcion"],
       },
@@ -904,19 +931,19 @@ const plataTools = defineTools("plata", [
     function: {
       name: "plata_registrar_ingreso",
       description:
-        "Anota plata que ENTRÓ y que no es una venta del mostrador. Con maquinaId queda como alquiler/viaje de esa máquina (podés marcar cobrado=false si todavía no pagaron). Sin maquinaId entra como movimiento de la caja abierta, y si no hay caja abierta el sistema lo dice. NO sirve para registrar ventas de productos: esas van por el punto de venta. El usuario confirma antes de que se ejecute.",
+        "Anota plata que ENTRÓ y no es una venta del mostrador. Con maquinaId queda como alquiler o viaje de esa máquina; sin él entra a la caja abierta. No sirve para ventas de productos.",
       parameters: {
         type: "object",
         properties: {
           descripcion: { type: "string", description: "De qué es el ingreso" },
-          monto: { type: "number", description: "Total en soles. Omitilo si diste cantidad y tarifa." },
-          cantidad: { type: "number", description: "Horas, días, viajes o m³ trabajados" },
-          tarifa: { type: "number", description: "Precio por hora/día/viaje/m³" },
-          unidad: { type: "string", description: "hora | dia | viaje | m3" },
-          maquinaId: { type: "string", description: "Id de la máquina, de plata_buscar_maquina" },
+          monto: { type: "number", description: "Total en soles. Omitir si diste cantidad y tarifa." },
+          cantidad: { type: "number", description: "Horas, días, viajes o m³" },
+          tarifa: { type: "number", description: "Precio por unidad" },
+          unidad: { type: "string", description: "hora|dia|viaje|m3" },
+          maquinaId: { type: "string" },
           cliente: { type: "string", description: "Quién pagó o alquiló" },
-          cobrado: { type: "boolean", description: "false si quedó a deber. Por defecto true." },
-          metodoPago: { type: "string", description: "efectivo | yape | plin | transferencia | tarjeta" },
+          cobrado: { type: "boolean", description: "false si quedó a deber" },
+          metodoPago: { type: "string", description: "efectivo|yape|plin|transferencia|tarjeta" },
         },
         required: ["descripcion"],
       },
@@ -927,15 +954,15 @@ const plataTools = defineTools("plata", [
     function: {
       name: "plata_registrar_adelanto",
       description:
-        "Anota un adelanto de plata a una persona del padrón (se liquida después con entregas o descuento). Requiere el personaId de plata_buscar_persona. Si supera el límite de crédito de esa persona, el sistema lo frena: eso se autoriza en la pantalla de Adelantos, no desde el chat. El usuario confirma antes de que se ejecute.",
+        "Anota un adelanto de plata a una persona del padrón. Si supera su límite de crédito el sistema lo frena: eso se autoriza en la pantalla.",
       parameters: {
         type: "object",
         properties: {
-          personaId: { type: "string", description: "Id de la persona, de plata_buscar_persona" },
-          monto: { type: "number", description: "Cuánta plata se le adelanta, en soles" },
-          metodoPago: { type: "string", description: "efectivo | yape | plin | transferencia | tarjeta. Omitir si no salió de la caja." },
-          fecha: { type: "string", description: "AAAA-MM-DD. Omitir si es hoy." },
-          notas: { type: "string", description: "Para qué es el adelanto" },
+          personaId: { type: "string" },
+          monto: { type: "number", description: "En soles" },
+          metodoPago: { type: "string", description: "Omitir si no salió de la caja" },
+          fecha: { type: "string", description: "AAAA-MM-DD" },
+          notas: { type: "string", description: "Para qué es" },
         },
         required: ["personaId", "monto"],
       },
@@ -945,14 +972,13 @@ const plataTools = defineTools("plata", [
   {
     function: {
       name: "plata_cobrar_fiado",
-      description:
-        "Registra un pago que un cliente hizo sobre lo que debía (fiado). Requiere el fiadoId de plata_buscar_deuda. Si el monto supera el saldo, el sistema lo rechaza y hay que preguntar cuánto entregó de verdad. El usuario confirma antes de que se ejecute.",
+      description: "Registra un pago sobre lo que un cliente debía. Si el monto supera el saldo, el sistema lo rechaza.",
       parameters: {
         type: "object",
         properties: {
-          fiadoId: { type: "string", description: "Id de la deuda, de plata_buscar_deuda" },
+          fiadoId: { type: "string" },
           monto: { type: "number", description: "Cuánto pagó, en soles" },
-          notas: { type: "string", description: "Detalle del cobro" },
+          notas: { type: "string" },
         },
         required: ["fiadoId", "monto"],
       },
@@ -963,14 +989,14 @@ const plataTools = defineTools("plata", [
     function: {
       name: "plata_liquidar_adelanto",
       description:
-        "Descuenta plata de un adelanto abierto (la persona devolvió o entregó algo por ese valor). Requiere el adelantoId, que devuelve plata_buscar_persona. Sólo entregas en plata o servicios: si la persona entrega PRODUCTO que suma al stock, eso se hace en la pantalla de Adelantos. El usuario confirma antes de que se ejecute.",
+        "Descuenta plata de un adelanto abierto (la persona devolvió o entregó algo). Sólo entregas en plata o servicios; si entrega producto que suma al stock, va por la pantalla.",
       parameters: {
         type: "object",
         properties: {
-          adelantoId: { type: "string", description: "Id del adelanto, de plata_buscar_persona" },
-          monto: { type: "number", description: "Valor de lo entregado, en soles" },
+          adelantoId: { type: "string" },
+          monto: { type: "number", description: "Valor de lo entregado" },
           descripcion: { type: "string", description: "Qué entregó" },
-          metodoPago: { type: "string", description: "efectivo | yape | plin | transferencia | tarjeta, si entró a la caja" },
+          metodoPago: { type: "string", description: "Si entró a la caja" },
         },
         required: ["adelantoId", "monto"],
       },
@@ -979,62 +1005,28 @@ const plataTools = defineTools("plata", [
   },
   {
     function: {
-      name: "plata_buscar_proveedor",
-      description:
-        "Busca un proveedor del padrón por nombre, RUC o documento, y devuelve su proveedorId. Usar ANTES de anotar una compra: sin el id, cada dictado escribe una variante distinta del mismo proveedor y después no suman juntas.",
-      parameters: {
-        type: "object",
-        properties: { texto: { type: "string", description: "Nombre, RUC o documento del proveedor" } },
-        required: ["texto"],
-      },
-    },
-  },
-  {
-    function: {
-      name: "plata_buscar_cuenta",
-      description:
-        "Lista las cuentas de tesorería (banco, caja fuerte, billetera) con su saldo, o busca una por nombre. Usar ANTES de mover plata entre cuentas. Sin texto devuelve todas, que es lo que hace falta para «pasá plata del banco a la caja».",
-      parameters: {
-        type: "object",
-        properties: { texto: { type: "string", description: "Nombre o banco de la cuenta. Opcional." } },
-      },
-    },
-  },
-  {
-    function: {
-      name: "plata_buscar_lote",
-      description:
-        "Busca un lote de producción forestal por su código (L-2026-001) y devuelve el código EXACTO para usar como centroCosto de un gasto. Usar cuando el usuario dice que un gasto es «del lote tal».",
-      parameters: {
-        type: "object",
-        properties: { texto: { type: "string", description: "Código del lote o parte de él. Opcional: sin texto lista los últimos." } },
-      },
-    },
-  },
-  {
-    function: {
       name: "plata_registrar_compra",
       description:
-        "Anota una compra a un proveedor como orden de compra PENDIENTE. Requiere el proveedorId (de plata_buscar_proveedor) y, por cada ítem, el productId exacto (de inventory_buscar_producto), la cantidad y el costo unitario. NO sube el stock: eso pasa cuando marcás la orden como recibida en Compras, mirando lo que llegó de verdad. El usuario confirma antes de que se ejecute.",
+        "Anota una compra a un proveedor como orden PENDIENTE. Cada ítem necesita el productId de inventory_buscar_producto. NO sube el stock: eso pasa al marcarla recibida en Compras.",
       parameters: {
         type: "object",
         properties: {
-          proveedorId: { type: "string", description: "Id del proveedor, de plata_buscar_proveedor" },
+          proveedorId: { type: "string" },
           items: {
             type: "array",
-            description: "Lo que se compró, una entrada por producto",
+            description: "Una entrada por producto",
             items: {
               type: "object",
               properties: {
-                productId: { type: "number", description: "Id del producto, de inventory_buscar_producto" },
-                cantidad: { type: "number", description: "Cuántas unidades (entero)" },
-                costoUnitario: { type: "number", description: "Cuánto cuesta cada una, en soles" },
+                productId: { type: "number" },
+                cantidad: { type: "number", description: "Entero" },
+                costoUnitario: { type: "number", description: "En soles" },
               },
               required: ["productId", "cantidad", "costoUnitario"],
             },
           },
-          metodoPago: { type: "string", description: "efectivo | yape | plin | transferencia | tarjeta | credito" },
-          notas: { type: "string", description: "Detalle extra de la compra" },
+          metodoPago: { type: "string" },
+          notas: { type: "string" },
         },
         required: ["proveedorId", "items"],
       },
@@ -1045,15 +1037,15 @@ const plataTools = defineTools("plata", [
     function: {
       name: "plata_mover_tesoreria",
       description:
-        "Mueve plata de una cuenta de tesorería. Con cuentaDestinoId es una TRANSFERENCIA entre cuentas; sin ella es un movimiento suelto (entra o sale) y hay que decir el tipo y el concepto. Requiere los ids de plata_buscar_cuenta. Si no alcanza el saldo, o si las monedas no coinciden, el sistema lo frena. El usuario confirma antes de que se ejecute.",
+        "Mueve plata de una cuenta. Con cuentaDestinoId es transferencia entre cuentas; sin ella, movimiento suelto (hace falta tipo y descripción). Frena si no alcanza el saldo o si las monedas difieren.",
       parameters: {
         type: "object",
         properties: {
-          cuentaId: { type: "string", description: "Cuenta de origen (o la única, si es movimiento suelto)" },
-          cuentaDestinoId: { type: "string", description: "Cuenta de destino. Sólo para transferencias." },
-          monto: { type: "number", description: "Cuánta plata, en la moneda de la cuenta" },
-          tipo: { type: "string", description: "ingreso | egreso — sólo para movimientos sueltos" },
-          descripcion: { type: "string", description: "De qué es el movimiento" },
+          cuentaId: { type: "string", description: "Cuenta de origen" },
+          cuentaDestinoId: { type: "string", description: "Sólo para transferencias" },
+          monto: { type: "number" },
+          tipo: { type: "string", description: "ingreso|egreso — sólo para movimientos sueltos" },
+          descripcion: { type: "string", description: "De qué es" },
         },
         required: ["cuentaId", "monto"],
       },
@@ -1064,20 +1056,20 @@ const plataTools = defineTools("plata", [
     function: {
       name: "plata_registrar_flete",
       description:
-        "Anota un viaje de madera: el que la TRAE (tipo ingreso) o el que se la lleva (tipo despacho). Con el volumen en m³ el sistema calcula el costo por m³, que es el número que se compara entre transportistas. El usuario confirma antes de que se ejecute.",
+        "Anota un viaje de madera: tipo ingreso (la trae) o despacho (se la lleva). Con el volumen calcula el costo por m³.",
       parameters: {
         type: "object",
         properties: {
-          monto: { type: "number", description: "Cuánto costó el viaje, en soles" },
-          placa: { type: "string", description: "Placa del camión" },
-          transportista: { type: "string", description: "Quién hizo el viaje" },
-          volumenM3: { type: "number", description: "Metros cúbicos movidos" },
-          tipo: { type: "string", description: "ingreso (trae madera) | despacho (se la lleva). Por defecto ingreso." },
-          gtfNumber: { type: "string", description: "N° de la guía forestal del viaje" },
-          pagaQuien: { type: "string", description: "ctp | proveedor | destinatario. Por defecto ctp." },
-          pagado: { type: "boolean", description: "true si ya se pagó. Por defecto queda pendiente." },
-          fecha: { type: "string", description: "AAAA-MM-DD. Omitir si es hoy." },
-          notas: { type: "string", description: "Detalle extra del viaje" },
+          monto: { type: "number", description: "Cuánto costó, en soles" },
+          placa: { type: "string" },
+          transportista: { type: "string" },
+          volumenM3: { type: "number" },
+          tipo: { type: "string", description: "ingreso|despacho" },
+          gtfNumber: { type: "string", description: "N° de la guía forestal" },
+          pagaQuien: { type: "string", description: "ctp|proveedor|destinatario" },
+          pagado: { type: "boolean", description: "true si ya se pagó" },
+          fecha: { type: "string", description: "AAAA-MM-DD" },
+          notas: { type: "string" },
         },
         required: ["monto"],
       },

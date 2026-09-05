@@ -37,7 +37,7 @@ import { logger } from "@/lib/logger";
 import { resolveTenantSlugToId } from "@/lib/resolve-tenant";
 import { TenantsDB } from "@/lib/db/tenants.db";
 import { getN8nConfig, tokenValido } from "@/lib/n8n/flows";
-import { anotarOperacion } from "@/lib/plata/anotar";
+import { conversar } from "@/lib/asistente/conversar";
 import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
 import { getPendingApproval, removePendingApproval } from "@/lib/agents/pending-approvals";
 
@@ -146,19 +146,48 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Anotar ───────────────────────────────────────────────────────────────
-  const resultado = await anotarOperacion({
+  const r = await conversar({
     tenantId,
+    /**
+     * La sesión es quien manda, no el negocio: dos personas escribiendo por el
+     * mismo flujo de n8n no pueden pisarse la conversación. Sin `de`, cada
+     * llamada es independiente — que es lo correcto para un flujo automático.
+     */
+    sesionId: `n8n:${parsed.data.de ?? crypto.randomUUID()}`,
     texto: parsed.data.texto,
     actorRole: ROL,
     solicitante: parsed.data.de ? `n8n:${parsed.data.de}` : "n8n",
-    confirmar: parsed.data.confirmar === true,
+    confirmarAutomatico: parsed.data.confirmar === true,
     canal: parsed.data.canal,
   });
 
+  /**
+   * El contrato de este endpoint no cambia: n8n ya tiene flujos armados contra
+   * `{estado, aprobacionId, resumen}` y romperlos sería romper automatizaciones
+   * que ya andan. Lo nuevo —varias operaciones en un mensaje— se expone en
+   * `pendientes`, que los flujos viejos simplemente ignoran.
+   */
+  const primera = r.pendientes[0];
+  const registrada = r.registradas[0];
+  const cuerpo = primera
+    ? {
+        estado: "pendiente" as const,
+        aprobacionId: primera.id,
+        resumen: primera.resumen,
+        tool: primera.tool,
+        ...(r.pendientes.length > 1 && { pendientes: r.pendientes }),
+      }
+    : registrada
+      ? {
+          estado: "registrado" as const,
+          resumen: registrada.resumen,
+          ...(r.registradas.length > 1 && { registradas: r.registradas }),
+        }
+      : { estado: "pregunta" as const, mensaje: r.texto ?? "No entendí qué operación anotar." };
+
   // El estado va también en el cuerpo para que un flujo de n8n pueda ramificar
   // sin mirar el código HTTP (el nodo IF de n8n lee el JSON, no el status).
-  const status = resultado.estado === "error" ? 422 : 200;
-  return NextResponse.json(resultado, { status });
+  return NextResponse.json(cuerpo, { status: 200 });
 }
 
 /** Para que n8n pueda probar la credencial sin anotar nada. */
