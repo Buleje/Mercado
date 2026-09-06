@@ -23,6 +23,15 @@ export interface CtpEntry {
   status: "registrado" | "anulado"; annulledReason: string | null;
   /** El código pintado en el atado (ADR-314 · casillero 9 de la Sección 4). */
   codigoProducto?: string | null;
+  /**
+   * De qué producto salió ÉSTE, cuando la línea nació de un reproceso
+   * (ADR-316). El endpoint lo mandaba desde siempre y ningún componente lo
+   * leía: una tablilla re-aserrada de otro producto se veía igual que una
+   * producción nueva, y por ahí se lee como volumen que apareció de la nada.
+   * `reprocesadoQty` es la otra punta de la misma relación —cuánto de esta
+   * corrida se fue a reprocesar—; ésta dice de dónde VIENE.
+   */
+  codigoRaiz?: string | null;
   /** Cuánto de ESTA corrida ya salió y cuánto se reprocesó — el "¿ya se fue?". */
   despachadoQty?: number;
   reprocesadoQty?: number;

@@ -379,6 +379,17 @@ export default function CtpEntriesTabla({
                   {e.codigoProducto && (
                     <div className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{e.codigoProducto}</div>
                   )}
+                  {/* Una línea nacida de un reproceso (ADR-316) se veía idéntica
+                      a una producción nueva: sin esto, el volumen re-aserrado
+                      parece madera que apareció de la nada. */}
+                  {e.codigoRaiz && (
+                    <div
+                      className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+                      title={`Esta línea salió de reprocesar ${e.codigoRaiz}`}
+                    >
+                      ↻ viene de {e.codigoRaiz}
+                    </div>
+                  )}
                 </Td>
                 {section === "produccion" ? (
                   <>
