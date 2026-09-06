@@ -11,7 +11,7 @@
  * composición) → el detalle que se firma (conciliación, stock, antigüedad).
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, AlertCircle, FileDown, FileSpreadsheet } from "@buleje/design-system/icons";
 import { Btn, PanelSkeleton, VistaHeader } from "./ctp-shared";
 import DisponiblePorTipo from "./saldos/DisponiblePorTipo";
@@ -28,6 +28,9 @@ import { ctpPeriodShortLabel, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { useCtpSaldos } from "@/hooks/use-ctp-saldos";
 import CtpKardexModal from "./CtpKardexModal";
 import CtpPatioAging from "./CtpPatioAging";
+import LotesConSaldo, { diasParaVencer } from "./saldos/LotesConSaldo";
+import { logger } from "@/lib/logger";
+import { diasDeEspera, loteVencido, piezasLibres, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 
 const AVISO = {
   error: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]",
@@ -54,6 +57,38 @@ export function CtpSaldosView({
   const [reportError, setReportError] = useState<string | null>(null);
   const [kardexEspecie, setKardexEspecie] = useState<string | null>(null);
 
+  /* Los lotes con su saldo. Van por su propio pedido y no por `useCtpSaldos`
+     porque no dependen del período: un lote abierto en julio sigue con madera
+     apartada hoy, y filtrarlo por el trimestre lo escondería justo cuando más
+     hay que cerrarlo. Secundario: si falla, Saldos se muestra igual. */
+  const [lotes, setLotes] = useState<LoteAserrio[]>([]);
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/admin/forestal/lotes-aserrio", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (vivo && Array.isArray(j?.lotes)) setLotes(j.lotes as LoteAserrio[]); })
+      .catch((err) => logger.warn("[ctp-saldos] lotes no cargaron", { error: String(err) }));
+    return () => { vivo = false; };
+  }, []);
+
+  /* Los lotes en la forma que piden los dos reportes. Se arma UNA vez y la usan
+     el PDF y el CSV: dos versiones de la misma tabla divergen a la primera
+     columna nueva, que es exactamente lo que ya pasó con las guías. */
+  const lotesDelReporte = useMemo(() => {
+    const ahora = new Date();
+    return lotes.map((l) => ({
+      code: l.code,
+      especie: l.speciesCommon,
+      status: l.status,
+      restaM3: volumenLibre(l),
+      piezas: piezasLibres(l).length,
+      diasParado: diasDeEspera(l, ahora),
+      finProceso: l.finProceso ? String(l.finProceso).slice(0, 10) : null,
+      diasParaVencer: diasParaVencer(l.finProceso, ahora),
+      vencido: loteVencido(l, ahora),
+    }));
+  }, [lotes]);
+
   // Reporte de existencias imprimible (PDF) para fiscalización: misma data del
   // panel + identidad del CTP (best-effort desde la Ficha).
   const handleReport = useCallback(async () => {
@@ -74,16 +109,17 @@ export function CtpSaldosView({
         productos: data.productos,
         concil,
         ficha,
+        lotes: lotesDelReporte,
       });
     } catch (err) {
       setReportError(err instanceof Error ? err.message : String(err));
     }
-  }, [data, concil, period.label]);
+  }, [data, concil, period.label, lotesDelReporte]);
 
   /** Lo mismo que se ve, para cruzar en Excel contra la planilla del contador. */
   const descargarCsv = useCallback(() => {
     if (!data) return;
-    const csv = saldosACsv(data.porEspecie, data.productos, period.label);
+    const csv = saldosACsv(data.porEspecie, data.productos, period.label, lotesDelReporte);
     const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -91,9 +127,10 @@ export function CtpSaldosView({
     a.download = nombreArchivoSaldos(period.label);
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  }, [data, period.label]);
+  }, [data, period.label, lotesDelReporte]);
 
   const mp = data?.materiaPrima;
+
 
   const excepciones = useMemo(
     () =>
@@ -201,6 +238,8 @@ export function CtpSaldosView({
           <TablaProductos productos={data.productos} onDespachar={onDespachar} />
 
           {/* Gemelo del patio: materia prima parada por antigüedad (self-fetch). */}
+          <LotesConSaldo lotes={lotes} />
+
           <CtpPatioAging onValorizar={onIr ? () => onIr("rentabilidad") : undefined} />
         </>
       )}

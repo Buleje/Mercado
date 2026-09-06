@@ -42,10 +42,27 @@ const num = (v: number, decimales = 4) => v.toFixed(decimales).replace(".", ",")
  * troza con unidades de producto en la misma columna, que es el error que este
  * módulo evita en todos lados.
  */
+/** Un lote con lo que le resta y su plazo, para el reporte. */
+export interface LoteCsv {
+  code: string;
+  especie: string;
+  status: string;
+  restaM3: number;
+  piezas: number;
+  diasParado: number | null;
+  finProceso: string | null;
+  diasParaVencer: number | null;
+  vencido: boolean;
+}
+
 export function saldosACsv(
   especies: readonly EspecieCsv[],
   productos: readonly ProductoCsv[],
   periodoLabel: string,
+  /* Los lotes van al final y son opcionales: el reporte se pudo descargar
+     siempre sin ellos, y un tenant sin lotes no tiene por qué ver una tabla
+     vacía. */
+  lotes: readonly LoteCsv[] = [],
 ): string {
   const lineas: string[] = [
     fila(["Existencias del Libro CTP", periodoLabel]),
@@ -88,6 +105,42 @@ export function saldosACsv(
       num(productos.reduce((a, p) => a + p.stock, 0)),
     ]),
   ];
+
+  /* Lo que queda apartado en cada lote, con su plazo. El «Plazo» va en texto y
+     no en número: «3 dias vencido» y «quedan 3 dias» son lo contrario y un -3
+     en una planilla se lee mal a la primera. El número queda igual en su
+     columna para poder ordenar. */
+  if (lotes.length > 0) {
+    lineas.push(
+      "",
+      fila(["LOTES DE ASERRIO"]),
+      fila([
+        "Lote", "Especie", "Estado", "Resta (m3)", "Piezas libres",
+        "Dias parado", "Fin de proceso", "Dias para vencer", "Plazo",
+      ]),
+      ...lotes.map((l) =>
+        fila([
+          l.code,
+          l.especie,
+          l.status,
+          num(l.restaM3),
+          String(l.piezas),
+          l.diasParado == null ? "" : String(l.diasParado),
+          l.finProceso ?? "",
+          l.diasParaVencer == null ? "" : String(l.diasParaVencer),
+          l.vencido
+            ? `${Math.abs(l.diasParaVencer ?? 0)} dias vencido`
+            : l.diasParaVencer == null
+              ? "sin fecha"
+              : l.diasParaVencer === 0
+                ? "vence hoy"
+                : `quedan ${l.diasParaVencer} dias`,
+        ]),
+      ),
+      fila(["TOTAL APARTADO EN LOTES", "", "", num(lotes.reduce((a, l) => a + l.restaM3, 0))]),
+    );
+  }
+
   return lineas.join("\r\n");
 }
 

@@ -15,8 +15,23 @@
 
 import { esc, ctpIdentityBlock, ctpReportFooter, openCtpReport, type CtpReportFicha } from "./ctp-print-shared";
 
+/** Un lote con lo que le resta y su plazo (ADR-342 · `finProceso`). */
+export interface LoteDelReporte {
+  code: string;
+  especie: string;
+  status: string;
+  restaM3: number;
+  piezas: number;
+  diasParado: number | null;
+  finProceso: string | null;
+  diasParaVencer: number | null;
+  vencido: boolean;
+}
+
 export interface ExistenciasReportData {
   periodLabel: string;
+  /** Opcional: un CTP sin lotes de aserrío no tiene por qué ver la tabla. */
+  lotes?: readonly LoteDelReporte[];
   materiaPrima: {
     ingresoM3: number;
     ingresosCount: number;
@@ -164,6 +179,41 @@ export function printExistencias(d: ExistenciasReportData): void {
     <tbody>${productoRows}</tbody>
   </table>`
       : `<p style="color:#777">Sin productos transformados todavía.</p>`
+  }
+
+  ${
+    (d.lotes ?? []).length > 0
+      ? `<h2>Lo que resta en cada lote de aserrío</h2>
+  <p style="color:#555;margin:0 0 6px">Madera apartada: mientras esté en un lote abierto no se ofrece para otra corrida. El plazo es el «fin de proceso» que el lote declaró (ADR-342).</p>
+  <table>
+    <thead><tr><th>Lote</th><th>Especie</th><th>Estado</th><th class="num">Resta (m³)</th><th class="num">Piezas</th><th class="num">Parado</th><th>Fin de proceso</th><th>Plazo</th></tr></thead>
+    <tbody>${(d.lotes ?? [])
+      .map(
+        (l) => `<tr>
+      <td>${l.code}</td>
+      <td>${l.especie}</td>
+      <td>${l.status}</td>
+      ${num(l.restaM3)}
+      <td class="num">${l.piezas}</td>
+      <td class="num">${l.diasParado == null ? "—" : `${l.diasParado} d`}</td>
+      <td>${l.finProceso ?? "—"}</td>
+      <td${l.vencido ? ' style="color:#b91c1c;font-weight:700"' : ""}>${
+        l.vencido
+          ? `${Math.abs(l.diasParaVencer ?? 0)} ${Math.abs(l.diasParaVencer ?? 0) === 1 ? "día" : "días"} vencido`
+          : l.diasParaVencer == null
+            ? "sin fecha"
+            : l.diasParaVencer === 0
+              ? "vence hoy"
+              : `quedan ${l.diasParaVencer} ${l.diasParaVencer === 1 ? "día" : "días"}`
+      }</td>
+    </tr>`,
+      )
+      .join("")}</tbody>
+    <tfoot><tr><td colspan="3"><b>Total apartado en lotes</b></td>${num(
+      (d.lotes ?? []).reduce((a, l) => a + l.restaM3, 0),
+    )}<td colspan="4"></td></tr></tfoot>
+  </table>`
+      : ""
   }
 
   ${ctpReportFooter(
