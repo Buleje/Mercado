@@ -41,6 +41,7 @@ export type EstadoLoteAserrio = "abierto" | "consumido" | "cerrado";
 export interface LoteAserrioInput {
   speciesCommon: string;
   speciesScientific?: string | null;
+  permiso?: string | null;
   notes?: string | null;
   /** Programación del lote (ADR-342), como el formulario oficial del SNIFFS. */
   ordenProduccion?: string | null;
@@ -67,6 +68,7 @@ export interface LoteEditInput {
   code?: string | null;
   speciesCommon?: string;
   speciesScientific?: string | null;
+  permiso?: string | null;
   notes?: string | null;
   ordenProduccion?: string | null;
   tipoProductoConsumir?: string | null;
@@ -95,6 +97,7 @@ export interface PaqueteInventarioInput {
 export interface LoteInventarioInput {
   speciesCommon: string;
   speciesScientific?: string | null;
+  permiso?: string | null;
   /** Lo que entró a la sierra, declarado de una vez — no la suma de trozas reales. */
   volumenConsumidoM3: number;
   fecha?: Date;
@@ -605,6 +608,8 @@ export class ForestLoteAserrioDB {
         notes: input.notes?.trim() || null,
         ordenProduccion: input.ordenProduccion?.trim() || null,
         tipoProductoConsumir: input.tipoProductoConsumir?.trim() || null,
+        /* El título habilitante que el lote va a consumir (ADR-393). */
+        permiso: input.permiso?.trim() || null,
         inicioProceso: input.inicioProceso ?? null,
         finProceso: input.finProceso ?? null,
         createdBy: input.createdBy,
@@ -1617,6 +1622,7 @@ export class ForestLoteAserrioDB {
         ...(cambios.notes !== undefined ? { notes: cambios.notes?.trim() || null } : {}),
         ...(cambios.ordenProduccion !== undefined ? { ordenProduccion: cambios.ordenProduccion?.trim() || null } : {}),
         ...(cambios.tipoProductoConsumir !== undefined ? { tipoProductoConsumir: cambios.tipoProductoConsumir?.trim() || null } : {}),
+        ...(cambios.permiso !== undefined ? { permiso: cambios.permiso?.trim() || null } : {}),
         ...(cambios.inicioProceso !== undefined ? { inicioProceso: cambios.inicioProceso } : {}),
         ...(cambios.finProceso !== undefined ? { finProceso: cambios.finProceso } : {}),
       },

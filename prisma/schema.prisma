@@ -6265,6 +6265,19 @@ model ForestLoteAserrio {
   ordenProduccion      String?
   /// Qué materia prima se va a consumir: rolliza, aserrada, tablones…
   tipoProductoConsumir String?
+  /// El título habilitante que este lote va a consumir (ADR-393).
+  ///
+  /// Se elige AL ARMAR el lote, antes de que tenga piezas: el filtro tiene que
+  /// existir en el momento de elegirlas, y derivarlo de las trozas llega tarde
+  /// —serviría para denunciar la mezcla, no para impedirla—. Un lote con dos
+  /// permisos rompe la trazabilidad hacia adelante: la corrida que sale no
+  /// puede decir de qué título salió su madera.
+  ///
+  /// `null` = «todos los permisos», que es lo que declaran los lotes armados
+  /// antes de esta decisión y los CTP que trabajan con una sola fuente. La
+  /// verdad de qué permiso ampara cada pieza sigue viviendo en su ingreso
+  /// (`WoodEntry.originCode`); esto es la intención del lote, no un candado.
+  permiso              String?
   /// La ventana del proceso — distinta de `fechaApertura` (cuándo se creó el
   /// registro) y de `fechaConsumo` (cuándo entró de verdad a la sierra).
   inicioProceso        DateTime?

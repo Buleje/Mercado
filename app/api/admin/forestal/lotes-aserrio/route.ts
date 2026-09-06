@@ -91,6 +91,8 @@ const postSchema = z.discriminatedUnion("modo", [
     // Programación del lote (ADR-342): los campos del formulario oficial.
     ordenProduccion: z.string().trim().max(80).nullish(),
     tipoProductoConsumir: z.string().trim().max(60).nullish(),
+    /* El título habilitante que el lote va a consumir (ADR-393). */
+    permiso: z.string().trim().max(100).nullish(),
     inicioProceso: dia,
     finProceso: dia,
   }),
@@ -131,6 +133,8 @@ const patchSchema = z.discriminatedUnion("accion", [
     speciesScientific: z.string().trim().max(160).nullish(),
     ordenProduccion: z.string().trim().max(80).nullish(),
     tipoProductoConsumir: z.string().trim().max(60).nullish(),
+    /* El título habilitante que el lote va a consumir (ADR-393). */
+    permiso: z.string().trim().max(100).nullish(),
     inicioProceso: dia,
     finProceso: dia,
     notes: z.string().trim().max(500).nullish(),

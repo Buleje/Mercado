@@ -46,9 +46,10 @@ const norm = (v: string | null | undefined) =>
  */
 export function trozasDelLote(
   trozas: readonly TrozaConsumible[],
-  lote: { id: string; speciesCommon: string },
+  lote: { id: string; speciesCommon: string; permiso?: string | null },
 ): TrozaConsumible[] {
   const especie = norm(lote.speciesCommon);
+  const permiso = (lote.permiso ?? "").trim();
   return trozas.filter((t) => {
     if (t.consumidaEnId) return false;
     /* La guía sin recibir NO está en el patio (ADR-339). Sin esto el selector
@@ -56,7 +57,15 @@ export function trozasDelLote(
        real, tres de esas Capirona eran de una guía que seguía en la bandeja. */
     if (t.guiaRecepcionada === false) return false;
     if (norm(t.especieComun) !== especie) return false;
+    /* El lote declaró un título habilitante: sólo toma madera de ESE (ADR-393).
+       Un lote con dos permisos no puede decir después de cuál salió su corrida.
+       Sin permiso declarado se comporta como siempre — no se rompe lo viejo.
+
+       La pieza que YA está en este lote se sigue mostrando aunque su permiso no
+       coincida: si un lote armado antes de esta regla tiene madera mezclada, hay
+       que poder verla para sacarla, no esconderla. */
     if (t.loteAserrioId === lote.id) return true;
+    if (permiso && (t.permiso ?? "").trim() !== permiso) return false;
     return !t.loteAserrioId && motivoBloqueo(t) === null;
   });
 }
@@ -69,13 +78,68 @@ export interface DisponibleEspecie {
   volumen: number;
 }
 
-export function disponiblePorEspecie(trozas: readonly TrozaConsumible[]): DisponibleEspecie[] {
+/** Un título habilitante del patio con lo que hay disponible de él. */
+export interface DisponiblePermiso {
+  permiso: string;
+  piezas: number;
+  volumen: number;
+  especies: number;
+}
+
+/** Las trozas que el modal puede ofrecer: recibidas, libres y sin bloqueo. */
+function ofrecibles(trozas: readonly TrozaConsumible[]): TrozaConsumible[] {
+  return trozas.filter(
+    (t) => t.guiaRecepcionada !== false && !t.loteAserrioId && !t.consumidaEnId && motivoBloqueo(t) === null,
+  );
+}
+
+/**
+ * Los permisos que hay en el patio, con cuánto tiene cada uno (ADR-393).
+ *
+ * Es el primer paso al armar un lote: elegido el permiso, las especies se
+ * acotan a las que tienen madera de ESE título. Un lote con dos permisos rompe
+ * la trazabilidad hacia adelante — la corrida que sale no puede decir de qué
+ * título salió su madera.
+ *
+ * Las piezas sin permiso NO se cuentan acá: no tienen título que elegir. Se
+ * siguen ofreciendo con «todos los permisos», que es lo que hace un CTP de una
+ * sola fuente.
+ */
+export function disponiblePorPermiso(trozas: readonly TrozaConsumible[]): DisponiblePermiso[] {
+  const mapa = new Map<string, DisponiblePermiso & { _especies: Set<string> }>();
+  for (const t of ofrecibles(trozas)) {
+    const permiso = (t.permiso ?? "").trim();
+    if (!permiso) continue;
+    const acc = mapa.get(permiso) ?? { permiso, piezas: 0, volumen: 0, especies: 0, _especies: new Set<string>() };
+    acc.piezas += 1;
+    acc.volumen += Number(t.volumenM3 ?? 0);
+    const esp = (t.especieComun ?? "").trim();
+    if (esp) acc._especies.add(esp);
+    mapa.set(permiso, acc);
+  }
+  return [...mapa.values()]
+    .map(({ _especies, ...p }) => ({ ...p, volumen: Math.round(p.volumen * 10000) / 10000, especies: _especies.size }))
+    .sort((a, b) => b.volumen - a.volumen);
+}
+
+/**
+ * Las especies del patio con lo que hay de cada una.
+ *
+ * Con `permiso`, sólo cuenta la madera de ESE título habilitante: es lo que
+ * hace que elegir el permiso primero acote de verdad las especies que siguen
+ * (ADR-393). Sin él, cuenta todo el patio, como siempre.
+ */
+export function disponiblePorEspecie(
+  trozas: readonly TrozaConsumible[],
+  permiso?: string | null,
+): DisponibleEspecie[] {
   const mapa = new Map<string, DisponibleEspecie>();
   for (const t of trozas) {
     /* Mismo criterio que `trozasDelLote`: si acá se contara la madera sin
        recibir, el modal ofrecería una especie que después no aparece. */
     if (t.guiaRecepcionada === false) continue;
     if (t.loteAserrioId || t.consumidaEnId || motivoBloqueo(t) !== null) continue;
+    if (permiso && (t.permiso ?? "").trim() !== permiso) continue;
     const nombre = (t.especieComun ?? "").trim();
     if (!nombre) continue;
     const acc = mapa.get(nombre) ?? { nombre, cientifico: t.especieCientifica ?? null, piezas: 0, volumen: 0 };

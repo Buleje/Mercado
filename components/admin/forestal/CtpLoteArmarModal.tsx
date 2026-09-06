@@ -24,12 +24,12 @@
  * (mismo formulario que usa el resto del libro, sin duplicar esa UI acá).
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Archive, Boxes, Loader2, Plus } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
-import { PRODUCTOS_CONSUMIBLES_LOTE, disponiblePorEspecie } from "@/lib/forestal/lote-programacion";
+import { PRODUCTOS_CONSUMIBLES_LOTE, disponiblePorEspecie, disponiblePorPermiso } from "@/lib/forestal/lote-programacion";
 import { TIPOS_PRODUCTO_SALIDA } from "@/lib/forestal/loctp-catalogos";
 import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -44,6 +44,8 @@ export interface LoteProgramado {
   finProceso?: string | null;
   /** Código a mano; vacío = correlativo automático `LA-2026-00N`. */
   code?: string | null;
+  /** El título habilitante que va a consumir (ADR-393). `null` = todos. */
+  permiso?: string | null;
 }
 
 /** Lo que declara el modo inventario: el material, no todavía los paquetes. */
@@ -81,6 +83,11 @@ export default function CtpLoteArmarModal({
 }) {
   const hoy = new Date().toISOString().slice(0, 10);
   const [modo, setModo] = useState<"trozas" | "inventario">("trozas");
+  /* El permiso va PRIMERO y acota lo que sigue (ADR-393). Un lote con madera de
+     dos títulos habilitantes no puede decir después de cuál salió su corrida.
+     Vacío = «todos», que es lo que necesita un CTP de una sola fuente: lo que
+     no puede pasar es mezclar sin querer. */
+  const [permiso, setPermiso] = useState("");
   const [especie, setEspecie] = useState("");
   const [orden, setOrden] = useState("");
   const [tipo, setTipo] = useState<string>(PRODUCTOS_CONSUMIBLES_LOTE[0]?.valor ?? "rolliza");
@@ -99,7 +106,14 @@ export default function CtpLoteArmarModal({
    * Las especies del patio con lo que hay de cada una. Se cuenta sólo lo libre
    * —sin lote y sin bloqueo—: es la madera que este lote podría llegar a tomar.
    */
-  const especies = useMemo(() => disponiblePorEspecie(trozas), [trozas]);
+  const permisos = useMemo(() => disponiblePorPermiso(trozas), [trozas]);
+  const especies = useMemo(() => disponiblePorEspecie(trozas, permiso || null), [trozas, permiso]);
+
+  /* Si la especie elegida no tiene madera del permiso nuevo, se suelta: dejarla
+     puesta arma un lote que nace sin nada que tomar. */
+  useEffect(() => {
+    if (especie && !especies.some((e) => e.nombre === especie)) setEspecie("");
+  }, [especies, especie]);
 
   const elegida = especies.find((e) => e.nombre === especie) ?? null;
   const fechasAlReves = Boolean(inicio && fin && fin < inicio);
@@ -136,12 +150,13 @@ export default function CtpLoteArmarModal({
         notes: descripcion.trim() || null,
         ordenProduccion: orden.trim() || null,
         tipoProductoConsumir: tipo,
+        permiso: permiso.trim() || null,
         inicioProceso: inicio || null,
         finProceso: fin || null,
         code: codigo.trim() || null,
       });
       onListo(
-        `Lote ${r.code ?? ""} programado para ${especie.trim()}.` +
+        `Lote ${r.code ?? ""} programado para ${especie.trim()}${permiso ? ` · permiso ${permiso}` : ""}.` +
           (elegida ? ` Hay ${elegida.piezas} troza${elegida.piezas === 1 ? "" : "s"} de esa especie para cargarlo desde Consumos.` : ""),
         elegida ? "ok" : "aviso",
       );
@@ -297,6 +312,28 @@ export default function CtpLoteArmarModal({
               placeholder="OP-2026-014"
               className={`${I} font-mono`}
             />
+          </Field>
+          {/* El permiso, ANTES que la especie: acota lo que sigue (ADR-393). Un
+              lote con madera de dos títulos habilitantes no puede decir después
+              de cuál salió su corrida. */}
+          <Field
+            span={12}
+            label="N° de permiso"
+            hint={
+              permisos.length === 0
+                ? "El patio no tiene piezas con título habilitante cargado"
+                : "Elegilo primero: las especies de abajo se acotan a la madera de ese permiso"
+            }
+          >
+            <select value={permiso} onChange={(e) => setPermiso(e.target.value)} className={I}>
+              <option value="">Todos los permisos</option>
+              {permisos.map((p) => (
+                <option key={p.permiso} value={p.permiso}>
+                  {p.permiso} · {p.piezas} {p.piezas === 1 ? "pieza" : "piezas"} · {fmtM3(p.volumen)} m³
+                  {p.especies > 1 ? ` · ${p.especies} especies` : ""}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field span={6} label="Tipo de producto a consumir" required>
             <select value={tipo} onChange={(e) => setTipo(e.target.value)} className={I}>
