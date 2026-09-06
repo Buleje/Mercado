@@ -47,6 +47,8 @@ type Customer = {
   _tags?: string[];
 };
 
+export type { Customer, Segment };
+
 type QuickFilter = "todos" | "activos" | "inactivos" | "con-deuda";
 
 type Segment = "frecuente" | "ocasional" | "nuevo" | "perdido";
@@ -66,7 +68,15 @@ function fmtRelative(iso: string) {
   return `hace ${Math.floor(days / 365)}a`;
 }
 
-function inferSegment(c: Customer): Segment {
+/**
+ * Segmento del cliente según cuántas veces compró y hace cuánto.
+ *
+ * Exportada para test: depende de `_orderCount` / `_lastOrder`, que el
+ * componente tiene que LLENAR antes de llamarla. Si llegan vacíos, la primera
+ * línea manda a todos a «nuevo» y la segmentación entera queda muerta sin que
+ * nada falle — que es justo lo que pasaba.
+ */
+export function inferSegment(c: Customer): Segment {
   if ((c._orderCount ?? 0) === 0) return "nuevo";
   if (c._lastOrder) {
     const days = Math.floor((Date.now() - new Date(c._lastOrder).getTime()) / 86400000);
@@ -122,9 +132,56 @@ export default function CRMTab() {
     setLoading(true);
     setError(false);
     try {
-      const res = await fetch("/api/customers?limit=500");
+      /*
+       * `_orderCount` y `_lastOrder` decían «Populated client-side from
+       * /orders» desde siempre, y NADIE los llenaba: sólo se pedía
+       * /api/customers. Con los dos en `undefined`, `inferSegment` corta en su
+       * primera línea —`_orderCount ?? 0 === 0` → «nuevo»— y toda la
+       * segmentación quedaba muerta: TODOS los clientes «nuevo», Frecuente /
+       * Ocasional / Perdido vacíos para siempre, «Activos (30d)» clavado en 0
+       * y la columna de última compra en blanco. No dependía de los datos: con
+       * cualquier tenant daba lo mismo.
+       *
+       * Cuenta también la venta de mostrador, no sólo el pedido: para el dueño
+       * el cliente que vino ayer a la bodega compró igual que el que pidió por
+       * la app. Las dos listas son secundarias — si fallan, se pierde la
+       * segmentación pero la lista de clientes se muestra igual.
+       */
+      const [res, resPedidos, resVentas] = await Promise.all([
+        fetch("/api/customers?limit=500"),
+        fetch("/api/orders?limit=500").catch(() => null),
+        fetch("/api/sales?limit=500").catch(() => null),
+      ]);
       if (!res.ok) throw new Error("fetch failed");
       const data: Customer[] = await res.json();
+
+      const compras = new Map<string, { n: number; ultima: string }>();
+      const anotarCompra = (telefono: unknown, fecha: unknown) => {
+        const tel = typeof telefono === "string" ? telefono.trim() : "";
+        const iso = typeof fecha === "string" ? fecha : "";
+        if (!tel || !iso) return;
+        const previo = compras.get(tel);
+        compras.set(tel, {
+          n: (previo?.n ?? 0) + 1,
+          ultima: !previo || iso > previo.ultima ? iso : previo.ultima,
+        });
+      };
+      const leerLista = async (r: Response | null): Promise<unknown[]> => {
+        if (!r?.ok) return [];
+        const j = await r.json().catch(() => null);
+        if (Array.isArray(j)) return j;
+        const cont = j as { orders?: unknown[]; sales?: unknown[]; items?: unknown[] } | null;
+        return cont?.orders ?? cont?.sales ?? cont?.items ?? [];
+      };
+      for (const o of await leerLista(resPedidos)) {
+        const p = o as { customer?: { phone?: string }; customerPhone?: string; createdAt?: string };
+        anotarCompra(p.customer?.phone ?? p.customerPhone, p.createdAt);
+      }
+      for (const v of await leerLista(resVentas)) {
+        const p = v as { customerPhone?: string; createdAt?: string; date?: string };
+        anotarCompra(p.customerPhone, p.createdAt ?? p.date);
+      }
+
       // Annotate with inferred segment and parsed tags
       const annotated = data.map(c => {
         let parsedTags: string[] = [];
@@ -134,7 +191,9 @@ export default function CRMTab() {
             if (Array.isArray(t)) parsedTags = t;
           } catch { /* ignore */ }
         }
-        return { ...c, _segment: inferSegment(c), _tags: parsedTags };
+        const compra = compras.get((c.phone ?? "").trim());
+        const conCompras = { ...c, _orderCount: compra?.n ?? 0, _lastOrder: compra?.ultima ?? null };
+        return { ...conCompras, _segment: inferSegment(conCompras), _tags: parsedTags };
       });
       setCustomers(annotated);
     } catch {
