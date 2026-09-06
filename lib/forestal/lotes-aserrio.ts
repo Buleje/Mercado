@@ -230,18 +230,49 @@ export function volumenLibre(lote: Pick<LoteAserrio, "trozas">): number {
  * `corridasOtraUnidad`. Y basta UNA en otra unidad para que el total no se pueda
  * sumar: un porcentaje sobre una suma incompleta miente peor que no mostrarlo.
  */
-export function rendimientoLote(lote: LoteAserrio): number | null {
-  if (!(lote.volumenM3 > 0)) return null;
-
+/**
+ * Cuánto SALIÓ de la sierra en este lote, en m³.
+ *
+ * `null` cuando no se puede sumar sin inventar: sin corridas vivas, o con
+ * alguna declarada en otra unidad. Basta UNA en pie tablar para que el total no
+ * exista — convertirla para poder mostrar un número sería fabricar el dato, que
+ * es la misma regla que aplica Consumos con `corridasOtraUnidad`.
+ *
+ * Se extrajo de `rendimientoLote` para que la tabla de Saldos use ESTE número y
+ * no otro: dos caminos al mismo total ya divergieron una vez en este proyecto
+ * («47 vs 30»).
+ */
+export function producidoDelLote(lote: Pick<LoteAserrio, "corridas" | "produccion">): number | null {
   /* `corridas` es la fuente cuando está; `produccion` sola es el fallback para
      las vistas que no la traen (nunca las dos, o se cuenta doble). */
   const vivas = (lote.corridas ?? []).filter((c) => c.viva);
   const cuentan = vivas.length > 0 ? vivas : lote.produccion?.viva ? [lote.produccion] : [];
   if (cuentan.length === 0) return null;
   if (cuentan.some((c) => c.unit !== "m3")) return null;
+  const producido = r4(cuentan.reduce((a, c) => a + Number(c.quantity ?? 0), 0));
+  return producido > 0 ? producido : null;
+}
 
-  const producido = cuentan.reduce((a, c) => a + Number(c.quantity ?? 0), 0);
-  if (!(producido > 0)) return null;
+/**
+ * La madera que YA entró a la sierra: el lote entero menos lo que sigue libre.
+ *
+ * No se cuenta sumando las trozas con `consumidaEnId`: una atada a una corrida
+ * anulada volvió al patio, y la DB class ya deja ese id en `null` (ADR-326 §6).
+ * Restarle lo libre al total respeta esa regla sin repetirla.
+ */
+export function consumidoDelLote(lote: Pick<LoteAserrio, "trozas" | "volumenM3">): number {
+  return r4(Math.max(0, lote.volumenM3 - volumenLibre(lote)));
+}
+
+/** Los títulos habilitantes de la madera del lote. Más de uno = permisos mezclados. */
+export function permisosDelLote(lote: Pick<LoteAserrio, "trozas">): string[] {
+  return [...new Set(lote.trozas.map((t) => (t.permiso ?? "").trim()).filter(Boolean))];
+}
+
+export function rendimientoLote(lote: LoteAserrio): number | null {
+  if (!(lote.volumenM3 > 0)) return null;
+  const producido = producidoDelLote(lote);
+  if (producido == null) return null;
   return Math.round((producido / lote.volumenM3) * 1000) / 10;
 }
 

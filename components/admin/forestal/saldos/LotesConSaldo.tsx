@@ -28,12 +28,16 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { limaDateKey } from "@/lib/utils";
 import {
   DIAS_LOTE_ANEJO,
+  consumidoDelLote,
   diasDeEspera,
   loteVencido,
+  permisosDelLote,
   piezasLibres,
+  producidoDelLote,
   volumenLibre,
   type LoteAserrio,
 } from "@/lib/forestal/lotes-aserrio";
+import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import { Th } from "../ctp-section-shared";
 
 /**
@@ -63,6 +67,8 @@ export function diasParaVencer(finProceso: string | Date | null | undefined, aho
   return Math.round((aMs(clave) - aMs(hoy)) / 86_400_000);
 }
 
+const r2 = (v: number) => Math.round(v * 100) / 100;
+
 const fecha = (v: string | Date | null | undefined): string =>
   v ? new Date(v).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }) : "—";
 
@@ -90,10 +96,17 @@ export default function LotesConSaldo({ lotes, ahora = new Date() }: { lotes: Lo
   const filas = lotes
     .map((l) => {
       const libre = volumenLibre(l);
+      const consumido = consumidoDelLote(l);
       const dias = diasParaVencer(l.finProceso, ahora);
       return {
         lote: l,
         libre,
+        consumido,
+        /* Lo que ese consumo DEBERÍA rendir al tope del 56 % (ADR-358). No es
+           lo que salió: es la vara contra la que se compara. */
+        esperado56: r2(consumido * RENDIMIENTO_META),
+        producido: producidoDelLote(l),
+        permisos: permisosDelLote(l),
         piezas: piezasLibres(l).length,
         espera: diasDeEspera(l, ahora),
         dias,
@@ -155,8 +168,12 @@ export default function LotesConSaldo({ lotes, ahora = new Date() }: { lotes: Lo
         <thead className="bg-[var(--surface-sunken)]">
           <tr>
             <Th>Lote</Th>
+            <Th>N° de permiso</Th>
             <Th>Especie</Th>
             <Th>Estado</Th>
+            <Th className="text-right">Consumido (m³)</Th>
+            <Th className="text-right">Al 56 %</Th>
+            <Th className="text-right">Producido (m³)</Th>
             <Th className="text-right">Resta (m³)</Th>
             <Th className="text-right">Piezas</Th>
             <Th className="text-right">Parado</Th>
@@ -173,8 +190,38 @@ export default function LotesConSaldo({ lotes, ahora = new Date() }: { lotes: Lo
               }`}
             >
               <td className="px-4 py-2 font-mono font-bold text-[var(--text-primary)]">{f.lote.code}</td>
+              {/* Más de un permiso en un lote es madera de dos títulos
+                  habilitantes mezclada: se dice, no se esconde detrás del
+                  primero. */}
+              <td className="px-4 py-2 font-mono text-xs text-[var(--text-secondary)]">
+                {f.permisos.length === 0 ? (
+                  <span className="text-[var(--text-tertiary)]">—</span>
+                ) : f.permisos.length === 1 ? (
+                  f.permisos[0]
+                ) : (
+                  <span
+                    className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                    title={f.permisos.join(" · ")}
+                  >
+                    {f.permisos.length} permisos mezclados
+                  </span>
+                )}
+              </td>
               <td className="px-4 py-2 text-[var(--text-secondary)]">{f.lote.speciesCommon}</td>
               <td className="px-4 py-2 text-xs text-[var(--text-secondary)]">{f.lote.status}</td>
+              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                {fmtM3(f.consumido)}
+              </td>
+              {/* La vara, no el resultado: lo que ese consumo debería rendir al
+                  tope del 56 %. */}
+              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                {fmtM3(f.esperado56)}
+              </td>
+              {/* `null` = no se puede sumar sin inventar (sin corridas vivas, o
+                  alguna declarada en pie tablar). Se dice, no se pone 0. */}
+              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                {f.producido == null ? <span className="text-xs text-[var(--text-tertiary)]">—</span> : fmtM3(f.producido)}
+              </td>
               <td className="px-4 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                 {fmtM3(f.libre)}
               </td>

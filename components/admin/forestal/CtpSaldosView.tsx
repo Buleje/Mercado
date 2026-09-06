@@ -30,7 +30,8 @@ import CtpKardexModal from "./CtpKardexModal";
 import CtpPatioAging from "./CtpPatioAging";
 import LotesConSaldo, { diasParaVencer } from "./saldos/LotesConSaldo";
 import { logger } from "@/lib/logger";
-import { diasDeEspera, loteVencido, piezasLibres, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import { consumidoDelLote, diasDeEspera, loteVencido, permisosDelLote, piezasLibres, producidoDelLote, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 
 const AVISO = {
   error: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]",
@@ -78,8 +79,12 @@ export function CtpSaldosView({
     const ahora = new Date();
     return lotes.map((l) => ({
       code: l.code,
+      permisos: permisosDelLote(l),
       especie: l.speciesCommon,
       status: l.status,
+      consumidoM3: consumidoDelLote(l),
+      esperado56M3: Math.round(consumidoDelLote(l) * RENDIMIENTO_META * 100) / 100,
+      producidoM3: producidoDelLote(l),
       restaM3: volumenLibre(l),
       piezas: piezasLibres(l).length,
       diasParado: diasDeEspera(l, ahora),

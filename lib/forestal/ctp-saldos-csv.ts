@@ -45,8 +45,13 @@ const num = (v: number, decimales = 4) => v.toFixed(decimales).replace(".", ",")
 /** Un lote con lo que le resta y su plazo, para el reporte. */
 export interface LoteCsv {
   code: string;
+  permisos: string[];
   especie: string;
   status: string;
+  consumidoM3: number;
+  esperado56M3: number;
+  /** `null` = no se puede sumar sin inventar (otra unidad o sin corridas vivas). */
+  producidoM3: number | null;
   restaM3: number;
   piezas: number;
   diasParado: number | null;
@@ -115,14 +120,22 @@ export function saldosACsv(
       "",
       fila(["LOTES DE ASERRIO"]),
       fila([
-        "Lote", "Especie", "Estado", "Resta (m3)", "Piezas libres",
+        "Lote", "N de permiso", "Especie", "Estado",
+        "Consumido (m3)", "Al 56% (m3)", "Producido (m3)", "Resta (m3)", "Piezas libres",
         "Dias parado", "Fin de proceso", "Dias para vencer", "Plazo",
       ]),
       ...lotes.map((l) =>
         fila([
           l.code,
+          /* Los permisos separados por «+»: en una planilla, dos títulos
+             habilitantes en una celda tienen que verse como lo que son —madera
+             mezclada— y no como un código raro. */
+          l.permisos.join(" + "),
           l.especie,
           l.status,
+          num(l.consumidoM3),
+          num(l.esperado56M3),
+          l.producidoM3 == null ? "" : num(l.producidoM3),
           num(l.restaM3),
           String(l.piezas),
           l.diasParado == null ? "" : String(l.diasParado),
@@ -137,7 +150,16 @@ export function saldosACsv(
                 : `quedan ${l.diasParaVencer} dias`,
         ]),
       ),
-      fila(["TOTAL APARTADO EN LOTES", "", "", num(lotes.reduce((a, l) => a + l.restaM3, 0))]),
+      fila([
+        "TOTALES",
+        "",
+        "",
+        "",
+        num(lotes.reduce((a, l) => a + l.consumidoM3, 0)),
+        num(lotes.reduce((a, l) => a + l.esperado56M3, 0)),
+        num(lotes.reduce((a, l) => a + (l.producidoM3 ?? 0), 0)),
+        num(lotes.reduce((a, l) => a + l.restaM3, 0)),
+      ]),
     );
   }
 

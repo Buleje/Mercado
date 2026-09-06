@@ -21,8 +21,12 @@ const HOY = new Date(2026, 8, 6); // 6-sep-2026
 
 const lote = (over: Partial<LoteCsv> = {}): LoteCsv => ({
   code: "17-2026",
+  permisos: ["19-SEC/REG-PLT-2026-032"],
   especie: "TORNILLO",
   status: "abierto",
+  consumidoM3: 3.2,
+  esperado56M3: 1.79,
+  producidoM3: 1.75,
   restaM3: 5.411,
   piezas: 21,
   diasParado: 5,
@@ -97,8 +101,9 @@ describe("los lotes en el CSV del reporte", () => {
       lote({ code: "A", restaM3: 5.411 }),
       lote({ code: "B", restaM3: 2.5 }),
     ]);
-    expect(csv).toContain("TOTAL APARTADO EN LOTES");
-    expect(csv).toMatch(/TOTAL APARTADO EN LOTES;;;7,9110/);
+    expect(csv).toContain("TOTALES");
+    expect(csv).toMatch(/TOTALES;;;;/);
+    expect(csv).toContain("7,9110");
   });
 
   it("un lote sin nada libre NO se esconde: es el que hay que cerrar", () => {
