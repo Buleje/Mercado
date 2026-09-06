@@ -277,9 +277,36 @@ export default function CtpGuiaFichaModal({
                     {c.label}
                   </dt>
                   {/* Vacío se dibuja vacío: un campo que desaparece hace creer
-                      que la guía no lo necesita. */}
-                  <dd className={c.valor ? "text-sm text-[var(--text-primary)]" : "text-sm text-[var(--text-tertiary)]"}>
+                      que la guía no lo necesita.
+
+                      Y lo que escribió una persona se ve distinto de lo que
+                      dice el papel (ADR-392): un fiscalizador pregunta de dónde
+                      sale cada número, y «lo dice la guía» no es lo mismo que
+                      «lo transcribió el almacenero». El tono informativo, no de
+                      alarma — completar un casillero es lo correcto, no un
+                      problema. */}
+                  <dd
+                    className={
+                      c.manual
+                        ? "text-sm font-medium text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+                        : c.valor
+                          ? "text-sm text-[var(--text-primary)]"
+                          : "text-sm text-[var(--text-tertiary)]"
+                    }
+                    title={
+                      c.manual
+                        ? `Completado a mano${c.manual.por ? ` por ${c.manual.por}` : ""}${
+                            c.manual.el ? ` el ${new Date(c.manual.el).toLocaleDateString("es-PE", { timeZone: "America/Lima" })}` : ""
+                          }`
+                        : undefined
+                    }
+                  >
                     {c.valor ?? "—"}
+                    {c.manual && (
+                      <span className="ml-1.5 align-middle text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] opacity-70">
+                        a mano
+                      </span>
+                    )}
                   </dd>
                 </div>
               ))}

@@ -46,35 +46,59 @@ const aInput = (iso: string | null): string => (iso ? iso.slice(0, 10) : "");
 
 interface Borrador {
   entryDate: string;
+  docType: string;
   gtfNumber: string;
   gtfDate: string;
+  gtfSeries: string;
+  serforNumeroRegistro: string;
+  fechaRecepcion: string;
   providerName: string;
   providerDocument: string;
   originType: string;
   originCode: string;
+  originSourceNumber: string;
+  ctpProductCode: string;
+  originRegion: string;
+  originDistrict: string;
   speciesCommonName: string;
   speciesScientificName: string;
   speciesCites: boolean;
   productType: string;
   volumeM3: string;
   pieces: string;
+  avgLengthM: string;
+  avgDiameterCm: string;
+  humidityPct: string;
+  defectsNotes: string;
   notes: string;
 }
 
 const desde = (e: WoodEntry): Borrador => ({
   entryDate: aInput(e.entryDate),
+  docType: e.docType ?? "GTF",
   gtfNumber: e.gtfNumber,
   gtfDate: aInput(e.gtfDate),
+  gtfSeries: e.gtfSeries ?? "",
+  serforNumeroRegistro: e.serforNumeroRegistro ?? "",
+  fechaRecepcion: aInput(e.fechaRecepcion ?? null),
   providerName: e.providerName,
   providerDocument: e.providerDocument ?? "",
   originType: e.originType,
   originCode: e.originCode ?? "",
+  originSourceNumber: e.originSourceNumber ?? "",
+  ctpProductCode: e.ctpProductCode ?? "",
+  originRegion: e.originRegion ?? "",
+  originDistrict: e.originDistrict ?? "",
   speciesCommonName: e.speciesCommonName,
   speciesScientificName: e.speciesScientificName ?? "",
   speciesCites: e.speciesCites,
   productType: e.productType,
   volumeM3: String(e.volumeM3),
   pieces: String(e.pieces),
+  avgLengthM: e.avgLengthM == null ? "" : String(e.avgLengthM),
+  avgDiameterCm: e.avgDiameterCm == null ? "" : String(e.avgDiameterCm),
+  humidityPct: e.humidityPct == null ? "" : String(e.humidityPct),
+  defectsNotes: e.defectsNotes ?? "",
   notes: e.notes ?? "",
 });
 
@@ -128,10 +152,22 @@ export default function CtpIngresoEditModal({
     if (data.entryDate !== base.entryDate) out.entryDate = data.entryDate;
     if (data.gtfNumber !== base.gtfNumber) out.gtfNumber = data.gtfNumber.trim();
     if (data.gtfDate !== base.gtfDate) out.gtfDate = data.gtfDate || null;
+    if (data.docType !== base.docType) out.docType = data.docType;
+    if (data.gtfSeries !== base.gtfSeries) out.gtfSeries = data.gtfSeries.trim() || null;
+    if (data.serforNumeroRegistro !== base.serforNumeroRegistro) {
+      out.serforNumeroRegistro = data.serforNumeroRegistro.trim() || null;
+    }
+    if (data.fechaRecepcion !== base.fechaRecepcion) out.fechaRecepcion = data.fechaRecepcion || null;
     if (data.providerName !== base.providerName) out.providerName = data.providerName.trim();
     if (data.providerDocument !== base.providerDocument) out.providerDocument = data.providerDocument.trim() || null;
     if (data.originType !== base.originType) out.originType = data.originType;
     if (data.originCode !== base.originCode) out.originCode = data.originCode.trim() || null;
+    if (data.originSourceNumber !== base.originSourceNumber) {
+      out.originSourceNumber = data.originSourceNumber.trim() || null;
+    }
+    if (data.ctpProductCode !== base.ctpProductCode) out.ctpProductCode = data.ctpProductCode.trim() || null;
+    if (data.originRegion !== base.originRegion) out.originRegion = data.originRegion.trim() || null;
+    if (data.originDistrict !== base.originDistrict) out.originDistrict = data.originDistrict.trim() || null;
     if (data.speciesCommonName !== base.speciesCommonName) out.speciesCommonName = data.speciesCommonName.trim();
     if (data.speciesScientificName !== base.speciesScientificName) {
       out.speciesScientificName = data.speciesScientificName.trim() || null;
@@ -140,6 +176,14 @@ export default function CtpIngresoEditModal({
     if (data.productType !== base.productType) out.productType = data.productType;
     if (Number(data.volumeM3) !== Number(base.volumeM3)) out.volumeM3 = Number(data.volumeM3);
     if (Number(data.pieces) !== Number(base.pieces)) out.pieces = Number(data.pieces || 0);
+    /* Los numéricos van `null` cuando quedan vacíos, nunca 0: «no se midió» y
+       «midió cero» son cosas distintas, y un 0 inventado ensucia los promedios
+       del patio. Mismo criterio que el costo sin factura. */
+    const num = (v: string) => (v.trim() === "" ? null : Number(v));
+    if (data.avgLengthM !== base.avgLengthM) out.avgLengthM = num(data.avgLengthM);
+    if (data.avgDiameterCm !== base.avgDiameterCm) out.avgDiameterCm = num(data.avgDiameterCm);
+    if (data.humidityPct !== base.humidityPct) out.humidityPct = num(data.humidityPct);
+    if (data.defectsNotes !== base.defectsNotes) out.defectsNotes = data.defectsNotes.trim() || null;
     if (data.notes !== base.notes) out.notes = data.notes.trim() || null;
     return out;
   }
@@ -221,6 +265,24 @@ export default function CtpIngresoEditModal({
               <Field span={12} label="N° de GTF" required casillero={4} hint="El origen legal de la madera">
                 <input type="text" className={`${I} font-mono`} value={data.gtfNumber} onChange={(e) => set("gtfNumber", e.target.value)} />
               </Field>
+              {/* Estos cuatro los aceptaba el endpoint desde siempre y el form
+                  no los ofrecía: se veían vacíos en la ficha y no había dónde
+                  escribirlos. El del SNIFFS ni siquiera lo aceptaba el PATCH. */}
+              <Field span={6} label="Tipo de documento" casillero={3}>
+                <select className={I} value={data.docType} onChange={(e) => set("docType", e.target.value)}>
+                  <option value="GTF">GTF</option>
+                  <option value="GRR">GRR</option>
+                </select>
+              </Field>
+              <Field span={6} label="Serie">
+                <input type="text" className={`${I} font-mono`} value={data.gtfSeries} onChange={(e) => set("gtfSeries", e.target.value)} />
+              </Field>
+              <Field span={12} label="N° de registro SNIFFS" hint="Con ese número se consulta la guía en la base pública de SERFOR">
+                <input type="text" className={`${I} font-mono`} value={data.serforNumeroRegistro} onChange={(e) => set("serforNumeroRegistro", e.target.value)} placeholder="1-19-0313629" />
+              </Field>
+              <Field span={12} label="Llegó a la planta" hint="Cuándo descargó el camión — no es la fecha del asiento ni la del documento">
+                <input type="date" className={I} value={data.fechaRecepcion} onChange={(e) => set("fechaRecepcion", e.target.value)} />
+              </Field>
             </Seccion>
 
             <Seccion numero={2} title="Titular habilitante">
@@ -242,6 +304,18 @@ export default function CtpIngresoEditModal({
               </Field>
               <Field span={12} label="Código de origen" casillero={9} hint="Concesión, predio o comunidad">
                 <input type="text" className={I} value={data.originCode} onChange={(e) => set("originCode", e.target.value)} />
+              </Field>
+              <Field span={12} label="N° de resolución" casillero={8}>
+                <input type="text" className={`${I} font-mono`} value={data.originSourceNumber} onChange={(e) => set("originSourceNumber", e.target.value)} />
+              </Field>
+              <Field span={6} label="Región">
+                <input type="text" className={I} value={data.originRegion} onChange={(e) => set("originRegion", e.target.value)} />
+              </Field>
+              <Field span={6} label="Distrito">
+                <input type="text" className={I} value={data.originDistrict} onChange={(e) => set("originDistrict", e.target.value)} />
+              </Field>
+              <Field span={12} label="Código de CTP de procedencia" casillero={9} hint="Sólo si la madera viene de otro centro de transformación">
+                <input type="text" className={`${I} font-mono`} value={data.ctpProductCode} onChange={(e) => set("ctpProductCode", e.target.value)} />
               </Field>
             </Seccion>
           </div>
@@ -303,6 +377,21 @@ export default function CtpIngresoEditModal({
                   value={data.pieces}
                   onChange={(e) => set("pieces", e.target.value)}
                 />
+              </Field>
+              {/* Vacío se guarda como `null`, nunca 0: «no se midió» y «midió
+                  cero» son cosas distintas y un 0 inventado ensucia los
+                  promedios del patio. */}
+              <Field span={6} label="Largo promedio (m)">
+                <input type="number" step="0.01" min="0" className={`${I} font-mono tabular-nums`} value={data.avgLengthM} onChange={(e) => set("avgLengthM", e.target.value)} placeholder="sin medir" />
+              </Field>
+              <Field span={6} label="Diámetro promedio (cm)">
+                <input type="number" step="0.1" min="0" className={`${I} font-mono tabular-nums`} value={data.avgDiameterCm} onChange={(e) => set("avgDiameterCm", e.target.value)} placeholder="sin medir" />
+              </Field>
+              <Field span={6} label="Humedad (%)">
+                <input type="number" step="0.1" min="0" max="100" className={`${I} font-mono tabular-nums`} value={data.humidityPct} onChange={(e) => set("humidityPct", e.target.value)} placeholder="sin medir" />
+              </Field>
+              <Field span={12} label="Defectos observados" hint="Mancha, rajaduras, insectos — lo que se vio al descargar">
+                <input type="text" className={I} value={data.defectsNotes} onChange={(e) => set("defectsNotes", e.target.value)} />
               </Field>
             </Seccion>
 

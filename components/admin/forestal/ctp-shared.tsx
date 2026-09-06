@@ -131,6 +131,9 @@ export interface WoodEntry {
   gtfNumber: string;
   gtfDate: string | null;
   gtfSeries: string | null;
+  /** Cuándo la madera LLEGÓ a la planta (ADR-335) — distinta de la del asiento
+   *  y de la del documento. Viaja en el JSON desde siempre; faltaba en el tipo. */
+  fechaRecepcion?: string | null;
   providerName: string;
   providerDocument: string | null;
   providerDocumentType: string | null;
@@ -140,6 +143,12 @@ export interface WoodEntry {
   originSourceNumber: string | null;
   /** (9) Código de CTP de procedencia (si vino de otro centro). */
   ctpProductCode: string | null;
+  /**
+   * Qué casillero escribió una PERSONA, quién y cuándo (ADR-392).
+   * Clave = campo del formato, valor = `{ por, el }`. `null`/ausente significa
+   * «no se sabe», NO «vino del documento».
+   */
+  camposManuales?: Record<string, { por?: string; el?: string }> | null;
   /**
    * Lo que se pagó por esta madera (ADR-135).
    *

@@ -23,6 +23,14 @@ export interface CampoFicha {
   valor: string | null;
   /** Casillero del formato oficial, si le corresponde uno. */
   casillero?: string;
+  /**
+   * Quién escribió este dato a mano, si lo escribió alguien (ADR-392).
+   *
+   * `undefined` NO significa «vino del documento»: significa que no se sabe.
+   * Los ingresos anteriores a que el libro registrara procedencia no declaran
+   * ninguna, y la ficha no se la inventa.
+   */
+  manual?: { por?: string; el?: string };
 }
 
 export interface SeccionFicha {
@@ -30,6 +38,21 @@ export interface SeccionFicha {
   /** Los casilleros que cubre, como los cita la autoridad. */
   rango?: string;
   campos: CampoFicha[];
+}
+
+/**
+ * ¿Este casillero lo escribió una persona? (ADR-392)
+ *
+ * Se lee de `camposManuales`, que sólo tiene los campos que alguien corrigió a
+ * mano. Ausente = no se sabe; nunca se interpreta como «vino del documento».
+ */
+function quien(linea: unknown, campo: string): { por?: string; el?: string } | undefined {
+  const cm = (linea as { camposManuales?: unknown } | null)?.camposManuales;
+  if (!cm || typeof cm !== "object" || Array.isArray(cm)) return undefined;
+  const dato = (cm as Record<string, unknown>)[campo];
+  if (!dato || typeof dato !== "object") return undefined;
+  const { por, el } = dato as { por?: unknown; el?: unknown };
+  return { por: typeof por === "string" ? por : undefined, el: typeof el === "string" ? el : undefined };
 }
 
 const t = (v: unknown): string | null => {
@@ -70,16 +93,16 @@ export function seccionesDeGuia(guia: GuiaIngreso<LineaConGuia>): SeccionFicha[]
       titulo: "Documento y origen",
       rango: "casilleros (2) a (12)",
       campos: [
-        { label: "N° de guía", valor: t(guia.gtfNumber), casillero: "4" },
-        { label: "Serie", valor: t(guia.gtfSeries) },
-        { label: "Tipo de documento", valor: t(guia.docType) ?? "GTF", casillero: "3" },
-        { label: "Fecha del documento", valor: t(guia.gtfDate ? String(guia.gtfDate).slice(0, 10) : null) },
-        { label: "N° de registro SNIFFS", valor: t(p.serforNumeroRegistro) },
-        { label: "Título habilitante", valor: t(p.originCode), casillero: "6" },
-        { label: "N° de resolución", valor: t(p.originSourceNumber), casillero: "8" },
-        { label: "Tipo de origen", valor: t(p.originType), casillero: "5" },
-        { label: "Procedencia", valor: ubicacion(p.originRegion ?? "", "", p.originDistrict ?? "") },
-        { label: "Código de CTP de procedencia", valor: t(p.ctpProductCode), casillero: "9" },
+        { label: "N° de guía", valor: t(guia.gtfNumber), casillero: "4", manual: quien(p, "gtfNumber") },
+        { label: "Serie", valor: t(guia.gtfSeries), manual: quien(p, "gtfSeries") },
+        { label: "Tipo de documento", valor: t(guia.docType) ?? "GTF", casillero: "3", manual: quien(p, "docType") },
+        { label: "Fecha del documento", valor: t(guia.gtfDate ? String(guia.gtfDate).slice(0, 10) : null), manual: quien(p, "gtfDate") },
+        { label: "N° de registro SNIFFS", valor: t(p.serforNumeroRegistro), manual: quien(p, "serforNumeroRegistro") },
+        { label: "Título habilitante", valor: t(p.originCode), casillero: "6", manual: quien(p, "originCode") },
+        { label: "N° de resolución", valor: t(p.originSourceNumber), casillero: "8", manual: quien(p, "originSourceNumber") },
+        { label: "Tipo de origen", valor: t(p.originType), casillero: "5", manual: quien(p, "originType") },
+        { label: "Procedencia", valor: ubicacion(p.originRegion ?? "", "", p.originDistrict ?? ""), manual: quien(p, "originRegion") ?? quien(p, "originDistrict") },
+        { label: "Código de CTP de procedencia", valor: t(p.ctpProductCode), casillero: "9", manual: quien(p, "ctpProductCode") },
       ],
     },
     {
